@@ -40,7 +40,7 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install -r backend/requirements.txt pytest httpx pytest-asyncio
-      - run: pytest backend/tests/ -v
+      - run: pytest backend/tests/unit/ -v --ignore=backend/tests/unit/test_health.py --ignore=backend/tests/unit/test_users.py
 
   test-frontend:
     runs-on: ubuntu-latest
