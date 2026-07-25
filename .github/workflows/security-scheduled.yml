@@ -132,7 +132,7 @@ jobs:
           fetch-depth: 0
 
       - name: Review Dependencies
-        uses: actions/dependency-review-action@v4
+        uses: actions/dependency-review-action@v5
         with:
           config-file: '.github/dependency-review-config.yml'
           fail-on-severity: high
