@@ -1,0 +1,96 @@
+# SuperDev AI Suite - Complete Helm Chart
+# This chart deploys the entire SuperDev platform
+
+apiVersion: v2
+name: superdev
+description: SuperDev AI Suite - Enterprise AI Development Platform
+type: application
+version: 1.0.0
+appVersion: "5.0.0"
+home: https://superdev.ai
+sources:
+  - https://github.com/superdev/superdev
+maintainers:
+  - name: SuperDev Team
+    email: team@superdev.ai
+icon: https://superdev.ai/icon.png
+
+dependencies:
+  # Core Infrastructure
+  - name: postgresql
+    version: "12.x.x"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: postgresql.enabled
+    alias: postgresql
+
+  - name: redis
+    version: "18.x.x"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: redis.enabled
+    alias: redis
+
+  # Monitoring Stack
+  - name: prometheus
+    version: "25.x.x"
+    repository: "https://prometheus-community.github.io/helm-charts"
+    condition: prometheus.enabled
+
+  - name: grafana
+    version: "6.x.x"
+    repository: "https://grafana.github.io/helm-charts"
+    condition: grafana.enabled
+
+  - name: jaeger
+    version: "2.x.x"
+    repository: "https://jaegertracing.github.io/helm-charts"
+    condition: jaeger.enabled
+
+  # Security
+  - name: cert-manager
+    version: "1.13.x"
+    repository: "https://charts.jetstack.io"
+    condition: certManager.enabled
+
+  # Ingress
+  - name: nginx-ingress
+    version: "4.x.x"
+    repository: "https://kubernetes.github.io/ingress-nginx"
+    condition: nginxIngress.enabled
+
+  # Feature Flags
+  - name: unleash
+    version: "1.x.x"
+    repository: "https://unleash.github.io/helm-charts"
+    condition: unleash.enabled
+
+  # Cost Management
+  - name: kubecost
+    version: "0.x.x"
+    repository: "https://kubecost.github.io/cost-analyzer"
+    condition: kubecost.enabled
+
+  # Chaos Engineering
+  - name: litmus
+    version: "2.x.x"
+    repository: "https://litmuschaos.github.io/litmus-helm"
+    condition: litmus.enabled
+
+keywords:
+  - ai
+  - development
+  - platform
+  - agents
+  - workflow
+  - code-generation
+  - verification
+
+annotations:
+  "artifacthub.io/containsSecurityUpdates": "true"
+  "artifacthub.io/license": "MIT"
+  "artifacthub.io/links": |
+    - name: Website
+      url: https://superdev.ai
+    - name: Documentation
+      url: https://docs.superdev.ai
+    - name: Source
+      url: https://github.com/superdev/superdev

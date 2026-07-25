@@ -1,0 +1,59 @@
+# Dependency Review Configuration
+# Used by actions/dependency-review-action@v4
+
+# Fail on vulnerabilities
+fail-on-severity: high
+
+# Allow licenses
+allow-licenses:
+  - MIT
+  - Apache-2.0
+  - BSD-2-Clause
+  - BSD-3-Clause
+  - ISC
+  - Python-2.0
+  - Unicode-DFS-2015
+  - MPL-2.0
+  - LGPL-2.1-or-later
+  - LGPL-3.0-or-later
+
+# Deny licenses (prohibited)
+deny-licenses:
+  - GPL-2.0-only
+  - GPL-3.0-only
+  - AGPL-3.0-only
+  - SSPL-1.0
+  - Commons-Clause-1.0
+  - BSL-1.0
+  - EULA
+
+# Allow scopes (dev dependencies are less critical)
+allow-scopes:
+  - dev
+
+# Specific package exemptions
+allow-list:
+  # Temporary exemptions with justification
+  - name: "some-problematic-package"
+    reason: "Required for X, waiting for upstream fix"
+    expires: "2025-01-01"
+
+# Configuration for specific ecosystems
+ecosystems:
+  python:
+    # Ignore specific advisory IDs
+    ignore-advisories:
+      - GHSA-xxxx-xxxx-xxxx  # False positive
+    # Minimum version for security
+    min-version: "3.11"
+
+  npm:
+    ignore-advisories:
+      - GHSA-xxxx-xxxx-xxxx
+    min-version: "18.0.0"
+
+  go:
+    min-version: "1.22.0"
+
+  cargo:
+    min-version: "1.75.0"

@@ -1,0 +1,215 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: litmus
+  labels:
+    app.kubernetes.io/name: litmus
+---
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: superdev-api-chaos
+  namespace: superdev
+spec:
+  appinfo:
+    appns: superdev
+    applabel: "app.kubernetes.io/name=superdev-api"
+  chaosServiceAccount: litmus-admin
+  experiments:
+    - name: pod-delete
+      spec:
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: "30"
+            - name: CHAOS_INTERVAL
+              value: "10"
+            - name: FORCE
+              value: "false"
+            - name: PODS_AFFECTED_PERC
+              value: "50"
+    - name: pod-cpu-hog
+      spec:
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: "60"
+            - name: CHAOS_INTERVAL
+              value: "10"
+            - name: CPU_UTILIZATION
+              value: "80"
+            - name: PODS_AFFECTED_PERC
+              value: "50"
+    - name: pod-memory-hog
+      spec:
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: "60"
+            - name: CHAOS_INTERVAL
+              value: "10"
+            - name: MEMORY_CONSUMPTION
+              value: "80"
+            - name: PODS_AFFECTED_PERC
+              value: "50"
+    - name: pod-network-latency
+      spec:
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: "60"
+            - name: CHAOS_INTERVAL
+              value: "10"
+            - name: NETWORK_LATENCY
+              value: "2000"
+            - name: PODS_AFFECTED_PERC
+              value: "50"
+    - name: pod-network-loss
+      spec:
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: "60"
+            - name: CHAOS_INTERVAL
+              value: "10"
+            - name: NETWORK_LOSS
+              value: "50"
+            - name: PODS_AFFECTED_PERC
+              value: "50"
+    - name: disk-fill
+      spec:
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: "60"
+            - name: CHAOS_INTERVAL
+              value: "10"
+            - name: FILL_PERCENTAGE
+              value: "80"
+            - name: PODS_AFFECTED_PERC
+              value: "50"
+---
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: postgres-chaos
+  namespace: superdev-database
+spec:
+  appinfo:
+    appns: superdev-database
+    applabel: "app.kubernetes.io/name=postgresql"
+  chaosServiceAccount: litmus-admin
+  experiments:
+    - name: pod-delete
+      spec:
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: "30"
+            - name: CHAOS_INTERVAL
+              value: "10"
+            - name: FORCE
+              value: "false"
+            - name: PODS_AFFECTED_PERC
+              value: "100"
+---
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: redis-chaos
+  namespace: superdev-database
+spec:
+  appinfo:
+    appns: superdev-database
+    applabel: "app.kubernetes.io/name=redis"
+  chaosServiceAccount: litmus-admin
+  experiments:
+    - name: pod-delete
+      spec:
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: "30"
+            - name: CHAOS_INTERVAL
+              value: "10"
+            - name: FORCE
+              value: "false"
+            - name: PODS_AFFECTED_PERC
+              value: "100"
+    - name: pod-cpu-hog
+      spec:
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: "60"
+            - name: CHAOS_INTERVAL
+              value: "10"
+            - name: CPU_UTILIZATION
+              value: "80"
+            - name: PODS_AFFECTED_PERC
+              value: "100"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: chaos-scenarios
+  namespace: litmus
+data:
+  # Daily chaos experiment schedule
+  daily-schedule.yaml: |
+    apiVersion: batch/v1
+    kind: CronJob
+    metadata:
+      name: daily-chaos-api
+      namespace: superdev
+    spec:
+      schedule: "0 2 * * *"
+      jobTemplate:
+        spec:
+          template:
+            spec:
+              serviceAccountName: litmus-admin
+              restartPolicy: OnFailure
+              containers:
+                - name: chaos-runner
+                  image: litmuschaos/litmus-go-runner:latest
+                  env:
+                    - name: CHAOS_ENGINE
+                      value: "superdev-api-chaos"
+                    - name: CHAOS_NAMESPACE
+                      value: "superdev"
+      schedule:
+---
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosExperiment
+metadata:
+  name: continuous-chaos
+  namespace: litmus
+spec:
+  definition:
+    scope: Namespaced
+    permissions:
+      - apiGroups: [""]
+        resources: ["pods", "pods/log"]
+        verbs: ["get", "list", "watch", "create", "delete"]
+      - apiGroups: ["apps"]
+        resources: ["deployments", "statefulsets", "replicasets"]
+        verbs: ["get", "list", "watch"]
+      - apiGroups: ["litmuschaos.io"]
+        resources: ["chaosengines", "chaosexperiments", "chaosresults"]
+        verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+    experiment:
+      name: continuous-chaos
+      spec:
+        components:
+          runner:
+            image: litmuschaos/litmus-go-runner:latest
+          env:
+            - name: CHAOS_SCHEDULE
+              value: "0 2 * * *"  # Daily at 2 AM
+            - name: CHAOS_DURATION
+              value: "30m"
+            - name: TARGET_NAMESPACES
+              value: "superdev,superdev-database"
+            - name: EXPERIMENTS
+              value: "pod-delete,pod-cpu-hog,pod-memory-hog,pod-network-latency,pod-network-loss,disk-fill"

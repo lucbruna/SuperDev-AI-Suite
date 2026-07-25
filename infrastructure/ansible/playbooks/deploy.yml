@@ -1,0 +1,19 @@
+---
+- name: Deploy SuperDev
+  hosts: superdev_servers
+  become: yes
+  tasks:
+    - name: Atualizar código
+      git:
+        repo: https://github.com/superdev/superdev-ai-suite.git
+        dest: /opt/superdev
+        version: main
+
+    - name: Instalar dependências
+      pip:
+        requirements: /opt/superdev/requirements.txt
+
+    - name: Reiniciar serviços
+      systemd:
+        name: superdev
+        state: restarted

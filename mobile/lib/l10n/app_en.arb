@@ -1,0 +1,19 @@
+{
+  "@@locale": "en",
+  "appTitle": "SuperDev",
+  "home": "Home",
+  "chat": "Chat",
+  "projects": "Projects",
+  "settings": "Settings",
+  "welcome": "Welcome to SuperDev",
+  "subtitle": "AI-powered development platform",
+  "login": "Login",
+  "logout": "Logout",
+  "loading": "Loading...",
+  "error": "Error",
+  "retry": "Retry",
+  "noProjects": "No projects found",
+  "createProject": "Create Project",
+  "projectName": "Project Name",
+  "description": "Description"
+}

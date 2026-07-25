@@ -1,0 +1,3 @@
+from backend.organizations.service import OrganizationService
+
+__all__ = ["OrganizationService"]

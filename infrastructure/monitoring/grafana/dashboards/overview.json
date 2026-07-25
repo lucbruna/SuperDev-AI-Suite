@@ -1,0 +1,31 @@
+{
+  "dashboard": {
+    "title": "SuperDev Overview",
+    "panels": [
+      {
+        "title": "Requests por Segundo",
+        "type": "graph",
+        "targets": [{
+          "expr": "rate(http_requests_total[5m])",
+          "legendFormat": "{{method}} {{status}}"
+        }]
+      },
+      {
+        "title": "Latência P95",
+        "type": "graph",
+        "targets": [{
+          "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
+          "legendFormat": "P95"
+        }]
+      },
+      {
+        "title": "Erros",
+        "type": "singlestat",
+        "targets": [{
+          "expr": "rate(http_requests_total{status=~'5..'}[5m])",
+          "legendFormat": "Taxa de erro"
+        }]
+      }
+    ]
+  }
+}

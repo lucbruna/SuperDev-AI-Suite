@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: superdev
+  labels:
+    app.kubernetes.io/name: superdev
+    app.kubernetes.io/managed-by: argocd
+    environment: dev
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: superdev-monitoring
+  labels:
+    app.kubernetes.io/name: superdev-monitoring
+    app.kubernetes.io/managed-by: argocd
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: superdev-database
+  labels:
+    app.kubernetes.io/name: superdev-database
+    app.kubernetes.io/managed-by: argocd

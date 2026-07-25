@@ -1,0 +1,12 @@
+---
+- name: Configurações comuns
+  block:
+    - name: Atualizar cache apt
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Instalar pacotes essenciais
+      apt:
+        name: [curl, wget, git, htop, vim, unzip]
+        state: present

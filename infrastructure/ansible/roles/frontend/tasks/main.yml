@@ -1,0 +1,12 @@
+---
+- name: Configurar frontend
+  block:
+    - name: Instalar Node.js
+      apt:
+        name: [nodejs, npm]
+        state: present
+
+    - name: Instalar dependências do frontend
+      npm:
+        path: /opt/superdev/frontend
+        state: present

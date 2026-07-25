@@ -1,0 +1,252 @@
+name: Scheduled Security & Maintenance
+
+on:
+  schedule:
+    - cron: '0 3 * * 0'  # Weekly on Sunday 3 AM
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  packages: write
+
+jobs:
+  # ════════════════════════════════════════════════════════════════════════
+  # FULL SECURITY SCAN
+  # ════════════════════════════════════════════════════════════════════════
+  full-security-scan:
+    name: Full Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # SAST with all languages
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: python, javascript, go, rust
+          queries: security-extended,security-and-quality
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "weekly-full-scan"
+
+      # Dependency scanning
+      - name: Run Trivy FS Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-weekly.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+          vuln-type: 'os,library'
+
+      - name: Upload Trivy Results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-weekly.sarif
+
+      # Secret scanning
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        with:
+          args: --verbose --report-format=json --report-path=gitleaks-weekly.json
+
+      - name: Upload Gitleaks Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gitleaks-weekly
+          path: gitleaks-weekly.json
+
+  # ════════════════════════════════════════════════════════════════════════
+  # CONTAINER SECURITY
+  # ════════════════════════════════════════════════════════════════════════
+  container-security-scan:
+    name: Container Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull latest images
+        run: |
+          docker pull ghcr.io/superdev/superdev-api:latest || true
+          docker pull ghcr.io/superdev/superdev-frontend:latest || true
+          docker pull ghcr.io/superdev/superdev-worker:latest || true
+
+      - name: Scan API image
+        uses: aquasecurity/trivy-action@master
+        if: always()
+        with:
+          image-ref: 'ghcr.io/superdev/superdev-api:latest'
+          format: 'sarif'
+          output: 'trivy-api.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+
+      - name: Scan Frontend image
+        uses: aquasecurity/trivy-action@master
+        if: always()
+        with:
+          image-ref: 'ghcr.io/superdev/superdev-frontend:latest'
+          format: 'sarif'
+          output: 'trivy-frontend.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+
+      - name: Scan Worker image
+        uses: aquasecurity/trivy-action@master
+        if: always()
+        with:
+          image-ref: 'ghcr.io/superdev/superdev-worker:latest'
+          format: 'sarif'
+          output: 'trivy-worker.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+
+      - name: Upload Container Scan Results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: '*.sarif'
+
+  # ════════════════════════════════════════════════════════════════════════
+  # DEPENDENCY REVIEW
+  # ════════════════════════════════════════════════════════════════════════
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Review Dependencies
+        uses: actions/dependency-review-action@v4
+        with:
+          config-file: '.github/dependency-review-config.yml'
+          fail-on-severity: high
+
+  # ════════════════════════════════════════════════════════════════════════
+  # LICENSE COMPLIANCE
+  # ════════════════════════════════════════════════════════════════════════
+  license-check:
+    name: License Compliance Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check Python licenses
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'json'
+          output: 'licenses.json'
+          vuln-type: 'license'
+
+      - name: Check for prohibited licenses
+        run: |
+          if jq -e '.Results[]?.Licenses[]? | select(.Name == "GPL-3.0-only" or .Name == "AGPL-3.0-only")' licenses.json; then
+            echo "❌ Prohibited license found!"
+            exit 1
+          fi
+
+      - name: Upload license report
+        uses: actions/upload-artifact@v4
+        with:
+          name: license-report
+          path: licenses.json
+
+  # ════════════════════════════════════════════════════════════════════════
+  # DATABASE MIGRATION CHECK
+  # ════════════════════════════════════════════════════════════════════════
+  migration-check:
+    name: Database Migration Check
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: superdev
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: superdev_migration_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - run: alembic upgrade head
+        env:
+          DATABASE_URL: postgresql://superdev:test@localhost:5432/superdev_migration_test
+      - run: alembic check
+        env:
+          DATABASE_URL: postgresql://superdev:test@localhost:5432/superdev_migration_test
+
+  # ════════════════════════════════════════════════════════════════════════
+  # NOTIFICATION
+  # ════════════════════════════════════════════════════════════════════════
+  notify-results:
+    name: Notify Security Results
+    runs-on: ubuntu-latest
+    needs:
+      - full-security-scan
+      - container-security-scan
+      - dependency-review
+      - license-check
+      - migration-check
+    if: always()
+    steps:
+      - name: Determine overall status
+        id: status
+        run: |
+          if [[ "${{ needs.full-security-scan.result }}" != "success" ]] || \
+             [[ "${{ needs.container-security-scan.result }}" != "success" ]] || \
+             [[ "${{ needs.dependency-review.result }}" != "success" ]] || \
+             [[ "${{ needs.license-check.result }}" != "success" ]] || \
+             [[ "${{ needs.migration-check.result }}" != "success" ]]; then
+            echo "overall=failed" >> $GITHUB_OUTPUT
+          else
+            echo "overall=success" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Send Slack notification
+        uses: slackapi/slack-github-action@v1.25.0
+        if: steps.status.outputs.overall == 'failed'
+        with:
+          channel-id: ${{ secrets.SLACK_ALERTS_CHANNEL }}
+          slack-message: |
+            🚨 *Weekly Security Scan - Issues Found*
+            *Repository:* ${{ github.repository }}
+            *Run:* ${{ github.run_id }}
+            *Status:* ❌ FAILED
+            *View details:* ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+      - name: Send Success notification
+        uses: slackapi/slack-github-action@v1.25.0
+        if: steps.status.outputs.overall == 'success'
+        with:
+          channel-id: ${{ secrets.SLACK_DEPLOY_CHANNEL }}
+          slack-message: |
+            ✅ *Weekly Security Scan - All Clear*
+            *Repository:* ${{ github.repository }}
+            *Run:* ${{ github.run_id }}
+            *Status:* ✅ PASSED

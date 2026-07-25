@@ -1,0 +1,237 @@
+{
+  "featureFlags": [
+    {
+      "name": "knowledge-base-enabled",
+      "description": "Enable knowledge base with RAG search",
+      "enabled": true,
+      "type": "release",
+      "tags": ["knowledge-base", "rag"],
+      "strategies": [
+        {
+          "name": "default",
+          "parameters": {}
+        }
+      ]
+    },
+    {
+      "name": "verification-loop-enabled",
+      "description": "Enable code verification loop (gen -> exec -> test -> review -> fix)",
+      "enabled": true,
+      "type": "release",
+      "tags": ["verification", "quality"],
+      "strategies": [
+        {
+          "name": "default",
+          "parameters": {}
+        }
+      ]
+    },
+    {
+      "name": "multi-llm-routing",
+      "description": "Enable smart multi-LLM routing based on cost/quality/latency",
+      "enabled": true,
+      "type": "experiment",
+      "tags": ["llm", "routing", "optimization"],
+      "strategies": [
+        {
+          "name": "gradualRolloutSessionId",
+          "parameters": {
+            "percentage": "50",
+            "groupId": "multi-llm-routing"
+          }
+        }
+      ]
+    },
+    {
+      "name": "plugin-marketplace",
+      "description": "Enable plugin marketplace with sandbox execution",
+      "enabled": true,
+      "type": "release",
+      "tags": ["plugins", "marketplace"],
+      "strategies": [
+        {
+          "name": "default",
+          "parameters": {}
+        }
+      ]
+    },
+    {
+      "name": "workflow-engine",
+      "description": "Enable workflow engine with DAG execution",
+      "enabled": true,
+      "type": "release",
+      "tags": ["workflow", "orchestration"],
+      "strategies": [
+        {
+          "name": "default",
+          "parameters": {}
+        }
+      ]
+    },
+    {
+      "name": "multi-tenant-rbac",
+      "description": "Enable multi-tenant RBAC with row-level security",
+      "enabled": true,
+      "type": "release",
+      "tags": ["multi-tenant", "rbac", "security"],
+      "strategies": [
+        {
+          "name": "default",
+          "parameters": {}
+        }
+      ]
+    },
+    {
+      "name": "advanced-rate-limiting",
+      "description": "Enable distributed rate limiting with Redis",
+      "enabled": true,
+      "type": "release",
+      "tags": ["rate-limiting", "redis"],
+      "strategies": [
+        {
+          "name": "default",
+          "parameters": {}
+        }
+      ]
+    },
+    {
+      "name": "code-execution-sandbox",
+      "description": "Enable secure code execution in WASM/Docker sandbox",
+      "enabled": true,
+      "type": "release",
+      "tags": ["sandbox", "security", "wasm"],
+      "strategies": [
+        {
+          "name": "gradualRolloutSessionId",
+          "parameters": {
+            "percentage": "25",
+            "groupId": "code-execution-sandbox"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ai-code-review",
+      "description": "Enable AI-powered code review with security scanning",
+      "enabled": false,
+      "type": "experiment",
+      "tags": ["ai", "code-review", "security"],
+      "strategies": [
+        {
+          "name": "userWithId",
+          "parameters": {
+            "userIds": "beta-testers"
+          }
+        }
+      ]
+    },
+    {
+      "name": "auto-documentation",
+      "description": "Auto-generate documentation from code",
+      "enabled": true,
+      "type": "release",
+      "tags": ["documentation", "automation"],
+      "strategies": [
+        {
+          "name": "default",
+          "parameters": {}
+        }
+      ]
+    },
+    {
+      "name": "cost-optimization-suggestions",
+      "description": "Show LLM cost optimization suggestions in IDE",
+      "enabled": true,
+      "type": "release",
+      "tags": ["cost", "optimization", "ide"],
+      "strategies": [
+        {
+          "name": "default",
+          "parameters": {}
+        }
+      ]
+    },
+    {
+      "name": "chaos-engineering",
+      "description": "Enable chaos engineering integration for resilience testing",
+      "enabled": false,
+      "type": "experiment",
+      "tags": ["chaos", "resilience", "testing"],
+      "strategies": [
+        {
+          "name": "userWithId",
+          "parameters": {
+            "userIds": "sre-team"
+          }
+        }
+      ]
+    },
+    {
+      "name": "github-copilot-integration",
+      "description": "Enable GitHub Copilot integration for code suggestions",
+      "enabled": true,
+      "type": "release",
+      "tags": ["github", "copilot", "integration"],
+      "strategies": [
+        {
+          "name": "default",
+          "parameters": {}
+        }
+      ]
+    },
+    {
+      "name": "slack-notifications",
+      "description": "Send workflow/agent notifications to Slack",
+      "enabled": true,
+      "type": "release",
+      "tags": ["notifications", "slack"],
+      "strategies": [
+        {
+          "name": "default",
+          "parameters": {}
+        }
+      ]
+    },
+    {
+      "name": "jira-integration",
+      "description": "Sync workflow tasks with Jira",
+      "enabled": true,
+      "type": "release",
+      "tags": ["jira", "integration", "project-management"],
+      "strategies": [
+        {
+          "name": "default",
+          "parameters": {}
+        }
+      ]
+    },
+    {
+      "name": "kubernetes-deployment",
+      "description": "Deploy workflows to Kubernetes",
+      "enabled": true,
+      "type": "release",
+      "tags": ["kubernetes", "deployment", "devops"],
+      "strategies": [
+        {
+          "name": "default",
+          "parameters": {}
+        }
+      ]
+    },
+    {
+      "name": "terraform-integration",
+      "description": "Generate and apply Terraform from workflows",
+      "enabled": false,
+      "type": "experiment",
+      "tags": ["terraform", "iac", "infrastructure"],
+      "strategies": [
+        {
+          "name": "userWithId",
+          "parameters": {
+            "userIds": "devops-team"
+          }
+        }
+      ]
+    }
+  ]
+}

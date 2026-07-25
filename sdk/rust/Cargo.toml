@@ -1,0 +1,30 @@
+[package]
+name = "superdev-sdk"
+version = "0.1.0"
+edition = "2021"
+description = "SuperDev AI Suite Rust SDK"
+repository = "https://github.com/superdev/sdk"
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+keywords = ["ai", "development", "agents", "workflow", "llm"]
+categories = ["development-tools", "api-client"]
+
+[dependencies]
+reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1.0", features = ["full"] }
+thiserror = "1.0"
+url = "2.5"
+
+[dev-dependencies]
+tokio-test = "0.4"
+mockito = "1.0"
+
+[features]
+default = []
+async = ["reqwest/async"]
+
+[[example]]
+name = "basic_usage"
+path = "examples/basic_usage.rs"

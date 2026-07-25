@@ -1,0 +1,22 @@
+---
+- name: Configurar servidor SuperDev
+  hosts: superdev_servers
+  become: yes
+  tasks:
+    - name: Instalar Docker
+      apt:
+        name: [docker.io, docker-compose]
+        state: present
+        update_cache: yes
+
+    - name: Instalar Python
+      apt:
+        name: [python3, python3-pip, python3-venv]
+        state: present
+
+    - name: Criar usuário superdev
+      user:
+        name: superdev
+        shell: /bin/bash
+        groups: docker
+        append: yes

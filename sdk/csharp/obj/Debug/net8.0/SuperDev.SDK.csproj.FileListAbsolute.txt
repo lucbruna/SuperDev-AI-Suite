@@ -1,0 +1,14 @@
+C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\sdk\csharp\obj\Debug\net8.0\SuperDev.SDK.csproj.AssemblyReference.cache
+C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\sdk\csharp\obj\Debug\net8.0\SuperDev.SDK.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\sdk\csharp\obj\Debug\net8.0\SuperDev.SDK.AssemblyInfoInputs.cache
+C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\sdk\csharp\obj\Debug\net8.0\SuperDev.SDK.AssemblyInfo.cs
+C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\sdk\csharp\obj\Debug\net8.0\SuperDev.SDK.csproj.CoreCompileInputs.cache
+C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\sdk\csharp\bin\Debug\net8.0\SuperDev.SDK.deps.json
+C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\sdk\csharp\bin\Debug\net8.0\SuperDev.SDK.dll
+C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\sdk\csharp\bin\Debug\net8.0\SuperDev.SDK.pdb
+C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\sdk\csharp\bin\Debug\net8.0\SuperDev.SDK.xml
+C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\sdk\csharp\obj\Debug\net8.0\SuperDev.SDK.dll
+C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\sdk\csharp\obj\Debug\net8.0\refint\SuperDev.SDK.dll
+C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\sdk\csharp\obj\Debug\net8.0\SuperDev.SDK.xml
+C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\sdk\csharp\obj\Debug\net8.0\SuperDev.SDK.pdb
+C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\sdk\csharp\obj\Debug\net8.0\ref\SuperDev.SDK.dll

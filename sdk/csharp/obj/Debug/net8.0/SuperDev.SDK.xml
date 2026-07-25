@@ -1,0 +1,553 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>SuperDev.SDK</name>
+    </assembly>
+    <members>
+        <member name="T:SuperDev.SDK.Auth.AuthManager">
+            <summary>
+            Manages authentication state including API keys and token pairs.
+            </summary>
+        </member>
+        <member name="M:SuperDev.SDK.Auth.AuthManager.#ctor(System.String)">
+            <summary>
+            Creates a new <see cref="T:SuperDev.SDK.Auth.AuthManager"/>.
+            </summary>
+            <param name="apiKey">Optional API key for direct authentication.</param>
+        </member>
+        <member name="P:SuperDev.SDK.Auth.AuthManager.IsAuthenticated">
+            <summary>Whether valid credentials are currently available.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Auth.AuthManager.ApiKey">
+            <summary>
+            Returns the current API key, or null if using token-based auth.
+            </summary>
+        </member>
+        <member name="M:SuperDev.SDK.Auth.AuthManager.SetTokens(System.String,System.String,System.Int32)">
+            <summary>
+            Sets tokens from a login response.
+            </summary>
+        </member>
+        <member name="M:SuperDev.SDK.Auth.AuthManager.ClearTokens">
+            <summary>
+            Clears all stored credentials.
+            </summary>
+        </member>
+        <member name="M:SuperDev.SDK.Auth.AuthManager.GetAuthorizationHeader">
+            <summary>
+            Builds the Authorization header value.
+            </summary>
+            <exception cref="T:SuperDev.SDK.Exceptions.AuthenticationException">Thrown when no valid credentials are available.</exception>
+        </member>
+        <member name="T:SuperDev.SDK.Auth.TokenPair">
+            <summary>
+            An access/refresh token pair with expiry tracking.
+            </summary>
+        </member>
+        <member name="T:SuperDev.SDK.Exceptions.AuthenticationException">
+            <summary>
+            Raised when authentication or authorization fails (HTTP 401 or 403).
+            </summary>
+        </member>
+        <member name="T:SuperDev.SDK.Exceptions.NotFoundException">
+            <summary>
+            Raised when a requested resource is not found (HTTP 404).
+            </summary>
+        </member>
+        <member name="T:SuperDev.SDK.Exceptions.SuperDevException">
+            <summary>
+            Base exception for all SuperDev SDK errors.
+            </summary>
+        </member>
+        <member name="P:SuperDev.SDK.Exceptions.SuperDevException.StatusCode">
+            <summary>HTTP status code, or 0 for non-HTTP errors.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Exceptions.SuperDevException.Details">
+            <summary>Structured error details from the API response.</summary>
+        </member>
+        <member name="T:SuperDev.SDK.Models.AgentStatus">
+            <summary>
+            Possible agent statuses.
+            </summary>
+        </member>
+        <member name="T:SuperDev.SDK.Models.Agent">
+            <summary>
+            Represents a SuperDev AI agent.
+            </summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.Agent.Id">
+            <summary>Unique agent identifier.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.Agent.Name">
+            <summary>Agent name.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.Agent.Type">
+            <summary>Agent type (e.g. "general", "coding", "research").</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.Agent.Status">
+            <summary>Current agent status.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.Agent.Config">
+            <summary>Agent configuration parameters.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.Agent.CreatedAt">
+            <summary>When the agent was created.</summary>
+        </member>
+        <member name="T:SuperDev.SDK.Models.MessageRole">
+            <summary>
+            A chat message role.
+            </summary>
+        </member>
+        <member name="T:SuperDev.SDK.Models.ChatMessage">
+            <summary>
+            A single chat message.
+            </summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.ChatMessage.Role">
+            <summary>Message role.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.ChatMessage.Content">
+            <summary>Message content.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.ChatMessage.Timestamp">
+            <summary>When the message was created.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.ChatMessage.Metadata">
+            <summary>Additional metadata.</summary>
+        </member>
+        <member name="T:SuperDev.SDK.Models.ChatResponse">
+            <summary>
+            Response from a chat completion request.
+            </summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.ChatResponse.Message">
+            <summary>The generated message content.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.ChatResponse.Model">
+            <summary>Model used for generation.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.ChatResponse.Provider">
+            <summary>Provider used for generation.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.ChatResponse.Usage">
+            <summary>Token usage statistics.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.ChatResponse.FinishReason">
+            <summary>Reason the generation finished.</summary>
+        </member>
+        <member name="T:SuperDev.SDK.Models.PaginatedResponse`1">
+            <summary>
+            A paginated response containing a list of items and pagination metadata.
+            </summary>
+            <typeparam name="T">The type of items in the response.</typeparam>
+        </member>
+        <member name="P:SuperDev.SDK.Models.PaginatedResponse`1.Items">
+            <summary>The items in the current page.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.PaginatedResponse`1.Total">
+            <summary>Total number of items across all pages.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.PaginatedResponse`1.Page">
+            <summary>Current page number (1-indexed).</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.PaginatedResponse`1.PageSize">
+            <summary>Number of items per page.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.PaginatedResponse`1.HasNext">
+            <summary>Whether there is a next page.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.PaginatedResponse`1.HasPrevious">
+            <summary>Whether there is a previous page.</summary>
+        </member>
+        <member name="T:SuperDev.SDK.Models.Plugin">
+            <summary>
+            Represents a SuperDev plugin.
+            </summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.Plugin.Id">
+            <summary>Unique plugin identifier.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.Plugin.Name">
+            <summary>Plugin name.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.Plugin.Version">
+            <summary>Plugin version.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.Plugin.Description">
+            <summary>Plugin description.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.Plugin.Author">
+            <summary>Plugin author.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.Plugin.IsInstalled">
+            <summary>Whether the plugin is currently installed.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.Plugin.Config">
+            <summary>Plugin configuration.</summary>
+        </member>
+        <member name="T:SuperDev.SDK.Models.Project">
+            <summary>
+            Represents a SuperDev project.
+            </summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.Project.Id">
+            <summary>Unique project identifier.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.Project.Name">
+            <summary>Project name.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.Project.Description">
+            <summary>Project description.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.Project.OrganizationId">
+            <summary>Owner organization identifier.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.Project.Status">
+            <summary>Current project status.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.Project.CreatedAt">
+            <summary>When the project was created.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.Project.UpdatedAt">
+            <summary>When the project was last updated.</summary>
+        </member>
+        <member name="T:SuperDev.SDK.Models.Provider">
+            <summary>
+            Represents an AI model provider (e.g. OpenAI, Anthropic).
+            </summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.Provider.Id">
+            <summary>Unique provider identifier.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.Provider.Name">
+            <summary>Provider display name.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.Provider.Type">
+            <summary>Provider type identifier.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.Provider.IsEnabled">
+            <summary>Whether the provider is currently enabled.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.Provider.Config">
+            <summary>Provider-specific configuration.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.Provider.Health">
+            <summary>Current health status of the provider.</summary>
+        </member>
+        <member name="T:SuperDev.SDK.Models.ProviderHealth">
+            <summary>
+            Health check result for a provider.
+            </summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.ProviderHealth.ProviderId">
+            <summary>Provider identifier.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.ProviderHealth.Status">
+            <summary>Current health status.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.ProviderHealth.LatencyMs">
+            <summary>Response latency in milliseconds.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.ProviderHealth.LastChecked">
+            <summary>When the health check was performed.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.ProviderHealth.Error">
+            <summary>Error message if the provider is unhealthy.</summary>
+        </member>
+        <member name="T:SuperDev.SDK.Models.StreamingChunk">
+            <summary>
+            A single chunk from a streaming chat response.
+            </summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.StreamingChunk.Delta">
+            <summary>Incremental text delta.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.StreamingChunk.Model">
+            <summary>Model used for generation.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.StreamingChunk.FinishReason">
+            <summary>Reason the generation finished, or null if still streaming.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.StreamingChunk.Usage">
+            <summary>Token usage statistics.</summary>
+        </member>
+        <member name="T:SuperDev.SDK.Models.User">
+            <summary>
+            Represents a SuperDev user.
+            </summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.User.Id">
+            <summary>Unique user identifier.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.User.Email">
+            <summary>User email address.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.User.Name">
+            <summary>Display name.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.User.AvatarUrl">
+            <summary>URL to the user's avatar image.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.User.IsActive">
+            <summary>Whether the user account is active.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.User.CreatedAt">
+            <summary>When the user was created.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.User.UpdatedAt">
+            <summary>When the user was last updated.</summary>
+        </member>
+        <member name="T:SuperDev.SDK.Models.Workflow">
+            <summary>
+            Represents a SuperDev workflow definition.
+            </summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.Workflow.Id">
+            <summary>Unique workflow identifier.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.Workflow.Name">
+            <summary>Workflow name.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.Workflow.Description">
+            <summary>Workflow description.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.Workflow.Graph">
+            <summary>The workflow graph definition (nodes and edges).</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.Workflow.Status">
+            <summary>Current workflow status.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.Workflow.Version">
+            <summary>Workflow version number.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.Workflow.CreatedAt">
+            <summary>When the workflow was created.</summary>
+        </member>
+        <member name="T:SuperDev.SDK.Models.WorkflowRunStatus">
+            <summary>
+            Possible workflow run statuses.
+            </summary>
+        </member>
+        <member name="T:SuperDev.SDK.Models.WorkflowRun">
+            <summary>
+            Represents a single execution of a workflow.
+            </summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.WorkflowRun.Id">
+            <summary>Unique run identifier.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.WorkflowRun.WorkflowId">
+            <summary>The workflow this run belongs to.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.WorkflowRun.Status">
+            <summary>Current run status.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.WorkflowRun.Inputs">
+            <summary>Inputs provided to the workflow run.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.WorkflowRun.Outputs">
+            <summary>Outputs produced by the workflow run.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.WorkflowRun.StartedAt">
+            <summary>When the run started.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.WorkflowRun.FinishedAt">
+            <summary>When the run finished.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.Models.WorkflowRun.Error">
+            <summary>Error message if the run failed.</summary>
+        </member>
+        <member name="T:SuperDev.SDK.SuperDevClientOptions">
+            <summary>
+            Configuration options for <see cref="T:SuperDev.SDK.SuperDevClient"/>.
+            </summary>
+        </member>
+        <member name="P:SuperDev.SDK.SuperDevClientOptions.BaseUrl">
+            <summary>Base URL of the SuperDev API.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.SuperDevClientOptions.ApiKey">
+            <summary>API key for authentication.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.SuperDevClientOptions.Timeout">
+            <summary>Default request timeout.</summary>
+        </member>
+        <member name="T:SuperDev.SDK.SuperDevClient">
+            <summary>
+            Main client for the SuperDev AI Suite API.
+            </summary>
+        </member>
+        <member name="P:SuperDev.SDK.SuperDevClient.Users">
+            <summary>Users API.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.SuperDevClient.Projects">
+            <summary>Projects API.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.SuperDevClient.Agents">
+            <summary>Agents API.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.SuperDevClient.Workflows">
+            <summary>Workflows API.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.SuperDevClient.Providers">
+            <summary>Providers API.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.SuperDevClient.Plugins">
+            <summary>Plugins API.</summary>
+        </member>
+        <member name="P:SuperDev.SDK.SuperDevClient.Chat">
+            <summary>Chat API.</summary>
+        </member>
+        <member name="M:SuperDev.SDK.SuperDevClient.#ctor(SuperDev.SDK.SuperDevClientOptions)">
+            <summary>
+            Creates a new <see cref="T:SuperDev.SDK.SuperDevClient"/> with the specified options.
+            </summary>
+        </member>
+        <member name="M:SuperDev.SDK.SuperDevClient.#ctor(System.Net.Http.HttpClient,SuperDev.SDK.Auth.AuthManager)">
+            <summary>
+            Creates a new <see cref="T:SuperDev.SDK.SuperDevClient"/> using an existing <see cref="T:System.Net.Http.HttpClient"/>.
+            </summary>
+        </member>
+        <member name="M:SuperDev.SDK.SuperDevClient.Create(System.String,System.String)">
+            <summary>
+            Creates a pre-configured <see cref="T:SuperDev.SDK.SuperDevClient"/>.
+            </summary>
+        </member>
+        <member name="M:SuperDev.SDK.SuperDevClient.LoginAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Authenticates with email and password.
+            </summary>
+        </member>
+        <member name="M:SuperDev.SDK.SuperDevClient.Logout">
+            <summary>
+            Clears stored authentication tokens.
+            </summary>
+        </member>
+        <member name="T:SuperDev.SDK.SuperDevServiceCollectionExtensions">
+            <summary>
+            DI extension methods for registering <see cref="T:SuperDev.SDK.SuperDevClient"/>.
+            </summary>
+        </member>
+        <member name="M:SuperDev.SDK.SuperDevServiceCollectionExtensions.AddSuperDevSDK(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.Action{SuperDev.SDK.SuperDevClientOptions})">
+            <summary>
+            Registers <see cref="T:SuperDev.SDK.SuperDevClient"/> and <see cref="T:SuperDev.SDK.Auth.AuthManager"/> in the DI container.
+            </summary>
+        </member>
+        <member name="T:SuperDev.SDK.UserApi">
+            <summary>API methods for managing users.</summary>
+        </member>
+        <member name="M:SuperDev.SDK.UserApi.MeAsync(System.Threading.CancellationToken)">
+            <summary>Gets the currently authenticated user.</summary>
+        </member>
+        <member name="M:SuperDev.SDK.UserApi.ListAsync(System.Int32,System.Int32,System.Threading.CancellationToken)">
+            <summary>Lists users with pagination.</summary>
+        </member>
+        <member name="T:SuperDev.SDK.ProjectApi">
+            <summary>API methods for managing projects.</summary>
+        </member>
+        <member name="M:SuperDev.SDK.ProjectApi.ListAsync(System.Int32,System.Int32,System.Threading.CancellationToken)">
+            <summary>Lists projects with pagination.</summary>
+        </member>
+        <member name="M:SuperDev.SDK.ProjectApi.GetAsync(System.String,System.Threading.CancellationToken)">
+            <summary>Gets a project by ID.</summary>
+        </member>
+        <member name="M:SuperDev.SDK.ProjectApi.CreateAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>Creates a new project.</summary>
+        </member>
+        <member name="M:SuperDev.SDK.ProjectApi.UpdateAsync(System.String,System.Collections.Generic.Dictionary{System.String,System.Object},System.Threading.CancellationToken)">
+            <summary>Updates a project.</summary>
+        </member>
+        <member name="M:SuperDev.SDK.ProjectApi.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <summary>Deletes a project.</summary>
+        </member>
+        <member name="T:SuperDev.SDK.AgentApi">
+            <summary>API methods for managing agents.</summary>
+        </member>
+        <member name="M:SuperDev.SDK.AgentApi.ListAsync(System.Int32,System.Int32,System.Threading.CancellationToken)">
+            <summary>Lists agents with pagination.</summary>
+        </member>
+        <member name="M:SuperDev.SDK.AgentApi.GetAsync(System.String,System.Threading.CancellationToken)">
+            <summary>Gets an agent by ID.</summary>
+        </member>
+        <member name="M:SuperDev.SDK.AgentApi.StartAsync(System.String,System.Collections.Generic.Dictionary{System.String,System.Object},System.Threading.CancellationToken)">
+            <summary>Starts an agent with optional configuration.</summary>
+        </member>
+        <member name="M:SuperDev.SDK.AgentApi.StopAsync(System.String,System.Threading.CancellationToken)">
+            <summary>Stops a running agent.</summary>
+        </member>
+        <member name="M:SuperDev.SDK.AgentApi.LogsAsync(System.String,System.Int32,System.Threading.CancellationToken)">
+            <summary>Gets agent logs.</summary>
+        </member>
+        <member name="T:SuperDev.SDK.WorkflowApi">
+            <summary>API methods for managing workflows.</summary>
+        </member>
+        <member name="M:SuperDev.SDK.WorkflowApi.ListAsync(System.Int32,System.Int32,System.Threading.CancellationToken)">
+            <summary>Lists workflows with pagination.</summary>
+        </member>
+        <member name="M:SuperDev.SDK.WorkflowApi.GetAsync(System.String,System.Threading.CancellationToken)">
+            <summary>Gets a workflow by ID.</summary>
+        </member>
+        <member name="M:SuperDev.SDK.WorkflowApi.CreateAsync(System.String,System.Collections.Generic.Dictionary{System.String,System.Object},System.String,System.Threading.CancellationToken)">
+            <summary>Creates a new workflow.</summary>
+        </member>
+        <member name="M:SuperDev.SDK.WorkflowApi.RunAsync(System.String,System.Collections.Generic.Dictionary{System.String,System.Object},System.Threading.CancellationToken)">
+            <summary>Runs a workflow with the given inputs.</summary>
+        </member>
+        <member name="M:SuperDev.SDK.WorkflowApi.GetRunAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>Gets the status of a workflow run.</summary>
+        </member>
+        <member name="M:SuperDev.SDK.WorkflowApi.CancelRunAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>Cancels a running workflow.</summary>
+        </member>
+        <member name="M:SuperDev.SDK.WorkflowApi.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <summary>Deletes a workflow.</summary>
+        </member>
+        <member name="T:SuperDev.SDK.ProviderApi">
+            <summary>API methods for managing providers.</summary>
+        </member>
+        <member name="M:SuperDev.SDK.ProviderApi.ListAsync(System.Threading.CancellationToken)">
+            <summary>Lists all providers.</summary>
+        </member>
+        <member name="M:SuperDev.SDK.ProviderApi.HealthAsync(System.String,System.Threading.CancellationToken)">
+            <summary>Gets health status of a provider.</summary>
+        </member>
+        <member name="M:SuperDev.SDK.ProviderApi.EnableAsync(System.String,System.Threading.CancellationToken)">
+            <summary>Enables a provider.</summary>
+        </member>
+        <member name="M:SuperDev.SDK.ProviderApi.DisableAsync(System.String,System.Threading.CancellationToken)">
+            <summary>Disables a provider.</summary>
+        </member>
+        <member name="M:SuperDev.SDK.ProviderApi.ConfigureAsync(System.String,System.Collections.Generic.Dictionary{System.String,System.Object},System.Threading.CancellationToken)">
+            <summary>Updates provider configuration.</summary>
+        </member>
+        <member name="T:SuperDev.SDK.PluginApi">
+            <summary>API methods for managing plugins.</summary>
+        </member>
+        <member name="M:SuperDev.SDK.PluginApi.ListAsync(System.Threading.CancellationToken)">
+            <summary>Lists all plugins.</summary>
+        </member>
+        <member name="M:SuperDev.SDK.PluginApi.InstallAsync(System.String,System.Threading.CancellationToken)">
+            <summary>Installs a plugin.</summary>
+        </member>
+        <member name="M:SuperDev.SDK.PluginApi.UninstallAsync(System.String,System.Threading.CancellationToken)">
+            <summary>Uninstalls a plugin.</summary>
+        </member>
+        <member name="M:SuperDev.SDK.PluginApi.UpdateAsync(System.String,System.Threading.CancellationToken)">
+            <summary>Updates a plugin.</summary>
+        </member>
+        <member name="T:SuperDev.SDK.ChatApi">
+            <summary>API methods for chat interactions.</summary>
+        </member>
+        <member name="M:SuperDev.SDK.ChatApi.SendAsync(System.String,System.String,System.String,System.String,System.String,System.Threading.CancellationToken)">
+            <summary>Sends a chat message and returns a completion response.</summary>
+        </member>
+        <member name="M:SuperDev.SDK.ChatApi.StreamAsync(System.String,System.String,System.String,System.String,System.Threading.CancellationToken)">
+            <summary>Sends a chat message and returns a streaming response.</summary>
+        </member>
+        <member name="M:SuperDev.SDK.ChatApi.ConversationsAsync(System.Threading.CancellationToken)">
+            <summary>Lists recent conversations.</summary>
+        </member>
+        <member name="M:SuperDev.SDK.ChatApi.EmbeddingsAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>Generates embeddings for the given input text.</summary>
+        </member>
+    </members>
+</doc>

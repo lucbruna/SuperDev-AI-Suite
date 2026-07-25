@@ -1,0 +1,65 @@
+{
+  "name": "superdev-frontend",
+  "version": "5.0.0",
+  "private": true,
+  "description": "SuperDev AI Suite frontend application",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint && prettier --check .",
+    "format": "prettier --write .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf .next node_modules"
+  },
+  "dependencies": {
+    "next": "^14.1.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "zustand": "^4.5.0",
+    "@tanstack/react-query": "^5.17.0",
+    "axios": "^1.6.0",
+    "react-hook-form": "^7.49.0",
+    "@monaco-editor/react": "^4.6.0",
+    "xterm": "^5.3.0",
+    "xterm-addon-fit": "^0.8.0",
+    "reactflow": "^11.11.0",
+    "recharts": "^2.10.0",
+    "lucide-react": "^0.312.0",
+    "tailwind-merge": "^2.2.0",
+    "clsx": "^2.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "@types/react": "^18.2.0",
+    "@types/node": "^20.11.0",
+    "tailwindcss": "^3.4.0",
+    "postcss": "^8.4.0",
+    "autoprefixer": "^10.4.0",
+    "eslint": "^8.56.0",
+    "prettier": "^3.2.0",
+    "eslint-config-next": "^14.1.0",
+    "vitest": "^1.2.0",
+    "@testing-library/react": "^14.1.0",
+    "@testing-library/jest-dom": "^6.2.0",
+    "@testing-library/user-event": "^14.5.0",
+    "axios-mock-adapter": "^1.22.0",
+    "@vitejs/plugin-react": "^4.2.0",
+    "@playwright/test": "^1.41.0"
+  },
+  "browserslist": {
+    "production": [
+      ">0.5%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

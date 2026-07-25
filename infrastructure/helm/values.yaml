@@ -1,0 +1,39 @@
+replicaCount: 2
+
+image:
+  repository: superdev/backend
+  tag: latest
+  pullPolicy: Always
+
+service:
+  type: ClusterIP
+  port: 8000
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: superdev.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 256Mi
+  limits:
+    cpu: 1
+    memory: 1Gi
+
+postgres:
+  enabled: true
+
+redis:
+  enabled: true
+
+config:
+  BACKEND_PORT: 8000
+  ENVIRONMENT: production

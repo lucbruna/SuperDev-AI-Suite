@@ -1,0 +1,313 @@
+openapi: 3.1.0
+info:
+  title: SuperDev AI Suite API
+  version: 5.0.0
+  description: API REST do SuperDev AI Suite
+  contact:
+    name: SuperDev Team
+
+servers:
+  - url: http://localhost:8000
+    description: Desenvolvimento
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
+        is_active:
+          type: boolean
+
+    Project:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+
+    Agent:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+        status:
+          type: string
+
+    Workflow:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+        version:
+          type: integer
+
+    ChatRequest:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+        model:
+          type: string
+        provider:
+          type: string
+        stream:
+          type: boolean
+
+    ChatResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        model:
+          type: string
+        provider:
+          type: string
+        usage:
+          type: object
+
+    PaginatedResponse:
+      type: object
+      properties:
+        items:
+          type: array
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        status_code:
+          type: integer
+
+security:
+  - BearerAuth: []
+  - ApiKeyAuth: []
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      tags: [System]
+      responses:
+        '200':
+          description: OK
+
+  /api/v1/auth/login:
+    post:
+      summary: Login
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login bem-sucedido
+
+  /api/v1/users/me:
+    get:
+      summary: Obter usuário atual
+      tags: [Users]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  /api/v1/projects:
+    get:
+      summary: Listar projetos
+      tags: [Projects]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+    post:
+      summary: Criar projeto
+      tags: [Projects]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+      responses:
+        '201':
+          description: Criado
+
+  /api/v1/agents:
+    get:
+      summary: Listar agentes
+      tags: [Agents]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: OK
+
+  /api/v1/workflows:
+    get:
+      summary: Listar workflows
+      tags: [Workflows]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: OK
+    post:
+      summary: Criar workflow
+      tags: [Workflows]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                graph:
+                  type: object
+      responses:
+        '201':
+          description: Criado
+
+  /api/v1/workflows/{id}/run:
+    post:
+      summary: Executar workflow
+      tags: [Workflows]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                inputs:
+                  type: object
+      responses:
+        '200':
+          description: Executado
+
+  /api/v1/chat:
+    post:
+      summary: Enviar mensagem de chat
+      tags: [Chat]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatRequest'
+      responses:
+        '200':
+          description: Resposta do chat
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatResponse'
+
+  /api/v1/providers:
+    get:
+      summary: Listar provedores
+      tags: [Providers]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: OK
+
+  /api/v1/plugins:
+    get:
+      summary: Listar plugins
+      tags: [Plugins]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: OK

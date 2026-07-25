@@ -1,0 +1,451 @@
+# SuperDev AI Suite - Production Values
+# Copy to values-{env}.yaml and customize
+
+# =============================================================================
+# GLOBAL SETTINGS
+# =============================================================================
+global:
+  imageRegistry: ghcr.io
+  imagePullSecrets: []
+  namespace: superdev
+  domain: superdev.example.com
+  environment: production
+  labels:
+    app.kubernetes.io/managed-by: Helm
+
+  tls:
+    enabled: true
+    issuer: letsencrypt-prod
+    email: admin@superdev.example.com
+
+  # Common resource limits
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# =============================================================================
+# SUPERDEV API DEPLOYMENT
+# =============================================================================
+api:
+  enabled: true
+  replicaCount: 3
+  image:
+    repository: superdev/superdev-api
+    tag: "5.0.0"
+    pullPolicy: IfNotPresent
+  imagePullSecrets: []
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 20
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  env:
+    - name: ENVIRONMENT
+      value: production
+    - name: LOG_LEVEL
+      value: INFO
+    - name: DATABASE_URL
+      valueFrom:
+        secretKeyRef:
+          name: superdev-secrets
+          key: database-url
+    - name: REDIS_URL
+      valueFrom:
+        secretKeyRef:
+          name: superdev-secrets
+          key: redis-url
+    - name: JWT_SECRET_KEY
+      valueFrom:
+        secretKeyRef:
+          name: superdev-secrets
+          key: jwt-secret-key
+    - name: OPENAI_API_KEY
+      valueFrom:
+        secretKeyRef:
+          name: superdev-secrets
+          key: openai-api-key
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 8000
+  ingress:
+    enabled: true
+    className: nginx
+    annotations:
+      nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    hosts:
+      - host: api.superdev.example.com
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: superdev-api-tls
+        hosts:
+          - api.superdev.example.com
+
+# =============================================================================
+# POSTGRESQL WITH PVECTOR
+# =============================================================================
+postgresql:
+  enabled: true
+  auth:
+    existingSecret: superdev-db-secret
+    secretKeys:
+      adminPasswordKey: password
+      userPasswordKey: password
+  primary:
+    persistence:
+      enabled: true
+      size: 100Gi
+      storageClass: fast-ssd
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: 2000m
+        memory: 4Gi
+    initdbScripts:
+      enable_pgvector.sql: |
+        CREATE EXTENSION IF NOT EXISTS vector;
+        CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+        CREATE EXTENSION IF NOT EXISTS pg_trgm;
+    postgresqlExtendedConf: |
+      max_connections = 200
+      shared_buffers = 256MB
+      effective_cache_size = 1GB
+      work_mem = 16MB
+      maintenance_work_mem = 128MB
+      max_parallel_workers = 8
+    postgresqlExtendedConf: |
+      max_connections = 200
+      shared_buffers = 256MB
+      effective_cache_size = 1GB
+      work_mem = 16MB
+      maintenance_work_mem = 128MB
+      max_parallel_workers = 8
+      wal_level = logical
+      max_replication_slots = 10
+      max_wal_senders = 10
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+
+# =============================================================================
+# REDIS WITH SENTINEL
+# =============================================================================
+redis:
+  enabled: true
+  auth:
+    enabled: true
+    existingSecret: superdev-redis-secret
+  architecture: replication
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: fast-ssd
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+  config:
+    maxmemory: 2gb
+    maxmemory-policy: allkeys-lru
+    appendonly: "yes"
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+  sentinel:
+    enabled: true
+    replicas: 3
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 256Mi
+
+# =============================================================================
+# PROMETHEUS MONITORING
+# =============================================================================
+prometheus:
+  enabled: true
+  prometheus:
+    prometheusSpec:
+      retention: 30d
+      retentionSize: 50GB
+      storageSpec:
+        volumeClaimTemplate:
+          spec:
+            storageClassName: fast-ssd
+            resources:
+              requests:
+                storage: 100Gi
+      serviceMonitorSelectorNilUsesHelmValues: false
+      podMonitorSelectorNilUsesHelmValues: false
+      ruleSelectorNilUsesHelmValues: false
+  alertmanager:
+    enabled: true
+    alertmanagerSpec:
+      storage:
+        volumeClaimTemplate:
+          spec:
+            storageClassName: fast-ssd
+            resources:
+              requests:
+                storage: 10Gi
+  grafana:
+    enabled: true
+    adminPassword: admin
+    persistence:
+      enabled: true
+      size: 10Gi
+    dashboards:
+      default:
+        superdev-overview:
+          json: |
+            {"dashboard": {"title": "SuperDev Overview", "panels": []}}
+    datasources:
+      datasources.yaml:
+        apiVersion: 1
+        datasources:
+          - name: Prometheus
+            type: prometheus
+            url: http://prometheus-operated.monitoring:9090
+            access: proxy
+            isDefault: true
+            editable: false
+
+# =============================================================================
+# JAEGER TRACING
+# =============================================================================
+jaeger:
+  enabled: true
+  provisionDataStore:
+    cassandra: false
+    elasticsearch: true
+  storage:
+    type: elasticsearch
+    elasticsearch:
+      host: elasticsearch.monitoring.svc.cluster.local
+      port: 9200
+      indexPrefix: jaeger
+      user: elastic
+      password:
+        secretName: elasticsearch-master-credentials
+        key: password
+  collector:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+    replicas: 2
+  query:
+    replicas: 2
+  agent:
+    enabled: true
+
+# =============================================================================
+# CERT-MANAGER
+# =============================================================================
+certManager:
+  enabled: true
+  installCRDs: true
+  extraArgs:
+    - --dns01-recursive-nameservers-only
+    - --dns01-recursive-nameservers=8.8.8.8:53,1.1.1.1:53
+
+# =============================================================================
+# NGINX INGRESS
+# =============================================================================
+nginxIngress:
+  enabled: true
+  controller:
+    ingressClassResource:
+      default: true
+    service:
+      type: LoadBalancer
+    metrics:
+      enabled: true
+      serviceMonitor:
+        enabled: true
+    config:
+      proxy-body-size: "50m"
+      proxy-read-timeout: "300"
+      proxy-send-timeout: "300"
+      use-forwarded-headers: "true"
+
+# =============================================================================
+# SUPERDEV SPECIFIC CONFIGS
+# =============================================================================
+superdev:
+  knowledgeBase:
+    enabled: true
+    embeddingModel: all-MiniLM-L6-v2
+    embeddingDimension: 384
+    chunkSize: 1000
+    chunkOverlap: 200
+  verification:
+    enabled: true
+    maxIterations: 3
+    defaultTimeout: 300
+  plugins:
+    enabled: true
+    marketplaceUrl: https://marketplace.superdev.ai/api/v1
+  workflows:
+    enabled: true
+    maxConcurrent: 10
+    defaultTimeout: 3600
+  rateLimiting:
+    enabled: true
+    requests: 100
+    windowSeconds: 60
+  multiTenancy:
+    enabled: true
+    isolationLevel: schema
+  features:
+    knowledgeBase: true
+    verificationLoop: true
+    pluginMarketplace: true
+    workflowEngine: true
+    multiTenant: true
+    rateLimiting: true
+    observability: true
+    supplyChainSecurity: true
+
+# =============================================================================
+# FEATURE FLAGS (UNLEASH)
+# =============================================================================
+unleash:
+  enabled: true
+  unleash:
+    replicaCount: 2
+    postgres:
+      existingSecret: superdev-db-secret
+    persistence:
+      enabled: true
+    ingress:
+      enabled: true
+      hosts:
+        - flags.superdev.example.com
+
+# =============================================================================
+# COST MANAGEMENT (OPENCOST)
+# =============================================================================
+kubecost:
+  enabled: true
+  kubecostToken: ""
+  prometheus:
+    kubeStateMetrics:
+      enabled: true
+    nodeExporter:
+      enabled: true
+
+# =============================================================================
+# CHAOS ENGINEERING (LITMUS)
+# =============================================================================
+litmus:
+  enabled: false
+  chaosCenter:
+    enabled: true
+  chaosRunner:
+    enabled: true
+
+# =============================================================================
+# SECRETS (Create these separately)
+# =============================================================================
+# Required secrets (create with kubectl or external-secrets):
+# superdev-secrets:
+#   database-url: postgresql+asyncpg://superdev:password@postgresql:5432/superdev
+#   redis-url: redis://:password@redis-master:6379/0
+#   jwt-secret-key: your-256-bit-secret
+#   openai-api-key: sk-...
+#   anthropic-api-key: sk-...
+#   gemini-api-key: ...
+#   ollama-base-url: http://ollama:11434
+#   openrouter-api-key: ...
+#   sentry-dsn: ...
+#   github-oauth-client-id: ...
+#   github-oauth-client-secret: ...
+#   google-oauth-client-id: ...
+#   google-oauth-client-secret: ...
+
+# superdev-db-secret:
+#   password: ...
+
+# superdev-redis-secret:
+#   password: ...
+#   sentinel-password: ...
+
+# elasticsearch-master-credentials:
+#   password: ...
+
+# =============================================================================
+# DEVELOPMENT OVERRIDES (values-dev.yaml)
+# =============================================================================
+# Use with: helm install superdev ./helm/superdev -f values-dev.yaml
+#
+# global:
+#   environment: development
+#   domain: dev.superdev.example.com
+#
+# api:
+#   replicaCount: 1
+#   resources:
+#     requests:
+#       cpu: 250m
+#       memory: 256Mi
+#     limits:
+#       cpu: 1000m
+#       memory: 1Gi
+#
+# postgresql:
+#   primary:
+#     persistence:
+#       size: 20Gi
+#     resources:
+#       requests:
+#         cpu: 250m
+#         memory: 512Mi
+#       limits:
+#         cpu: 1000m
+#         memory: 2Gi
+#
+# redis:
+#   architecture: standalone
+#   replica:
+#     replicaCount: 0
+#
+# prometheus:
+#   prometheusSpec:
+#     retention: 7d
+#     storageSpec:
+#       volumeClaimTemplate:
+#         spec:
+#           resources:
+#             requests:
+#               storage: 20Gi
+#
+# features:
+#   observability: true
+#   supplyChainSecurity: false

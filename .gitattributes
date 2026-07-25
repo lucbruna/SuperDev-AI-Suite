@@ -1,0 +1,82 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Python
+*.py text diff=python
+*.pyw text diff=python
+*.pxd text diff=python
+*.pxi text diff=python
+*.pyx text diff=python
+*.pyi text diff=python
+
+# TypeScript
+*.ts text diff=typescript
+*.tsx text diff=typescript
+*.mts text diff=typescript
+*.cts text diff=typescript
+
+# JavaScript
+*.js text diff=javascript
+*.jsx text diff=javascript
+*.mjs text diff=javascript
+*.cjs text diff=javascript
+
+# JSON / YAML
+*.json text
+*.yaml text
+*.yml text
+
+# Markdown
+*.md text diff=markdown
+
+# Shell
+*.sh text eol=lf
+*.bash text eol=lf
+*.zsh text eol=lf
+
+# PowerShell
+*.ps1 text eol=crlf
+*.psm1 text eol=crlf
+*.psd1 text eol=crlf
+
+# Batch
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Docker
+Dockerfile text
+Dockerfile.* text
+*.dockerfile text
+
+# Configuration
+*.toml text
+*.ini text
+*.cfg text
+*.conf text
+*.env.example text
+
+# Git
+*.gitignore text
+*.gitattributes text
+
+# Lock files
+pnpm-lock.yaml -diff
+package-lock.json -diff
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg binary
+*.woff binary
+*.woff2 binary
+*.eot binary
+*.ttf binary
+*.otf binary
+*.pdf binary
+*.zip binary
+*.tar.gz binary
+*.gz binary
+*.lock -diff

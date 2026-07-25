@@ -1,0 +1,35 @@
+name: Template Marketplace
+description: A collection of reusable project templates
+version: 1.0.0
+
+templates:
+  - name: FastAPI Microservice
+    description: Production-ready FastAPI microservice with auth, database, and testing
+    tags: [python, fastapi, api]
+    variables:
+      - name: project_name
+        type: string
+        default: my-service
+      - name: python_version
+        type: string
+        default: "3.11"
+
+  - name: Next.js App
+    description: Full-stack Next.js application with TypeScript, Tailwind, and authentication
+    tags: [typescript, nextjs, frontend]
+    variables:
+      - name: app_name
+        type: string
+        default: my-app
+
+  - name: AI Agent
+    description: Configurable AI agent with tool integration and memory
+    tags: [ai, agent, llm]
+    variables:
+      - name: agent_name
+        type: string
+        default: my-agent
+      - name: provider
+        type: select
+        options: [openai, anthropic, gemini]
+        default: openai

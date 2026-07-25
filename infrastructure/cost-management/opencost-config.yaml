@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kubecost
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kubecost-config
+  namespace: kubecost
+data:
+  kubecost-config.json: |
+    {
+      "default": {
+        "kubecostToken": "",
+        "kubecostProductConfigs": {
+          "aggregator": {
+            "enabled": true,
+            "prometheus": {
+              "enabled": true,
+              "thanos": {
+                "enabled": false
+              }
+            },
+            "prometheusFederation": {
+              "enabled": true
+            }
+          }
+        },
+        "ui": {
+          "enabled": true
+        },
+        "aggregator": {
+          "enabled": true,
+          "prometheus": {
+            "enabled": true
+          }
+        }
+      }
+    }
+  }
+}

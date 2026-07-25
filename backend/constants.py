@@ -1,0 +1,34 @@
+from typing import Final
+
+PROJECT_NAME: Final[str] = "SuperDev AI Suite"
+VERSION: Final[str] = "5.0.0"
+API_V1_PREFIX: Final[str] = "/api/v1"
+
+DEFAULT_PAGE_SIZE: Final[int] = 20
+DEFAULT_PAGE: Final[int] = 1
+MAX_PAGE_SIZE: Final[int] = 100
+
+HTTP_GET: Final[str] = "GET"
+HTTP_POST: Final[str] = "POST"
+HTTP_PUT: Final[str] = "PUT"
+HTTP_PATCH: Final[str] = "PATCH"
+HTTP_DELETE: Final[str] = "DELETE"
+HTTP_HEAD: Final[str] = "HEAD"
+HTTP_OPTIONS: Final[str] = "OPTIONS"
+
+ERR_INTERNAL: Final[str] = "INTERNAL_ERROR"
+ERR_NOT_FOUND: Final[str] = "NOT_FOUND"
+ERR_VALIDATION: Final[str] = "VALIDATION_ERROR"
+ERR_AUTHENTICATION: Final[str] = "AUTHENTICATION_ERROR"
+ERR_AUTHORIZATION: Final[str] = "AUTHORIZATION_ERROR"
+ERR_CONFIGURATION: Final[str] = "CONFIGURATION_ERROR"
+ERR_PLUGIN: Final[str] = "PLUGIN_ERROR"
+ERR_PROVIDER: Final[str] = "PROVIDER_ERROR"
+ERR_WORKFLOW: Final[str] = "WORKFLOW_ERROR"
+ERR_RUNTIME: Final[str] = "RUNTIME_ERROR"
+ERR_DATABASE: Final[str] = "DATABASE_ERROR"
+ERR_SECURITY: Final[str] = "SECURITY_ERROR"
+ERR_STORAGE: Final[str] = "STORAGE_ERROR"
+ERR_RATE_LIMIT: Final[str] = "RATE_LIMIT_ERROR"
+ERR_TIMEOUT: Final[str] = "TIMEOUT_ERROR"
+ERR_SERVICE_UNAVAILABLE: Final[str] = "SERVICE_UNAVAILABLE"

@@ -1,0 +1,16 @@
+{
+  "name": "superdev-vscode",
+  "displayName": "SuperDev AI Suite",
+  "version": "0.1.0",
+  "description": "SuperDev workflow editor and agent manager for VS Code",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Other"],
+  "activationEvents": [],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      { "command": "superdev.openDashboard", "title": "SuperDev: Open Dashboard" },
+      { "command": "superdev.runWorkflow", "title": "SuperDev: Run Workflow" }
+    ]
+  }
+}

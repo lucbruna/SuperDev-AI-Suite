@@ -1,0 +1,22 @@
+appId: com.superdev.desktop
+productName: SuperDev
+directories:
+  output: dist
+files:
+  - src/main/**/*
+  - src/renderer/**/*
+  - package.json
+mac:
+  category: public.app-category.developer-tools
+  target:
+    - dmg
+    - zip
+win:
+  target:
+    - nsis
+    - portable
+linux:
+  target:
+    - AppImage
+    - deb
+  category: Development
