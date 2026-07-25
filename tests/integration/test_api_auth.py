@@ -8,7 +8,10 @@ from backend.main import app
 @pytest.fixture
 async def client():
     transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://localhost:8000", timeout=60.0) as ac:
+    async with AsyncClient(
+        transport=transport, base_url="http://localhost:8000", timeout=60.0,
+        headers={"Host": "localhost:8000"},
+    ) as ac:
         yield ac
 
 

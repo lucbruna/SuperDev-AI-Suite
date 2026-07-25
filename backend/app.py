@@ -35,9 +35,13 @@ def create_app() -> FastAPI:
 
     app.add_middleware(GZipMiddleware, minimum_size=1000)
 
+    allowed_hosts = config.cors.allow_origins
+    if allowed_hosts != ["*"]:
+        from urllib.parse import urlparse
+        allowed_hosts = list({urlparse(o).hostname or o for o in allowed_hosts})
     app.add_middleware(
         TrustedHostMiddleware,
-        allowed_hosts=config.cors.allow_origins if config.cors.allow_origins != ["*"] else ["*"],
+        allowed_hosts=allowed_hosts,
     )
 
     app.add_middleware(MetricsMiddleware)
