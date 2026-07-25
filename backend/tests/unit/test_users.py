@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 import pytest
 from pydantic import ValidationError
 
-from backend.users.model import User
+from backend.database.models.user import User
 from backend.users.schema import UserCreate, UserResponse
 
 
