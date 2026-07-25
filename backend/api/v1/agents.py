@@ -2,9 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.database.session import get_db
-from backend.middleware.authentication import get_current_user
 from backend.agents.agent_manager import agent_manager
+from backend.database.session import get_db
 
 router = APIRouter()
 
@@ -49,7 +48,7 @@ async def create_agent(
     db: AsyncSession = Depends(get_db),
 ) -> AgentResponse:
     from backend.dependencies import get_current_active_user
-    user = await get_current_active_user(db=db)
+    await get_current_active_user(db=db)
 
     try:
         agent = agent_manager.create_agent(
@@ -165,7 +164,7 @@ async def delete_agent(
     db: AsyncSession = Depends(get_db),
 ) -> None:
     from backend.dependencies import get_current_active_user
-    user = await get_current_active_user(db=db)
+    await get_current_active_user(db=db)
 
     deleted = agent_manager.delete_agent(agent_id)
     if not deleted:

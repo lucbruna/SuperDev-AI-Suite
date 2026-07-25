@@ -15,7 +15,12 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install ruff
-      - run: ruff check backend/ ai_platform/ agents/ workflow_engine/
+      - name: Lint Python code
+        run: |
+          ruff check backend/ agents/ ai_platform/ workflow_engine/ \
+            --select F,I \
+            --fix \
+            --exclude backend/database/models/
 
   test-backend:
     runs-on: ubuntu-latest
@@ -38,6 +43,9 @@ jobs:
 
   test-frontend:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

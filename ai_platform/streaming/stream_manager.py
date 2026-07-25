@@ -1,8 +1,9 @@
 from __future__ import annotations
-import uuid
+
 import time
-from typing import Any, Optional
-from dataclasses import dataclass, field
+import uuid
+from dataclasses import dataclass
+from typing import Any
 
 from ..providers.base_provider import BaseProvider
 
@@ -32,7 +33,7 @@ class StreamManager:
         )
         return stream_id
 
-    def get_stream(self, stream_id: str) -> Optional[StreamInfo]:
+    def get_stream(self, stream_id: str) -> StreamInfo | None:
         return self._streams.get(stream_id)
 
     async def cancel_stream(self, stream_id: str) -> bool:

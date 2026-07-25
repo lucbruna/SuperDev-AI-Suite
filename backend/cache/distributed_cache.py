@@ -1,5 +1,6 @@
+from typing import Any
+
 import msgpack
-from typing import Any, Optional
 
 from .redis_client import RedisClient
 
@@ -16,7 +17,7 @@ class DistributedCache:
     def _make_key(self, key: str) -> str:
         return f"{self._namespace}:{key}"
 
-    async def get(self, key: str) -> Optional[Any]:
+    async def get(self, key: str) -> Any | None:
         raw = await self._redis.get(self._make_key(key))
         if raw is None:
             return None
@@ -29,7 +30,7 @@ class DistributedCache:
         self,
         key: str,
         value: Any,
-        ttl: Optional[int] = None,
+        ttl: int | None = None,
     ) -> None:
         packed = msgpack.packb(value)
         await self._redis.set(

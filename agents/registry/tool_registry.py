@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 from ..base.base_tool import BaseTool
 
@@ -18,7 +18,7 @@ class ToolRegistry:
             self._categories[category] = []
         self._categories[category].append(name)
 
-    def get(self, name: str) -> Optional[type[BaseTool]]:
+    def get(self, name: str) -> type[BaseTool] | None:
         return self._tools.get(name)
 
     def list_by_category(self, category: str) -> list[dict[str, Any]]:

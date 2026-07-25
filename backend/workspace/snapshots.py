@@ -1,10 +1,8 @@
 import uuid
-from datetime import datetime, timezone
 from copy import deepcopy
-from typing import Optional
+from datetime import UTC, datetime
 
 from .filesystem import WorkspaceFilesystem
-
 
 _snapshots: dict[str, dict] = {}
 
@@ -18,7 +16,7 @@ class WorkspaceSnapshot:
         _snapshots[snapshot_id] = {
             "id": snapshot_id,
             "workspace_id": workspace_id,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "files": deepcopy(self._filesystem.get_all_files()),
         }
         return snapshot_id
@@ -30,7 +28,7 @@ class WorkspaceSnapshot:
             if s["workspace_id"] == workspace_id
         ]
 
-    async def get_snapshot(self, snapshot_id: str) -> Optional[dict]:
+    async def get_snapshot(self, snapshot_id: str) -> dict | None:
         return _snapshots.get(snapshot_id)
 
     async def restore_snapshot(self, snapshot_id: str) -> bool:

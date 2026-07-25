@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import sys
 import tempfile
 from typing import Any
@@ -55,7 +56,7 @@ class PythonTool:
                 "stderr": stderr.decode("utf-8", errors="replace") if stderr else "",
                 "exit_code": proc.returncode or 0,
             }
-        except asyncio.TimeoutError:
+        except TimeoutError:
             return {
                 "success": False,
                 "stdout": "",
@@ -66,10 +67,8 @@ class PythonTool:
             return {"success": False, "stdout": "", "stderr": str(e), "exit_code": -1}
         finally:
             import os
-            try:
+            with contextlib.suppress(Exception):
                 os.unlink(script_path)
-            except Exception:
-                pass
 
     async def rollback(self) -> None:
         pass

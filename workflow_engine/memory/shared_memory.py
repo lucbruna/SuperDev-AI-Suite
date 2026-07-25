@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 
 class SharedMemory:
-    _instance: Optional[SharedMemory] = None
+    _instance: SharedMemory | None = None
 
     def __new__(cls) -> SharedMemory:
         if cls._instance is None:
@@ -15,7 +15,7 @@ class SharedMemory:
     def set(self, key: str, value: Any, namespace: str = "default") -> None:
         self._data.setdefault(namespace, {})[key] = value
 
-    def get(self, key: str, namespace: str = "default") -> Optional[Any]:
+    def get(self, key: str, namespace: str = "default") -> Any | None:
         return self._data.get(namespace, {}).get(key)
 
     def delete(self, key: str, namespace: str = "default") -> None:

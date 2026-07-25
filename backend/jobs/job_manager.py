@@ -4,16 +4,16 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import traceback
-from datetime import datetime, timezone
-from enum import Enum
-from typing import Any, Callable, Optional
+from collections.abc import Callable
+from datetime import UTC, datetime
+from enum import StrEnum
+from typing import Any
 from uuid import uuid4
 
 logger = logging.getLogger(__name__)
 
 
-class JobStatus(str, Enum):
+class JobStatus(StrEnum):
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -46,7 +46,7 @@ class Job:
         self.progress: float = 0.0
         self.retries = 0
 
-        self.created_at = datetime.now(timezone.utc)
+        self.created_at = datetime.now(UTC)
         self.started_at: datetime | None = None
         self.completed_at: datetime | None = None
 
@@ -140,7 +140,7 @@ class JobManager:
             try:
                 job_id = await asyncio.wait_for(self._queue.get(), timeout=1.0)
                 await self._process_job(job_id)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 continue
             except asyncio.CancelledError:
                 break
@@ -156,7 +156,7 @@ class JobManager:
             return
 
         job.status = JobStatus.RUNNING
-        job.started_at = datetime.now(timezone.utc)
+        job.started_at = datetime.now(UTC)
 
         handler = self._handlers.get(job.type)
         if not handler:
@@ -174,7 +174,7 @@ class JobManager:
             job.status = JobStatus.COMPLETED
             job.progress = 100.0
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             job.status = JobStatus.FAILED
             job.error = f"Timeout após {job.timeout}s"
 
@@ -192,7 +192,7 @@ class JobManager:
                 logger.error(f"Job {job_id} falhou: {e}")
 
         finally:
-            job.completed_at = datetime.now(timezone.utc)
+            job.completed_at = datetime.now(UTC)
 
     def get_job(self, job_id: str) -> Job | None:
         """Obtém um job pelo ID."""
@@ -227,7 +227,7 @@ class JobManager:
 
 async def handle_code_review(job: Job) -> dict[str, Any]:
     """Handler para revisão de código."""
-    code = job.payload.get("code", "")
+    job.payload.get("code", "")
     language = job.payload.get("language", "python")
 
     # Simular revisão
@@ -245,7 +245,7 @@ async def handle_code_review(job: Job) -> dict[str, Any]:
 async def handle_notification(job: Job) -> dict[str, Any]:
     """Handler para envio de notificações."""
     notification_type = job.payload.get("type", "info")
-    message = job.payload.get("message", "")
+    job.payload.get("message", "")
 
     job.progress = 50.0
     await asyncio.sleep(0.5)

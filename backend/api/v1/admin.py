@@ -2,11 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.audit.audit_logger import audit_logger
 from backend.database.session import get_db
-from backend.middleware.authentication import get_current_user
-from backend.audit.audit_logger import audit_logger, AuditAction
-from backend.security.compliance import compliance_engine, ComplianceFramework
-from backend.security.multi_tenancy import tenant_manager, TenantPlan
+from backend.security.compliance import ComplianceFramework, compliance_engine
+from backend.security.multi_tenancy import TenantPlan, tenant_manager
 
 router = APIRouter()
 
@@ -35,7 +34,7 @@ async def get_audit_logs(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     from backend.dependencies import get_current_admin_user
-    user = await get_current_admin_user(db=db)
+    await get_current_admin_user(db=db)
 
     entries = audit_logger.query(limit=limit)
     return {
@@ -49,7 +48,7 @@ async def get_audit_statistics(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     from backend.dependencies import get_current_admin_user
-    user = await get_current_admin_user(db=db)
+    await get_current_admin_user(db=db)
 
     return audit_logger.get_statistics()
 
@@ -60,7 +59,7 @@ async def get_security_events(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     from backend.dependencies import get_current_admin_user
-    user = await get_current_admin_user(db=db)
+    await get_current_admin_user(db=db)
 
     events = audit_logger.get_security_events(limit)
     return {
@@ -75,7 +74,7 @@ async def export_audit_logs(
     db: AsyncSession = Depends(get_db),
 ):
     from backend.dependencies import get_current_admin_user
-    user = await get_current_admin_user(db=db)
+    await get_current_admin_user(db=db)
 
     data = audit_logger.export(format=format)
     if format == "json":
@@ -93,7 +92,7 @@ async def check_compliance(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     from backend.dependencies import get_current_admin_user
-    user = await get_current_admin_user(db=db)
+    await get_current_admin_user(db=db)
 
     try:
         framework = ComplianceFramework(request.framework)
@@ -112,7 +111,7 @@ async def list_compliance_frameworks(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     from backend.dependencies import get_current_admin_user
-    user = await get_current_admin_user(db=db)
+    await get_current_admin_user(db=db)
 
     return {
         "frameworks": [
@@ -127,7 +126,7 @@ async def list_tenants(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     from backend.dependencies import get_current_admin_user
-    user = await get_current_admin_user(db=db)
+    await get_current_admin_user(db=db)
 
     tenants = tenant_manager.list_tenants()
     return {
@@ -175,7 +174,7 @@ async def upgrade_tenant_plan(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     from backend.dependencies import get_current_admin_user
-    user = await get_current_admin_user(db=db)
+    await get_current_admin_user(db=db)
 
     try:
         new_plan = TenantPlan(plan)

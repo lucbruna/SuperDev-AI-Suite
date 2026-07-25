@@ -4,7 +4,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
-from starlette.middleware.base import BaseHTTPMiddleware
 
 from backend.config import config
 from backend.constants import API_V1_PREFIX, PROJECT_NAME, VERSION
@@ -45,8 +44,8 @@ def create_app() -> FastAPI:
 
     register_error_handlers(app)
 
-    tracer_provider = configure_tracing()
-    meter_provider = configure_metrics()
+    configure_tracing()
+    configure_metrics()
     instrument_fastapi(app)
 
     from backend.api.router import router as api_router

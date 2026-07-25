@@ -1,8 +1,9 @@
 from __future__ import annotations
-import uuid
+
 import time
-from typing import Any, Optional
+import uuid
 from dataclasses import dataclass, field
+from typing import Any
 
 
 @dataclass
@@ -24,7 +25,7 @@ class SessionManager:
     def __init__(self):
         self._sessions: dict[str, AISession] = {}
 
-    def create(self, user_id: str, provider: str = "", model: str = "", context_window: int = 4096, metadata: Optional[dict] = None) -> AISession:
+    def create(self, user_id: str, provider: str = "", model: str = "", context_window: int = 4096, metadata: dict | None = None) -> AISession:
         now = time.time()
         session = AISession(
             id=str(uuid.uuid4()),
@@ -39,13 +40,13 @@ class SessionManager:
         self._sessions[session.id] = session
         return session
 
-    def get(self, session_id: str) -> Optional[AISession]:
+    def get(self, session_id: str) -> AISession | None:
         session = self._sessions.get(session_id)
         if session:
             session.touch()
         return session
 
-    def update(self, session_id: str, **kwargs: Any) -> Optional[AISession]:
+    def update(self, session_id: str, **kwargs: Any) -> AISession | None:
         session = self._sessions.get(session_id)
         if not session:
             return None

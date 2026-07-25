@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import random
-from typing import Optional
 
 
 class RetryPolicy:
@@ -25,5 +24,5 @@ class RetryPolicy:
         jitter = random.uniform(0, d * 0.1)
         return d + jitter
 
-    def should_retry(self, attempt: int, error: Optional[str] = None) -> bool:
+    def should_retry(self, attempt: int, error: str | None = None) -> bool:  # noqa: ARG002
         return attempt < self.max_retries

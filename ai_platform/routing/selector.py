@@ -1,9 +1,9 @@
 from __future__ import annotations
-from typing import Optional
-from enum import Enum
+
+from enum import StrEnum
 
 
-class SelectionStrategy(str, Enum):
+class SelectionStrategy(StrEnum):
     COST_FIRST = "cost_first"
     QUALITY_FIRST = "quality_first"
     LATENCY_FIRST = "latency_first"
@@ -44,7 +44,7 @@ class ModelSelector:
     def __init__(self, strategy: SelectionStrategy = SelectionStrategy.AUTO):
         self.strategy = strategy
 
-    def select(self, capability: str, context: Optional[dict] = None) -> str:
+    def select(self, capability: str, context: dict | None = None) -> str:
         ctx = context or {}
         strategy_name = ctx.get("strategy", self.strategy.value)
         weights = SCORING_PROFILES.get(strategy_name, SCORING_PROFILES["auto"])

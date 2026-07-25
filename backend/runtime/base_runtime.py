@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
-from enum import Enum
-from typing import AsyncIterator, Any
+from enum import StrEnum
+from typing import Any
 
 
-class RuntimeStatus(str, Enum):
+class RuntimeStatus(StrEnum):
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -15,7 +16,7 @@ class RuntimeStatus(str, Enum):
     CANCELLED = "cancelled"
 
 
-class Language(str, Enum):
+class Language(StrEnum):
     PYTHON = "python"
     NODEJS = "nodejs"
     GO = "go"

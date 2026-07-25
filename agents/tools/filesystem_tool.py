@@ -30,9 +30,7 @@ class FilesystemTool(BaseTool):
             return False
         if action in ("read", "write", "delete") and "path" not in params:
             return False
-        if action == "write" and "content" not in params:
-            return False
-        return True
+        return not (action == "write" and "content" not in params)
 
     async def execute(self, params: dict[str, Any]) -> dict[str, Any]:
         action = params.get("action")
@@ -42,7 +40,7 @@ class FilesystemTool(BaseTool):
             if action == "read":
                 if not os.path.exists(path):
                     raise FileNotFoundError(f"File not found: {path}")
-                with open(path, "r", encoding="utf-8") as f:
+                with open(path, encoding="utf-8") as f:
                     content = f.read()
                 self._log_operation("read", path)
                 return {"success": True, "content": content, "path": path}
@@ -53,7 +51,7 @@ class FilesystemTool(BaseTool):
                 # Backup existing file for rollback
                 backup = None
                 if os.path.exists(path):
-                    with open(path, "r", encoding="utf-8") as f:
+                    with open(path, encoding="utf-8") as f:
                         backup = f.read()
 
                 os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
@@ -70,7 +68,7 @@ class FilesystemTool(BaseTool):
                 # Backup file content for rollback
                 backup = None
                 if os.path.isfile(path):
-                    with open(path, "r", encoding="utf-8") as f:
+                    with open(path, encoding="utf-8") as f:
                         backup = f.read()
                 elif os.path.isdir(path):
                     backup_dir = path + ".backup"

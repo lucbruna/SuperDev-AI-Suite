@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional
-
-from workflow_engine.state.state_machine import WorkflowState, WorkflowStateMachine, TransitionRecord
+from workflow_engine.state.state_machine import TransitionRecord, WorkflowState, WorkflowStateMachine
 
 
 class StateManager:
@@ -11,7 +9,7 @@ class StateManager:
         self._history: dict[str, list[TransitionRecord]] = {}
         self._machine = WorkflowStateMachine()
 
-    async def get_state(self, workflow_id: str) -> Optional[WorkflowState]:
+    async def get_state(self, workflow_id: str) -> WorkflowState | None:
         return self._states.get(workflow_id)
 
     async def set_state(self, workflow_id: str, new_state: WorkflowState) -> TransitionRecord:
@@ -24,7 +22,7 @@ class StateManager:
     async def get_history(self, workflow_id: str) -> list[TransitionRecord]:
         return self._history.get(workflow_id, [])
 
-    def get_state_sync(self, workflow_id: str) -> Optional[WorkflowState]:
+    def get_state_sync(self, workflow_id: str) -> WorkflowState | None:
         return self._states.get(workflow_id)
 
     def set_state_sync(self, workflow_id: str, new_state: WorkflowState) -> TransitionRecord:

@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -163,8 +163,9 @@ async def review_code(
     request: CodeReviewRequest,
     db: AsyncSession = Depends(get_db),
 ) -> CodeReviewResponse:
-    from backend.verification.reviewer import CodeReviewer
     from ai_platform.providers.provider_registry import ProviderRegistry
+
+    from backend.verification.reviewer import CodeReviewer
     
     registry = ProviderRegistry()
     provider = None

@@ -1,23 +1,20 @@
 from __future__ import annotations
 
 import uuid
-from enum import Enum
-from typing import Any, Callable, Optional
+from typing import Any
 
-from pydantic import BaseModel, Field
-
-from workflow_engine.core.registry import WorkflowRegistry
-from workflow_engine.core.kernel import WorkflowKernel
 from workflow_engine.core.configuration import WorkflowConfig
+from workflow_engine.core.kernel import WorkflowKernel
+from workflow_engine.core.registry import WorkflowRegistry
+from workflow_engine.executor.executor import ExecutionResult
 from workflow_engine.graph.graph import WorkflowGraph
 from workflow_engine.graph.graph_builder import GraphBuilder
-from workflow_engine.state.state_machine import WorkflowState, WorkflowStateMachine
+from workflow_engine.state.state_machine import WorkflowState
 from workflow_engine.state.state_manager import StateManager
-from workflow_engine.executor.executor import ExecutionResult
 
 
 class WorkflowEngine:
-    def __init__(self, kernel: WorkflowKernel, registry: WorkflowRegistry, state_manager: StateManager, config: Optional[WorkflowConfig] = None):
+    def __init__(self, kernel: WorkflowKernel, registry: WorkflowRegistry, state_manager: StateManager, config: WorkflowConfig | None = None):
         self._kernel = kernel
         self._registry = registry
         self._state_manager = state_manager
@@ -31,7 +28,7 @@ class WorkflowEngine:
         await self._state_manager.set_state(workflow_id, WorkflowState.CREATED)
         return workflow_id
 
-    async def execute(self, workflow_id: str, context: Optional[dict[str, Any]] = None) -> ExecutionResult:
+    async def execute(self, workflow_id: str, context: dict[str, Any] | None = None) -> ExecutionResult:
         graph = self._graphs.get(workflow_id)
         if not graph:
             raise ValueError(f"Workflow {workflow_id} not found")
@@ -40,7 +37,7 @@ class WorkflowEngine:
             result = await self._kernel.run(graph, context or {}, workflow_id)
             await self._state_manager.set_state(workflow_id, WorkflowState.COMPLETED)
             return result
-        except Exception as e:
+        except Exception:
             await self._state_manager.set_state(workflow_id, WorkflowState.FAILED)
             raise
 
@@ -65,5 +62,5 @@ class WorkflowEngine:
     async def get_status(self, workflow_id: str) -> WorkflowState:
         return await self._state_manager.get_state(workflow_id)
 
-    def get_graph(self, workflow_id: str) -> Optional[WorkflowGraph]:
+    def get_graph(self, workflow_id: str) -> WorkflowGraph | None:
         return self._graphs.get(workflow_id)

@@ -2,15 +2,14 @@ from __future__ import annotations
 
 import asyncio
 import time
-import uuid
-from enum import Enum
-from typing import Any, Optional
+from enum import StrEnum
+from typing import Any
 
 from ..base.base_agent import AgentResult
 from ..base.base_tool import BaseTool
 
 
-class LifecycleStage(str, Enum):
+class LifecycleStage(StrEnum):
     INIT = "init"
     PLAN = "plan"
     EXECUTE = "execute"
@@ -56,7 +55,7 @@ class AgentRuntime:
         finally:
             self._stages[agent_id] = LifecycleStage.COMPLETE
 
-    def get_stage(self, agent_id: str) -> Optional[LifecycleStage]:
+    def get_stage(self, agent_id: str) -> LifecycleStage | None:
         return self._stages.get(agent_id)
 
     def list_agents(self) -> list[str]:

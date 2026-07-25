@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any
+
 from backend.events.event_bus import Event
 
 
@@ -21,7 +21,7 @@ class EventSerializer:
     @staticmethod
     def deserialize(data: str) -> Event:
         parsed = json.loads(data)
-        from datetime import datetime, timezone
+        from datetime import datetime
         return Event(
             id=parsed["id"],
             type=parsed["type"],

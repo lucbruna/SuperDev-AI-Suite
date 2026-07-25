@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, TypeVar, Generic, Type
+from typing import Any, Generic, TypeVar
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.repositories.base_repository import BaseRepository
 from backend.database.base import BaseModel
+from backend.repositories.base_repository import BaseRepository
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -12,7 +13,7 @@ T = TypeVar("T", bound=BaseModel)
 class BaseService(Generic[T]):
     """Base service layer for business logic."""
 
-    def __init__(self, db: AsyncSession, model: Type[T]):
+    def __init__(self, db: AsyncSession, model: type[T]):
         self.db = db
         self.repository = BaseRepository(db, model)
 

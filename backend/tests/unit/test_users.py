@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from pydantic import ValidationError
@@ -152,7 +152,7 @@ class TestUserCreateSchema:
 
 class TestUserResponseSchema:
     def test_user_response_serialization(self) -> None:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         data = UserResponse(
             id="550e8400-e29b-41d4-a716-446655440000",
             email="resp@example.com",
@@ -173,7 +173,7 @@ class TestUserResponseSchema:
         assert UserResponse.model_config.get("from_attributes") is True
 
     def test_user_response_serializes_to_dict(self) -> None:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         data = UserResponse(
             id="id-1",
             email="a@b.com",

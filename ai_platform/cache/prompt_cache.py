@@ -1,11 +1,10 @@
 from __future__ import annotations
+
 import hashlib
 import json
 import time
-from typing import Any, Optional
 from collections import OrderedDict
-
-from ..providers.base_provider import ChatResponse
+from typing import Any
 
 
 class PromptCache:
@@ -19,6 +18,7 @@ class PromptCache:
     async def initialize(self) -> None:
         try:
             import redis.asyncio as redis
+
             from ..core.configuration import get_platform_config
             config = get_platform_config()
             if config.redis_url:
@@ -27,11 +27,11 @@ class PromptCache:
         except Exception:
             self._redis_enabled = False
 
-    def cache_key(self, messages: list[dict], model: str = "", config: Optional[dict] = None) -> str:
+    def cache_key(self, messages: list[dict], model: str = "", config: dict | None = None) -> str:
         raw = json.dumps({"messages": messages, "model": model, "config": config or {}}, sort_keys=True, default=str)
         return hashlib.sha256(raw.encode()).hexdigest()
 
-    async def get(self, key: str) -> Optional[Any]:
+    async def get(self, key: str) -> Any | None:
         if self._redis_enabled and self._redis:
             try:
                 data = await self._redis.get(key)
@@ -49,7 +49,7 @@ class PromptCache:
                 del self._cache[key]
         return None
 
-    async def set(self, key: str, value: Any, ttl: Optional[int] = None) -> None:
+    async def set(self, key: str, value: Any, ttl: int | None = None) -> None:
         ttl = ttl or self.default_ttl
         expiry = time.time() + ttl
 

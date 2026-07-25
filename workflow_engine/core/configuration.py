@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from enum import Enum
-from typing import Any, Optional
+from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
 
-class RetryMode(str, Enum):
+class RetryMode(StrEnum):
     FIXED = "fixed"
     EXPONENTIAL = "exponential"
     LINEAR = "linear"

@@ -1,14 +1,15 @@
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from enum import Enum
-from typing import Any, Callable, Awaitable
+from datetime import UTC, datetime
+from enum import StrEnum
+from typing import Any
 
 from backend.utils.uuid_utils import generate_uuid
 
 
-class TaskStatus(str, Enum):
+class TaskStatus(StrEnum):
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -25,7 +26,7 @@ class Task:
     status: TaskStatus = TaskStatus.PENDING
     result: Any = None
     error: str | None = None
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
 class TaskManager:

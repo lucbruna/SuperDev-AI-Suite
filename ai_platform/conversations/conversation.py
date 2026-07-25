@@ -1,8 +1,9 @@
 from __future__ import annotations
-import uuid
+
 import time
-from typing import Any, Optional
+import uuid
 from dataclasses import dataclass, field
+from typing import Any
 
 
 @dataclass
@@ -27,7 +28,7 @@ class ConversationManager:
     def __init__(self):
         self._conversations: dict[str, Conversation] = {}
 
-    def create(self, session_id: str, title: str = "", metadata: Optional[dict] = None) -> Conversation:
+    def create(self, session_id: str, title: str = "", metadata: dict | None = None) -> Conversation:
         now = time.time()
         conv = Conversation(
             id=str(uuid.uuid4()),
@@ -39,10 +40,10 @@ class ConversationManager:
         self._conversations[conv.id] = conv
         return conv
 
-    def get(self, conversation_id: str) -> Optional[Conversation]:
+    def get(self, conversation_id: str) -> Conversation | None:
         return self._conversations.get(conversation_id)
 
-    def add_message(self, conversation_id: str, role: str, content: str, metadata: Optional[dict] = None) -> Optional[Message]:
+    def add_message(self, conversation_id: str, role: str, content: str, metadata: dict | None = None) -> Message | None:
         conv = self._conversations.get(conversation_id)
         if not conv:
             return None

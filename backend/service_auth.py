@@ -1,8 +1,6 @@
 """Service-to-service authentication using API keys and JWT."""
-from functools import lru_cache
-from typing import Optional
 import os
-
+from functools import lru_cache
 
 SERVICE_API_KEYS = {
     "backend": os.getenv("BACKEND_API_KEY", "dev-backend-key"),
@@ -18,7 +16,7 @@ def authenticate_service(service_name: str, api_key: str) -> bool:
     return expected is not None and expected == api_key
 
 
-def get_service_token(service_name: str) -> Optional[str]:
+def get_service_token(service_name: str) -> str | None:
     return SERVICE_API_KEYS.get(service_name)
 
 

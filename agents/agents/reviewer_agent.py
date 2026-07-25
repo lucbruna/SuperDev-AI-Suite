@@ -47,7 +47,7 @@ class ReviewerAgent(BaseAgent):
         if not path or not os.path.isfile(path):
             return ""
         try:
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 return f.read()
         except Exception:
             return ""
@@ -106,7 +106,7 @@ class ReviewerAgent(BaseAgent):
     def _generate_report(self, file_path: str, code: str, issues: list) -> str:
         newline_count = code.count("\n") if code else 0
         lines = [
-            f"## Code Review Report",
+            "## Code Review Report",
             f"**File:** {file_path or 'inline code'}",
             f"**Lines:** {newline_count}",
             f"**Issues Found:** {len(issues)}",

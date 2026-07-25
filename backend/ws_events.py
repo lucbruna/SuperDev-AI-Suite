@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime, timezone
-from typing import Any, Callable
+from datetime import UTC, datetime
+from typing import Any
 from uuid import uuid4
 
 logger = logging.getLogger(__name__)
@@ -20,7 +20,7 @@ class WsEvent:
         self.data = data
         self.room = room
         self.sender = sender
-        self.timestamp = datetime.now(timezone.utc).isoformat()
+        self.timestamp = datetime.now(UTC).isoformat()
 
     def to_dict(self) -> dict[str, Any]:
         return {"id": self.id, "type": self.type, "data": self.data, "room": self.room, "sender": self.sender, "timestamp": self.timestamp}

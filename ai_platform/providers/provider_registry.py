@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional
+
 from .base_provider import BaseProvider
 
 
@@ -14,7 +14,7 @@ class ProviderRegistry:
     def register_instance(self, name: str, instance: BaseProvider) -> None:
         self._instances[name] = instance
 
-    def get(self, name: str) -> Optional[BaseProvider]:
+    def get(self, name: str) -> BaseProvider | None:
         if name in self._instances:
             return self._instances[name]
         cls = self._providers.get(name)

@@ -61,14 +61,14 @@ class TestingAgent(BaseAgent):
         if os.path.isfile(path):
             files_to_test.append(path)
         else:
-            for root, dirs, fnames in os.walk(path):
+            for root, _dirs, fnames in os.walk(path):
                 for fname in fnames:
                     if fname.endswith(".py") and not fname.startswith("test_"):
                         files_to_test.append(os.path.join(root, fname))
 
         for fpath in files_to_test[:5]:
             try:
-                with open(fpath, "r", encoding="utf-8") as f:
+                with open(fpath, encoding="utf-8") as f:
                     content = f.read()
 
                 module_name = os.path.splitext(os.path.basename(fpath))[0]
@@ -133,7 +133,7 @@ class TestingAgent(BaseAgent):
             stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=60)
             output = stdout.decode() if stdout else ""
             passed = len(re.findall(r"PASSED", output))
-            failed = len(_re.findall(r"FAILED", output))
+            failed = len(re.findall(r"FAILED", output))
             return {
                 "success": proc.returncode == 0,
                 "passed": passed,

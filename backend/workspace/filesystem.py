@@ -1,7 +1,5 @@
-import math
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
 
 @dataclass
@@ -11,7 +9,7 @@ class FileNode:
     type: str  # "file" or "dir"
     children: list["FileNode"] = field(default_factory=list)
     size: int = 0
-    modified: Optional[str] = None
+    modified: str | None = None
 
     def to_dict(self) -> dict:
         result = {
@@ -33,7 +31,7 @@ class WorkspaceFilesystem:
     async def create_file(self, path: str, content: str) -> None:
         self._files[path] = content
 
-    async def read_file(self, path: str) -> Optional[str]:
+    async def read_file(self, path: str) -> str | None:
         return self._files.get(path)
 
     async def write_file(self, path: str, content: str) -> None:
@@ -69,7 +67,7 @@ class WorkspaceFilesystem:
                         path=child_path,
                         type="file",
                         size=len(self._files[file_path]),
-                        modified=datetime.now(timezone.utc).isoformat(),
+                        modified=datetime.now(UTC).isoformat(),
                     )
                     self._merge_node(current, node)
                 else:
@@ -89,7 +87,7 @@ class WorkspaceFilesystem:
 
         return root.to_dict()
 
-    def _find_child(self, node: FileNode, name: str) -> Optional[FileNode]:
+    def _find_child(self, node: FileNode, name: str) -> FileNode | None:
         for c in node.children:
             if c.name == name:
                 return c

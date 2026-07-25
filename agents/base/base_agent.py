@@ -4,7 +4,7 @@ import asyncio
 import time
 import uuid
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -18,16 +18,16 @@ class AgentResult(BaseModel):
 
 
 class BaseAgent(ABC):
-    def __init__(self, config: Optional[dict[str, Any]] = None) -> None:
+    def __init__(self, config: dict[str, Any] | None = None) -> None:
         self._agent_id: str = str(uuid.uuid4())
         self._config: dict[str, Any] = config or {}
         self._status: str = "idle"
         self._paused: asyncio.Event = asyncio.Event()
         self._paused.set()
         self._cancelled: bool = False
-        self._started_at: Optional[float] = None
+        self._started_at: float | None = None
         self._error_count: int = 0
-        self._last_heartbeat: Optional[float] = None
+        self._last_heartbeat: float | None = None
 
     @abstractmethod
     async def initialize(self) -> None:

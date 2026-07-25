@@ -5,10 +5,8 @@ from collections.abc import Callable
 from functools import wraps
 from typing import Any
 
-from fastapi import Depends, HTTPException, status
+from fastapi import HTTPException, status
 
-from ..auth.deps import get_current_user
-from ..database import get_session
 from ..projects.repository import ProjectMemberRepository, ProjectRepository
 from .cache import PermissionCache
 from .policy import PolicyEngine

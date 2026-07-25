@@ -1,26 +1,20 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
-from uuid import UUID, uuid4
 
-from ai_platform.providers.provider_registry import ProviderRegistry
 from ai_platform.providers.base_provider import BaseProvider
-from backend.verification.generator import CodeGenerator
-from backend.verification.executor import CodeExecutor
-from backend.verification.tester import CodeTester
-from backend.verification.reviewer import CodeReviewer
+from ai_platform.providers.provider_registry import ProviderRegistry
+
 from backend.verification.corrector import CodeCorrector
+from backend.verification.executor import CodeExecutor
+from backend.verification.generator import CodeGenerator
 from backend.verification.models import (
-    VerificationLoop,
+    TestResult,
     VerificationResult,
     VerificationStage,
-    GenerationResult,
-    ExecutionResult,
-    TestResult,
-    ReviewResult,
-    CorrectionResult,
 )
+from backend.verification.reviewer import CodeReviewer
+from backend.verification.tester import CodeTester
 
 
 class VerificationLoop:

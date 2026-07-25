@@ -1,9 +1,10 @@
 from __future__ import annotations
-from typing import Any, Optional
 
-from .selector import ModelSelector
-from .routing_policy import RoutingPolicy
+from typing import Any
+
 from .load_balancer import LoadBalancer
+from .routing_policy import RoutingPolicy
+from .selector import ModelSelector
 
 
 class AIRouter:
@@ -12,7 +13,7 @@ class AIRouter:
         self.policy = RoutingPolicy()
         self.load_balancer = LoadBalancer()
 
-    def route(self, messages: list[dict], config: Optional[dict[str, Any]] = None) -> tuple[str, str]:
+    def route(self, messages: list[dict], config: dict[str, Any] | None = None) -> tuple[str, str]:
         cfg = config or {}
         provider = cfg.get("provider", "")
         model = cfg.get("model", "")

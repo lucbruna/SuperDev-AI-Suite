@@ -14,6 +14,7 @@ jobs:
         with:
           role-to-assume: ${{ secrets.AWS_ROLE }}
           aws-region: us-east-1
+          audience: sts.amazonaws.com
       - name: Login to ECR
         uses: aws-actions/amazon-ecr-login@v2
       - name: Build & push backend

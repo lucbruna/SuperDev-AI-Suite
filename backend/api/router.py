@@ -2,7 +2,20 @@ from fastapi import APIRouter
 
 router = APIRouter()
 
-from backend.api.v1 import health, auth, users, projects, agents, chat, runtime, workflow, plugins, admin, knowledge, verification
+from backend.api.v1 import (
+    admin,
+    agents,
+    auth,
+    chat,
+    health,
+    knowledge,
+    plugins,
+    projects,
+    runtime,
+    users,
+    verification,
+    workflow,
+)
 
 v1_router = APIRouter(prefix="/api/v1")
 v1_router.include_router(health.router, tags=["health"])

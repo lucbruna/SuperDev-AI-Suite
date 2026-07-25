@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from backend.agents.base_agent import AgentStatus, AgentType, BaseAgent
+from backend.agents.base_agent import BaseAgent
 from backend.agents.react_agent import ReActAgent
 from backend.utils.uuid_utils import generate_uuid
 

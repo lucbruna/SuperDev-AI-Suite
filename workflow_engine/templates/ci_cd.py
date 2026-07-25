@@ -29,7 +29,12 @@ def ci_cd_template() -> dict[str, Any]:
                 "id": "deploy",
                 "type": "HTTP",
                 "name": "Deploy to Production",
-                "config": {"url": "https://api.example.com/deploy", "method": "POST", "headers": {"Authorization": "Bearer $deploy_token"}, "timeout": 120},
+                "config": {
+                    "url": "https://api.example.com/deploy",
+                    "method": "POST",
+                    "headers": {"Authorization": "Bearer $deploy_token"},
+                    "timeout": 120,
+                },
             },
             {
                 "id": "health_check",

@@ -36,7 +36,7 @@ class TerminalTool:
             return {"success": False, "stdout": "", "stderr": "No command provided", "exit_code": -1}
 
         # Save working directory for potential rollback (cd operations)
-        original_dir = os.getcwd() if workdir else None
+        os.getcwd() if workdir else None
 
         try:
             exec_env = os.environ.copy()
@@ -63,7 +63,7 @@ class TerminalTool:
             self._log_operation(command, workdir, result=result)
             return result
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             return {
                 "success": False,
                 "stdout": "",

@@ -1,22 +1,20 @@
 from __future__ import annotations
 
-from typing import Type
-
 from backend.providers.base_provider import BaseProvider
 
 
 class ProviderRegistry:
     """Registry for LLM provider implementations."""
 
-    _providers: dict[str, Type[BaseProvider]] = {}
+    _providers: dict[str, type[BaseProvider]] = {}
     _instances: dict[str, BaseProvider] = {}
 
     @classmethod
-    def register(cls, name: str, provider_cls: Type[BaseProvider]) -> None:
+    def register(cls, name: str, provider_cls: type[BaseProvider]) -> None:
         cls._providers[name] = provider_cls
 
     @classmethod
-    def get(cls, name: str) -> Type[BaseProvider] | None:
+    def get(cls, name: str) -> type[BaseProvider] | None:
         return cls._providers.get(name)
 
     @classmethod

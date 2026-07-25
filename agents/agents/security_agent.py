@@ -62,12 +62,12 @@ class SecurityAgent(BaseAgent):
             (r"(?i)sk-[a-zA-Z0-9]{32,}", "OpenAI API Key", "critical"),
         ]
 
-        for root, dirs, files in os.walk(path):
+        for root, _dirs, files in os.walk(path):
             for fname in files:
                 if fname.endswith((".py", ".js", ".ts", ".env", ".yml", ".yaml", ".json", ".toml", ".cfg")):
                     try:
                         fpath = os.path.join(root, fname)
-                        with open(fpath, "r", encoding="utf-8", errors="ignore") as f:
+                        with open(fpath, encoding="utf-8", errors="ignore") as f:
                             content = f.read()
                             for pattern, desc, severity in secret_patterns:
                                 for m in re.finditer(pattern, content):
@@ -89,7 +89,7 @@ class SecurityAgent(BaseAgent):
         if not os.path.exists(path):
             return findings
         requirements_files = []
-        for root, dirs, files in os.walk(path):
+        for root, _dirs, files in os.walk(path):
             for f in files:
                 if f in ("requirements.txt", "Pipfile", "poetry.lock", "yarn.lock", "package-lock.json"):
                     requirements_files.append(os.path.join(root, f))
@@ -107,7 +107,7 @@ class SecurityAgent(BaseAgent):
         findings = []
         if not os.path.exists(path):
             return findings
-        for root, dirs, files in os.walk(path):
+        for root, _dirs, files in os.walk(path):
             for fname in files:
                 fpath = os.path.join(root, fname)
                 try:

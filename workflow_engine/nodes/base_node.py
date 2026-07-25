@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional
-from datetime import datetime
+from typing import Any
 
 from workflow_engine.graph.node import NodeType
 
@@ -12,7 +11,7 @@ class NodeResult:
         node_id: str,
         status: str,
         output: Any = None,
-        error: Optional[str] = None,
+        error: str | None = None,
         duration: float = 0.0,
     ):
         self.node_id = node_id

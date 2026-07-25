@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import uuid
-from typing import Any, Optional, Protocol
+from typing import Any, Protocol
 
 from pydantic import BaseModel, Field
 
@@ -34,7 +34,7 @@ class Planner:
         self._steps: list[Step] = []
         self._llm = llm_provider
 
-    async def plan(self, goal: str, context: Optional[dict[str, Any]] = None) -> list[Step]:
+    async def plan(self, goal: str, context: dict[str, Any] | None = None) -> list[Step]:
         ctx = context or {}
         if self._llm:
             self._steps = await self._decompose_with_llm(goal, ctx)
@@ -153,7 +153,7 @@ Rules:
 
         prev_phase_ids: list[str] = []
 
-        for phase_idx, (phase_steps, phase_name) in enumerate(zip(all_phases, phase_names)):
+        for phase_idx, (phase_steps, _phase_name) in enumerate(zip(all_phases, phase_names, strict=False)):
             phase_ids: list[str] = []
 
             for desc, agent, complexity in phase_steps:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 from ..base.base_tool import BaseTool
 
@@ -24,9 +24,7 @@ class HTTPTool(BaseTool):
         method = params.get("method", "GET")
         if not url or not isinstance(url, str):
             return False
-        if method.upper() not in ("GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"):
-            return False
-        return True
+        return method.upper() in ("GET", "POST", "PUT", "PATCH", "DELETE", "HEAD")
 
     async def execute(self, params: dict[str, Any]) -> dict[str, Any]:
         url = params.get("url", "")
@@ -48,8 +46,8 @@ class HTTPTool(BaseTool):
                 }
         except ImportError:
             try:
-                import urllib.request
                 import urllib.error
+                import urllib.request
                 req = urllib.request.Request(url, data=body.encode() if body else None, headers=headers, method=method)
                 with urllib.request.urlopen(req, timeout=timeout) as resp:
                     return {

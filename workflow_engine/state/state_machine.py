@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from enum import Enum
-from typing import Optional
+from enum import StrEnum
 
 
-class WorkflowState(str, Enum):
+class WorkflowState(StrEnum):
     CREATED = "CREATED"
     READY = "READY"
     RUNNING = "RUNNING"
@@ -27,7 +26,9 @@ _TRANSITIONS: dict[WorkflowState, set[WorkflowState]] = {
     },
     WorkflowState.PAUSED: {WorkflowState.RUNNING, WorkflowState.CANCELLED},
     WorkflowState.WAITING: {WorkflowState.RUNNING, WorkflowState.CANCELLED, WorkflowState.FAILED},
-    WorkflowState.BLOCKED: {WorkflowState.WAITING, WorkflowState.RUNNING, WorkflowState.CANCELLED, WorkflowState.FAILED},
+    WorkflowState.BLOCKED: {
+        WorkflowState.WAITING, WorkflowState.RUNNING, WorkflowState.CANCELLED, WorkflowState.FAILED,
+    },
     WorkflowState.RETRYING: {WorkflowState.RUNNING, WorkflowState.FAILED, WorkflowState.CANCELLED},
     WorkflowState.FAILED: {WorkflowState.RETRYING, WorkflowState.ROLLED_BACK, WorkflowState.READY},
     WorkflowState.COMPLETED: {WorkflowState.ROLLED_BACK},
@@ -55,7 +56,9 @@ class WorkflowStateMachine:
         allowed = _TRANSITIONS.get(from_state, set())
         return to_state in allowed
 
-    def transition(self, workflow_id: str, from_state: WorkflowState, to_state: WorkflowState) -> TransitionRecord:
+    def transition(
+        self, workflow_id: str, from_state: WorkflowState, to_state: WorkflowState,
+    ) -> TransitionRecord:
         if not self.can_transition(from_state, to_state):
             raise ValueError(f"Invalid transition from {from_state.value} to {to_state.value}")
         return TransitionRecord(workflow_id=workflow_id, from_state=from_state, to_state=to_state)

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Any, Callable, Awaitable
+from datetime import UTC, datetime
+from typing import Any
 
 from backend.utils.uuid_utils import generate_uuid
 
@@ -46,7 +47,7 @@ class Scheduler:
             args=args,
             kwargs=kwargs or {},
             interval_seconds=interval_seconds,
-            next_run=datetime.now(timezone.utc),
+            next_run=datetime.now(UTC),
         )
         return job_id
 
@@ -99,7 +100,7 @@ class Scheduler:
 
     async def _run_loop(self) -> None:
         while self._running:
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             for job in list(self._jobs.values()):
                 if not job.enabled or not job.next_run:
                     continue

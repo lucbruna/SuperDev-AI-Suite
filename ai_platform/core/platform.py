@@ -1,22 +1,19 @@
-from typing import Optional
-from asyncio import TaskGroup
-from contextlib import asynccontextmanager
 
-from .configuration import AIPlatformConfig, get_platform_config
-from .kernel import AIKernel
-from ..providers.provider_manager import ProviderManager
-from ..providers.provider_factory import ProviderFactory
-from ..routing.router import AIRouter
-from ..streaming.stream_manager import StreamManager
-from ..sessions.session import SessionManager
+from ..cache.prompt_cache import PromptCache
 from ..conversations.conversation import ConversationManager
 from ..cost.cost_tracker import CostTracker
-from ..cache.prompt_cache import PromptCache
 from ..embeddings.embedding_manager import EmbeddingManager
+from ..providers.provider_factory import ProviderFactory
+from ..providers.provider_manager import ProviderManager
+from ..routing.router import AIRouter
+from ..sessions.session import SessionManager
+from ..streaming.stream_manager import StreamManager
+from .configuration import AIPlatformConfig, get_platform_config
+from .kernel import AIKernel
 
 
 class AIPlatform:
-    def __init__(self, config: Optional[AIPlatformConfig] = None):
+    def __init__(self, config: AIPlatformConfig | None = None):
         self.config = config or get_platform_config()
         self.kernel = AIKernel(self.config)
         self.provider_manager = ProviderManager()
@@ -49,7 +46,7 @@ class AIPlatform:
     def get_provider(self, name: str):
         return self.provider_manager.get_provider(name)
 
-    async def chat(self, messages: list[dict], provider: Optional[str] = None, model: Optional[str] = None, **kwargs):
+    async def chat(self, messages: list[dict], provider: str | None = None, model: str | None = None, **kwargs):
         cache_key = self.cache.cache_key(messages, model or "", kwargs)
         cached = await self.cache.get(cache_key)
         if cached:
@@ -60,7 +57,7 @@ class AIPlatform:
         await self.cache.set(cache_key, response)
         return response
 
-    async def stream(self, messages: list[dict], provider: Optional[str] = None, model: Optional[str] = None, **kwargs):
+    async def stream(self, messages: list[dict], provider: str | None = None, model: str | None = None, **kwargs):
         p, m = self.router.route(messages, {"provider": provider, "model": model})
         prov = self.provider_manager.get_provider(p)
         stream_id = self.stream_manager.create_stream(prov, messages, {**kwargs, "model": m})
@@ -70,5 +67,5 @@ class AIPlatform:
         finally:
             await self.stream_manager.cancel_stream(stream_id)
 
-    async def embeddings(self, texts: list[str], provider: Optional[str] = None):
+    async def embeddings(self, texts: list[str], provider: str | None = None):
         return await self.embedding_manager.embed_texts(texts, provider, self.provider_manager)

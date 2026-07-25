@@ -1,14 +1,11 @@
 from __future__ import annotations
 
 import json
-import asyncio
-from typing import Any
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
-from starlette.websockets import WebSocketState
+from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 
-from backend.websocket.manager import manager
 from backend.websocket.events import EventType, WSEvent
+from backend.websocket.manager import manager
 
 router = APIRouter()
 

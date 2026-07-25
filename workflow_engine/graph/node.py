@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from enum import Enum
-from typing import Any, Optional
+from enum import StrEnum
+from typing import Any
 
 from pydantic import BaseModel, Field
 
 
-class NodeType(str, Enum):
+class NodeType(StrEnum):
     AGENT = "AGENT"
     TOOL = "TOOL"
     CONDITION = "CONDITION"

@@ -1,23 +1,22 @@
 from __future__ import annotations
 
-import asyncio
 import hashlib
 import json
 import os
+import tempfile
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import aiofiles
 import httpx
-
 from plugin_platform.manifest.manifest import PluginManifest
 from plugin_platform.sandbox.plugin_sandbox import PluginSandbox, SandboxConfig
 
 
-class PluginCategory(str, Enum):
+class PluginCategory(StrEnum):
     TOOL = "tool"
     AGENT = "agent"
     PROVIDER = "provider"
@@ -30,7 +29,7 @@ class PluginCategory(str, Enum):
     UTILITY = "utility"
 
 
-class PluginStatus(str, Enum):
+class PluginStatus(StrEnum):
     PENDING = "pending"
     DOWNLOADING = "downloading"
     VALIDATING = "validating"
@@ -58,10 +57,10 @@ class PluginInfo:
     tags: list[str] = field(default_factory=list)
     screenshots: list[str] = field(default_factory=list)
     readme: str = ""
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
     min_platform_version: str = "5.0.0"
-    max_platform_version: Optional[str] = None
+    max_platform_version: str | None = None
     dependencies: list[str] = field(default_factory=list)
     keywords: list[str] = field(default_factory=list)
     is_official: bool = False
@@ -77,7 +76,7 @@ class InstalledPlugin:
     install_path: str = ""
     config: dict[str, Any] = field(default_factory=dict)
     installed_at: datetime = field(default_factory=datetime.now)
-    last_updated: Optional[datetime] = None
+    last_updated: datetime | None = None
     enabled: bool = False
 
 
@@ -85,14 +84,14 @@ class MarketplaceClient:
     def __init__(
         self,
         api_url: str = "https://marketplace.superdev.ai/api/v1",
-        cache_dir: Optional[Path] = None,
+        cache_dir: Path | None = None,
         timeout: int = 30,
     ):
         self._api_url = api_url.rstrip("/")
         self._cache_dir = cache_dir or Path.home() / ".superdev" / "marketplace_cache"
         self._cache_dir.mkdir(parents=True, exist_ok=True)
         self._timeout = timeout
-        self._client: Optional[httpx.AsyncClient] = None
+        self._client: httpx.AsyncClient | None = None
         self._simulated_plugins: list[PluginInfo] = self._get_simulated_plugins()
 
     async def __aenter__(self):
@@ -288,8 +287,8 @@ class MarketplaceClient:
     async def search(
         self,
         query: str = "",
-        category: Optional[PluginCategory] = None,
-        tags: Optional[list[str]] = None,
+        category: PluginCategory | None = None,
+        tags: list[str] | None = None,
         official_only: bool = False,
         verified_only: bool = False,
         sort_by: str = "popularity",
@@ -367,7 +366,7 @@ class MarketplaceClient:
         self,
         plugin_id: str,
         version: str = "latest",
-        target_dir: Optional[Path] = None,
+        target_dir: Path | None = None,
     ) -> Path:
         cache_key = f"{plugin_id}@{version}"
         cache_file = self._cache_dir / f"{hashlib.sha256(cache_key.encode()).hexdigest()}.zip"
@@ -449,19 +448,19 @@ class PluginInstaller:
         self,
         plugin_id: str,
         version: str = "latest",
-        config: Optional[dict[str, Any]] = None,
+        config: dict[str, Any] | None = None,
     ) -> InstalledPlugin:
-        plugin_info = await self._marketplace.get_details(plugin_id)
+        await self._marketplace.get_details(plugin_id)
         package_path = await self._marketplace.download(plugin_id, version)
         return await self.install_from_package(package_path, config)
 
     async def install_from_package(
         self,
         package_path: Path,
-        config: Optional[dict[str, Any]] = None,
+        config: dict[str, Any] | None = None,
     ) -> InstalledPlugin:
-        import zipfile
         import tempfile
+        import zipfile
 
         with tempfile.TemporaryDirectory() as tmpdir:
             tmpdir_path = Path(tmpdir)
@@ -516,7 +515,7 @@ class PluginInstaller:
         repo_url: str,
         branch: str = "main",
         subdir: str = "",
-        config: Optional[dict[str, Any]] = None,
+        config: dict[str, Any] | None = None,
     ) -> InstalledPlugin:
         import subprocess
 
@@ -559,14 +558,14 @@ class PluginValidator:
         if not entry_file.exists():
             errors.append(f"Entrypoint not found: {manifest.entrypoint}")
 
-        for dep in manifest.dependencies:
+        for _dep in manifest.dependencies:
             pass
 
         return len(errors) == 0, errors
 
 
 class PluginSDK:
-    def __init__(self, plugins_dir: Optional[Path] = None):
+    def __init__(self, plugins_dir: Path | None = None):
         self.plugins_dir = plugins_dir or Path.cwd() / "plugins"
         self.plugins_dir.mkdir(parents=True, exist_ok=True)
         self._marketplace = MarketplaceClient()

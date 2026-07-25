@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional, Type
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -26,10 +26,10 @@ class WorkflowRegistry:
     def register_edge_type(self, type_name: str, class_ref: type) -> None:
         self._edge_types[type_name] = class_ref
 
-    def get_node_class(self, type_name: str) -> Optional[type]:
+    def get_node_class(self, type_name: str) -> type | None:
         return self._node_types.get(type_name)
 
-    def get_edge_class(self, type_name: str) -> Optional[type]:
+    def get_edge_class(self, type_name: str) -> type | None:
         return self._edge_types.get(type_name)
 
     def list_registered(self) -> dict[str, Any]:

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import time
-from typing import Any, Optional
+from typing import Any
 
 from ..base.base_memory import BaseMemory
 
@@ -18,7 +18,7 @@ class ShortTermMemory(BaseMemory):
             self._data[key] = (value, time.time())
         await self._cleanup()
 
-    async def retrieve(self, key: str) -> Optional[Any]:
+    async def retrieve(self, key: str) -> Any | None:
         async with self._lock:
             entry = self._data.get(key)
             if entry is None:

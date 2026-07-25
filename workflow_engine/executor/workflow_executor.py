@@ -2,28 +2,25 @@ from __future__ import annotations
 
 import asyncio
 import time
-from typing import Any, Optional
+from typing import Any
 
-from pydantic import BaseModel, Field
-
-from workflow_engine.graph.graph import WorkflowGraph
-from workflow_engine.graph.graph_builder import GraphBuilder
-from workflow_engine.graph.graph_validator import GraphValidator
-from workflow_engine.executor.executor import ExecutionResult
-from workflow_engine.executor.task_executor import TaskExecutor
-from workflow_engine.retry.retry_policy import RetryPolicy
-from workflow_engine.retry.rollback_manager import RollbackManager
 from workflow_engine.checkpoint.checkpoint import Checkpoint
 from workflow_engine.core.registry import WorkflowRegistry
+from workflow_engine.executor.executor import ExecutionResult
+from workflow_engine.executor.task_executor import TaskExecutor
+from workflow_engine.graph.graph import WorkflowGraph
+from workflow_engine.graph.graph_validator import GraphValidator
+from workflow_engine.retry.retry_policy import RetryPolicy
+from workflow_engine.retry.rollback_manager import RollbackManager
 
 
 class WorkflowLifecycleExecutor:
     def __init__(
         self,
         registry: WorkflowRegistry,
-        retry_policy: Optional[RetryPolicy] = None,
-        rollback_manager: Optional[RollbackManager] = None,
-        checkpoint: Optional[Checkpoint] = None,
+        retry_policy: RetryPolicy | None = None,
+        rollback_manager: RollbackManager | None = None,
+        checkpoint: Checkpoint | None = None,
     ):
         self._registry = registry
         self._task_executor = TaskExecutor(registry)
@@ -103,5 +100,5 @@ class WorkflowLifecycleExecutor:
     def _build_execution_plan(self, graph: WorkflowGraph) -> list:
         return graph.topological_sort()
 
-    def _should_retry(self, attempt: int, error: Optional[str]) -> bool:
+    def _should_retry(self, attempt: int, error: str | None) -> bool:
         return self._retry_policy.should_retry(attempt, error or "")

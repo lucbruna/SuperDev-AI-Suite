@@ -1,21 +1,30 @@
 from __future__ import annotations
+
 import os
 import time
-from typing import Any, AsyncIterator, Optional
-from datetime import datetime, timezone
+from collections.abc import AsyncIterator
+from datetime import UTC, datetime
+from typing import Any
 
 import httpx
 
 from ..base_provider import (
-    BaseProvider, ModelInfo, ChatResponse, Choice, Usage,
-    StreamChunk, HealthStatus, ProviderLimits, PricingInfo,
+    BaseProvider,
+    ChatResponse,
+    Choice,
+    HealthStatus,
+    ModelInfo,
+    PricingInfo,
+    ProviderLimits,
+    StreamChunk,
+    Usage,
 )
 
 
 class OpenRouterProvider(BaseProvider):
     def __init__(self, config: Any):
         super().__init__(config)
-        self._client: Optional[httpx.AsyncClient] = None
+        self._client: httpx.AsyncClient | None = None
 
     def _get_api_key(self) -> str:
         return self.config.api_key or os.getenv("OPENROUTER_API_KEY") or ""
@@ -153,11 +162,11 @@ class OpenRouterProvider(BaseProvider):
             resp = await client.get("/models")
             elapsed = (time.monotonic() - start) * 1000
             if resp.status_code == 200:
-                return HealthStatus(status="healthy", latency_ms=elapsed, last_check=datetime.now(timezone.utc))
-            return HealthStatus(status="degraded", latency_ms=elapsed, last_check=datetime.now(timezone.utc), error=f"Status {resp.status_code}")
+                return HealthStatus(status="healthy", latency_ms=elapsed, last_check=datetime.now(UTC))
+            return HealthStatus(status="degraded", latency_ms=elapsed, last_check=datetime.now(UTC), error=f"Status {resp.status_code}")
         except Exception as e:
             elapsed = (time.monotonic() - start) * 1000
-            return HealthStatus(status="unhealthy", latency_ms=elapsed, last_check=datetime.now(timezone.utc), error=str(e))
+            return HealthStatus(status="unhealthy", latency_ms=elapsed, last_check=datetime.now(UTC), error=str(e))
 
     async def limits(self) -> ProviderLimits:
         return ProviderLimits(max_requests_per_minute=1000, max_tokens_per_minute=200000, max_concurrent_requests=50)

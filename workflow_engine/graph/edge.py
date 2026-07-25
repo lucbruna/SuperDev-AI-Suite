@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -11,6 +11,6 @@ class WorkflowEdge(BaseModel):
     target_node_id: str
     source_handle: str = "default"
     target_handle: str = "default"
-    condition: Optional[str] = None
+    condition: str | None = None
     label: str = ""
     metadata: dict[str, Any] = Field(default_factory=dict)

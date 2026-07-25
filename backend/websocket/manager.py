@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import json
 import asyncio
+import json
 from typing import Any
 
-from fastapi import WebSocket, WebSocketDisconnect
+from fastapi import WebSocket
 from starlette.websockets import WebSocketState
 
 

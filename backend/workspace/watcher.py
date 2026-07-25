@@ -1,7 +1,6 @@
-import os
-from pathlib import Path
-from typing import Callable, Optional
 import asyncio
+from collections.abc import Callable
+from pathlib import Path
 
 
 class FileWatcher:
@@ -9,7 +8,7 @@ class FileWatcher:
         self._poll_interval = poll_interval
         self._callbacks: list[Callable] = []
         self._running = False
-        self._task: Optional[asyncio.Task] = None
+        self._task: asyncio.Task | None = None
         self._mtimes: dict[str, float] = {}
 
     async def watch(self, path: str) -> None:

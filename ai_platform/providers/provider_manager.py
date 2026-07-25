@@ -1,12 +1,12 @@
 from __future__ import annotations
-from typing import Optional
+
 import asyncio
 
 from .base_provider import BaseProvider, HealthStatus
 from .provider_configuration import ProviderConfig
-from .provider_registry import ProviderRegistry
 from .provider_factory import ProviderFactory
 from .provider_health import HealthChecker
+from .provider_registry import ProviderRegistry
 
 
 class ProviderManager:
@@ -33,9 +33,8 @@ class ProviderManager:
         for name in self.registry.list():
             try:
                 p = self.registry.get(name)
-                if isinstance(p, BaseProvider):
-                    if asyncio.run(self.health_checker.check(p)):
-                        results.append(p)
+                if isinstance(p, BaseProvider) and asyncio.run(self.health_checker.check(p)):
+                    results.append(p)
             except Exception:
                 continue
         return results

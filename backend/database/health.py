@@ -1,5 +1,4 @@
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.database.session import async_session_factory
 

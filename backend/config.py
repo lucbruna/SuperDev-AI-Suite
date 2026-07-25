@@ -7,15 +7,15 @@ from backend.settings import (
     AuthSettings,
     CorsSettings,
     DatabaseSettings,
+    KnowledgeBaseSettings,
     LoggingSettings,
+    PluginSettings,
     ProviderSettings,
     RedisSettings,
-    TelemetrySettings,
     SandboxSettings,
-    KnowledgeBaseSettings,
-    PluginSettings,
-    WorkflowSettings,
+    TelemetrySettings,
     VerificationSettings,
+    WorkflowSettings,
 )
 
 

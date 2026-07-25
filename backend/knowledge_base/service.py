@@ -1,21 +1,17 @@
 from __future__ import annotations
 
-import hashlib
 import os
-import pathspec
 from dataclasses import dataclass
-from typing import Any, Optional
 from uuid import UUID
 
+import pathspec
 from fastapi import Depends
-from pgvector.sqlalchemy import Vector
 from sentence_transformers import SentenceTransformer
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.config import config
-from backend.knowledge_base.models import KnowledgeBase, KnowledgeChunk, KnowledgeEntry, KnowledgeBaseType
 from backend.database.session import get_db
+from backend.knowledge_base.models import KnowledgeBase, KnowledgeBaseType, KnowledgeChunk, KnowledgeEntry
 
 
 async def get_knowledge_base_service(db: AsyncSession = Depends(get_db)) -> KnowledgeBaseService:
@@ -37,12 +33,12 @@ class SearchResult:
 
 
 class EmbeddingService:
-    _instance: Optional["EmbeddingService"] = None
-    _model: Optional[SentenceTransformer] = None
+    _instance: EmbeddingService | None = None
+    _model: SentenceTransformer | None = None
     _model_name: str = "all-MiniLM-L6-v2"
     _embedding_dim: int = 384
 
-    def __new__(cls) -> "EmbeddingService":
+    def __new__(cls) -> EmbeddingService:
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
@@ -77,11 +73,11 @@ class EmbeddingService:
         if not valid_texts:
             return [[0.0] * self._embedding_dim for _ in texts]
         
-        indices, clean_texts = zip(*valid_texts)
+        indices, clean_texts = zip(*valid_texts, strict=False)
         embeddings = self._model.encode(list(clean_texts), normalize_embeddings=True)
         
         results = [[0.0] * self._embedding_dim for _ in texts]
-        for idx, emb in zip(indices, embeddings):
+        for idx, emb in zip(indices, embeddings, strict=False):
             results[idx] = emb.tolist()
         
         return results
@@ -117,7 +113,7 @@ class VectorStore:
         rows = results.all()
         
         search_results = []
-        for chunk, entry, kb in rows:
+        for chunk, entry, _kb in rows:
             if chunk.embedding is None:
                 continue
             
@@ -217,7 +213,7 @@ class KnowledgeBaseService:
         embeddings = self.embedding_service.embed_texts(chunk_texts)
         
         chunks = []
-        for (chunk_index, chunk_content, chunk_metadata), embedding in zip(chunks_data, embeddings):
+        for (chunk_index, chunk_content, chunk_metadata), embedding in zip(chunks_data, embeddings, strict=False):
             chunk = KnowledgeChunk(
                 entry_id=entry.id,
                 chunk_index=chunk_index,
@@ -352,7 +348,7 @@ class KnowledgeBaseService:
                     continue
                 
                 try:
-                    with open(file_path, "r", encoding="utf-8") as f:
+                    with open(file_path, encoding="utf-8") as f:
                         content = f.read()
                     
                     if not content.strip():

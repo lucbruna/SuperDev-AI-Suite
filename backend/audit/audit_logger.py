@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from enum import Enum
+from datetime import UTC, datetime
+from enum import StrEnum
 from typing import Any
 
 from backend.utils.uuid_utils import generate_uuid
 
 
-class AuditAction(str, Enum):
+class AuditAction(StrEnum):
     CREATE = "create"
     READ = "read"
     UPDATE = "update"
@@ -32,7 +32,7 @@ class AuditAction(str, Enum):
     IMPORT = "import"
 
 
-class AuditSeverity(str, Enum):
+class AuditSeverity(StrEnum):
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
@@ -97,7 +97,7 @@ class AuditLogger:
     ) -> AuditEntry:
         entry = AuditEntry(
             id=generate_uuid(),
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             action=action,
             resource=resource,
             resource_id=resource_id,

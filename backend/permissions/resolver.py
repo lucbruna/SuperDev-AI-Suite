@@ -3,9 +3,7 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
-from ..projects.model import Project, ProjectMember
 from ..projects.repository import ProjectMemberRepository, ProjectRepository
-from .permissions import ALL_PERMISSIONS
 from .roles import get_default_role, get_role
 
 

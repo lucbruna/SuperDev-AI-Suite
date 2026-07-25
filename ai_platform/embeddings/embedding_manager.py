@@ -1,7 +1,7 @@
 from __future__ import annotations
+
+import contextlib
 import hashlib
-import json
-from typing import Optional
 
 from ..providers.provider_manager import ProviderManager
 
@@ -14,15 +14,13 @@ class EmbeddingManager:
         raw = f"{text}:{model}"
         return hashlib.sha256(raw.encode()).hexdigest()
 
-    async def embed_texts(self, texts: list[str], provider_name: Optional[str] = None, provider_manager: Optional[ProviderManager] = None) -> list[list[float]]:
+    async def embed_texts(self, texts: list[str], provider_name: str | None = None, provider_manager: ProviderManager | None = None) -> list[list[float]]:
         if not texts:
             return []
         provider = None
         if provider_manager and provider_name:
-            try:
+            with contextlib.suppress(ValueError):
                 provider = provider_manager.get_provider(provider_name)
-            except ValueError:
-                pass
 
         results = []
         uncached_texts = []
@@ -41,7 +39,7 @@ class EmbeddingManager:
         if uncached_texts and provider:
             try:
                 embeddings = await provider.embeddings(uncached_texts)
-                for idx, emb in zip(uncached_indices, embeddings):
+                for idx, emb in zip(uncached_indices, embeddings, strict=False):
                     key = self._cache_key(texts[idx])
                     self._cache[key] = emb
                     results[idx] = emb
@@ -54,7 +52,7 @@ class EmbeddingManager:
 
         return results
 
-    async def embed_query(self, query: str, provider_name: Optional[str] = None, provider_manager: Optional[ProviderManager] = None) -> list[float]:
+    async def embed_query(self, query: str, provider_name: str | None = None, provider_manager: ProviderManager | None = None) -> list[float]:
         results = await self.embed_texts([query], provider_name, provider_manager)
         return results[0] if results else [0.0] * 1536
 

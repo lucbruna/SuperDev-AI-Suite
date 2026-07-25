@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 import httpx
 
-from workflow_engine.nodes.base_node import BaseNode, NodeResult
 from workflow_engine.graph.node import NodeType
+from workflow_engine.nodes.base_node import BaseNode, NodeResult
 
 
 class HTTPNode(BaseNode):

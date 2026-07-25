@@ -1,20 +1,20 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from enum import Enum
+from datetime import UTC, datetime
+from enum import StrEnum
 from typing import Any
 
 from backend.utils.uuid_utils import generate_uuid
 
 
-class AlertSeverity(str, Enum):
+class AlertSeverity(StrEnum):
     INFO = "info"
     WARNING = "warning"
     CRITICAL = "critical"
 
 
-class AlertStatus(str, Enum):
+class AlertStatus(StrEnum):
     ACTIVE = "active"
     RESOLVED = "resolved"
     ACKNOWLEDGED = "acknowledged"
@@ -29,7 +29,7 @@ class Alert:
     status: AlertStatus = AlertStatus.ACTIVE
     source: str = ""
     details: dict[str, Any] = field(default_factory=dict)
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     resolved_at: datetime | None = None
 
 
@@ -62,7 +62,7 @@ class AlertManager:
         alert = self._alerts.get(alert_id)
         if alert:
             alert.status = AlertStatus.RESOLVED
-            alert.resolved_at = datetime.now(timezone.utc)
+            alert.resolved_at = datetime.now(UTC)
             return True
         return False
 

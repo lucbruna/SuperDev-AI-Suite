@@ -1,6 +1,7 @@
-from alembic import context
-from backend.database.base import Base
 from backend.config import settings
+from backend.database.base import Base
+
+from alembic import context
 
 target_metadata = Base.metadata
 

@@ -3,7 +3,6 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.database.session import get_db
-from backend.middleware.authentication import get_current_user
 from backend.plugins.plugin_manager import plugin_manager
 from backend.plugins.plugin_registry import plugin_registry
 
@@ -121,7 +120,7 @@ async def install_plugin(
     db: AsyncSession = Depends(get_db),
 ) -> PluginInstalledResponse:
     from backend.dependencies import get_current_active_user
-    user = await get_current_active_user(db=db)
+    await get_current_active_user(db=db)
 
     entry = plugin_registry.get(request.slug)
     if not entry:
@@ -173,7 +172,7 @@ async def enable_plugin(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     from backend.dependencies import get_current_active_user
-    user = await get_current_active_user(db=db)
+    await get_current_active_user(db=db)
 
     enabled = await plugin_manager.enable_plugin(slug)
     if not enabled:
@@ -190,7 +189,7 @@ async def disable_plugin(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     from backend.dependencies import get_current_active_user
-    user = await get_current_active_user(db=db)
+    await get_current_active_user(db=db)
 
     disabled = await plugin_manager.disable_plugin(slug)
     if not disabled:
@@ -207,7 +206,7 @@ async def uninstall_plugin(
     db: AsyncSession = Depends(get_db),
 ) -> None:
     from backend.dependencies import get_current_active_user
-    user = await get_current_active_user(db=db)
+    await get_current_active_user(db=db)
 
     uninstalled = await plugin_manager.uninstall_plugin(slug)
     if not uninstalled:
@@ -224,7 +223,7 @@ async def update_plugin_config(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     from backend.dependencies import get_current_active_user
-    user = await get_current_active_user(db=db)
+    await get_current_active_user(db=db)
 
     updated = await plugin_manager.update_plugin_config(slug, request.settings)
     if not updated:

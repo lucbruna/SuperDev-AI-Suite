@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import asyncio
-import time
+import contextlib
 import uuid
-from typing import Any, Optional
+from typing import Any
 
 from ..base.base_agent import BaseAgent
 from ..core.agent_configuration import AgentConfig
@@ -11,7 +10,7 @@ from ..registry.agent_registry import AgentRegistry
 
 
 class AgentManager:
-    def __init__(self, registry: Optional[AgentRegistry] = None) -> None:
+    def __init__(self, registry: AgentRegistry | None = None) -> None:
         self._instances: dict[str, BaseAgent] = {}
         self._configs: dict[str, AgentConfig] = {}
         self._statuses: dict[str, str] = {}
@@ -33,10 +32,8 @@ class AgentManager:
     async def destroy_agent(self, agent_id: str) -> None:
         agent = self._instances.pop(agent_id, None)
         if agent:
-            try:
+            with contextlib.suppress(Exception):
                 await agent.shutdown()
-            except Exception:
-                pass
         self._configs.pop(agent_id, None)
         self._statuses.pop(agent_id, None)
 

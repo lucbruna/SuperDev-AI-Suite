@@ -15,7 +15,7 @@ async def startup_handler() -> None:
     logger.info("Loading configuration", extra={"environment": config.app.environment})
     logger.info("Checking database connection")
     try:
-        from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+        from sqlalchemy.ext.asyncio import create_async_engine
 
         engine = create_async_engine(config.database.url, pool_size=1, echo=False)
         async with engine.begin() as conn:
@@ -29,6 +29,7 @@ async def startup_handler() -> None:
     logger.info("Running database migrations")
     try:
         from alembic.config import Config as AlembicConfig
+
         from alembic import command
 
         alembic_cfg = AlembicConfig(config.database.migration_dir)

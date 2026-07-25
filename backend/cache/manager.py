@@ -3,16 +3,16 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from typing import Any, AsyncGenerator, Optional, List, Dict
+from typing import Any
 
-import redis.asyncio as redis
 from redis.asyncio import Redis
 from redis.asyncio.connection import ConnectionPool
 from redis.asyncio.retry import Retry
 from redis.backoff import ExponentialBackoff
-from redis.exceptions import RedisError, ConnectionError, TimeoutError
+from redis.exceptions import ConnectionError, TimeoutError
 
 from backend.config import config
 
@@ -32,11 +32,11 @@ class RedisClusterManager:
     """Production-ready Redis manager with Sentinel/Cluster support."""
 
     def __init__(self):
-        self._primary_pool: Optional[ConnectionPool] = None
-        self._replica_pools: List[ConnectionPool] = []
-        self._primary_client: Optional[Redis] = None
-        self._replica_clients: List[Redis] = []
-        self._sentinel_client: Optional[Redis] = None
+        self._primary_pool: ConnectionPool | None = None
+        self._replica_pools: list[ConnectionPool] = []
+        self._primary_client: Redis | None = None
+        self._replica_clients: list[Redis] = []
+        self._sentinel_client: Redis | None = None
         self._initialized = False
 
     def _create_pool(
@@ -242,7 +242,7 @@ class RedisClusterManager:
                 pass
 
     # High-level operations
-    async def get(self, key: str, readonly: bool = True) -> Optional[str]:
+    async def get(self, key: str, readonly: bool = True) -> str | None:
         async with self.get_client(readonly=readonly) as client:
             return await client.get(key)
 
@@ -250,7 +250,7 @@ class RedisClusterManager:
         self,
         key: str,
         value: str,
-        expire: Optional[int] = None,
+        expire: int | None = None,
         nx: bool = False,
         xx: bool = False,
     ) -> bool:
@@ -274,7 +274,7 @@ class RedisClusterManager:
             return await client.ttl(key)
 
     # Hash operations
-    async def hget(self, name: str, key: str, readonly: bool = True) -> Optional[str]:
+    async def hget(self, name: str, key: str, readonly: bool = True) -> str | None:
         async with self.get_client(readonly=readonly) as client:
             return await client.hget(name, key)
 
@@ -299,11 +299,11 @@ class RedisClusterManager:
         async with self.get_client(readonly=False) as client:
             return await client.rpush(name, *values)
 
-    async def lpop(self, name: str, count: Optional[int] = None) -> Optional[str]:
+    async def lpop(self, name: str, count: int | None = None) -> str | None:
         async with self.get_client(readonly=False) as client:
             return await client.lpop(name, count=count)
 
-    async def rpop(self, name: str, count: Optional[int] = None) -> Optional[str]:
+    async def rpop(self, name: str, count: int | None = None) -> str | None:
         async with self.get_client(readonly=False) as client:
             return await client.rpop(name, count=count)
 
@@ -394,7 +394,7 @@ class RedisClusterManager:
         name: str,
         timeout: int = 30,
         blocking: bool = True,
-        blocking_timeout: Optional[int] = None,
+        blocking_timeout: int | None = None,
     ):
         """Distributed lock using Redis."""
         lock = self._primary_client.lock(

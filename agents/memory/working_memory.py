@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import time
 import uuid
-from typing import Any, Optional
+from typing import Any
 
 from ..base.base_memory import BaseMemory
 
@@ -21,7 +21,7 @@ class WorkingMemory(BaseMemory):
         async with self._lock:
             self._context[key] = value
 
-    async def retrieve(self, key: str) -> Optional[Any]:
+    async def retrieve(self, key: str) -> Any | None:
         async with self._lock:
             return self._context.get(key)
 
@@ -57,7 +57,7 @@ class WorkingMemory(BaseMemory):
             })
         return goal_id
 
-    async def add_sub_task(self, task: str, depends_on: Optional[list[str]] = None) -> str:
+    async def add_sub_task(self, task: str, depends_on: list[str] | None = None) -> str:
         task_id = str(uuid.uuid4())
         async with self._lock:
             self._sub_tasks.append({

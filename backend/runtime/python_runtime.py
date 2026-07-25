@@ -4,20 +4,16 @@ import asyncio
 import os
 import sys
 import time
-import tempfile
-from pathlib import Path
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
 from backend.runtime.base_runtime import (
     BaseRuntime,
     ExecutionResult,
     Language,
-    ResourceLimits,
     RuntimeConfig,
     RuntimeStatus,
 )
 from backend.runtime.sandbox import sandbox_manager
-from backend.utils.uuid_utils import generate_uuid
 
 
 class PythonRuntime(BaseRuntime):
@@ -74,7 +70,7 @@ class PythonRuntime(BaseRuntime):
                     proc.communicate(),
                     timeout=limits.max_execution_time_seconds,
                 )
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 proc.kill()
                 await proc.communicate()
                 execution_time = (time.time() - start_time) * 1000
@@ -159,7 +155,7 @@ class PythonRuntime(BaseRuntime):
                 async with asyncio.timeout(limits.max_execution_time_seconds):
                     async for line in proc.stdout:
                         yield line.decode("utf-8", errors="replace")
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 proc.kill()
                 yield f"\n[TIMEOUT] Execution timed out after {limits.max_execution_time_seconds}s\n"
             finally:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 from .planner import Step
 
@@ -20,7 +20,7 @@ class ExecutionPlan:
 
     def validate(self) -> bool:
         step_ids = {s.id for s in self._steps}
-        for step_id, deps in self._dependencies.items():
+        for _step_id, deps in self._dependencies.items():
             for dep_id in deps:
                 if dep_id not in step_ids:
                     return False

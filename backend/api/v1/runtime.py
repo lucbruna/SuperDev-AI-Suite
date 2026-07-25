@@ -4,7 +4,6 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.database.session import get_db
-from backend.middleware.authentication import get_current_user
 from backend.runtime.base_runtime import Language, ResourceLimits, RuntimeConfig
 from backend.runtime.runtime_manager import runtime_manager
 from backend.utils.uuid_utils import generate_uuid

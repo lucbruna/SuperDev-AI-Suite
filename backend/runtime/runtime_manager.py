@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
 from backend.runtime.base_runtime import (
     BaseRuntime,
@@ -10,10 +10,10 @@ from backend.runtime.base_runtime import (
     RuntimeConfig,
     RuntimeStatus,
 )
-from backend.runtime.python_runtime import PythonRuntime
 from backend.runtime.node_runtime import NodeRuntime
+from backend.runtime.python_runtime import PythonRuntime
 from backend.runtime.shell_runtime import ShellRuntime
-from backend.websocket.events import EventBuilder, EventType
+from backend.websocket.events import EventBuilder
 from backend.websocket.manager import manager
 
 

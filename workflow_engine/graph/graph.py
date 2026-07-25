@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import uuid
 from collections import deque
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
-from workflow_engine.graph.node import WorkflowNode
 from workflow_engine.graph.edge import WorkflowEdge
+from workflow_engine.graph.node import WorkflowNode
 
 
 class WorkflowGraph(BaseModel):
@@ -29,10 +29,10 @@ class WorkflowGraph(BaseModel):
     def remove_edge(self, edge_id: str) -> None:
         self.edges.pop(edge_id, None)
 
-    def get_node(self, node_id: str) -> Optional[WorkflowNode]:
+    def get_node(self, node_id: str) -> WorkflowNode | None:
         return self.nodes.get(node_id)
 
-    def get_edges(self, from_node: Optional[str] = None) -> list[WorkflowEdge]:
+    def get_edges(self, from_node: str | None = None) -> list[WorkflowEdge]:
         if from_node:
             return [e for e in self.edges.values() if e.source_node_id == from_node]
         return list(self.edges.values())

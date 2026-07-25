@@ -7,7 +7,7 @@ from backend.database.base import Base, SoftDeleteMixin, TimestampMixin
 from backend.utils.uuid_utils import generate_uuid
 
 
-class OrganizationRole(str, enum.Enum):
+class OrganizationRole(enum.StrEnum):
     OWNER = "owner"
     ADMIN = "admin"
     MEMBER = "member"

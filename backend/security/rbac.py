@@ -1,18 +1,17 @@
 from __future__ import annotations
 
-from enum import Enum
+from collections.abc import Callable
+from enum import StrEnum
 from functools import wraps
-from typing import Callable
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.database.models.role import Role, user_roles, role_permissions
-from backend.database.models.permission import Permission
+from backend.database.models.role import Permission, Role, UserRole, role_permissions
 
 
-class Resource(str, Enum):
+class Resource(StrEnum):
     USER = "user"
     PROJECT = "project"
     WORKFLOW = "workflow"
@@ -24,7 +23,7 @@ class Resource(str, Enum):
     ADMIN = "admin"
 
 
-class Action(str, Enum):
+class Action(StrEnum):
     CREATE = "create"
     READ = "read"
     UPDATE = "update"
@@ -43,8 +42,8 @@ class RBACEngine:
             select(Permission)
             .join(role_permissions, Permission.id == role_permissions.c.permission_id)
             .join(Role, Role.id == role_permissions.c.role_id)
-            .join(user_roles, Role.id == user_roles.c.role_id)
-            .where(user_roles.c.user_id == user_id)
+            .join(UserRole.__table__, Role.id == UserRole.__table__.c.role_id)
+            .where(UserRole.__table__.c.user_id == user_id)
             .where(Permission.resource == resource.value)
             .where(Permission.action == action.value)
         )
@@ -54,8 +53,8 @@ class RBACEngine:
     async def get_user_roles(self, user_id: str) -> list[str]:
         query = (
             select(Role.name)
-            .join(user_roles, Role.id == user_roles.c.role_id)
-            .where(user_roles.c.user_id == user_id)
+            .join(UserRole.__table__, Role.id == UserRole.__table__.c.role_id)
+            .where(UserRole.__table__.c.user_id == user_id)
         )
         result = await self.db.execute(query)
         return [row[0] for row in result.all()]
@@ -65,18 +64,17 @@ class RBACEngine:
             select(Permission.name)
             .join(role_permissions, Permission.id == role_permissions.c.permission_id)
             .join(Role, Role.id == role_permissions.c.role_id)
-            .join(user_roles, Role.id == user_roles.c.role_id)
-            .where(user_roles.c.user_id == user_id)
+            .join(UserRole.__table__, Role.id == UserRole.__table__.c.role_id)
+            .where(UserRole.__table__.c.user_id == user_id)
         )
         result = await self.db.execute(query)
         return [row[0] for row in result.all()]
 
     async def assign_role(self, user_id: str, role_id: str) -> None:
-        from backend.utils.uuid_utils import generate_uuid
         from sqlalchemy import insert
 
         await self.db.execute(
-            insert(user_roles).values(user_id=user_id, role_id=role_id)
+            insert(UserRole.__table__).values(user_id=user_id, role_id=role_id)
         )
         await self.db.commit()
 
@@ -84,9 +82,9 @@ class RBACEngine:
         from sqlalchemy import delete
 
         await self.db.execute(
-            delete(user_roles)
-            .where(user_roles.c.user_id == user_id)
-            .where(user_roles.c.role_id == role_id)
+            delete(UserRole.__table__)
+            .where(UserRole.__table__.c.user_id == user_id)
+            .where(UserRole.__table__.c.role_id == role_id)
         )
         await self.db.commit()
 

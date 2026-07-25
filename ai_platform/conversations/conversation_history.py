@@ -1,9 +1,8 @@
 from __future__ import annotations
-from typing import Optional
-from dataclasses import dataclass, field
+
+from dataclasses import dataclass
 
 from .conversation import Conversation, Message
-
 
 TRUNCATION_STRATEGIES = {
     "trim_oldest": "trim_oldest",
@@ -44,14 +43,13 @@ class ConversationHistory:
             while self.total_tokens() > self.max_tokens and len(self.conversation.messages) > 1:
                 self.conversation.messages.pop(0)
 
-        elif self.truncation_strategy == "trim_middle":
-            if len(self.conversation.messages) > 2:
-                keep_first = [self.conversation.messages[0]]
-                keep_last = [self.conversation.messages[-1]]
-                middle = self.conversation.messages[1:-1]
-                while self.total_tokens_from_list(keep_first + middle + keep_last) > self.max_tokens and middle:
-                    middle.pop(len(middle) // 2)
-                self.conversation.messages = keep_first + middle + keep_last
+        elif self.truncation_strategy == "trim_middle" and len(self.conversation.messages) > 2:
+            keep_first = [self.conversation.messages[0]]
+            keep_last = [self.conversation.messages[-1]]
+            middle = self.conversation.messages[1:-1]
+            while self.total_tokens_from_list(keep_first + middle + keep_last) > self.max_tokens and middle:
+                middle.pop(len(middle) // 2)
+            self.conversation.messages = keep_first + middle + keep_last
 
         return self.conversation.messages
 
@@ -59,7 +57,7 @@ class ConversationHistory:
     def total_tokens_from_list(messages: list[Message]) -> int:
         return sum(int(len(m.content) * TOKEN_ESTIMATE_PER_CHAR) + 1 for m in messages)
 
-    def get_context_messages(self, max_context_tokens: Optional[int] = None) -> list[Message]:
+    def get_context_messages(self, max_context_tokens: int | None = None) -> list[Message]:
         limit = max_context_tokens or self.max_tokens
         result = []
         total = 0

@@ -1,11 +1,10 @@
 from __future__ import annotations
+
 import asyncio
-import time
 import statistics
-from typing import Optional
+import time
 
 from ..providers.base_provider import BaseProvider
-
 
 TEST_PROMPTS = [
     [{"role": "user", "content": "Hello, how are you?"}],
@@ -20,7 +19,7 @@ class LatencyBenchmark:
     @staticmethod
     async def benchmark_provider(
         provider: BaseProvider,
-        test_prompts: Optional[list[list[dict]]] = None,
+        test_prompts: list[list[dict]] | None = None,
         iterations: int = 3,
     ) -> dict:
         prompts = test_prompts or TEST_PROMPTS
@@ -34,7 +33,7 @@ class LatencyBenchmark:
                     await provider.chat(prompt, config)
                     elapsed = (time.monotonic() - start) * 1000
                     latencies.append(elapsed)
-                except Exception as e:
+                except Exception:
                     elapsed = (time.monotonic() - start) * 1000
                     latencies.append(elapsed)
                 await asyncio.sleep(0.1)
@@ -60,7 +59,7 @@ class LatencyBenchmark:
     @staticmethod
     async def benchmark_stream(
         provider: BaseProvider,
-        test_prompts: Optional[list[list[dict]]] = None,
+        test_prompts: list[list[dict]] | None = None,
         iterations: int = 2,
     ) -> dict:
         prompts = test_prompts or TEST_PROMPTS[:2]
@@ -73,7 +72,7 @@ class LatencyBenchmark:
                 start = time.monotonic()
                 first_chunk = True
                 try:
-                    async for chunk in provider.stream(prompt, config):
+                    async for _chunk in provider.stream(prompt, config):
                         if first_chunk:
                             ttfb = (time.monotonic() - start) * 1000
                             ttfb_list.append(ttfb)

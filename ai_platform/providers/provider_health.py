@@ -1,8 +1,8 @@
 from __future__ import annotations
+
 import asyncio
 import time
-from typing import Optional, Callable, Awaitable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from .base_provider import BaseProvider, HealthStatus
 
@@ -10,7 +10,7 @@ from .base_provider import BaseProvider, HealthStatus
 class ProviderHealth:
     def __init__(self, provider: BaseProvider):
         self.provider = provider
-        self.last_status: Optional[HealthStatus] = None
+        self.last_status: HealthStatus | None = None
 
     async def check(self) -> HealthStatus:
         start = time.monotonic()
@@ -18,7 +18,7 @@ class ProviderHealth:
             status = await self.provider.health()
             elapsed = (time.monotonic() - start) * 1000
             status.latency_ms = elapsed
-            status.last_check = datetime.now(timezone.utc)
+            status.last_check = datetime.now(UTC)
             self.last_status = status
             return status
         except Exception as e:
@@ -26,7 +26,7 @@ class ProviderHealth:
             status = HealthStatus(
                 status="unhealthy",
                 latency_ms=elapsed,
-                last_check=datetime.now(timezone.utc),
+                last_check=datetime.now(UTC),
                 error=str(e),
             )
             self.last_status = status
@@ -63,5 +63,5 @@ class HealthChecker:
             task.cancel()
         self._tasks.clear()
 
-    def get_result(self, name: str) -> Optional[HealthStatus]:
+    def get_result(self, name: str) -> HealthStatus | None:
         return self._results.get(name)

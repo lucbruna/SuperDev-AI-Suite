@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 
 def parse_cron(expression: str) -> dict:
@@ -18,7 +18,7 @@ def parse_cron(expression: str) -> dict:
 
 def cron_matches(expression: str, dt: datetime | None = None) -> bool:
     if dt is None:
-        dt = datetime.now(timezone.utc)
+        dt = datetime.now(UTC)
     parsed = parse_cron(expression)
     fields = {
         "minute": dt.minute,

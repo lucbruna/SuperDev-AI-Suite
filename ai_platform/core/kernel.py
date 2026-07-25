@@ -1,8 +1,8 @@
+from datetime import UTC, datetime
 from typing import Any
-from datetime import datetime, timezone
 
-from .configuration import AIPlatformConfig
 from ..providers.provider_configuration import ProviderConfig
+from .configuration import AIPlatformConfig
 
 
 class AIKernel:
@@ -53,7 +53,7 @@ class AIKernel:
         return {
             "status": "healthy",
             "bootstrapped": self._bootstrapped,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "config": self.config.model_dump(),
         }
 

@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from enum import Enum
+from datetime import UTC, datetime
+from enum import StrEnum
 from typing import Any
 
-from backend.audit.audit_logger import AuditLogger, AuditAction, audit_logger
+from backend.audit.audit_logger import AuditLogger
 from backend.utils.uuid_utils import generate_uuid
 
 
-class ComplianceFramework(str, Enum):
+class ComplianceFramework(StrEnum):
     SOC2 = "soc2"
     GDPR = "gdpr"
     HIPAA = "hipaa"
@@ -17,7 +17,7 @@ class ComplianceFramework(str, Enum):
     PCI_DSS = "pci_dss"
 
 
-class ComplianceStatus(str, Enum):
+class ComplianceStatus(StrEnum):
     COMPLIANT = "compliant"
     NON_COMPLIANT = "non_compliant"
     PARTIAL = "partial"
@@ -42,7 +42,7 @@ class ComplianceResult:
     framework: ComplianceFramework
     status: ComplianceStatus
     details: str = ""
-    checked_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    checked_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
 @dataclass
@@ -185,7 +185,7 @@ class ComplianceEngine:
         return ComplianceReport(
             id=generate_uuid(),
             framework=framework,
-            generated_at=datetime.now(timezone.utc),
+            generated_at=datetime.now(UTC),
             overall_status=overall,
             total_rules=total,
             compliant_rules=compliant,

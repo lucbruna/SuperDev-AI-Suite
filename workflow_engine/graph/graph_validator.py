@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any, Optional
-
 from pydantic import BaseModel
 
 from workflow_engine.graph.graph import WorkflowGraph
@@ -10,8 +8,8 @@ from workflow_engine.graph.graph import WorkflowGraph
 class ValidationError(BaseModel):
     code: str
     message: str
-    node_id: Optional[str] = None
-    edge_id: Optional[str] = None
+    node_id: str | None = None
+    edge_id: str | None = None
 
 
 class ValidationResult(BaseModel):

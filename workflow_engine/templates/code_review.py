@@ -5,7 +5,10 @@ from typing import Any
 
 def code_review_template() -> dict[str, Any]:
     return {
-        "metadata": {"name": "Code Review Pipeline", "description": "Checkout code, lint, run tests, review, and report"},
+        "metadata": {
+            "name": "Code Review Pipeline",
+            "description": "Checkout code, lint, run tests, review, and report",
+        },
         "nodes": [
             {
                 "id": "checkout",

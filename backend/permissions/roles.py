@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 
 from .permissions import (
     AdminPermissions,
@@ -15,7 +15,7 @@ from .permissions import (
 )
 
 
-class PredefinedRole(str, Enum):
+class PredefinedRole(StrEnum):
     ADMIN = "admin"
     OWNER = "owner"
     DEVELOPER = "developer"

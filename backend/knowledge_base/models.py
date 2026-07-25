@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import enum
 from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
@@ -16,10 +17,19 @@ from sqlalchemy import (
     Text,
     func,
 )
-from sqlalchemy.dialects.postgresql import ARRAY, UUID as PG_UUID
+from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.database.base import Base, TimestampMixin
+
+
+class KnowledgeBaseType(str, enum.Enum):
+    DOCUMENTATION = "documentation"
+    FAQ = "faq"
+    CODE = "code"
+    API = "api"
+    GENERAL = "general"
 
 
 class KnowledgeBase(Base, TimestampMixin):

@@ -1,11 +1,10 @@
-from typing import Union
 
 
-def user_key(user_id: Union[str, int]) -> str:
+def user_key(user_id: str | int) -> str:
     return f"superdev:user:{user_id}"
 
 
-def project_key(project_id: Union[str, int]) -> str:
+def project_key(project_id: str | int) -> str:
     return f"superdev:project:{project_id}"
 
 
@@ -14,7 +13,7 @@ def session_key(session_id: str) -> str:
 
 
 def permission_key(
-    user_id: Union[str, int], resource: str
+    user_id: str | int, resource: str
 ) -> str:
     return f"superdev:permission:{user_id}:{resource}"
 

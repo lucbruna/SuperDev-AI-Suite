@@ -1,7 +1,7 @@
-from enum import Enum, auto
 from dataclasses import dataclass, field
-from typing import Any, Dict
 from datetime import datetime
+from enum import Enum, auto
+from typing import Any
 
 
 class EventType(Enum):
@@ -21,13 +21,29 @@ class EventType(Enum):
 
 
 @dataclass
-class EventBuilder:
+class WSEvent:
     type: EventType
-    payload: Dict[str, Any] = field(default_factory=dict)
+    payload: dict[str, Any] = field(default_factory=dict)
     timestamp: datetime = field(default_factory=datetime.utcnow)
     source: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "type": self.type.name,
+            "payload": self.payload,
+            "timestamp": self.timestamp.isoformat(),
+            "source": self.source,
+        }
+
+
+@dataclass
+class EventBuilder:
+    type: EventType
+    payload: dict[str, Any] = field(default_factory=dict)
+    timestamp: datetime = field(default_factory=datetime.utcnow)
+    source: str = ""
+
+    def to_dict(self) -> dict[str, Any]:
         return {
             "type": self.type.name,
             "payload": self.payload,

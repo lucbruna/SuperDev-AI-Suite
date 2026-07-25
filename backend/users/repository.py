@@ -1,4 +1,3 @@
-from math import ceil
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession

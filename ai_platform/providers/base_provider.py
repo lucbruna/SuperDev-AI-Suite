@@ -1,8 +1,10 @@
 from __future__ import annotations
+
 from abc import ABC, abstractmethod
-from typing import Any, AsyncIterator, Optional
-from datetime import datetime, timezone
+from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Any
 
 
 @dataclass
@@ -36,14 +38,14 @@ class ChatResponse:
     choices: list[Choice] = field(default_factory=list)
     usage: Usage = field(default_factory=Usage)
     provider: str = ""
-    raw: Optional[dict[str, Any]] = None
+    raw: dict[str, Any] | None = None
 
 
 @dataclass
 class StreamChunk:
     delta: str = ""
-    finish_reason: Optional[str] = None
-    usage: Optional[Usage] = None
+    finish_reason: str | None = None
+    usage: Usage | None = None
     index: int = 0
     model: str = ""
 
@@ -52,8 +54,8 @@ class StreamChunk:
 class HealthStatus:
     status: str = "unknown"
     latency_ms: float = 0.0
-    last_check: Optional[datetime] = None
-    error: Optional[str] = None
+    last_check: datetime | None = None
+    error: str | None = None
 
 
 @dataclass

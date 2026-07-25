@@ -2,20 +2,18 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
-from typing import Any, Optional
+from typing import Any
 
 from sentence_transformers import SentenceTransformer
 
-from backend.config import config
-
 
 class EmbeddingService:
-    _instance: Optional["EmbeddingService"] = None
-    _model: Optional[SentenceTransformer] = None
+    _instance: EmbeddingService | None = None
+    _model: SentenceTransformer | None = None
     _model_name: str = "all-MiniLM-L6-v2"
     _embedding_dim: int = 384
 
-    def __new__(cls) -> "EmbeddingService":
+    def __new__(cls) -> EmbeddingService:
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
@@ -39,8 +37,7 @@ class EmbeddingService:
         if not text or not text.strip():
             return [0.0] * self._embedding_dim
         
-        text_hash = hashlib.md5(text.encode()).hexdigest()
-        cache_key = f"embedding:{text_hash}"
+        hashlib.md5(text.encode()).hexdigest()
         
         embedding = self._model.encode(text, normalize_embeddings=True)
         return embedding.tolist()
@@ -53,11 +50,11 @@ class EmbeddingService:
         if not valid_texts:
             return [[0.0] * self._embedding_dim for _ in texts]
         
-        indices, clean_texts = zip(*valid_texts)
+        indices, clean_texts = zip(*valid_texts, strict=False)
         embeddings = self._model.encode(list(clean_texts), normalize_embeddings=True)
         
         results = [[0.0] * self._embedding_dim for _ in texts]
-        for idx, emb in zip(indices, embeddings):
+        for idx, emb in zip(indices, embeddings, strict=False):
             results[idx] = emb.tolist()
         
         return results

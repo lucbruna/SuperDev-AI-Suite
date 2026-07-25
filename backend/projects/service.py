@@ -9,12 +9,12 @@ from ..database import get_session
 from .model import Project, ProjectMember
 from .repository import ProjectMemberRepository, ProjectRepository
 from .schema import (
+    OwnerInfo,
     ProjectCreate,
     ProjectList,
     ProjectMemberResponse,
     ProjectResponse,
     ProjectUpdate,
-    OwnerInfo,
 )
 
 

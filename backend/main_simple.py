@@ -1,15 +1,12 @@
 """SuperDev AI Suite - Backend Simplificado para demonstração."""
 
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
 import time
-from datetime import datetime, timezone
-
+from contextlib import asynccontextmanager
 
 # ── Health Monitor ────────────────────────────────────────────────
-
 import psutil
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 
 def get_system_stats():

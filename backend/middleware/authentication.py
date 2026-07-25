@@ -1,12 +1,12 @@
 from typing import Any
 
 from fastapi import Depends, HTTPException, Request, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.auth.jwt import JWTManager
+from backend.database.models.user import User
 from backend.database.session import get_db
-from backend.users.model import User
 from backend.users.repository import UserRepository
 
 security = HTTPBearer(auto_error=False)

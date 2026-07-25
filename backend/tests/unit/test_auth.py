@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from datetime import timedelta
 
-import pytest
-
 from backend.auth.jwt import JWTManager
 from backend.auth.passwords import hash_password, verify_password
 

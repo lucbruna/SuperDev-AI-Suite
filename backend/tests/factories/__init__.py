@@ -1,6 +1,4 @@
-from sqlalchemy.ext.declarative import declarative_base
 from faker import Faker
-from backend.database.base import Base
 
 fake = Faker()
 

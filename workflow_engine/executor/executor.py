@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import asyncio
 import time
-from typing import Any, Optional
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from workflow_engine.graph.graph import WorkflowGraph
 from workflow_engine.graph.node import WorkflowNode
@@ -12,11 +11,13 @@ from workflow_engine.nodes.base_node import NodeResult
 
 
 class ExecutionResult(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     success: bool = False
     output: Any = None
     node_results: list[NodeResult] = Field(default_factory=list)
     duration: float = 0.0
-    error: Optional[str] = None
+    error: str | None = None
     workflow_id: str = ""
 
 

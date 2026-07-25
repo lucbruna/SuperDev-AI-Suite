@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Optional
 from uuid import UUID
 
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.knowledge_base.models import KnowledgeChunk, KnowledgeEntry, KnowledgeBase
 from backend.knowledge_base.embedding_service import embedding_service
+from backend.knowledge_base.models import KnowledgeBase, KnowledgeChunk, KnowledgeEntry
 
 
 @dataclass

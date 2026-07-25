@@ -1,17 +1,15 @@
 from __future__ import annotations
 
-import asyncio
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator, Optional
 
-from sqlalchemy import event, pool, text
+from sqlalchemy import event, text
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
     async_sessionmaker,
     create_async_engine,
 )
-from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.pool import NullPool, QueuePool
 
 from backend.config import config
@@ -21,10 +19,10 @@ class DatabaseManager:
     """Production-ready database manager with connection pooling, health checks, and migrations."""
 
     def __init__(self):
-        self._engine: Optional[AsyncEngine] = None
-        self._session_factory: Optional[async_sessionmaker[AsyncSession]] = None
-        self._readonly_engine: Optional[AsyncEngine] = None
-        self._readonly_session_factory: Optional[async_sessionmaker[AsyncSession]] = None
+        self._engine: AsyncEngine | None = None
+        self._session_factory: async_sessionmaker[AsyncSession] | None = None
+        self._readonly_engine: AsyncEngine | None = None
+        self._readonly_session_factory: async_sessionmaker[AsyncSession] | None = None
 
     def create_engine(
         self,

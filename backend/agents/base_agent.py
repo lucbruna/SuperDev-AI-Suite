@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 
-class AgentStatus(str, Enum):
+class AgentStatus(StrEnum):
     IDLE = "idle"
     RUNNING = "running"
     PAUSED = "paused"
@@ -14,7 +14,7 @@ class AgentStatus(str, Enum):
     COMPLETED = "completed"
 
 
-class AgentType(str, Enum):
+class AgentType(StrEnum):
     REACT = "react"
     PLANNER_EXECUTOR = "planner_executor"
     CODE = "code"

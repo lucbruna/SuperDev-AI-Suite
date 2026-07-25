@@ -4,9 +4,9 @@ from typing import Any
 
 from ..base.base_agent import AgentResult, BaseAgent
 from ..tools.filesystem_tool import FilesystemTool
-from ..tools.terminal_tool import TerminalTool
-from ..tools.python_tool import PythonTool
 from ..tools.git_tool import GitTool
+from ..tools.python_tool import PythonTool
+from ..tools.terminal_tool import TerminalTool
 
 
 class ExecutorAgent(BaseAgent):

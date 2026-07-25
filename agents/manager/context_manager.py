@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Optional
+from typing import Any
 
 
 class ContextManager:
@@ -12,8 +12,8 @@ class ContextManager:
         self,
         agent_id: str,
         task: str,
-        project_context: Optional[dict[str, Any]] = None,
-        user_context: Optional[dict[str, Any]] = None,
+        project_context: dict[str, Any] | None = None,
+        user_context: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         merged: dict[str, Any] = {
             "agent_id": agent_id,

@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import asyncio
 from typing import Any
 
-from workflow_engine.nodes.base_node import BaseNode, NodeResult
 from workflow_engine.graph.node import NodeType
+from workflow_engine.nodes.base_node import BaseNode, NodeResult
 
 
 class LoopNode(BaseNode):

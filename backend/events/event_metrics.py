@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 
 class EventMetrics:
@@ -13,7 +13,7 @@ class EventMetrics:
 
     def record(self, event_type: str) -> None:
         self._counts[event_type] += 1
-        self._timestamps[event_type].append(datetime.now(timezone.utc))
+        self._timestamps[event_type].append(datetime.now(UTC))
 
     def get_count(self, event_type: str) -> int:
         return self._counts.get(event_type, 0)
@@ -23,5 +23,5 @@ class EventMetrics:
 
     def get_recent(self, event_type: str, minutes: int = 60) -> int:
         from datetime import timedelta
-        cutoff = datetime.now(timezone.utc) - timedelta(minutes=minutes)
+        cutoff = datetime.now(UTC) - timedelta(minutes=minutes)
         return sum(1 for t in self._timestamps.get(event_type, []) if t >= cutoff)

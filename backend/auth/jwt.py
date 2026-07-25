@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 
 from jose import JWTError, jwt
 from pydantic import SecretStr

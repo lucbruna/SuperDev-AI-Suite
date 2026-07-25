@@ -1,11 +1,9 @@
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.database.models.role import Role
 from backend.database.models.permission import Permission
-from backend.database.base import BaseModel
+from backend.database.models.role import Role
 from backend.utils.uuid_utils import generate_uuid
-
 
 DEFAULT_ROLES = [
     {"name": "super_admin", "description": "Super administrator with full access", "is_system": True},

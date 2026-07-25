@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any, Optional
+from typing import Any
 
 from workflow_engine.graph.graph import WorkflowGraph
 
@@ -24,7 +24,7 @@ class Checkpoint:
         self._entries.setdefault(workflow_id, []).append(entry)
         return checkpoint_id
 
-    async def restore(self, checkpoint_id: str) -> Optional[tuple[WorkflowGraph, dict[str, Any]]]:
+    async def restore(self, checkpoint_id: str) -> tuple[WorkflowGraph, dict[str, Any]] | None:
         for entries in self._entries.values():
             for entry in entries:
                 if entry.checkpoint_id == checkpoint_id:

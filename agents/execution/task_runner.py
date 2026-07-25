@@ -1,10 +1,7 @@
 from __future__ import annotations
 
-import asyncio
-from typing import Any, Optional
+from typing import Any
 
-from ..base.base_agent import BaseAgent
-from ..base.base_tool import BaseTool
 from ..core.agent_system import AgentSystem
 from ..registry.tool_registry import ToolRegistry
 
@@ -12,8 +9,8 @@ from ..registry.tool_registry import ToolRegistry
 class TaskRunner:
     def __init__(
         self,
-        agent_system: Optional[AgentSystem] = None,
-        tool_registry: Optional[ToolRegistry] = None,
+        agent_system: AgentSystem | None = None,
+        tool_registry: ToolRegistry | None = None,
     ) -> None:
         self._agent_system = agent_system or AgentSystem()
         self._tool_registry = tool_registry or ToolRegistry()

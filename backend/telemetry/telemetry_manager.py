@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from backend.utils.uuid_utils import generate_uuid
@@ -12,7 +12,7 @@ class MetricPoint:
     name: str
     value: float
     labels: dict[str, str] = field(default_factory=dict)
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
 class TelemetryManager:
@@ -36,7 +36,7 @@ class TelemetryManager:
             "duration_ms": duration_ms,
             "status": status,
             "metadata": metadata or {},
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
         self._traces.append(trace)
 

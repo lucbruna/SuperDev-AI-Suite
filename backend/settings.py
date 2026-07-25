@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional, List, Dict, Any
-from datetime import timedelta
-from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -69,14 +66,14 @@ class RedisSettings(BaseSettings):
     health_check_interval: int = 30
     # Sentinel
     sentinel_enabled: bool = False
-    sentinel_hosts: List[str] = []
+    sentinel_hosts: list[str] = []
     sentinel_password: str = ""
     service_name: str = "mymaster"
     # Cluster
     cluster_enabled: bool = False
-    cluster_nodes: List[str] = []
+    cluster_nodes: list[str] = []
     # Replicas
-    replica_hosts: List[str] = []
+    replica_hosts: list[str] = []
 
 
 class AuthSettings(BaseSettings):
@@ -122,11 +119,11 @@ class CorsSettings(BaseSettings):
         extra="ignore",
     )
 
-    allow_origins: List[str] = ["http://localhost:3000", "http://localhost:8000"]
+    allow_origins: list[str] = ["http://localhost:3000", "http://localhost:8000"]
     allow_credentials: bool = True
-    allow_methods: List[str] = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
-    allow_headers: List[str] = ["*"]
-    expose_headers: List[str] = ["X-Request-ID", "X-Process-Time"]
+    allow_methods: list[str] = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+    allow_headers: list[str] = ["*"]
+    expose_headers: list[str] = ["X-Request-ID", "X-Process-Time"]
     max_age: int = 3600
 
 
@@ -234,7 +231,7 @@ class SandboxSettings(BaseSettings):
     use_docker: bool = False
     docker_host: str = "unix:///var/run/docker.sock"
     seccomp_profile: str = "default"
-    drop_capabilities: List[str] = ["all"]
+    drop_capabilities: list[str] = ["all"]
     use_user_namespace: bool = True
     uid_map: str = "0:100000:65536"
     gid_map: str = "0:100000:65536"
@@ -269,7 +266,7 @@ class PluginSettings(BaseSettings):
     marketplace_enabled: bool = True
     auto_update: bool = False
     sandbox_enabled: bool = True
-    permissions_required: List[str] = ["filesystem.read"]
+    permissions_required: list[str] = ["filesystem.read"]
     max_memory_mb: int = 256
     max_cpu_seconds: int = 30
 

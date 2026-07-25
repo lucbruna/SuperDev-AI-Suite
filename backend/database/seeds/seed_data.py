@@ -1,7 +1,6 @@
 """Seed data realista para o SuperDev."""
 
 import uuid
-from datetime import datetime, timezone
 from typing import Any
 
 
@@ -369,9 +368,9 @@ def get_all_seed_data() -> dict[str, list[dict[str, Any]]]:
 
 def seed_database(session: Any) -> None:
     """Popula o banco de dados com dados de exemplo."""
-    from backend.database.models.user import User
     from backend.database.models.organization import Organization
     from backend.database.models.project import Project
+    from backend.database.models.user import User
 
     data = get_all_seed_data()
 

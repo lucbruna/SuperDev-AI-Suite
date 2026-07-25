@@ -3,13 +3,13 @@ from __future__ import annotations
 import asyncio
 import json
 import os
-from typing import Any, Optional
+from typing import Any
 
 from ..base.base_memory import BaseMemory
 
 
 class LongTermMemory(BaseMemory):
-    def __init__(self, storage_path: Optional[str] = None) -> None:
+    def __init__(self, storage_path: str | None = None) -> None:
         self._storage_path = storage_path or os.path.join(
             os.path.dirname(os.path.abspath(__file__)), "..", "..", "memory_store"
         )
@@ -37,7 +37,7 @@ class LongTermMemory(BaseMemory):
             with open(filepath, "w", encoding="utf-8") as f:
                 json.dump(value, f, indent=2, default=str)
 
-    async def retrieve(self, key: str) -> Optional[Any]:
+    async def retrieve(self, key: str) -> Any | None:
         async with self._lock:
             return self._data.get(key)
 

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable, Awaitable
+from typing import Any
 
 
 @dataclass
@@ -71,7 +72,7 @@ tool_registry = ToolRegistry()
 
 
 async def _execute_code(code: str, language: str = "python") -> dict:
-    from backend.runtime.base_runtime import Language, RuntimeConfig, ResourceLimits
+    from backend.runtime.base_runtime import Language, ResourceLimits, RuntimeConfig
     from backend.runtime.runtime_manager import runtime_manager
     from backend.utils.uuid_utils import generate_uuid
 

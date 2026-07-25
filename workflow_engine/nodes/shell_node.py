@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import asyncio
-import sys
 from typing import Any
 
-from workflow_engine.nodes.base_node import BaseNode, NodeResult
 from workflow_engine.graph.node import NodeType
+from workflow_engine.nodes.base_node import BaseNode, NodeResult
 
 
 class ShellNode(BaseNode):
@@ -22,7 +21,7 @@ class ShellNode(BaseNode):
                 stderr=asyncio.subprocess.PIPE,
             )
             stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             return NodeResult(
                 node_id=self.config.get("node_id", ""),
                 status="failed",

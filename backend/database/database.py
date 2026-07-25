@@ -1,8 +1,7 @@
-from pydantic import SecretStr
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine
+from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
-from backend.database.engine import get_engine_instance, dispose_engine
 from backend.database.base import Base
+from backend.database.engine import dispose_engine, get_engine_instance
 
 
 class DatabaseConfig:

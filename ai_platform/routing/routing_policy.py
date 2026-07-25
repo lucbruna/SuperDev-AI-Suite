@@ -1,14 +1,15 @@
 from __future__ import annotations
-from typing import Any, Optional
+
 from dataclasses import dataclass, field
+from typing import Any
 
 
 @dataclass
 class RuleCondition:
-    capability: Optional[str] = None
-    model_size: Optional[str] = None
-    cost_max: Optional[float] = None
-    latency_max: Optional[float] = None
+    capability: str | None = None
+    model_size: str | None = None
+    cost_max: float | None = None
+    latency_max: float | None = None
 
 
 @dataclass
@@ -25,7 +26,7 @@ class Rule:
 
 
 class RoutingPolicy:
-    def __init__(self, rules: Optional[list[Rule]] = None):
+    def __init__(self, rules: list[Rule] | None = None):
         self.rules = sorted(rules or [], key=lambda r: r.priority, reverse=True)
 
     def add_rule(self, rule: Rule) -> None:

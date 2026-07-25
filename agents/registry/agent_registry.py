@@ -4,7 +4,6 @@ import importlib
 import inspect
 import os
 import pkgutil
-from typing import Any, Optional, type_checking
 
 from ..base.base_agent import BaseAgent
 
@@ -18,7 +17,7 @@ class AgentRegistry:
             raise TypeError(f"{agent_class.__name__} must be a subclass of BaseAgent")
         self._agents[name] = agent_class
 
-    def get(self, name: str) -> Optional[type[BaseAgent]]:
+    def get(self, name: str) -> type[BaseAgent] | None:
         return self._agents.get(name)
 
     def list(self) -> dict[str, type[BaseAgent]]:
@@ -29,11 +28,11 @@ class AgentRegistry:
 
     def discover(self, package_path: str) -> None:
         package_dir = os.path.dirname(os.path.abspath(package_path))
-        for importer, modname, ispkg in pkgutil.iter_modules([package_dir]):
+        for _importer, modname, _ispkg in pkgutil.iter_modules([package_dir]):
             if modname.endswith("_agent"):
                 try:
                     module = importlib.import_module(modname)
-                    for name, obj in inspect.getmembers(module, inspect.isclass):
+                    for _name, obj in inspect.getmembers(module, inspect.isclass):
                         if issubclass(obj, BaseAgent) and obj is not BaseAgent:
                             registry_name = getattr(obj, "_registry_name", modname)
                             self.register(registry_name, obj)

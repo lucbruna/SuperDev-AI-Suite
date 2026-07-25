@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
 
-from sqlalchemy import String, Text, ForeignKey, Boolean
-from sqlalchemy.dialects.postgresql import UUID as PG_UUID, JSONB
+import sqlalchemy as sa
+from sqlalchemy import Boolean, ForeignKey, String, Text
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from backend.database.base import Base, TimestampMixin
-import sqlalchemy as sa
+from backend.database.base import Base
 
 
 class Notification(Base):
@@ -22,8 +22,8 @@ class Notification(Base):
     message: Mapped[str] = mapped_column(Text, nullable=False)
     data: Mapped[dict] = mapped_column(JSONB, server_default='{}', nullable=False)
     is_read: Mapped[bool] = mapped_column(Boolean, server_default='false', nullable=False)
-    read_at: Mapped[Optional[datetime]] = mapped_column(sa.DateTime(timezone=True), nullable=True)
+    read_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False)
 
-    organization: Mapped["Organization"] = relationship("Organization", back_populates="notifications")
-    user: Mapped["User"] = relationship("User", back_populates="notifications")
+    organization: Mapped[Organization] = relationship("Organization", back_populates="notifications")
+    user: Mapped[User] = relationship("User", back_populates="notifications")

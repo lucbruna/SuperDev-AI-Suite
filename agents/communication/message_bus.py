@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import time
 import uuid
-from typing import Any, Awaitable, Callable, Optional
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 MessageHandler = Callable[[dict[str, Any]], Awaitable[None]]
 
@@ -35,10 +37,8 @@ class MessageBus:
             handlers = list(self._subscriptions.get(to_agent, []))
 
         for handler in handlers:
-            try:
+            with contextlib.suppress(Exception):
                 await handler(message)
-            except Exception:
-                pass
 
         return message
 

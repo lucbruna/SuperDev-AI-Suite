@@ -5,7 +5,6 @@ import os
 import tempfile
 import time
 from pathlib import Path
-from typing import Any
 
 from backend.verification.models import ExecutionResult, VerificationStage
 
@@ -65,7 +64,7 @@ class CodeExecutor:
                     process.communicate(),
                     timeout=self.timeout,
                 )
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 process.kill()
                 await process.wait()
                 return ExecutionResult(
@@ -125,7 +124,7 @@ class CodeExecutor:
                     process.communicate(),
                     timeout=self.timeout,
                 )
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 process.kill()
                 await process.wait()
                 return ExecutionResult(
@@ -183,7 +182,7 @@ class CodeExecutor:
                     process.communicate(),
                     timeout=self.timeout,
                 )
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 process.kill()
                 await process.wait()
                 return ExecutionResult(

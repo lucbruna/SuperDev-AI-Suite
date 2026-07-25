@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-import os
 from typing import Any
 
 from ..base.base_agent import AgentResult, BaseAgent
-from ..tools.search_tool import SearchTool
 from ..tools.http_tool import HTTPTool
+from ..tools.search_tool import SearchTool
 
 
 class ResearchAgent(BaseAgent):
@@ -59,10 +58,10 @@ class ResearchAgent(BaseAgent):
     def _generate_summary(self, task: str, search: dict, web: list) -> str:
         lines = [
             f"## Research Summary: {task[:60]}",
-            f"",
-            f"### Local Search Results",
+            "",
+            "### Local Search Results",
             f"Found {search.get('count', 0)} matches",
-            f"",
+            "",
             f"### Web Sources Consulted: {len(web)}",
         ]
         for w in web:

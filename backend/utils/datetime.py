@@ -1,8 +1,8 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 
 def utc_now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def format_datetime(dt: datetime, fmt: str = "%Y-%m-%dT%H:%M:%S.%fZ") -> str:
@@ -10,7 +10,7 @@ def format_datetime(dt: datetime, fmt: str = "%Y-%m-%dT%H:%M:%S.%fZ") -> str:
 
 
 def parse_datetime(value: str, fmt: str = "%Y-%m-%dT%H:%M:%S.%fZ") -> datetime:
-    return datetime.strptime(value, fmt).replace(tzinfo=timezone.utc)
+    return datetime.strptime(value, fmt).replace(tzinfo=UTC)
 
 
 def time_ago(dt: datetime, reference: datetime | None = None) -> str:

@@ -1,11 +1,12 @@
 from __future__ import annotations
-from typing import Any, Optional
-from enum import Enum
-from dataclasses import dataclass, field, asdict
+
 import json
+from dataclasses import dataclass, field
+from enum import StrEnum
+from typing import Any
 
 
-class StreamEventType(str, Enum):
+class StreamEventType(StrEnum):
     START = "start"
     CHUNK = "chunk"
     END = "end"
@@ -36,7 +37,7 @@ class StreamEvent:
         return "\n".join(lines)
 
     @classmethod
-    def start(cls, stream_id: str, metadata: Optional[dict] = None) -> "StreamEvent":
+    def start(cls, stream_id: str, metadata: dict | None = None) -> StreamEvent:
         import time
         return cls(
             event=StreamEventType.START,
@@ -46,7 +47,7 @@ class StreamEvent:
         )
 
     @classmethod
-    def chunk(cls, stream_id: str, content: str, index: int = 0) -> "StreamEvent":
+    def chunk(cls, stream_id: str, content: str, index: int = 0) -> StreamEvent:
         import time
         return cls(
             event=StreamEventType.CHUNK,
@@ -56,7 +57,7 @@ class StreamEvent:
         )
 
     @classmethod
-    def end(cls, stream_id: str, usage: Optional[dict] = None) -> "StreamEvent":
+    def end(cls, stream_id: str, usage: dict | None = None) -> StreamEvent:
         import time
         return cls(
             event=StreamEventType.END,
@@ -66,7 +67,7 @@ class StreamEvent:
         )
 
     @classmethod
-    def error(cls, stream_id: str, message: str) -> "StreamEvent":
+    def error(cls, stream_id: str, message: str) -> StreamEvent:
         import time
         return cls(
             event=StreamEventType.ERROR,
@@ -76,7 +77,7 @@ class StreamEvent:
         )
 
     @classmethod
-    def cancel(cls, stream_id: str) -> "StreamEvent":
+    def cancel(cls, stream_id: str) -> StreamEvent:
         import time
         return cls(
             event=StreamEventType.CANCEL,

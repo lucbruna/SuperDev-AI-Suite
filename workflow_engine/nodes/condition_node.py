@@ -4,8 +4,8 @@ import ast
 import operator
 from typing import Any
 
-from workflow_engine.nodes.base_node import BaseNode, NodeResult
 from workflow_engine.graph.node import NodeType
+from workflow_engine.nodes.base_node import BaseNode, NodeResult
 
 # Safe operators for expression evaluation
 _SAFE_OPERATORS: dict[type, Any] = {
@@ -81,7 +81,7 @@ def _safe_eval_node(node: ast.AST, context: dict[str, Any]) -> Any:
 
     if isinstance(node, ast.Compare):
         left = _safe_eval_node(node.left, context)
-        for op, comparator in zip(node.ops, node.comparators):
+        for op, comparator in zip(node.ops, node.comparators, strict=False):
             op_type = type(op)
             if op_type not in _SAFE_OPERATORS:
                 raise ValueError(f"Comparison operator {op_type.__name__} is not allowed")

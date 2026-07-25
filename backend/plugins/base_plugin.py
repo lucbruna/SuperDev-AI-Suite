@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 
-class PluginStatus(str, Enum):
+class PluginStatus(StrEnum):
     INSTALLED = "installed"
     ENABLED = "enabled"
     DISABLED = "disabled"
@@ -14,7 +14,7 @@ class PluginStatus(str, Enum):
     UPDATING = "updating"
 
 
-class PluginType(str, Enum):
+class PluginType(StrEnum):
     EXTENSION = "extension"
     INTEGRATION = "integration"
     TOOL = "tool"

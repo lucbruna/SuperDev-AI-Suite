@@ -1,5 +1,4 @@
-from typing import Any, Optional
-
+from typing import Any
 
 DEFAULT_TTLS: dict[str, int] = {
     "superdev:user": 300,
@@ -14,7 +13,7 @@ DEFAULT_TTLS: dict[str, int] = {
 
 class CachePolicy:
     def __init__(
-        self, custom_ttls: Optional[dict[str, int]] = None
+        self, custom_ttls: dict[str, int] | None = None
     ) -> None:
         self._ttls = dict(DEFAULT_TTLS)
         if custom_ttls:

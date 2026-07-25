@@ -24,9 +24,7 @@ class DockerTool(BaseTool):
         action = params.get("action")
         if action not in ("build", "run", "stop", "logs", "ps", "pull"):
             return False
-        if action in ("build", "run") and "image" not in params:
-            return False
-        return True
+        return not (action in ("build", "run") and "image" not in params)
 
     async def execute(self, params: dict[str, Any]) -> dict[str, Any]:
         action = params.get("action")
@@ -70,7 +68,7 @@ class DockerTool(BaseTool):
                 "stderr": stderr.decode("utf-8", errors="replace") if stderr else "",
                 "exit_code": proc.returncode or 0,
             }
-        except asyncio.TimeoutError:
+        except TimeoutError:
             return {"success": False, "error": f"Docker operation timed out after {timeout}s"}
         except FileNotFoundError:
             return {"success": False, "error": "Docker not found. Is Docker installed and in PATH?"}

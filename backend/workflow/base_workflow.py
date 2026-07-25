@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 
-class WorkflowStatus(str, Enum):
+class WorkflowStatus(StrEnum):
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -15,7 +14,7 @@ class WorkflowStatus(str, Enum):
     CANCELLED = "cancelled"
 
 
-class StepStatus(str, Enum):
+class StepStatus(StrEnum):
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -24,7 +23,7 @@ class StepStatus(str, Enum):
     RETRYING = "retrying"
 
 
-class StepType(str, Enum):
+class StepType(StrEnum):
     CODE = "code"
     API_CALL = "api_call"
     CONDITION = "condition"

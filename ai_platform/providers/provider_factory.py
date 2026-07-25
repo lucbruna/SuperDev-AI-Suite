@@ -1,12 +1,12 @@
 from __future__ import annotations
-from typing import Optional
-from .base_provider import BaseProvider
-from .provider_configuration import ProviderConfig
-from .openai.openai_provider import OpenAIProvider
+
 from .anthropic.anthropic_provider import AnthropicProvider
+from .base_provider import BaseProvider
 from .gemini.gemini_provider import GeminiProvider
 from .ollama.ollama_provider import OllamaProvider
+from .openai.openai_provider import OpenAIProvider
 from .openrouter.openrouter_provider import OpenRouterProvider
+from .provider_configuration import ProviderConfig
 
 
 class ProviderFactory:

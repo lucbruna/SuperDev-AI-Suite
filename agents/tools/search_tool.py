@@ -37,17 +37,17 @@ class SearchTool(BaseTool):
             results = []
 
             if search_type == "file":
-                for root, dirs, files in os.walk(path):
+                for root, _dirs, files in os.walk(path):
                     for fname in files:
                         if fnmatch.fnmatch(fname, pattern):
                             results.append(os.path.join(root, fname))
 
             elif search_type == "grep":
-                for root, dirs, files in os.walk(path):
+                for root, _dirs, files in os.walk(path):
                     for fname in files:
                         try:
                             fpath = os.path.join(root, fname)
-                            with open(fpath, "r", encoding="utf-8", errors="ignore") as f:
+                            with open(fpath, encoding="utf-8", errors="ignore") as f:
                                 for lineno, line in enumerate(f, 1):
                                     if re.search(pattern, line, re.IGNORECASE):
                                         results.append({
@@ -60,13 +60,13 @@ class SearchTool(BaseTool):
 
             elif search_type == "code":
                 code_extensions = {".py", ".js", ".ts", ".java", ".cpp", ".c", ".h", ".cs", ".go", ".rs", ".rb", ".php"}
-                for root, dirs, files in os.walk(path):
+                for root, _dirs, files in os.walk(path):
                     for fname in files:
                         ext = os.path.splitext(fname)[1]
                         if ext in code_extensions:
                             try:
                                 fpath = os.path.join(root, fname)
-                                with open(fpath, "r", encoding="utf-8", errors="ignore") as f:
+                                with open(fpath, encoding="utf-8", errors="ignore") as f:
                                     for lineno, line in enumerate(f, 1):
                                         if re.search(pattern, line, re.IGNORECASE):
                                             results.append({

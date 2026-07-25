@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from backend.providers.base_provider import TokenUsage
@@ -15,7 +15,7 @@ class UsageRecord:
     completion_tokens: int
     total_tokens: int
     estimated_cost: float
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     user_id: str | None = None
     request_id: str | None = None
     metadata: dict[str, Any] = field(default_factory=dict)

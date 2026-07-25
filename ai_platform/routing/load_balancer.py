@@ -1,13 +1,12 @@
 from __future__ import annotations
+
 import itertools
-import time
-from typing import Optional
-from enum import Enum
+from enum import StrEnum
 
 from ..providers.base_provider import BaseProvider
 
 
-class LoadBalanceStrategy(str, Enum):
+class LoadBalanceStrategy(StrEnum):
     ROUND_ROBIN = "round_robin"
     LEAST_LATENCY = "least_latency"
     LEAST_COST = "least_cost"
@@ -27,7 +26,7 @@ class LoadBalancer:
     def record_latency(self, name: str, latency_ms: float) -> None:
         self._latency_map[name] = latency_ms
 
-    def get_next_provider(self, capability: str = "") -> Optional[BaseProvider]:
+    def get_next_provider(self, capability: str = "") -> BaseProvider | None:
         if not self._providers:
             return None
 

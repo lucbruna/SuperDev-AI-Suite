@@ -1,7 +1,7 @@
-from pydantic_settings import BaseSettings
-from typing import Optional
-from pydantic import Field
 from functools import lru_cache
+
+from pydantic import Field
+from pydantic_settings import BaseSettings
 
 
 class AIPlatformConfig(BaseSettings):
@@ -19,7 +19,7 @@ class AIPlatformConfig(BaseSettings):
             "ollama": "llama3",
         }
     )
-    redis_url: Optional[str] = None
+    redis_url: str | None = None
     log_level: str = "INFO"
     embedding_model: str = "text-embedding-3-small"
 

@@ -19,7 +19,7 @@ class ProjectGenerator:
         name = project_data.get("name", "app")
         return {
             f"{name}/__init__.py": "",
-            f"{name}/main.py": """from fastapi import FastAPI
+            f"{name}/main.py": f"""from fastapi import FastAPI
 
 app = FastAPI(title="{name}")
 
@@ -27,13 +27,13 @@ app = FastAPI(title="{name}")
 @app.get("/")
 async def root():
     return {{"message": "Hello from {name}"}}
-""".format(name=name),
+""",
             f"{name}/routers/__init__.py": "",
             f"{name}/models/__init__.py": "",
             f"{name}/schemas/__init__.py": "",
             f"{name}/services/__init__.py": "",
             f"{name}/core/__init__.py": "",
-            f"{name}/core/config.py": """from pydantic_settings import BaseSettings
+            f"{name}/core/config.py": f"""from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
@@ -42,7 +42,7 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
-""".format(name=name),
+""",
             "requirements.txt": "fastapi\nuvicorn[standard]\npydantic\npydantic-settings\nsqlalchemy\nasyncpg\n",
             ".env": f"APP_NAME={name}\nDEBUG=true\n",
             "Dockerfile": f"FROM python:3.12-slim\n\nWORKDIR /app\nCOPY . .\nRUN pip install -r requirements.txt\nCMD [\"uvicorn\", \"{name}.main:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8000\"]\n",
@@ -92,17 +92,17 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     def generate_next(self, project_data: dict[str, Any]) -> dict[str, str]:
         name = project_data.get("name", "my-app")
         return {
-            "src/app/layout.tsx": f"""export default function RootLayout({{
+            "src/app/layout.tsx": """export default function RootLayout({
   children,
-}}: {{
+}: {
   children: React.ReactNode;
-}}) {{
+}) {
   return (
     <html lang="en">
-      <body>{{children}}</body>
+      <body>{children}</body>
     </html>
   );
-}}
+}
 """,
             "src/app/page.tsx": f"""export default function Home() {{
   return <div>Hello from {name}</div>;

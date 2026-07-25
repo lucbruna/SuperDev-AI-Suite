@@ -1,13 +1,13 @@
 from __future__ import annotations
+
 import json
-from typing import Optional
 
 from ..providers.base_provider import StreamChunk, Usage
 
 
 class StreamParser:
     @staticmethod
-    def parse_openai_chunk(raw: str) -> Optional[StreamChunk]:
+    def parse_openai_chunk(raw: str) -> StreamChunk | None:
         if not raw.startswith("data: "):
             return None
         payload = raw[6:].strip()
@@ -39,7 +39,7 @@ class StreamParser:
             return None
 
     @staticmethod
-    def parse_anthropic_chunk(raw: str) -> Optional[StreamChunk]:
+    def parse_anthropic_chunk(raw: str) -> StreamChunk | None:
         if not raw.startswith("data: "):
             return None
         payload = raw[6:].strip()
@@ -59,7 +59,7 @@ class StreamParser:
             return None
 
     @staticmethod
-    def parse_ollama_chunk(raw: str) -> Optional[StreamChunk]:
+    def parse_ollama_chunk(raw: str) -> StreamChunk | None:
         if not raw.strip():
             return None
         try:
@@ -74,7 +74,7 @@ class StreamParser:
             return None
 
     @staticmethod
-    def parse_chunk(raw: str, source: str = "openai") -> Optional[StreamChunk]:
+    def parse_chunk(raw: str, source: str = "openai") -> StreamChunk | None:
         parsers = {
             "openai": StreamParser.parse_openai_chunk,
             "anthropic": StreamParser.parse_anthropic_chunk,

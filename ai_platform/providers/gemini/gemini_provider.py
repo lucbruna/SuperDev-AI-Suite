@@ -1,12 +1,21 @@
 from __future__ import annotations
+
 import os
 import time
-from typing import Any, AsyncIterator, Optional
-from datetime import datetime, timezone
+from collections.abc import AsyncIterator
+from datetime import UTC, datetime
+from typing import Any
 
 from ..base_provider import (
-    BaseProvider, ModelInfo, ChatResponse, Choice, Usage,
-    StreamChunk, HealthStatus, ProviderLimits, PricingInfo,
+    BaseProvider,
+    ChatResponse,
+    Choice,
+    HealthStatus,
+    ModelInfo,
+    PricingInfo,
+    ProviderLimits,
+    StreamChunk,
+    Usage,
 )
 
 
@@ -119,10 +128,10 @@ class GeminiProvider(BaseProvider):
             genai.configure(api_key=self._get_api_key())
             list(genai.list_models())  # ensure iteration
             elapsed = (time.monotonic() - start) * 1000
-            return HealthStatus(status="healthy", latency_ms=elapsed, last_check=datetime.now(timezone.utc))
+            return HealthStatus(status="healthy", latency_ms=elapsed, last_check=datetime.now(UTC))
         except Exception as e:
             elapsed = (time.monotonic() - start) * 1000
-            return HealthStatus(status="unhealthy", latency_ms=elapsed, last_check=datetime.now(timezone.utc), error=str(e))
+            return HealthStatus(status="unhealthy", latency_ms=elapsed, last_check=datetime.now(UTC), error=str(e))
 
     async def limits(self) -> ProviderLimits:
         return ProviderLimits(max_requests_per_minute=60, max_tokens_per_minute=120000, max_concurrent_requests=10)

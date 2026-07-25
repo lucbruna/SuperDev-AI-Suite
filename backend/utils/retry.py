@@ -1,13 +1,14 @@
 import asyncio
 import functools
-from typing import Any, Callable, Type
+from collections.abc import Callable
+from typing import Any
 
 
 def async_retry(
     max_retries: int = 3,
     delay: float = 1.0,
     backoff: float = 2.0,
-    exceptions: tuple[Type[Exception], ...] = (Exception,),
+    exceptions: tuple[type[Exception], ...] = (Exception,),
 ) -> Callable[..., Any]:
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         @functools.wraps(func)

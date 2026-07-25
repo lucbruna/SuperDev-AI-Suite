@@ -1,7 +1,9 @@
-from fastapi import Request, HTTPException, status
-from starlette.middleware.base import BaseHTTPMiddleware
 import time
 from collections import defaultdict
+
+from fastapi import HTTPException
+from starlette.middleware.base import BaseHTTPMiddleware
+
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
     def __init__(self, app, max_requests=100, window_seconds=60):
@@ -39,7 +41,7 @@ class CircuitBreaker:
             self.failure_count = 0
             self.state = 'closed'
             return result
-        except Exception as e:
+        except Exception:
             self.failure_count += 1
             self.last_failure_time = time.time()
             if self.failure_count >= self.failure_threshold:

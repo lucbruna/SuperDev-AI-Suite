@@ -1,4 +1,3 @@
-from math import ceil
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -27,7 +26,7 @@ class OrganizationRepository:
     async def get_by_id(self, org_id: str) -> Organization | None:
         query = select(Organization).where(
             Organization.id == org_id,
-            Organization.is_deleted == False,
+            not Organization.is_deleted,
         )
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
@@ -35,7 +34,7 @@ class OrganizationRepository:
     async def get_by_slug(self, slug: str) -> Organization | None:
         query = select(Organization).where(
             Organization.slug == slug,
-            Organization.is_deleted == False,
+            not Organization.is_deleted,
         )
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
@@ -66,8 +65,8 @@ class OrganizationRepository:
         page_size: int = 20,
         filters: dict | None = None,
     ) -> tuple[list[Organization], int]:
-        query = select(Organization).where(Organization.is_deleted == False)
-        count_query = select(func.count()).select_from(Organization).where(Organization.is_deleted == False)
+        query = select(Organization).where(not Organization.is_deleted)
+        count_query = select(func.count()).select_from(Organization).where(not Organization.is_deleted)
 
         if filters:
             for field, value in filters.items():

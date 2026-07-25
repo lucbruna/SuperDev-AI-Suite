@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -22,12 +22,12 @@ class TestDatetimeUtils:
         assert isinstance(utc_now(), datetime)
 
     def test_format_datetime_default_format(self) -> None:
-        dt = datetime(2024, 1, 15, 10, 30, 0, 123456, tzinfo=timezone.utc)
+        dt = datetime(2024, 1, 15, 10, 30, 0, 123456, tzinfo=UTC)
         formatted = format_datetime(dt)
         assert formatted == "2024-01-15T10:30:00.123456Z"
 
     def test_format_datetime_custom_format(self) -> None:
-        dt = datetime(2024, 1, 15, tzinfo=timezone.utc)
+        dt = datetime(2024, 1, 15, tzinfo=UTC)
         formatted = format_datetime(dt, "%Y-%m-%d")
         assert formatted == "2024-01-15"
 

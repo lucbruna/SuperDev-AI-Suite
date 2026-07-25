@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Optional
 
 
 class ExecutionQueue:
@@ -13,14 +12,14 @@ class ExecutionQueue:
         self._counter += 1
         await self._queue.put((priority, self._counter, workflow_id))
 
-    async def dequeue(self) -> Optional[str]:
+    async def dequeue(self) -> str | None:
         try:
             _, _, workflow_id = await asyncio.wait_for(self._queue.get(), timeout=0.1)
             return workflow_id
-        except (asyncio.TimeoutError, asyncio.CancelledError):
+        except (TimeoutError, asyncio.CancelledError):
             return None
 
-    async def peek(self) -> Optional[str]:
+    async def peek(self) -> str | None:
         try:
             _, _, workflow_id = self._queue.get_nowait()
             await self._queue.put((0, self._counter, workflow_id))

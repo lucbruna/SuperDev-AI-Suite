@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -19,7 +19,7 @@ class Reasoner:
     def __init__(self) -> None:
         self._history: list[Solution] = []
 
-    async def reason(self, problem: str, context: Optional[dict[str, Any]] = None) -> Solution:
+    async def reason(self, problem: str, context: dict[str, Any] | None = None) -> Solution:
         ctx = context or {}
         decomposed = self._decompose(problem, ctx)
         analyzed = self._analyze(decomposed, ctx)

@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import APIRouter, HTTPException
 
 from workflow_engine.core.engine import WorkflowEngine
-from workflow_engine.core.configuration import WorkflowConfig
-from workflow_engine.state.state_machine import WorkflowState
 
 router = APIRouter(prefix="/workflows", tags=["workflows"])
 
@@ -38,7 +36,9 @@ async def get_workflow(workflow_id: str) -> dict[str, Any]:
 
 
 @router.post("/{workflow_id}/execute")
-async def execute_workflow(workflow_id: str, context: dict[str, Any] = {}) -> dict[str, Any]:
+async def execute_workflow(workflow_id: str, context: dict[str, Any] = None) -> dict[str, Any]:
+    if context is None:
+        context = {}
     engine = _get_engine()
     try:
         result = await engine.execute(workflow_id, context)

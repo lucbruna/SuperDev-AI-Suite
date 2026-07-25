@@ -5,7 +5,6 @@ import json
 import tempfile
 import time
 from pathlib import Path
-from typing import Any
 
 from backend.verification.models import TestResult, VerificationStage
 
@@ -74,7 +73,7 @@ class CodeTester:
                     process.communicate(),
                     timeout=self.timeout,
                 )
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 process.kill()
                 await process.wait()
                 return TestResult(
@@ -179,7 +178,7 @@ class CodeTester:
                     process.communicate(),
                     timeout=self.timeout,
                 )
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 process.kill()
                 await process.wait()
                 return TestResult(
@@ -233,7 +232,7 @@ class CodeTester:
             )
 
     def _generate_python_tests(self, code: str) -> str:
-        return f"""import pytest
+        return """import pytest
 import sys
 import os
 

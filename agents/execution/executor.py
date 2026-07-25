@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import asyncio
 import time
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
-from ..base.base_agent import AgentResult
 from ..planner.execution_plan import ExecutionPlan
 from ..planner.planner import Step
 
@@ -45,7 +44,7 @@ class Executor:
             tasks = [self._execute_step(step, context) for step in next_steps]
             results = await asyncio.gather(*tasks, return_exceptions=True)
 
-            for step, result in zip(next_steps, results):
+            for step, result in zip(next_steps, results, strict=False):
                 if isinstance(result, Exception):
                     plan.mark_failed(step.id)
                     step_results.append({

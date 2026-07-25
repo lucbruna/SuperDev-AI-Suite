@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import json
-from typing import Any
 
-from ai_platform.providers.base_provider import BaseProvider, Message
+from ai_platform.providers.base_provider import BaseProvider
+
 from backend.verification.models import ReviewResult, VerificationStage
 
 
@@ -23,9 +23,9 @@ class CodeReviewer:
         system_prompt = self._build_system_prompt(language)
         user_prompt = self._build_user_prompt(code, context)
 
-        messages = [
-            Message(role="system", content=system_prompt),
-            Message(role="user", content=user_prompt),
+        messages: list[dict[str, str]] = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
         ]
 
         try:

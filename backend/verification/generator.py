@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-import json
-from typing import Any
+from ai_platform.providers.base_provider import BaseProvider
 
-from ai_platform.providers.base_provider import BaseProvider, ChatResponse, Message
-from backend.verification.models import GenerationResult, VerificationStage
+from backend.verification.models import GenerationResult
 
 
 class CodeGenerator:
@@ -22,9 +20,9 @@ class CodeGenerator:
         system_prompt = self._build_system_prompt(language, requirements)
         user_prompt = self._build_user_prompt(task_description, context, existing_code)
 
-        messages = [
-            Message(role="system", content=system_prompt),
-            Message(role="user", content=user_prompt),
+        messages: list[dict[str, str]] = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
         ]
 
         try:

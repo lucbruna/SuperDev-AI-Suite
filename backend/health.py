@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import logging
 import time
-from datetime import datetime, timezone
-from enum import Enum
+from datetime import UTC, datetime
+from enum import StrEnum
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -13,7 +13,7 @@ from backend.config import config
 logger = logging.getLogger("superdev")
 
 
-class HealthStatus(str, Enum):
+class HealthStatus(StrEnum):
     HEALTHY = "healthy"
     DEGRADED = "degraded"
     UNHEALTHY = "unhealthy"
@@ -24,7 +24,7 @@ class HealthCheckResult(BaseModel):
     component: str
     message: str = ""
     latency_ms: float = Field(default=0.0, ge=0.0)
-    checked_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    checked_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
     details: dict[str, Any] = Field(default_factory=dict)
 
 

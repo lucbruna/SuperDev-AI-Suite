@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
 from backend.providers.base_provider import (
     BaseProvider,
@@ -8,7 +8,6 @@ from backend.providers.base_provider import (
     EmbeddingResponse,
     Message,
     StreamChunk,
-    TokenUsage,
 )
 from backend.providers.provider_registry import ProviderRegistry
 

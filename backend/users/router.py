@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.database.session import get_db
 from backend.middleware.authentication import get_current_user
 from backend.users.model import User
-from backend.users.schema import UserCreate, UserList, UserResponse, UserUpdate
+from backend.users.schema import UserList, UserResponse, UserUpdate
 from backend.users.service import UserService
 
 router = APIRouter()

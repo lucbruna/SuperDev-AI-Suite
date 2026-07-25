@@ -1,10 +1,8 @@
 import uuid
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
 from .filesystem import WorkspaceFilesystem
 from .snapshots import WorkspaceSnapshot
-
 
 _restore_history: dict[str, list[dict]] = {}
 
@@ -59,7 +57,7 @@ class WorkspaceRestore:
         workspace_id: str,
         snapshot_id: str,
         restore_type: str,
-        file_paths: Optional[list[str]],
+        file_paths: list[str] | None,
     ) -> None:
         if workspace_id not in _restore_history:
             _restore_history[workspace_id] = []
@@ -70,6 +68,6 @@ class WorkspaceRestore:
                 "snapshot_id": snapshot_id,
                 "type": restore_type,
                 "file_paths": file_paths,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
         )

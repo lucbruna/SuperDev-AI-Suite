@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Optional
+from typing import Any
 
 from workflow_engine.monitoring.metrics import WorkflowMetrics
 
 
 class WorkflowHealth:
-    _instance: Optional[WorkflowHealth] = None
+    _instance: WorkflowHealth | None = None
 
     def __new__(cls) -> WorkflowHealth:
         if cls._instance is None:

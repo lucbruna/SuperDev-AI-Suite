@@ -1,4 +1,4 @@
-from backend.middleware.authentication import get_current_user, AuthMiddleware
+from backend.middleware.authentication import AuthMiddleware, get_current_user
 from backend.middleware.cors import setup_cors
 from backend.middleware.logging import LoggingMiddleware
 from backend.middleware.rate_limit import RateLimitMiddleware

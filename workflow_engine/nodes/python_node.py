@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import sys
 import io
+import sys
 import traceback
 from typing import Any
 
-from workflow_engine.nodes.base_node import BaseNode, NodeResult
 from workflow_engine.graph.node import NodeType
+from workflow_engine.nodes.base_node import BaseNode, NodeResult
 
 
 class PythonNode(BaseNode):

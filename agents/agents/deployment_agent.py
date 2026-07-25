@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import os
-import sys
 from typing import Any
 
 from ..base.base_agent import AgentResult, BaseAgent

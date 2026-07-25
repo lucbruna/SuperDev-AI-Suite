@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from typing import Any
 
+from backend.utils.uuid_utils import generate_uuid
 from backend.workflow.base_workflow import (
     StepConfig,
     StepType,
     WorkflowDefinition,
     WorkflowStatus,
 )
-from backend.workflow.executor import WorkflowExecutor, workflow_executor
-from backend.utils.uuid_utils import generate_uuid
+from backend.workflow.executor import workflow_executor
 
 
 class WorkflowManager:

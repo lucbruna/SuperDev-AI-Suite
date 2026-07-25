@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import time
-from typing import Any, Optional
+from typing import Any
 
 from croniter import croniter
 
@@ -22,11 +23,11 @@ class ScheduledJob:
 
 
 class WorkflowScheduler:
-    def __init__(self, queue: Optional[ExecutionQueue] = None):
+    def __init__(self, queue: ExecutionQueue | None = None):
         self._jobs: dict[str, ScheduledJob] = {}
         self._queue = queue or ExecutionQueue()
         self._running = False
-        self._task: Optional[asyncio.Task] = None
+        self._task: asyncio.Task | None = None
 
     def schedule(self, workflow_id: str, cron_expr: str) -> None:
         job = ScheduledJob(workflow_id, cron_expr)
@@ -58,10 +59,8 @@ class WorkflowScheduler:
         self._running = False
         if self._task:
             self._task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._task
-            except asyncio.CancelledError:
-                pass
 
     async def _poll_loop(self, interval: float) -> None:
         while self._running:

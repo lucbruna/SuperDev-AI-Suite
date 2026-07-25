@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 from backend.config import config
-from backend.constants import PROJECT_NAME, VERSION
+from backend.constants import VERSION
 from backend.environment import Environment, get_environment
 from backend.logging import setup_logging
-from backend.registry import service_registry
-from backend.startup import startup_handler
 from backend.shutdown import shutdown_handler
+from backend.startup import startup_handler
 
 
 async def lifespan(app):

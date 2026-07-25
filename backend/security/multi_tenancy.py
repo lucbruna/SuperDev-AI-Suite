@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from backend.utils.uuid_utils import generate_uuid
 
 
-class TenantPlan(str, Enum):
+class TenantPlan(StrEnum):
     FREE = "free"
     PRO = "pro"
     ENTERPRISE = "enterprise"

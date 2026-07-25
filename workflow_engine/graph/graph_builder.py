@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Optional
+from typing import Any
 
-from workflow_engine.graph.graph import WorkflowGraph
-from workflow_engine.graph.node import WorkflowNode, NodeType, NodeHandle
 from workflow_engine.graph.edge import WorkflowEdge
+from workflow_engine.graph.graph import WorkflowGraph
+from workflow_engine.graph.node import NodeHandle, NodeType, WorkflowNode
 
 
 class GraphBuilder:

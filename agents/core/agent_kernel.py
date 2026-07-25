@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Optional
+from typing import Any
 
 
 class AgentKernel:
-    _instance: Optional["AgentKernel"] = None
+    _instance: AgentKernel | None = None
 
-    def __new__(cls) -> "AgentKernel":
+    def __new__(cls) -> AgentKernel:
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
@@ -16,7 +16,7 @@ class AgentKernel:
         if not hasattr(self, "_initialized"):
             self._services: dict[str, Any] = {}
             self._booted: bool = False
-            self._boot_time: Optional[float] = None
+            self._boot_time: float | None = None
             self._initialized = True
 
     async def boot(self) -> None:
@@ -26,7 +26,7 @@ class AgentKernel:
     async def register_service(self, name: str, service: Any) -> None:
         self._services[name] = service
 
-    def get_service(self, name: str) -> Optional[Any]:
+    def get_service(self, name: str) -> Any | None:
         return self._services.get(name)
 
     def health(self) -> dict[str, Any]:

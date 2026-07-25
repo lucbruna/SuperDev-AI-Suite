@@ -1,14 +1,12 @@
 import uuid
-from datetime import datetime, timezone
-from typing import Optional
-
+from datetime import UTC, datetime
 
 _workspaces: dict[str, dict] = {}
 
 
 class WorkspaceManager:
     async def create_workspace(
-        self, name: str, project_id: str, template: Optional[str] = None
+        self, name: str, project_id: str, template: str | None = None
     ) -> str:
         workspace_id = str(uuid.uuid4())
         _workspaces[workspace_id] = {
@@ -16,12 +14,12 @@ class WorkspaceManager:
             "name": name,
             "project_id": project_id,
             "template": template,
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
+            "updated_at": datetime.now(UTC).isoformat(),
         }
         return workspace_id
 
-    async def get_workspace(self, workspace_id: str) -> Optional[dict]:
+    async def get_workspace(self, workspace_id: str) -> dict | None:
         return _workspaces.get(workspace_id)
 
     async def list_workspaces(self, project_id: str) -> list[dict]:

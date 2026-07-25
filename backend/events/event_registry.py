@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
-
 
 class EventRegistry:
     """Registry of known event types."""

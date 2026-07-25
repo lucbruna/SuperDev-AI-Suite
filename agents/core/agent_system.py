@@ -1,16 +1,17 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Optional
+import contextlib
+from typing import Any
 
 from ..base.base_agent import AgentResult, BaseAgent
 from ..registry.agent_registry import AgentRegistry
 
 
 class AgentSystem:
-    _instance: Optional["AgentSystem"] = None
+    _instance: AgentSystem | None = None
 
-    def __new__(cls) -> "AgentSystem":
+    def __new__(cls) -> AgentSystem:
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
@@ -35,15 +36,13 @@ class AgentSystem:
 
     async def shutdown(self) -> None:
         async with self._lock:
-            for name, agent in self._agents.items():
-                try:
+            for _name, agent in self._agents.items():
+                with contextlib.suppress(Exception):
                     await agent.shutdown()
-                except Exception:
-                    pass
             self._agents.clear()
             self._running = False
 
-    def get_agent(self, name: str) -> Optional[BaseAgent]:
+    def get_agent(self, name: str) -> BaseAgent | None:
         return self._agents.get(name)
 
     def list_agents(self) -> list[str]:

@@ -29,9 +29,7 @@ class GitTool(BaseTool):
             return False
         if action == "clone" and "repo" not in params:
             return False
-        if action == "commit" and "message" not in params:
-            return False
-        return True
+        return not (action == "commit" and "message" not in params)
 
     async def execute(self, params: dict[str, Any]) -> dict[str, Any]:
         action = params.get("action")
@@ -106,7 +104,7 @@ class GitTool(BaseTool):
                     "stderr": stderr.decode("utf-8", errors="replace") if stderr else "",
                     "exit_code": proc.returncode or 0,
                 }
-        except asyncio.TimeoutError:
+        except TimeoutError:
             return {"success": False, "error": "Git operation timed out"}
         except Exception as e:
             return {"success": False, "error": str(e)}

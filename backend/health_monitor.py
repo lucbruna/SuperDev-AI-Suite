@@ -3,9 +3,8 @@
 from __future__ import annotations
 
 import asyncio
-import os
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import psutil
@@ -19,7 +18,7 @@ class HealthCheck:
         self.status = status
         self.message = message
         self.details = details or {}
-        self.checked_at = datetime.now(timezone.utc).isoformat()
+        self.checked_at = datetime.now(UTC).isoformat()
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -62,7 +61,7 @@ class HealthMonitor:
 
         return {
             "status": overall_status,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "uptime_seconds": time.time() - self._start_time,
             "checks": [r.to_dict() for r in results],
         }

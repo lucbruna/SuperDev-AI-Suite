@@ -3,14 +3,13 @@ from __future__ import annotations
 from collections.abc import AsyncGenerator
 from typing import Any
 
-from fastapi import Depends, Header, HTTPException, Request, status
+from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from backend.config import config
 from backend.exceptions import (
     AuthenticationException,
     AuthorizationException,
-    NotFoundException,
 )
 
 security_scheme = HTTPBearer(auto_error=False)
@@ -29,7 +28,7 @@ async def get_redis() -> AsyncGenerator[Any, None]:
 
 
 async def get_db() -> AsyncGenerator[Any, None]:
-    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
     engine = create_async_engine(
         config.database.url,

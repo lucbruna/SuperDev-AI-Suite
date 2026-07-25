@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Any
-from uuid import UUID, uuid4
+from uuid import UUID
 
 
-class VerificationStage(str, Enum):
+class VerificationStage(StrEnum):
     GENERATE = "generate"
     EXECUTE = "execute"
     TEST = "test"

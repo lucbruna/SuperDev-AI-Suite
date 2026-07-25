@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from typing import Any, TypeVar, Generic, Type
-from sqlalchemy import select, func
+from typing import Any, Generic, TypeVar
+
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.database.base import BaseModel
@@ -12,7 +13,7 @@ T = TypeVar("T", bound=BaseModel)
 class BaseRepository(Generic[T]):
     """Base repository pattern for database operations."""
 
-    def __init__(self, db: AsyncSession, model: Type[T]):
+    def __init__(self, db: AsyncSession, model: type[T]):
         self.db = db
         self.model = model
 

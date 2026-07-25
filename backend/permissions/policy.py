@@ -69,7 +69,7 @@ class PolicyEngine:
         action: str,
         context: dict[str, Any],
     ) -> bool:
-        resource_type = resource.get("type", "")
+        resource.get("type", "")
         resource_owner = resource.get("owner_id")
         user_id = user.get("id")
         org_membership = context.get("org_membership", [])

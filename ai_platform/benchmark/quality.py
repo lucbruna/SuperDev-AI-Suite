@@ -1,7 +1,6 @@
 from __future__ import annotations
-from typing import Optional
+
 import difflib
-import re
 
 from ..providers.base_provider import ChatResponse
 

@@ -1,13 +1,13 @@
 import json
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.database.session import get_db
-from backend.middleware.authentication import get_current_user
 from backend.ai_router.router import router as ai_router
 from backend.ai_router.token_counter import token_counter
+from backend.database.session import get_db
 from backend.providers.base_provider import Message
 
 router = APIRouter()
@@ -87,7 +87,7 @@ async def chat_stream(
     db: AsyncSession = Depends(get_db),
 ):
     from backend.dependencies import get_current_active_user
-    user = await get_current_active_user(db=db)
+    await get_current_active_user(db=db)
 
     messages = [Message(role=m.role, content=m.content) for m in request.messages]
 

@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter
 
@@ -17,7 +17,7 @@ async def health_check() -> dict:
         "data": {
             "status": "healthy" if overall else "degraded",
             "version": "5.0.0",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "checks": {
                 k: {"status": v.status.value, "latency_ms": v.latency_ms, "message": v.message}
                 for k, v in results.items()
@@ -31,7 +31,7 @@ async def readiness_check() -> dict:
     return {
         "status": "ok",
         "version": "5.0.0",
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
     }
 
 
@@ -40,5 +40,5 @@ async def liveness_check() -> dict:
     return {
         "status": "ok",
         "version": "5.0.0",
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
     }

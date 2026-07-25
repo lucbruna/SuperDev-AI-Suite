@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Awaitable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import Any
 
 from backend.utils.uuid_utils import generate_uuid
 
@@ -12,7 +13,7 @@ class Event:
     id: str
     type: str
     data: dict[str, Any] = field(default_factory=dict)
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     source: str = ""
 
 

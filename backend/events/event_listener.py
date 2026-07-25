@@ -1,7 +1,9 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Awaitable
-from backend.events.event_bus import Event, event_bus
+from collections.abc import Awaitable, Callable
+from typing import Any
+
+from backend.events.event_bus import event_bus
 
 
 class EventListener:

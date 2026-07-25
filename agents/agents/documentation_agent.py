@@ -43,17 +43,17 @@ class DocumentationAgent(BaseAgent):
             return files
         if os.path.isfile(path):
             try:
-                with open(path, "r", encoding="utf-8") as f:
+                with open(path, encoding="utf-8") as f:
                     files.append({"path": path, "content": f.read()})
             except Exception:
                 pass
         else:
-            for root, dirs, fnames in os.walk(path):
+            for root, _dirs, fnames in os.walk(path):
                 for fname in fnames[:20]:
                     if fname.endswith((".py", ".js", ".ts", ".md", ".json", ".yaml", ".yml", ".toml")):
                         fpath = os.path.join(root, fname)
                         try:
-                            with open(fpath, "r", encoding="utf-8") as f:
+                            with open(fpath, encoding="utf-8") as f:
                                 files.append({"path": fpath, "content": f.read()})
                         except Exception:
                             pass

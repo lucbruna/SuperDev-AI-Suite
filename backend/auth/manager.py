@@ -1,24 +1,24 @@
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import Optional, List, Dict, Any
-from enum import Enum
+from enum import StrEnum
+from typing import Any
 
-from fastapi import HTTPException, status, Depends, Request
-from fastapi.security import OAuth2PasswordBearer, OAuth2AuthorizationCodeBearer
-from jose import jwt, JWTError
+import httpx
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2AuthorizationCodeBearer, OAuth2PasswordBearer
+from jose import JWTError, jwt
 from passlib.context import CryptContext
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, or_
-from pydantic import BaseModel, EmailStr, Field
 
 from backend.config import config
-from backend.database.session import get_db
-from backend.database.models.user import User
 from backend.database.models.organization import Organization, OrganizationMember
-from backend.database.models.role import Role, Permission, UserRole
 from backend.database.models.project import Project, ProjectMember
-
+from backend.database.models.role import Permission, Role, UserRole
+from backend.database.models.user import User
+from backend.database.session import get_db
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -31,13 +31,13 @@ oauth2_auth_code = OAuth2AuthorizationCodeBearer(
 )
 
 
-class TokenType(str, Enum):
+class TokenType(StrEnum):
     ACCESS = "access"
     REFRESH = "refresh"
     API_KEY = "api_key"
 
 
-class UserRole(str, Enum):
+class OrgUserRole(StrEnum):
     OWNER = "owner"
     ADMIN = "admin"
     MEMBER = "member"
@@ -48,14 +48,14 @@ class UserRole(str, Enum):
 class TokenPayload:
     sub: str  # user_id
     email: str
-    org_id: Optional[str] = None
-    project_id: Optional[str] = None
-    roles: List[str] = field(default_factory=list)
-    permissions: List[str] = field(default_factory=list)
+    org_id: str | None = None
+    project_id: str | None = None
+    roles: list[str] = field(default_factory=list)
+    permissions: list[str] = field(default_factory=list)
     token_type: TokenType = TokenType.ACCESS
-    exp: Optional[int] = None
-    iat: Optional[int] = None
-    jti: Optional[str] = None
+    exp: int | None = None
+    iat: int | None = None
+    jti: str | None = None
 
 
 class AuthManager:
@@ -76,11 +76,11 @@ class AuthManager:
     def create_access_token(
         self,
         user: User,
-        org_id: Optional[str] = None,
-        project_id: Optional[str] = None,
-        roles: Optional[List[str]] = None,
-        permissions: Optional[List[str]] = None,
-        expires_delta: Optional[timedelta] = None,
+        org_id: str | None = None,
+        project_id: str | None = None,
+        roles: list[str] | None = None,
+        permissions: list[str] | None = None,
+        expires_delta: timedelta | None = None,
     ) -> str:
         now = datetime.utcnow()
         expire = datetime.utcnow() + (expires_delta or self.access_token_expire)
@@ -101,7 +101,7 @@ class AuthManager:
 
         return jwt.encode(payload, self.secret_key, algorithm=self.algorithm)
 
-    def create_refresh_token(self, user: User, expires_delta: Optional[timedelta] = None) -> str:
+    def create_refresh_token(self, user: User, expires_delta: timedelta | None = None) -> str:
         now = datetime.utcnow()
         expire = now + (self.refresh_token_expire or timedelta(days=7))
 
@@ -227,7 +227,7 @@ async def get_current_project(
 
 # Role-based access control
 class PermissionChecker:
-    def __init__(self, required_permissions: List[str]):
+    def __init__(self, required_permissions: list[str]):
         self.required_permissions = required_permissions
 
     async def __call__(
@@ -243,8 +243,8 @@ class PermissionChecker:
             .where(
                 and_(
                     UserRole.user_id == current_user.id,
-                    UserRole.organization_id == current_org.id,
-                    UserRole.is_active == True,
+                    UserRole.organization_id == org.id,
+                    UserRole.is_active,
                 )
             )
         )
@@ -282,18 +282,18 @@ class TenantFilter:
 
 class TenantContext:
     def __init__(self):
-        self._org_id: Optional[str] = None
-        self._project_id: Optional[str] = None
+        self._org_id: str | None = None
+        self._project_id: str | None = None
 
     @property
-    def org_id(self) -> Optional[str]:
+    def org_id(self) -> str | None:
         return self._org_id
 
     @property
-    def project_id(self) -> Optional[str]:
+    def project_id(self) -> str | None:
         return self._project_id
 
-    def set_tenant(self, org_id: str, project_id: Optional[str] = None):
+    def set_tenant(self, org_id: str, project_id: str | None = None):
         self._org_id = org_id
         self._project_id = project_id
 
@@ -308,7 +308,7 @@ tenant_context = TenantContext()
 async def get_tenant_context(
     current_user: User = Depends(get_current_user),
     org: Organization = Depends(get_current_org),
-    project: Optional[Project] = Depends(get_current_project),
+    project: Project | None = Depends(get_current_project),
 ) -> TenantContext:
     tenant_context.set_tenant(str(org.id), str(project.id) if project else None)
     return tenant_context
@@ -323,18 +323,18 @@ class APIKeyAuth:
         self,
         token: str = Depends(oauth2_scheme),
         db: AsyncSession = Depends(get_db),
-    ) -> tuple[User, Optional[Organization]]:
+    ) -> tuple[User, Organization | None]:
         # Check if it's an API key (format: sk_...)
         if token.startswith("sk_"):
+            from backend.auth.security import verify_password
             from backend.database.models.api_key import APIKey
-            from backend.auth.security import hash_password, verify_password
 
             # Find API key by prefix
             prefix = token[:24]  # First 24 chars as prefix
             api_keys = await db.execute(
                 select(APIKey)
                 .where(APIKey.key_prefix == prefix)
-                .where(APIKey.is_active == True)
+                .where(APIKey.is_active)
             )
             api_key = api_keys.scalar_one_or_none()
 
@@ -375,15 +375,15 @@ api_key_auth = APIKeyAuth()
 # OAuth2/OIDC Integration
 class OAuth2Provider:
     def __init__(self):
-        self.providers: Dict[str, OAuth2Config] = {}
+        self.providers: dict[str, OAuth2Config] = {}
 
     def register(self, name: str, config: OAuth2Config):
         self.providers[name] = config
 
-    def get_config(self, name: str) -> Optional[OAuth2Config]:
+    def get_config(self, name: str) -> OAuth2Config | None:
         return self.providers.get(name)
 
-    async def get_user_info(self, provider: str, token: str) -> Dict[str, Any]:
+    async def get_user_info(self, provider: str, token: str) -> dict[str, Any]:
         config = self.get_config(provider)
         if not config:
             raise ValueError(f"Unknown provider: {provider}")
@@ -427,7 +427,7 @@ class OAuth2Config:
         client_id: str,
         client_secret: str,
         redirect_uri: str,
-        scopes: List[str] = None,
+        scopes: list[str] = None,
     ):
         self.name = name
         self.authorization_endpoint = authorization_endpoint
@@ -717,8 +717,8 @@ async def assign_user_role(
     user_id: str,
     role_name: str,
     org_id: str,
-    project_id: Optional[str] = None,
-    expires_at: Optional[datetime] = None,
+    project_id: str | None = None,
+    expires_at: datetime | None = None,
 ) -> UserRole:
     """Assign a role to a user in an organization/project."""
     role = await db.execute(
