@@ -4,8 +4,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.agents.agent_manager import agent_manager
 from backend.database.session import get_db
+from backend.dependencies import get_current_active_user
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_active_user)])
 
 
 class AgentCreateRequest(BaseModel):

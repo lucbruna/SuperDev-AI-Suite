@@ -1,16 +1,55 @@
 {
   "name": "superdev-vscode",
   "displayName": "SuperDev AI Suite",
-  "version": "0.1.0",
-  "description": "SuperDev workflow editor and agent manager for VS Code",
+  "description": "Manage workflows, agents, and AI pipelines from VS Code",
+  "version": "1.0.0",
+  "publisher": "superdev",
+  "license": "MIT",
   "engines": { "vscode": "^1.85.0" },
-  "categories": ["Other"],
-  "activationEvents": [],
-  "main": "./extension.js",
+  "categories": ["Other", "Programming Languages"],
+  "activationEvents": ["onStartupFinished"],
+  "main": "./out/extension.js",
   "contributes": {
     "commands": [
       { "command": "superdev.openDashboard", "title": "SuperDev: Open Dashboard" },
-      { "command": "superdev.runWorkflow", "title": "SuperDev: Run Workflow" }
+      { "command": "superdev.runWorkflow", "title": "SuperDev: Run Workflow" },
+      { "command": "superdev.refreshWorkflows", "title": "SuperDev: Refresh Workflows" },
+      { "command": "superdev.viewAgentLogs", "title": "SuperDev: View Agent Logs" }
+    ],
+    "viewsContainers": { "activitybar": [{ "id": "superdev-sidebar", "title": "SuperDev", "icon": "$(symbol-method)" }] },
+    "views": {
+      "superdev-sidebar": [
+        { "type": "tree", "id": "superdev.workflows", "name": "Workflows" },
+        { "type": "tree", "id": "superdev.agents", "name": "Agents" }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        { "command": "superdev.refreshWorkflows", "when": "view == superdev.workflows", "group": "navigation" }
+      ],
+      "view/item/context": [
+        { "command": "superdev.runWorkflow", "when": "view == superdev.workflows && viewItem == workflow", "group": "inline" },
+        { "command": "superdev.viewAgentLogs", "when": "view == superdev.agents", "group": "inline" }
+      ]
+    },
+    "languages": [
+      { "id": "superdev-dsl", "aliases": ["SuperDev DSL", "superdev"], "extensions": [".sd.yaml", ".sd.yml"], "configuration": "./language-configuration.json" }
+    ],
+    "grammars": [
+      { "language": "superdev-dsl", "scopeName": "source.superdev", "path": "./syntaxes/superdev.tmLanguage.json" }
+    ],
+    "keybindings": [
+      { "command": "superdev.openDashboard", "key": "ctrl+shift+d", "mac": "cmd+shift+d" },
+      { "command": "superdev.runWorkflow", "key": "ctrl+shift+r", "mac": "cmd+shift+r" }
     ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.3.0"
   }
 }

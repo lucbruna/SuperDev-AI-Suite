@@ -1,0 +1,38 @@
+{
+  "dashboard": {
+    "title": "LLM Usage & Cost",
+    "panels": [
+      {
+        "title": "Requests per Minute",
+        "type": "timeseries",
+        "target": "rate(llm_api_calls_total[1m])",
+        "unit": "req/min"
+      },
+      {
+        "title": "Cost per Model",
+        "type": "bar",
+        "target": "sum by(model) (llm_cost_total)",
+        "unit": "USD"
+      },
+      {
+        "title": "Latency p50/p95/p99",
+        "type": "timeseries",
+        "targets": ["histogram_quantile(0.50, rate(llm_response_duration_seconds_bucket[5m]))",
+                     "histogram_quantile(0.95, rate(llm_response_duration_seconds_bucket[5m]))",
+                     "histogram_quantile(0.99, rate(llm_response_duration_seconds_bucket[5m]))"],
+        "unit": "seconds"
+      },
+      {
+        "title": "Token Usage",
+        "type": "timeseries",
+        "target": "rate(llm_tokens_total[5m])",
+        "unit": "tokens/s"
+      },
+      {
+        "title": "Error Rate by Provider",
+        "type": "pie",
+        "target": "sum by(provider) (rate(llm_api_errors_total[5m])) / sum(rate(llm_api_calls_total[5m]))"
+      }
+    ]
+  }
+}

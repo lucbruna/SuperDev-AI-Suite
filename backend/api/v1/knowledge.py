@@ -8,10 +8,11 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.database.session import get_db
+from backend.dependencies import get_current_active_user
 from backend.knowledge_base.models import KnowledgeBaseType
 from backend.knowledge_base.service import KnowledgeBaseService, get_knowledge_base_service
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_active_user)])
 
 
 class KnowledgeBaseCreate(BaseModel):

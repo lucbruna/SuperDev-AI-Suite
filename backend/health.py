@@ -89,9 +89,16 @@ class HealthChecker:
     async def _check_redis(self) -> HealthCheckResult:
         start = time.monotonic()
         try:
-            from redis.asyncio import from_url
+            from redis.asyncio import Redis
 
-            redis = await from_url(config.redis.url, socket_connect_timeout=5)
+            redis = Redis(
+                host=config.redis.host,
+                port=config.redis.port,
+                password=config.redis.password or None,
+                db=config.redis.db,
+                decode_responses=config.redis.decode_responses,
+                socket_connect_timeout=5,
+            )
             await redis.ping()
             await redis.aclose()
             latency = (time.monotonic() - start) * 1000
@@ -113,9 +120,16 @@ class HealthChecker:
     async def _check_cache(self) -> HealthCheckResult:
         start = time.monotonic()
         try:
-            from redis.asyncio import from_url
+            from redis.asyncio import Redis
 
-            redis = await from_url(config.redis.url, socket_connect_timeout=5)
+            redis = Redis(
+                host=config.redis.host,
+                port=config.redis.port,
+                password=config.redis.password or None,
+                db=config.redis.db,
+                decode_responses=config.redis.decode_responses,
+                socket_connect_timeout=5,
+            )
             await redis.set("health:test", "1", ex=5)
             val = await redis.get("health:test")
             await redis.aclose()

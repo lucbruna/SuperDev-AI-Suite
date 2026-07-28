@@ -1,0 +1,135 @@
+# ── Redis Cluster Configuration ───────────────────────
+redis:
+  cluster:
+    enabled: true
+    nodes: 6
+    replicas_per_node: 1
+    shard_count: 3
+    maxmemory_policy: allkeys-lru
+    timeout: 300
+    tcp_keepalive: 60
+    maxclients: 10000
+    appendonly: yes
+    appendfsync: everysec
+    auto_aof_rewrite_percentage: 100
+    auto_aof_rewrite_min_size: 64mb
+  connection_pool:
+    min_size: 5
+    max_size: 50
+    idle_timeout: 60
+    max_wait: 5
+
+# ── CDN / Cache Configuration ─────────────────────────
+cdn:
+  enabled: true
+  provider: cloudfront
+  cache_policy:
+    ttl_default: 86400
+    ttl_max: 604800
+    ttl_min: 0
+    compress: true
+    smooth_streaming: false
+  origins:
+    - id: app
+      domain: app.superdev.ai
+      protocol: https-only
+    - id: api
+      domain: api.superdev.ai
+      protocol: https-only
+  behaviors:
+    - path_pattern: "/static/*"
+      ttl: 31536000
+      compress: true
+    - path_pattern: "/api/*"
+      ttl: 0
+      compress: false
+    - path_pattern: "/_next/static/*"
+      ttl: 31536000
+      compress: true
+  geo_restrictions:
+    enabled: false
+  waf:
+    enabled: true
+    rate_limit: 2000
+    block_bad_bots: true
+
+# ── PgBouncer Configuration ───────────────────────────
+pgbouncer:
+  enabled: true
+  pool_mode: transaction
+  max_client_conn: 200
+  default_pool_size: 25
+  min_pool_size: 5
+  reserve_pool_size: 5
+  reserve_pool_timeout: 3
+  max_db_connections: 50
+  max_user_connections: 50
+  server_idle_timeout: 600
+  query_timeout: 30
+  query_wait_timeout: 10
+  client_tls_sslmode: require
+  stats_period: 60
+  log_connections: false
+  log_disconnections: false
+
+# ── Lazy Loading / Frontend Optimization ──────────────
+frontend:
+  lazy_loading:
+    images: true
+    routes: true
+    components: true
+    intersection_threshold: 0.1
+    prefetch: hover
+  code_splitting:
+    chunk_size: 240000
+    max_initial_chunks: 25
+    max_async_chunks: 50
+  caching:
+    service_worker: true
+    cache_api_responses: true
+    cache_duration: 300
+    stale_while_revalidate: true
+
+# ── Compression ───────────────────────────────────────
+compression:
+  enabled: true
+  algorithm: brotli
+  level: 6
+  min_size: 1024
+  types:
+    - text/html
+    - text/css
+    - application/javascript
+    - application/json
+    - image/svg+xml
+
+# ── Database Connection Pool (Application Side) ───────
+database:
+  pool:
+    min: 5
+    max: 30
+    max_lifetime: 1800
+    idle_timeout: 600
+    connection_timeout: 10
+    leak_detection_threshold: 60000
+  query:
+    statement_timeout: 30000
+    lock_timeout: 5000
+    idle_in_transaction_session_timeout: 60000
+
+# ── Rate Limiting ─────────────────────────────────────
+rate_limiting:
+  enabled: true
+  strategy: sliding_window
+  default_limit: 100
+  default_window: 60
+  endpoints:
+    /api/v1/agents:
+      limit: 50
+      window: 60
+    /api/v1/chat:
+      limit: 30
+      window: 60
+    /api/v1/code:
+      limit: 100
+      window: 60

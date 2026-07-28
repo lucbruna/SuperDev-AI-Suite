@@ -44,10 +44,10 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 
@@ -209,13 +209,15 @@ async def list_plugins():
     return {"success": True, "data": plugins_db}
 
 
-# ── Admin User ────────────────────────────────────────────────────
+# ── Admin User (apenas para dev) ──────────────────────────────────
+
+import os
 
 ADMIN_USER = {
     "id": "usr_admin_001",
-    "email": "admin@superdev.com",
+    "email": os.getenv("ADMIN_EMAIL", "admin@superdev.com"),
     "name": "Administrador Master",
-    "password": "SuperDev@2025",
+    "password": os.getenv("ADMIN_PASSWORD", "change-me-in-production"),
     "is_active": True,
     "is_superuser": True,
     "role": "admin",
@@ -243,7 +245,6 @@ async def login(credentials: dict):
     email = credentials.get("email", "")
     password = credentials.get("password", "")
 
-    # Verificar credenciais do admin
     if email == ADMIN_USER["email"] and password == ADMIN_USER["password"]:
         return {
             "success": True,

@@ -4,11 +4,11 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.database.session import get_db
+from backend.dependencies import get_current_active_user
 from backend.runtime.base_runtime import Language, ResourceLimits, RuntimeConfig
 from backend.runtime.runtime_manager import runtime_manager
-from backend.utils.uuid_utils import generate_uuid
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_active_user)])
 
 
 class ExecuteRequest(BaseModel):

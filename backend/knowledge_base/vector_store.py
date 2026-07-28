@@ -82,7 +82,7 @@ class VectorStore:
                 content=content,
                 token_count=len(content.split()),
                 embedding=embedding,
-                metadata=metadata or {},
+extra_metadata=metadata or {},
             )
             knowledge_chunks.append(chunk)
         

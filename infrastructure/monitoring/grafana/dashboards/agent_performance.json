@@ -1,0 +1,38 @@
+{
+  "dashboard": {
+    "title": "Agent Performance",
+    "panels": [
+      {
+        "title": "Active Agents",
+        "type": "stat",
+        "target": "count(agent_status == 1)",
+        "unit": "agents"
+      },
+      {
+        "title": "Agent Execution Duration",
+        "type": "timeseries",
+        "targets": ["histogram_quantile(0.50, rate(agent_execution_duration_seconds_bucket[5m]))",
+                     "histogram_quantile(0.95, rate(agent_execution_duration_seconds_bucket[5m]))"],
+        "unit": "seconds"
+      },
+      {
+        "title": "Agent Success Rate",
+        "type": "timeseries",
+        "target": "1 - (rate(agent_execution_failures_total[5m]) / rate(agent_execution_total[5m]))",
+        "unit": "percent"
+      },
+      {
+        "title": "Queue Depth",
+        "type": "timeseries",
+        "target": "agent_queue_depth",
+        "unit": "tasks"
+      },
+      {
+        "title": "Agents by Type",
+        "type": "table",
+        "targets": ["count by(type) (agent_status)"],
+        "columns": ["type", "count"]
+      }
+    ]
+  }
+}

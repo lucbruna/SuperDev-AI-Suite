@@ -8,10 +8,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.database.models.project import Project
 from backend.database.models.user import User
 from backend.database.session import get_db
+from backend.dependencies import get_current_active_user
 from backend.middleware.authentication import get_current_user
 from backend.utils.uuid_utils import generate_uuid
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_active_user)])
 
 
 class ProjectCreate(BaseModel):

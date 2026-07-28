@@ -17,7 +17,7 @@ export default function RuntimePage() {
           <h2 className="text-lg font-semibold">Code Execution Terminal</h2>
         </CardHeader>
         <CardBody>
-          <div className="h-[500px] rounded-lg overflow-hidden border border-border">
+          <div className="h-[500px] rounded-lg overflow-hidden border border-surface-200 dark:border-surface-700">
             <Terminal />
           </div>
         </CardBody>

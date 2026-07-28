@@ -15,11 +15,12 @@ async def startup_handler() -> None:
     logger.info("Loading configuration", extra={"environment": config.app.environment})
     logger.info("Checking database connection")
     try:
+        from sqlalchemy import text
         from sqlalchemy.ext.asyncio import create_async_engine
 
         engine = create_async_engine(config.database.url, pool_size=1, echo=False)
         async with engine.begin() as conn:
-            await conn.execute("SELECT 1")
+            await conn.execute(text("SELECT 1"))
         await engine.dispose()
         logger.info("Database connection verified")
     except Exception as e:
@@ -28,9 +29,8 @@ async def startup_handler() -> None:
 
     logger.info("Running database migrations")
     try:
-        from alembic.config import Config as AlembicConfig
-
         from alembic import command
+        from alembic.config import Config as AlembicConfig
 
         alembic_cfg = AlembicConfig(config.database.migration_dir)
         command.upgrade(alembic_cfg, "head")
@@ -40,10 +40,13 @@ async def startup_handler() -> None:
 
     logger.info("Initializing cache")
     try:
-        from redis.asyncio import from_url
+        from redis.asyncio import Redis
 
-        redis = await from_url(
-            config.redis.url,
+        redis = Redis(
+            host=config.redis.host,
+            port=config.redis.port,
+            password=config.redis.password or None,
+            db=config.redis.db,
             decode_responses=config.redis.decode_responses,
             socket_connect_timeout=config.redis.socket_connect_timeout,
         )
@@ -55,7 +58,10 @@ async def startup_handler() -> None:
 
     logger.info("Registering default data")
     service_registry.register("config", config)
-    service_registry.register("started_at", __import__("datetime").datetime.utcnow().isoformat())
+
+    from datetime import datetime, timezone
+
+    service_registry.register("started_at", datetime.now(timezone.utc).isoformat())
 
     logger.info("Running health check")
     health = HealthChecker()

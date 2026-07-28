@@ -9,6 +9,7 @@ from backend.runtime.runtime_manager import runtime_manager
 from backend.websocket.events import EventBuilder
 from backend.websocket.manager import manager
 from backend.workflow.base_workflow import (
+from backend.workflow.condition_eval import safe_condition_eval
     StepConfig,
     StepResult,
     StepStatus,
@@ -198,7 +199,7 @@ class WorkflowExecutor:
     ) -> StepResult:
         condition = step.config.get("condition", "True")
         try:
-            result = eval(condition, {"__builtins__": {}}, context)
+            result = safe_condition_eval(condition, context)
             return StepResult(
                 step_id=step.id,
                 status=StepStatus.COMPLETED,

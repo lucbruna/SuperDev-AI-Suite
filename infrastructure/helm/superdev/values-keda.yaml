@@ -1,0 +1,37 @@
+keda:
+  enabled: true
+  pollingInterval: 15
+  cooldownPeriod: 60
+  minReplicas: 2
+  maxReplicas: 20
+  cpuThreshold: "75"
+  memoryThreshold: "80"
+  redis:
+    enabled: false
+    address: ""
+    password: ""
+    listName: "superdev:queue"
+    listLength: "10"
+  prometheus:
+    enabled: false
+    serverAddress: ""
+    metricName: "http_requests_total"
+    threshold: "100"
+    query: "sum(rate(http_requests_total[2m]))"
+  cron:
+    enabled: false
+    timezone: "UTC"
+    start: "0 8 * * *"
+    end: "0 18 * * *"
+    desiredReplicas: "5"
+
+pdb:
+  minAvailable: 2
+
+monitoring:
+  interval: "15s"
+  metricsPath: "/metrics"
+
+kedaScaledObject:
+  apiVersion: keda.sh/v1alpha1
+  kind: ScaledObject

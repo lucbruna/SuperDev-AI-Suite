@@ -7,6 +7,7 @@ from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from backend.config import config
+from backend.database.session import get_db as _get_db_session
 from backend.exceptions import (
     AuthenticationException,
     AuthorizationException,
@@ -16,36 +17,27 @@ security_scheme = HTTPBearer(auto_error=False)
 
 
 async def get_redis() -> AsyncGenerator[Any, None]:
-    redis = None
+    redis_instance = None
     try:
-        from redis.asyncio import from_url
+        from redis.asyncio import Redis
 
-        redis = await from_url(config.redis.url, decode_responses=config.redis.decode_responses)
-        yield redis
+        redis_instance = Redis(
+            host=config.redis.host,
+            port=config.redis.port,
+            password=config.redis.password or None,
+            db=config.redis.db,
+            decode_responses=config.redis.decode_responses,
+            socket_connect_timeout=config.redis.socket_connect_timeout,
+            socket_keepalive=config.redis.socket_keepalive,
+            health_check_interval=config.redis.health_check_interval,
+        )
+        yield redis_instance
     finally:
-        if redis is not None:
-            await redis.aclose()
+        if redis_instance is not None:
+            await redis_instance.aclose()
 
 
-async def get_db() -> AsyncGenerator[Any, None]:
-    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
-
-    engine = create_async_engine(
-        config.database.url,
-        pool_size=config.database.pool_size,
-        max_overflow=config.database.max_overflow,
-        echo=config.database.echo,
-        pool_pre_ping=config.database.pool_pre_ping,
-        pool_recycle=config.database.pool_recycle,
-    )
-    async_session = async_sessionmaker(engine, expire_on_commit=False)
-
-    async with async_session() as session:
-        try:
-            yield session
-        finally:
-            await session.close()
-            await engine.dispose()
+get_db = _get_db_session
 
 
 async def get_current_user(

@@ -1,0 +1,19 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "superdev.fullname" . }}-monitor
+  labels:
+    {{- include "superdev.labels" . | nindent 4 }}
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      {{- include "superdev.selectorLabels" . | nindent 6 }}
+  endpoints:
+    - port: {{ .Values.service.metricsPortName | default "http" }}
+      interval: {{ .Values.monitoring.interval | default "15s" }}
+      path: {{ .Values.monitoring.metricsPath | default "/metrics" }}
+      scheme: http
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}

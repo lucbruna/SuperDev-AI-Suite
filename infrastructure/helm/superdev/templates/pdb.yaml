@@ -1,0 +1,11 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "superdev.fullname" . }}-pdb
+  labels:
+    {{- include "superdev.labels" . | nindent 4 }}
+spec:
+  minAvailable: {{ .Values.pdb.minAvailable | default 2 }}
+  selector:
+    matchLabels:
+      {{- include "superdev.selectorLabels" . | nindent 6 }}

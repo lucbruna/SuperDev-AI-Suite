@@ -4,6 +4,7 @@ from typing import Any
 
 from workflow_engine.graph.node import NodeType
 from workflow_engine.nodes.base_node import BaseNode, NodeResult
+from workflow_engine.nodes.condition_node import safe_condition_eval
 
 
 class LoopNode(BaseNode):
@@ -20,7 +21,7 @@ class LoopNode(BaseNode):
         while iterations < max_iterations:
             if condition_expr:
                 try:
-                    should_continue = bool(eval(condition_expr, {"__builtins__": {}}, context))
+                    should_continue = safe_condition_eval(condition_expr, context)
                     if not should_continue:
                         break
                 except Exception:

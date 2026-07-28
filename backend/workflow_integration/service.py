@@ -198,10 +198,10 @@ language = {language!r}
         task: str,
         context: dict[str, Any],
     ) -> dict[str, Any]:
-        from agents.core.agent_system import AgentSystem
-        
-        system = AgentSystem()
-        await system.initialize({})
+        from backend.agents.agent_manager import agent_manager
+
+        system = agent_manager
+        await system.initialize()
         
         result = await system.execute_task(agent_name, task, context)
         

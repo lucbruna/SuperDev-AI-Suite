@@ -8,9 +8,10 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.database.session import get_db
+from backend.dependencies import get_current_active_user
 from backend.workflow_integration.service import WorkflowIntegrationService, get_workflow_integration_service
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_active_user)])
 
 
 class CreateWorkflowRequest(BaseModel):

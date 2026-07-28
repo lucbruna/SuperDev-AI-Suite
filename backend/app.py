@@ -55,24 +55,28 @@ def create_app() -> FastAPI:
     from backend.api.router import router as api_router
     app.include_router(api_router)
 
+    from backend.code_search.api import router as code_search_router
+    app.include_router(code_search_router)
+
+    from backend.cloud.api import router as cloud_router
+    app.include_router(cloud_router, prefix="/api")
+
+    from backend.diff.api import router as diff_router
+    app.include_router(diff_router, prefix="/api")
+
+    from backend.collab.api import router as collab_router
+    app.include_router(collab_router, prefix="/api")
+
+    from backend.deploy.engine import router as deploy_router
+
     from backend.websocket.handler import router as ws_router
     app.include_router(ws_router)
 
-    @app.get(f"{API_V1_PREFIX}/health")
-    async def health_check():
-        from backend.health import HealthChecker
+    from backend.prompt_hub.api import router as prompt_hub_router
+    app.include_router(prompt_hub_router, prefix="/api")
 
-        checker = HealthChecker()
-        results = await checker.check_all()
-        overall = all(r.status.value == "healthy" for r in results.values())
-        return {
-            "success": True,
-            "data": {
-                "status": "healthy" if overall else "degraded",
-                "version": VERSION,
-                "checks": {k: {"status": v.status.value, "latency_ms": v.latency_ms, "message": v.message} for k, v in results.items()},
-            },
-        }
+    from backend.refactor.engine import router as refactor_router
+    app.include_router(refactor_router, prefix="/api")
 
     @app.get(f"{API_V1_PREFIX}/version")
     async def version_info():

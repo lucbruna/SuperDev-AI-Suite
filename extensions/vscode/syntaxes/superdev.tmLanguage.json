@@ -1,0 +1,31 @@
+{
+  "scopeName": "source.superdev",
+  "name": "SuperDev DSL",
+  "fileTypes": [".sd.yaml", ".sd.yml"],
+  "patterns": [
+    { "include": "#keywords" },
+    { "include": "#strings" },
+    { "include": "#comments" }
+  ],
+  "repository": {
+    "keywords": {
+      "patterns": [
+        { "match": "\\b(agent|workflow|steps|tools|memory|plan|execute|review|deploy|notify)\\b", "name": "keyword.control.superdev" },
+        { "match": "\\b(name|version|description|author|model|provider|timeout|retry|max|on|type)\\b", "name": "support.type.property-name.superdev" },
+        { "match": "\\b(string|number|boolean|object|array)\\b", "name": "storage.type.superdev" },
+        { "match": "\\b(true|false|null|yes|no)\\b", "name": "constant.language.superdev" }
+      ]
+    },
+    "strings": {
+      "name": "string.quoted.double.superdev",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [{ "match": "\\\\[\\\\\"]", "name": "constant.character.escape.superdev" }]
+    },
+    "comments": {
+      "name": "comment.line.number-sign.superdev",
+      "begin": "#",
+      "end": "$"
+    }
+  }
+}

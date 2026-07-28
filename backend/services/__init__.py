@@ -1,3 +1,3 @@
-from backend.services.base_service import BaseService
+from .diff_analyzer import DiffAnalyzer
 
-__all__ = ["BaseService"]
+__all__ = ["DiffAnalyzer"]

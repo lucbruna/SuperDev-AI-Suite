@@ -13,12 +13,16 @@ class JWTManager:
 
     def __init__(
         self,
-        secret_key: str | None = None,
+        secret_key: str,
         algorithm: str = ALGORITHM,
         access_token_expire: int = ACCESS_TOKEN_EXPIRE_MINUTES,
         refresh_token_expire: int = REFRESH_TOKEN_EXPIRE_MINUTES,
     ) -> None:
-        self.secret_key = SecretStr(secret_key or "super-dev-secret-key-change-in-production")
+        if not secret_key or secret_key == "super-dev-secret-key-change-in-production":
+            raise ValueError(
+                "JWT secret_key must be configured via JWT_SECRET_KEY environment variable"
+            )
+        self.secret_key = SecretStr(secret_key)
         self.algorithm = algorithm
         self.access_token_expire = access_token_expire
         self.refresh_token_expire = refresh_token_expire

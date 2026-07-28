@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.auth.jwt import JWTManager
 from backend.auth.passwords import verify_password
 from backend.auth.sessions import SessionManager
+from backend.config import config
 from backend.database.session import get_db
 from backend.users.service import UserService
 
@@ -33,7 +34,7 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
 
 
-jwt_manager = JWTManager()
+jwt_manager = JWTManager(secret_key=str(config.auth.secret_key))
 session_manager = SessionManager()
 
 

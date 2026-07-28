@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import os
 import shutil
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -10,8 +12,8 @@ from backend.runtime.base_runtime import ResourceLimits
 class SandboxManager:
     """Manages isolated execution environments for code runs."""
 
-    def __init__(self, base_dir: str = "/tmp/superdev_sandbox"):
-        self.base_dir = Path(base_dir)
+    def __init__(self, base_dir: str | None = None):
+        self.base_dir = Path(base_dir or os.path.join(tempfile.gettempdir(), "superdev_sandbox"))
         self.base_dir.mkdir(parents=True, exist_ok=True)
 
     def create_sandbox(self, run_id: str, limits: ResourceLimits | None = None) -> Path:

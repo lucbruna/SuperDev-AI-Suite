@@ -8,9 +8,10 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.database.session import get_db
+from backend.dependencies import get_current_active_user
 from backend.verification.verification_loop import VerificationLoop
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_active_user)])
 
 
 class VerificationRequest(BaseModel):
@@ -163,7 +164,7 @@ async def review_code(
     request: CodeReviewRequest,
     db: AsyncSession = Depends(get_db),
 ) -> CodeReviewResponse:
-    from ai_platform.providers.provider_registry import ProviderRegistry
+    from backend.providers.provider_registry import ProviderRegistry
 
     from backend.verification.reviewer import CodeReviewer
     

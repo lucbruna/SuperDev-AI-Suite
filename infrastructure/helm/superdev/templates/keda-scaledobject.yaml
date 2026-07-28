@@ -1,0 +1,46 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: {{ include "superdev.fullname" . }}-scaler
+  labels:
+    {{- include "superdev.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    name: {{ include "superdev.fullname" . }}
+  pollingInterval: {{ .Values.keda.pollingInterval | default 15 }}
+  cooldownPeriod: {{ .Values.keda.cooldownPeriod | default 60 }}
+  minReplicaCount: {{ .Values.keda.minReplicas | default 2 }}
+  maxReplicaCount: {{ .Values.keda.maxReplicas | default 20 }}
+  triggers:
+    - type: cpu
+      metricType: AverageValue
+      metadata:
+        value: "{{ .Values.keda.cpuThreshold | default "75" }}"
+    - type: memory
+      metricType: AverageValue
+      metadata:
+        value: "{{ .Values.keda.memoryThreshold | default "80" }}"
+    {{- if .Values.keda.redis.enabled }}
+    - type: redis
+      metadata:
+        address: "{{ .Values.keda.redis.address }}"
+        password: "{{ .Values.keda.redis.password }}"
+        listName: "{{ .Values.keda.redis.listName | default "superdev:queue" }}"
+        listLength: "{{ .Values.keda.redis.listLength | default "10" }}"
+    {{- end }}
+    {{- if .Values.keda.prometheus.enabled }}
+    - type: prometheus
+      metadata:
+        serverAddress: "{{ .Values.keda.prometheus.serverAddress }}"
+        metricName: "{{ .Values.keda.prometheus.metricName | default "http_requests_total" }}"
+        threshold: "{{ .Values.keda.prometheus.threshold | default "100" }}"
+        query: "{{ .Values.keda.prometheus.query | default "sum(rate(http_requests_total[2m]))" }}"
+    {{- end }}
+    {{- if .Values.keda.cron.enabled }}
+    - type: cron
+      metadata:
+        timezone: "{{ .Values.keda.cron.timezone | default "UTC" }}"
+        start: "{{ .Values.keda.cron.start }}"
+        end: "{{ .Values.keda.cron.end }}"
+        desiredReplicas: "{{ .Values.keda.cron.desiredReplicas | default "5" }}"
+    {{- end }}

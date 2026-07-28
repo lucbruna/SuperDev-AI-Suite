@@ -11,8 +11,8 @@ def setup_cors(
 ) -> None:
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=allow_origins or ["*"],
+        allow_origins=allow_origins or ["http://localhost:3000"],
         allow_credentials=allow_credentials,
-        allow_methods=allow_methods or ["*"],
-        allow_headers=allow_headers or ["*"],
+        allow_methods=allow_methods or ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=allow_headers or ["Authorization", "Content-Type", "X-Request-ID"],
     )

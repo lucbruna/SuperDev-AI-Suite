@@ -3,10 +3,11 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.database.session import get_db
+from backend.dependencies import get_current_active_user
 from backend.plugins.plugin_manager import plugin_manager
 from backend.plugins.plugin_registry import plugin_registry
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_active_user)])
 
 
 class PluginInstallRequest(BaseModel):

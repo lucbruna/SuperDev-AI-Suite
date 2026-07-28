@@ -1,0 +1,107 @@
+groups:
+  - name: AgentPerformance
+    rules:
+      - alert: HighAgentLatency
+        expr: histogram_quantile(0.95, rate(agent_execution_duration_seconds_bucket[5m])) > 30
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High agent execution latency (p95 > 30s)"
+          description: "Agent execution p95 latency is {{ $value }}s"
+
+      - alert: AgentFailureRate
+        expr: rate(agent_execution_failures_total[5m]) / rate(agent_execution_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High agent failure rate (> 10%)"
+          description: "Agent failure rate is {{ $value | humanizePercentage }}"
+
+      - alert: AgentQueueBacklog
+        expr: agent_queue_depth > 100
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Agent queue backlog > 100"
+          description: "Queue depth is {{ $value }}"
+
+  - name: LLMUsage
+    rules:
+      - alert: LLMHighCost
+        expr: sum(rate(llm_cost_per_minute[10m])) > 10
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "LLM cost exceeding $10/min"
+          description: "Current LLM spend is ${{ $value }}/min"
+
+      - alert: LLMErrorRate
+        expr: rate(llm_api_errors_total[5m]) / rate(llm_api_calls_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "LLM API error rate > 5%"
+          description: "Error rate is {{ $value | humanizePercentage }}"
+
+      - alert: LLMLatency
+        expr: histogram_quantile(0.99, rate(llm_response_duration_seconds_bucket[5m])) > 60
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "LLM p99 latency > 60s"
+          description: "p99 latency is {{ $value }}s"
+
+  - name: SystemHealth
+    rules:
+      - alert: HighMemoryUsage
+        expr: container_memory_usage_bytes / container_spec_memory_limit_bytes > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container memory > 85%"
+          description: "Memory usage is {{ $value | humanizePercentage }}"
+
+      - alert: HighCPUUsage
+        expr: rate(container_cpu_usage_seconds_total[5m]) / container_spec_cpu_quota > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container CPU > 80%"
+          description: "CPU usage is {{ $value | humanizePercentage }}"
+
+      - alert: DiskSpaceLow
+        expr: container_fs_usage_bytes / container_fs_limit_bytes > 0.9
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Container disk > 90%"
+          description: "Disk usage is {{ $value | humanizePercentage }}"
+
+  - name: Workflow
+    rules:
+      - alert: WorkflowFailureRate
+        expr: rate(workflow_failures_total[10m]) / rate(workflow_starts_total[10m]) > 0.15
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Workflow failure rate > 15%"
+          description: "Workflow failure rate is {{ $value | humanizePercentage }}"
+
+      - alert: WorkflowDurationAnomaly
+        expr: histogram_quantile(0.95, rate(workflow_duration_seconds_bucket[10m])) > 300
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Workflow p95 duration > 5min"
+          description: "p95 workflow duration is {{ $value }}s"

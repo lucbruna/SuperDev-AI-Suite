@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -32,6 +33,7 @@ class DatabaseSettings(BaseSettings):
     )
 
     url: str = "postgresql+asyncpg://superdev:superdev@localhost:5432/superdev"
+    migration_dir: str = "backend/database/migrations"
     readonly_url: str = ""
     pool_size: int = 20
     max_overflow: int = 30
@@ -58,6 +60,7 @@ class RedisSettings(BaseSettings):
     port: int = 6379
     password: str = ""
     db: int = 0
+    decode_responses: bool = True
     max_connections: int = 50
     socket_timeout: float = 5.0
     socket_connect_timeout: float = 5.0
@@ -72,6 +75,13 @@ class RedisSettings(BaseSettings):
     # Cluster
     cluster_enabled: bool = False
     cluster_nodes: list[str] = []
+
+    @property
+    def url(self) -> str:
+        if self.password:
+            return f"redis://:{self.password}@{self.host}:{self.port}/{self.db}"
+        return f"redis://{self.host}:{self.port}/{self.db}"
+
     # Replicas
     replica_hosts: list[str] = []
 
@@ -82,7 +92,7 @@ class AuthSettings(BaseSettings):
         extra="ignore",
     )
 
-    secret_key: str = "change-me-in-production"
+    secret_key: str = Field(default="change-me-in-production", exclude=True)
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
     refresh_token_expire_days: int = 7
