@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { api } from "@/utils/api-fetch";
 
 interface VM {
   id: string;
@@ -23,12 +24,12 @@ export function CloudVMPanel() {
 
   const refresh = async () => {
     try {
-      const [vmsRes, statsRes] = await Promise.all([
-        fetch("/api/cloud/vms"),
-        fetch("/api/cloud/stats"),
+      const [vmsData, statsData] = await Promise.all([
+        api.get<any>("/api/cloud/vms"),
+        api.get<any>("/api/cloud/stats"),
       ]);
-      setVms((await vmsRes.json()).vms || []);
-      setStats(await statsRes.json());
+      setVms(vmsData.vms || []);
+      setStats(statsData);
     } catch {}
     setLoading(false);
   };
@@ -39,7 +40,7 @@ export function CloudVMPanel() {
     if (!vmName.trim()) return;
     setCreating(true);
     try {
-      await fetch(`/api/cloud/vms?name=${encodeURIComponent(vmName)}`, { method: "POST" });
+      await api.post(`/api/cloud/vms?name=${encodeURIComponent(vmName)}`);
       setVmName("");
       await refresh();
     } catch {}
@@ -48,7 +49,7 @@ export function CloudVMPanel() {
 
   const action = async (id: string, action: string) => {
     try {
-      await fetch(`/api/cloud/vms/${id}/${action}`, { method: "POST" });
+      await api.post(`/api/cloud/vms/${id}/${action}`);
       await refresh();
     } catch {}
   };

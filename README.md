@@ -206,9 +206,9 @@ make seed        # Insert initial data
 
 | Email | Password | Role |
 |-------|----------|------|
-| `admin@superdev.com` | `admin123` | Super Admin |
-| `dev@superdev.com` | `dev123` | Developer |
-| `usuario@superdev.com` | `user123` | Standard User |
+| `admin@superdev.com` | `SuperDev@2025` | Super Admin |
+| `dev@superdev.com` | `SuperDev@2025` | Developer |
+| `usuario@superdev.com` | `SuperDev@2025` | Standard User |
 
 ## Contributing
 

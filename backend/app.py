@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
@@ -11,6 +13,23 @@ from backend.error_handlers import register_error_handlers
 from backend.lifespan import lifespan
 from backend.metrics import MetricsMiddleware
 from backend.telemetry import configure_metrics, configure_tracing, instrument_fastapi
+
+logger = logging.getLogger(__name__)
+
+
+def _safe_include(app: FastAPI, module_path: str, attr: str = "router", prefix: str = "", **kwargs) -> None:
+    """Safely import a router and include it in the app, logging if the module is unavailable."""
+    try:
+        import importlib
+        module = importlib.import_module(module_path)
+        router = getattr(module, attr)
+        if prefix:
+            app.include_router(router, prefix=prefix, **kwargs)
+        else:
+            app.include_router(router, **kwargs)
+        logger.debug("Router loaded: %s", module_path)
+    except (ImportError, AttributeError) as e:
+        logger.warning("Router not available (skipped): %s — %s", module_path, e)
 
 
 def create_app() -> FastAPI:
@@ -52,38 +71,31 @@ def create_app() -> FastAPI:
     configure_metrics()
     instrument_fastapi(app)
 
+    # Core API router
     from backend.api.router import router as api_router
     app.include_router(api_router)
 
-    from backend.code_search.api import router as code_search_router
-    app.include_router(code_search_router)
+    # Initialize orchestrator and register with system API
+    try:
+        from backend.api.v1.system import set_orchestrator
+        from core.orchestrator import Orchestrator
+        orchestrator = Orchestrator()
+        set_orchestrator(orchestrator)
+        logger.info("Orchestrator initialized")
+    except (ImportError, Exception) as e:
+        logger.warning("Orchestrator not available: %s", e)
 
-    from backend.cloud.api import router as cloud_router
-    app.include_router(cloud_router, prefix="/api")
-
-    from backend.diff.api import router as diff_router
-    app.include_router(diff_router, prefix="/api")
-
-    from backend.collab.api import router as collab_router
-    app.include_router(collab_router, prefix="/api")
-
-    from backend.deploy.engine import router as deploy_router
-    app.include_router(deploy_router)
-
-    from backend.websocket.handler import router as ws_router
-    app.include_router(ws_router)
-
-    from backend.websocket.studio_handler import router as studio_router
-    app.include_router(studio_router)
-
-    from backend.prompt_hub.api import router as prompt_hub_router
-    app.include_router(prompt_hub_router, prefix="/api")
-
-    from backend.refactor.engine import router as refactor_router
-    app.include_router(refactor_router, prefix="/api")
-
-    from backend.api.external import router as external_router
-    app.include_router(external_router)
+    # Optional routers (gracefully skip if module not yet implemented)
+    _safe_include(app, "backend.code_search.api")
+    _safe_include(app, "backend.cloud.api", prefix="/api")
+    _safe_include(app, "backend.diff.api", prefix="/api")
+    _safe_include(app, "backend.collab.api", prefix="/api")
+    _safe_include(app, "backend.deploy.engine")
+    _safe_include(app, "backend.websocket.handler")
+    _safe_include(app, "backend.websocket.studio_handler")
+    _safe_include(app, "backend.prompt_hub.api", prefix="/api")
+    _safe_include(app, "backend.refactor.engine", prefix="/api")
+    _safe_include(app, "backend.api.external")
 
     from backend.health import HealthChecker, HealthStatus
 

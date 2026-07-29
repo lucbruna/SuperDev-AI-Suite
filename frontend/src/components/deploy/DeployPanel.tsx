@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { api } from "@/utils/api-fetch";
 
 export function DeployPanel() {
   const [env, setEnv] = useState("staging");
@@ -11,7 +12,7 @@ export function DeployPanel() {
   const [history, setHistory] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch("/api/deploy/history").then(r => r.json()).then(d => setHistory(d.history || [])).catch(() => {});
+    api.get<any>("/api/deploy/history").then(d => setHistory(d.history || [])).catch(() => {});
   }, []);
 
   const doDeploy = async () => {
@@ -19,8 +20,7 @@ export function DeployPanel() {
     setDeploying(true);
     setResult(null);
     try {
-      const res = await fetch(`/api/deploy/deploy?env=${env}&version=${encodeURIComponent(version)}&strategy=${strategy}`, { method: "POST" });
-      const data = await res.json();
+      const data = await api.post<any>(`/api/deploy/deploy?env=${env}&version=${encodeURIComponent(version)}&strategy=${strategy}`);
       setResult(data);
       setHistory(prev => [data, ...prev].slice(0, 20));
     } catch {}
@@ -28,8 +28,8 @@ export function DeployPanel() {
   };
 
   const doRollback = async () => {
-    const res = await fetch(`/api/deploy/rollback?env=${env}`, { method: "POST" });
-    setResult(await res.json());
+    const data = await api.post<any>(`/api/deploy/rollback?env=${env}`);
+    setResult(data);
   };
 
   const envColor = (e: string) => {

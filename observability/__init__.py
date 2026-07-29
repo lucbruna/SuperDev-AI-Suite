@@ -1,3 +1,2 @@
-from observability.core.observability_manager import ObservabilityManager
-
-__all__ = ["ObservabilityManager"]
+from monitoring import *
+from monitoring import __all__

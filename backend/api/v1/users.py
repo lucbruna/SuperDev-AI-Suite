@@ -1,3 +1,5 @@
+from typing import Any
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,22 +13,26 @@ router = APIRouter(dependencies=[Depends(get_current_active_user)])
 
 @router.get("/me", response_model=UserResponse)
 async def get_current_user_profile(
+    current_user: dict[str, Any] = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
 ) -> UserResponse:
-    from backend.dependencies import get_current_active_user
-    user = await get_current_active_user(db=db)
+    service = UserService(db)
+    user = await service.get_user(current_user["id"])
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     return UserResponse.model_validate(user)
 
 
 @router.put("/me", response_model=UserResponse)
 async def update_current_user_profile(
     update: UserUpdate,
+    current_user: dict[str, Any] = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
 ) -> UserResponse:
-    from backend.dependencies import get_current_active_user
-    user = await get_current_active_user(db=db)
     service = UserService(db)
-    updated = await service.update_user(str(user.id), **update.model_dump(exclude_unset=True))
+    updated = await service.update_user(current_user["id"], **update.model_dump(exclude_unset=True))
+    if not updated:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     return UserResponse.model_validate(updated)
 
 

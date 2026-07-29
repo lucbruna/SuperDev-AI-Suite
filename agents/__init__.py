@@ -1,5 +1,6 @@
-from agents.base.base_agent import BaseAgent
-from agents.manager.agent_manager import AgentManager
-from agents.registry.agent_registry import AgentRegistry
+"""SuperDev Agents — AI agent system.
 
-__all__ = ["BaseAgent", "AgentRegistry", "AgentManager"]
+Agents are the building blocks of the SuperDev AI platform, each
+specializing in a specific domain like coding, reviewing, debugging, etc.
+"""
+from __future__ import annotations

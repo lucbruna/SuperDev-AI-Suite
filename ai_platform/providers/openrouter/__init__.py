@@ -1,2 +1,0 @@
-### PLACEHOLDER ###
-# OpenRouter provider

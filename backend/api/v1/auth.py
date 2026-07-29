@@ -10,6 +10,7 @@ from backend.auth.passwords import verify_password
 from backend.auth.sessions import SessionManager
 from backend.config import config
 from backend.database.session import get_db
+from backend.dependencies import get_current_active_user
 from backend.users.service import UserService
 
 router = APIRouter()
@@ -147,10 +148,26 @@ async def refresh(
 
 @router.get("/me")
 async def get_current_user(
+    current_user: dict[str, Any] = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
-    from backend.dependencies import get_current_user as auth_dependency
-
-    from backend.users.service import UserService
-
-    return {"success": True, "data": {"user": None}}
+    service = UserService(db)
+    user = await service.get_user(current_user["id"])
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    return {
+        "success": True,
+        "data": {
+            "user": {
+                "id": str(user.id),
+                "email": user.email,
+                "username": getattr(user, "username", ""),
+                "fullName": getattr(user, "full_name", ""),
+                "avatarUrl": getattr(user, "avatar_url", ""),
+                "role": getattr(user, "role", "user"),
+                "isEmailVerified": getattr(user, "is_verified", False),
+                "createdAt": str(user.created_at) if hasattr(user, "created_at") else "",
+                "updatedAt": str(user.updated_at) if hasattr(user, "updated_at") else "",
+            }
+        },
+    }

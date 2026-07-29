@@ -18,8 +18,11 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    volumes:
-      - ./backend:/app/backend
+    # NOTA: volume mount removido intencionalmente.
+    # No Windows Docker Desktop, bind mounts via gRPC FUSE causam D-state
+    # (uninterruptible sleep) no processo uvicorn, impedindo reqs.
+    # O Dockerfile já copia todos os módulos necessarios na imagem.
+    # Para desenvolvimento com hot-reload, use docker-compose.dev.yml.
     command: uvicorn backend.main:app --host 0.0.0.0 --port 8000
 
   # ── Frontend ─────────────────────────────────────────────────────
@@ -36,9 +39,9 @@ services:
       - VITE_WS_URL=ws://localhost:8000
     depends_on:
       - backend
-    volumes:
-      - ./frontend:/app/frontend
-      - /app/frontend/node_modules
+    # Volume mount removido (mesmo motivo do backend: Windows Docker Desktop
+    # bind mounts causam D-state no processo principal).
+    # Para desenvolvimento com hot-reload, use docker-compose.dev.yml.
 
   # ── Banco de Dados ──────────────────────────────────────────────
   postgres:

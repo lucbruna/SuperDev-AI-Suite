@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { api } from "@/utils/api-fetch";
 
 interface Prompt {
   id: string;
@@ -32,7 +33,7 @@ export function PromptHub() {
   const [showCreate, setShowCreate] = useState(false);
 
   useEffect(() => {
-    fetch("/api/prompt-hub/prompts").then((r) => r.json()).then((d) => setPrompts(d.prompts || [])).catch(() => {});
+    api.get<any>("/api/prompt-hub/prompts").then((d) => setPrompts(d.prompts || [])).catch(() => {});
   }, []);
 
   const select = async (p: Prompt) => {
@@ -40,24 +41,21 @@ export function PromptHub() {
     setName(p.name);
     setModel(p.model);
     setTags(p.tags.join(", "));
-    const res = await fetch(`/api/prompt-hub/prompts/${p.id}`);
-    const data = await res.json();
+    const data = await api.get<any>(`/api/prompt-hub/prompts/${p.id}`);
     setVersions(data.versions || []);
     setContent(data.versions?.[data.versions.length - 1]?.content || "");
     setDiff(null);
   };
 
   const create = async () => {
-    const res = await fetch(`/api/prompt-hub/prompts?name=${encodeURIComponent(name)}&content=${encodeURIComponent(content)}&model=${model}&tags=${encodeURIComponent(tags)}`, { method: "POST" });
-    const data = await res.json();
+    const data = await api.post<any>(`/api/prompt-hub/prompts?name=${encodeURIComponent(name)}&content=${encodeURIComponent(content)}&model=${model}&tags=${encodeURIComponent(tags)}`);
     setPrompts((prev) => [...prev, data]);
     setShowCreate(false);
   };
 
   const saveVersion = async () => {
     if (!selected) return;
-    const res = await fetch(`/api/prompt-hub/prompts/${selected.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content }) });
-    const data = await res.json();
+    const data = await api.put<any>(`/api/prompt-hub/prompts/${selected.id}`, { content });
     if (data.status === "updated") {
       select(selected);
     }
@@ -65,8 +63,7 @@ export function PromptHub() {
 
   const showDiff = async (v1: number, v2: number) => {
     if (!selected) return;
-    const res = await fetch(`/api/prompt-hub/prompts/${selected.id}/diff?v1=${v1}&v2=${v2}`);
-    const data = await res.json();
+    const data = await api.get<any>(`/api/prompt-hub/prompts/${selected.id}/diff?v1=${v1}&v2=${v2}`);
     setDiff(data.diff);
   };
 

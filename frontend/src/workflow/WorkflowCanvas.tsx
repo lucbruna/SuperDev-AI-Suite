@@ -34,7 +34,8 @@ export function WorkflowCanvas() {
     try {
       const response = await fetch("/api/v1/workflows");
       const data = await response.json();
-      setWorkflows(data);
+      // Unwrap {success, data} envelope
+      setWorkflows(data.data ?? data);
     } catch (err) {
       console.error("Failed to fetch workflows:", err);
     }
@@ -53,7 +54,8 @@ export function WorkflowCanvas() {
         body: JSON.stringify({}),
       });
       const data = await response.json();
-      setExecutionResult(data);
+      // Unwrap {success, data} envelope
+      setExecutionResult(data.data ?? data);
     } catch (err) {
       setExecutionResult({ error: `${err}` });
     } finally {

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
+import { ENV } from "@/config/environment";
 
 export default function StudioPage() {
   const wsRef = useRef<WebSocket | null>(null);
@@ -9,7 +10,7 @@ export default function StudioPage() {
   const [nodes, setNodes] = useState<any[]>([]);
 
   useEffect(() => {
-    const ws = new WebSocket("ws://localhost:8000/studio/ws");
+    const ws = new WebSocket(`${ENV.WS_URL}/studio/ws`);
     ws.onopen = () => setConnected(true);
     ws.onmessage = (e) => {
       try {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { api } from "@/utils/api-fetch";
 
 interface CallResult {
   tool_call_id: string;
@@ -22,12 +23,10 @@ export function MCPConsole() {
     try {
       let parsed = {};
       try { parsed = JSON.parse(args); } catch {}
-      const res = await fetch("/api/mcp/call", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tool_name: toolName, arguments: parsed }),
+      const data = await api.post<any>("/api/mcp/call", {
+        tool_name: toolName,
+        arguments: parsed,
       });
-      const data = await res.json();
       setResult(data);
     } catch (err: any) {
       setResult({

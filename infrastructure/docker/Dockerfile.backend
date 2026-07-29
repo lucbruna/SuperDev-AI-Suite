@@ -10,8 +10,25 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Core backend (FastAPI application)
 COPY backend/ ./backend/
+
+# Modulos da nova arquitetura importados pelo backend em runtime
+COPY core/ ./core/
+COPY ai/ ./ai/
+COPY monitoring/ ./monitoring/
+COPY cli/ ./cli/
+
+# Scanners e Security (analise estatica)
+COPY scanners/ ./scanners/
+COPY security/ ./security/
+
+# Builders (templates de geracao de codigo)
+COPY builders/ ./builders/
+
+# Runtime engine e workflow (orquestracao)
 COPY runtime_engine/ ./runtime_engine/
+COPY workflow_engine/ ./workflow_engine/
 
 EXPOSE 8000
 

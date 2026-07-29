@@ -69,8 +69,17 @@ make clean        # Clean build artifacts
 
 ## Default Credentials
 
-- **UI:** `admin@superdev.dev` / `admin123` (change in production!)
-- **API:** JWT tokens issued at `/api/v1/auth/login`
+All seed users share the same password `SuperDev@2025`:
+
+| Email | Role |
+|-------|------|
+| `admin@superdev.com` | Super Admin |
+| `dev@superdev.com` | Developer |
+| `usuario@superdev.com` | Standard User |
+
+> ⚠️ **Change all passwords in production!**
+
+- **API:** JWT tokens issued at `POST /api/v1/auth/login`
 
 ## API Endpoints
 

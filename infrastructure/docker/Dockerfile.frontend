@@ -17,19 +17,23 @@ FROM base AS build
 WORKDIR /app
 # Copy hoisted dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
-# Copy frontend source directly to /app/ (overwrites root package.json)
+# Copy frontend source directly to /app/
 COPY frontend/ ./
-# Build directly from /app/ where both package.json and node_modules exist
+# Build — outputs .next/ at /app/.next/
 RUN pnpm run build
 
 # ── runner: Production image ────────────────────────────────────
 FROM base AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-# Copy built artifacts
+# Copy built artifacts (all at /app/ level)
 COPY --from=build /app/.next ./.next
 COPY --from=build /app/public ./public
 COPY --from=build /app/package.json ./
 COPY --from=build /app/node_modules ./node_modules
 EXPOSE 3000
-CMD ["pnpm", "start"]
+# Run next start directly from CWD (/app/) where .next/ lives.
+# pnpm start from root package.json does "cd frontend && npx next start"
+# which fails because .next/ is at /app/.next/, not /app/frontend/.next/.
+# Using npx directly ensures next finds .next/ in the current directory.
+CMD ["npx", "next", "start"]

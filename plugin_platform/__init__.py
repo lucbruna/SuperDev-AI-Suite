@@ -1,5 +1,2 @@
-from plugin_platform.registry.plugin_registry import PluginRegistry
-from plugin_platform.loader.plugin_loader import PluginLoader
-from plugin_platform.manifest.manifest import PluginManifest
-
-__all__ = ["PluginRegistry", "PluginLoader", "PluginManifest"]
+from core.plugin_manager import *
+from core.plugin_manager import __all__

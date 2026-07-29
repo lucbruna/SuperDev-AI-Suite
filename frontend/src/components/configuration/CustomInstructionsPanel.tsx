@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { api } from "@/utils/api-fetch";
 
 const DEFAULT_RULES = [
   { id: "lang-python", pattern: "*.py", instruction: "Use type hints, follow PEP 8, max line length 120", enabled: true },
@@ -18,7 +19,7 @@ export function CustomInstructionsPanel() {
   const [newInstruction, setNewInstruction] = useState("");
 
   useEffect(() => {
-    fetch("/api/configuration/rules").then(r => r.json()).then(d => {
+    api.get<any>("/api/configuration/rules").then(d => {
       if (d.rules) setRules(d.rules.map((r: any) => typeof r === "string" ? { id: "custom", pattern: "*", instruction: r, enabled: true } : { ...r, enabled: r.enabled ?? true }));
     }).catch(() => {});
   }, []);
@@ -42,7 +43,7 @@ export function CustomInstructionsPanel() {
 
   const save = async () => {
     try {
-      await fetch("/api/configuration/rules", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ rules }) });
+      await api.put("/api/configuration/rules", { rules });
       setSaved(true);
     } catch {}
   };

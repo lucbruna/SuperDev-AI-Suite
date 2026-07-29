@@ -4,21 +4,49 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException
 
-from runtime_engine.cloud.vm_orchestrator import VMOrchestrator
-from runtime_engine.cloud.container_pool import ContainerPool
-from runtime_engine.cloud.browser import BrowserSession
-from runtime_engine.cloud.snapshot import SnapshotManager
+import logging
+
+logger = logging.getLogger(__name__)
+
+# Optional imports — runtime_engine modules may not be installed
+# Cloud features are gracefully disabled when the engine is unavailable
+try:
+    from runtime_engine.cloud.vm_orchestrator import VMOrchestrator
+    _orchestrator = VMOrchestrator(provider="aws")
+except ImportError:
+    logger.warning("runtime_engine.cloud.vm_orchestrator not available — VM features disabled")
+    _orchestrator = None
+
+try:
+    from runtime_engine.cloud.container_pool import ContainerPool
+    _pool = ContainerPool()
+    _has_pool = True
+except ImportError:
+    logger.warning("runtime_engine.cloud.container_pool not available — container pool disabled")
+    _pool = None
+    _has_pool = False
+
+try:
+    from runtime_engine.cloud.browser import BrowserSession
+    _browser = BrowserSession()
+except ImportError:
+    logger.warning("runtime_engine.cloud.browser not available — browser sessions disabled")
+    _browser = None
+
+try:
+    from runtime_engine.cloud.snapshot import SnapshotManager
+    _snapshots = SnapshotManager()
+except ImportError:
+    logger.warning("runtime_engine.cloud.snapshot not available — snapshot features disabled")
+    _snapshots = None
 
 router = APIRouter(prefix="/cloud", tags=["cloud"])
-_orchestrator = VMOrchestrator(provider="aws")
-_pool = ContainerPool()
-_browser = BrowserSession()
-_snapshots = SnapshotManager()
 
 
 @router.on_event("startup")
 async def _init_pool():
-    await _pool.start()
+    if _has_pool and _pool is not None:
+        await _pool.start()
 
 
 @router.post("/vms")

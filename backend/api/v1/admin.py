@@ -1,60 +1,22 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
+from sqlalchemy import select, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.dependencies import get_current_admin_user
 
 from backend.audit.audit_logger import audit_logger
+from backend.database.models.organization import Organization, OrganizationMember
+from backend.database.models.role import UserRole
+from backend.database.models.user import User
 from backend.database.session import get_db
 from backend.security.compliance import ComplianceFramework, compliance_engine
 from backend.security.multi_tenancy import TenantPlan, tenant_manager
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 router = APIRouter(dependencies=[Depends(get_current_admin_user)])
-
-# In-memory admin users store (extends the main user store)
-_admin_users: list[dict] = [
-    {
-        "id": "1",
-        "email": "admin@superdev.com",
-        "fullName": "Admin User",
-        "username": "admin",
-        "role": "admin",
-        "isActive": True,
-        "isVerified": True,
-        "lastLogin": "2026-07-29T00:00:00Z",
-        "createdAt": "2025-01-01T00:00:00Z",
-        "updatedAt": "2026-07-29T00:00:00Z",
-    },
-    {
-        "id": "2",
-        "email": "user@superdev.com",
-        "fullName": "Dev User",
-        "username": "devuser",
-        "role": "user",
-        "isActive": True,
-        "isVerified": True,
-        "lastLogin": "2026-07-28T12:00:00Z",
-        "createdAt": "2025-06-01T00:00:00Z",
-        "updatedAt": "2026-07-28T12:00:00Z",
-    },
-]
-
-_admin_organizations: list[dict] = [
-    {
-        "id": "1",
-        "name": "SuperDev",
-        "slug": "superdev",
-        "ownerId": "1",
-        "ownerName": "Admin User",
-        "memberCount": 3,
-        "isActive": True,
-        "createdAt": "2025-01-01T00:00:00Z",
-        "updatedAt": "2026-07-29T00:00:00Z",
-    },
-]
 
 _admin_settings: dict = {
     "defaultLanguage": "en",
@@ -244,33 +206,54 @@ async def admin_list_users(
     search: str | None = None,
     role: str | None = None,
     isActive: bool | None = None,
-    sortBy: str = "createdAt",
+    sortBy: str = "created_at",
     sortOrder: str = "desc",
     db: AsyncSession = Depends(get_db),
 ):
-
-
-    users = _admin_users
+    query = select(User)
     if search:
-        users = [u for u in users if search.lower() in u["email"].lower() or search.lower() in u["fullName"].lower()]
-    if role:
-        users = [u for u in users if u["role"] == role]
+        query = query.where(
+            or_(User.email.ilike(f"%{search}%"), User.full_name.ilike(f"%{search}%"))
+        )
     if isActive is not None:
-        users = [u for u in users if u["isActive"] == isActive]
+        query = query.where(User.is_active == isActive)
 
-    reverse = sortOrder == "desc"
-    users.sort(key=lambda u: u.get(sortBy, ""), reverse=reverse)
+    # Count total
+    count_q = select(func.count()).select_from(query.subquery())
+    total_result = await db.execute(count_q)
+    total = total_result.scalar() or 0
 
-    total = len(users)
-    start = (page - 1) * limit
-    items = users[start : start + limit]
+    # Sort
+    sort_col = getattr(User, sortBy, User.created_at)
+    order_fn = sort_col.desc() if sortOrder == "desc" else sort_col.asc()
+    query = query.order_by(order_fn)
+
+    # Paginate
+    query = query.offset((page - 1) * limit).limit(limit)
+    result = await db.execute(query)
+    users = result.scalars().all()
+
+    items = []
+    for u in users:
+        items.append({
+            "id": str(u.id),
+            "email": u.email,
+            "fullName": u.full_name,
+            "username": u.username,
+            "role": "admin" if u.is_superuser else "user",
+            "isActive": u.is_active,
+            "isVerified": u.is_verified,
+            "lastLogin": u.last_login.isoformat() if u.last_login else None,
+            "createdAt": u.created_at.isoformat() if u.created_at else None,
+            "updatedAt": u.updated_at.isoformat() if u.updated_at else None,
+        })
 
     return {
         "items": items,
         "total": total,
         "page": page,
         "limit": limit,
-        "totalPages": (total + limit - 1) // limit,
+        "totalPages": (total + limit - 1) // limit if total > 0 else 1,
     }
 
 
@@ -280,16 +263,34 @@ async def admin_update_user(
     data: dict,
     db: AsyncSession = Depends(get_db),
 ):
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
 
+    for k, v in data.items():
+        col = {
+            "email": "email",
+            "fullName": "full_name",
+            "isActive": "is_active",
+            "isVerified": "is_verified",
+        }.get(k)
+        if col and hasattr(user, col):
+            setattr(user, col, v)
 
-    for u in _admin_users:
-        if u["id"] == user_id:
-            for k, v in data.items():
-                if k in u:
-                    u[k] = v
-            u["updatedAt"] = datetime.utcnow().isoformat() + "Z"
-            return {"success": True, "data": u}
-    raise HTTPException(status_code=404, detail="User not found")
+    await db.commit()
+    return {
+        "success": True,
+        "data": {
+            "id": str(user.id),
+            "email": user.email,
+            "fullName": user.full_name,
+            "username": user.username,
+            "isActive": user.is_active,
+            "isVerified": user.is_verified,
+            "updatedAt": user.updated_at.isoformat() if user.updated_at else None,
+        },
+    }
 
 
 @router.delete("/users/{user_id}", status_code=204)
@@ -297,13 +298,14 @@ async def admin_delete_user(
     user_id: str,
     db: AsyncSession = Depends(get_db),
 ):
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
 
-
-    for i, u in enumerate(_admin_users):
-        if u["id"] == user_id:
-            _admin_users.pop(i)
-            return None
-    raise HTTPException(status_code=404, detail="User not found")
+    await db.delete(user)
+    await db.commit()
+    return None
 
 
 @router.get("/organizations")
@@ -312,31 +314,52 @@ async def admin_list_organizations(
     limit: int = 20,
     search: str | None = None,
     isActive: bool | None = None,
-    sortBy: str = "createdAt",
+    sortBy: str = "created_at",
     sortOrder: str = "desc",
     db: AsyncSession = Depends(get_db),
 ):
-
-
-    orgs = _admin_organizations
+    query = select(Organization)
     if search:
-        orgs = [o for o in orgs if search.lower() in o["name"].lower()]
-    if isActive is not None:
-        orgs = [o for o in orgs if o["isActive"] == isActive]
+        query = query.where(Organization.name.ilike(f"%{search}%"))
 
-    reverse = sortOrder == "desc"
-    orgs.sort(key=lambda o: o.get(sortBy, ""), reverse=reverse)
+    count_q = select(func.count()).select_from(query.subquery())
+    total_result = await db.execute(count_q)
+    total = total_result.scalar() or 0
 
-    total = len(orgs)
-    start = (page - 1) * limit
-    items = orgs[start : start + limit]
+    sort_col = getattr(Organization, sortBy, Organization.created_at)
+    order_fn = sort_col.desc() if sortOrder == "desc" else sort_col.asc()
+    query = query.order_by(order_fn)
+
+    query = query.offset((page - 1) * limit).limit(limit)
+    result = await db.execute(query)
+    orgs = result.scalars().all()
+
+    items = []
+    for org in orgs:
+        # Count members
+        member_count_q = select(func.count()).select_from(
+            select(OrganizationMember).where(OrganizationMember.organization_id == org.id).subquery()
+        )
+        mc_result = await db.execute(member_count_q)
+        member_count = mc_result.scalar() or 0
+
+        items.append({
+            "id": str(org.id),
+            "name": org.name,
+            "slug": org.slug,
+            "description": org.description,
+            "plan": org.plan,
+            "memberCount": member_count,
+            "createdAt": org.created_at.isoformat() if org.created_at else None,
+            "updatedAt": org.updated_at.isoformat() if org.updated_at else None,
+        })
 
     return {
         "items": items,
         "total": total,
         "page": page,
         "limit": limit,
-        "totalPages": (total + limit - 1) // limit,
+        "totalPages": (total + limit - 1) // limit if total > 0 else 1,
     }
 
 
@@ -346,16 +369,18 @@ async def admin_update_organization(
     data: dict,
     db: AsyncSession = Depends(get_db),
 ):
+    result = await db.execute(select(Organization).where(Organization.id == org_id))
+    org = result.scalar_one_or_none()
+    if not org:
+        raise HTTPException(status_code=404, detail="Organization not found")
 
+    for k, v in data.items():
+        col = {"name": "name", "slug": "slug", "description": "description", "plan": "plan"}.get(k)
+        if col and hasattr(org, col):
+            setattr(org, col, v)
 
-    for o in _admin_organizations:
-        if o["id"] == org_id:
-            for k, v in data.items():
-                if k in o:
-                    o[k] = v
-            o["updatedAt"] = datetime.utcnow().isoformat() + "Z"
-            return {"success": True, "data": o}
-    raise HTTPException(status_code=404, detail="Organization not found")
+    await db.commit()
+    return {"success": True, "data": {"id": str(org.id), "name": org.name, "slug": org.slug}}
 
 
 @router.get("/settings")

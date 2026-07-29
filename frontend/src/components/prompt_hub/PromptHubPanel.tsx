@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { api } from "@/utils/api-fetch";
 
 export function PromptHubPanel() {
   const [prompts, setPrompts] = useState<any[]>([]);
@@ -13,8 +14,7 @@ export function PromptHubPanel() {
 
   const refresh = async () => {
     try {
-      const res = await fetch("/api/prompt-hub/prompts");
-      const data = await res.json();
+      const data = await api.get<any>("/api/prompt-hub/prompts");
       setPrompts(data.prompts || []);
     } catch {}
   };
@@ -23,7 +23,7 @@ export function PromptHubPanel() {
 
   const create = async () => {
     if (!name.trim() || !content.trim()) return;
-    await fetch(`/api/prompt-hub/prompts?name=${encodeURIComponent(name)}&content=${encodeURIComponent(content)}&model=${model}`, { method: "POST" });
+    await api.post(`/api/prompt-hub/prompts?name=${encodeURIComponent(name)}&content=${encodeURIComponent(content)}&model=${model}`);
     setName(""); setContent(""); setModel("gpt-4o");
     await refresh();
   };
@@ -32,15 +32,15 @@ export function PromptHubPanel() {
     setSelected(p);
     setDiff(null);
     try {
-      const res = await fetch(`/api/prompt-hub/prompts/${p.id}/versions`);
-      setVersions((await res.json()).versions || []);
+      const data = await api.get<any>(`/api/prompt-hub/prompts/${p.id}/versions`);
+      setVersions(data.versions || []);
     } catch {}
   };
 
   const showDiff = async (v1: number, v2: number) => {
     if (!selected) return;
-    const res = await fetch(`/api/prompt-hub/prompts/${selected.id}/compare?v1=${v1}&v2=${v2}`);
-    setDiff(await res.json());
+    const data = await api.get<any>(`/api/prompt-hub/prompts/${selected.id}/compare?v1=${v1}&v2=${v2}`);
+    setDiff(data);
   };
 
   return (
@@ -98,7 +98,7 @@ export function PromptHubPanel() {
                   </div>
                   <div className="flex gap-1">
                     <button onClick={() => showDiff(v.version - 1, v.version)} disabled={v.version <= 1} className="rounded bg-surface-100 px-2 py-0.5 text-[9px] dark:bg-surface-700 disabled:opacity-30">Diff</button>
-                    <button onClick={async () => { await fetch(`/api/prompt-hub/prompts/${selected.id}/promote?version=${v.version}`, { method: "POST" }); }} className="rounded bg-green-100 px-2 py-0.5 text-[9px] text-green-700 dark:bg-green-900 dark:text-green-300">Promote</button>
+                    <button onClick={async () => { await api.post(`/api/prompt-hub/prompts/${selected.id}/promote?version=${v.version}`); }} className="rounded bg-green-100 px-2 py-0.5 text-[9px] text-green-700 dark:bg-green-900 dark:text-green-300">Promote</button>
                   </div>
                 </div>
               ))}

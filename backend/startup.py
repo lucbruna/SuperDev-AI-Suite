@@ -24,8 +24,8 @@ async def startup_handler() -> None:
         await engine.dispose()
         logger.info("Database connection verified")
     except Exception as e:
-        logger.error("Database connection failed", extra={"error": str(e)})
-        raise
+        logger.warning("Database connection failed — app will start without DB: %s", e)
+        # Don't raise — let the app start so health checks and fallback work
 
     logger.info("Running database migrations")
     try:

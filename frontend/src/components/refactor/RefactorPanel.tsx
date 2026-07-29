@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { api } from "@/utils/api-fetch";
 
 type RefactorMode = "search-replace" | "rename" | "extract";
 
@@ -24,13 +25,15 @@ export function RefactorPanel() {
     try {
       let res;
       if (mode === "search-replace") {
-        res = await fetch("/api/refactor/search-replace", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ filepath, search, replace, dry_run: true }) });
+        const data = await api.post<any>("/api/refactor/search-replace", { filepath, search, replace, dry_run: true });
+        setResult(data);
       } else if (mode === "rename") {
-        res = await fetch("/api/refactor/rename-symbol", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ filepath, old_name: oldName, new_name: newName, language }) });
+        const data = await api.post<any>("/api/refactor/rename-symbol", { filepath, old_name: oldName, new_name: newName, language });
+        setResult(data);
       } else {
-        res = await fetch("/api/refactor/extract-function", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ filepath, start_line: parseInt(startLine), end_line: parseInt(endLine), new_function_name: funcName }) });
+        const data = await api.post<any>("/api/refactor/extract-function", { filepath, start_line: parseInt(startLine), end_line: parseInt(endLine), new_function_name: funcName });
+        setResult(data);
       }
-      setResult(await res.json());
     } catch {}
     setRunning(false);
   };

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { ENV } from "@/config/environment";
 
 export function CollaborativeEditor() {
   const [sessionId, setSessionId] = useState("");
@@ -14,7 +15,7 @@ export function CollaborativeEditor() {
 
   const connect = useCallback(() => {
     if (!sessionId.trim()) return;
-    const ws = new WebSocket(`ws://localhost:8000/api/collab/ws/${encodeURIComponent(sessionId)}?user_id=${userIdRef.current}`);
+    const ws = new WebSocket(`${ENV.WS_URL}/api/collab/ws/${encodeURIComponent(sessionId)}?user_id=${userIdRef.current}`);
     ws.onopen = () => setConnected(true);
     ws.onmessage = (event) => {
       try {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { api } from "@/utils/api-fetch";
 
 interface MCPTool {
   name: string;
@@ -15,8 +16,7 @@ export function MCPBrowser() {
   const [selectedTool, setSelectedTool] = useState<MCPTool | null>(null);
 
   useEffect(() => {
-    fetch("/api/mcp/tools")
-      .then((r) => r.json())
+    api.get<MCPTool[]>("/api/mcp/tools")
       .then(setTools)
       .catch(() => setTools([]))
       .finally(() => setLoading(false));

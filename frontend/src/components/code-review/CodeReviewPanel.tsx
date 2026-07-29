@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { api } from "@/utils/api-fetch";
 
 interface ReviewResult {
   conclusion: string;
@@ -20,12 +21,12 @@ export function CodeReviewPanel() {
     setLoading(true);
     setResult(null);
     try {
-      const res = await fetch("/api/code-review/run", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ repo: repo || "owner/repo", pr_number: parseInt(prNumber) || 1, sha: "mock_sha" }),
+      const data = await api.post<any>("/code-review/run", {
+        repo: repo || "owner/repo",
+        pr_number: parseInt(prNumber) || 1,
+        sha: "mock_sha",
       });
-      setResult(await res.json());
+      setResult(data);
     } catch (err: any) {
       setResult({ conclusion: "error", score: 0, summary: err.message, comments: [], total_issues: 0 });
     } finally {

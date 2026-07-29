@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { api } from "@/utils/api-fetch";
 
 const DEFAULT_TESTS = [
   { name: "factual_accuracy", description: "Knowledge recall test" },
@@ -18,7 +19,7 @@ export function EvalHarnessPanel() {
   const [selectedTests, setSelectedTests] = useState<string[]>(DEFAULT_TESTS.map((t) => t.name));
 
   useEffect(() => {
-    fetch("/api/eval-harness/runs").then((r) => r.json()).then((d) => setHistory(d.runs || [])).catch(() => {});
+    api.get<any>("/eval-harness/runs").then((d) => setHistory(d.runs || [])).catch(() => {});
   }, []);
 
   const toggleTest = (name: string) => {
@@ -29,8 +30,7 @@ export function EvalHarnessPanel() {
     setRunning(true);
     setResult(null);
     try {
-      const res = await fetch(`/api/eval-harness/run?model=${model}`, { method: "POST" });
-      const data = await res.json();
+      const data = await api.post<any>(`/eval-harness/run?model=${model}`);
       setResult(data);
       setHistory((prev) => [data, ...prev]);
     } catch (err: any) {
