@@ -64,11 +64,12 @@ class HealthChecker:
     async def _check_database(self) -> HealthCheckResult:
         start = time.monotonic()
         try:
+            from sqlalchemy import text
             from sqlalchemy.ext.asyncio import create_async_engine
 
             engine = create_async_engine(config.database.url, pool_size=1, echo=False)
             async with engine.begin() as conn:
-                await conn.execute("SELECT 1")
+                await conn.execute(text("SELECT 1"))
             await engine.dispose()
             latency = (time.monotonic() - start) * 1000
             return HealthCheckResult(

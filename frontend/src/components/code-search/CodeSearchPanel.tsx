@@ -88,19 +88,23 @@ export function CodeSearchPanel() {
             />
             <select value={extFilter} onChange={(e) => setExtFilter(e.target.value)} className="w-20 rounded-lg border border-surface-300 bg-white px-2 py-2 text-xs dark:border-surface-600 dark:bg-surface-800">
               <option value="">All</option>
-              {fileFilters.map((f) => <option key={f} value={f}>{f}</option>)}
+              {fileFilters.map((f) => (
+                <option key={f} value={f}>
+                  {f}
+                </option>
+              ))}
             </select>
             <button onClick={search} disabled={loading || !query.trim()} className="rounded-lg bg-primary-600 px-4 py-2 text-xs font-medium text-white hover:bg-primary-700 disabled:opacity-40">
               {loading ? "..." : "Search"}
             </button>
           </div>
           {stats && (
-            <p className="mt-1.5 text-[10px] text-surface-500">{stats.total_files} files · {stats.total_lines.toLocaleString()} lines indexed</p>
+            <p className="mt-1.5 text-[10px] text-surface-500">{stats.total_files} files \u00B7 {stats.total_lines.toLocaleString()} lines indexed</p>
           )}
         </div>
         <div className="flex-1 overflow-y-auto divide-y dark:divide-surface-700">
           {totalResults === 0 && !loading && query && (
-            <div className="flex items-center justify-center p-8 text-xs text-surface-400">No results for "{query}"</div>
+            <div className="flex items-center justify-center p-8 text-xs text-surface-400">No results for {query}</div>
           )}
           {results.map((r) => (
             <button key={r.file} onClick={() => openFile(r.file)} className={`w-full px-4 py-3 text-left hover:bg-surface-50 dark:hover:bg-surface-800 ${selectedFile === r.file ? "bg-primary-50 dark:bg-primary-900/20" : ""}`}>

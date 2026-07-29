@@ -52,6 +52,22 @@ class AgentManager:
             for agent_id, agent in self._agents.items()
         ]
 
+    def start_agent(self, agent_id: str) -> bool:
+        agent = self._agents.get(agent_id)
+        if not agent:
+            return False
+        from backend.agents.base_agent import AgentStatus
+        agent._status = AgentStatus.RUNNING
+        return True
+
+    def stop_agent(self, agent_id: str) -> bool:
+        agent = self._agents.get(agent_id)
+        if not agent:
+            return False
+        from backend.agents.base_agent import AgentStatus
+        agent._status = AgentStatus.IDLE
+        return True
+
     def delete_agent(self, agent_id: str) -> bool:
         if agent_id in self._agents:
             del self._agents[agent_id]

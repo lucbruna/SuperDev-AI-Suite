@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ai_platform.providers.base_provider import BaseProvider
+from backend.providers.base_provider import BaseProvider
 
 from backend.verification.models import GenerationResult
 

@@ -178,10 +178,37 @@ curl -X POST http://localhost:8000/api/v1/chat \
 | `docker-compose up -d` | Start all services |
 | `docker-compose down` | Stop all services |
 | `docker-compose logs -f backend` | View backend logs |
+| `make migrate` | Run database migrations |
+| `make seed` | Populate database with initial data (admin user, orgs, projects) |
+| `make reset-db` | Reset database (drop schema, recreate extensions) |
+| `make reset` | Full bootstrap: `reset-db` → `migrate` → `seed` |
+| `make win-seed` | Windows PowerShell: populate database |
+| `make win-reset` | Windows PowerShell: full bootstrap |
 | `python tests/test_all_imports.py` | Test all modules |
 | `pytest tests/ -v` | Run all tests |
-| `make dev` | Start development |
 | `superdev doctor` | Check system status |
+
+### Database Bootstrap
+
+The database is automatically seeded on first backend startup (via the FastAPI lifespan hook). You can also run commands manually:
+
+```bash
+# Full bootstrap (drop everything, recreate, seed):
+make reset
+
+# Or step by step:
+make reset-db    # Drop schema, rebuild extensions
+make migrate     # Run Alembic migrations
+make seed        # Insert initial data
+```
+
+**Seed credentials:**
+
+| Email | Password | Role |
+|-------|----------|------|
+| `admin@superdev.com` | `admin123` | Super Admin |
+| `dev@superdev.com` | `dev123` | Developer |
+| `usuario@superdev.com` | `user123` | Standard User |
 
 ## Contributing
 

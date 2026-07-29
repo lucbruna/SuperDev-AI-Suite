@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import type { OrganizationMember } from "@/types/organization";
 import type { ProjectMember } from "@/types/project";
 import { cn } from "@/utils/cn";
@@ -50,9 +51,11 @@ export function MemberCard({
       )}
     >
       {avatarUrl ? (
-        <img
+        <Image
           src={avatarUrl}
           alt={displayName}
+          width={40}
+          height={40}
           className="h-10 w-10 rounded-full object-cover"
         />
       ) : (

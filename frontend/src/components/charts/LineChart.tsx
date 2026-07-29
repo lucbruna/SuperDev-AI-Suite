@@ -37,7 +37,10 @@ export function LineChart({
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
-  const padding = { top: 20, right: 20, bottom: showLabels ? 40 : 20, left: showLabels ? 50 : 20 };
+  const padding = useMemo(
+    () => ({ top: 20, right: 20, bottom: showLabels ? 40 : 20, left: showLabels ? 50 : 20 }),
+    [showLabels]
+  );
   const chartWidth = width - padding.left - padding.right;
   const chartHeight = height - padding.top - padding.bottom;
 

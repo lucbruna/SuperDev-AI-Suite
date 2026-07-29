@@ -12,6 +12,7 @@ from backend.api.v1 import (
     plugins,
     projects,
     runtime,
+    settings,
     users,
     verification,
     workflow,
@@ -30,5 +31,6 @@ v1_router.include_router(plugins.router, prefix="/plugins", tags=["plugins"])
 v1_router.include_router(knowledge.router, prefix="/knowledge", tags=["knowledge"])
 v1_router.include_router(verification.router, prefix="/verify", tags=["verification"])
 v1_router.include_router(admin.router, prefix="/admin", tags=["admin"])
+v1_router.include_router(settings.router, prefix="/settings", tags=["settings"])
 
 router.include_router(v1_router)

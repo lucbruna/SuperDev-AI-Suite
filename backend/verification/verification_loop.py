@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from ai_platform.providers.base_provider import BaseProvider
-from ai_platform.providers.provider_registry import ProviderRegistry
+from backend.providers.base_provider import BaseProvider
+from backend.providers.provider_registry import ProviderRegistry
 
 from backend.verification.corrector import CodeCorrector
 from backend.verification.executor import CodeExecutor

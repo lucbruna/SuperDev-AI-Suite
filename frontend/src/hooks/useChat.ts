@@ -24,13 +24,6 @@ export function useChat(): UseChatReturn {
   const [error, setError] = useState<string | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
 
-  useEffect(() => {
-    loadConversations();
-    return () => {
-      wsRef.current?.close();
-    };
-  }, []);
-
   const loadConversations = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -43,6 +36,13 @@ export function useChat(): UseChatReturn {
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    loadConversations();
+    return () => {
+      wsRef.current?.close();
+    };
+  }, [loadConversations]);
 
   const sendMessage = useCallback(async (text: string) => {
     if (!activeConversation) return;

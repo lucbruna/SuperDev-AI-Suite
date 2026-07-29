@@ -1,7 +1,7 @@
 # SuperDev AI Suite - Makefile (Unix + PowerShell wrapper)
 # Para Windows: use `make win-<comando>` ou leia Makefile.ps1
 
-.PHONY: help install test lint format build run-api run-frontend clean
+.PHONY: help install test lint format build run-api run-frontend clean seed migrate reset reset-db
 
 help:
 	@echo "SuperDev AI Suite - Comandos"
@@ -15,6 +15,9 @@ help:
 	@echo "  make format          - Format (ruff)"
 	@echo "  make typecheck       - Type check (mypy)"
 	@echo "  make migrate         - Rodar migrations"
+	@echo "  make seed            - Popular banco com dados iniciais"
+	@echo "  make reset-db        - Resetar banco (drop schema + recreates extensions)"
+	@echo "  make reset           - Reset completo: drop schema + migrate + seed"
 	@echo "  make clean           - Limpar caches"
 	@echo ""
 	@echo "  make docker-build    - Build Docker"
@@ -48,6 +51,16 @@ typecheck:
 migrate:
 	alembic upgrade head
 
+seed:
+	PYTHONPATH=. python -m backend.database.seeds.run_seeds
+
+# ── Reset de banco ──────────────────────────────────────────────
+
+reset-db:
+	python backend/database/seeds/reset_db.py
+
+reset: reset-db migrate seed
+
 docker-build:
 	docker compose build
 
@@ -62,7 +75,7 @@ clean:
 # Comandos Windows (via PowerShell)
 # ============================================================
 
-.PHONY: win-install win-run-api win-run-frontend win-test win-clean
+.PHONY: win-install win-run-api win-run-frontend win-test win-seed win-migrate win-reset win-reset-db win-clean
 
 win-install:
 	powershell -Command "pip install -e '.[dev]'; Set-Location frontend; npm install"
@@ -75,6 +88,17 @@ win-run-frontend:
 
 win-test:
 	powershell -Command "python -m pytest tests/ -v"
+
+win-seed:
+	powershell -Command "\$env:PYTHONPATH='.'; python -m backend.database.seeds.run_seeds"
+
+win-migrate:
+	powershell -Command "alembic upgrade head"
+
+win-reset-db:
+	powershell -Command "python backend/database/seeds/reset_db.py"
+
+win-reset: win-reset-db win-migrate win-seed
 
 win-clean:
 	powershell -Command "if (Test-Path '.pytest_cache') { Remove-Item -Recurse -Force '.pytest_cache' }; if (Test-Path '.ruff_cache') { Remove-Item -Recurse -Force '.ruff_cache' }; if (Test-Path '.next') { Remove-Item -Recurse -Force '.next' }; if (Test-Path 'node_modules') { Remove-Item -Recurse -Force 'node_modules' }"

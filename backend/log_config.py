@@ -40,7 +40,7 @@ def setup_logging(settings: LoggingSettings) -> logging.Logger:
     logger.setLevel(settings.level.upper())
     logger.handlers.clear()
 
-    if settings.console:
+    if settings.output == "stdout":
         console_handler = logging.StreamHandler(sys.stdout)
         if settings.format == "json":
             console_handler.setFormatter(JsonFormatter())
@@ -50,8 +50,8 @@ def setup_logging(settings: LoggingSettings) -> logging.Logger:
             )
         logger.addHandler(console_handler)
 
-    if settings.output_file:
-        log_path = Path(settings.output_file)
+    if settings.file_path:
+        log_path = Path(settings.file_path)
         log_path.parent.mkdir(parents=True, exist_ok=True)
         file_handler = logging.FileHandler(log_path, encoding="utf-8")
         file_handler.setFormatter(JsonFormatter())

@@ -1,15 +1,34 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { authApi } from "@/api/auth";
+import { useAuthStore } from "@/stores/authStore";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Login:", { email, password });
+    setError("");
+    setLoading(true);
+
+    try {
+      const result = await authApi.login({ email, password });
+      useAuthStore.getState().login(result.user, result.accessToken, result.refreshToken);
+      router.push("/dashboard");
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Email ou senha inválidos";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -21,6 +40,11 @@ export default function LoginPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/30 dark:text-red-400">
+              {error}
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium text-surface-700 dark:text-surface-300">Email</label>
             <input
@@ -43,10 +67,14 @@ export default function LoginPage() {
           </div>
           <button
             type="submit"
-            className="w-full rounded-lg bg-primary-600 py-2 font-medium text-white hover:bg-primary-700 transition-colors"
+            disabled={loading}
+            className="w-full rounded-lg bg-primary-600 py-2 font-medium text-white hover:bg-primary-700 transition-colors disabled:opacity-50"
           >
-            Entrar
+            {loading ? "Entrando..." : "Entrar"}
           </button>
+          <div className="flex justify-between text-sm">
+            <Link href="/forgot-password" className="text-primary-600 hover:underline">Esqueceu a senha?</Link>
+          </div>
         </form>
 
         <p className="mt-4 text-center text-sm text-surface-500">

@@ -1,5 +1,8 @@
+from datetime import datetime, UTC
+from typing import Any
+
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.auth.jwt import JWTManager
@@ -13,12 +16,12 @@ router = APIRouter()
 
 
 class LoginRequest(BaseModel):
-    email: EmailStr
+    email: str
     password: str
 
 
 class RegisterRequest(BaseModel):
-    email: EmailStr
+    email: str
     password: str
     username: str
     full_name: str | None = None
@@ -34,15 +37,22 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
 
 
+class LoginResponse(BaseModel):
+    user: dict[str, Any]
+    accessToken: str
+    refreshToken: str
+    expiresIn: int
+
+
 jwt_manager = JWTManager(secret_key=str(config.auth.secret_key))
 session_manager = SessionManager()
 
 
-@router.post("/login", response_model=TokenResponse)
+@router.post("/login")
 async def login(
     request: LoginRequest,
     db: AsyncSession = Depends(get_db),
-) -> TokenResponse:
+) -> dict[str, Any]:
     user_service = UserService(db)
     user = await user_service.get_user_by_email(request.email)
     if not user or not verify_password(request.password, user.hashed_password):
@@ -52,14 +62,32 @@ async def login(
         )
     access_token = jwt_manager.create_access_token(subject=str(user.id))
     refresh_token = jwt_manager.create_refresh_token(subject=str(user.id))
-    return TokenResponse(access_token=access_token, refresh_token=refresh_token)
+    return {
+        "success": True,
+        "data": {
+            "user": {
+                "id": str(user.id),
+                "email": user.email,
+                "username": getattr(user, "username", user.email.split("@")[0]),
+                "fullName": getattr(user, "full_name", ""),
+                "avatarUrl": getattr(user, "avatar_url", ""),
+                "role": getattr(user, "role", "user"),
+                "isEmailVerified": getattr(user, "is_verified", False),
+                "createdAt": getattr(user, "created_at", datetime.now(UTC)).isoformat() if hasattr(user, "created_at") else datetime.now(UTC).isoformat(),
+                "updatedAt": getattr(user, "updated_at", datetime.now(UTC)).isoformat() if hasattr(user, "updated_at") else datetime.now(UTC).isoformat(),
+            },
+            "accessToken": access_token,
+            "refreshToken": refresh_token,
+            "expiresIn": jwt_manager.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        },
+    }
 
 
-@router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register(
     request: RegisterRequest,
     db: AsyncSession = Depends(get_db),
-) -> TokenResponse:
+) -> dict[str, Any]:
     user_service = UserService(db)
     existing = await user_service.get_user_by_email(request.email)
     if existing:
@@ -75,7 +103,25 @@ async def register(
     )
     access_token = jwt_manager.create_access_token(subject=str(user.id))
     refresh_token = jwt_manager.create_refresh_token(subject=str(user.id))
-    return TokenResponse(access_token=access_token, refresh_token=refresh_token)
+    return {
+        "success": True,
+        "data": {
+            "user": {
+                "id": str(user.id),
+                "email": user.email,
+                "username": getattr(user, "username", user.email.split("@")[0]),
+                "fullName": getattr(user, "full_name", ""),
+                "avatarUrl": getattr(user, "avatar_url", ""),
+                "role": getattr(user, "role", "user"),
+                "isEmailVerified": getattr(user, "is_verified", False),
+                "createdAt": getattr(user, "created_at", datetime.now(UTC)).isoformat() if hasattr(user, "created_at") else datetime.now(UTC).isoformat(),
+                "updatedAt": getattr(user, "updated_at", datetime.now(UTC)).isoformat() if hasattr(user, "updated_at") else datetime.now(UTC).isoformat(),
+            },
+            "accessToken": access_token,
+            "refreshToken": refresh_token,
+            "expiresIn": jwt_manager.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        },
+    }
 
 
 @router.post("/refresh", response_model=TokenResponse)
@@ -99,6 +145,12 @@ async def refresh(
     return TokenResponse(access_token=access_token, refresh_token=new_refresh_token)
 
 
-@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
-async def logout() -> None:
-    return None
+@router.get("/me")
+async def get_current_user(
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    from backend.dependencies import get_current_user as auth_dependency
+
+    from backend.users.service import UserService
+
+    return {"success": True, "data": {"user": None}}

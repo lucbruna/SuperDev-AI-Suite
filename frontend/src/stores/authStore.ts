@@ -8,6 +8,7 @@ interface AuthStore {
   refreshToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  _hydrated: boolean;
   error: string | null;
   setUser: (user: User | null) => void;
   setTokens: (accessToken: string, refreshToken: string) => void;
@@ -26,6 +27,7 @@ export const useAuthStore = create<AuthStore>()(
         refreshToken: null,
         isAuthenticated: false,
         isLoading: false,
+        _hydrated: false,
         error: null,
 
         setUser: (user) =>
@@ -70,6 +72,13 @@ export const useAuthStore = create<AuthStore>()(
           refreshToken: state.refreshToken,
           user: state.user,
         }),
+        onRehydrateStorage: () => (state) => {
+          if (state) {
+            state.isAuthenticated = state.user !== null;
+            state.isLoading = false;
+            state._hydrated = true;
+          }
+        },
       },
     ),
   ),

@@ -68,9 +68,13 @@ def create_app() -> FastAPI:
     app.include_router(collab_router, prefix="/api")
 
     from backend.deploy.engine import router as deploy_router
+    app.include_router(deploy_router)
 
     from backend.websocket.handler import router as ws_router
     app.include_router(ws_router)
+
+    from backend.websocket.studio_handler import router as studio_router
+    app.include_router(studio_router)
 
     from backend.prompt_hub.api import router as prompt_hub_router
     app.include_router(prompt_hub_router, prefix="/api")
@@ -78,9 +82,27 @@ def create_app() -> FastAPI:
     from backend.refactor.engine import router as refactor_router
     app.include_router(refactor_router, prefix="/api")
 
+    from backend.api.external import router as external_router
+    app.include_router(external_router)
+
+    from backend.health import HealthChecker, HealthStatus
+
     @app.get(f"{API_V1_PREFIX}/version")
     async def version_info():
         return {"success": True, "data": {"version": VERSION, "name": PROJECT_NAME}}
+
+    @app.get("/health")
+    async def health_check():
+        checker = HealthChecker()
+        results = await checker.check_all()
+        overall = HealthStatus.HEALTHY
+        for r in results.values():
+            if r.status == HealthStatus.UNHEALTHY:
+                overall = HealthStatus.UNHEALTHY
+                break
+            if r.status == HealthStatus.DEGRADED:
+                overall = HealthStatus.DEGRADED
+        return {"status": overall, "checks": {k: v.model_dump() for k, v in results.items()}}
 
     return app
 

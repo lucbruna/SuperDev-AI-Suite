@@ -69,7 +69,7 @@ export function MonacoEditor({
     });
 
     return () => editor.dispose();
-  }, [isLoaded, language, readOnly, fontSize, wordWrap, minimap, lineNumbers]);
+  }, [isLoaded, language, readOnly, fontSize, wordWrap, minimap, lineNumbers, value, onChange]);
 
   return (
     <div className={`relative ${className}`}>

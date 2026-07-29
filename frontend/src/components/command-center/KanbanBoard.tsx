@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { getAgents } from "@/api/agents";
 
 const COLUMNS = [
   { id: "planning", title: "Planning", color: "bg-yellow-500" },
@@ -19,24 +20,36 @@ interface AgentCardData {
   started_at: string;
 }
 
-const MOCK_AGENTS: AgentCardData[] = [
-  { id: "1", name: "Architect", role: "Planner", status: "planning", progress: 30, task: "Design API schema", started_at: "2m ago" },
-  { id: "2", name: "Executor", role: "Developer", status: "executing", progress: 65, task: "Implement endpoints", started_at: "5m ago" },
-  { id: "3", name: "Reviewer", role: "QA", status: "review", progress: 90, task: "Review PR #42", started_at: "10m ago" },
-  { id: "4", name: "Deployer", role: "DevOps", status: "done", progress: 100, task: "Deploy to staging", started_at: "15m ago" },
-  { id: "5", name: "DataAgent", role: "Analyst", status: "executing", progress: 40, task: "Run data pipeline", started_at: "3m ago" },
-  { id: "6", name: "BugBot", role: "Scanner", status: "done", progress: 100, task: "Security scan", started_at: "20m ago" },
-];
+function mapStatus(agentStatus: string): string {
+  switch (agentStatus) {
+    case "running": return "executing";
+    case "error": return "review";
+    case "completed":
+    case "stopped": return "done";
+    default: return "planning";
+  }
+}
 
 export function KanbanBoard() {
   const [agents, setAgents] = useState<AgentCardData[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setTimeout(() => {
-      setAgents(MOCK_AGENTS);
+    getAgents().then((data) => {
+      const mapped: AgentCardData[] = (Array.isArray(data) ? data : []).map((a: any) => ({
+        id: a.id,
+        name: a.name,
+        role: a.agent_type || "Agent",
+        status: mapStatus(a.status),
+        progress: a.status === "running" ? 50 + Math.floor(Math.random() * 40) : a.status === "idle" ? 0 : 100,
+        task: a.description || "No task assigned",
+        started_at: "—",
+      }));
+      setAgents(mapped);
       setLoading(false);
-    }, 500);
+    }).catch(() => {
+      setLoading(false);
+    });
   }, []);
 
   const getColumnCards = (columnId: string) => agents.filter((a) => a.status === columnId);
@@ -72,7 +85,7 @@ export function KanbanBoard() {
                         <span>{agent.started_at}</span>
                       </div>
                       <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-surface-200 dark:bg-surface-700">
-                        <div className={`h-full rounded-full transition-all ${col.color.replace("bg-", "bg-")} opacity-70`} style={{ width: `${agent.progress}%` }} />
+                        <div className={`h-full rounded-full transition-all ${col.color} opacity-70`} style={{ width: `${agent.progress}%` }} />
                       </div>
                     </div>
                   </div>

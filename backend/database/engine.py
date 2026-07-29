@@ -1,10 +1,12 @@
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
+from backend.config import config
+
 _engine: AsyncEngine | None = None
 
 
 def create_engine(
-    database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/superdev",
+    database_url: str | None = None,
     echo: bool = False,
     pool_size: int = 10,
     max_overflow: int = 20,
@@ -20,13 +22,15 @@ def create_engine(
             max_overflow=max_overflow,
             pool_pre_ping=pool_pre_ping,
             pool_recycle=pool_recycle,
+            connect_args={"server_settings": {"search_path": "superdev,public"}},
         )
     return _engine
 
 
 def get_engine_instance() -> AsyncEngine:
     if _engine is None:
-        return create_engine()
+        url = config.database.url
+        return create_engine(database_url=url)
     return _engine
 
 

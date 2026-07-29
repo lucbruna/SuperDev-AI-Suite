@@ -74,6 +74,35 @@ async def update_prompt(prompt_id: str, content: str, author: str = "user"):
     return {"status": "updated", "new_version": new_version}
 
 
+@router.get("/prompts/{prompt_id}/versions")
+async def list_versions(prompt_id: str):
+    prompt = _prompts.get(prompt_id)
+    if not prompt:
+        raise HTTPException(status_code=404, detail="Prompt not found")
+    return {"versions": _versions.get(prompt_id, [])}
+
+
+@router.get("/prompts/{prompt_id}/compare")
+async def compare_prompt(prompt_id: str, v1: int, v2: int):
+    versions = _versions.get(prompt_id, [])
+    a = next((v for v in versions if v["version"] == v1), None)
+    b = next((v for v in versions if v["version"] == v2), None)
+    if not a or not b:
+        raise HTTPException(status_code=404, detail="Version not found")
+    diff = list(difflib.unified_diff(a["content"].splitlines(keepends=True), b["content"].splitlines(keepends=True), fromfile=f"v{v1}", tofile=f"v{v2}"))
+    return {"version_a": v1, "version_b": v2, "diff": "".join(diff), "additions": sum(1 for l in diff if l.startswith("+") and not l.startswith("+++")), "deletions": sum(1 for l in diff if l.startswith("-") and not l.startswith("---"))}
+
+
+@router.post("/prompts/{prompt_id}/promote")
+async def promote_version(prompt_id: str, version: int):
+    prompt = _prompts.get(prompt_id)
+    if not prompt:
+        raise HTTPException(status_code=404, detail="Prompt not found")
+    prompt["current_version"] = version
+    prompt["updated_at"] = datetime.utcnow().isoformat()
+    return {"status": "promoted", "new_current_version": version}
+
+
 @router.get("/prompts/{prompt_id}/diff")
 async def diff_prompt(prompt_id: str, v1: int, v2: int):
     versions = _versions.get(prompt_id, [])

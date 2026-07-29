@@ -1,20 +1,18 @@
 http:
   routers:
-    backend:
-      rule: "Host(`api.superdev.io`)"
+    api:
+      rule: "(Host(`localhost`) || Host(`127.0.0.1`)) && PathPrefix(`/api`)"
       entryPoints:
-        - websecure
+        - web
       service: backend
-      tls:
-        certResolver: letsencrypt
+      priority: 10
 
     frontend:
-      rule: "Host(`app.superdev.io`)"
+      rule: "Host(`localhost`) || Host(`127.0.0.1`)"
       entryPoints:
-        - websecure
+        - web
       service: frontend
-      tls:
-        certResolver: letsencrypt
+      priority: 5
 
   services:
     backend:

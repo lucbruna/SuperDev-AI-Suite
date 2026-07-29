@@ -1,15 +1,13 @@
 "use client";
 
-import { DeployPanel } from "../../components/deploy/DeployPanel";
+import { DashboardLayout } from "@/components/DashboardLayout";
+import { DeployPanel } from "@/components/deploy/DeployPanel";
 
 export default function DeployPage() {
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-lg font-bold text-surface-900 dark:text-surface-50">Auto-Deploy</h1>
-        <p className="text-sm text-surface-500">Deploy to development, staging, or production with rolling, blue-green, canary, or recreate strategies</p>
-      </div>
+    <DashboardLayout>
+      <h1 className="mb-6 text-2xl font-bold text-surface-900 dark:text-surface-50">Deploy</h1>
       <DeployPanel />
-    </div>
+    </DashboardLayout>
   );
 }

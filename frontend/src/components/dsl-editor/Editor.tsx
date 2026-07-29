@@ -29,7 +29,7 @@ export function DSLEditor() {
 
   const handleEditorMount: OnMount = (editor, monaco) => {
     monaco.languages.registerCompletionItemProvider("yaml", {
-      provideCompletionItems: (model, position) => {
+      provideCompletionItems: (model: any, position: any) => {
         const word = model.getWordUntilPosition(position);
         const range = {
           startLineNumber: position.lineNumber,

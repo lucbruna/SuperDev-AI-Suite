@@ -126,6 +126,48 @@ async def get_agent(
     )
 
 
+@router.post("/{agent_id}/start", response_model=AgentResponse)
+async def start_agent(
+    agent_id: str,
+) -> AgentResponse:
+    if not agent_manager.start_agent(agent_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Agent not found",
+        )
+    agent = agent_manager.get_agent(agent_id)
+    agent_dict = agent.to_dict()
+    return AgentResponse(
+        id=agent_id,
+        name=agent_dict["name"],
+        description=agent_dict["description"],
+        agent_type=agent_dict["agent_type"],
+        status=agent_dict["status"],
+        tools=agent_dict["tools"],
+    )
+
+
+@router.post("/{agent_id}/stop", response_model=AgentResponse)
+async def stop_agent(
+    agent_id: str,
+) -> AgentResponse:
+    if not agent_manager.stop_agent(agent_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Agent not found",
+        )
+    agent = agent_manager.get_agent(agent_id)
+    agent_dict = agent.to_dict()
+    return AgentResponse(
+        id=agent_id,
+        name=agent_dict["name"],
+        description=agent_dict["description"],
+        agent_type=agent_dict["agent_type"],
+        status=agent_dict["status"],
+        tools=agent_dict["tools"],
+    )
+
+
 @router.post("/{agent_id}/execute", response_model=AgentExecuteResponse)
 async def execute_agent(
     agent_id: str,

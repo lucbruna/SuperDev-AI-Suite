@@ -38,6 +38,32 @@ async def startup_handler() -> None:
     except Exception as e:
         logger.warning("Migrations skipped or failed", extra={"error": str(e)})
 
+    logger.info("Running database seed")
+    try:
+        import asyncio
+        from sqlalchemy import create_engine
+        from sqlalchemy.orm import Session
+
+        # Converte URL async (postgresql+asyncpg://) para sync (postgresql://)
+        sync_url = config.database.url.replace("+asyncpg", "")
+
+        def _run_seed():
+            engine = create_engine(sync_url, pool_pre_ping=True)
+            try:
+                with Session(engine) as session:
+                    from backend.database.seeds.roles import seed_roles_and_permissions
+                    from backend.database.seeds.seed_data import seed_database
+
+                    seed_roles_and_permissions(session)
+                    seed_database(session)
+            finally:
+                engine.dispose()
+
+        await asyncio.to_thread(_run_seed)
+        logger.info("Database seed complete")
+    except Exception as e:
+        logger.warning("Database seed skipped or failed", extra={"error": str(e)})
+
     logger.info("Initializing cache")
     try:
         from redis.asyncio import Redis

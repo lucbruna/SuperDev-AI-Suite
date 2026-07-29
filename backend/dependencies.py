@@ -6,6 +6,7 @@ from typing import Any
 from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from backend.auth.jwt import JWTManager
 from backend.config import config
 from backend.database.session import get_db as _get_db_session
 from backend.exceptions import (
@@ -14,6 +15,10 @@ from backend.exceptions import (
 )
 
 security_scheme = HTTPBearer(auto_error=False)
+
+
+async def get_jwt_manager() -> JWTManager:
+    return JWTManager(secret_key=str(config.auth.secret_key))
 
 
 async def get_redis() -> AsyncGenerator[Any, None]:
@@ -73,8 +78,11 @@ async def get_current_active_user(
 
 async def get_current_admin_user(
     current_user: dict[str, Any] = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
-    roles: list[str] = current_user.get("roles", [])
-    if "admin" not in roles:
+    from backend.users.service import UserService
+    service = UserService(db)
+    user = await service.get_user(current_user["id"])
+    if not user or not getattr(user, "is_superuser", False):
         raise AuthorizationException("Admin privileges required")
     return current_user

@@ -23,6 +23,7 @@ class Organization(Base, TimestampMixin):
     settings: Mapped[dict] = mapped_column(JSONB, server_default='{}', nullable=False)
 
     members: Mapped[list[OrganizationMember]] = relationship("OrganizationMember", back_populates="organization", cascade="all, delete-orphan")
+    custom_roles: Mapped[list[Role]] = relationship("Role", back_populates="organization", cascade="all, delete-orphan")
     projects: Mapped[list[Project]] = relationship("Project", back_populates="organization", cascade="all, delete-orphan")
     api_keys: Mapped[list[APIKey]] = relationship("APIKey", back_populates="organization", cascade="all, delete-orphan")
     audit_logs: Mapped[list[AuditLog]] = relationship("AuditLog", back_populates="organization", cascade="all, delete-orphan")

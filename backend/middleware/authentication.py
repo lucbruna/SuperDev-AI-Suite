@@ -5,18 +5,23 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.auth.jwt import JWTManager
+from backend.config import config
 from backend.database.models.user import User
 from backend.database.session import get_db
 from backend.users.repository import UserRepository
 
 security = HTTPBearer(auto_error=False)
-jwt_manager = JWTManager()
+
+
+def get_jwt_manager() -> JWTManager:
+    return JWTManager(secret_key=config.auth.secret_key)
 
 
 async def get_current_user(
     request: Request,
     credentials: HTTPAuthorizationCredentials | None = Depends(security),
     db: AsyncSession = Depends(get_db),
+    jwt_manager: JWTManager = Depends(get_jwt_manager),
 ) -> User:
     if credentials is None:
         raise HTTPException(

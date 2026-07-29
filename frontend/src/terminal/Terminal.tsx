@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, useMemo } from "react";
 import { useTerminalStore } from "@/stores/terminalStore";
 import { Button } from "@/components/buttons/Button";
 
@@ -20,10 +20,10 @@ export function Terminal({ className = "" }: TerminalProps) {
       createSession();
     }
     setIsReady(true);
-  }, []);
+  }, [sessions.length, createSession]);
 
   const activeSessionData = sessions.find((s) => s.id === activeSessionId);
-  const outputLines = activeSessionData?.output || [];
+  const outputLines = useMemo(() => activeSessionData?.output || [], [activeSessionData?.output]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useMemo, useState } from "react";
 import { cn } from "@/utils/cn";
 import { Badge } from "@/components/badges/Badge";
@@ -145,7 +146,7 @@ export function MembersTable({
               <td className="whitespace-nowrap px-4 py-3">
                 <div className="flex items-center gap-3">
                   {member.avatarUrl ? (
-                    <img src={member.avatarUrl} alt="" className="h-8 w-8 rounded-full object-cover" />
+                    <Image src={member.avatarUrl} alt="" width={32} height={32} className="h-8 w-8 rounded-full object-cover" />
                   ) : (
                     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-50 text-xs font-semibold text-primary-600 dark:bg-primary-950 dark:text-primary-400">
                       {member.name.charAt(0).toUpperCase()}

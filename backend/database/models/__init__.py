@@ -1,7 +1,7 @@
 from backend.database.models.agent import Agent, AgentExecution
 from backend.database.models.api_key import APIKey
 from backend.database.models.audit_log import AuditLog
-from backend.knowledge_base.models import KnowledgeBase, KnowledgeChunk, KnowledgeEntry
+from backend.database.models.knowledge import KnowledgeBase, KnowledgeChunk, KnowledgeEntry
 from backend.database.models.notification import Notification
 from backend.database.models.organization import Organization, OrganizationMember
 from backend.database.models.plugin import Plugin

@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from backend.dependencies import get_current_active_user
 
-router = APIRouter(prefix="/code-search", tags=["code_search"], dependencies=[Depends(get_current_active_user)])
+router = APIRouter(prefix="/api/code-search", tags=["code_search"], dependencies=[Depends(get_current_active_user)])
 
 _file_index: dict[str, dict[str, Any]] = {}
 

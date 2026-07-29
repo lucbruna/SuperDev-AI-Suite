@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import CodePreview from './CodePreview';
 
 interface MarkdownViewerProps {
@@ -142,8 +143,7 @@ function renderInline(text: string): React.ReactNode {
     const imageMatch = remaining.match(/^!\[(.+?)\]\((.+?)\)/);
     if (imageMatch) {
       parts.push(
-        <img key={key++} src={imageMatch[2]} alt={imageMatch[1]}
-             className="max-w-full rounded-lg my-1" loading="lazy" />
+        <Image key={key++} src={imageMatch[2]} alt={imageMatch[1]} width={800} height={600} className="max-w-full rounded-lg my-1" loading="lazy" />
       );
       remaining = remaining.slice(imageMatch[0].length);
       continue;

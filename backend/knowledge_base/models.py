@@ -21,7 +21,14 @@ from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from backend.database.base import Base, TimestampMixin
+from sqlalchemy.orm import declarative_base
+
+KBBase = declarative_base()
+
+
+class KBTimestampMixin:
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
 
 class KnowledgeBaseType(str, enum.Enum):
@@ -32,7 +39,7 @@ class KnowledgeBaseType(str, enum.Enum):
     GENERAL = "general"
 
 
-class KnowledgeBase(Base, TimestampMixin):
+class KnowledgeBase(KBBase, KBTimestampMixin):
     __tablename__ = "knowledge_bases"
 
     id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
@@ -53,7 +60,7 @@ class KnowledgeBase(Base, TimestampMixin):
     )
 
 
-class KnowledgeEntry(Base, TimestampMixin):
+class KnowledgeEntry(KBBase, KBTimestampMixin):
     __tablename__ = "knowledge_entries"
 
     id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
@@ -86,7 +93,7 @@ class KnowledgeEntry(Base, TimestampMixin):
     )
 
 
-class KnowledgeChunk(Base):
+class KnowledgeChunk(KBBase):
     __tablename__ = "knowledge_chunks"
 
     id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)

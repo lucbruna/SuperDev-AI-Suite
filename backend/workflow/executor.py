@@ -9,7 +9,6 @@ from backend.runtime.runtime_manager import runtime_manager
 from backend.websocket.events import EventBuilder
 from backend.websocket.manager import manager
 from backend.workflow.base_workflow import (
-from backend.workflow.condition_eval import safe_condition_eval
     StepConfig,
     StepResult,
     StepStatus,
@@ -17,6 +16,7 @@ from backend.workflow.condition_eval import safe_condition_eval
     WorkflowDefinition,
     WorkflowStatus,
 )
+from backend.workflow.condition_eval import safe_condition_eval
 
 
 class WorkflowExecutor:

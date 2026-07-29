@@ -2,3 +2,6 @@ packages:
   - 'frontend'
   - 'cli'
   - 'sdk/*'
+allowBuilds:
+  esbuild: true
+  unrs-resolver: true

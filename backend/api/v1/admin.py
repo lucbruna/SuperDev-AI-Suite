@@ -2,12 +2,65 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.dependencies import get_current_admin_user
+
 from backend.audit.audit_logger import audit_logger
 from backend.database.session import get_db
 from backend.security.compliance import ComplianceFramework, compliance_engine
 from backend.security.multi_tenancy import TenantPlan, tenant_manager
 
-router = APIRouter()
+from datetime import datetime
+from typing import Optional
+
+router = APIRouter(dependencies=[Depends(get_current_admin_user)])
+
+# In-memory admin users store (extends the main user store)
+_admin_users: list[dict] = [
+    {
+        "id": "1",
+        "email": "admin@superdev.com",
+        "fullName": "Admin User",
+        "username": "admin",
+        "role": "admin",
+        "isActive": True,
+        "isVerified": True,
+        "lastLogin": "2026-07-29T00:00:00Z",
+        "createdAt": "2025-01-01T00:00:00Z",
+        "updatedAt": "2026-07-29T00:00:00Z",
+    },
+    {
+        "id": "2",
+        "email": "user@superdev.com",
+        "fullName": "Dev User",
+        "username": "devuser",
+        "role": "user",
+        "isActive": True,
+        "isVerified": True,
+        "lastLogin": "2026-07-28T12:00:00Z",
+        "createdAt": "2025-06-01T00:00:00Z",
+        "updatedAt": "2026-07-28T12:00:00Z",
+    },
+]
+
+_admin_organizations: list[dict] = [
+    {
+        "id": "1",
+        "name": "SuperDev",
+        "slug": "superdev",
+        "ownerId": "1",
+        "ownerName": "Admin User",
+        "memberCount": 3,
+        "isActive": True,
+        "createdAt": "2025-01-01T00:00:00Z",
+        "updatedAt": "2026-07-29T00:00:00Z",
+    },
+]
+
+_admin_settings: dict = {
+    "defaultLanguage": "en",
+    "timezone": "UTC",
+    "dateFormat": "YYYY-MM-DD",
+}
 
 
 class AuditQueryRequest(BaseModel):
@@ -33,9 +86,6 @@ async def get_audit_logs(
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    from backend.dependencies import get_current_admin_user
-    await get_current_admin_user(db=db)
-
     entries = audit_logger.query(limit=limit)
     return {
         "entries": [e.to_dict() for e in entries],
@@ -47,8 +97,7 @@ async def get_audit_logs(
 async def get_audit_statistics(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    from backend.dependencies import get_current_admin_user
-    await get_current_admin_user(db=db)
+
 
     return audit_logger.get_statistics()
 
@@ -58,8 +107,7 @@ async def get_security_events(
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    from backend.dependencies import get_current_admin_user
-    await get_current_admin_user(db=db)
+
 
     events = audit_logger.get_security_events(limit)
     return {
@@ -73,8 +121,7 @@ async def export_audit_logs(
     format: str = "json",
     db: AsyncSession = Depends(get_db),
 ):
-    from backend.dependencies import get_current_admin_user
-    await get_current_admin_user(db=db)
+
 
     data = audit_logger.export(format=format)
     if format == "json":
@@ -91,8 +138,7 @@ async def check_compliance(
     request: ComplianceCheckRequest,
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    from backend.dependencies import get_current_admin_user
-    await get_current_admin_user(db=db)
+
 
     try:
         framework = ComplianceFramework(request.framework)
@@ -110,8 +156,7 @@ async def check_compliance(
 async def list_compliance_frameworks(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    from backend.dependencies import get_current_admin_user
-    await get_current_admin_user(db=db)
+
 
     return {
         "frameworks": [
@@ -125,8 +170,7 @@ async def list_compliance_frameworks(
 async def list_tenants(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    from backend.dependencies import get_current_admin_user
-    await get_current_admin_user(db=db)
+
 
     tenants = tenant_manager.list_tenants()
     return {
@@ -173,8 +217,7 @@ async def upgrade_tenant_plan(
     plan: str,
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    from backend.dependencies import get_current_admin_user
-    await get_current_admin_user(db=db)
+
 
     try:
         new_plan = TenantPlan(plan)
@@ -192,3 +235,142 @@ async def upgrade_tenant_plan(
         )
 
     return tenant.to_dict()
+
+
+@router.get("/users")
+async def admin_list_users(
+    page: int = 1,
+    limit: int = 20,
+    search: str | None = None,
+    role: str | None = None,
+    isActive: bool | None = None,
+    sortBy: str = "createdAt",
+    sortOrder: str = "desc",
+    db: AsyncSession = Depends(get_db),
+):
+
+
+    users = _admin_users
+    if search:
+        users = [u for u in users if search.lower() in u["email"].lower() or search.lower() in u["fullName"].lower()]
+    if role:
+        users = [u for u in users if u["role"] == role]
+    if isActive is not None:
+        users = [u for u in users if u["isActive"] == isActive]
+
+    reverse = sortOrder == "desc"
+    users.sort(key=lambda u: u.get(sortBy, ""), reverse=reverse)
+
+    total = len(users)
+    start = (page - 1) * limit
+    items = users[start : start + limit]
+
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "limit": limit,
+        "totalPages": (total + limit - 1) // limit,
+    }
+
+
+@router.patch("/users/{user_id}")
+async def admin_update_user(
+    user_id: str,
+    data: dict,
+    db: AsyncSession = Depends(get_db),
+):
+
+
+    for u in _admin_users:
+        if u["id"] == user_id:
+            for k, v in data.items():
+                if k in u:
+                    u[k] = v
+            u["updatedAt"] = datetime.utcnow().isoformat() + "Z"
+            return {"success": True, "data": u}
+    raise HTTPException(status_code=404, detail="User not found")
+
+
+@router.delete("/users/{user_id}", status_code=204)
+async def admin_delete_user(
+    user_id: str,
+    db: AsyncSession = Depends(get_db),
+):
+
+
+    for i, u in enumerate(_admin_users):
+        if u["id"] == user_id:
+            _admin_users.pop(i)
+            return None
+    raise HTTPException(status_code=404, detail="User not found")
+
+
+@router.get("/organizations")
+async def admin_list_organizations(
+    page: int = 1,
+    limit: int = 20,
+    search: str | None = None,
+    isActive: bool | None = None,
+    sortBy: str = "createdAt",
+    sortOrder: str = "desc",
+    db: AsyncSession = Depends(get_db),
+):
+
+
+    orgs = _admin_organizations
+    if search:
+        orgs = [o for o in orgs if search.lower() in o["name"].lower()]
+    if isActive is not None:
+        orgs = [o for o in orgs if o["isActive"] == isActive]
+
+    reverse = sortOrder == "desc"
+    orgs.sort(key=lambda o: o.get(sortBy, ""), reverse=reverse)
+
+    total = len(orgs)
+    start = (page - 1) * limit
+    items = orgs[start : start + limit]
+
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "limit": limit,
+        "totalPages": (total + limit - 1) // limit,
+    }
+
+
+@router.patch("/organizations/{org_id}")
+async def admin_update_organization(
+    org_id: str,
+    data: dict,
+    db: AsyncSession = Depends(get_db),
+):
+
+
+    for o in _admin_organizations:
+        if o["id"] == org_id:
+            for k, v in data.items():
+                if k in o:
+                    o[k] = v
+            o["updatedAt"] = datetime.utcnow().isoformat() + "Z"
+            return {"success": True, "data": o}
+    raise HTTPException(status_code=404, detail="Organization not found")
+
+
+@router.get("/settings")
+async def admin_get_system_settings(
+    db: AsyncSession = Depends(get_db),
+):
+
+    return {"success": True, "data": _admin_settings}
+
+
+@router.put("/settings")
+async def admin_update_system_settings(
+    data: dict,
+    db: AsyncSession = Depends(get_db),
+):
+
+    _admin_settings.update(data)
+    return {"success": True, "data": _admin_settings}
