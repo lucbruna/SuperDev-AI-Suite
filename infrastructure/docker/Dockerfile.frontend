@@ -1,20 +1,35 @@
-FROM node:20-alpine AS deps
+FROM node:20-alpine AS base
 WORKDIR /app
-COPY frontend/package.json frontend/package-lock.json* ./
-RUN npm ci
+RUN npm install -g pnpm && echo "node-linker=hoisted" > .npmrc
 
-FROM node:20-alpine AS build
+# ── deps: Install dependencies with frozen lockfile ──────────────
+FROM base AS deps
 WORKDIR /app
+# Copy ALL workspace package.json files to satisfy --frozen-lockfile
+COPY pnpm-lock.yaml package.json pnpm-workspace.yaml ./
+COPY frontend/package.json ./frontend/package.json
+COPY sdk/typescript/package.json ./sdk/typescript/package.json
+# Strictly reproducible install --frozen-lockfile verifies all specs match
+RUN pnpm install --frozen-lockfile --filter superdev-frontend
+
+# ── build: Compile the Next.js application ──────────────────────
+FROM base AS build
+WORKDIR /app
+# Copy hoisted dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
-COPY frontend/ .
-RUN npm run build
+# Copy frontend source directly to /app/ (overwrites root package.json)
+COPY frontend/ ./
+# Build directly from /app/ where both package.json and node_modules exist
+RUN pnpm run build
 
-FROM node:20-alpine AS runner
+# ── runner: Production image ────────────────────────────────────
+FROM base AS runner
 WORKDIR /app
 ENV NODE_ENV=production
+# Copy built artifacts
 COPY --from=build /app/.next ./.next
 COPY --from=build /app/public ./public
 COPY --from=build /app/package.json ./
 COPY --from=build /app/node_modules ./node_modules
 EXPOSE 3000
-CMD ["npm", "start"]
+CMD ["pnpm", "start"]

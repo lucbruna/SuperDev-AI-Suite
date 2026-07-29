@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   # ── Backend ──────────────────────────────────────────────────────
   backend:
@@ -9,8 +7,9 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://superdev:superdev@postgres:5432/superdev
-      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql+asyncpg://superdev:superdev@postgres:5432/superdev
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
       - SECRET_KEY=dev-secret-key-change-in-production
       - CORS_ORIGINS=["http://localhost:3000"]
       - LOG_LEVEL=INFO
@@ -21,7 +20,7 @@ services:
         condition: service_healthy
     volumes:
       - ./backend:/app/backend
-    command: uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+    command: uvicorn backend.main:app --host 0.0.0.0 --port 8000
 
   # ── Frontend ─────────────────────────────────────────────────────
   frontend:
@@ -38,7 +37,6 @@ services:
     volumes:
       - ./frontend:/app/frontend
       - /app/frontend/node_modules
-    command: npm run dev
 
   # ── Banco de Dados ──────────────────────────────────────────────
   postgres:
@@ -71,6 +69,17 @@ services:
       timeout: 5s
       retries: 5
 
+  # ── Postgres Exporter (for Prometheus metrics) ──────────────────
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    ports:
+      - "9187:9187"
+    environment:
+      DATA_SOURCE_NAME: "postgresql://superdev:superdev@postgres:5432/superdev?sslmode=disable"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   # ── Monitoramento ────────────────────────────────────────────────
   prometheus:
     image: prom/prometheus:latest
@@ -95,13 +104,10 @@ services:
     image: traefik:v3.0
     ports:
       - "80:80"
-      - "8080:8080"
+      - "8081:8080"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./infrastructure/network/traefik/traefik.yml:/etc/traefik/traefik.yml
-    depends_on:
-      - backend
-      - frontend
+      - ./infrastructure/network/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./infrastructure/network/traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
 
 volumes:
   postgres_data:

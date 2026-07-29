@@ -1,7 +1,8 @@
-version: "3.8"
-
 services:
   backend:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.backend
     restart: always
     deploy:
       resources:
@@ -14,19 +15,102 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    networks:
+      - superdev
 
   frontend:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.frontend
     restart: always
+    networks:
+      - superdev
 
-  monitoring:
+  postgres:
+    image: pgvector/pgvector:pg16
+    restart: always
+    environment:
+      POSTGRES_USER: superdev
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: superdev
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U superdev"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - superdev
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - superdev
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    restart: always
+    environment:
+      DATA_SOURCE_NAME: "postgresql://superdev:${POSTGRES_PASSWORD}@postgres:5432/superdev?sslmode=disable"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - superdev
+
+  prometheus:
     image: prom/prometheus:latest
+    restart: always
     ports:
       - "9090:9090"
     volumes:
-      - ./infrastructure/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./infrastructure/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    networks:
+      - superdev
+
+  grafana:
+    image: grafana/grafana:latest
+    restart: always
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+    volumes:
+      - ./infrastructure/monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - grafana_data:/var/lib/grafana
+    networks:
+      - superdev
+
+  traefik:
+    image: traefik:v3.0
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./infrastructure/network/traefik/traefik.yml:/etc/traefik/traefik.yml
     networks:
       - superdev
 
 networks:
   superdev:
     driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:
