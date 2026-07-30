@@ -15,6 +15,9 @@ class TestUserModel:
             email="test@example.com",
             username="testuser",
             hashed_password="hashed_pw",
+            is_active=True,
+            is_superuser=False,
+            is_verified=False,
         )
         assert user.email == "test@example.com"
         assert user.username == "testuser"

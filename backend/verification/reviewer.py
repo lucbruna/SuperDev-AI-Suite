@@ -47,6 +47,7 @@ class CodeReviewer:
         import re
         
         issues = []
+        security_issues = []
         score = 100
         
         lines = code.split("\n")
@@ -61,8 +62,20 @@ class CodeReviewer:
                 score -= 10
             
             if "eval(" in code or "exec(" in code:
-                issues.append({"type": "security", "message": "Use of eval/exec is dangerous", "severity": "critical"})
+                security_issues.append({"type": "security", "message": "Use of eval/exec is dangerous", "severity": "critical"})
                 score -= 30
+            
+            if "os.system(" in code or "os.popen(" in code:
+                security_issues.append({"type": "security", "message": "Use of os.system/os.popen is dangerous", "severity": "critical"})
+                score -= 30
+            
+            if "subprocess" in code and ("shell=True" in code or "call(" in code or "Popen(" in code):
+                security_issues.append({"type": "security", "message": "subprocess with shell or direct call can be dangerous", "severity": "high"})
+                score -= 20
+            
+            if "__import__(" in code:
+                security_issues.append({"type": "security", "message": "Dynamic imports with __import__ are risky", "severity": "high"})
+                score -= 15
             
             if len(lines) > 500:
                 issues.append({"type": "style", "message": "File too long, consider splitting", "severity": "info"})
@@ -72,6 +85,7 @@ class CodeReviewer:
             success=True,
             score=max(0, score),
             issues=issues,
+            security_issues=security_issues,
             stage=VerificationStage.REVIEW,
         )
 

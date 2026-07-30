@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from typing import Any
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.auth.rbac import Action, Resource, require_permission
 from backend.database.session import get_db
 from backend.dependencies import get_current_active_user
 from backend.knowledge_base.models import KnowledgeBaseType
@@ -114,6 +116,7 @@ async def create_knowledge_base(
     request: KnowledgeBaseCreate,
     db: AsyncSession = Depends(get_db),
     service: KnowledgeBaseService = Depends(get_knowledge_base_service),
+    _user: Any = Depends(require_permission(Resource.KNOWLEDGE, Action.CREATE)),
 ) -> KnowledgeBaseResponse:
     kb = await service.create_knowledge_base(
         name=request.name,
@@ -180,6 +183,7 @@ async def delete_knowledge_base(
     kb_id: UUID,
     db: AsyncSession = Depends(get_db),
     service: KnowledgeBaseService = Depends(get_knowledge_base_service),
+    _user: Any = Depends(require_permission(Resource.KNOWLEDGE, Action.DELETE)),
 ) -> None:
     deleted = await service.vector_store.delete_knowledge_base(kb_id)
     if not deleted:
@@ -192,6 +196,7 @@ async def add_document(
     request: DocumentCreate,
     db: AsyncSession = Depends(get_db),
     service: KnowledgeBaseService = Depends(get_knowledge_base_service),
+    _user: Any = Depends(require_permission(Resource.KNOWLEDGE, Action.CREATE)),
 ) -> DocumentResponse:
     entry = await service.add_document(
         knowledge_base_id=kb_id,
@@ -227,6 +232,7 @@ async def add_code_file(
     tags: list[str] | None = None,
     db: AsyncSession = Depends(get_db),
     service: KnowledgeBaseService = Depends(get_knowledge_base_service),
+    _user: Any = Depends(require_permission(Resource.KNOWLEDGE, Action.CREATE)),
 ) -> DocumentResponse:
     entry = await service.add_code_file(
         knowledge_base_id=kb_id,
@@ -362,6 +368,7 @@ async def ingest_repository(
     request: IngestRepoRequest,
     db: AsyncSession = Depends(get_db),
     service: KnowledgeBaseService = Depends(get_knowledge_base_service),
+    _user: Any = Depends(require_permission(Resource.KNOWLEDGE, Action.CREATE)),
 ) -> dict[str, Any]:
     kb = await service.vector_store.get_knowledge_base(kb_id)
     if not kb:

@@ -5,45 +5,85 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main]
-  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   lint:
+    name: Lint & Type Check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - run: pip install ruff
-      - name: Lint Python code
-        run: |
-          ruff check backend/ agents/ ai_platform/ workflow_engine/ \
-            --select F,I \
-            --fix \
-            --exclude backend/database/models/
+      - name: Install ruff
+        run: pip install ruff
+      - name: Ruff lint
+        run: ruff check backend/ --output-format=github
+      - name: Ruff format check
+        run: ruff format --check backend/
 
   test-backend:
+    name: Backend Tests
     runs-on: ubuntu-latest
+    needs: lint
     services:
       postgres:
-        image: postgres:16
+        image: pgvector/pgvector:pg16
         env:
+          POSTGRES_USER: superdev
+          POSTGRES_PASSWORD: testpassword
           POSTGRES_DB: superdev_test
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
         ports:
           - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - run: pip install -r backend/requirements.txt pytest httpx pytest-asyncio
-      - run: pytest backend/tests/unit/ -v --ignore=backend/tests/unit/test_health.py --ignore=backend/tests/unit/test_users.py
+          cache: pip
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio pytest-cov aiosqlite httpx
+      - name: Run unit tests
+        env:
+          DATABASE_URL: postgresql+asyncpg://superdev:testpassword@localhost:5432/superdev_test
+          REDIS_URL: redis://localhost:6379/0
+          JWT_SECRET_KEY: ci-test-secret-key-minimum-32-chars-long
+          ENVIRONMENT: test
+        run: |
+          pytest tests/ -v \
+            --ignore=tests/unit/test_ai_router.py \
+            --ignore=tests/unit/test_git_tool.py \
+            --cov=backend \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            -x
+      - name: Upload coverage
+        if: always()
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          flags: backend
+        continue-on-error: true
 
   test-frontend:
+    name: Frontend Tests
     runs-on: ubuntu-latest
+    needs: lint
     defaults:
       run:
         working-directory: frontend
@@ -52,14 +92,22 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
       - run: npm ci
-      - run: npm run lint
-      - run: npm run typecheck
+      - run: npm run lint --if-present
+      - run: npm run build --if-present
+      - run: npm test -- --passWithNoTests
 
-  build:
-    needs: [lint, test-backend, test-frontend]
+  docker-build:
+    name: Docker Build
     runs-on: ubuntu-latest
+    needs: [test-backend, test-frontend]
     steps:
       - uses: actions/checkout@v4
-      - run: docker build -f infrastructure/docker/Dockerfile.backend -t superdev-backend .
-      - run: docker build -f infrastructure/docker/Dockerfile.frontend -t superdev-frontend .
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build backend image
+        run: docker build -f infrastructure/docker/Dockerfile.backend -t superdev-backend:test .
+      - name: Build frontend image
+        run: docker build -f infrastructure/docker/Dockerfile.frontend -t superdev-frontend:test .

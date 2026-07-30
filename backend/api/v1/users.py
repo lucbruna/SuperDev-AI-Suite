@@ -3,6 +3,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.auth.rbac import Action, Resource, require_permission
 from backend.database.session import get_db
 from backend.dependencies import get_current_active_user
 from backend.users.schema import UserResponse, UserUpdate
@@ -53,6 +54,7 @@ async def list_users(
     page: int = 1,
     size: int = 20,
     db: AsyncSession = Depends(get_db),
+    _user: Any = Depends(require_permission(Resource.USERS, Action.READ)),
 ) -> list[UserResponse]:
     service = UserService(db)
     users = await service.list_users(page=page, size=size)
@@ -63,6 +65,7 @@ async def list_users(
 async def delete_user(
     user_id: str,
     db: AsyncSession = Depends(get_db),
+    _user: Any = Depends(require_permission(Resource.USERS, Action.DELETE)),
 ) -> None:
     service = UserService(db)
     await service.delete_user(user_id)

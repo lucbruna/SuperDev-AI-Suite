@@ -1,28 +1,21 @@
-"""Alembic migration environment.
+"""Alembic environment configuration for async SQLAlchemy migrations.
 
-Usa importlib para carregar models sem disparar backend.__init__
-(que tem lazy imports para evitar hangs).
+Supports both PostgreSQL (production) and SQLite (testing).
 """
+from __future__ import annotations
 
-import os
-import sys
+import asyncio
 from logging.config import fileConfig
 
-from sqlalchemy import create_engine
-from sqlalchemy import pool
-
 from alembic import context
+from sqlalchemy import pool
+from sqlalchemy.engine import Connection
+from sqlalchemy.ext.asyncio import async_engine_from_config
 
-# Adicionar o diretório raiz ao path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+from backend.database.base import Base
 
-# Importa o Base usando importlib para evitar passar pelo backend.__init__
-import importlib
-base_mod = importlib.import_module("backend.database.base")
-Base = base_mod.Base
-
-# Importa todos os modelos para registrar no metadata do Base
-importlib.import_module("backend.database.models")
+# Import all models so Alembic can detect them
+from backend.database.models import user, project, workflow, agent, plugin, provider, knowledge, notification, audit, organization, role  # noqa: F401
 
 config = context.config
 if config.config_file_name is not None:
@@ -30,16 +23,16 @@ if config.config_file_name is not None:
 
 target_metadata = Base.metadata
 
-# URL do banco (usa sync driver psycopg2 para migracoes)
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql://superdev:superdev@localhost:5432/superdev",
-)
+# Override sqlalchemy.url from environment if available
+import os
+db_url = os.getenv("DATABASE_URL") or os.getenv("ALEMBIC_DATABASE_URL")
+if db_url:
+    config.set_main_option("sqlalchemy.url", db_url)
 
 
 def run_migrations_offline() -> None:
-    """Executa migracoes em modo offline (gera SQL)."""
-    url = config.get_main_option("sqlalchemy.url", DATABASE_URL)
+    """Run migrations in 'offline' mode — generate SQL without connecting."""
+    url = config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -50,17 +43,27 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 
+def do_run_migrations(connection: Connection) -> None:
+    context.configure(connection=connection, target_metadata=target_metadata)
+    with context.begin_transaction():
+        context.run_migrations()
+
+
+async def run_async_migrations() -> None:
+    """Run migrations in 'online' mode with an async engine."""
+    connectable = async_engine_from_config(
+        config.get_section(config.config_ini_section, {}),
+        prefix="sqlalchemy.",
+        poolclass=pool.NullPool,
+    )
+    async with connectable.connect() as connection:
+        await connection.run_sync(do_run_migrations)
+    await connectable.dispose()
+
+
 def run_migrations_online() -> None:
-    """Executa migracoes em modo online (conectado ao banco)."""
-    url = os.getenv("DATABASE_URL", DATABASE_URL)
-    connectable = create_engine(url, poolclass=pool.NullPool)
-    with connectable.connect() as connection:
-        context.configure(
-            connection=connection,
-            target_metadata=target_metadata,
-        )
-        with context.begin_transaction():
-            context.run_migrations()
+    """Entrypoint for online migrations — delegates to async runner."""
+    asyncio.run(run_async_migrations())
 
 
 if context.is_offline_mode():

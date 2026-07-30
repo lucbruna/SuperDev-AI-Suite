@@ -1,7 +1,10 @@
+from typing import Any
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.auth.rbac import Action, Resource, require_permission
 from backend.database.session import get_db
 from backend.dependencies import get_current_active_user
 from backend.plugins.plugin_manager import plugin_manager
@@ -72,6 +75,7 @@ async def list_registry_plugins(
 async def get_popular_plugins(
     limit: int = 10,
     db: AsyncSession = Depends(get_db),
+    _user: Any = Depends(require_permission(Resource.PLUGINS, Action.READ)),
 ) -> list[PluginRegistryResponse]:
     plugins = plugin_registry.get_popular(limit)
     return [
@@ -119,9 +123,8 @@ async def list_installed_plugins(
 async def install_plugin(
     request: PluginInstallRequest,
     db: AsyncSession = Depends(get_db),
+    _user: Any = Depends(require_permission(Resource.PLUGINS, Action.CREATE)),
 ) -> PluginInstalledResponse:
-    from backend.dependencies import get_current_active_user
-    await get_current_active_user(db=db)
 
     entry = plugin_registry.get(request.slug)
     if not entry:
@@ -171,9 +174,8 @@ async def install_plugin(
 async def enable_plugin(
     slug: str,
     db: AsyncSession = Depends(get_db),
+    _user: Any = Depends(require_permission(Resource.PLUGINS, Action.UPDATE)),
 ) -> dict:
-    from backend.dependencies import get_current_active_user
-    await get_current_active_user(db=db)
 
     enabled = await plugin_manager.enable_plugin(slug)
     if not enabled:
@@ -188,9 +190,8 @@ async def enable_plugin(
 async def disable_plugin(
     slug: str,
     db: AsyncSession = Depends(get_db),
+    _user: Any = Depends(require_permission(Resource.PLUGINS, Action.UPDATE)),
 ) -> dict:
-    from backend.dependencies import get_current_active_user
-    await get_current_active_user(db=db)
 
     disabled = await plugin_manager.disable_plugin(slug)
     if not disabled:
@@ -205,9 +206,8 @@ async def disable_plugin(
 async def uninstall_plugin(
     slug: str,
     db: AsyncSession = Depends(get_db),
+    _user: Any = Depends(require_permission(Resource.PLUGINS, Action.DELETE)),
 ) -> None:
-    from backend.dependencies import get_current_active_user
-    await get_current_active_user(db=db)
 
     uninstalled = await plugin_manager.uninstall_plugin(slug)
     if not uninstalled:
@@ -222,9 +222,8 @@ async def update_plugin_config(
     slug: str,
     request: PluginConfigUpdate,
     db: AsyncSession = Depends(get_db),
+    _user: Any = Depends(require_permission(Resource.PLUGINS, Action.UPDATE)),
 ) -> dict:
-    from backend.dependencies import get_current_active_user
-    await get_current_active_user(db=db)
 
     updated = await plugin_manager.update_plugin_config(slug, request.settings)
     if not updated:

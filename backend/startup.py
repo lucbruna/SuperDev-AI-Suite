@@ -45,7 +45,7 @@ async def startup_handler() -> None:
         from sqlalchemy.orm import Session
 
         # Converte URL async (postgresql+asyncpg://) para sync (postgresql://)
-        sync_url = config.database.url.replace("+asyncpg", "")
+        sync_url = config.database.url.replace("+asyncpg", "").replace("+aiosqlite", "")
 
         def _run_seed():
             engine = create_engine(sync_url, pool_pre_ping=True)
@@ -63,6 +63,20 @@ async def startup_handler() -> None:
         logger.info("Database seed complete")
     except Exception as e:
         logger.warning("Database seed skipped or failed", extra={"error": str(e)})
+
+    # Ensure RBAC system roles exist (idempotent)
+    try:
+        from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+        engine = create_async_engine(config.database.url, pool_size=1, echo=False)
+        async_session = async_sessionmaker(engine, expire_on_commit=False)
+        async with async_session() as session:
+            from backend.auth.rbac import ensure_system_roles
+            await ensure_system_roles(session)
+        await engine.dispose()
+        logger.info("RBAC system roles ensured")
+    except Exception as e:
+        logger.warning("RBAC role seeding skipped or failed: %s", e)
 
     logger.info("Initializing cache")
     try:

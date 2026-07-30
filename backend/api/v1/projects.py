@@ -1,12 +1,14 @@
 from datetime import datetime
+from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from sqlalchemy import text as sa_text
 
+from backend.auth.rbac import Action, Resource, require_permission
 from backend.database.session import get_db
 from backend.dependencies import get_current_active_user
 from backend.utils.uuid_utils import generate_uuid
@@ -49,6 +51,7 @@ class ProjectList(BaseModel):
 async def create_project(
     data: ProjectCreate,
     db: AsyncSession = Depends(get_db),
+    _user: Any = Depends(require_permission(Resource.PROJECTS, Action.CREATE)),
 ) -> ProjectResponse:
     pid = generate_uuid()
     await db.execute(
@@ -109,6 +112,7 @@ async def update_project(
     project_id: str,
     data: ProjectUpdate,
     db: AsyncSession = Depends(get_db),
+    _user: Any = Depends(require_permission(Resource.PROJECTS, Action.UPDATE)),
 ) -> ProjectResponse:
     updates = {k: v for k, v in data.model_dump(exclude_unset=True).items() if v is not None}
     if not updates:
@@ -128,6 +132,7 @@ async def update_project(
 async def delete_project(
     project_id: str,
     db: AsyncSession = Depends(get_db),
+    _user: Any = Depends(require_permission(Resource.PROJECTS, Action.DELETE)),
 ) -> None:
     result = await db.execute(sa_text("DELETE FROM projects WHERE id = :id"), {"id": project_id})
     await db.commit()

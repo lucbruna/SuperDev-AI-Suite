@@ -1,0 +1,17 @@
+# Default code owners
+* @superdev-team
+
+# Backend
+/backend/ @backend-team
+
+# Frontend
+/frontend/ @frontend-team
+
+# Infrastructure & DevOps
+/infrastructure/ @devops-team
+/.github/ @devops-team
+/docker-compose*.yml @devops-team
+
+# Documentation
+/docs/ @docs-team
+*.md @docs-team

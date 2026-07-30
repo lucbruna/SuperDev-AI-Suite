@@ -46,6 +46,7 @@ from core.ai_knowledge_engine import (
     ManagerConfig as KWMConfig,
     KnowledgeEngineConfig as KWMConfig_EC,
 )
+from core.enterprise.monitor.enterprise_monitor import EnterpriseMonitor
 
 
 async def run_full_integration():
@@ -224,8 +225,22 @@ async def run_full_integration():
     kw_healthy = kw_manager.is_healthy()
     print(f"  Healthy: {kw_healthy}")
 
+    # Enterprise Monitor
+    print("\n[10] Enterprise Monitor - Unified Dashboard")
+    monitor = EnterpriseMonitor()
+    await monitor.initialize()
+    summary = await monitor.get_enterprise_summary()
+    print(f"  Total engines: {summary['total_engines']}")
+    print(f"  Healthy engines: {summary['healthy_engines']}")
+    print(f"  Total KPIs: {summary['total_kpis']}")
+    print(f"  All healthy: {summary['all_healthy']}")
+    kpis = await monitor.get_enterprise_kpis()
+    for engine_name, engine_kpis in kpis.items():
+        print(f"  {engine_name}: {len(engine_kpis)} KPIs")
+    await monitor.shutdown()
+
     # Cross-domain
-    print("\n[10] Cross-Domain Health")
+    print("\n[11] Cross-Domain Health")
     sc_health = sc_manager.get_engine_status()
     fin_health = fin_manager.get_engine_status()
     hr_health = hr_manager.get_engine_status()

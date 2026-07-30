@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 
 class VerificationStage(StrEnum):
@@ -78,8 +78,8 @@ class CorrectionResult:
 
 @dataclass
 class VerificationResult:
-    task_id: UUID
     task_description: str
+    task_id: UUID = field(default_factory=uuid4)
     language: str = "python"
     success: bool = False
     error: str | None = None

@@ -1,0 +1,61 @@
+from __future__ import annotations
+
+from typing import Any, Dict, List
+
+
+class ConsistencyChecker:
+    """Checks consistency of memory data across replicas."""
+
+    def __init__(self):
+        self._checks: int = 0
+
+    @property
+    def check_count(self) -> int:
+        return self._checks
+
+    def check(self, data: Dict[str, Any]) -> bool:
+        self._checks += 1
+        if not isinstance(data, dict):
+            return False
+        return True
+
+    def compare(self, local: Dict[str, Any], remote: Dict[str, Any]) -> Dict[str, Any]:
+        self._checks += 1
+        matching: List[str] = []
+        diverging: List[str] = []
+        missing_local: List[str] = []
+        missing_remote: List[str] = []
+        all_keys = set(local.keys()) | set(remote.keys())
+        for key in all_keys:
+            if key in local and key in remote:
+                if local[key] == remote[key]:
+                    matching.append(key)
+                else:
+                    diverging.append(key)
+            elif key in local:
+                missing_remote.append(key)
+            else:
+                missing_local.append(key)
+        return {
+            "consistent": len(diverging) == 0,
+            "matching": len(matching),
+            "diverging": len(diverging),
+            "missing_local": len(missing_local),
+            "missing_remote": len(missing_remote),
+            "total_keys": len(all_keys),
+        }
+
+    def check_consistency(self, replicas: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
+        self._checks += 1
+        if len(replicas) < 2:
+            return {"consistent": True, "checked": False}
+        ids = list(replicas.keys())
+        base = replicas[ids[0]]
+        for rid in ids[1:]:
+            result = self.compare(base, replicas[rid])
+            if not result["consistent"]:
+                return {"consistent": False, "diverging_replicas": [ids[0], rid]}
+        return {"consistent": True}
+
+    def reset(self) -> None:
+        self._checks = 0

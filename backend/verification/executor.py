@@ -41,7 +41,7 @@ class CodeExecutor:
     ) -> ExecutionResult:
         start = time.time()
         
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False, encoding="utf-8") as f:
             f.write(code)
             temp_file = f.name
 
@@ -70,14 +70,15 @@ class CodeExecutor:
                 return ExecutionResult(
                     success=False,
                     error=f"Execution timed out after {self.timeout}s",
+                    exit_code=-1,
                     execution_time=time.time() - start,
                     stage=VerificationStage.EXECUTE,
                 )
 
             return ExecutionResult(
                 success=process.returncode == 0,
-                stdout=stdout.decode() if stdout else "",
-                stderr=stderr.decode() if stderr else "",
+                output=stdout.decode(errors="replace") if stdout else "",
+                error=stderr.decode(errors="replace") if stderr else None,
                 exit_code=process.returncode,
                 execution_time=time.time() - start,
                 stage=VerificationStage.EXECUTE,
@@ -130,14 +131,15 @@ class CodeExecutor:
                 return ExecutionResult(
                     success=False,
                     error=f"Execution timed out after {self.timeout}s",
+                    exit_code=-1,
                     execution_time=time.time() - start,
                     stage=VerificationStage.EXECUTE,
                 )
 
             return ExecutionResult(
                 success=process.returncode == 0,
-                stdout=stdout.decode() if stdout else "",
-                stderr=stderr.decode() if stderr else "",
+                output=stdout.decode(errors="replace") if stdout else "",
+                error=stderr.decode(errors="replace") if stderr else None,
                 exit_code=process.returncode,
                 execution_time=time.time() - start,
                 stage=VerificationStage.EXECUTE,
@@ -188,14 +190,15 @@ class CodeExecutor:
                 return ExecutionResult(
                     success=False,
                     error=f"Execution timed out after {self.timeout}s",
+                    exit_code=-1,
                     execution_time=time.time() - start,
                     stage=VerificationStage.EXECUTE,
                 )
 
             return ExecutionResult(
                 success=process.returncode == 0,
-                stdout=stdout.decode() if stdout else "",
-                stderr=stderr.decode() if stderr else "",
+                output=stdout.decode(errors="replace") if stdout else "",
+                error=stderr.decode(errors="replace") if stderr else None,
                 exit_code=process.returncode,
                 execution_time=time.time() - start,
                 stage=VerificationStage.EXECUTE,

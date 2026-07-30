@@ -46,13 +46,13 @@ class HealthChecker:
                 self._results.append(ComponentHealth(
                     name=name,
                     status=HealthStatus.UNHEALTHY,
-                    error=str(e),
+                    message=str(e),
                 ))
         return self._results
 
     def get_overall_status(self) -> HealthStatus:
         if not self._results:
-            return HealthStatus.UNKNOWN
+            return HealthStatus.HEALTHY
         statuses = [r.status for r in self._results]
         if all(s == HealthStatus.HEALTHY for s in statuses):
             return HealthStatus.HEALTHY

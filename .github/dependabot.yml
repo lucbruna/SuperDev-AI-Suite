@@ -1,115 +1,44 @@
 version: 2
 updates:
-  # Python dependencies
-  - package-ecosystem: "pip"
-    directory: "/"
+  - package-ecosystem: pip
+    directory: /
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "02:00"
+      interval: weekly
+      day: monday
     open-pull-requests-limit: 10
     labels:
-      - "dependencies"
-      - "python"
-    commit-message:
-      prefix: "deps(python)"
+      - dependencies
+      - python
     groups:
-      django:
+      dev-dependencies:
+        dependency-type: development
         patterns:
-          - "django*"
-      fastapi:
-        patterns:
-          - "fastapi*"
-          - "starlette*"
-      pydantic:
-        patterns:
-          - "pydantic*"
-      sqlalchemy:
-        patterns:
-          - "sqlalchemy*"
-          - "alembic*"
-      testing:
-        patterns:
-          - "pytest*"
-          - "httpx*"
-          - "faker*"
+          - pytest*
+          - ruff
+          - mypy
 
-  # Node.js dependencies
-  - package-ecosystem: "npm"
-    directory: "/sdk/typescript"
+  - package-ecosystem: npm
+    directory: /frontend
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "02:30"
+      interval: weekly
+      day: monday
     open-pull-requests-limit: 10
     labels:
-      - "dependencies"
-      - "typescript"
-    commit-message:
-      prefix: "deps(typescript)"
-    groups:
-      react:
-        patterns:
-          - "react*"
-          - "@types/react*"
-      testing:
-        patterns:
-          - "jest*"
-          - "@testing-library*"
-          - "vitest*"
+      - dependencies
+      - javascript
 
-  # Go dependencies
-  - package-ecosystem: "gomod"
-    directory: "/sdk/go"
+  - package-ecosystem: docker
+    directory: /
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "03:00"
-    open-pull-requests-limit: 5
+      interval: monthly
     labels:
-      - "dependencies"
-      - "go"
-    commit-message:
-      prefix: "deps(go)"
+      - dependencies
+      - docker
 
-  # Rust dependencies
-  - package-ecosystem: "cargo"
-    directory: "/sdk/rust"
+  - package-ecosystem: github-actions
+    directory: /
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "03:30"
-    open-pull-requests-limit: 5
+      interval: weekly
     labels:
-      - "dependencies"
-      - "rust"
-    commit-message:
-      prefix: "deps(rust)"
-
-  # Docker dependencies
-  - package-ecosystem: "docker"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "04:00"
-    open-pull-requests-limit: 5
-    labels:
-      - "dependencies"
-      - "docker"
-    commit-message:
-      prefix: "deps(docker)"
-
-  # GitHub Actions
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "04:30"
-    open-pull-requests-limit: 5
-    labels:
-      - "dependencies"
-      - "github-actions"
-    commit-message:
-      prefix: "deps(github-actions)"
+      - dependencies
+      - ci

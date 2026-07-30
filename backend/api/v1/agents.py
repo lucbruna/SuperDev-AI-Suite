@@ -1,8 +1,11 @@
+from typing import Any
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.agents.agent_manager import agent_manager
+from backend.auth.rbac import Action, Resource, require_permission
 from backend.database.session import get_db
 from backend.dependencies import get_current_active_user
 
@@ -47,9 +50,8 @@ class AgentExecuteResponse(BaseModel):
 async def create_agent(
     request: AgentCreateRequest,
     db: AsyncSession = Depends(get_db),
+    _user: Any = Depends(require_permission(Resource.AGENTS, Action.CREATE)),
 ) -> AgentResponse:
-    from backend.dependencies import get_current_active_user
-    await get_current_active_user(db=db)
 
     try:
         agent = agent_manager.create_agent(
@@ -129,6 +131,7 @@ async def get_agent(
 @router.post("/{agent_id}/start", response_model=AgentResponse)
 async def start_agent(
     agent_id: str,
+    _user: Any = Depends(require_permission(Resource.AGENTS, Action.UPDATE)),
 ) -> AgentResponse:
     if not agent_manager.start_agent(agent_id):
         raise HTTPException(
@@ -150,6 +153,7 @@ async def start_agent(
 @router.post("/{agent_id}/stop", response_model=AgentResponse)
 async def stop_agent(
     agent_id: str,
+    _user: Any = Depends(require_permission(Resource.AGENTS, Action.UPDATE)),
 ) -> AgentResponse:
     if not agent_manager.stop_agent(agent_id):
         raise HTTPException(
@@ -173,9 +177,9 @@ async def execute_agent(
     agent_id: str,
     request: AgentExecuteRequest,
     db: AsyncSession = Depends(get_db),
+    _user: Any = Depends(require_permission(Resource.AGENTS, Action.EXECUTE)),
 ) -> AgentExecuteResponse:
-    from backend.dependencies import get_current_active_user
-    user = await get_current_active_user(db=db)
+    user = _user
 
     result = await agent_manager.execute_agent(
         agent_id=agent_id,
@@ -205,9 +209,8 @@ async def execute_agent(
 async def delete_agent(
     agent_id: str,
     db: AsyncSession = Depends(get_db),
+    _user: Any = Depends(require_permission(Resource.AGENTS, Action.DELETE)),
 ) -> None:
-    from backend.dependencies import get_current_active_user
-    await get_current_active_user(db=db)
 
     deleted = agent_manager.delete_agent(agent_id)
     if not deleted:

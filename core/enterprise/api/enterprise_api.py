@@ -102,6 +102,24 @@ async def get_dashboard(
     return data.model_dump()
 
 
+@router.get("/dashboard/unified")
+async def get_unified_dashboard():
+    monitor = EnterpriseMonitor()
+    await monitor.initialize()
+    dashboard = await monitor.get_unified_dashboard()
+    await monitor.shutdown()
+    return dashboard
+
+
+@router.get("/dashboard/health")
+async def get_enterprise_health():
+    monitor = EnterpriseMonitor()
+    await monitor.initialize()
+    health = await monitor.get_enterprise_health()
+    await monitor.shutdown()
+    return health
+
+
 @router.get("/analytics/report")
 async def generate_report(
     report_type: str = Query(...),

@@ -1,0 +1,13 @@
+from __future__ import annotations
+
+from typing import Any, Protocol
+
+
+class ProjectLifecycle(Protocol):
+    def on_create(self, project: Any) -> None: ...
+    def on_update(self, project: Any) -> None: ...
+    def on_delete(self, project_id: str) -> None: ...
+
+
+class ProjectValidator(Protocol):
+    def validate(self, project: Any) -> list[str]: ...

@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.database.session import get_db
 from backend.dependencies import get_current_active_user
+from backend.auth.rbac import Action, Resource, require_permission
 from backend.workflow_integration.service import WorkflowIntegrationService, get_workflow_integration_service
 
 router = APIRouter(dependencies=[Depends(get_current_active_user)])
@@ -70,6 +71,7 @@ async def create_workflow(
     request: CreateWorkflowRequest,
     db: AsyncSession = Depends(get_db),
     service: WorkflowIntegrationService = Depends(get_workflow_integration_service),
+    _user: Any = Depends(require_permission(Resource.WORKFLOWS, Action.CREATE)),
 ) -> CreateWorkflowResponse:
     definition = service.workflow_manager.create_definition(
         name=request.name,
@@ -133,6 +135,7 @@ async def execute_workflow(
     request: ExecuteWorkflowRequest = ExecuteWorkflowRequest(),
     db: AsyncSession = Depends(get_db),
     service: WorkflowIntegrationService = Depends(get_workflow_integration_service),
+    _user: Any = Depends(require_permission(Resource.WORKFLOWS, Action.EXECUTE)),
 ) -> ExecuteWorkflowResponse:
     result = await service.execute_verification_workflow(
         workflow_id=str(workflow_id),
@@ -152,6 +155,7 @@ async def run_verification(
     request: VerificationWorkflowRequest,
     db: AsyncSession = Depends(get_db),
     service: WorkflowIntegrationService = Depends(get_workflow_integration_service),
+    _user: Any = Depends(require_permission(Resource.WORKFLOWS, Action.EXECUTE)),
 ) -> VerificationWorkflowResponse:
     result = await service.run_verification_workflow(
         task_description=request.task_description,
@@ -183,6 +187,7 @@ async def create_verification_workflow(
     request: VerificationWorkflowRequest,
     db: AsyncSession = Depends(get_db),
     service: WorkflowIntegrationService = Depends(get_workflow_integration_service),
+    _user: Any = Depends(require_permission(Resource.WORKFLOWS, Action.CREATE)),
 ) -> CreateWorkflowResponse:
     definition = await service.create_verification_workflow(
         name=f"Verify: {request.task_description[:50]}",

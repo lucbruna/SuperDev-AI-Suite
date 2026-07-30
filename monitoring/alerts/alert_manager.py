@@ -1,65 +1,131 @@
-import uuid
+from __future__ import annotations
+
 import time
-from typing import Any, Dict, List, Optional
 from dataclasses import dataclass, field
+from typing import Any, Callable
+
+from ..monitoring_models import Alert, AlertSeverity, AlertStatus
 
 
 @dataclass
-class Alert:
-    id: str
-    name: str
-    severity: str  # critical, warning, info
-    message: str
-    status: str  # active, acknowledged, resolved
-    timestamp: float
-    acknowledged_at: Optional[float] = None
-    resolved_at: Optional[float] = None
-    details: Dict[str, Any] = field(default_factory=dict)
+class AlertManagerConfig:
+    max_alerts: int = 1000
+    auto_resolve_after: float = 300.0  # 5 minutes
+    dedup_window: float = 60.0
+    aggregation_window: float = 300.0
 
 
 class AlertManager:
-    def __init__(self) -> None:
-        self._alerts: Dict[str, Alert] = {}
+    """Central alert manager that coordinates rule evaluation, dedup, notification."""
 
-    def trigger(self, alert_dict: Dict[str, Any]) -> Alert:
-        alert_id = str(uuid.uuid4())
-        alert = Alert(
-            id=alert_id,
-            name=alert_dict.get("name", "unknown"),
-            severity=alert_dict.get("severity", "info"),
-            message=alert_dict.get("message", ""),
-            status="active",
-            timestamp=time.time(),
-            details=alert_dict.get("details", {}),
-        )
-        self._alerts[alert_id] = alert
-        return alert
+    def __init__(self, config: AlertManagerConfig | None = None) -> None:
+        self._config = config or AlertManagerConfig()
+        self._alerts: dict[str, Alert] = {}
+        self._history: list[Alert] = []
+        self._rules: list[Any] = []
+        self._notifiers: list[Callable[[Alert], None]] = []
+        self._on_fire: list[Callable[[Alert], None]] = []
+        self._on_resolve: list[Callable[[Alert], None]] = []
 
-    def acknowledge(self, alert_id: str) -> Optional[Alert]:
-        alert = self._alerts.get(alert_id)
-        if alert is None:
-            return None
-        alert.status = "acknowledged"
-        alert.acknowledged_at = time.time()
-        return alert
+    @property
+    def config(self) -> AlertManagerConfig:
+        return self._config
 
-    def resolve(self, alert_id: str) -> Optional[Alert]:
-        alert = self._alerts.get(alert_id)
-        if alert is None:
-            return None
-        alert.status = "resolved"
+    def register_rule(self, rule: Any) -> None:
+        self._rules.append(rule)
+
+    def add_notifier(self, notifier: Callable[[Alert], None]) -> None:
+        self._notifiers.append(notifier)
+
+    def on_alert_fire(self, handler: Callable[[Alert], None]) -> None:
+        self._on_fire.append(handler)
+
+    def on_alert_resolve(self, handler: Callable[[Alert], None]) -> None:
+        self._on_resolve.append(handler)
+
+    def fire(self, alert: Alert) -> None:
+        key = alert.name
+        if key in self._alerts:
+            existing = self._alerts[key]
+            if existing.status == AlertStatus.FIRING:
+                return
+            existing.status = AlertStatus.FIRING
+            existing.fired_at = time.time()
+            existing.resolved_at = None
+        else:
+            self._alerts[key] = alert
+
+        self._history.append(alert)
+        self._prune()
+        self._notify(alert)
+        for handler in self._on_fire:
+            try:
+                handler(alert)
+            except Exception:
+                pass
+
+    def resolve(self, alert_name: str) -> None:
+        alert = self._alerts.get(alert_name)
+        if not alert:
+            return
+        alert.status = AlertStatus.RESOLVED
         alert.resolved_at = time.time()
-        return alert
+        for handler in self._on_resolve:
+            try:
+                handler(alert)
+            except Exception:
+                pass
 
-    def get_active(self) -> List[Alert]:
-        return [a for a in self._alerts.values() if a.status in ("active", "acknowledged")]
+    def acknowledge(self, alert_name: str) -> None:
+        alert = self._alerts.get(alert_name)
+        if alert:
+            alert.status = AlertStatus.ACKNOWLEDGED
 
-    def get_all(self, filters: Optional[Dict[str, Any]] = None) -> List[Alert]:
-        results = list(self._alerts.values())
-        if filters:
-            for key, value in filters.items():
-                results = [a for a in results if getattr(a, key, None) == value]
-        return results
+    def suppress(self, alert_name: str) -> None:
+        alert = self._alerts.get(alert_name)
+        if alert:
+            alert.status = AlertStatus.SUPPRESSED
 
-    def get(self, alert_id: str) -> Optional[Alert]:
-        return self._alerts.get(alert_id)
+    def get_active(self) -> list[Alert]:
+        return [
+            a for a in self._alerts.values()
+            if a.status in (AlertStatus.FIRING, AlertStatus.ACKNOWLEDGED)
+        ]
+
+    def get_by_name(self, name: str) -> Alert | None:
+        return self._alerts.get(name)
+
+    def get_history(self, limit: int = 100) -> list[Alert]:
+        return list(self._history[-limit:])
+
+    def evaluate_all(self) -> None:
+        for rule in self._rules:
+            try:
+                rule.evaluate(self)
+            except Exception:
+                pass
+        self._auto_resolve()
+
+    def _auto_resolve(self) -> None:
+        now = time.time()
+        for alert in list(self._alerts.values()):
+            if (
+                alert.status == AlertStatus.FIRING
+                and self._config.auto_resolve_after > 0
+                and (now - alert.fired_at) > self._config.auto_resolve_after
+            ):
+                alert.status = AlertStatus.RESOLVED
+                alert.resolved_at = now
+
+    def _notify(self, alert: Alert) -> None:
+        for notifier in self._notifiers:
+            try:
+                notifier(alert)
+            except Exception:
+                pass
+
+    def _prune(self) -> None:
+        if len(self._history) <= self._config.max_alerts:
+            return
+        excess = len(self._history) - self._config.max_alerts
+        self._history = self._history[excess:]

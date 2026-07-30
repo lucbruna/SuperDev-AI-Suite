@@ -58,6 +58,9 @@ def create_app() -> FastAPI:
     if allowed_hosts != ["*"]:
         from urllib.parse import urlparse
         allowed_hosts = list({urlparse(o).hostname or o for o in allowed_hosts})
+    # Add common test hosts for dev/test environments
+    if config.app.environment != "production":
+        allowed_hosts.extend(["testserver", "test", "localhost", "127.0.0.1"])
     app.add_middleware(
         TrustedHostMiddleware,
         allowed_hosts=allowed_hosts,

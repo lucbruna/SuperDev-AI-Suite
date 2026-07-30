@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from datetime import datetime
 from uuid import UUID
 
@@ -8,9 +9,13 @@ from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy import MetaData
 from sqlalchemy.orm import DeclarativeBase, Mapped, declared_attr, mapped_column
 
+# Use schema only for PostgreSQL (not SQLite in tests)
+_DB_URL = os.getenv("DATABASE_URL", "")
+_DB_SCHEMA = "superdev" if "postgresql" in _DB_URL else None
+
 
 class Base(DeclarativeBase):
-    metadata = MetaData(schema="superdev")
+    metadata = MetaData(schema=_DB_SCHEMA)
 
 
 class TimestampMixin:

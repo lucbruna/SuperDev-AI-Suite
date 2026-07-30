@@ -83,8 +83,8 @@ class CodeTester:
                     stage=VerificationStage.TEST,
                 )
 
-            output = stdout.decode() if stdout else ""
-            error_output = stderr.decode() if stderr else ""
+            output = stdout.decode(errors="replace") if stdout else ""
+            error_output = stderr.decode(errors="replace") if stderr else ""
             
             result_file = test_dir / ".report.json"
             coverage = 0.0
