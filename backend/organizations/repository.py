@@ -2,7 +2,7 @@
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.organizations.model import Organization, OrganizationMember
+from backend.organizations.model import Organization, OrganizationInvite, OrganizationMember
 from backend.organizations.schema import OrganizationCreate, OrganizationUpdate
 
 
@@ -136,3 +136,63 @@ class OrganizationMemberRepository:
         query = select(OrganizationMember).where(OrganizationMember.user_id == user_id)
         result = await self.db.execute(query)
         return list(result.scalars().all())
+
+
+class OrganizationInviteRepository:
+    def __init__(self, db: AsyncSession) -> None:
+        self.db = db
+
+    async def create(
+        self,
+        org_id: str,
+        email: str,
+        role: str,
+        invited_by: str,
+    ) -> OrganizationInvite:
+        invite = OrganizationInvite(
+            organization_id=org_id,
+            email=email,
+            role=role,
+            invited_by=invited_by,
+        )
+        self.db.add(invite)
+        await self.db.commit()
+        await self.db.refresh(invite)
+        return invite
+
+    async def get_by_token(self, token: str) -> OrganizationInvite | None:
+        query = select(OrganizationInvite).where(
+            OrganizationInvite.token == token,
+            OrganizationInvite.status == "pending",
+        )
+        result = await self.db.execute(query)
+        return result.scalar_one_or_none()
+
+    async def get_by_id(self, invite_id: str) -> OrganizationInvite | None:
+        query = select(OrganizationInvite).where(OrganizationInvite.id == invite_id)
+        result = await self.db.execute(query)
+        return result.scalar_one_or_none()
+
+    async def update_status(self, invite_id: str, status: str) -> OrganizationInvite | None:
+        invite = await self.get_by_id(invite_id)
+        if not invite:
+            return None
+        invite.status = status
+        await self.db.commit()
+        await self.db.refresh(invite)
+        return invite
+
+    async def revoke_all_for_email(self, org_id: str, email: str) -> int:
+        """Revoke all pending invites for an email in an organization."""
+        query = select(OrganizationInvite).where(
+            OrganizationInvite.organization_id == org_id,
+            OrganizationInvite.email == email,
+            OrganizationInvite.status == "pending",
+        )
+        result = await self.db.execute(query)
+        invites = list(result.scalars().all())
+        for invite in invites:
+            invite.status = "revoked"
+        if invites:
+            await self.db.commit()
+        return len(invites)

@@ -46,6 +46,27 @@ from .llm_runtime import LLMRuntime
 from .llm_scheduler import LLMScheduler
 from .llm_security import LLMSecurity
 
+# Convenience re-exports from providers
+from .providers import (
+    PROVIDER_CLASSES,
+    PROVIDER_DEFAULT_MODELS,
+    PROVIDER_ENV_MAP,
+    AnthropicProvider,
+    AWSBedrockProvider,
+    AzureOpenAIProvider,
+    CohereProvider,
+    CustomProvider,
+    DeepSeekProvider,
+    GoogleProvider,
+    GroqProvider,
+    HuggingFaceProvider,
+    LocalProvider,
+    MistralProvider,
+    MockProvider,
+    OpenAIProvider,
+    TogetherProvider,
+)
+
 __all__ = [
     "LLMCache",
     "LLMContext",
@@ -85,4 +106,23 @@ __all__ = [
     "RoutableProvider",
     "StreamableProvider",
     "VisionProvider",
+    # Provider classes
+    "AnthropicProvider",
+    "AWSBedrockProvider",
+    "AzureOpenAIProvider",
+    "CohereProvider",
+    "CustomProvider",
+    "DeepSeekProvider",
+    "GoogleProvider",
+    "GroqProvider",
+    "HuggingFaceProvider",
+    "LocalProvider",
+    "MistralProvider",
+    "MockProvider",
+    "OpenAIProvider",
+    "TogetherProvider",
+    # Provider metadata
+    "PROVIDER_CLASSES",
+    "PROVIDER_ENV_MAP",
+    "PROVIDER_DEFAULT_MODELS",
 ]

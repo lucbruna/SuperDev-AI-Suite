@@ -32,6 +32,11 @@ class TimestampMixin:
     )
 
 
+class SoftDeleteMixin:
+    is_deleted: Mapped[bool] = mapped_column(default=False, nullable=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
 class UUIDMixin:
     @declared_attr
     def id(cls) -> Mapped[UUID]:

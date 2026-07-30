@@ -9,6 +9,7 @@ from backend.organizations.events import (
 )
 from backend.organizations.model import Organization
 from backend.organizations.repository import (
+    OrganizationInviteRepository,
     OrganizationMemberRepository,
     OrganizationRepository,
 )
@@ -26,6 +27,7 @@ class OrganizationService:
     def __init__(self, db: AsyncSession) -> None:
         self.repository = OrganizationRepository(db)
         self.member_repository = OrganizationMemberRepository(db)
+        self.invite_repository = OrganizationInviteRepository(db)
 
     async def create_organization(
         self,
@@ -108,7 +110,60 @@ class OrganizationService:
         return [OrganizationMemberResponse.model_validate(m) for m in members]
 
     async def invite_member(self, org_id: str, data: InviteCreate, actor_id: str):
-        pass
+        """Create an organization invitation for a user by email."""
+        org = await self.repository.get_by_id(org_id)
+        if not org:
+            raise ValueError(f"Organization not found: {org_id}")
+
+        # Revoke any existing pending invites for this email in this org
+        await self.invite_repository.revoke_all_for_email(org_id, data.email)
+
+        # Create the new invite
+        invite = await self.invite_repository.create(
+            org_id=org_id,
+            email=data.email,
+            role=data.role.value,
+            invited_by=actor_id,
+        )
+
+        # Emit event (best-effort)
+        try:
+            from backend.organizations.events import MemberInvited
+            MemberInvited(org_id=org_id, actor_id=actor_id, email=data.email)
+        except ImportError:
+            pass
+
+        return invite
 
     async def accept_invite(self, token: str):
-        pass
+        """Accept an organization invitation by token and add the user as a member."""
+        invite = await self.invite_repository.get_by_token(token)
+        if not invite:
+            raise ValueError("Invalid or expired invitation token")
+
+        # Find user by email
+        from backend.users.repository import UserRepository
+        user_repo = UserRepository(self.member_repository.db)
+        user = await user_repo.get_by_email(invite.email)
+        if not user:
+            raise ValueError(f"No user found with email: {invite.email}")
+
+        # Check if already a member
+        existing_members = await self.member_repository.list_by_org(invite.organization_id)
+        if any(m.user_id == user.id for m in existing_members):
+            raise ValueError("User is already a member of this organization")
+
+        # Add as member
+        await self.member_repository.add(invite.organization_id, user.id, invite.role)
+
+        # Mark invite as accepted
+        await self.invite_repository.update_status(invite.id, "accepted")
+
+        # Emit event (best-effort)
+        try:
+            from backend.organizations.events import MemberAdded
+            MemberAdded(org_id=invite.organization_id, actor_id=invite.invited_by, user_id=user.id)
+        except ImportError:
+            pass
+
+        return invite

@@ -1,10 +1,16 @@
 import enum
+import secrets
 
 from sqlalchemy import Boolean, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.database.base import Base, SoftDeleteMixin, TimestampMixin
 from backend.utils.uuid_utils import generate_uuid
+
+
+def generate_invite_token() -> str:
+    """Generate a cryptographically secure invitation token."""
+    return secrets.token_urlsafe(32)
 
 
 class OrganizationRole(enum.StrEnum):
@@ -39,3 +45,24 @@ class OrganizationMember(Base, TimestampMixin):
     role: Mapped[str] = mapped_column(String(20), nullable=False)
 
     organization = relationship("Organization", back_populates="members")
+
+
+class OrganizationInviteStatus(enum.StrEnum):
+    PENDING = "pending"
+    ACCEPTED = "accepted"
+    EXPIRED = "expired"
+    REVOKED = "revoked"
+
+
+class OrganizationInvite(Base, TimestampMixin):
+    __tablename__ = "organization_invites"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
+    organization_id: Mapped[str] = mapped_column(String(36), ForeignKey("organizations.id"), nullable=False)
+    email: Mapped[str] = mapped_column(String(255), nullable=False)
+    role: Mapped[str] = mapped_column(String(20), nullable=False, default="member")
+    token: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, default=generate_invite_token)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
+    invited_by: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), nullable=False)
+
+    organization = relationship("Organization")

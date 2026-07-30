@@ -41,7 +41,18 @@ class PermissionCache:
         self._cache.pop(key, None)
 
     def invalidate_resource(self, resource_type: str, resource_id: uuid.UUID) -> None:
-        pass
+        """Invalidate all cached permissions that reference a specific resource.
+
+        Scans the cache and removes entries where the permission string contains
+        the resource identifier (e.g., 'project:{id}' or 'org:{id}').
+        """
+        resource_key = f"{resource_type}:{resource_id}"
+        keys_to_remove = [
+            key for key in self._cache
+            if resource_key in key
+        ]
+        for key in keys_to_remove:
+            del self._cache[key]
 
     def clear(self) -> None:
         self._cache.clear()
