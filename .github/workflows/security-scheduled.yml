@@ -53,7 +53,7 @@ jobs:
 
       # Secret scanning
       - name: Run Gitleaks
-        uses: gitleaks/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@v3
         with:
           args: --verbose --report-format=json --report-path=gitleaks-weekly.json
 
