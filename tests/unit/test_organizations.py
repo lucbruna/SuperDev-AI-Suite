@@ -168,12 +168,13 @@ class TestPermissionCache:
         assert perms == ["read", "write"]
 
     def test_get_expired_permissions(self):
-        cache = PermissionCache(max_size=100, default_ttl=0)
+        cache = PermissionCache(max_size=100, default_ttl=300)
         user_id = uuid.uuid4()
 
-        cache.set_cached_permissions(user_id, ["read"])
-        # TTL=0 means it expires immediately
-        time.sleep(0.01)
+        # Manually inject an expired entry (expiry in the past)
+        key = f"perms:user:{user_id}"
+        cache._cache[key] = (["read"], time.monotonic() - 1)
+        
         perms = cache.get_cached_permissions(user_id)
         assert perms is None
 
