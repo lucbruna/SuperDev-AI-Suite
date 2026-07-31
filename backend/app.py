@@ -41,9 +41,18 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
+    # Security: reject wildcard origins combined with credentials
+    cors_origins = config.cors.allow_origins
+    if "*" in cors_origins and config.cors.allow_credentials:
+        logger.warning(
+            "CORS: wildcard origin with credentials is insecure. "
+            "Setting allow_credentials=False."
+        )
+        config.cors.allow_credentials = False
+
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=config.cors.allow_origins,
+        allow_origins=cors_origins,
         allow_credentials=config.cors.allow_credentials,
         allow_methods=config.cors.allow_methods,
         allow_headers=config.cors.allow_headers,
@@ -64,6 +73,27 @@ def create_app() -> FastAPI:
         TrustedHostMiddleware,
         allowed_hosts=allowed_hosts,
     )
+
+    # Authentication middleware
+    try:
+        from backend.middleware.authentication import AuthMiddleware
+        app.add_middleware(AuthMiddleware)
+    except ImportError:
+        logger.warning("Auth middleware not available")
+
+    # Security headers
+    try:
+        from backend.middleware.security import SecurityHeadersMiddleware
+        app.add_middleware(SecurityHeadersMiddleware)
+    except ImportError:
+        logger.warning("Security headers middleware not available")
+
+    # Request size limiting (10MB max)
+    try:
+        from backend.middleware.request_size_limit import RequestSizeLimitMiddleware
+        app.add_middleware(RequestSizeLimitMiddleware, max_body_size=10 * 1024 * 1024)
+    except ImportError:
+        logger.warning("Request size limit middleware not available")
 
     app.add_middleware(MetricsMiddleware)
 

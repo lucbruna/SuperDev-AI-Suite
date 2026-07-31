@@ -1,3 +1,4 @@
+import os
 import time
 from collections import defaultdict
 from typing import Any
@@ -7,11 +8,9 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
-    """Rate limiting middleware with in-memory storage.
+    """Rate limiting middleware with Redis-backed distributed storage.
 
-    Uses a sliding window counter per client IP. In production, replace
-    the in-memory dict with Redis for distributed rate limiting across
-    multiple worker processes.
+    Falls back to in-memory storage when Redis is unavailable.
     """
 
     def __init__(
@@ -25,7 +24,21 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.max_requests = max_requests
         self.window_seconds = window_seconds
         self.requests: dict[str, list[float]] = defaultdict(list)
-        self.redis_client = redis_client  # Optional Redis client for distributed limiting
+        self.redis_client = redis_client
+        # Try to connect to Redis if not provided
+        if self.redis_client is None:
+            self._try_connect_redis()
+
+    def _try_connect_redis(self) -> None:
+        """Attempt to connect to Redis for distributed rate limiting."""
+        try:
+            import redis.asyncio as aioredis
+            redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
+            self.redis_client = aioredis.from_url(
+                redis_url, decode_responses=True, socket_connect_timeout=2
+            )
+        except Exception:
+            self.redis_client = None
 
     async def dispatch(self, request: Request, call_next: Any) -> Response:
         client_ip = request.client.host if request.client else "unknown"

@@ -1,3 +1,5 @@
+"""WebSocket handler with token authentication."""
+
 from __future__ import annotations
 
 import json
@@ -15,6 +17,26 @@ async def websocket_endpoint(
     channel: str = Query(default="default"),
     token: str | None = Query(default=None),
 ):
+    # Verify token before accepting connection
+    if not token:
+        await websocket.close(code=4001, reason="Authentication token required")
+        return
+
+    try:
+        from backend.auth.jwt import get_jwt_manager
+        mgr = get_jwt_manager()
+        payload = await mgr.verify_token(token)
+        if payload is None:
+            await websocket.close(code=4003, reason="Invalid or expired token")
+            return
+        user_id = payload.get("sub")
+        if not user_id:
+            await websocket.close(code=4003, reason="Invalid token payload")
+            return
+    except Exception:
+        await websocket.close(code=4003, reason="Authentication failed")
+        return
+
     await manager.connect(websocket, channel)
     try:
         while True:

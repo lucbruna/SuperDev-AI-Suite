@@ -21,11 +21,11 @@ class TestJWTManager:
         assert jwt_manager.REFRESH_TOKEN_EXPIRE_MINUTES == 1440
 
     def test_reject_default_secret(self):
-        with pytest.raises(ValueError, match="JWT secret_key must be configured"):
+        with pytest.raises(ValueError, match="JWT_SECRET_KEY must be set"):
             JWTManager(secret_key="super-dev-secret-key-change-in-production")
 
     def test_reject_empty_secret(self):
-        with pytest.raises(ValueError, match="JWT secret_key must be configured"):
+        with pytest.raises(ValueError, match="JWT_SECRET_KEY must be set"):
             JWTManager(secret_key="")
 
     def test_create_access_token(self, jwt_manager):

@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
+import os
 import shutil
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -14,6 +16,14 @@ from typing import Any
 from backend.utils.uuid_utils import generate_uuid
 
 logger = logging.getLogger(__name__)
+
+
+def _safe_path(base_dir: str, relative_path: str) -> str:
+    """Resolve a path and ensure it stays within base_dir (prevents path traversal)."""
+    resolved = os.path.normpath(os.path.join(base_dir, relative_path))
+    if not resolved.startswith(os.path.normpath(base_dir)):
+        raise ValueError(f"Path traversal detected: {relative_path}")
+    return resolved
 
 
 class BackupType(StrEnum):
@@ -249,6 +259,13 @@ class BackupManager:
         try:
             if "postgresql" in db_url:
                 import asyncio
+
+                # Validate the backup file path is within backup_dir
+                try:
+                    _safe_path(str(self.backup_dir), file_path.name)
+                except ValueError:
+                    logger.error("Path traversal blocked in restore: %s", file_path)
+                    return False
 
                 cmd = [
                     "psql",

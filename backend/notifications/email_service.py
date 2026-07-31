@@ -3,11 +3,26 @@
 from __future__ import annotations
 
 import logging
+import re
 from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any
 
 logger = logging.getLogger(__name__)
+
+_EMAIL_REGEX = re.compile(r"^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$")
+
+
+def _validate_recipients(recipients: list[str]) -> list[str]:
+    """Validate and sanitize email recipients. Returns only valid emails."""
+    validated = []
+    for r in recipients:
+        r = r.strip().lower()
+        if _EMAIL_REGEX.match(r):
+            validated.append(r)
+    if not validated:
+        raise ValueError("No valid email recipients provided")
+    return validated
 
 
 class EmailPriority(StrEnum):
@@ -73,14 +88,21 @@ class EmailService:
         return template
 
     async def send(self, message: EmailMessage) -> EmailResult:
+        # Validate recipients before sending
+        try:
+            to_list = message.to if isinstance(message.to, list) else [message.to]
+            validated_to = _validate_recipients(to_list)
+        except ValueError as e:
+            return EmailResult(success=False, error=str(e))
+
         if self.dry_run:
             result = EmailResult(
                 success=True,
                 message_id=f"dry-run-{len(self._sent_log)}",
-                details={"dry_run": True, "to": message.to, "subject": message.subject},
+                details={"dry_run": True, "to": validated_to, "subject": message.subject},
             )
             self._sent_log.append({"message": message, "result": result})
-            logger.info("Email (dry run): to=%s subject=%s", message.to, message.subject)
+            logger.info("Email (dry run): to=%s subject=%s", validated_to, message.subject)
             return result
 
         try:
@@ -90,23 +112,25 @@ class EmailService:
 
             msg = MIMEMultipart("alternative")
             msg["From"] = message.from_email or self.from_email
-            msg["To"] = message.to if isinstance(message.to, str) else ", ".join(message.to)
+            msg["To"] = ", ".join(validated_to)
             msg["Subject"] = message.subject
             msg["X-Priority"] = str(
                 {"low": "5", "normal": "3", "high": "2", "urgent": "1"}.get(message.priority.value, "3")
             )
 
             if message.cc:
-                msg["Cc"] = message.cc if isinstance(message.cc, str) else ", ".join(message.cc)
+                cc_list = message.cc if isinstance(message.cc, list) else [message.cc]
+                msg["Cc"] = ", ".join(cc_list)
 
             msg.attach(MIMEText(message.body, "plain"))
             if message.html_body:
                 msg.attach(MIMEText(message.html_body, "html"))
 
-            recipients = message.to if isinstance(message.to, list) else [message.to]
+            recipients = list(validated_to)
             if message.cc:
                 cc_list = message.cc if isinstance(message.cc, list) else [message.cc]
-                recipients.extend(cc_list)
+                validated_cc = _validate_recipients(cc_list)
+                recipients.extend(validated_cc)
 
             await aiosmtplib.send(
                 msg,
