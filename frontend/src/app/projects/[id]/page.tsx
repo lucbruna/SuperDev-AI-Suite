@@ -6,7 +6,8 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { projectsApi } from "@/api/projects";
 
 export default function ProjectDetailPage() {
-  const { id } = useParams<{ id: string }>();
+  const params = useParams<{ id: string }>();
+  const id = params?.id;
   const router = useRouter();
   const [project, setProject] = useState<any>(null);
   const [loading, setLoading] = useState(true);

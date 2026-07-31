@@ -10,10 +10,7 @@ const navItems = [
   { href: "/projects", label: "Projetos", icon: "📁" },
   { href: "/agents", label: "Agentes", icon: "🤖" },
   { href: "/workflows", label: "Workflows", icon: "⚡" },
-  { href: "/studio", label: "Studio", icon: "🎨" },
-  { href: "/chat", label: "Chat", icon: "💬" },
-  { href: "/llm/providers", label: "LLM Providers", icon: "🧠" },
-  { href: "/llm/chat", label: "LLM Chat", icon: "🤖" },
+  { href: "/chat", label: "Chat IA", icon: "💬" },
   { href: "/settings", label: "Configurações", icon: "⚙️" },
 ];
 
@@ -37,7 +34,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           </div>
           <nav className="flex-1 space-y-1 p-4">
             {navItems.map((item) => {
-              const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+              const isActive = pathname === item.href || (pathname && pathname.startsWith(item.href + "/"));
               return (
                 <Link
                   key={item.href}
