@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from .reasoning_models import ReasoningResult
@@ -14,7 +14,7 @@ class ReasoningHistory:
 
     def record(self, result: ReasoningResult) -> None:
         self._entries.append({
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "context_id": result.context_id,
             "decision": result.decision,
             "confidence": result.confidence,

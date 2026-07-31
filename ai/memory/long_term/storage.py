@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class Storage:
     """In-memory storage backend for long-term memory data."""
 
     def __init__(self):
-        self._data: Dict[str, Any] = {}
+        self._data: dict[str, Any] = {}
 
     @property
     def count(self) -> int:
@@ -25,13 +25,13 @@ class Storage:
     def has(self, key: str) -> bool:
         return key in self._data
 
-    def keys(self) -> List[str]:
+    def keys(self) -> list[str]:
         return list(self._data.keys())
 
     def clear(self) -> None:
         self._data.clear()
 
-    def get_all(self) -> Dict[str, Any]:
+    def get_all(self) -> dict[str, Any]:
         return dict(self._data)
 
     def size_bytes(self) -> int:

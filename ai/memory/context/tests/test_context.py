@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-from ..manager import ContextManager
 from ..builder import ContextBuilder
-from ..loader import ContextLoader
-from ..optimizer import ContextOptimizer
-from ..validator import ContextValidator
-from ..window import ContextWindow
 from ..compressor import ContextCompressor
 from ..expander import ContextExpander
-from ..ranker import ContextRanker
 from ..filter import ContextFilter
+from ..loader import ContextLoader
+from ..manager import ContextManager
+from ..optimizer import ContextOptimizer
+from ..ranker import ContextRanker
 from ..router import ContextRouter
+from ..validator import ContextValidator
+from ..window import ContextWindow
 
 
 class TestContextManager:
@@ -214,7 +214,7 @@ class TestContextWindow:
     def test_window_size_setter_invalid(self) -> None:
         try:
             self.window.window_size = 0
-            assert False, "Should raise ValueError"
+            raise AssertionError("Should raise ValueError")
         except ValueError:
             pass
 
@@ -347,7 +347,7 @@ class TestContextRouter:
     def test_route_missing_key(self) -> None:
         try:
             self.router.route({"type": "unknown"})
-            assert False, "Should raise KeyError"
+            raise AssertionError("Should raise KeyError")
         except KeyError:
             pass
 

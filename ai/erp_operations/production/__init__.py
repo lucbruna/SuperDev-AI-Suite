@@ -1,6 +1,6 @@
 """Production subsystem."""
-from .models import ProductionStatus, QualityStatus, ProductionOrder, ProductionLine, QualityCheck, BOM
 from .engine import ProductionEngine
+from .models import BOM, ProductionLine, ProductionOrder, ProductionStatus, QualityCheck, QualityStatus
 
 __all__ = [
     "ProductionStatus", "QualityStatus", "ProductionOrder", "ProductionLine", "QualityCheck", "BOM",

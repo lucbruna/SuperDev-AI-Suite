@@ -1,7 +1,9 @@
 """DDoS protection."""
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
-import time, uuid
+
+import time
+from typing import Any
+
 
 class DDoSRule:
     def __init__(self, name: str, threshold: int, window_seconds: int, action: str = "block") -> None:
@@ -12,15 +14,15 @@ class DDoSRule:
 
 class DDoSProtection:
     def __init__(self) -> None:
-        self._rules: Dict[str, DDoSRule] = {}
-        self._request_counts: Dict[str, List[float]] = {}
-        self._blocked_sources: Dict[str, Dict[str, Any]] = {}
-        self._alerts: List[Dict[str, Any]] = []
+        self._rules: dict[str, DDoSRule] = {}
+        self._request_counts: dict[str, list[float]] = {}
+        self._blocked_sources: dict[str, dict[str, Any]] = {}
+        self._alerts: list[dict[str, Any]] = []
     def add_rule(self, name: str, threshold: int, window_seconds: int, action: str = "block") -> DDoSRule:
         rule = DDoSRule(name, threshold, window_seconds, action)
         self._rules[name] = rule
         return rule
-    def check_request(self, source_ip: str) -> Dict[str, Any]:
+    def check_request(self, source_ip: str) -> dict[str, Any]:
         if source_ip in self._blocked_sources:
             blocked_until = self._blocked_sources[source_ip].get("until", 0)
             if time.time() < blocked_until:
@@ -45,9 +47,9 @@ class DDoSProtection:
             del self._blocked_sources[source_ip]
             return True
         return False
-    def get_blocked(self) -> Dict[str, Dict[str, Any]]:
+    def get_blocked(self) -> dict[str, dict[str, Any]]:
         return dict(self._blocked_sources)
-    def get_alerts(self, limit: int = 100) -> List[Dict[str, Any]]:
+    def get_alerts(self, limit: int = 100) -> list[dict[str, Any]]:
         return self._alerts[-limit:]
-    def list_rules(self) -> List[str]:
+    def list_rules(self) -> list[str]:
         return list(self._rules.keys())

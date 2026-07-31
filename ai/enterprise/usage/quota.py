@@ -1,11 +1,11 @@
 """Usage quota."""
 from __future__ import annotations
-from typing import Any, Dict
+
 
 class UsageQuota:
     def __init__(self) -> None:
-        self._quotas: Dict[str, Dict[str, float]] = {}
-        self._usage: Dict[str, Dict[str, float]] = {}
+        self._quotas: dict[str, dict[str, float]] = {}
+        self._usage: dict[str, dict[str, float]] = {}
     def set_quota(self, org_id: str, metric: str, limit: float) -> None:
         self._quotas.setdefault(org_id, {})[metric] = limit
     def get_quota(self, org_id: str, metric: str) -> float:
@@ -27,7 +27,7 @@ class UsageQuota:
         if quota == 0 or quota == float('inf'):
             return 0.0
         return (self.get_usage(org_id, metric) / quota) * 100
-    def list_quotas(self, org_id: str) -> Dict[str, float]:
+    def list_quotas(self, org_id: str) -> dict[str, float]:
         return dict(self._quotas.get(org_id, {}))
     def reset(self, org_id: str, metric: str = "") -> float:
         if metric:

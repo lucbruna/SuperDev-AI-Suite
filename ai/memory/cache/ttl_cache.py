@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .cache_entry import CacheEntry
 
@@ -12,7 +12,7 @@ class TTLCache:
     def __init__(self, default_ttl: float = 60.0, max_size: int = 1000) -> None:
         self._default_ttl = default_ttl
         self._max_size = max_size
-        self._entries: Dict[str, CacheEntry] = {}
+        self._entries: dict[str, CacheEntry] = {}
 
     @property
     def default_ttl(self) -> float:
@@ -27,7 +27,7 @@ class TTLCache:
         self._purge_expired()
         return len(self._entries)
 
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         entry = self._entries.get(key)
         if entry is None or entry.is_expired:
             if entry:
@@ -35,7 +35,7 @@ class TTLCache:
             return None
         return entry.value
 
-    def set(self, key: str, value: Any, ttl: Optional[float] = None) -> None:
+    def set(self, key: str, value: Any, ttl: float | None = None) -> None:
         self._purge_expired()
         if len(self._entries) >= self._max_size:
             self._evict()
@@ -51,14 +51,14 @@ class TTLCache:
     def clear(self) -> None:
         self._entries.clear()
 
-    def remaining_ttl(self, key: str) -> Optional[float]:
+    def remaining_ttl(self, key: str) -> float | None:
         entry = self._entries.get(key)
         if entry is None:
             return None
         remaining = entry.ttl - (time.time() - entry.created_at)
         return max(remaining, 0.0)
 
-    def keys(self) -> List[str]:
+    def keys(self) -> list[str]:
         self._purge_expired()
         return list(self._entries.keys())
 
@@ -72,7 +72,7 @@ class TTLCache:
             oldest = min(self._entries.keys(), key=lambda k: self._entries[k].created_at)
             del self._entries[oldest]
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "default_ttl": self._default_ttl,
             "max_size": self._max_size,

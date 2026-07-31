@@ -1,9 +1,10 @@
 """
 Live Updates Manager
 """
-from typing import Callable, Dict, Any, List
-from dataclasses import dataclass, field
+from collections.abc import Callable
+from dataclasses import dataclass
 from enum import Enum
+from typing import Any
 
 
 class UpdateType(Enum):
@@ -23,24 +24,24 @@ class LiveUpdate:
 
 class LiveUpdatesManager:
     def __init__(self):
-        self.subscriptions: Dict[str, List[Callable]] = {}
-        self.buffer: List[LiveUpdate] = []
+        self.subscriptions: dict[str, list[Callable]] = {}
+        self.buffer: list[LiveUpdate] = []
         self.batch_size: int = 10
-        
+
     def subscribe(self, resource: str, callback: Callable) -> None:
         if resource not in self.subscriptions:
             self.subscriptions[resource] = []
         self.subscriptions[resource].append(callback)
-        
+
     def unsubscribe(self, resource: str, callback: Callable) -> None:
         if resource in self.subscriptions:
             self.subscriptions[resource] = [h for h in self.subscriptions[resource] if h != callback]
-            
+
     def push(self, update: LiveUpdate) -> None:
         self.buffer.append(update)
         if len(self.buffer) >= self.batch_size:
             self.flush()
-            
+
     def flush(self) -> None:
         for update in self.buffer:
             for handler in self.subscriptions.get(update.resource, []):
@@ -48,6 +49,6 @@ class LiveUpdatesManager:
             for handler in self.subscriptions.get("*", []):
                 handler(update)
         self.buffer.clear()
-        
-    def render(self) -> Dict[str, Any]:
+
+    def render(self) -> dict[str, Any]:
         return {"subscriptions": list(self.subscriptions.keys()), "bufferSize": len(self.buffer)}

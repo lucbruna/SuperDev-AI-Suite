@@ -10,8 +10,6 @@ from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
 
-from backend.utils.uuid_utils import generate_uuid
-
 logger = logging.getLogger(__name__)
 
 

@@ -1,24 +1,24 @@
 """Meta-learning engine for learning how to learn."""
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 
 class MetaLearner:
     """Analyzes learning patterns to improve learning strategies."""
 
     def __init__(self) -> None:
-        self._meta_strategies: Dict[str, float] = {
+        self._meta_strategies: dict[str, float] = {
             "few_shot": 0.6,
             "pattern_recognition": 0.7,
             "analogical_reasoning": 0.65,
             "incremental_refinement": 0.8,
         }
 
-    def analyze(self, experiences: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def analyze(self, experiences: list[dict[str, Any]]) -> dict[str, Any]:
         if not experiences:
             return {"strategy_scores": dict(self._meta_strategies), "recommendation": "Collect more data"}
-        issue_counts: Dict[str, int] = {}
+        issue_counts: dict[str, int] = {}
         for exp in experiences:
             issue = exp.get("issue", "unknown")
             issue_counts[issue] = issue_counts.get(issue, 0) + 1

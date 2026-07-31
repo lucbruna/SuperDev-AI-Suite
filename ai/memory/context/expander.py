@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class ContextExpander:
@@ -13,7 +13,7 @@ class ContextExpander:
     def expansion_count(self) -> int:
         return self._expansion_count
 
-    def expand_entry(self, entry: Dict[str, Any], extra_data: Dict[str, Any]) -> Dict[str, Any]:
+    def expand_entry(self, entry: dict[str, Any], extra_data: dict[str, Any]) -> dict[str, Any]:
         expanded = dict(entry)
         content = dict(expanded.get("content", {}))
         content.update(extra_data)
@@ -24,7 +24,7 @@ class ContextExpander:
         self._expansion_count += 1
         return expanded
 
-    def expand_key(self, context: Dict[str, Any], key: str, value: Any) -> Dict[str, Any]:
+    def expand_key(self, context: dict[str, Any], key: str, value: Any) -> dict[str, Any]:
         result = dict(context)
         content = dict(result.get("content", {}))
         content[key] = value
@@ -35,8 +35,8 @@ class ContextExpander:
         return result
 
     def expand_from_source(
-        self, context: Dict[str, Any], source_key: str, target_key: str, transformer: Any = None
-    ) -> Dict[str, Any]:
+        self, context: dict[str, Any], source_key: str, target_key: str, transformer: Any = None
+    ) -> dict[str, Any]:
         content = dict(context.get("content", {}))
         if source_key not in content:
             return context

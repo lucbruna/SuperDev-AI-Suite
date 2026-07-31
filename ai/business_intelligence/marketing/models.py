@@ -1,8 +1,8 @@
 """Marketing models."""
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
 from enum import Enum
+from typing import Any
 
 
 class CampaignStatus(Enum):
@@ -31,10 +31,10 @@ class Campaign:
     status: CampaignStatus = CampaignStatus.DRAFT
     budget: float = 0.0
     spent: float = 0.0
-    start_date: Optional[datetime] = None
-    end_date: Optional[datetime] = None
+    start_date: datetime | None = None
+    end_date: datetime | None = None
     target_audience: str = ""
-    tags: List[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
 
     @property
     def roi(self) -> float:
@@ -54,7 +54,7 @@ class Lead:
     score: float = 0.0
     status: str = "new"
     created_at: datetime = field(default_factory=datetime.now)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -88,6 +88,6 @@ class MarketingMetrics:
 class Segment:
     segment_id: str
     name: str
-    criteria: Dict[str, Any] = field(default_factory=dict)
+    criteria: dict[str, Any] = field(default_factory=dict)
     lead_count: int = 0
     created_at: datetime = field(default_factory=datetime.now)

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 
@@ -14,13 +14,13 @@ class DecisionState:
         self.confidence: float = 0.0
         self.error: str | None = None
         self._history: list[dict[str, Any]] = []
-        self._started_at: str = datetime.now(timezone.utc).isoformat()
+        self._started_at: str = datetime.now(UTC).isoformat()
 
     def transition(self, phase: str) -> None:
         self.phase = phase
         self._history.append({
             "phase": phase,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         })
 
     def snapshot(self) -> dict[str, Any]:

@@ -7,7 +7,7 @@ from .vector_store import VectorStore
 
 __all__ = [
     "KnowledgeBase",
-    "KnowledgeEntry", 
+    "KnowledgeEntry",
     "KnowledgeChunk",
     "VectorStore",
     "EmbeddingService",

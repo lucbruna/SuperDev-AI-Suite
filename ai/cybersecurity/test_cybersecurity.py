@@ -3,94 +3,100 @@ Comprehensive test suite for Cybersecurity & AI Security Engine (Volume 28)
 Covers all 11 subsystems: identity, authentication, authorization, encryption,
 application, code_security, ai_security, threat_detection, incident_response, compliance, core
 """
-import sys
 import os
+import sys
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import unittest
-from datetime import datetime, timedelta
+from datetime import datetime
 
-# === Identity ===
-from identity.identity_engine import IdentityEngine, Identity
-from identity.identity_manager import IdentityManager
-from identity.user_identity import UserIdentity, UserIdentityManager
-from identity.organization_identity import OrganizationIdentity, OrganizationManager
-from identity.identity_provider import IdentityProviderManager, ProviderType
-from identity.identity_verification import IdentityVerifier, VerificationMethod
-
-# === Authentication ===
-from authentication.auth_engine import AuthEngine, AuthSession
-from authentication.login import LoginManager, LoginPolicy
-from authentication.session import SessionManager, Session
-from authentication.token_manager import TokenManager, Token
-from authentication.mfa import MFAManager, MFAMethod, MFAConfig
-from authentication.biometric import BiometricManager, BiometricType
-
-# === Authorization ===
-from authorization.authorization_engine import AuthorizationEngine, AccessDecision, AccessRequest, AccessPolicy
-from authorization.role_manager import RoleManager, Role
-from authorization.permission_manager import PermissionManager, Permission
-from authorization.policy_engine import PolicyEngine, PolicyEffect
-from authorization.access_control import AccessControl, AccessLevel
-
-# === Encryption ===
-from encryption.encryption_engine import EncryptionEngine, CipherType, EncryptionResult, KeyPair
-from encryption.key_manager import KeyManager, ManagedKey, KeyState, KeyType
-from encryption.certificate_manager import CertificateManager, Certificate, CertStatus
-from encryption.hash_engine import HashEngine, HashAlgorithm, HashResult
-from encryption.secret_manager import SecretManager, Secret, SecretType
-from encryption.vault import Vault, VaultState
-
-# === Application Security ===
-from application.web_security import WebSecurity, OWASPCategory
-from application.api_security import APISecurity, APIKeyState
-from application.dependency_scanner import DependencyScanner, Severity
-from application.sast_engine import SASTEngine, SASTRule, FindingType
-from application.dast_engine import DASTEngine, DASTVulnerability, VulnSeverity
-from application.supply_chain import SupplyChainSecurity, IntegrityStatus
-
-# === Code Security ===
-from code_security.secret_scanner import SecretScanner, SecretType as CodeSecretType
-from code_security.credential_detector import CredentialDetector, CredentialType
-from code_security.license_scanner import LicenseScanner, LicenseCategory
-from code_security.vulnerability_scanner import VulnerabilityScanner, VulnSeverity as CodeVulnSeverity
-from code_security.code_quality import CodeQualityAnalyzer, QualityRule, Severity as CodeSeverity
-from code_security.compliance_checker import ComplianceChecker, Framework, ComplianceStatus
+from ai_security.adversarial_defense import AdversarialDefense
+from ai_security.ai_audit import AIAudit, AuditAction
+from ai_security.data_poisoning import DataPoisoningDefense
+from ai_security.extraction_defense import ExtractionDefense
+from ai_security.fairness_monitor import FairnessMonitor
 
 # === AI Security ===
-from ai_security.model_security import ModelSecurity, ThreatType
-from ai_security.prompt_guard import PromptGuard, InjectionType
-from ai_security.data_poisoning import DataPoisoningDefense, PoisoningType
-from ai_security.extraction_defense import ExtractionDefense, ExtractionType
-from ai_security.fairness_monitor import FairnessMonitor, BiasType
-from ai_security.ai_audit import AIAudit, AuditAction
-from ai_security.adversarial_defense import AdversarialDefense, AttackType
+from ai_security.model_security import ModelSecurity
+from ai_security.prompt_guard import InjectionType, PromptGuard
+from application.api_security import APISecurity
+from application.dast_engine import DASTEngine
+from application.dependency_scanner import DependencyScanner, Severity
+from application.sast_engine import FindingType, SASTEngine, SASTRule
+from application.supply_chain import IntegrityStatus, SupplyChainSecurity
 
-# === Threat Detection ===
-from threat_detection.threat_intel import ThreatIntel, IOCType, ThreatLevel
-from threat_detection.intrusion_detector import IntrusionDetector, AlertSeverity
-from threat_detection.siem_engine import SIEMEngine, EventType, Severity
-from threat_detection.network_monitor import NetworkMonitor, Protocol
-from threat_detection.endpoint_defense import EndpointDefense, ThreatCategory
-from threat_detection.vulnerability_manager import VulnerabilityManager, VulnStatus, RiskLevel
-from threat_detection.risk_scorer import RiskScorer, RiskCategory
+# === Application Security ===
+from application.web_security import WebSecurity
 
-# === Incident Response ===
-from incident_response.incident_manager import IncidentManager, Severity as IRSeverity, IncidentStatus
-from incident_response.playbook_engine import PlaybookEngine, StepStatus
-from incident_response.forensic_analyzer import ForensicAnalyzer, EvidenceType
-from incident_response.notification import NotificationSystem, NotificationChannel, Priority
-from incident_response.evidence_collector import EvidenceCollector, EvidenceFormat
-from incident_response.lessons_learned import LessonsLearnedManager, RootCauseCategory
+# === Authentication ===
+from authentication.auth_engine import AuthEngine
+from authentication.biometric import BiometricManager, BiometricType
+from authentication.login import LoginManager
+from authentication.mfa import MFAManager, MFAMethod
+from authentication.session import SessionManager
+from authentication.token_manager import TokenManager
+from authorization.access_control import AccessControl, AccessLevel
+
+# === Authorization ===
+from authorization.authorization_engine import AccessDecision, AccessPolicy, AccessRequest, AuthorizationEngine
+from authorization.permission_manager import PermissionManager
+from authorization.policy_engine import PolicyEffect, PolicyEngine
+from authorization.role_manager import RoleManager
+from code_security.code_quality import CodeQualityAnalyzer
+from code_security.compliance_checker import ComplianceChecker, ComplianceStatus, Framework
+from code_security.credential_detector import CredentialDetector
+from code_security.license_scanner import LicenseScanner
+
+# === Code Security ===
+from code_security.secret_scanner import SecretScanner
+from code_security.vulnerability_scanner import VulnerabilityScanner
+from code_security.vulnerability_scanner import VulnSeverity as CodeVulnSeverity
+from compliance.audit_logger import AuditEventType, AuditLogger
 
 # === Compliance ===
-from compliance.compliance_engine import ComplianceEngine, Framework as CompFramework, ControlStatus
-from compliance.audit_logger import AuditLogger, AuditEventType
+from compliance.compliance_engine import ComplianceEngine, ControlStatus
+from compliance.compliance_engine import Framework as CompFramework
+from compliance.compliance_reporter import ComplianceReporter
+from compliance.data_governance import DataClassification, DataGovernance
 from compliance.policy_manager import PolicyManager, PolicyStatus
-from compliance.risk_assessor import RiskAssessor, RiskLevel as CompRiskLevel, TreatmentType
-from compliance.data_governance import DataGovernance, DataClassification
-from compliance.privacy_manager import PrivacyManager, ConsentType, DataSubjectRequest
-from compliance.compliance_reporter import ComplianceReporter, ReportFormat, TrendDirection
+from compliance.privacy_manager import ConsentType, DataSubjectRequest, PrivacyManager
+from compliance.risk_assessor import RiskAssessor
+from compliance.risk_assessor import RiskLevel as CompRiskLevel
+from encryption.certificate_manager import CertificateManager
+
+# === Encryption ===
+from encryption.encryption_engine import EncryptionEngine
+from encryption.hash_engine import HashEngine
+from encryption.key_manager import KeyManager, KeyState, KeyType
+from encryption.secret_manager import SecretManager
+from encryption.vault import Vault
+
+# === Identity ===
+from identity.identity_engine import IdentityEngine
+from identity.identity_manager import IdentityManager
+from identity.identity_provider import IdentityProviderManager, ProviderType
+from identity.identity_verification import IdentityVerifier, VerificationMethod
+from identity.organization_identity import OrganizationManager
+from identity.user_identity import UserIdentityManager
+from incident_response.evidence_collector import EvidenceCollector, EvidenceFormat
+from incident_response.forensic_analyzer import EvidenceType, ForensicAnalyzer
+
+# === Incident Response ===
+from incident_response.incident_manager import IncidentManager, IncidentStatus
+from incident_response.incident_manager import Severity as IRSeverity
+from incident_response.lessons_learned import LessonsLearnedManager, RootCauseCategory
+from incident_response.notification import NotificationChannel, NotificationSystem, Priority
+from incident_response.playbook_engine import PlaybookEngine
+from threat_detection.endpoint_defense import EndpointDefense
+from threat_detection.intrusion_detector import AlertSeverity, IntrusionDetector
+from threat_detection.network_monitor import NetworkMonitor, Protocol
+from threat_detection.risk_scorer import RiskCategory, RiskScorer
+from threat_detection.siem_engine import EventType, Severity, SIEMEngine
+
+# === Threat Detection ===
+from threat_detection.threat_intel import IOCType, ThreatIntel, ThreatLevel
+from threat_detection.vulnerability_manager import RiskLevel, VulnerabilityManager, VulnStatus
 
 
 # ============================================================
@@ -964,7 +970,7 @@ class TestNotificationSystem(unittest.TestCase):
 
     def test_escalation(self):
         ns = NotificationSystem()
-        rule = ns.add_escalation_rule("escalate_1", severity_threshold="critical", delay_minutes=15)
+        ns.add_escalation_rule("escalate_1", severity_threshold="critical", delay_minutes=15)
         self.assertEqual(len(ns.get_escalation_rules()), 1)
 
 
@@ -1031,14 +1037,14 @@ class TestAuditLogger(unittest.TestCase):
 class TestPolicyManager(unittest.TestCase):
     def test_create_and_activate(self):
         pm = PolicyManager()
-        policy = pm.create_policy("p1", "Data Retention", owner="compliance")
+        pm.create_policy("p1", "Data Retention", owner="compliance")
         pm.activate_policy("p1")
         self.assertEqual(pm.get_policy("p1").status, PolicyStatus.ACTIVE)
 
     def test_exception(self):
         pm = PolicyManager()
         pm.create_policy("p1", "Encryption")
-        exc = pm.add_exception("p1", "Legacy system", approved_by="ciso")
+        pm.add_exception("p1", "Legacy system", approved_by="ciso")
         self.assertEqual(len(pm.get_exceptions("p1")), 1)
 
 

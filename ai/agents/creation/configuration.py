@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List
+from typing import Any
 
 
 @dataclass
@@ -17,8 +17,8 @@ class ModelDefaults:
 @dataclass
 class SecurityPresets:
     sandbox_mode: bool = True
-    allowed_tools: List[str] = field(default_factory=list)
-    blocked_tools: List[str] = field(default_factory=lambda: ["shell", "filesystem_write"])
+    allowed_tools: list[str] = field(default_factory=list)
+    blocked_tools: list[str] = field(default_factory=lambda: ["shell", "filesystem_write"])
     max_tool_calls_per_step: int = 5
     require_approval: bool = False
 
@@ -37,7 +37,7 @@ class CapabilityPresets:
 
 
 # Per-type presets
-AGENT_TYPE_PRESETS: Dict[str, Dict[str, Any]] = {
+AGENT_TYPE_PRESETS: dict[str, dict[str, Any]] = {
     "supervisor": {
         "model": ModelDefaults(temperature=0.3, max_tokens=8192),
         "capabilities": CapabilityPresets(
@@ -93,16 +93,16 @@ class CreationConfiguration:
         self.capability_presets = CapabilityPresets()
         self._type_presets = dict(AGENT_TYPE_PRESETS)
 
-    def get_type_preset(self, agent_type: str) -> Dict[str, Any]:
+    def get_type_preset(self, agent_type: str) -> dict[str, Any]:
         return self._type_presets.get(agent_type, {})
 
-    def register_type_preset(self, agent_type: str, preset: Dict[str, Any]) -> None:
+    def register_type_preset(self, agent_type: str, preset: dict[str, Any]) -> None:
         self._type_presets[agent_type] = preset
 
-    def list_type_presets(self) -> List[str]:
+    def list_type_presets(self) -> list[str]:
         return list(self._type_presets.keys())
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         return {
             "type_presets": list(self._type_presets.keys()),
             "default_provider": self.model_defaults.provider,

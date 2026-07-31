@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 
 class Relevance:
@@ -13,9 +13,9 @@ class Relevance:
     def relevance_count(self) -> int:
         return self._relevance_count
 
-    def compute(self, query: str, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def compute(self, query: str, items: list[dict[str, Any]]) -> list[dict[str, Any]]:
         q_words = set(query.lower().split())
-        results: List[Dict[str, Any]] = []
+        results: list[dict[str, Any]] = []
         for item in items:
             content = str(item.get("content", "")).lower()
             entry_words = set(content.split())
@@ -26,7 +26,7 @@ class Relevance:
         self._relevance_count += 1
         return results
 
-    def binary(self, query: str, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def binary(self, query: str, items: list[dict[str, Any]]) -> list[dict[str, Any]]:
         q = query.lower()
         for item in items:
             content = str(item.get("content", "")).lower()
@@ -34,10 +34,10 @@ class Relevance:
         self._relevance_count += 1
         return items
 
-    def threshold(self, items: List[Dict[str, Any]], min_relevance: float = 0.5) -> List[Dict[str, Any]]:
+    def threshold(self, items: list[dict[str, Any]], min_relevance: float = 0.5) -> list[dict[str, Any]]:
         return [item for item in items if item.get("relevance", 0) >= min_relevance]
 
-    def feedback_adjust(self, items: List[Dict[str, Any]], relevant_ids: List[str], boost: float = 0.2) -> List[Dict[str, Any]]:
+    def feedback_adjust(self, items: list[dict[str, Any]], relevant_ids: list[str], boost: float = 0.2) -> list[dict[str, Any]]:
         for item in items:
             if item.get("id") in relevant_ids:
                 item["relevance"] = item.get("relevance", 0) + boost

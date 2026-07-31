@@ -1,8 +1,8 @@
 """
 Input UI Component
 """
-from typing import Optional, Callable
-from dataclasses import dataclass, field
+from collections.abc import Callable
+from dataclasses import dataclass
 from enum import Enum
 
 
@@ -29,34 +29,34 @@ class InputProps:
     size: InputSize = InputSize.MD
     placeholder: str = ""
     value: str = ""
-    label: Optional[str] = None
-    helper_text: Optional[str] = None
-    error: Optional[str] = None
+    label: str | None = None
+    helper_text: str | None = None
+    error: str | None = None
     disabled: bool = False
     readonly: bool = False
     required: bool = False
-    maxLength: Optional[int] = None
-    minLength: Optional[int] = None
-    onChange: Optional[Callable] = None
+    maxLength: int | None = None
+    minLength: int | None = None
+    onChange: Callable | None = None
 
 
 class Input:
-    def __init__(self, props: Optional[InputProps] = None):
+    def __init__(self, props: InputProps | None = None):
         self.props = props or InputProps()
         self._value = self.props.value
         self._errors = []
-        
+
     @property
     def value(self):
         return self._value
-        
+
     @value.setter
     def value(self, val):
         self._value = val
         self._validate()
         if self.props.onChange:
             self.props.onChange(val)
-            
+
     def _validate(self):
         self._errors = []
         if self.props.required and not self._value:
@@ -65,9 +65,9 @@ class Input:
             self._errors.append("Minimum length is " + str(self.props.minLength))
         if self.props.maxLength and len(self._value) > self.props.maxLength:
             self._errors.append("Maximum length is " + str(self.props.maxLength))
-            
+
     def is_valid(self):
         return len(self._errors) == 0
-        
+
     def get_errors(self):
         return self._errors

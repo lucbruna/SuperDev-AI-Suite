@@ -34,12 +34,12 @@ class ApiResponse(BaseTool):
                 data = params.get("data", {})
                 return {"success": True, "parsed": data, "format": params.get("format", "json")}
             elif action == "validate":
-                schema = params.get("schema", {})
+                params.get("schema", {})
                 data = params.get("data", {})
                 return {"success": True, "valid": True, "errors": []}
             elif action == "transform":
                 data = params.get("data", {})
-                mapping = params.get("mapping", {})
+                params.get("mapping", {})
                 return {"success": True, "transformed": data}
             elif action == "cache":
                 key = params.get("key", "")

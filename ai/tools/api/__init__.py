@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from .api_tool import ApiTool
+from .auth import ApiAuth
 from .client import ApiClient
 from .request import ApiRequest
 from .response import ApiResponse
-from .auth import ApiAuth
 from .webhook import ApiWebhook
 
 __all__ = [

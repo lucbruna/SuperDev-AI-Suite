@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .concepts import Concept
 from .entities import Entity
@@ -17,12 +17,12 @@ class SemanticMemory:
     """High-level facade for semantic memory — acquired knowledge."""
 
     def __init__(self):
-        self._concepts: Dict[str, Concept] = {}
-        self._entities: Dict[str, Entity] = {}
+        self._concepts: dict[str, Concept] = {}
+        self._entities: dict[str, Entity] = {}
         self._ontology = Ontology()
         self._taxonomy = Taxonomy()
-        self._links: List[SemanticLink] = []
-        self._relationships: Dict[str, Relationship] = {}
+        self._links: list[SemanticLink] = []
+        self._relationships: dict[str, Relationship] = {}
         self._search = SemanticSearch()
         self._index = SemanticIndex()
         self._loader = KnowledgeLoader()
@@ -67,10 +67,10 @@ class SemanticMemory:
     def add_link(self, link: SemanticLink) -> None:
         self._links.append(link)
 
-    def query(self, query: str) -> List[Dict[str, Any]]:
+    def query(self, query: str) -> list[dict[str, Any]]:
         return self._search.search(query, self._concepts, self._entities, self._links)
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         return {
             "concepts": len(self._concepts),
             "entities": len(self._entities),

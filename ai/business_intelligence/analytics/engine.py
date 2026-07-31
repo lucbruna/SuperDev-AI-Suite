@@ -1,20 +1,18 @@
 """Analytics engine implementation."""
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional
-from .models import (
-    AnalysisRequest, AnalysisResult, AnalysisType,
-    DataPoint, Insight, InsightType
-)
-from .interfaces import AnalyticsEngineInterface
+from typing import Any
+
 from .config import AnalyticsConfig
+from .interfaces import AnalyticsEngineInterface
+from .models import AnalysisRequest, AnalysisResult, DataPoint, Insight, InsightType
 
 
 class AnalyticsEngine(AnalyticsEngineInterface):
-    def __init__(self, config: Optional[AnalyticsConfig] = None):
+    def __init__(self, config: AnalyticsConfig | None = None):
         self._config = config or AnalyticsConfig()
-        self._data_points: List[DataPoint] = []
-        self._insights: List[Insight] = []
+        self._data_points: list[DataPoint] = []
+        self._insights: list[Insight] = []
 
     async def analyze(self, request: AnalysisRequest) -> AnalysisResult:
         start = datetime.now()
@@ -31,17 +29,17 @@ class AnalyticsEngine(AnalyticsEngineInterface):
             execution_time_ms=elapsed,
         )
 
-    async def ingest_data(self, data_points: List[DataPoint]) -> bool:
+    async def ingest_data(self, data_points: list[DataPoint]) -> bool:
         self._data_points.extend(data_points)
         return True
 
-    async def get_insights(self, time_range: Optional[tuple] = None) -> List[Insight]:
+    async def get_insights(self, time_range: tuple | None = None) -> list[Insight]:
         if time_range:
             start, end = time_range
             return [i for i in self._insights if start <= i.created_at <= end]
         return list(self._insights)
 
-    def _filter_data(self, request: AnalysisRequest) -> List[DataPoint]:
+    def _filter_data(self, request: AnalysisRequest) -> list[DataPoint]:
         result = self._data_points
         if request.time_range_start:
             result = [d for d in result if d.timestamp >= request.time_range_start]
@@ -49,7 +47,7 @@ class AnalyticsEngine(AnalyticsEngineInterface):
             result = [d for d in result if d.timestamp <= request.time_range_end]
         return result
 
-    def _generate_insights(self, request: AnalysisRequest, data: List[DataPoint]) -> List[Insight]:
+    def _generate_insights(self, request: AnalysisRequest, data: list[DataPoint]) -> list[Insight]:
         if not data:
             return []
         values = [d.value for d in data]
@@ -78,7 +76,7 @@ class AnalyticsEngine(AnalyticsEngineInterface):
                 ))
         return insights
 
-    def _compute_summary(self, data: List[DataPoint]) -> Dict[str, Any]:
+    def _compute_summary(self, data: list[DataPoint]) -> dict[str, Any]:
         if not data:
             return {"count": 0}
         values = [d.value for d in data]

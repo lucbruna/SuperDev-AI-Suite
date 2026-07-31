@@ -26,7 +26,7 @@ class Probability:
         if not priors or not likelihoods:
             return 0.5
         posterior = 0.5
-        for prior, likelihood in zip(priors, likelihoods):
+        for prior, likelihood in zip(priors, likelihoods, strict=False):
             posterior = (likelihood * prior) / (likelihood * prior + (1 - likelihood) * (1 - prior) + 1e-10)
         return posterior
 

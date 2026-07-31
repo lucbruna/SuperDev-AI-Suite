@@ -1,10 +1,10 @@
 """
 Data Sync - Record-level synchronization
 """
-from typing import Dict, Any, Optional, List
+import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
-import hashlib
+from typing import Any
 
 
 @dataclass
@@ -12,18 +12,18 @@ class SyncRecord:
     record_id: str
     source_id: str
     target_id: str
-    data: Dict[str, Any] = field(default_factory=dict)
+    data: dict[str, Any] = field(default_factory=dict)
     status: str = "pending"
-    synced_at: Optional[datetime] = None
+    synced_at: datetime | None = None
     hash_value: str = ""
 
 
 class DataSync:
     def __init__(self):
-        self.records: Dict[str, SyncRecord] = {}
-        self.conflicts: List[Dict[str, Any]] = []
+        self.records: dict[str, SyncRecord] = {}
+        self.conflicts: list[dict[str, Any]] = []
 
-    def create_record(self, source_id: str, target_id: str, data: Dict[str, Any]) -> SyncRecord:
+    def create_record(self, source_id: str, target_id: str, data: dict[str, Any]) -> SyncRecord:
         record_id = hashlib.sha256(f"{source_id}{target_id}{str(data)}".encode()).hexdigest()[:16]
         hash_val = hashlib.sha256(str(data).encode()).hexdigest()
         record = SyncRecord(record_id=record_id, source_id=source_id, target_id=target_id, data=data, hash_value=hash_val)
@@ -38,7 +38,7 @@ class DataSync:
             return True
         return False
 
-    def detect_conflict(self, record_id: str, new_data: Dict[str, Any]) -> bool:
+    def detect_conflict(self, record_id: str, new_data: dict[str, Any]) -> bool:
         record = self.records.get(record_id)
         if record:
             new_hash = hashlib.sha256(str(new_data).encode()).hexdigest()
@@ -48,7 +48,7 @@ class DataSync:
                 return True
         return False
 
-    def resolve_conflict(self, record_id: str, resolution: Dict[str, Any]) -> bool:
+    def resolve_conflict(self, record_id: str, resolution: dict[str, Any]) -> bool:
         record = self.records.get(record_id)
         if record:
             record.data = resolution
@@ -57,13 +57,13 @@ class DataSync:
             return True
         return False
 
-    def get_record(self, record_id: str) -> Optional[SyncRecord]:
+    def get_record(self, record_id: str) -> SyncRecord | None:
         return self.records.get(record_id)
 
-    def get_pending(self) -> List[SyncRecord]:
+    def get_pending(self) -> list[SyncRecord]:
         return [r for r in self.records.values() if r.status == "pending"]
 
-    def get_conflicts(self) -> List[Dict[str, Any]]:
+    def get_conflicts(self) -> list[dict[str, Any]]:
         return self.conflicts
 
     def count(self) -> int:

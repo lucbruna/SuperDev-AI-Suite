@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import os
 from typing import Any
 
 from ...base.base_tool import BaseTool
@@ -48,7 +47,7 @@ class ProcessExecutor(BaseTool):
                 "exit_code": proc.returncode or 0,
                 "pid": proc.pid,
             }
-        except asyncio.TimeoutError:
+        except TimeoutError:
             return {"success": False, "error": f"Process timed out after {timeout}s"}
         except Exception as e:
             return {"success": False, "error": str(e)}

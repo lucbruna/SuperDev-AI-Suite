@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from typing import Any
-from datetime import datetime, timezone
 
 
 class Restore:
@@ -21,7 +21,7 @@ class Restore:
             "backup_id": backup_id,
             "tables": tables or [],
             "status": "completed",
-            "started_at": datetime.now(timezone.utc).isoformat(),
+            "started_at": datetime.now(UTC).isoformat(),
         }
         return rid
 

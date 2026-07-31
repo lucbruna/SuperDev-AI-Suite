@@ -1,10 +1,8 @@
 """Biometric Engine - Core biometric authentication."""
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
-import secrets
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
 
 
 class BiometricType(Enum):
@@ -46,8 +44,8 @@ class AuthAttempt:
 
 class BiometricEngine:
     def __init__(self):
-        self.enrollments: Dict[str, List[BiometricEnrollment]] = {}
-        self.attempts: List[AuthAttempt] = []
+        self.enrollments: dict[str, list[BiometricEnrollment]] = {}
+        self.attempts: list[AuthAttempt] = []
 
     def enroll(self, user_id: str, biometric_type: BiometricType, template_data: str = "", quality_score: float = 0.0) -> BiometricEnrollment:
         enrollment_id = hashlib.sha256(f"{user_id}{biometric_type.value}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
@@ -90,10 +88,10 @@ class BiometricEngine:
                     return True
         return False
 
-    def get_enrollments(self, user_id: str) -> List[BiometricEnrollment]:
+    def get_enrollments(self, user_id: str) -> list[BiometricEnrollment]:
         return self.enrollments.get(user_id, [])
 
-    def get_attempts(self, user_id: str = None, limit: int = 100) -> List[AuthAttempt]:
+    def get_attempts(self, user_id: str = None, limit: int = 100) -> list[AuthAttempt]:
         attempts = self.attempts
         if user_id:
             attempts = [a for a in attempts if a.user_id == user_id]

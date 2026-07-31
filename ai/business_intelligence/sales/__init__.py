@@ -1,7 +1,11 @@
 """Business Intelligence Sales subsystem."""
 from .models import (
-    DealStage, LeadSource,
-    Deal, Contact, Activity, SalesMetrics,
+    Activity,
+    Contact,
+    Deal,
+    DealStage,
+    LeadSource,
+    SalesMetrics,
 )
 from .pipeline import SalesPipeline
 

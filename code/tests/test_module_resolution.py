@@ -11,6 +11,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from SuperDev.code.code_engine import (
+    _focus_symbols,
     _module_to_path_map,
     _rank_selection,
     _resolve_import_to_path,
@@ -162,3 +163,38 @@ class TestRankSelection:
         assert ranked[1]["path"] == "b.py"
         assert ranked[0]["relevance"] == 0
         assert ranked[1]["relevance"] == 0
+
+
+class TestFocusSymbols:
+    """Tests for ``_focus_symbols`` — the ``Foco:`` instruction section."""
+
+    def test_keeps_defined_symbols_in_relevance_order(self) -> None:
+        ranked = [
+            {"name": "Order", "locations": [{"kind": "class",
+                                               "path": "a.py"}]},
+            {"name": "OrderItem", "locations": [{"kind": "class",
+                                                    "path": "a.py"}]},
+            {"name": "create_order", "locations": [{"kind": "function",
+                                                       "path": "b.py"}]},
+        ]
+        assert _focus_symbols(ranked, limit=4) == ["Order", "OrderItem",
+                                                   "create_order"]
+
+    def test_skips_pure_imports(self) -> None:
+        ranked = [
+            {"name": "models.order",
+             "locations": [{"kind": "import", "path": "b.py"}]},
+            {"name": "Order", "locations": [{"kind": "class",
+                                                "path": "a.py"}]},
+        ]
+        # the import-only symbol is skipped even though it ranks first
+        assert _focus_symbols(ranked, limit=4) == ["Order"]
+
+    def test_respects_limit(self) -> None:
+        ranked = [{"name": f"Sym{i}",
+                   "locations": [{"kind": "class", "path": "a.py"}]}
+                  for i in range(10)]
+        assert len(_focus_symbols(ranked, limit=3)) == 3
+
+    def test_empty_input(self) -> None:
+        assert _focus_symbols([], limit=4) == []

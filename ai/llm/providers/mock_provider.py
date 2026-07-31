@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import Any, AsyncIterator
+from collections.abc import AsyncIterator
+from typing import Any
 
 from .base_provider import BaseLLMProvider
-
 
 _DEFAULT_RESPONSE = (
     "This is a mock response for testing purposes. "

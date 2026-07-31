@@ -1,5 +1,6 @@
 """Generic documentation generator."""
-from typing import List, Dict, Any
+from typing import Any
+
 from .models import DocPage, DocSection, DocType
 
 
@@ -7,9 +8,9 @@ class DocGenerator:
     """Generates documentation pages from specifications."""
 
     def __init__(self):
-        self._templates: Dict[str, str] = {}
+        self._templates: dict[str, str] = {}
 
-    def generate_page(self, title: str, sections: List[Dict[str, Any]],
+    def generate_page(self, title: str, sections: list[dict[str, Any]],
                       doc_type: DocType = DocType.GUIDE) -> DocPage:
         page = DocPage(title=title, doc_type=doc_type)
         for sec_data in sections:

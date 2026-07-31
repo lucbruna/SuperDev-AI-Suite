@@ -1,6 +1,7 @@
 """Manager for documentation lifecycle."""
-from typing import List, Dict, Any, Optional
 from datetime import datetime
+from typing import Any
+
 from .models import DocPage, DocumentationConfig
 
 
@@ -8,15 +9,15 @@ class DocumentationManager:
     """Manages documentation pages and configurations."""
 
     def __init__(self):
-        self._pages: Dict[str, DocPage] = {}
-        self._configs: Dict[str, DocumentationConfig] = {}
-        self._history: List[Dict[str, Any]] = []
+        self._pages: dict[str, DocPage] = {}
+        self._configs: dict[str, DocumentationConfig] = {}
+        self._history: list[dict[str, Any]] = []
 
     def add_page(self, page: DocPage) -> None:
         self._pages[page.page_id] = page
         self._record_action("add_page", page.page_id)
 
-    def get_page(self, page_id: str) -> Optional[DocPage]:
+    def get_page(self, page_id: str) -> DocPage | None:
         return self._pages.get(page_id)
 
     def remove_page(self, page_id: str) -> bool:
@@ -29,16 +30,16 @@ class DocumentationManager:
     def add_config(self, config: DocumentationConfig) -> None:
         self._configs[config.config_id] = config
 
-    def get_config(self, config_id: str) -> Optional[DocumentationConfig]:
+    def get_config(self, config_id: str) -> DocumentationConfig | None:
         return self._configs.get(config_id)
 
-    def list_pages(self) -> List[DocPage]:
+    def list_pages(self) -> list[DocPage]:
         return list(self._pages.values())
 
-    def get_history(self) -> List[Dict[str, Any]]:
+    def get_history(self) -> list[dict[str, Any]]:
         return list(self._history)
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         return {
             "pages": len(self._pages),
             "configs": len(self._configs),

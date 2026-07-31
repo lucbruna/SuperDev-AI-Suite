@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
-
 
 class ReinforcementLearning:
     """Reinforcement learning from action-reward cycles."""
 
     def __init__(self, learning_rate: float = 0.1):
-        self._q_table: Dict[str, float] = {}
+        self._q_table: dict[str, float] = {}
         self._learning_rate = learning_rate
         self._cycle_count: int = 0
 
@@ -19,7 +17,7 @@ class ReinforcementLearning:
     def cycle_count(self) -> int:
         return self._cycle_count
 
-    def act(self, state: str, actions: List[str]) -> str:
+    def act(self, state: str, actions: list[str]) -> str:
         best_action = actions[0]
         best_value = float("-inf")
         for action in actions:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 
 class AgentIdentity:
@@ -27,7 +27,7 @@ class AgentIdentity:
     def version(self, value: str) -> None:
         self._version = value
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "agent_id": self._agent_id,
             "agent_type": self._agent_type,

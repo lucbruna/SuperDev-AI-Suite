@@ -3,11 +3,11 @@ from __future__ import annotations
 from typing import Any
 
 from ...base.base_tool import BaseTool
-from .connection import DatabaseConnection
-from .query import DatabaseQuery
-from .migration import DatabaseMigration
-from .schema import DatabaseSchema
 from .backup import DatabaseBackup
+from .connection import DatabaseConnection
+from .migration import DatabaseMigration
+from .query import DatabaseQuery
+from .schema import DatabaseSchema
 
 
 class DatabaseTool(BaseTool):

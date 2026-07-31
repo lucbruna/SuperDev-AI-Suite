@@ -1,48 +1,64 @@
 """ERP Operations — Comprehensive test suite."""
-import pytest
-from datetime import datetime
 
 # Core models
-from erp_operations.erp_models import (
-    Product, StockMovement, Order, PurchaseOrder, Supplier, Employee, WorkOrder,
-    Delivery, WarehouseLocation, WorkflowApproval,
-    ProductStatus, OrderStatus, OrderPriority, PaymentStatus, EmployeeStatus, WorkflowStatus,
-)
+from erp_operations.automation.engine import AutomationEngine
+from erp_operations.automation.models import AutomationRule, AutomationStatus, ScheduledTask
 
 # Core engine
 from erp_operations.erp_engine import ERPEngine
-
-# Subsystem models and engines
-from erp_operations.inventory.models import InventoryItem, StockMovement as InvMovement, ReplenishmentAlert, StockStatus, MovementType
+from erp_operations.erp_models import (
+    Delivery,
+    Employee,
+    Order,
+    OrderStatus,
+    Product,
+    PurchaseOrder,
+    Supplier,
+    WarehouseLocation,
+    WorkflowApproval,
+    WorkflowStatus,
+    WorkOrder,
+)
+from erp_operations.hr.engine import HREngine
+from erp_operations.hr.models import Department, LeaveRequest, LeaveStatus, LeaveType, PayrollRecord
+from erp_operations.hr.models import Employee as HREmployee
+from erp_operations.hr.models import EmployeeStatus as HREmpStatus
 from erp_operations.inventory.engine import InventoryEngine
 
-from erp_operations.sales.models import SalesOrder, Quotation, SalesTarget, Commission, SalesOrderStatus, QuotationStatus
-from erp_operations.sales.engine import SalesEngine
-
-from erp_operations.purchases.models import PurchaseOrder as PurchPO, PurchaseOrderItem, PurchaseOrderStatus, PriceComparison
-from erp_operations.purchases.engine import PurchasesEngine
-
-from erp_operations.suppliers.models import Supplier as SupSupplier, SupplierContract, SupplierPerformance, SupplierStatus, SupplierCategory
-from erp_operations.suppliers.engine import SuppliersEngine
-
-from erp_operations.production.models import ProductionOrder, ProductionLine, QualityCheck, BOM, ProductionStatus, QualityStatus
-from erp_operations.production.engine import ProductionEngine
-
-from erp_operations.logistics.models import Shipment, Route, Carrier, DeliveryProof, ShipmentStatus, CarrierType
+# Subsystem models and engines
+from erp_operations.inventory.models import InventoryItem, MovementType
+from erp_operations.inventory.models import StockMovement as InvMovement
 from erp_operations.logistics.engine import LogisticsEngine
-
-from erp_operations.warehouse.models import WarehouseZoneModel, Bin, PutAwayTask, PickTask, WarehouseZone, BinStatus
+from erp_operations.logistics.models import Carrier, CarrierType, DeliveryProof, Route, Shipment, ShipmentStatus
+from erp_operations.production.engine import ProductionEngine
+from erp_operations.production.models import (
+    BOM,
+    ProductionLine,
+    ProductionOrder,
+    ProductionStatus,
+    QualityCheck,
+    QualityStatus,
+)
+from erp_operations.purchases.engine import PurchasesEngine
+from erp_operations.purchases.models import PurchaseOrder as PurchPO
+from erp_operations.purchases.models import PurchaseOrderStatus
+from erp_operations.sales.engine import SalesEngine
+from erp_operations.sales.models import (
+    Commission,
+    Quotation,
+    QuotationStatus,
+    SalesOrder,
+    SalesOrderStatus,
+    SalesTarget,
+)
+from erp_operations.suppliers.engine import SuppliersEngine
+from erp_operations.suppliers.models import Supplier as SupSupplier
+from erp_operations.suppliers.models import SupplierPerformance, SupplierStatus
 from erp_operations.warehouse.engine import WarehouseEngine
-
-from erp_operations.hr.models import Employee as HREmployee, LeaveRequest, PayrollRecord, Department, EmployeeStatus as HREmpStatus, LeaveType, LeaveStatus
-from erp_operations.hr.engine import HREngine
-
-from erp_operations.workflow.models import WorkflowDefinition, WorkflowStep, WorkflowInstance, ApprovalRecord, WorkflowStatus as WfStatus, StepType, StepStatus
+from erp_operations.warehouse.models import Bin, BinStatus, PickTask, WarehouseZone, WarehouseZoneModel
 from erp_operations.workflow.engine import WorkflowEngine
-
-from erp_operations.automation.models import AutomationRule, AutomationExecution, ScheduledTask, AutomationMetrics, AutomationStatus, TriggerType, ActionType
-from erp_operations.automation.engine import AutomationEngine
-
+from erp_operations.workflow.models import StepStatus, StepType, WorkflowDefinition, WorkflowInstance, WorkflowStep
+from erp_operations.workflow.models import WorkflowStatus as WfStatus
 
 # ========== Core ERPEngine Tests ==========
 

@@ -1,9 +1,9 @@
 """Software Factory Engine - Core engine for autonomous software creation."""
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class FactoryPhase(Enum):
@@ -37,13 +37,13 @@ class SoftwareProject:
     owner: str = ""
     created_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class SoftwareFactoryEngine:
     def __init__(self):
-        self.projects: Dict[str, SoftwareProject] = {}
-        self.phase_log: List[Dict[str, Any]] = []
+        self.projects: dict[str, SoftwareProject] = {}
+        self.phase_log: list[dict[str, Any]] = []
 
     def create_project(self, name: str, description: str = "", owner: str = "") -> SoftwareProject:
         project_id = hashlib.sha256(f"{name}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
@@ -73,10 +73,10 @@ class SoftwareFactoryEngine:
             return True
         return False
 
-    def get_project(self, project_id: str) -> Optional[SoftwareProject]:
+    def get_project(self, project_id: str) -> SoftwareProject | None:
         return self.projects.get(project_id)
 
-    def list_projects(self, status: ProjectStatus = None) -> List[SoftwareProject]:
+    def list_projects(self, status: ProjectStatus = None) -> list[SoftwareProject]:
         if status:
             return [p for p in self.projects.values() if p.status == status]
         return list(self.projects.values())

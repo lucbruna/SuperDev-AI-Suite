@@ -1,8 +1,8 @@
 """Fingerprint - Fingerprint biometric module."""
-from typing import Dict, Any, Optional, List
+import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
-import hashlib
+from typing import Any
 
 
 @dataclass
@@ -18,8 +18,8 @@ class FingerprintTemplate:
 
 class FingerprintManager:
     def __init__(self):
-        self.templates: Dict[str, FingerprintTemplate] = {}
-        self.scan_log: List[Dict[str, Any]] = []
+        self.templates: dict[str, FingerprintTemplate] = {}
+        self.scan_log: list[dict[str, Any]] = []
 
     def enroll(self, user_id: str, finger_id: int, template_data: str = "", quality: float = 0.0) -> FingerprintTemplate:
         template_id = hashlib.sha256(f"{user_id}{finger_id}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
@@ -36,7 +36,7 @@ class FingerprintManager:
         self.scan_log.append({"user_id": user_id, "finger_id": finger_id, "match": False, "timestamp": datetime.now().isoformat()})
         return False
 
-    def get_user_templates(self, user_id: str) -> List[FingerprintTemplate]:
+    def get_user_templates(self, user_id: str) -> list[FingerprintTemplate]:
         return [t for t in self.templates.values() if t.user_id == user_id and t.active]
 
     def remove(self, template_id: str) -> bool:

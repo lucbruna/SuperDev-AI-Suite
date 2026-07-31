@@ -2,49 +2,49 @@
 from __future__ import annotations
 
 # --- Pre-existing modules ---
-from . import architect_agent
-from . import base
-from . import collaboration
-from . import communication
-from . import coordination
-from . import deployment_agent
-from . import documentation_agent
-from . import monitoring_agent
-from . import qa_agent
-from . import frontend_agent
-from . import database_agent
-from . import security_agent
-
 # --- Core infrastructure ---
-from . import agent_config
-from . import agent_engine
-from . import agent_manager
-from . import agent_factory
-from . import agent_registry
-from . import agent_runtime
-from . import agent_context
-from . import agent_events
-from . import agent_metrics
-from . import agent_logger
-from . import agent_security
-from . import agent_models
-from . import agent_interfaces
-from . import agent_protocols
-
 # --- Volume 13 subsystems ---
-from . import creation
-from . import lifecycle
-from . import memory
-from . import planning
-from . import reasoning
-from . import execution
-from . import evaluation
-from . import learning
-from . import optimization
-from . import personality
-from . import skills
-from . import tools
-from . import marketplace
+from . import (
+    agent_config,
+    agent_context,
+    agent_engine,
+    agent_events,
+    agent_factory,
+    agent_interfaces,
+    agent_logger,
+    agent_manager,
+    agent_metrics,
+    agent_models,
+    agent_protocols,
+    agent_registry,
+    agent_runtime,
+    agent_security,
+    architect_agent,
+    base,
+    collaboration,
+    communication,
+    coordination,
+    creation,
+    database_agent,
+    deployment_agent,
+    documentation_agent,
+    evaluation,
+    execution,
+    frontend_agent,
+    learning,
+    lifecycle,
+    marketplace,
+    memory,
+    monitoring_agent,
+    optimization,
+    personality,
+    planning,
+    qa_agent,
+    reasoning,
+    security_agent,
+    skills,
+    tools,
+)
 
 __all__ = [
     # Pre-existing

@@ -1,9 +1,12 @@
 """Monitoring data models."""
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
-from enum import Enum
+
+import time
+import uuid
 from dataclasses import dataclass, field
-import time, uuid
+from enum import Enum
+from typing import Any
+
 
 class LogLevel(Enum):
     DEBUG = "debug"
@@ -30,7 +33,7 @@ class LogEntry:
     level: LogLevel = LogLevel.INFO
     source: str = ""
     message: str = ""
-    context: Dict[str, Any] = field(default_factory=dict)
+    context: dict[str, Any] = field(default_factory=dict)
     entry_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
 
 @dataclass
@@ -38,7 +41,7 @@ class MetricPoint:
     name: str = ""
     value: float = 0.0
     timestamp: float = field(default_factory=time.time)
-    labels: Dict[str, str] = field(default_factory=dict)
+    labels: dict[str, str] = field(default_factory=dict)
     metric_type: str = "gauge"
 
 @dataclass
@@ -50,7 +53,7 @@ class TraceSpan:
     start_time: float = field(default_factory=time.time)
     end_time: float = 0.0
     status: str = "ok"
-    attributes: Dict[str, Any] = field(default_factory=dict)
+    attributes: dict[str, Any] = field(default_factory=dict)
 
 @dataclass
 class Alert:
@@ -78,6 +81,6 @@ class Incident:
     severity: AlertSeverity = AlertSeverity.LOW
     status: str = "open"
     created_at: float = field(default_factory=time.time)
-    resolved_at: Optional[float] = None
+    resolved_at: float | None = None
     description: str = ""
-    timeline: List[Dict[str, Any]] = field(default_factory=list)
+    timeline: list[dict[str, Any]] = field(default_factory=list)

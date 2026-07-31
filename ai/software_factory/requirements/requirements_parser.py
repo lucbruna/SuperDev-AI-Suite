@@ -1,12 +1,13 @@
 """Parser for requirements data from various formats."""
-from typing import List, Dict, Any, Optional
-from .models import Requirement, RequirementType, Priority
+from typing import Any
+
+from .models import Priority, Requirement, RequirementType
 
 
 class RequirementsParser:
     """Parses requirements from dicts, text, or structured data."""
 
-    def parse(self, data: Dict[str, Any]) -> Requirement:
+    def parse(self, data: dict[str, Any]) -> Requirement:
         """Parse a single requirement from a dictionary."""
         rtype_str = data.get("type", "functional")
         try:
@@ -32,7 +33,7 @@ class RequirementsParser:
             dependencies=data.get("dependencies", []),
         )
 
-    def parse_many(self, data_list: List[Dict[str, Any]]) -> List[Requirement]:
+    def parse_many(self, data_list: list[dict[str, Any]]) -> list[Requirement]:
         """Parse multiple requirements."""
         return [self.parse(d) for d in data_list]
 
@@ -43,10 +44,10 @@ class RequirementsParser:
         description = "\n".join(lines[1:]) if len(lines) > 1 else ""
         return Requirement(title=title, description=description)
 
-    def parse_yaml_like(self, yaml_str: str) -> List[Requirement]:
+    def parse_yaml_like(self, yaml_str: str) -> list[Requirement]:
         """Parse a simplified YAML-like format."""
         requirements = []
-        current: Dict[str, Any] = {}
+        current: dict[str, Any] = {}
         for line in yaml_str.strip().split("\n"):
             line = line.strip()
             if not line:

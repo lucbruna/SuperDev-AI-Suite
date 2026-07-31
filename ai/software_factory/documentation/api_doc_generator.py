@@ -1,5 +1,6 @@
 """Generator for API documentation."""
-from typing import List, Dict, Any
+from typing import Any
+
 from .models import ApiEndpoint, ApiParameter
 
 
@@ -7,12 +8,12 @@ class ApiDocGenerator:
     """Generates API documentation from endpoint specifications."""
 
     def __init__(self):
-        self._endpoints: List[ApiEndpoint] = []
+        self._endpoints: list[ApiEndpoint] = []
 
     def add_endpoint(self, endpoint: ApiEndpoint) -> None:
         self._endpoints.append(endpoint)
 
-    def generate(self, endpoint_dicts: List[Dict[str, Any]] = None) -> str:
+    def generate(self, endpoint_dicts: list[dict[str, Any]] = None) -> str:
         if endpoint_dicts:
             self._endpoints = []
             for ed in endpoint_dicts:
@@ -49,8 +50,8 @@ class ApiDocGenerator:
                 lines.append("")
         return "\n".join(lines)
 
-    def get_endpoints(self) -> List[ApiEndpoint]:
+    def get_endpoints(self) -> list[ApiEndpoint]:
         return list(self._endpoints)
 
-    def find_by_tag(self, tag: str) -> List[ApiEndpoint]:
+    def find_by_tag(self, tag: str) -> list[ApiEndpoint]:
         return [e for e in self._endpoints if tag in e.tags]

@@ -3,14 +3,14 @@ from __future__ import annotations
 
 import time
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .goal_manager import GoalManager
-from .task_decomposition import TaskDecomposer
-from .strategy import StrategyEngine
-from .scheduling import Scheduler
 from .optimization import PlanningOptimizer
 from .replanning import Replanner
+from .scheduling import Scheduler
+from .strategy import StrategyEngine
+from .task_decomposition import TaskDecomposer
 
 
 class PlanningEngine:
@@ -24,7 +24,7 @@ class PlanningEngine:
         self._scheduler = Scheduler()
         self._optimizer = PlanningOptimizer()
         self._replanner = Replanner()
-        self._plans: Dict[str, Dict[str, Any]] = {}
+        self._plans: dict[str, dict[str, Any]] = {}
         self._plan_count: int = 0
 
     @property
@@ -43,9 +43,9 @@ class PlanningEngine:
     def scheduler(self) -> Scheduler:
         return self._scheduler
 
-    def create_plan(self, goal: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def create_plan(self, goal: str, context: dict[str, Any] | None = None) -> dict[str, Any]:
         plan_id = f"plan_{uuid.uuid4().hex[:12]}"
-        goal_data = self._goal_manager.add_goal(goal, context)
+        self._goal_manager.add_goal(goal, context)
         tasks = self._decomposer.decompose(goal, context)
         strategy = self._strategy.select_strategy(goal, tasks)
         scheduled = self._scheduler.schedule(tasks)
@@ -64,7 +64,7 @@ class PlanningEngine:
         self._plan_count += 1
         return plan
 
-    def execute_plan(self, plan_id: str) -> Dict[str, Any]:
+    def execute_plan(self, plan_id: str) -> dict[str, Any]:
         plan = self._plans.get(plan_id)
         if plan is None:
             return {"error": f"Plan {plan_id} not found"}
@@ -73,7 +73,7 @@ class PlanningEngine:
         return {"plan_id": plan_id, "status": "executing", "tasks": plan["tasks"]}
 
     def complete_task(self, plan_id: str, task_id: str,
-                      result: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+                      result: dict[str, Any] | None = None) -> dict[str, Any]:
         plan = self._plans.get(plan_id)
         if plan is None:
             return {"error": "Plan not found"}
@@ -89,7 +89,7 @@ class PlanningEngine:
             plan["completed_at"] = time.time()
         return {"plan_id": plan_id, "completed": completed, "total": total}
 
-    def replan(self, plan_id: str, reason: str) -> Dict[str, Any]:
+    def replan(self, plan_id: str, reason: str) -> dict[str, Any]:
         plan = self._plans.get(plan_id)
         if plan is None:
             return {"error": "Plan not found"}
@@ -99,16 +99,16 @@ class PlanningEngine:
         plan["replan_reason"] = reason
         return {"plan_id": plan_id, "new_task_count": len(new_tasks)}
 
-    def get_plan(self, plan_id: str) -> Optional[Dict[str, Any]]:
+    def get_plan(self, plan_id: str) -> dict[str, Any] | None:
         return self._plans.get(plan_id)
 
-    def list_plans(self) -> List[Dict[str, Any]]:
+    def list_plans(self) -> list[dict[str, Any]]:
         return [
             {"plan_id": p["plan_id"], "goal": p["goal"], "status": p["status"]}
             for p in self._plans.values()
         ]
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         return {
             "total_plans": self._plan_count,
             "active_plans": len(self._plans),

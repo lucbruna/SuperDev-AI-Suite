@@ -1,11 +1,11 @@
 """
 OAuth 2.0 Provider
 """
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta
 import hashlib
 import secrets
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from typing import Any
 
 
 @dataclass
@@ -14,8 +14,8 @@ class OAuthApp:
     name: str
     client_id: str
     client_secret: str
-    redirect_uris: List[str] = field(default_factory=list)
-    scopes: List[str] = field(default_factory=list)
+    redirect_uris: list[str] = field(default_factory=list)
+    scopes: list[str] = field(default_factory=list)
     is_active: bool = True
 
 
@@ -31,18 +31,18 @@ class OAuthToken:
 
 class OAuthProvider:
     def __init__(self):
-        self.apps: Dict[str, OAuthApp] = {}
-        self.tokens: Dict[str, OAuthToken] = {}
-        self.authorization_codes: Dict[str, Dict[str, Any]] = {}
+        self.apps: dict[str, OAuthApp] = {}
+        self.tokens: dict[str, OAuthToken] = {}
+        self.authorization_codes: dict[str, dict[str, Any]] = {}
 
-    def register_app(self, name: str, redirect_uris: List[str] = None, scopes: List[str] = None) -> OAuthApp:
+    def register_app(self, name: str, redirect_uris: list[str] = None, scopes: list[str] = None) -> OAuthApp:
         client_id = secrets.token_urlsafe(32)
         client_secret = secrets.token_urlsafe(64)
         app = OAuthApp(app_id=hashlib.sha256(client_id.encode()).hexdigest()[:16], name=name, client_id=client_id, client_secret=client_secret, redirect_uris=redirect_uris or [], scopes=scopes or ["read"])
         self.apps[app.app_id] = app
         return app
 
-    def generate_auth_code(self, app_id: str, user_id: str, scope: str = "read") -> Optional[str]:
+    def generate_auth_code(self, app_id: str, user_id: str, scope: str = "read") -> str | None:
         app = self.apps.get(app_id)
         if not app or not app.is_active:
             return None
@@ -50,7 +50,7 @@ class OAuthProvider:
         self.authorization_codes[code] = {"app_id": app_id, "user_id": user_id, "scope": scope, "expires_at": (datetime.now() + timedelta(minutes=10)).isoformat()}
         return code
 
-    def exchange_code(self, code: str, client_id: str, client_secret: str) -> Optional[OAuthToken]:
+    def exchange_code(self, code: str, client_id: str, client_secret: str) -> OAuthToken | None:
         code_data = self.authorization_codes.pop(code, None)
         if not code_data:
             return None
@@ -76,7 +76,7 @@ class OAuthProvider:
             return True
         return False
 
-    def get_app(self, app_id: str) -> Optional[OAuthApp]:
+    def get_app(self, app_id: str) -> OAuthApp | None:
         return self.apps.get(app_id)
 
     def count(self) -> int:

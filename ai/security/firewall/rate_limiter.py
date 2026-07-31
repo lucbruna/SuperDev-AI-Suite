@@ -1,7 +1,9 @@
 """Rate limiting."""
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
-import time, uuid
+
+import time
+from typing import Any
+
 
 class RateLimitRule:
     def __init__(self, name: str, max_requests: int, window_seconds: int, scope: str = "global") -> None:
@@ -13,14 +15,14 @@ class RateLimitRule:
 
 class RateLimiter:
     def __init__(self) -> None:
-        self._rules: Dict[str, RateLimitRule] = {}
-        self._requests: Dict[str, List[float]] = {}
-        self._violations: List[Dict[str, Any]] = []
+        self._rules: dict[str, RateLimitRule] = {}
+        self._requests: dict[str, list[float]] = {}
+        self._violations: list[dict[str, Any]] = []
     def add_rule(self, name: str, max_requests: int, window_seconds: int, scope: str = "global") -> RateLimitRule:
         rule = RateLimitRule(name, max_requests, window_seconds, scope)
         self._rules[name] = rule
         return rule
-    def check(self, key: str, rule_name: str = "default") -> Dict[str, Any]:
+    def check(self, key: str, rule_name: str = "default") -> dict[str, Any]:
         rule = self._rules.get(rule_name)
         if not rule:
             return {"allowed": True, "remaining": -1}
@@ -38,12 +40,12 @@ class RateLimiter:
             del self._rules[name]
             return True
         return False
-    def get_violations(self, key: str = "", limit: int = 100) -> List[Dict[str, Any]]:
+    def get_violations(self, key: str = "", limit: int = 100) -> list[dict[str, Any]]:
         violations = self._violations
         if key:
             violations = [v for v in violations if v["key"] == key]
         return violations[-limit:]
-    def list_rules(self) -> List[str]:
+    def list_rules(self) -> list[str]:
         return list(self._rules.keys())
     def reset_key(self, key: str) -> None:
         self._requests.pop(key, None)

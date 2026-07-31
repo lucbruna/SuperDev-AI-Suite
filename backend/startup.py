@@ -30,8 +30,9 @@ async def startup_handler() -> None:
 
     logger.info("Running database migrations")
     try:
-        from alembic import command
         from alembic.config import Config as AlembicConfig
+
+        from alembic import command
 
         alembic_cfg = AlembicConfig(config.database.migration_dir)
         command.upgrade(alembic_cfg, "head")

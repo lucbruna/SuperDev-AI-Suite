@@ -1,7 +1,6 @@
 """Sales intelligence models."""
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
 from enum import Enum
 
 
@@ -35,7 +34,7 @@ class SalesLead:
     stage: SalesStage = SalesStage.QUALIFICATION
     assigned_to: str = ""
     created_at: datetime = field(default_factory=datetime.now)
-    last_contact: Optional[datetime] = None
+    last_contact: datetime | None = None
 
     @property
     def is_qualified(self) -> bool:
@@ -48,9 +47,9 @@ class SalesPrediction:
     lead_id: str = ""
     conversion_probability: float = 0.0
     predicted_value: float = 0.0
-    predicted_close_date: Optional[datetime] = None
+    predicted_close_date: datetime | None = None
     confidence: float = 0.0
-    factors: List[str] = field(default_factory=list)
+    factors: list[str] = field(default_factory=list)
     created_at: datetime = field(default_factory=datetime.now)
 
 

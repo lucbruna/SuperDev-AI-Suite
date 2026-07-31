@@ -1,8 +1,8 @@
 """Mobile Logger - Structured logging for mobile/edge platform."""
-from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
-from enum import Enum
 from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class LogLevel(Enum):
@@ -20,17 +20,17 @@ class LogEntry:
     source: str = ""
     device_id: str = ""
     module: str = ""
-    data: Dict[str, Any] = field(default_factory=dict)
+    data: dict[str, Any] = field(default_factory=dict)
     timestamp: datetime = field(default_factory=datetime.now)
 
 
 class MobileLogger:
     def __init__(self):
-        self.entries: List[LogEntry] = []
+        self.entries: list[LogEntry] = []
         self.min_level: LogLevel = LogLevel.DEBUG
-        self.filters: Dict[str, Any] = {}
+        self.filters: dict[str, Any] = {}
 
-    def log(self, level: LogLevel, message: str, source: str = "", device_id: str = "", module: str = "", data: Dict[str, Any] = None) -> LogEntry:
+    def log(self, level: LogLevel, message: str, source: str = "", device_id: str = "", module: str = "", data: dict[str, Any] = None) -> LogEntry:
         entry = LogEntry(level=level, message=message, source=source, device_id=device_id, module=module, data=data or {})
         self.entries.append(entry)
         return entry
@@ -50,7 +50,7 @@ class MobileLogger:
     def critical(self, message: str, **kwargs) -> LogEntry:
         return self.log(LogLevel.CRITICAL, message, **kwargs)
 
-    def get_entries(self, level: LogLevel = None, device_id: str = "", module: str = "", limit: int = 100) -> List[LogEntry]:
+    def get_entries(self, level: LogLevel = None, device_id: str = "", module: str = "", limit: int = 100) -> list[LogEntry]:
         entries = self.entries
         if level:
             entries = [e for e in entries if e.level == level]

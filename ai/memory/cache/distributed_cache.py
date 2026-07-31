@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class DistributedCache:
@@ -10,8 +10,8 @@ class DistributedCache:
     def __init__(self, node_id: str, sync_interval: float = 60.0) -> None:
         self._node_id = node_id
         self._sync_interval = sync_interval
-        self._data: Dict[str, Any] = {}
-        self._timestamps: Dict[str, float] = {}
+        self._data: dict[str, Any] = {}
+        self._timestamps: dict[str, float] = {}
         self._last_sync: float = time.time()
 
     @property
@@ -26,7 +26,7 @@ class DistributedCache:
     def last_sync(self) -> float:
         return self._last_sync
 
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         return self._data.get(key)
 
     def set(self, key: str, value: Any, ttl: float = 300.0) -> None:
@@ -44,9 +44,9 @@ class DistributedCache:
         self._data.clear()
         self._timestamps.clear()
 
-    def sync(self, peer: "DistributedCache") -> int:
+    def sync(self, peer: DistributedCache) -> int:
         synced = 0
-        for key in peer.keys():
+        for key in peer:
             if key not in self._data or peer._timestamps.get(key, 0) >= self._timestamps.get(key, 0):
                 self._data[key] = peer.get(key)
                 self._timestamps[key] = peer._timestamps.get(key, 0)
@@ -54,10 +54,10 @@ class DistributedCache:
         self._last_sync = time.time()
         return synced
 
-    def keys(self) -> List[str]:
+    def keys(self) -> list[str]:
         return list(self._data.keys())
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "node_id": self._node_id,
             "size": self.size,

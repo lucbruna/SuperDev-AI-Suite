@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 import json
-import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
 
 from .memory_exceptions import MemoryNotFoundError
 from .memory_models import MemoryEntry, MemoryQuery
-from .memory_types import MemoryData, MemoryID, MemoryScope, MemoryStatus, Tags
+from .memory_types import MemoryData, MemoryID, MemoryScope
 
 
 class MemoryRepository:
@@ -15,7 +13,7 @@ class MemoryRepository:
 
     def __init__(self, storage_dir: str | Path | None = None):
         self._storage_dir = Path(storage_dir) if storage_dir else None
-        self._entries: Dict[str, MemoryEntry] = {}
+        self._entries: dict[str, MemoryEntry] = {}
 
     @property
     def storage_dir(self) -> Path | None:
@@ -60,8 +58,8 @@ class MemoryRepository:
     async def exists(self, key: MemoryID) -> bool:
         return key in self._entries
 
-    async def search(self, query: MemoryQuery) -> List[MemoryEntry]:
-        results: List[MemoryEntry] = []
+    async def search(self, query: MemoryQuery) -> list[MemoryEntry]:
+        results: list[MemoryEntry] = []
         for entry in self._entries.values():
             if not query.include_expired and entry.is_expired:
                 continue
@@ -102,7 +100,7 @@ class MemoryRepository:
             return len(self._entries)
         return sum(1 for e in self._entries.values() if e.scope == scope)
 
-    async def list_keys(self) -> List[MemoryID]:
+    async def list_keys(self) -> list[MemoryID]:
         return list(self._entries.keys())
 
     async def _write_to_disk(self, entry: MemoryEntry) -> None:

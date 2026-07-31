@@ -1,11 +1,10 @@
 """
 Integration Metrics - Performance monitoring
 """
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from datetime import datetime
 import hashlib
 import statistics
+from dataclasses import dataclass, field
+from datetime import datetime
 
 
 @dataclass
@@ -13,7 +12,7 @@ class MetricPoint:
     name: str
     value: float
     timestamp: datetime = field(default_factory=datetime.now)
-    tags: Dict[str, str] = field(default_factory=dict)
+    tags: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -28,13 +27,13 @@ class IntegrationMetric:
 
 class IntegrationMetrics:
     def __init__(self):
-        self.metrics: Dict[str, List[MetricPoint]] = {}
-        self.integration_metrics: Dict[str, List[IntegrationMetric]] = {}
-        self.counters: Dict[str, int] = {}
-        self.gauges: Dict[str, float] = {}
-        self.histograms: Dict[str, List[float]] = {}
+        self.metrics: dict[str, list[MetricPoint]] = {}
+        self.integration_metrics: dict[str, list[IntegrationMetric]] = {}
+        self.counters: dict[str, int] = {}
+        self.gauges: dict[str, float] = {}
+        self.histograms: dict[str, list[float]] = {}
 
-    def record(self, name: str, value: float, tags: Dict[str, str] = None) -> MetricPoint:
+    def record(self, name: str, value: float, tags: dict[str, str] = None) -> MetricPoint:
         point = MetricPoint(name=name, value=value, tags=tags or {})
         self.metrics.setdefault(name, []).append(point)
         return point
@@ -46,13 +45,13 @@ class IntegrationMetrics:
     def set_gauge(self, name: str, value: float) -> None:
         self.gauges[name] = value
 
-    def get_gauge(self, name: str) -> Optional[float]:
+    def get_gauge(self, name: str) -> float | None:
         return self.gauges.get(name)
 
     def observe(self, name: str, value: float) -> None:
         self.histograms.setdefault(name, []).append(value)
 
-    def get_histogram_stats(self, name: str) -> Dict[str, float]:
+    def get_histogram_stats(self, name: str) -> dict[str, float]:
         values = self.histograms.get(name, [])
         if not values:
             return {"count": 0, "mean": 0, "min": 0, "max": 0, "p50": 0, "p95": 0, "p99": 0}
@@ -64,10 +63,10 @@ class IntegrationMetrics:
         self.integration_metrics.setdefault(integration_id, []).append(metric)
         return metric
 
-    def get_integration_metrics(self, integration_id: str) -> List[IntegrationMetric]:
+    def get_integration_metrics(self, integration_id: str) -> list[IntegrationMetric]:
         return self.integration_metrics.get(integration_id, [])
 
-    def get_metric_points(self, name: str, limit: int = 100) -> List[MetricPoint]:
+    def get_metric_points(self, name: str, limit: int = 100) -> list[MetricPoint]:
         return self.metrics.get(name, [])[-limit:]
 
     def get_counter(self, name: str) -> int:

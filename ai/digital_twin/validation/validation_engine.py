@@ -1,20 +1,21 @@
 """Validation engine."""
 from __future__ import annotations
-from typing import Any, Dict, List
-import time
+
+from typing import Any
+
 
 class ValidationEngine:
     def __init__(self) -> None:
-        self._validators: Dict[str, Any] = {}
-        self._results: List[Dict[str, Any]] = []
+        self._validators: dict[str, Any] = {}
+        self._results: list[dict[str, Any]] = []
         self._started = False
     def start(self) -> None:
         self._started = True
-    def register_validator(self, name: str, validator_type: str = "schema") -> Dict[str, Any]:
+    def register_validator(self, name: str, validator_type: str = "schema") -> dict[str, Any]:
         validator = {"name": name, "type": validator_type, "validations": 0, "passed": 0}
         self._validators[name] = validator
         return validator
-    def validate(self, validator_name: str, data: Dict[str, Any], rules: Dict[str, Any] = None) -> Dict[str, Any]:
+    def validate(self, validator_name: str, data: dict[str, Any], rules: dict[str, Any] = None) -> dict[str, Any]:
         if validator_name not in self._validators:
             return {"error": "not_found"}
         self._validators[validator_name]["validations"] += 1
@@ -35,7 +36,7 @@ class ValidationEngine:
         result = {"validator": validator_name, "valid": valid, "errors": errors}
         self._results.append(result)
         return result
-    def get_results(self, validator_name: str = "", limit: int = 20) -> List[Dict[str, Any]]:
+    def get_results(self, validator_name: str = "", limit: int = 20) -> list[dict[str, Any]]:
         results = self._results
         if validator_name:
             results = [r for r in results if r["validator"] == validator_name]
@@ -49,7 +50,7 @@ class ValidationEngine:
         total = sum(v.get("validations", 0) for v in self._validators.values())
         passed = sum(v.get("passed", 0) for v in self._validators.values())
         return (passed / total * 100) if total > 0 else 0
-    def list_validators(self) -> List[Dict[str, Any]]:
+    def list_validators(self) -> list[dict[str, Any]]:
         return list(self._validators.values())
     def count(self) -> int:
         return len(self._results)

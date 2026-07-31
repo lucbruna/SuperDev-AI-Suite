@@ -1,28 +1,29 @@
 """Processing engine."""
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional
-from .models import TransformRule, ProcessingJob, ProcessingResult, TransformType, ProcessingStatus
+from typing import Any
+
+from .models import ProcessingJob, ProcessingResult, ProcessingStatus, TransformRule, TransformType
 
 
 class ProcessingEngine:
     def __init__(self):
-        self._jobs: Dict[str, ProcessingJob] = {}
-        self._results: List[ProcessingResult] = []
-        self._rules: Dict[str, TransformRule] = {}
+        self._jobs: dict[str, ProcessingJob] = {}
+        self._results: list[ProcessingResult] = []
+        self._rules: dict[str, TransformRule] = {}
 
     def create_rule(self, rule: TransformRule) -> TransformRule:
         self._rules[rule.rule_id] = rule
         return rule
 
-    def get_rule(self, rule_id: str) -> Optional[TransformRule]:
+    def get_rule(self, rule_id: str) -> TransformRule | None:
         return self._rules.get(rule_id)
 
     def create_job(self, job: ProcessingJob) -> ProcessingJob:
         self._jobs[job.job_id] = job
         return job
 
-    def get_job(self, job_id: str) -> Optional[ProcessingJob]:
+    def get_job(self, job_id: str) -> ProcessingJob | None:
         return self._jobs.get(job_id)
 
     def start_job(self, job_id: str) -> bool:
@@ -66,7 +67,7 @@ class ProcessingEngine:
         self._results.append(result)
         return True
 
-    def transform_records(self, records: List[Dict[str, Any]], rules: List[TransformRule]) -> List[Dict[str, Any]]:
+    def transform_records(self, records: list[dict[str, Any]], rules: list[TransformRule]) -> list[dict[str, Any]]:
         result = list(records)
         for rule in sorted(rules, key=lambda r: r.order):
             if not rule.enabled:
@@ -97,8 +98,8 @@ class ProcessingEngine:
                 result = deduped
         return result
 
-    def aggregate_records(self, records: List[Dict[str, Any]], group_by: str, agg_field: str, agg_func: str = "sum") -> List[Dict[str, Any]]:
-        groups: Dict[str, List[Dict[str, Any]]] = {}
+    def aggregate_records(self, records: list[dict[str, Any]], group_by: str, agg_field: str, agg_func: str = "sum") -> list[dict[str, Any]]:
+        groups: dict[str, list[dict[str, Any]]] = {}
         for r in records:
             key = str(r.get(group_by, ""))
             groups.setdefault(key, []).append(r)
@@ -120,7 +121,7 @@ class ProcessingEngine:
             results.append({group_by: key, f"{agg_func}_{agg_field}": agg_value, "count": len(group)})
         return results
 
-    def get_results(self, job_id: Optional[str] = None) -> List[ProcessingResult]:
+    def get_results(self, job_id: str | None = None) -> list[ProcessingResult]:
         if job_id:
             return [r for r in self._results if r.job_id == job_id]
         return list(self._results)

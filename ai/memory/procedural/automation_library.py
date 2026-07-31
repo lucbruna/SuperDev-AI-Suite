@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 
 class AutomationScript:
@@ -33,7 +33,7 @@ class AutomationScript:
     def description(self) -> str:
         return self._description
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "script_id": self._script_id,
             "name": self._name,
@@ -46,7 +46,7 @@ class AutomationLibrary:
     """Library of automation scripts."""
 
     def __init__(self):
-        self._scripts: Dict[str, AutomationScript] = {}
+        self._scripts: dict[str, AutomationScript] = {}
 
     @property
     def count(self) -> int:
@@ -58,10 +58,10 @@ class AutomationLibrary:
     def get(self, script_id: str) -> AutomationScript | None:
         return self._scripts.get(script_id)
 
-    def get_by_language(self, language: str) -> List[AutomationScript]:
+    def get_by_language(self, language: str) -> list[AutomationScript]:
         return [s for s in self._scripts.values() if s.language == language]
 
-    def search(self, query: str) -> List[AutomationScript]:
+    def search(self, query: str) -> list[AutomationScript]:
         q = query.lower()
         return [s for s in self._scripts.values() if q in s.name.lower() or q in s.description.lower()]
 

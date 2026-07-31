@@ -37,8 +37,8 @@ class EvalReport:
 
     def _generate_recommendation(self, winner: str, summary: dict[str, Any], costs: dict[str, float]) -> str:
         if winner == "tie":
-            cheaper = "model_a" if costs["model_a_cost"] < costs["model_b_cost"] else "model_b"
-            return f"Models performed equally. Recommend using the more cost-effective option."
+            "model_a" if costs["model_a_cost"] < costs["model_b_cost"] else "model_b"
+            return "Models performed equally. Recommend using the more cost-effective option."
         return f"Recommend: {winner} — {summary['model_a']['wins'] if winner != 'tie' else 'N/A'} wins vs {summary['model_b']['wins']}"
 
     def format_markdown(self, report: dict[str, Any]) -> str:

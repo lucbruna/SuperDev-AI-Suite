@@ -2,16 +2,17 @@ from __future__ import annotations
 
 import logging
 
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+
 from backend.config import config
 from backend.constants import API_V1_PREFIX, PROJECT_NAME, VERSION
 from backend.error_handlers import register_error_handlers
 from backend.lifespan import lifespan
 from backend.metrics import MetricsMiddleware
 from backend.telemetry import configure_metrics, configure_tracing, instrument_fastapi
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.middleware.trustedhost import TrustedHostMiddleware
 
 logger = logging.getLogger(__name__)
 

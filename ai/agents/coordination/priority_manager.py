@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 
 class PriorityManager:
     """Manages task priority levels."""
 
     def __init__(self) -> None:
-        self._priorities: Dict[str, int] = {}
+        self._priorities: dict[str, int] = {}
 
     def set_priority(self, task_id: str, priority: int) -> None:
         self._priorities[task_id] = priority
@@ -15,7 +15,7 @@ class PriorityManager:
     def get_priority(self, task_id: str) -> int:
         return self._priorities.get(task_id, 0)
 
-    def sorted_tasks(self) -> List[Tuple[str, int]]:
+    def sorted_tasks(self) -> list[tuple[str, int]]:
         return sorted(self._priorities.items(), key=lambda x: x[1], reverse=True)
 
     def remove(self, task_id: str) -> bool:
@@ -24,5 +24,5 @@ class PriorityManager:
     def clear(self) -> None:
         self._priorities.clear()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {"priorities": dict(self._priorities)}

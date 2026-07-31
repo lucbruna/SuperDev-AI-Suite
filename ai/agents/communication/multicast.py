@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 
 class Multicast:
     """Multicasts messages to a group of agents."""
 
     def __init__(self) -> None:
-        self._groups: Dict[str, List[str]] = {}
+        self._groups: dict[str, list[str]] = {}
 
     def create_group(self, group: str) -> None:
         if group not in self._groups:
@@ -23,12 +23,12 @@ class Multicast:
             return True
         return False
 
-    def send(self, sender: str, group: str, content: Dict[str, Any]) -> int:
+    def send(self, sender: str, group: str, content: dict[str, Any]) -> int:
         recipients = self._groups.get(group, [])
         return len(recipients)
 
-    def group_members(self, group: str) -> List[str]:
+    def group_members(self, group: str) -> list[str]:
         return list(self._groups.get(group, []))
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {"groups": {g: list(m) for g, m in self._groups.items()}}

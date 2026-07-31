@@ -1,9 +1,10 @@
 """ERP Runtime — Execution runtime for ERP operations."""
-from typing import Dict, Any, Optional, List, Callable
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class ERPTaskState(Enum):
@@ -20,21 +21,21 @@ class ERPTask:
     project_id: str
     name: str
     state: ERPTaskState = ERPTaskState.PENDING
-    input_data: Dict[str, Any] = field(default_factory=dict)
-    output_data: Dict[str, Any] = field(default_factory=dict)
+    input_data: dict[str, Any] = field(default_factory=dict)
+    output_data: dict[str, Any] = field(default_factory=dict)
     error: str = ""
     created_at: datetime = field(default_factory=datetime.now)
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
 
 
 class ERPRuntime:
     def __init__(self):
-        self.tasks: Dict[str, ERPTask] = {}
-        self.handlers: Dict[str, Callable] = {}
-        self.task_log: List[Dict[str, Any]] = []
+        self.tasks: dict[str, ERPTask] = {}
+        self.handlers: dict[str, Callable] = {}
+        self.task_log: list[dict[str, Any]] = []
 
-    def submit_task(self, project_id: str, name: str, input_data: Optional[Dict[str, Any]] = None) -> ERPTask:
+    def submit_task(self, project_id: str, name: str, input_data: dict[str, Any] | None = None) -> ERPTask:
         task_id = hashlib.sha256(f"{project_id}{name}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
         task = ERPTask(task_id=task_id, project_id=project_id, name=name, input_data=input_data or {})
         self.tasks[task_id] = task
@@ -69,7 +70,7 @@ class ERPRuntime:
     def register_handler(self, task_name: str, handler: Callable) -> None:
         self.handlers[task_name] = handler
 
-    def get_task(self, task_id: str) -> Optional[ERPTask]:
+    def get_task(self, task_id: str) -> ERPTask | None:
         return self.tasks.get(task_id)
 
     def cancel_task(self, task_id: str) -> bool:

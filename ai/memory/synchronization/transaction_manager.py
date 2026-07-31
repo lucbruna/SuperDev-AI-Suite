@@ -1,25 +1,25 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class Transaction:
     """A single sync transaction."""
 
-    def __init__(self, transaction_id: str, operations: List[Dict[str, Any]]):
+    def __init__(self, transaction_id: str, operations: list[dict[str, Any]]):
         self._transaction_id = transaction_id
         self._operations = list(operations)
         self._status: str = "pending"
         self._created_at = time.time()
-        self._completed_at: Optional[float] = None
+        self._completed_at: float | None = None
 
     @property
     def transaction_id(self) -> str:
         return self._transaction_id
 
     @property
-    def operations(self) -> List[Dict[str, Any]]:
+    def operations(self) -> list[dict[str, Any]]:
         return list(self._operations)
 
     @property
@@ -37,10 +37,10 @@ class Transaction:
         return self._created_at
 
     @property
-    def completed_at(self) -> Optional[float]:
+    def completed_at(self) -> float | None:
         return self._completed_at
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "transaction_id": self._transaction_id,
             "operations": list(self._operations),
@@ -54,14 +54,14 @@ class TransactionManager:
     """Manages transactions for safe memory synchronization."""
 
     def __init__(self):
-        self._transactions: Dict[str, Transaction] = {}
+        self._transactions: dict[str, Transaction] = {}
         self._counter: int = 0
 
     @property
     def active_count(self) -> int:
         return sum(1 for t in self._transactions.values() if t.status == "pending")
 
-    def begin(self, operations: List[Dict[str, Any]]) -> Transaction:
+    def begin(self, operations: list[dict[str, Any]]) -> Transaction:
         self._counter += 1
         tx = Transaction(f"tx_{self._counter}", operations)
         self._transactions[tx.transaction_id] = tx
@@ -81,13 +81,13 @@ class TransactionManager:
         tx.status = "rolled_back"
         return True
 
-    def get_transaction(self, tx_id: str) -> Optional[Transaction]:
+    def get_transaction(self, tx_id: str) -> Transaction | None:
         return self._transactions.get(tx_id)
 
-    def list_active(self) -> List[Transaction]:
+    def list_active(self) -> list[Transaction]:
         return [t for t in self._transactions.values() if t.status == "pending"]
 
-    def list_all(self) -> List[Transaction]:
+    def list_all(self) -> list[Transaction]:
         return list(self._transactions.values())
 
     def clear(self) -> None:

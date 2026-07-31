@@ -29,14 +29,10 @@ from sqlalchemy.ext.asyncio import (
 from backend.database.base import Base
 
 # ---------------------------------------------------------------------------
-# Event loop — session-scoped so all async fixtures share one loop
+# Event loop — managed by pytest-asyncio 1.x (loop scopes configured in
+# pytest.ini via asyncio_default_fixture_loop_scope). The old custom
+# `event_loop` fixture was removed because it conflicts with the runner.
 # ---------------------------------------------------------------------------
-
-@pytest.fixture(scope="session")
-def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
 
 
 # ---------------------------------------------------------------------------

@@ -1,8 +1,7 @@
 """Validation utilities for agent creation."""
 from __future__ import annotations
 
-from typing import Any, Dict, List
-
+from typing import Any
 
 VALID_AGENT_TYPES = {
     "supervisor", "planner", "coder", "security", "qa",
@@ -22,8 +21,8 @@ VALID_TIERS = {0, 1, 2, 3, 4}
 class CreationValidator:
     """Validates agent configurations before creation."""
 
-    def validate_config(self, config: Dict[str, Any]) -> Dict[str, Any]:
-        errors: List[str] = []
+    def validate_config(self, config: dict[str, Any]) -> dict[str, Any]:
+        errors: list[str] = []
         if not config.get("name"):
             errors.append("name is required")
         if not config.get("agent_type") and not config.get("type"):
@@ -36,23 +35,23 @@ class CreationValidator:
             errors.append(f"Invalid tier: {tier}. Must be 0-4")
         return {"valid": len(errors) == 0, "errors": errors}
 
-    def validate_tools(self, tools: List[Dict[str, Any]]) -> Dict[str, Any]:
-        errors: List[str] = []
+    def validate_tools(self, tools: list[dict[str, Any]]) -> dict[str, Any]:
+        errors: list[str] = []
         for tool in tools:
             if not tool.get("name"):
                 errors.append("Tool name is required")
         return {"valid": len(errors) == 0, "errors": errors}
 
-    def validate_permissions(self, permissions: List[str]) -> Dict[str, Any]:
-        errors: List[str] = []
+    def validate_permissions(self, permissions: list[str]) -> dict[str, Any]:
+        errors: list[str] = []
         dangerous = {"sudo", "admin", "root", "execute_all"}
         for perm in permissions:
             if perm in dangerous:
                 errors.append(f"Dangerous permission: {perm}")
         return {"valid": len(errors) == 0, "errors": errors}
 
-    def validate_model(self, model_config: Dict[str, Any]) -> Dict[str, Any]:
-        errors: List[str] = []
+    def validate_model(self, model_config: dict[str, Any]) -> dict[str, Any]:
+        errors: list[str] = []
         provider = model_config.get("provider", "")
         if provider and provider not in {"openai", "anthropic", "gemini", "ollama", "openrouter"}:
             errors.append(f"Unknown provider: {provider}")
@@ -61,15 +60,15 @@ class CreationValidator:
             errors.append(f"Temperature must be 0.0-2.0, got {temp}")
         return {"valid": len(errors) == 0, "errors": errors}
 
-    def validate_capabilities(self, capabilities: List[str]) -> Dict[str, Any]:
-        errors: List[str] = []
+    def validate_capabilities(self, capabilities: list[str]) -> dict[str, Any]:
+        errors: list[str] = []
         for cap in capabilities:
             if cap not in VALID_CAPABILITIES:
                 errors.append(f"Unknown capability: {cap}")
         return {"valid": len(errors) == 0, "errors": errors}
 
-    def full_validation(self, config: Dict[str, Any]) -> Dict[str, Any]:
-        all_errors: List[str] = []
+    def full_validation(self, config: dict[str, Any]) -> dict[str, Any]:
+        all_errors: list[str] = []
         config_result = self.validate_config(config)
         all_errors.extend(config_result["errors"])
         tools = config.get("tools", [])

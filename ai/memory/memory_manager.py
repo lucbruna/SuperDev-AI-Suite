@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List, Optional
 
 from .memory_cache import MemoryCache
 from .memory_config import MemoryConfig
@@ -10,14 +9,13 @@ from .memory_logger import MemoryLogger
 from .memory_metrics import MemoryMetrics
 from .memory_models import MemoryEntry, MemoryQuery, MemorySummary
 from .memory_optimizer import MemoryOptimizer
-from .memory_permissions import MemoryPermissions, MemoryAction, MemoryRole
+from .memory_permissions import MemoryAction, MemoryPermissions
 from .memory_repository import MemoryRepository
 from .memory_scheduler import MemoryScheduler
 from .memory_security import MemorySecurity
 from .memory_state import MemoryPhase, MemoryState
 from .memory_statistics import MemoryStatistics
 from .memory_types import (
-    ConsolidationStrategy,
     MemoryCategory,
     MemoryData,
     MemoryID,
@@ -184,7 +182,7 @@ class MemoryManager:
             self._security.audit("delete", key, user)
         return result
 
-    async def search(self, query: MemoryQuery, user: str = "") -> List[MemoryEntry]:
+    async def search(self, query: MemoryQuery, user: str = "") -> list[MemoryEntry]:
         if not self._permissions.can(user, MemoryAction.READ):
             return []
         return await self._repository.search(query)
@@ -210,10 +208,10 @@ class MemoryManager:
         total_size = sum(e.size_bytes for e in entries)
         active = sum(1 for e in entries if e.status == MemoryStatus.ACTIVE)
         expired = sum(1 for e in entries if e.is_expired)
-        by_scope: Dict[str, int] = {}
+        by_scope: dict[str, int] = {}
         for e in entries:
             by_scope[e.scope.name] = by_scope.get(e.scope.name, 0) + 1
-        by_category: Dict[str, int] = {}
+        by_category: dict[str, int] = {}
         for e in entries:
             by_category[e.category.name] = by_category.get(e.category.name, 0) + 1
         return MemorySummary(

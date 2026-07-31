@@ -1,11 +1,10 @@
 """
 Threat Intelligence Management
 """
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
 
 
 class IOCType(Enum):
@@ -35,7 +34,7 @@ class IOC:
     description: str = ""
     first_seen: datetime = field(default_factory=datetime.now)
     last_seen: datetime = field(default_factory=datetime.now)
-    tags: List[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
     confidence: float = 0.5
 
 
@@ -45,15 +44,15 @@ class ThreatFeed:
     name: str
     url: str = ""
     enabled: bool = True
-    last_updated: Optional[datetime] = None
+    last_updated: datetime | None = None
     ioc_count: int = 0
 
 
 class ThreatIntel:
     def __init__(self):
-        self.iocs: Dict[str, IOC] = {}
-        self.feeds: Dict[str, ThreatFeed] = {}
-        self.correlations: Dict[str, List[str]] = {}
+        self.iocs: dict[str, IOC] = {}
+        self.feeds: dict[str, ThreatFeed] = {}
+        self.correlations: dict[str, list[str]] = {}
 
     def add_ioc(self, ioc_type: IOCType, value: str, threat_level: ThreatLevel = ThreatLevel.MEDIUM, source: str = "", **kwargs) -> IOC:
         ioc_id = hashlib.sha256(f"{ioc_type.value}:{value}".encode()).hexdigest()[:16]
@@ -61,7 +60,7 @@ class ThreatIntel:
         self.iocs[ioc_id] = ioc
         return ioc
 
-    def lookup(self, value: str) -> Optional[IOC]:
+    def lookup(self, value: str) -> IOC | None:
         for ioc in self.iocs.values():
             if ioc.value == value:
                 return ioc
@@ -73,19 +72,19 @@ class ThreatIntel:
         self.feeds[feed_id] = feed
         return feed
 
-    def correlate(self, ioc_id: str, related_ids: List[str]) -> None:
+    def correlate(self, ioc_id: str, related_ids: list[str]) -> None:
         self.correlations[ioc_id] = related_ids
 
-    def search(self, query: str) -> List[IOC]:
+    def search(self, query: str) -> list[IOC]:
         return [ioc for ioc in self.iocs.values() if query.lower() in ioc.value.lower() or query.lower() in ioc.description.lower()]
 
-    def get_by_type(self, ioc_type: IOCType) -> List[IOC]:
+    def get_by_type(self, ioc_type: IOCType) -> list[IOC]:
         return [ioc for ioc in self.iocs.values() if ioc.ioc_type == ioc_type]
 
-    def get_by_threat_level(self, level: ThreatLevel) -> List[IOC]:
+    def get_by_threat_level(self, level: ThreatLevel) -> list[IOC]:
         return [ioc for ioc in self.iocs.values() if ioc.threat_level == level]
 
-    def get_recent(self, hours: int = 24) -> List[IOC]:
+    def get_recent(self, hours: int = 24) -> list[IOC]:
         cutoff = datetime.now()
         return [ioc for ioc in self.iocs.values() if (cutoff - ioc.first_seen).total_seconds() < hours * 3600]
 

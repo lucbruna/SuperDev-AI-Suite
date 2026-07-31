@@ -1,8 +1,11 @@
 """Policy engine."""
 from __future__ import annotations
-from typing import Any, Callable, Dict, List, Optional
+
+import time
+import uuid
 from enum import Enum
-import time, uuid
+from typing import Any
+
 
 class PolicyEffect(Enum):
     ALLOW = "allow"
@@ -18,13 +21,13 @@ class Policy:
         self.description = description
         self.enabled = True
         self.created_at = time.time()
-        self.conditions: Dict[str, Any] = {}
+        self.conditions: dict[str, Any] = {}
         self.priority = 0
 
 class PolicyEngine:
     def __init__(self) -> None:
-        self._policies: Dict[str, Policy] = {}
-        self._evaluation_log: List[Dict[str, Any]] = []
+        self._policies: dict[str, Policy] = {}
+        self._evaluation_log: list[dict[str, Any]] = []
     def create_policy(self, name: str, effect: PolicyEffect, description: str = "") -> Policy:
         policy = Policy(name, effect, description)
         self._policies[policy.policy_id] = policy
@@ -35,7 +38,7 @@ class PolicyEngine:
             policy.conditions[key] = value
             return True
         return False
-    def evaluate(self, context: Dict[str, Any]) -> PolicyEffect:
+    def evaluate(self, context: dict[str, Any]) -> PolicyEffect:
         applicable = sorted([p for p in self._policies.values() if p.enabled], key=lambda p: -p.priority)
         for policy in applicable:
             match = all(context.get(k) == v for k, v in policy.conditions.items()) if policy.conditions else True
@@ -60,7 +63,7 @@ class PolicyEngine:
             del self._policies[policy_id]
             return True
         return False
-    def list_policies(self) -> List[Dict[str, Any]]:
+    def list_policies(self) -> list[dict[str, Any]]:
         return [{"id": p.policy_id, "name": p.name, "effect": p.effect.value, "enabled": p.enabled, "priority": p.priority} for p in self._policies.values()]
-    def get_evaluation_log(self, limit: int = 100) -> List[Dict[str, Any]]:
+    def get_evaluation_log(self, limit: int = 100) -> list[dict[str, Any]]:
         return self._evaluation_log[-limit:]

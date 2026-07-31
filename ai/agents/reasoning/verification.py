@@ -1,7 +1,7 @@
 """Verification engine for validating reasoning conclusions."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class VerificationEngine:
@@ -9,13 +9,13 @@ class VerificationEngine:
 
     def __init__(self) -> None:
         self._verification_count: int = 0
-        self._results: List[Dict[str, Any]] = []
+        self._results: list[dict[str, Any]] = []
 
-    def verify(self, conclusion: str, evidence: Dict[str, Any],
-               rules: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
+    def verify(self, conclusion: str, evidence: dict[str, Any],
+               rules: list[dict[str, Any]] | None = None) -> dict[str, Any]:
         self._verification_count += 1
         confidence = 0.5
-        issues: List[str] = []
+        issues: list[str] = []
         if evidence:
             confidence += min(len(evidence) * 0.05, 0.25)
         if rules:
@@ -38,10 +38,10 @@ class VerificationEngine:
         self._results.append(result)
         return result
 
-    def verify_chain(self, steps: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def verify_chain(self, steps: list[dict[str, Any]]) -> dict[str, Any]:
         self._verification_count += 1
         chain_valid = True
-        step_results: List[Dict[str, Any]] = []
+        step_results: list[dict[str, Any]] = []
         for i, step in enumerate(steps):
             valid = bool(step.get("conclusion")) and bool(step.get("evidence", {}))
             if not valid:
@@ -49,10 +49,10 @@ class VerificationEngine:
             step_results.append({"step": i, "valid": valid})
         return {"chain_valid": chain_valid, "steps": step_results}
 
-    def get_results(self, limit: int = 20) -> List[Dict[str, Any]]:
+    def get_results(self, limit: int = 20) -> list[dict[str, Any]]:
         return self._results[-limit:]
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         verified_count = sum(1 for r in self._results if r.get("verified"))
         return {
             "total_verifications": self._verification_count,

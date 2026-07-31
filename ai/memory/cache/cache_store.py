@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .cache_entry import CacheEntry
 from .cache_policy import CachePolicy
@@ -9,10 +9,10 @@ from .cache_policy import CachePolicy
 class CacheStore:
     """Base cache store implementation."""
 
-    def __init__(self, name: str, policy: Optional[CachePolicy] = None) -> None:
+    def __init__(self, name: str, policy: CachePolicy | None = None) -> None:
         self._name = name
         self._policy = policy or CachePolicy()
-        self._entries: Dict[str, CacheEntry] = {}
+        self._entries: dict[str, CacheEntry] = {}
 
     @property
     def name(self) -> str:
@@ -26,7 +26,7 @@ class CacheStore:
     def policy(self) -> CachePolicy:
         return self._policy
 
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         entry = self._entries.get(key)
         if entry is None or entry.is_expired:
             if entry:
@@ -48,7 +48,7 @@ class CacheStore:
     def clear(self) -> None:
         self._entries.clear()
 
-    def keys(self) -> List[str]:
+    def keys(self) -> list[str]:
         return list(self._entries.keys())
 
     def _evict(self) -> None:
@@ -58,7 +58,7 @@ class CacheStore:
         victim = self._policy.select_victim(entries_data)
         self._entries.pop(victim, None)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "name": self._name,
             "size": self.size,

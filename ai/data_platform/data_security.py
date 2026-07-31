@@ -1,7 +1,7 @@
 """Data Platform Security — Security for data platform operations."""
-from typing import Dict, Any, List, Optional
 from datetime import datetime
 from enum import Enum
+from typing import Any
 
 
 class DataAccessLevel(Enum):
@@ -13,9 +13,9 @@ class DataAccessLevel(Enum):
 
 class DataPlatformSecurity:
     def __init__(self):
-        self._access_policies: Dict[str, Dict[str, DataAccessLevel]] = {}
-        self._audit_log: List[Dict[str, Any]] = []
-        self._encryption_keys: Dict[str, str] = {}
+        self._access_policies: dict[str, dict[str, DataAccessLevel]] = {}
+        self._audit_log: list[dict[str, Any]] = []
+        self._encryption_keys: dict[str, str] = {}
 
     def set_access(self, user_id: str, dataset: str, level: DataAccessLevel) -> None:
         if user_id not in self._access_policies:
@@ -37,7 +37,7 @@ class DataPlatformSecurity:
             "timestamp": datetime.now().isoformat(),
         })
 
-    def get_audit_log(self, user_id: Optional[str] = None, dataset: Optional[str] = None) -> List[Dict[str, Any]]:
+    def get_audit_log(self, user_id: str | None = None, dataset: str | None = None) -> list[dict[str, Any]]:
         log = list(self._audit_log)
         if user_id:
             log = [e for e in log if e["user_id"] == user_id]
@@ -48,7 +48,7 @@ class DataPlatformSecurity:
     def register_encryption_key(self, dataset: str, key: str) -> None:
         self._encryption_keys[dataset] = key
 
-    def get_encryption_key(self, dataset: str) -> Optional[str]:
+    def get_encryption_key(self, dataset: str) -> str | None:
         return self._encryption_keys.get(dataset)
 
     def encrypt(self, dataset: str, data: str) -> str:

@@ -1,6 +1,6 @@
 """Dashboard interfaces."""
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+
 from .models import Dashboard, Widget, WidgetData
 
 
@@ -10,7 +10,7 @@ class DashboardBuilderInterface(ABC):
         pass
 
     @abstractmethod
-    async def update_dashboard(self, dashboard_id: str, updates: Dict) -> Dashboard:
+    async def update_dashboard(self, dashboard_id: str, updates: dict) -> Dashboard:
         pass
 
     @abstractmethod
@@ -18,17 +18,17 @@ class DashboardBuilderInterface(ABC):
         pass
 
     @abstractmethod
-    async def get_dashboard(self, dashboard_id: str) -> Optional[Dashboard]:
+    async def get_dashboard(self, dashboard_id: str) -> Dashboard | None:
         pass
 
     @abstractmethod
-    async def list_dashboards(self, tags: Optional[List[str]] = None) -> List[Dashboard]:
+    async def list_dashboards(self, tags: list[str] | None = None) -> list[Dashboard]:
         pass
 
 
 class WidgetRendererInterface(ABC):
     @abstractmethod
-    async def render_widget(self, widget: Widget, filters: Optional[Dict] = None) -> WidgetData:
+    async def render_widget(self, widget: Widget, filters: dict | None = None) -> WidgetData:
         pass
 
     @abstractmethod
@@ -38,7 +38,7 @@ class WidgetRendererInterface(ABC):
 
 class DashboardShareInterface(ABC):
     @abstractmethod
-    async def share(self, dashboard_id: str, user_id: str, permissions: List[str]) -> bool:
+    async def share(self, dashboard_id: str, user_id: str, permissions: list[str]) -> bool:
         pass
 
     @abstractmethod
@@ -46,5 +46,5 @@ class DashboardShareInterface(ABC):
         pass
 
     @abstractmethod
-    async def get_permissions(self, dashboard_id: str) -> Dict[str, List[str]]:
+    async def get_permissions(self, dashboard_id: str) -> dict[str, list[str]]:
         pass

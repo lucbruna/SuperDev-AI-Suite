@@ -1,8 +1,8 @@
 """CX Logger — Structured logging for CX operations."""
-from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
-from enum import Enum
 from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class CXLogLevel(Enum):
@@ -19,15 +19,15 @@ class CXLogEntry:
     message: str
     source: str = ""
     project_id: str = ""
-    data: Dict[str, Any] = field(default_factory=dict)
+    data: dict[str, Any] = field(default_factory=dict)
     timestamp: datetime = field(default_factory=datetime.now)
 
 
 class CXLogger:
     def __init__(self):
-        self.entries: List[CXLogEntry] = []
+        self.entries: list[CXLogEntry] = []
 
-    def log(self, level: CXLogLevel, message: str, source: str = "", project_id: str = "", data: Optional[Dict[str, Any]] = None) -> CXLogEntry:
+    def log(self, level: CXLogLevel, message: str, source: str = "", project_id: str = "", data: dict[str, Any] | None = None) -> CXLogEntry:
         entry = CXLogEntry(level=level, message=message, source=source, project_id=project_id, data=data or {})
         self.entries.append(entry)
         return entry
@@ -47,7 +47,7 @@ class CXLogger:
     def critical(self, message: str, **kwargs) -> CXLogEntry:
         return self.log(CXLogLevel.CRITICAL, message, **kwargs)
 
-    def get_entries(self, level: Optional[CXLogLevel] = None, source: str = "", limit: int = 100) -> List[CXLogEntry]:
+    def get_entries(self, level: CXLogLevel | None = None, source: str = "", limit: int = 100) -> list[CXLogEntry]:
         entries = self.entries
         if level:
             entries = [e for e in entries if e.level == level]

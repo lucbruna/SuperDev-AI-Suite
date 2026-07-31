@@ -5,10 +5,11 @@ from __future__ import annotations
 import secrets
 from typing import Any
 
-from backend.dependencies import get_current_active_user
-from backend.security.sso import SSOProviderType, sso_manager
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
+
+from backend.dependencies import get_current_active_user
+from backend.security.sso import sso_manager
 
 router = APIRouter(dependencies=[Depends(get_current_active_user)])
 

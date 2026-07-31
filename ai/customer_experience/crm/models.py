@@ -1,7 +1,6 @@
 """CRM models."""
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
 from enum import Enum
 
 
@@ -60,7 +59,7 @@ class Opportunity:
     value: float = 0.0
     stage: OpportunityStage = OpportunityStage.PROSPECTING
     probability: float = 0.0
-    close_date: Optional[datetime] = None
+    close_date: datetime | None = None
     owner: str = ""
     created_at: datetime = field(default_factory=datetime.now)
 

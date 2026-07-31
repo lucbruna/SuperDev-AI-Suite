@@ -1,9 +1,9 @@
 """Security monitoring engine."""
 import uuid
-from datetime import datetime
-from typing import Dict, Any, List, Optional
-from enum import Enum
 from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class AlertSeverity(Enum):
@@ -27,10 +27,10 @@ class SecurityAlert:
     severity: AlertSeverity = AlertSeverity.INFO
     source: str = ""
     status: AlertStatus = AlertStatus.OPEN
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     created_at: datetime = field(default_factory=datetime.now)
-    acknowledged_at: Optional[datetime] = None
-    resolved_at: Optional[datetime] = None
+    acknowledged_at: datetime | None = None
+    resolved_at: datetime | None = None
 
 
 @dataclass
@@ -39,7 +39,7 @@ class MetricSnapshot:
     value: float = 0.0
     unit: str = ""
     timestamp: datetime = field(default_factory=datetime.now)
-    tags: Dict[str, str] = field(default_factory=dict)
+    tags: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -55,12 +55,12 @@ class MonitoringRule:
 
 class MonitoringEngine:
     def __init__(self):
-        self._alerts: Dict[str, SecurityAlert] = {}
-        self._metrics: List[MetricSnapshot] = []
-        self._rules: Dict[str, MonitoringRule] = {}
+        self._alerts: dict[str, SecurityAlert] = {}
+        self._metrics: list[MetricSnapshot] = []
+        self._rules: dict[str, MonitoringRule] = {}
         self._max_metrics: int = 10000
 
-    def record_metric(self, name: str, value: float, unit: str = "", tags: Optional[Dict[str, str]] = None) -> MetricSnapshot:
+    def record_metric(self, name: str, value: float, unit: str = "", tags: dict[str, str] | None = None) -> MetricSnapshot:
         snap = MetricSnapshot(metric_name=name, value=value, unit=unit, tags=tags or {})
         self._metrics.append(snap)
         if len(self._metrics) > self._max_metrics:
@@ -76,15 +76,7 @@ class MonitoringEngine:
             if not rule.enabled or rule.metric != metric_name:
                 continue
             triggered = False
-            if rule.operator == "gt" and value > rule.threshold:
-                triggered = True
-            elif rule.operator == "lt" and value < rule.threshold:
-                triggered = True
-            elif rule.operator == "eq" and value == rule.threshold:
-                triggered = True
-            elif rule.operator == "gte" and value >= rule.threshold:
-                triggered = True
-            elif rule.operator == "lte" and value <= rule.threshold:
+            if rule.operator == "gt" and value > rule.threshold or rule.operator == "lt" and value < rule.threshold or rule.operator == "eq" and value == rule.threshold or rule.operator == "gte" and value >= rule.threshold or rule.operator == "lte" and value <= rule.threshold:
                 triggered = True
             if triggered:
                 alert = SecurityAlert(
@@ -116,7 +108,7 @@ class MonitoringEngine:
         alert.resolved_at = datetime.now()
         return True
 
-    def get_alerts(self, severity: Optional[AlertSeverity] = None, status: Optional[AlertStatus] = None) -> List[SecurityAlert]:
+    def get_alerts(self, severity: AlertSeverity | None = None, status: AlertStatus | None = None) -> list[SecurityAlert]:
         alerts = list(self._alerts.values())
         if severity:
             alerts = [a for a in alerts if a.severity == severity]
@@ -124,7 +116,7 @@ class MonitoringEngine:
             alerts = [a for a in alerts if a.status == status]
         return alerts
 
-    def get_metrics(self, name: Optional[str] = None, limit: int = 100) -> List[MetricSnapshot]:
+    def get_metrics(self, name: str | None = None, limit: int = 100) -> list[MetricSnapshot]:
         metrics = list(self._metrics)
         if name:
             metrics = [m for m in metrics if m.metric_name == name]

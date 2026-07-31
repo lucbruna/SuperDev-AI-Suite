@@ -1,9 +1,9 @@
 """Sync Engine - Core synchronization logic."""
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class SyncDirection(Enum):
@@ -29,14 +29,14 @@ class SyncJob:
     records_pushed: int = 0
     records_pulled: int = 0
     conflicts: int = 0
-    last_sync: Optional[datetime] = None
-    errors: List[str] = field(default_factory=list)
+    last_sync: datetime | None = None
+    errors: list[str] = field(default_factory=list)
 
 
 class MobileSyncEngine:
     def __init__(self):
-        self.jobs: Dict[str, SyncJob] = {}
-        self.log: List[Dict[str, Any]] = []
+        self.jobs: dict[str, SyncJob] = {}
+        self.log: list[dict[str, Any]] = []
 
     def create_job(self, name: str, direction: SyncDirection = SyncDirection.BIDIRECTIONAL) -> SyncJob:
         job_id = hashlib.sha256(f"{name}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
@@ -44,7 +44,7 @@ class MobileSyncEngine:
         self.jobs[job_id] = job
         return job
 
-    def execute(self, job_id: str, push_data: Any = None, pull_data: Any = None) -> Dict[str, Any]:
+    def execute(self, job_id: str, push_data: Any = None, pull_data: Any = None) -> dict[str, Any]:
         job = self.jobs.get(job_id)
         if not job:
             return {"success": False, "error": "Job not found"}
@@ -63,10 +63,10 @@ class MobileSyncEngine:
             job.errors.append(str(e))
             return {"success": False, "error": str(e)}
 
-    def get_job(self, job_id: str) -> Optional[SyncJob]:
+    def get_job(self, job_id: str) -> SyncJob | None:
         return self.jobs.get(job_id)
 
-    def list_jobs(self) -> List[SyncJob]:
+    def list_jobs(self) -> list[SyncJob]:
         return list(self.jobs.values())
 
     def count(self) -> int:

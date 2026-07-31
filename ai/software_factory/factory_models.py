@@ -1,8 +1,8 @@
 """Factory Models - Data models for software factory."""
-from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
-from enum import Enum
 from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class Language(Enum):
@@ -42,7 +42,7 @@ class TechStack:
     frontend: str = ""
     deployment: str = ""
     testing: str = ""
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -59,7 +59,7 @@ class CodeFile:
 class DatabaseSchema:
     schema_id: str
     name: str
-    tables: List[Dict[str, Any]] = field(default_factory=list)
+    tables: list[dict[str, Any]] = field(default_factory=list)
     created_at: datetime = field(default_factory=datetime.now)
 
 
@@ -68,7 +68,7 @@ class TestSuite:
     suite_id: str
     project_id: str
     name: str = ""
-    tests: List[Dict[str, Any]] = field(default_factory=list)
+    tests: list[dict[str, Any]] = field(default_factory=list)
     passed: int = 0
     failed: int = 0
     total: int = 0
@@ -82,5 +82,5 @@ class DeploymentConfig:
     target: str = ""
     method: str = "docker"
     environment: str = "production"
-    config: Dict[str, Any] = field(default_factory=dict)
+    config: dict[str, Any] = field(default_factory=dict)
     created_at: datetime = field(default_factory=datetime.now)

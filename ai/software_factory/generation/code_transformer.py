@@ -1,14 +1,14 @@
 """Code transformer for modifying generated code."""
-from typing import List, Dict, Any, Optional
 import re
-from .models import TransformRule, TemplateLanguage
+
+from .models import TemplateLanguage, TransformRule
 
 
 class CodeTransformer:
     """Applies transformation rules to code."""
 
     def __init__(self):
-        self._rules: List[TransformRule] = []
+        self._rules: list[TransformRule] = []
 
     def add_rule(self, rule: TransformRule) -> None:
         self._rules.append(rule)
@@ -47,7 +47,7 @@ class CodeTransformer:
                 formatted.append("")
         return "\n".join(formatted)
 
-    def get_rules(self) -> List[TransformRule]:
+    def get_rules(self) -> list[TransformRule]:
         return list(self._rules)
 
     def clear_rules(self) -> None:

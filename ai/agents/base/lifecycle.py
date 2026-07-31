@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum, auto
-from typing import Any, Dict
+from typing import Any
 
 
 class LifecycleStage(Enum):
@@ -42,5 +42,5 @@ class Lifecycle:
     def is_active(self) -> bool:
         return self._stage in (LifecycleStage.RUNNING, LifecycleStage.PAUSED)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {"stage": self._stage.name, "active": self.is_active()}

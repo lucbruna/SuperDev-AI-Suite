@@ -1,7 +1,6 @@
 """Supplier models."""
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
 from enum import Enum
 
 
@@ -40,8 +39,8 @@ class Supplier:
 class SupplierContract:
     contract_id: str
     supplier_id: str = ""
-    start_date: Optional[datetime] = None
-    end_date: Optional[datetime] = None
+    start_date: datetime | None = None
+    end_date: datetime | None = None
     terms: str = ""
     total_value: float = 0.0
     status: str = "active"

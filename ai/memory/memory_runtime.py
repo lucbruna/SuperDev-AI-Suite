@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import contextlib
 import time
-from typing import Any, Callable, Dict, List, Optional
+from collections.abc import Callable
+from typing import Any
 
 from .memory_state import MemoryPhase, MemoryState
-
 
 LifecycleHook = Callable[[], None]
 
@@ -14,7 +15,7 @@ class MemoryRuntime:
 
     def __init__(self, state: MemoryState | None = None):
         self._state = state or MemoryState()
-        self._hooks: Dict[str, List[LifecycleHook]] = {
+        self._hooks: dict[str, list[LifecycleHook]] = {
             "on_start": [],
             "on_ready": [],
             "on_shutdown": [],
@@ -55,10 +56,8 @@ class MemoryRuntime:
 
     def _run_hooks(self, event: str) -> None:
         for hook in self._hooks.get(event, []):
-            try:
+            with contextlib.suppress(Exception):
                 hook()
-            except Exception:
-                pass
 
     def start(self) -> None:
         if self._running:
@@ -97,7 +96,7 @@ class MemoryRuntime:
         self._state.record_maintenance()
         self._run_hooks("on_maintenance")
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "running": self._running,
             "uptime": self.uptime,

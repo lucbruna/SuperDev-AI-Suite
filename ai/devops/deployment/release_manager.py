@@ -1,12 +1,14 @@
 """Release manager."""
 from __future__ import annotations
-from typing import Any, Dict, List
+
 import time
+from typing import Any
+
 
 class ReleaseManager:
     def __init__(self) -> None:
-        self._releases: List[Dict[str, Any]] = []
-    def create(self, version: str, project: str, artifacts: List[str] = None) -> Dict[str, Any]:
+        self._releases: list[dict[str, Any]] = []
+    def create(self, version: str, project: str, artifacts: list[str] = None) -> dict[str, Any]:
         release = {"version": version, "project": project, "artifacts": artifacts or [], "status": "created", "created_at": time.time()}
         self._releases.append(release)
         return release
@@ -16,7 +18,7 @@ class ReleaseManager:
                 r["status"] = f"promoted_to_{environment}"
                 return True
         return False
-    def list_all(self, project: str = "", limit: int = 20) -> List[Dict[str, Any]]:
+    def list_all(self, project: str = "", limit: int = 20) -> list[dict[str, Any]]:
         releases = self._releases
         if project:
             releases = [r for r in releases if r["project"] == project]

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class SecurityLogger:
@@ -10,9 +10,9 @@ class SecurityLogger:
 
     def __init__(self, log_level: str = "INFO") -> None:
         self._log_level = log_level
-        self._entries: List[Dict[str, Any]] = []
+        self._entries: list[dict[str, Any]] = []
 
-    def _log(self, level: str, category: str, message: str, details: Optional[Dict[str, Any]] = None) -> None:
+    def _log(self, level: str, category: str, message: str, details: dict[str, Any] | None = None) -> None:
         if self._should_log(level):
             entry = {
                 "level": level,
@@ -42,8 +42,8 @@ class SecurityLogger:
     def critical(self, category: str, message: str, **kwargs: Any) -> None:
         self._log("CRITICAL", category, message, kwargs)
 
-    def get_entries(self, level: Optional[str] = None, category: Optional[str] = None,
-                    limit: int = 50) -> List[Dict[str, Any]]:
+    def get_entries(self, level: str | None = None, category: str | None = None,
+                    limit: int = 50) -> list[dict[str, Any]]:
         entries = self._entries
         if level:
             entries = [e for e in entries if e["level"] == level]

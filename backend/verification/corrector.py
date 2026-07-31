@@ -58,7 +58,7 @@ class CodeCorrector:
     ) -> CorrectionResult:
         corrected = code
         changes = []
-        
+
         if test_result and test_result.failures:
             for failure in test_result.failures:
                 if "SyntaxError" in failure.get("error", ""):
@@ -66,7 +66,7 @@ class CodeCorrector:
                         "type": "fix_syntax",
                         "description": f"Fixed syntax error: {failure.get('error', '')}",
                     })
-        
+
         if review_result:
             for issue in review_result.security_issues:
                 if "eval" in str(issue).lower() or "exec" in str(issue).lower():
@@ -74,7 +74,7 @@ class CodeCorrector:
                         "type": "security_fix",
                         "description": f"Removed dangerous function: {issue.get('message', '')}",
                     })
-        
+
         return CorrectionResult(
             success=True,
             corrected_code=corrected,
@@ -101,12 +101,12 @@ Return ONLY a JSON object:
         context: str | None,
     ) -> str:
         parts = [f"Current code:\n```\n{code}\n```"]
-        
+
         if test_result and not test_result.success:
             parts.append(f"Test failures:\n{test_result.test_output}")
             for failure in test_result.failures:
                 parts.append(f"Failure: {failure.get('error', '')}")
-        
+
         if review_result:
             if review_result.security_issues:
                 parts.append(f"Security issues: {json.dumps(review_result.security_issues)}")
@@ -116,20 +116,20 @@ Return ONLY a JSON object:
                 parts.append(f"Style issues: {json.dumps(review_result.style_issues)}")
             if review_result.suggestions:
                 parts.append(f"Suggestions: {json.dumps(review_result.suggestions)}")
-        
+
         if context:
             parts.append(f"Context: {context}")
-        
+
         return "\n\n".join(parts)
 
     def _parse_correction(self, content: str, original_code: str) -> CorrectionResult:
         import re
-        
+
         try:
             json_match = re.search(r"\{.*\}", content, re.DOTALL)
             if json_match:
                 data = json.loads(json_match.group())
-                
+
                 return CorrectionResult(
                     success=True,
                     corrected_code=data.get("corrected_code", original_code),
@@ -138,7 +138,7 @@ Return ONLY a JSON object:
                 )
         except Exception:
             pass
-        
+
         return CorrectionResult(
             success=False,
             error="Failed to parse correction response",

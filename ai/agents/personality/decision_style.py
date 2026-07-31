@@ -1,7 +1,7 @@
 """Decision-making style configuration."""
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 
 class DecisionStyle:
@@ -19,7 +19,7 @@ class DecisionStyle:
         if depth in self._valid_depths:
             self._analysis_depth = depth
 
-    def get_profile(self) -> Dict[str, Any]:
+    def get_profile(self) -> dict[str, Any]:
         return {
             "risk_tolerance": self._risk_tolerance,
             "analysis_depth": self._analysis_depth,
@@ -27,7 +27,7 @@ class DecisionStyle:
             "thorough": self._analysis_depth in ("balanced", "deep"),
         }
 
-    def evaluate_options(self, options: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def evaluate_options(self, options: list[dict[str, Any]]) -> list[dict[str, Any]]:
         scored = []
         for opt in options:
             risk = opt.get("risk", 0.5)

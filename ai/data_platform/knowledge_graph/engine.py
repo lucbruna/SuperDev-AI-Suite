@@ -1,20 +1,20 @@
 """Knowledge Graph engine."""
 import uuid
-from typing import Dict, List, Optional, Set
-from .models import Entity, Relation, KnowledgePath, GraphQuery, EntityType, RelationType
+
+from .models import Entity, GraphQuery, KnowledgePath, Relation
 
 
 class KnowledgeGraphEngine:
     def __init__(self):
-        self._entities: Dict[str, Entity] = {}
-        self._relations: Dict[str, Relation] = {}
-        self._adjacency: Dict[str, List[str]] = {}
+        self._entities: dict[str, Entity] = {}
+        self._relations: dict[str, Relation] = {}
+        self._adjacency: dict[str, list[str]] = {}
 
     def add_entity(self, entity: Entity) -> Entity:
         self._entities[entity.entity_id] = entity
         return entity
 
-    def get_entity(self, entity_id: str) -> Optional[Entity]:
+    def get_entity(self, entity_id: str) -> Entity | None:
         return self._entities.get(entity_id)
 
     def add_relation(self, relation: Relation) -> Relation:
@@ -23,16 +23,16 @@ class KnowledgeGraphEngine:
         self._adjacency.setdefault(relation.target_id, []).append(relation.relation_id)
         return relation
 
-    def get_relation(self, relation_id: str) -> Optional[Relation]:
+    def get_relation(self, relation_id: str) -> Relation | None:
         return self._relations.get(relation_id)
 
-    def get_entity_relations(self, entity_id: str) -> List[Relation]:
+    def get_entity_relations(self, entity_id: str) -> list[Relation]:
         rel_ids = self._adjacency.get(entity_id, [])
         return [self._relations[rid] for rid in rel_ids if rid in self._relations]
 
-    def get_neighbors(self, entity_id: str, max_depth: int = 1) -> List[Entity]:
-        visited: Set[str] = set()
-        result: List[Entity] = []
+    def get_neighbors(self, entity_id: str, max_depth: int = 1) -> list[Entity]:
+        visited: set[str] = set()
+        result: list[Entity] = []
         queue = [(entity_id, 0)]
         while queue:
             eid, depth = queue.pop(0)
@@ -49,8 +49,8 @@ class KnowledgeGraphEngine:
                     queue.append((next_id, depth + 1))
         return result
 
-    def find_path(self, source_id: str, target_id: str, max_depth: int = 5) -> Optional[KnowledgePath]:
-        visited: Set[str] = set()
+    def find_path(self, source_id: str, target_id: str, max_depth: int = 5) -> KnowledgePath | None:
+        visited: set[str] = set()
         queue = [(source_id, [source_id], [])]
         while queue:
             eid, path, rel_path = queue.pop(0)
@@ -70,16 +70,16 @@ class KnowledgeGraphEngine:
                     queue.append((next_id, path + [next_id], rel_path + [rel.relation_id]))
         return None
 
-    def search_entities(self, query: GraphQuery) -> List[Entity]:
+    def search_entities(self, query: GraphQuery) -> list[Entity]:
         entities = list(self._entities.values())
         if query.entity_type:
             entities = [e for e in entities if e.entity_type == query.entity_type]
         return entities[:query.limit]
 
-    def get_all_entities(self) -> List[Entity]:
+    def get_all_entities(self) -> list[Entity]:
         return list(self._entities.values())
 
-    def get_all_relations(self) -> List[Relation]:
+    def get_all_relations(self) -> list[Relation]:
         return list(self._relations.values())
 
     def get_entity_count(self) -> int:

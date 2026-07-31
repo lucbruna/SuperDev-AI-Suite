@@ -1,8 +1,12 @@
 """Alert management."""
 from __future__ import annotations
-from typing import Any, Callable, Dict, List, Optional
+
+import time
+import uuid
+from collections.abc import Callable
 from enum import Enum
-import time, uuid
+from typing import Any
+
 
 class AlertSeverity(Enum):
     INFO = "info"
@@ -27,14 +31,14 @@ class Alert:
         self.details = details
         self.status = AlertStatus.OPEN
         self.created_at = time.time()
-        self.acknowledged_at: Optional[float] = None
-        self.resolved_at: Optional[float] = None
+        self.acknowledged_at: float | None = None
+        self.resolved_at: float | None = None
 
 class AlertManager:
     def __init__(self) -> None:
-        self._alerts: Dict[str, Alert] = {}
-        self._escalation_rules: List[Dict[str, Any]] = []
-        self._notification_handlers: Dict[str, Callable[..., Any]] = {}
+        self._alerts: dict[str, Alert] = {}
+        self._escalation_rules: list[dict[str, Any]] = []
+        self._notification_handlers: dict[str, Callable[..., Any]] = {}
     def create_alert(self, title: str, severity: AlertSeverity, source: str = "", details: str = "") -> Alert:
         alert = Alert(title, severity, source, details)
         self._alerts[alert.alert_id] = alert
@@ -70,15 +74,15 @@ class AlertManager:
                 handler = self._notification_handlers.get(rule["action"])
                 if handler:
                     handler(alert)
-    def get_alerts(self, severity: Optional[AlertSeverity] = None, status: Optional[AlertStatus] = None, limit: int = 100) -> List[Dict[str, Any]]:
+    def get_alerts(self, severity: AlertSeverity | None = None, status: AlertStatus | None = None, limit: int = 100) -> list[dict[str, Any]]:
         alerts = list(self._alerts.values())
         if severity:
             alerts = [a for a in alerts if a.severity == severity]
         if status:
             alerts = [a for a in alerts if a.status == status]
         return [{"id": a.alert_id, "title": a.title, "severity": a.severity.value, "status": a.status.value, "source": a.source, "created_at": a.created_at} for a in alerts[-limit:]]
-    def stats(self) -> Dict[str, int]:
-        counts: Dict[str, int] = {}
+    def stats(self) -> dict[str, int]:
+        counts: dict[str, int] = {}
         for alert in self._alerts.values():
             counts[alert.status.value] = counts.get(alert.status.value, 0) + 1
         return counts

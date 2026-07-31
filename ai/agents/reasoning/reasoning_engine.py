@@ -1,14 +1,13 @@
 """Central reasoning engine coordinating all reasoning subsystems."""
 from __future__ import annotations
 
-import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from .inference import InferenceEngine
+from .decision import DecisionEngine
 from .deduction import DeductionEngine
 from .evaluation import ReasoningEvaluator
-from .decision import DecisionEngine
 from .hypothesis import HypothesisManager
+from .inference import InferenceEngine
 from .verification import VerificationEngine
 
 
@@ -45,7 +44,7 @@ class ReasoningEngine:
     def hypothesis(self) -> HypothesisManager:
         return self._hypothesis
 
-    def reason(self, problem: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def reason(self, problem: str, context: dict[str, Any] | None = None) -> dict[str, Any]:
         self._reasoning_count += 1
         facts = context or {}
         inferred = self._inference.infer(problem, facts)
@@ -77,5 +76,5 @@ class ReasoningEngine:
             "confidence": best["score"] if best else 0.0,
         }
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         return {"total_reasoning": self._reasoning_count}

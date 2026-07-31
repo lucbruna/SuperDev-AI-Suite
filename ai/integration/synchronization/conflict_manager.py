@@ -1,11 +1,11 @@
 """
 Conflict Manager - Sync conflict resolution
 """
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class ResolutionStrategy(Enum):
@@ -20,27 +20,27 @@ class ResolutionStrategy(Enum):
 class Conflict:
     conflict_id: str
     record_id: str
-    source_data: Dict[str, Any] = field(default_factory=dict)
-    target_data: Dict[str, Any] = field(default_factory=dict)
+    source_data: dict[str, Any] = field(default_factory=dict)
+    target_data: dict[str, Any] = field(default_factory=dict)
     strategy: ResolutionStrategy = ResolutionStrategy.MANUAL
     resolved: bool = False
-    resolution: Dict[str, Any] = field(default_factory=dict)
+    resolution: dict[str, Any] = field(default_factory=dict)
     detected_at: datetime = field(default_factory=datetime.now)
-    resolved_at: Optional[datetime] = None
+    resolved_at: datetime | None = None
 
 
 class ConflictManager:
     def __init__(self):
-        self.conflicts: Dict[str, Conflict] = {}
+        self.conflicts: dict[str, Conflict] = {}
         self.default_strategy: ResolutionStrategy = ResolutionStrategy.NEWEST_WINS
 
-    def detect_conflict(self, record_id: str, source_data: Dict[str, Any], target_data: Dict[str, Any]) -> Conflict:
+    def detect_conflict(self, record_id: str, source_data: dict[str, Any], target_data: dict[str, Any]) -> Conflict:
         conflict_id = hashlib.sha256(f"{record_id}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
         conflict = Conflict(conflict_id=conflict_id, record_id=record_id, source_data=source_data, target_data=target_data, strategy=self.default_strategy)
         self.conflicts[conflict_id] = conflict
         return conflict
 
-    def resolve(self, conflict_id: str, resolution: Dict[str, Any]) -> bool:
+    def resolve(self, conflict_id: str, resolution: dict[str, Any]) -> bool:
         conflict = self.conflicts.get(conflict_id)
         if conflict:
             conflict.resolved = True
@@ -66,10 +66,10 @@ class ConflictManager:
     def set_strategy(self, strategy: ResolutionStrategy) -> None:
         self.default_strategy = strategy
 
-    def get_unresolved(self) -> List[Conflict]:
+    def get_unresolved(self) -> list[Conflict]:
         return [c for c in self.conflicts.values() if not c.resolved]
 
-    def get_conflict(self, conflict_id: str) -> Optional[Conflict]:
+    def get_conflict(self, conflict_id: str) -> Conflict | None:
         return self.conflicts.get(conflict_id)
 
     def count(self) -> int:

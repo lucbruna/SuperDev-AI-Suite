@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 class SessionMemory:
@@ -8,14 +8,14 @@ class SessionMemory:
 
     def __init__(self, session_id: str = ""):
         self._session_id = session_id
-        self._data: Dict[str, Any] = {}
+        self._data: dict[str, Any] = {}
 
     @property
     def session_id(self) -> str:
         return self._session_id
 
     @property
-    def data(self) -> Dict[str, Any]:
+    def data(self) -> dict[str, Any]:
         return dict(self._data)
 
     def get(self, key: str, default: Any = None) -> Any:
@@ -24,7 +24,7 @@ class SessionMemory:
     def set(self, key: str, value: Any) -> None:
         self._data[key] = value
 
-    def update(self, data: Dict[str, Any]) -> None:
+    def update(self, data: dict[str, Any]) -> None:
         self._data.update(data)
 
     def delete(self, key: str) -> bool:
@@ -40,7 +40,7 @@ class SessionMemory:
     def size(self) -> int:
         return len(self._data)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "session_id": self._session_id,
             "data": dict(self._data),

@@ -1,6 +1,9 @@
 """License key generator."""
 from __future__ import annotations
-import random, string
+
+import random
+import string
+
 
 class LicenseKeyGenerator:
     def __init__(self, prefix: str = "SD", length: int = 32) -> None:

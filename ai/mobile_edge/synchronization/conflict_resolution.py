@@ -1,9 +1,9 @@
 """Conflict Resolution - Data conflict detection and resolution."""
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class ConflictStrategy(Enum):
@@ -19,27 +19,27 @@ class Conflict:
     conflict_id: str
     table: str
     record_id: str
-    client_data: Dict[str, Any] = field(default_factory=dict)
-    server_data: Dict[str, Any] = field(default_factory=dict)
+    client_data: dict[str, Any] = field(default_factory=dict)
+    server_data: dict[str, Any] = field(default_factory=dict)
     strategy: ConflictStrategy = ConflictStrategy.TIMESTAMP
     resolved: bool = False
-    resolved_data: Dict[str, Any] = field(default_factory=dict)
+    resolved_data: dict[str, Any] = field(default_factory=dict)
     created_at: datetime = field(default_factory=datetime.now)
-    resolved_at: Optional[datetime] = None
+    resolved_at: datetime | None = None
 
 
 class ConflictResolver:
     def __init__(self, default_strategy: ConflictStrategy = ConflictStrategy.TIMESTAMP):
-        self.conflicts: List[Conflict] = []
+        self.conflicts: list[Conflict] = []
         self.default_strategy = default_strategy
 
-    def detect(self, table: str, record_id: str, client_data: Dict[str, Any], server_data: Dict[str, Any]) -> Conflict:
+    def detect(self, table: str, record_id: str, client_data: dict[str, Any], server_data: dict[str, Any]) -> Conflict:
         conflict_id = hashlib.sha256(f"{table}{record_id}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
         conflict = Conflict(conflict_id=conflict_id, table=table, record_id=record_id, client_data=client_data, server_data=server_data, strategy=self.default_strategy)
         self.conflicts.append(conflict)
         return conflict
 
-    def resolve(self, conflict_id: str, strategy: ConflictStrategy = None) -> Optional[Dict[str, Any]]:
+    def resolve(self, conflict_id: str, strategy: ConflictStrategy = None) -> dict[str, Any] | None:
         for conflict in self.conflicts:
             if conflict.conflict_id == conflict_id and not conflict.resolved:
                 strat = strategy or conflict.strategy
@@ -56,7 +56,7 @@ class ConflictResolver:
                 return conflict.resolved_data
         return None
 
-    def get_unresolved(self) -> List[Conflict]:
+    def get_unresolved(self) -> list[Conflict]:
         return [c for c in self.conflicts if not c.resolved]
 
     def count(self) -> int:

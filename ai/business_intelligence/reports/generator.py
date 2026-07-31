@@ -1,29 +1,33 @@
 """Report generator."""
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
+
 from .models import (
-    ReportTemplate, GeneratedReport, ReportFormat, ReportSection, ReportSchedule,
+    GeneratedReport,
+    ReportFormat,
+    ReportSchedule,
+    ReportTemplate,
 )
 
 
 class ReportGenerator:
     def __init__(self):
-        self._templates: Dict[str, ReportTemplate] = {}
-        self._reports: Dict[str, GeneratedReport] = {}
-        self._schedules: Dict[str, ReportSchedule] = {}
+        self._templates: dict[str, ReportTemplate] = {}
+        self._reports: dict[str, GeneratedReport] = {}
+        self._schedules: dict[str, ReportSchedule] = {}
 
     def create_template(self, template: ReportTemplate) -> ReportTemplate:
         self._templates[template.template_id] = template
         return template
 
-    def get_template(self, template_id: str) -> Optional[ReportTemplate]:
+    def get_template(self, template_id: str) -> ReportTemplate | None:
         return self._templates.get(template_id)
 
-    def list_templates(self) -> List[ReportTemplate]:
+    def list_templates(self) -> list[ReportTemplate]:
         return list(self._templates.values())
 
-    def generate_report(self, template_id: str, data: Dict[str, Any], format: ReportFormat = ReportFormat.HTML) -> GeneratedReport:
+    def generate_report(self, template_id: str, data: dict[str, Any], format: ReportFormat = ReportFormat.HTML) -> GeneratedReport:
         template = self._templates.get(template_id)
         if not template:
             return GeneratedReport(
@@ -58,10 +62,10 @@ class ReportGenerator:
         self._reports[report_id] = report
         return report
 
-    def get_report(self, report_id: str) -> Optional[GeneratedReport]:
+    def get_report(self, report_id: str) -> GeneratedReport | None:
         return self._reports.get(report_id)
 
-    def list_reports(self, template_id: Optional[str] = None) -> List[GeneratedReport]:
+    def list_reports(self, template_id: str | None = None) -> list[GeneratedReport]:
         reports = list(self._reports.values())
         if template_id:
             reports = [r for r in reports if r.template_id == template_id]
@@ -71,7 +75,7 @@ class ReportGenerator:
         self._schedules[schedule.schedule_id] = schedule
         return schedule
 
-    def get_schedules(self, enabled_only: bool = True) -> List[ReportSchedule]:
+    def get_schedules(self, enabled_only: bool = True) -> list[ReportSchedule]:
         schedules = list(self._schedules.values())
         if enabled_only:
             schedules = [s for s in schedules if s.enabled]

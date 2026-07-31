@@ -1,26 +1,28 @@
 """Accuracy evaluation."""
 from __future__ import annotations
-from typing import Any, Dict, List
+
+from typing import Any
+
 
 class AccuracyEvaluator:
     def __init__(self) -> None:
-        self._evaluations: List[Dict[str, Any]] = []
-    def evaluate(self, predictions: List[str], expected: List[str]) -> Dict[str, Any]:
-        correct = sum(1 for p, e in zip(predictions, expected) if p.strip().lower() == e.strip().lower())
+        self._evaluations: list[dict[str, Any]] = []
+    def evaluate(self, predictions: list[str], expected: list[str]) -> dict[str, Any]:
+        correct = sum(1 for p, e in zip(predictions, expected, strict=False) if p.strip().lower() == e.strip().lower())
         total = len(expected)
         accuracy = (correct / total * 100) if total > 0 else 0
         result = {"accuracy": accuracy, "correct": correct, "total": total}
         self._evaluations.append(result)
         return result
-    def evaluate_contains(self, predictions: List[str], expected_keywords: List[List[str]]) -> Dict[str, Any]:
+    def evaluate_contains(self, predictions: list[str], expected_keywords: list[list[str]]) -> dict[str, Any]:
         correct = 0
-        for pred, keywords in zip(predictions, expected_keywords):
+        for pred, keywords in zip(predictions, expected_keywords, strict=False):
             if any(kw.lower() in pred.lower() for kw in keywords):
                 correct += 1
         total = len(expected_keywords)
         accuracy = (correct / total * 100) if total > 0 else 0
         return {"accuracy": accuracy, "correct": correct, "total": total}
-    def get_history(self, limit: int = 20) -> List[Dict[str, Any]]:
+    def get_history(self, limit: int = 20) -> list[dict[str, Any]]:
         return self._evaluations[-limit:]
     def average_accuracy(self) -> float:
         if not self._evaluations:

@@ -1,12 +1,14 @@
 """Prompt optimization."""
 from __future__ import annotations
-from typing import Any, Dict, List
+
+from typing import Any
+
 
 class PromptOptimizer:
     def __init__(self) -> None:
-        self._templates: Dict[str, Dict[str, Any]] = {}
-        self._results: List[Dict[str, Any]] = []
-    def optimize(self, prompt: str, strategies: List[str] = None) -> Dict[str, Any]:
+        self._templates: dict[str, dict[str, Any]] = {}
+        self._results: list[dict[str, Any]] = []
+    def optimize(self, prompt: str, strategies: list[str] = None) -> dict[str, Any]:
         strategies = strategies or ["length", "clarity", "specificity"]
         optimized = prompt.strip()
         scores = {}
@@ -20,16 +22,16 @@ class PromptOptimizer:
         result = {"original": prompt, "optimized": optimized, "scores": scores, "avg_score": sum(scores.values()) / len(scores) if scores else 0}
         self._results.append(result)
         return result
-    def save_template(self, name: str, prompt: str, category: str = "general") -> Dict[str, Any]:
+    def save_template(self, name: str, prompt: str, category: str = "general") -> dict[str, Any]:
         self._templates[name] = {"prompt": prompt, "category": category, "usage_count": 0}
         return {"name": name, "saved": True}
     def get_template(self, name: str) -> str:
         return self._templates.get(name, {}).get("prompt", "")
-    def list_templates(self, category: str = "") -> List[str]:
+    def list_templates(self, category: str = "") -> list[str]:
         if category:
             return [n for n, t in self._templates.items() if t["category"] == category]
         return list(self._templates.keys())
-    def get_results(self, limit: int = 20) -> List[Dict[str, Any]]:
+    def get_results(self, limit: int = 20) -> list[dict[str, Any]]:
         return self._results[-limit:]
     def count(self) -> int:
         return len(self._results)

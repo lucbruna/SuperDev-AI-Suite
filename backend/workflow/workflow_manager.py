@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 from typing import Any
 
 from backend.utils.uuid_utils import generate_uuid
@@ -194,7 +195,5 @@ BUILTIN_WORKFLOWS = [
 
 
 for wf_data in BUILTIN_WORKFLOWS:
-    try:
+    with contextlib.suppress(Exception):
         workflow_manager.create_definition(**wf_data)
-    except Exception:
-        pass

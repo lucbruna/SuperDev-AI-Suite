@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 class AgentRuntime:
@@ -9,16 +9,16 @@ class AgentRuntime:
 
     def __init__(self, agent_id: str) -> None:
         self._agent_id = agent_id
-        self._started_at: Optional[float] = None
+        self._started_at: float | None = None
         self._status: str = "idle"
-        self._metadata: Dict[str, Any] = {}
+        self._metadata: dict[str, Any] = {}
 
     @property
     def agent_id(self) -> str:
         return self._agent_id
 
     @property
-    def started_at(self) -> Optional[float]:
+    def started_at(self) -> float | None:
         return self._started_at
 
     @property
@@ -41,10 +41,10 @@ class AgentRuntime:
     def set_metadata(self, key: str, value: Any) -> None:
         self._metadata[key] = value
 
-    def get_metadata(self, key: str) -> Optional[Any]:
+    def get_metadata(self, key: str) -> Any | None:
         return self._metadata.get(key)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "agent_id": self._agent_id,
             "status": self._status,

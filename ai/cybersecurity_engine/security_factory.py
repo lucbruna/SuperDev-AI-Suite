@@ -1,8 +1,18 @@
 """Cybersecurity Engine Factory — Factory for creating security components."""
-from typing import Dict, Any, List, Optional
+from typing import Any
+
 from .security_models import (
-    Threat, Vulnerability, Incident, SecurityUser, AuditEntry, EncryptionKey, SecurityPolicy,
-    ThreatSeverity, ThreatType, IncidentStatus, VulnerabilitySeverity, ComplianceStandard, AccessControl,
+    AuditEntry,
+    ComplianceStandard,
+    EncryptionKey,
+    Incident,
+    SecurityPolicy,
+    SecurityUser,
+    Threat,
+    ThreatSeverity,
+    ThreatType,
+    Vulnerability,
+    VulnerabilitySeverity,
 )
 
 
@@ -19,7 +29,7 @@ class SecurityFactory:
         return Vulnerability(name=name, component=component, severity=vs, cvss_score=cvss)
 
     @staticmethod
-    def create_incident(title: str = "", severity: str = "low", affected_systems: List[str] = None) -> Incident:
+    def create_incident(title: str = "", severity: str = "low", affected_systems: list[str] = None) -> Incident:
         ts = ThreatSeverity(severity) if severity in [e.value for e in ThreatSeverity] else ThreatSeverity.LOW
         return Incident(title=title, severity=ts, affected_systems=affected_systems or [])
 
@@ -36,12 +46,12 @@ class SecurityFactory:
         return EncryptionKey(name=name, algorithm=algorithm, purpose=purpose)
 
     @staticmethod
-    def create_policy(name: str = "", standard: str = "lgpd", rules: List[Dict[str, Any]] = None) -> SecurityPolicy:
+    def create_policy(name: str = "", standard: str = "lgpd", rules: list[dict[str, Any]] = None) -> SecurityPolicy:
         cs = ComplianceStandard(standard) if standard in [e.value for e in ComplianceStandard] else ComplianceStandard.LGPD
         return SecurityPolicy(name=name, standard=cs, rules=rules or [])
 
     @staticmethod
-    def templates() -> Dict[str, Dict[str, Any]]:
+    def templates() -> dict[str, dict[str, Any]]:
         return {
             "web_application": {
                 "monitored": ["login", "api", "database"],

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 
 class Scoring:
@@ -13,9 +13,9 @@ class Scoring:
     def scoring_count(self) -> int:
         return self._scoring_count
 
-    def score(self, query: str, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def score(self, query: str, items: list[dict[str, Any]]) -> list[dict[str, Any]]:
         q_words = set(query.lower().split())
-        scored: List[Dict[str, Any]] = []
+        scored: list[dict[str, Any]] = []
         for item in items:
             content = str(item.get("content", "")).lower()
             entry_words = set(content.split())
@@ -25,9 +25,9 @@ class Scoring:
         self._scoring_count += 1
         return scored
 
-    def score_boolean(self, query: str, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def score_boolean(self, query: str, items: list[dict[str, Any]]) -> list[dict[str, Any]]:
         q = query.lower()
-        scored: List[Dict[str, Any]] = []
+        scored: list[dict[str, Any]] = []
         for item in items:
             content = str(item.get("content", "")).lower()
             score = 1.0 if q in content else 0.0
@@ -36,10 +36,10 @@ class Scoring:
         return scored
 
     def score_weighted(
-        self, query: str, items: List[Dict[str, Any]], weights: Dict[str, float]
-    ) -> List[Dict[str, Any]]:
+        self, query: str, items: list[dict[str, Any]], weights: dict[str, float]
+    ) -> list[dict[str, Any]]:
         q_words = set(query.lower().split())
-        scored: List[Dict[str, Any]] = []
+        scored: list[dict[str, Any]] = []
         for item in items:
             total = 0.0
             for field, weight in weights.items():

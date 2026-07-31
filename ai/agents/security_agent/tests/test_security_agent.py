@@ -11,8 +11,6 @@ from ..secrets_detector import SecretsDetector
 from ..security_agent import SecurityAgent
 from ..vulnerability_report import VulnerabilityReport
 
-import re
-
 
 class TestOWASPAnalyzer:
     def test_analyze_code_sql(self) -> None:

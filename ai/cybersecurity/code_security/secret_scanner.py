@@ -1,11 +1,9 @@
 """
 Hardcoded Secret Scanner
 """
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
 import re
-import hashlib
+from dataclasses import dataclass
+from enum import Enum
 
 
 class SecretType(Enum):
@@ -30,7 +28,7 @@ class SecretFinding:
 
 class SecretScanner:
     def __init__(self):
-        self.patterns: Dict[SecretType, List[str]] = {
+        self.patterns: dict[SecretType, list[str]] = {
             SecretType.API_KEY: [r'api[_-]?key\s*=\s*["\']([\w-]+)', r'API_KEY\s*=\s*["\']([\w-]+)'],
             SecretType.PASSWORD: [r'password\s*=\s*["\']([^"\']+)', r'passwd\s*=\s*["\']([^"\']+)'],
             SecretType.TOKEN: [r'token\s*=\s*["\']([\w.-]+)', r'access_token\s*=\s*["\']([\w.-]+)'],
@@ -38,10 +36,10 @@ class SecretScanner:
             SecretType.AWS_KEY: [r'AKIA[0-9A-Z]{16}'],
             SecretType.DATABASE_URL: [r'(mysql|postgresql|mongodb)://[^\s]+:[^\s]+@'],
         }
-        self.findings: List[SecretFinding] = []
+        self.findings: list[SecretFinding] = []
         self.excluded_files: set = {".env.example", "test_mock.py"}
 
-    def scan_file(self, file_path: str, content: str) -> List[SecretFinding]:
+    def scan_file(self, file_path: str, content: str) -> list[SecretFinding]:
         if any(ex in file_path for ex in self.excluded_files):
             return []
         findings = []
@@ -68,12 +66,12 @@ class SecretScanner:
         entropy = -sum((count / length) * math.log2(count / length) for count in freq.values())
         return entropy
 
-    def get_findings(self, secret_type: SecretType = None) -> List[SecretFinding]:
+    def get_findings(self, secret_type: SecretType = None) -> list[SecretFinding]:
         if secret_type:
             return [f for f in self.findings if f.secret_type == secret_type]
         return self.findings
 
-    def get_high_confidence(self, threshold: float = 0.7) -> List[SecretFinding]:
+    def get_high_confidence(self, threshold: float = 0.7) -> list[SecretFinding]:
         return [f for f in self.findings if f.confidence >= threshold]
 
     def clear_findings(self) -> None:

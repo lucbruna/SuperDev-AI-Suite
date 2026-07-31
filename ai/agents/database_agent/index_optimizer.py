@@ -61,7 +61,7 @@ class IndexOptimizer:
                     "index": idx["name"],
                     "table": idx["table"],
                     "suggestion": "Consider removing unused index",
-                    "impact": f"Dropping may improve write performance",
+                    "impact": "Dropping may improve write performance",
                 })
         return unused
 

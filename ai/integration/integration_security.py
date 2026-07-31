@@ -1,12 +1,12 @@
 """
 Integration Security - Security controls for integrations
 """
-from typing import Dict, Any, Optional, List, Set
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
 import secrets
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class AuthMethod(Enum):
@@ -22,10 +22,10 @@ class AuthMethod(Enum):
 class SecurityPolicy:
     policy_id: str
     name: str
-    auth_methods: List[AuthMethod] = field(default_factory=list)
+    auth_methods: list[AuthMethod] = field(default_factory=list)
     rate_limit: int = 1000
-    ip_whitelist: List[str] = field(default_factory=list)
-    ip_blacklist: List[str] = field(default_factory=list)
+    ip_whitelist: list[str] = field(default_factory=list)
+    ip_blacklist: list[str] = field(default_factory=list)
     encryption_required: bool = True
     audit_logging: bool = True
     max_payload_size: int = 10 * 1024 * 1024
@@ -38,26 +38,26 @@ class SecurityToken:
     integration_id: str
     auth_method: AuthMethod
     token_hash: str = ""
-    expires_at: Optional[datetime] = None
-    scopes: List[str] = field(default_factory=list)
+    expires_at: datetime | None = None
+    scopes: list[str] = field(default_factory=list)
     is_revoked: bool = False
 
 
 class IntegrationSecurity:
     def __init__(self):
-        self.policies: Dict[str, SecurityPolicy] = {}
-        self.tokens: Dict[str, SecurityToken] = {}
-        self.blocked_ips: Set[str] = set()
-        self.audit_log: List[Dict[str, Any]] = []
-        self.rate_counters: Dict[str, int] = {}
+        self.policies: dict[str, SecurityPolicy] = {}
+        self.tokens: dict[str, SecurityToken] = {}
+        self.blocked_ips: set[str] = set()
+        self.audit_log: list[dict[str, Any]] = []
+        self.rate_counters: dict[str, int] = {}
 
-    def create_policy(self, name: str, auth_methods: List[AuthMethod] = None, **kwargs) -> SecurityPolicy:
+    def create_policy(self, name: str, auth_methods: list[AuthMethod] = None, **kwargs) -> SecurityPolicy:
         policy_id = hashlib.sha256(name.encode()).hexdigest()[:16]
         policy = SecurityPolicy(policy_id=policy_id, name=name, auth_methods=auth_methods or [AuthMethod.API_KEY], **kwargs)
         self.policies[policy_id] = policy
         return policy
 
-    def create_token(self, integration_id: str, auth_method: AuthMethod, scopes: List[str] = None) -> SecurityToken:
+    def create_token(self, integration_id: str, auth_method: AuthMethod, scopes: list[str] = None) -> SecurityToken:
         raw_token = secrets.token_urlsafe(32)
         token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
         token = SecurityToken(token_id=hashlib.sha256(f"{integration_id}{token_hash}".encode()).hexdigest()[:16], integration_id=integration_id, auth_method=auth_method, token_hash=token_hash, scopes=scopes or [])
@@ -68,9 +68,7 @@ class IntegrationSecurity:
         token = self.tokens.get(token_id)
         if not token or token.is_revoked:
             return False
-        if token.expires_at and datetime.now() > token.expires_at:
-            return False
-        return True
+        return not (token.expires_at and datetime.now() > token.expires_at)
 
     def revoke_token(self, token_id: str) -> bool:
         token = self.tokens.get(token_id)
@@ -101,15 +99,15 @@ class IntegrationSecurity:
     def reset_rate_limit(self, integration_id: str) -> None:
         self.rate_counters[integration_id] = 0
 
-    def audit(self, action: str, integration_id: str, details: Dict[str, Any] = None) -> None:
+    def audit(self, action: str, integration_id: str, details: dict[str, Any] = None) -> None:
         self.audit_log.append({"action": action, "integration_id": integration_id, "details": details or {}, "timestamp": datetime.now().isoformat()})
 
-    def get_audit_log(self, integration_id: str = None) -> List[Dict[str, Any]]:
+    def get_audit_log(self, integration_id: str = None) -> list[dict[str, Any]]:
         if integration_id:
             return [e for e in self.audit_log if e["integration_id"] == integration_id]
         return self.audit_log
 
-    def get_policy(self, policy_id: str) -> Optional[SecurityPolicy]:
+    def get_policy(self, policy_id: str) -> SecurityPolicy | None:
         return self.policies.get(policy_id)
 
     def count(self) -> int:

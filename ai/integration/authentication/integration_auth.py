@@ -1,12 +1,12 @@
 """
 Integration Authentication - Core auth for integrations
 """
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
 import secrets
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class AuthType(Enum):
@@ -24,18 +24,18 @@ class AuthCredential:
     integration_id: str
     auth_type: AuthType
     key_hash: str = ""
-    scopes: List[str] = field(default_factory=list)
-    expires_at: Optional[datetime] = None
+    scopes: list[str] = field(default_factory=list)
+    expires_at: datetime | None = None
     is_active: bool = True
     created_at: datetime = field(default_factory=datetime.now)
 
 
 class IntegrationAuth:
     def __init__(self):
-        self.credentials: Dict[str, AuthCredential] = {}
-        self.active_sessions: Dict[str, Dict[str, Any]] = {}
+        self.credentials: dict[str, AuthCredential] = {}
+        self.active_sessions: dict[str, dict[str, Any]] = {}
 
-    def create_credential(self, integration_id: str, auth_type: AuthType, secret: str = "", scopes: List[str] = None) -> AuthCredential:
+    def create_credential(self, integration_id: str, auth_type: AuthType, secret: str = "", scopes: list[str] = None) -> AuthCredential:
         credential_id = hashlib.sha256(f"{integration_id}{auth_type.value}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
         key_hash = hashlib.sha256(secret.encode()).hexdigest() if secret else ""
         cred = AuthCredential(credential_id=credential_id, integration_id=integration_id, auth_type=auth_type, key_hash=key_hash, scopes=scopes or [])
@@ -48,9 +48,7 @@ class IntegrationAuth:
             return False
         if cred.expires_at and datetime.now() > cred.expires_at:
             return False
-        if cred.key_hash and cred.key_hash != hashlib.sha256(secret.encode()).hexdigest():
-            return False
-        return True
+        return not (cred.key_hash and cred.key_hash != hashlib.sha256(secret.encode()).hexdigest())
 
     def revoke_credential(self, credential_id: str) -> bool:
         cred = self.credentials.get(credential_id)
@@ -59,7 +57,7 @@ class IntegrationAuth:
             return True
         return False
 
-    def authenticate(self, integration_id: str, auth_type: AuthType, credentials: Dict[str, str]) -> Optional[str]:
+    def authenticate(self, integration_id: str, auth_type: AuthType, credentials: dict[str, str]) -> str | None:
         for cred in self.credentials.values():
             if cred.integration_id == integration_id and cred.auth_type == auth_type and cred.is_active:
                 session_token = secrets.token_urlsafe(32)
@@ -76,7 +74,7 @@ class IntegrationAuth:
             return True
         return False
 
-    def get_credentials(self, integration_id: str) -> List[AuthCredential]:
+    def get_credentials(self, integration_id: str) -> list[AuthCredential]:
         return [c for c in self.credentials.values() if c.integration_id == integration_id]
 
     def count(self) -> int:

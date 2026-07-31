@@ -1,27 +1,26 @@
 """
 Response Manager - Format and return responses
 """
-from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
-from datetime import datetime
+from typing import Any
 
 
 @dataclass
 class ResponseData:
     status_code: int
     body: Any = None
-    headers: Dict[str, str] = field(default_factory=dict)
+    headers: dict[str, str] = field(default_factory=dict)
     duration_ms: float = 0.0
     cached: bool = False
 
 
 class ResponseManager:
     def __init__(self):
-        self.responses: List[ResponseData] = []
-        self.cache: Dict[str, ResponseData] = {}
-        self.default_headers: Dict[str, str] = {"Content-Type": "application/json", "X-Powered-By": "SuperDev"}
+        self.responses: list[ResponseData] = []
+        self.cache: dict[str, ResponseData] = {}
+        self.default_headers: dict[str, str] = {"Content-Type": "application/json", "X-Powered-By": "SuperDev"}
 
-    def create_response(self, status_code: int, body: Any = None, headers: Dict[str, str] = None) -> ResponseData:
+    def create_response(self, status_code: int, body: Any = None, headers: dict[str, str] = None) -> ResponseData:
         resp = ResponseData(status_code=status_code, body=body, headers={**self.default_headers, **(headers or {})})
         self.responses.append(resp)
         return resp
@@ -47,13 +46,13 @@ class ResponseManager:
     def set_cache(self, key: str, response: ResponseData, ttl: int = 60) -> None:
         self.cache[key] = response
 
-    def get_cache(self, key: str) -> Optional[ResponseData]:
+    def get_cache(self, key: str) -> ResponseData | None:
         return self.cache.get(key)
 
     def clear_cache(self) -> None:
         self.cache.clear()
 
-    def get_recent(self, limit: int = 10) -> List[ResponseData]:
+    def get_recent(self, limit: int = 10) -> list[ResponseData]:
         return self.responses[-limit:]
 
     def count(self) -> int:

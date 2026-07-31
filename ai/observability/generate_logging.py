@@ -1,5 +1,6 @@
 """Logging subsystem generator."""
 import os
+
 BASE = r'C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\observability\logging'
 
 def write_file(path, content):

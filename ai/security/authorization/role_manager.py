@@ -1,13 +1,15 @@
 """Role management."""
 from __future__ import annotations
-from typing import Any, Dict, List, Set
+
+from typing import Any
+
 
 class RoleManager:
     def __init__(self) -> None:
-        self._roles: Dict[str, Dict[str, Any]] = {}
-        self._role_hierarchies: Dict[str, Set[str]] = {}
-        self._user_roles: Dict[str, Set[str]] = {}
-    def create_role(self, name: str, description: str = "", parent: str = "") -> Dict[str, Any]:
+        self._roles: dict[str, dict[str, Any]] = {}
+        self._role_hierarchies: dict[str, set[str]] = {}
+        self._user_roles: dict[str, set[str]] = {}
+    def create_role(self, name: str, description: str = "", parent: str = "") -> dict[str, Any]:
         self._roles[name] = {"name": name, "description": description, "active": True}
         if parent and parent in self._roles:
             self._role_hierarchies[name] = {parent}
@@ -23,9 +25,9 @@ class RoleManager:
             self._user_roles[user_id].discard(role)
             return True
         return False
-    def get_user_roles(self, user_id: str) -> List[str]:
+    def get_user_roles(self, user_id: str) -> list[str]:
         return sorted(self._user_roles.get(user_id, set()))
-    def get_role_permissions(self, role: str) -> List[str]:
+    def get_role_permissions(self, role: str) -> list[str]:
         parents = self._role_hierarchies.get(role, set())
         return sorted(parents)
     def deactivate_role(self, name: str) -> bool:
@@ -33,5 +35,5 @@ class RoleManager:
             self._roles[name]["active"] = False
             return True
         return False
-    def list_roles(self) -> List[str]:
+    def list_roles(self) -> list[str]:
         return [r for r, v in self._roles.items() if v.get("active")]

@@ -1,23 +1,28 @@
 """Workflow engine."""
 import uuid
-from datetime import datetime
-from typing import Dict, List, Optional
-from .models import WorkflowDefinition, WorkflowStep, WorkflowInstance, ApprovalRecord
-from .models import WorkflowStatus, StepType, StepStatus
+
+from .models import (
+    ApprovalRecord,
+    StepStatus,
+    WorkflowDefinition,
+    WorkflowInstance,
+    WorkflowStatus,
+    WorkflowStep,
+)
 
 
 class WorkflowEngine:
     def __init__(self):
-        self._definitions: Dict[str, WorkflowDefinition] = {}
-        self._steps: Dict[str, WorkflowStep] = {}
-        self._instances: Dict[str, WorkflowInstance] = {}
-        self._approvals: List[ApprovalRecord] = []
+        self._definitions: dict[str, WorkflowDefinition] = {}
+        self._steps: dict[str, WorkflowStep] = {}
+        self._instances: dict[str, WorkflowInstance] = {}
+        self._approvals: list[ApprovalRecord] = []
 
     def create_definition(self, defn: WorkflowDefinition) -> WorkflowDefinition:
         self._definitions[defn.workflow_id] = defn
         return defn
 
-    def get_definition(self, workflow_id: str) -> Optional[WorkflowDefinition]:
+    def get_definition(self, workflow_id: str) -> WorkflowDefinition | None:
         return self._definitions.get(workflow_id)
 
     def activate_definition(self, workflow_id: str) -> bool:
@@ -31,7 +36,7 @@ class WorkflowEngine:
         self._steps[step.step_id] = step
         return step
 
-    def get_workflow_steps(self, workflow_id: str) -> List[WorkflowStep]:
+    def get_workflow_steps(self, workflow_id: str) -> list[WorkflowStep]:
         steps = [s for s in self._steps.values() if s.workflow_id == workflow_id]
         return sorted(steps, key=lambda s: s.order)
 
@@ -39,7 +44,7 @@ class WorkflowEngine:
         self._instances[instance.instance_id] = instance
         return instance
 
-    def get_instance(self, instance_id: str) -> Optional[WorkflowInstance]:
+    def get_instance(self, instance_id: str) -> WorkflowInstance | None:
         return self._instances.get(instance_id)
 
     def complete_step(self, step_id: str, result: str = "completed") -> bool:
@@ -65,7 +70,7 @@ class WorkflowEngine:
         self._approvals.append(record)
         return record
 
-    def get_approvals(self, instance_id: Optional[str] = None) -> List[ApprovalRecord]:
+    def get_approvals(self, instance_id: str | None = None) -> list[ApprovalRecord]:
         if instance_id:
             return [a for a in self._approvals if a.instance_id == instance_id]
         return list(self._approvals)

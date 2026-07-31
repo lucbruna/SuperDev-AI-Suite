@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from backend.code_review.review_engine import ReviewEngine
 from backend.code_review.check_runner import GitHubChecksClient
-from backend.code_review.config import ReviewConfig
+from backend.code_review.review_engine import ReviewEngine
 
 
 class CodeReviewAgent:

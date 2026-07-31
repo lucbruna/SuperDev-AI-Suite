@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import StrEnum
@@ -117,10 +118,8 @@ class AuditLogger:
             self._entries = self._entries[-self._max_entries:]
 
         for listener in self._listeners:
-            try:
+            with contextlib.suppress(Exception):
                 listener(entry)
-            except Exception:
-                pass
 
         return entry
 

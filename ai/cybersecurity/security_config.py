@@ -2,8 +2,8 @@
 Security Configuration
 """
 from dataclasses import dataclass, field
-from typing import Optional, Dict, Any, List
 from enum import Enum
+from typing import Any
 
 
 class SecurityLevel(Enum):
@@ -40,8 +40,8 @@ class SecurityConfig:
     prompt_injection_protection: bool = True
     model_protection: bool = True
     code_scanning_enabled: bool = True
-    
-    def to_dict(self) -> Dict[str, Any]:
+
+    def to_dict(self) -> dict[str, Any]:
         return {
             "security_level": self.security_level.value,
             "encryption_algorithm": self.encryption_algorithm.value,
@@ -55,7 +55,7 @@ class SecurityConfig:
 class PolicyRule:
     name: str
     action: str = "allow"
-    conditions: Dict[str, Any] = field(default_factory=dict)
+    conditions: dict[str, Any] = field(default_factory=dict)
     priority: int = 0
     enabled: bool = True
 
@@ -63,22 +63,22 @@ class PolicyRule:
 @dataclass
 class SecurityPolicy:
     name: str
-    rules: List[PolicyRule] = field(default_factory=list)
+    rules: list[PolicyRule] = field(default_factory=list)
     enabled: bool = True
-    
+
     def add_rule(self, rule: PolicyRule) -> None:
         self.rules.append(rule)
         self.rules.sort(key=lambda r: r.priority, reverse=True)
-        
-    def evaluate(self, context: Dict[str, Any]) -> str:
+
+    def evaluate(self, context: dict[str, Any]) -> str:
         for rule in self.rules:
             if not rule.enabled:
                 continue
             if self._match_conditions(rule.conditions, context):
                 return rule.action
         return "deny"
-        
-    def _match_conditions(self, conditions: Dict, context: Dict) -> bool:
+
+    def _match_conditions(self, conditions: dict, context: dict) -> bool:
         for key, value in conditions.items():
             if key not in context:
                 return False

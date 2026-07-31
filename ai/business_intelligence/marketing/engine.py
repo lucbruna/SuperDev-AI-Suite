@@ -1,27 +1,28 @@
 """Marketing engine."""
-import uuid
-from datetime import datetime
-from typing import Dict, List, Optional
 from .models import (
-    Campaign, CampaignStatus, ChannelType, Lead, ConversionEvent,
-    MarketingMetrics, Segment,
+    Campaign,
+    CampaignStatus,
+    ConversionEvent,
+    Lead,
+    MarketingMetrics,
+    Segment,
 )
 
 
 class MarketingEngine:
     def __init__(self):
-        self._campaigns: Dict[str, Campaign] = {}
-        self._leads: Dict[str, Lead] = {}
-        self._conversions: List[ConversionEvent] = []
-        self._metrics: Dict[str, MarketingMetrics] = {}
-        self._segments: Dict[str, Segment] = {}
+        self._campaigns: dict[str, Campaign] = {}
+        self._leads: dict[str, Lead] = {}
+        self._conversions: list[ConversionEvent] = []
+        self._metrics: dict[str, MarketingMetrics] = {}
+        self._segments: dict[str, Segment] = {}
 
     def create_campaign(self, campaign: Campaign) -> Campaign:
         self._campaigns[campaign.campaign_id] = campaign
         self._metrics[campaign.campaign_id] = MarketingMetrics(campaign_id=campaign.campaign_id)
         return campaign
 
-    def update_campaign(self, campaign_id: str, updates: Dict) -> Optional[Campaign]:
+    def update_campaign(self, campaign_id: str, updates: dict) -> Campaign | None:
         c = self._campaigns.get(campaign_id)
         if not c:
             return None
@@ -86,10 +87,10 @@ class MarketingEngine:
             m.ctr = m.clicks / m.impressions * 100
         return True
 
-    def get_metrics(self, campaign_id: str) -> Optional[MarketingMetrics]:
+    def get_metrics(self, campaign_id: str) -> MarketingMetrics | None:
         return self._metrics.get(campaign_id)
 
-    def get_leads(self, status: Optional[str] = None) -> List[Lead]:
+    def get_leads(self, status: str | None = None) -> list[Lead]:
         leads = list(self._leads.values())
         if status:
             leads = [l for l in leads if l.status == status]
@@ -99,10 +100,10 @@ class MarketingEngine:
         self._segments[segment.segment_id] = segment
         return segment
 
-    def get_segment(self, segment_id: str) -> Optional[Segment]:
+    def get_segment(self, segment_id: str) -> Segment | None:
         return self._segments.get(segment_id)
 
-    def get_campaigns(self, status: Optional[CampaignStatus] = None) -> List[Campaign]:
+    def get_campaigns(self, status: CampaignStatus | None = None) -> list[Campaign]:
         campaigns = list(self._campaigns.values())
         if status:
             campaigns = [c for c in campaigns if c.status == status]

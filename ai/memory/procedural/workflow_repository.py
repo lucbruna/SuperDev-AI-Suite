@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class WorkflowDefinition:
     """A stored workflow definition."""
 
-    def __init__(self, workflow_id: str, name: str, steps: List[Dict[str, Any]], description: str = ""):
+    def __init__(self, workflow_id: str, name: str, steps: list[dict[str, Any]], description: str = ""):
         self._workflow_id = workflow_id
         self._name = name
         self._steps = list(steps)
@@ -21,14 +21,14 @@ class WorkflowDefinition:
         return self._name
 
     @property
-    def steps(self) -> List[Dict[str, Any]]:
+    def steps(self) -> list[dict[str, Any]]:
         return list(self._steps)
 
     @property
     def description(self) -> str:
         return self._description
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "workflow_id": self._workflow_id,
             "name": self._name,
@@ -41,7 +41,7 @@ class WorkflowRepository:
     """Storage for reusable workflow definitions."""
 
     def __init__(self):
-        self._workflows: Dict[str, WorkflowDefinition] = {}
+        self._workflows: dict[str, WorkflowDefinition] = {}
 
     @property
     def count(self) -> int:
@@ -56,11 +56,11 @@ class WorkflowRepository:
     def remove(self, workflow_id: str) -> bool:
         return self._workflows.pop(workflow_id, None) is not None
 
-    def search(self, query: str) -> List[WorkflowDefinition]:
+    def search(self, query: str) -> list[WorkflowDefinition]:
         q = query.lower()
         return [w for w in self._workflows.values() if q in w.name.lower() or q in w.description.lower()]
 
-    def list_all(self) -> List[WorkflowDefinition]:
+    def list_all(self) -> list[WorkflowDefinition]:
         return list(self._workflows.values())
 
     def clear(self) -> None:

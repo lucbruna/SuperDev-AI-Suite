@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class MemoryLogEntry:
@@ -13,7 +13,7 @@ class MemoryLogEntry:
         message: str,
         operation: str = "",
         key: str = "",
-        details: Dict[str, Any] | None = None,
+        details: dict[str, Any] | None = None,
     ):
         self._timestamp = time.time()
         self._level = level
@@ -43,10 +43,10 @@ class MemoryLogEntry:
         return self._key
 
     @property
-    def details(self) -> Dict[str, Any]:
+    def details(self) -> dict[str, Any]:
         return dict(self._details)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "timestamp": self._timestamp,
             "level": self._level,
@@ -61,22 +61,22 @@ class MemoryLogger:
     """Structured logger for the memory subsystem."""
 
     def __init__(self, max_entries: int = 10000):
-        self._entries: List[MemoryLogEntry] = []
+        self._entries: list[MemoryLogEntry] = []
         self._max_entries = max_entries
 
-    def info(self, message: str, operation: str = "", key: str = "", details: Dict[str, Any] | None = None) -> None:
+    def info(self, message: str, operation: str = "", key: str = "", details: dict[str, Any] | None = None) -> None:
         self._log("INFO", message, operation, key, details)
 
-    def warn(self, message: str, operation: str = "", key: str = "", details: Dict[str, Any] | None = None) -> None:
+    def warn(self, message: str, operation: str = "", key: str = "", details: dict[str, Any] | None = None) -> None:
         self._log("WARN", message, operation, key, details)
 
-    def error(self, message: str, operation: str = "", key: str = "", details: Dict[str, Any] | None = None) -> None:
+    def error(self, message: str, operation: str = "", key: str = "", details: dict[str, Any] | None = None) -> None:
         self._log("ERROR", message, operation, key, details)
 
-    def debug(self, message: str, operation: str = "", key: str = "", details: Dict[str, Any] | None = None) -> None:
+    def debug(self, message: str, operation: str = "", key: str = "", details: dict[str, Any] | None = None) -> None:
         self._log("DEBUG", message, operation, key, details)
 
-    def _log(self, level: str, message: str, operation: str, key: str, details: Dict[str, Any] | None) -> None:
+    def _log(self, level: str, message: str, operation: str, key: str, details: dict[str, Any] | None) -> None:
         entry = MemoryLogEntry(level, message, operation, key, details)
         self._entries.append(entry)
         if len(self._entries) > self._max_entries:
@@ -87,7 +87,7 @@ class MemoryLogger:
         level: str | None = None,
         operation: str | None = None,
         limit: int = 100,
-    ) -> List[MemoryLogEntry]:
+    ) -> list[MemoryLogEntry]:
         results = list(self._entries)
         if level:
             results = [e for e in results if e.level == level]
@@ -95,7 +95,7 @@ class MemoryLogger:
             results = [e for e in results if e.operation == operation]
         return results[-limit:]
 
-    def get_errors(self, limit: int = 100) -> List[MemoryLogEntry]:
+    def get_errors(self, limit: int = 100) -> list[MemoryLogEntry]:
         return self.get_entries(level="ERROR", limit=limit)
 
     def clear(self) -> None:
@@ -105,5 +105,5 @@ class MemoryLogger:
     def size(self) -> int:
         return len(self._entries)
 
-    def to_dict_list(self) -> List[Dict[str, Any]]:
+    def to_dict_list(self) -> list[dict[str, Any]]:
         return [e.to_dict() for e in self._entries]

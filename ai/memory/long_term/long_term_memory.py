@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .archive import Archive
 from .compression import Compression
@@ -81,7 +81,7 @@ class LongTermMemory:
     def synchronization(self) -> Synchronization:
         return self._synchronization
 
-    def store(self, key: str, data: Dict[str, Any]) -> None:
+    def store(self, key: str, data: dict[str, Any]) -> None:
         if not self._validator.validate(data):
             return
         compressed = self._compression.compress(data)
@@ -89,7 +89,7 @@ class LongTermMemory:
         self._indexing.add(key, data)
         self._persistence.persist(key, compressed)
 
-    def retrieve(self, key: str) -> Dict[str, Any] | None:
+    def retrieve(self, key: str) -> dict[str, Any] | None:
         data = self._storage.get(key)
         if data is None:
             data = self._persistence.load(key)
@@ -103,9 +103,9 @@ class LongTermMemory:
         self._indexing.remove(key)
         return self._storage.delete(key)
 
-    def search(self, query: str) -> List[Dict[str, Any]]:
+    def search(self, query: str) -> list[dict[str, Any]]:
         keys = self._indexing.search(query)
-        results: List[Dict[str, Any]] = []
+        results: list[dict[str, Any]] = []
         for key in keys[:50]:
             data = self.retrieve(key)
             if data:
@@ -115,10 +115,10 @@ class LongTermMemory:
     def consolidate(self, source: Any) -> int:
         return self._consolidation.run(source, self)
 
-    def optimize(self) -> Dict[str, Any]:
+    def optimize(self) -> dict[str, Any]:
         return self._optimizer.run(self._storage, self._indexing)
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         return {
             "storage_size": self._storage.count,
             "index_size": self._indexing.count,

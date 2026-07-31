@@ -1,9 +1,9 @@
 """Reasoning subsystem engine — Inference, hypothesis building, and conclusion generation."""
 import uuid
-from datetime import datetime
-from typing import Dict, Any, List, Optional
-from enum import Enum
 from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class ReasoningType(Enum):
@@ -24,7 +24,7 @@ class HypothesisStatus(Enum):
 class Observation:
     observation_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     description: str = ""
-    data: Dict[str, Any] = field(default_factory=dict)
+    data: dict[str, Any] = field(default_factory=dict)
     source: str = ""
     confidence: float = 0.5
     timestamp: datetime = field(default_factory=datetime.now)
@@ -35,8 +35,8 @@ class Hypothesis:
     hypothesis_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     statement: str = ""
     reasoning_type: ReasoningType = ReasoningType.INDUCTIVE
-    evidence_for: List[str] = field(default_factory=list)
-    evidence_against: List[str] = field(default_factory=list)
+    evidence_for: list[str] = field(default_factory=list)
+    evidence_against: list[str] = field(default_factory=list)
     status: HypothesisStatus = HypothesisStatus.PROPOSED
     confidence: float = 0.3
     created_at: datetime = field(default_factory=datetime.now)
@@ -47,25 +47,25 @@ class Conclusion:
     conclusion_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     statement: str = ""
     reasoning_type: ReasoningType = ReasoningType.DEDUCTIVE
-    supporting_evidence: List[str] = field(default_factory=list)
+    supporting_evidence: list[str] = field(default_factory=list)
     confidence: float = 0.5
-    implications: List[str] = field(default_factory=list)
+    implications: list[str] = field(default_factory=list)
     created_at: datetime = field(default_factory=datetime.now)
 
 
 class ReasoningSubEngine:
     def __init__(self):
-        self._observations: Dict[str, Observation] = {}
-        self._hypotheses: Dict[str, Hypothesis] = {}
-        self._conclusions: Dict[str, Conclusion] = {}
-        self._inference_rules: List[Dict[str, Any]] = []
+        self._observations: dict[str, Observation] = {}
+        self._hypotheses: dict[str, Hypothesis] = {}
+        self._conclusions: dict[str, Conclusion] = {}
+        self._inference_rules: list[dict[str, Any]] = []
 
-    def add_observation(self, description: str, data: Optional[Dict[str, Any]] = None, source: str = "") -> Observation:
+    def add_observation(self, description: str, data: dict[str, Any] | None = None, source: str = "") -> Observation:
         obs = Observation(description=description, data=data or {}, source=source)
         self._observations[obs.observation_id] = obs
         return obs
 
-    def get_observation(self, observation_id: str) -> Optional[Observation]:
+    def get_observation(self, observation_id: str) -> Observation | None:
         return self._observations.get(observation_id)
 
     def add_hypothesis(self, statement: str, reasoning_type: str = "inductive") -> Hypothesis:
@@ -74,7 +74,7 @@ class ReasoningSubEngine:
         self._hypotheses[hyp.hypothesis_id] = hyp
         return hyp
 
-    def get_hypothesis(self, hypothesis_id: str) -> Optional[Hypothesis]:
+    def get_hypothesis(self, hypothesis_id: str) -> Hypothesis | None:
         return self._hypotheses.get(hypothesis_id)
 
     def add_evidence(self, hypothesis_id: str, evidence: str, is_for: bool = True) -> bool:
@@ -101,10 +101,10 @@ class ReasoningSubEngine:
             hyp.status = HypothesisStatus.REJECTED
         return hyp.status
 
-    def add_rule(self, name: str, condition: Dict[str, Any], conclusion: str) -> None:
+    def add_rule(self, name: str, condition: dict[str, Any], conclusion: str) -> None:
         self._inference_rules.append({"name": name, "condition": condition, "conclusion": conclusion})
 
-    def infer(self, context: Dict[str, Any]) -> List[str]:
+    def infer(self, context: dict[str, Any]) -> list[str]:
         results = []
         for rule in self._inference_rules:
             match = all(context.get(k) == v for k, v in rule["condition"].items())
@@ -112,18 +112,18 @@ class ReasoningSubEngine:
                 results.append(rule["conclusion"])
         return results
 
-    def create_conclusion(self, statement: str, evidence: Optional[List[str]] = None, reasoning_type: str = "deductive") -> Conclusion:
+    def create_conclusion(self, statement: str, evidence: list[str] | None = None, reasoning_type: str = "deductive") -> Conclusion:
         rt = ReasoningType(reasoning_type) if reasoning_type in [e.value for e in ReasoningType] else ReasoningType.DEDUCTIVE
         conc = Conclusion(statement=statement, reasoning_type=rt, supporting_evidence=evidence or [])
         self._conclusions[conc.conclusion_id] = conc
         return conc
 
-    def get_conclusion(self, conclusion_id: str) -> Optional[Conclusion]:
+    def get_conclusion(self, conclusion_id: str) -> Conclusion | None:
         return self._conclusions.get(conclusion_id)
 
-    def analyze_problem(self, problem: str, observations: Optional[List[str]] = None) -> Dict[str, Any]:
+    def analyze_problem(self, problem: str, observations: list[str] | None = None) -> dict[str, Any]:
         hypotheses = []
-        for obs_id, obs in self._observations.items():
+        for _obs_id, obs in self._observations.items():
             if any(word in obs.description.lower() for word in problem.lower().split()):
                 hyp = self.add_hypothesis(f"Possible cause: {obs.description}")
                 hypotheses.append(hyp.hypothesis_id)

@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from typing import Any
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from backend.database.models.plugin import Plugin
 from backend.exceptions import PluginNotFoundException, PluginValidationException
 from backend.repositories.plugin_repository import PluginRepository
-from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class PluginService:

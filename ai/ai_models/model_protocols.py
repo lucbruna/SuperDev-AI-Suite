@@ -1,14 +1,16 @@
 """AI Model protocols."""
 from __future__ import annotations
-from typing import Any, Dict, Protocol, runtime_checkable
+
+from typing import Any, Protocol, runtime_checkable
+
 
 @runtime_checkable
 class Inferable(Protocol):
-    def infer(self, prompt: str, **kwargs: Any) -> Dict[str, Any]: ...
+    def infer(self, prompt: str, **kwargs: Any) -> dict[str, Any]: ...
 
 @runtime_checkable
 class Evaluable(Protocol):
-    def evaluate(self, test_cases: list) -> Dict[str, float]: ...
+    def evaluate(self, test_cases: list) -> dict[str, float]: ...
 
 @runtime_checkable
 class Cacheable(Protocol):

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .active_agents import ActiveAgents
 from .active_tasks import ActiveTasks
@@ -89,13 +88,13 @@ class ShortTermMemory:
         self._agents.clear()
         self._events.clear()
 
-    def run_housekeeping(self) -> Dict[str, int]:
+    def run_housekeeping(self) -> dict[str, int]:
         expired = self._expiration.purge_expired(self._temporary)
         cleaned = self._cleanup.clean(self._temporary, self._buffer, self._history)
         self._events.record("housekeeping", {"expired": expired, "cleaned": cleaned})
         return {"expired": expired, "cleaned": cleaned}
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         return {
             "session_size": len(self._session.data),
             "buffer_size": self._buffer.size,

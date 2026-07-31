@@ -1,8 +1,8 @@
 """Quality models."""
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
 from enum import Enum
+from typing import Any
 
 
 class QualityCheckType(Enum):
@@ -24,7 +24,7 @@ class QualityRule:
     rule_id: str
     name: str = ""
     check_type: QualityCheckType = QualityCheckType.COMPLETENESS
-    config: Dict[str, Any] = field(default_factory=dict)
+    config: dict[str, Any] = field(default_factory=dict)
     threshold: float = 0.95
     enabled: bool = True
 
@@ -36,7 +36,7 @@ class QualityCheck:
     rule_id: str = ""
     status: QualityStatus = QualityStatus.PASSED
     score: float = 1.0
-    issues: List[Dict[str, Any]] = field(default_factory=list)
+    issues: list[dict[str, Any]] = field(default_factory=list)
     checked_at: datetime = field(default_factory=datetime.now)
 
 
@@ -44,7 +44,7 @@ class QualityCheck:
 class QualityReport:
     report_id: str
     dataset: str = ""
-    checks: List[QualityCheck] = field(default_factory=list)
+    checks: list[QualityCheck] = field(default_factory=list)
     overall_score: float = 1.0
     passed: int = 0
     failed: int = 0

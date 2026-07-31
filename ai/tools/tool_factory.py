@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..base.base_tool import BaseTool
 from .tool_interfaces import ITool, IToolFactory
 
 

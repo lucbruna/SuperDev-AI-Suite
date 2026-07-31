@@ -1,9 +1,9 @@
 """Alert Rules - Notification trigger rules."""
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class AlertCondition(Enum):
@@ -26,14 +26,14 @@ class AlertRule:
     notification_message: str = ""
     enabled: bool = True
     cooldown_seconds: int = 300
-    last_triggered: Optional[datetime] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    last_triggered: datetime | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class AlertRuleManager:
     def __init__(self):
-        self.rules: Dict[str, AlertRule] = {}
-        self.trigger_log: List[Dict[str, Any]] = []
+        self.rules: dict[str, AlertRule] = {}
+        self.trigger_log: list[dict[str, Any]] = []
 
     def create_rule(self, name: str, condition: AlertCondition, metric: str = "", threshold: float = 0.0, operator: str = ">", **kwargs) -> AlertRule:
         rule_id = hashlib.sha256(f"{name}{metric}".encode()).hexdigest()[:16]
@@ -62,10 +62,10 @@ class AlertRuleManager:
             self.trigger_log.append({"rule_id": rule_id, "value": current_value, "timestamp": datetime.now().isoformat()})
         return triggered
 
-    def get_rule(self, rule_id: str) -> Optional[AlertRule]:
+    def get_rule(self, rule_id: str) -> AlertRule | None:
         return self.rules.get(rule_id)
 
-    def list_rules(self, enabled_only: bool = False) -> List[AlertRule]:
+    def list_rules(self, enabled_only: bool = False) -> list[AlertRule]:
         rules = list(self.rules.values())
         if enabled_only:
             rules = [r for r in rules if r.enabled]

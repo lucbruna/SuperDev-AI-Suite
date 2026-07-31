@@ -1,15 +1,14 @@
 from __future__ import annotations
 
-import time
-from typing import Any, Dict, List
+from typing import Any
 
 
 class Synchronization:
     """Synchronization primitives for agents."""
 
     def __init__(self) -> None:
-        self._locks: Dict[str, bool] = {}
-        self._barriers: Dict[str, List[str]] = {}
+        self._locks: dict[str, bool] = {}
+        self._barriers: dict[str, list[str]] = {}
 
     def acquire_lock(self, resource: str, agent_id: str) -> bool:
         if self._locks.get(resource, False):
@@ -40,7 +39,7 @@ class Synchronization:
         self._locks.clear()
         self._barriers.clear()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "locks": dict(self._locks),
             "barriers": {b: len(m) for b, m in self._barriers.items()},

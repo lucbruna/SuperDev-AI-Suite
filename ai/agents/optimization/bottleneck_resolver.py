@@ -1,22 +1,22 @@
 """Bottleneck detection and resolution."""
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 
 class BottleneckResolver:
     """Identifies and resolves performance bottlenecks."""
 
     def __init__(self) -> None:
-        self._thresholds: Dict[str, float] = {
+        self._thresholds: dict[str, float] = {
             "latency_ms": 500.0,
             "error_rate": 0.1,
             "queue_depth": 50.0,
             "memory_usage_pct": 85.0,
         }
 
-    def identify(self, metrics: Dict[str, Any]) -> List[Dict[str, Any]]:
-        bottlenecks: List[Dict[str, Any]] = []
+    def identify(self, metrics: dict[str, Any]) -> list[dict[str, Any]]:
+        bottlenecks: list[dict[str, Any]] = []
         for metric_name, threshold in self._thresholds.items():
             value = float(metrics.get(metric_name, 0))
             if value > threshold:

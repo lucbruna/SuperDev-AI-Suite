@@ -1,10 +1,8 @@
 """
 Syntax Highlighting Engine
 """
-from typing import List, Dict, Optional
 from dataclasses import dataclass
 from enum import Enum
-import re
 
 
 class TokenType(Enum):
@@ -29,7 +27,7 @@ class Token:
     end: int
     line: int = 0
     column: int = 0
-    
+
     @property
     def length(self):
         return self.end - self.start
@@ -38,12 +36,12 @@ class Token:
 @dataclass
 class LanguageGrammar:
     name: str
-    keywords: List[str]
-    builtins: List[str]
-    constants: List[str]
+    keywords: list[str]
+    builtins: list[str]
+    constants: list[str]
     single_line_comment: str = "//"
-    string_delimiters: List[str] = None
-    
+    string_delimiters: list[str] = None
+
     def __post_init__(self):
         if self.string_delimiters is None:
             self.string_delimiters = ['"', "'"]
@@ -122,11 +120,11 @@ class SyntaxHighlighter:
             single_line_comment="//",
         ),
     }
-    
+
     def __init__(self):
         self.current_language = "python"
         self.tokens = []
-        
+
     def highlight(self, code, language):
         self.current_language = language
         self.tokens = []
@@ -139,7 +137,7 @@ class SyntaxHighlighter:
             self._tokenize_line(line, line_num, offset, grammar)
             offset += len(line) + 1
         return self.tokens
-    
+
     def _tokenize_line(self, line, line_num, offset, grammar):
         i = 0
         while i < len(line):
@@ -169,9 +167,7 @@ class SyntaxHighlighter:
                 word = line[start:i]
                 if word in grammar.keywords:
                     token_type = TokenType.KEYWORD
-                elif word in grammar.builtins:
-                    token_type = TokenType.CONSTANT
-                elif word in grammar.constants:
+                elif word in grammar.builtins or word in grammar.constants:
                     token_type = TokenType.CONSTANT
                 elif i < len(line) and line[i] == '(':
                     token_type = TokenType.FUNCTION
@@ -186,12 +182,12 @@ class SyntaxHighlighter:
             else:
                 self.tokens.append(Token(TokenType.TEXT, line[i], offset + i, offset + i + 1, line_num, i))
             i += 1
-            
+
     def get_token_at(self, position):
         for token in self.tokens:
             if token.start <= position < token.end:
                 return token
         return None
-        
+
     def clear(self):
         self.tokens.clear()

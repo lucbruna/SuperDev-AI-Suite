@@ -1,21 +1,22 @@
 """Manager for quality configurations and history."""
-from typing import List, Dict, Any, Optional
 from datetime import datetime
-from .models import QualityReport, QualityRule, QualityMetric
+from typing import Any
+
+from .models import QualityReport, QualityRule
 
 
 class QualityManager:
     """Manages quality analysis configurations and history."""
 
     def __init__(self):
-        self._rules: List[QualityRule] = []
-        self._reports: List[QualityReport] = []
-        self._history: List[Dict[str, Any]] = []
+        self._rules: list[QualityRule] = []
+        self._reports: list[QualityReport] = []
+        self._history: list[dict[str, Any]] = []
 
     def add_rule(self, rule: QualityRule) -> None:
         self._rules.append(rule)
 
-    def get_rules(self) -> List[QualityRule]:
+    def get_rules(self) -> list[QualityRule]:
         return list(self._rules)
 
     def enable_rule(self, rule_id: str) -> bool:
@@ -41,13 +42,13 @@ class QualityManager:
             "timestamp": datetime.utcnow().isoformat(),
         })
 
-    def get_reports(self) -> List[QualityReport]:
+    def get_reports(self) -> list[QualityReport]:
         return list(self._reports)
 
-    def get_history(self) -> List[Dict[str, Any]]:
+    def get_history(self) -> list[dict[str, Any]]:
         return list(self._history)
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         return {
             "rules": len(self._rules),
             "reports": len(self._reports),

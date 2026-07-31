@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, List
+from collections.abc import Callable
+from typing import Any
 
 
 class ModelUpdater:
@@ -8,7 +9,7 @@ class ModelUpdater:
 
     def __init__(self):
         self._version: int = 0
-        self._update_log: List[Dict[str, Any]] = []
+        self._update_log: list[dict[str, Any]] = []
 
     @property
     def version(self) -> int:
@@ -18,9 +19,9 @@ class ModelUpdater:
     def update_count(self) -> int:
         return len(self._update_log)
 
-    def update(self, data: List[Dict[str, Any]], strategy: str = "replace") -> int:
+    def update(self, data: list[dict[str, Any]], strategy: str = "replace") -> int:
         self._version += 1
-        entry: Dict[str, Any] = {
+        entry: dict[str, Any] = {
             "version": self._version,
             "strategy": strategy,
             "sample_count": len(data),

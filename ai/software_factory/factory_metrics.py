@@ -1,8 +1,7 @@
 """Factory Metrics - Performance metrics for factory operations."""
-from typing import Dict, Any, Optional, List
+import statistics
 from dataclasses import dataclass, field
 from datetime import datetime
-import statistics
 
 
 @dataclass
@@ -12,7 +11,7 @@ class MetricPoint:
     unit: str = ""
     project_id: str = ""
     timestamp: datetime = field(default_factory=datetime.now)
-    tags: Dict[str, str] = field(default_factory=dict)
+    tags: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -27,11 +26,11 @@ class MetricSummary:
 
 class FactoryMetrics:
     def __init__(self):
-        self.metrics: Dict[str, List[MetricPoint]] = {}
-        self.counters: Dict[str, int] = {}
-        self.gauges: Dict[str, float] = {}
+        self.metrics: dict[str, list[MetricPoint]] = {}
+        self.counters: dict[str, int] = {}
+        self.gauges: dict[str, float] = {}
 
-    def record(self, name: str, value: float, unit: str = "", project_id: str = "", tags: Dict[str, str] = None) -> MetricPoint:
+    def record(self, name: str, value: float, unit: str = "", project_id: str = "", tags: dict[str, str] = None) -> MetricPoint:
         point = MetricPoint(name=name, value=value, unit=unit, project_id=project_id, tags=tags or {})
         self.metrics.setdefault(name, []).append(point)
         return point
@@ -56,10 +55,10 @@ class FactoryMetrics:
         values = [p.value for p in points]
         return MetricSummary(name=name, count=len(values), min_val=min(values), max_val=max(values), avg_val=statistics.mean(values), latest=values[-1])
 
-    def get_points(self, name: str, limit: int = 100) -> List[MetricPoint]:
+    def get_points(self, name: str, limit: int = 100) -> list[MetricPoint]:
         return self.metrics.get(name, [])[-limit:]
 
-    def list_metrics(self) -> List[str]:
+    def list_metrics(self) -> list[str]:
         return list(self.metrics.keys())
 
     def count(self) -> int:

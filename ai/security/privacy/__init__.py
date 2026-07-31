@@ -1,9 +1,9 @@
 """Privacy subsystem."""
-from .privacy_engine import PrivacyEngine, DataCategory, ConsentRecord
-from .anonymizer import DataAnonymizer, AnonymizationMethod
+from .anonymizer import AnonymizationMethod, DataAnonymizer
 from .consent_manager import ConsentManager, ConsentType
 from .data_retention import DataRetention, RetentionRule
-from .data_subject_rights import DataSubjectRightsManager, DataSubjectRequest, RightType
+from .data_subject_rights import DataSubjectRequest, DataSubjectRightsManager, RightType
+from .privacy_engine import ConsentRecord, DataCategory, PrivacyEngine
 
 __all__ = [
     "PrivacyEngine", "DataCategory", "ConsentRecord",

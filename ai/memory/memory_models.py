@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .memory_types import (
     MemoryCategory,
@@ -123,7 +123,7 @@ class MemoryEntry:
         self._updated_at = time.time()
         self._access_count += 1
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "key": self._key,
             "data": self._data,
@@ -140,7 +140,7 @@ class MemoryEntry:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> MemoryEntry:
+    def from_dict(cls, data: dict[str, Any]) -> MemoryEntry:
         return cls(
             key=data["key"],
             data=data.get("data", {}),
@@ -211,7 +211,7 @@ class MemoryQuery:
     def include_expired(self) -> bool:
         return self._include_expired
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "query": self._query,
             "scope": self._scope.name if self._scope else None,
@@ -233,8 +233,8 @@ class MemorySummary:
         total_size_bytes: int = 0,
         active_entries: int = 0,
         expired_entries: int = 0,
-        by_scope: Dict[str, int] | None = None,
-        by_category: Dict[str, int] | None = None,
+        by_scope: dict[str, int] | None = None,
+        by_category: dict[str, int] | None = None,
     ):
         self._total_entries = total_entries
         self._total_size_bytes = total_size_bytes
@@ -260,14 +260,14 @@ class MemorySummary:
         return self._expired_entries
 
     @property
-    def by_scope(self) -> Dict[str, int]:
+    def by_scope(self) -> dict[str, int]:
         return dict(self._by_scope)
 
     @property
-    def by_category(self) -> Dict[str, int]:
+    def by_category(self) -> dict[str, int]:
         return dict(self._by_category)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "total_entries": self._total_entries,
             "total_size_bytes": self._total_size_bytes,

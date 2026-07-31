@@ -1,17 +1,19 @@
 """Contract compliance."""
 from __future__ import annotations
-from typing import Any, Dict, List
+
+from typing import Any
+
 
 class ComplianceManager:
     def __init__(self) -> None:
-        self._compliance: Dict[str, Dict[str, Any]] = {}
-    def set_compliance(self, contract_id: str, framework: str, status: str = "compliant") -> Dict[str, Any]:
+        self._compliance: dict[str, dict[str, Any]] = {}
+    def set_compliance(self, contract_id: str, framework: str, status: str = "compliant") -> dict[str, Any]:
         entry = {"framework": framework, "status": status, "checks": []}
         self._compliance[contract_id] = entry
         return entry
-    def get_compliance(self, contract_id: str) -> Dict[str, Any]:
+    def get_compliance(self, contract_id: str) -> dict[str, Any]:
         return self._compliance.get(contract_id, {})
-    def add_check(self, contract_id: str, check_name: str, passed: bool) -> Dict[str, Any]:
+    def add_check(self, contract_id: str, check_name: str, passed: bool) -> dict[str, Any]:
         compliance = self._compliance.get(contract_id)
         if compliance:
             check = {"name": check_name, "passed": passed}
@@ -22,9 +24,9 @@ class ComplianceManager:
         return {}
     def is_compliant(self, contract_id: str) -> bool:
         return self._compliance.get(contract_id, {}).get("status") == "compliant"
-    def get_checks(self, contract_id: str) -> List[Dict[str, Any]]:
+    def get_checks(self, contract_id: str) -> list[dict[str, Any]]:
         return self._compliance.get(contract_id, {}).get("checks", [])
-    def list_all(self) -> Dict[str, Dict[str, Any]]:
+    def list_all(self) -> dict[str, dict[str, Any]]:
         return dict(self._compliance)
     def delete(self, contract_id: str) -> bool:
         if contract_id in self._compliance:

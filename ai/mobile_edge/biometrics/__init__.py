@@ -1,8 +1,8 @@
 """Biometrics subsystem for Mobile & Edge AI Engine."""
-from .biometric_engine import BiometricEngine, BiometricType, AuthResult, BiometricEnrollment, AuthAttempt
-from .fingerprint import FingerprintManager, FingerprintTemplate
+from .biometric_engine import AuthAttempt, AuthResult, BiometricEngine, BiometricEnrollment, BiometricType
 from .face import FaceRecognitionManager, FaceTemplate
-from .voice import VoiceRecognitionManager, Voiceprint
+from .fingerprint import FingerprintManager, FingerprintTemplate
+from .voice import Voiceprint, VoiceRecognitionManager
 
 __all__ = [
     'BiometricEngine', 'BiometricType', 'AuthResult', 'BiometricEnrollment', 'AuthAttempt',

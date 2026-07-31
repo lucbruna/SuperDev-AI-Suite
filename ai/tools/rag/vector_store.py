@@ -43,7 +43,7 @@ class RagVectorStore(BaseTool):
                     self._stores[store_name].append(v)
                 return {"success": True, "inserted": len(vectors), "store": store_name}
             elif action == "search":
-                query_vector = params.get("vector", [0.1] * 128)
+                params.get("vector", [0.1] * 128)
                 top_k = params.get("top_k", 10)
                 store = self._stores.get(store_name, [])
                 results = store[:top_k]

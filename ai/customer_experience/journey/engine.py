@@ -1,17 +1,21 @@
 """Journey engine."""
 import uuid
 from datetime import datetime
-from typing import Dict, List, Optional
+
 from .models import (
-    Touchpoint, LifecycleStage, CustomerJourney, JourneyOptimization,
-    JourneyStage, TouchpointType,
+    CustomerJourney,
+    JourneyOptimization,
+    JourneyStage,
+    LifecycleStage,
+    Touchpoint,
+    TouchpointType,
 )
 
 
 class JourneyEngine:
     def __init__(self):
-        self._journeys: Dict[str, CustomerJourney] = {}
-        self._customer_journeys: Dict[str, str] = {}
+        self._journeys: dict[str, CustomerJourney] = {}
+        self._customer_journeys: dict[str, str] = {}
 
     def start_journey(self, customer_id: str) -> CustomerJourney:
         journey_id = str(uuid.uuid4())[:8]
@@ -25,13 +29,13 @@ class JourneyEngine:
         self._customer_journeys[customer_id] = journey_id
         return journey
 
-    def get_journey(self, customer_id: str) -> Optional[CustomerJourney]:
+    def get_journey(self, customer_id: str) -> CustomerJourney | None:
         jid = self._customer_journeys.get(customer_id)
         if jid:
             return self._journeys.get(jid)
         return None
 
-    def get_journey_by_id(self, journey_id: str) -> Optional[CustomerJourney]:
+    def get_journey_by_id(self, journey_id: str) -> CustomerJourney | None:
         return self._journeys.get(journey_id)
 
     def advance_stage(self, customer_id: str, new_stage: JourneyStage) -> bool:
@@ -57,7 +61,7 @@ class JourneyEngine:
         journey.last_activity = datetime.now()
         return True
 
-    def get_touchpoints(self, customer_id: str, touchpoint_type: Optional[TouchpointType] = None) -> List[Touchpoint]:
+    def get_touchpoints(self, customer_id: str, touchpoint_type: TouchpointType | None = None) -> list[Touchpoint]:
         journey = self.get_journey(customer_id)
         if not journey:
             return []
@@ -77,7 +81,7 @@ class JourneyEngine:
         journey.conversion_score = score
         return score
 
-    def get_journeys(self) -> List[CustomerJourney]:
+    def get_journeys(self) -> list[CustomerJourney]:
         return list(self._journeys.values())
 
     def get_stats(self) -> dict:
@@ -88,7 +92,7 @@ class JourneyEngine:
             "avg_conversion_score": avg_score,
         }
 
-    def optimize(self, customer_id: str) -> List[JourneyOptimization]:
+    def optimize(self, customer_id: str) -> list[JourneyOptimization]:
         journey = self.get_journey(customer_id)
         if not journey:
             return []

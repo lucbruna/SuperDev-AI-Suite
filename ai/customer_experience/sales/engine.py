@@ -1,21 +1,20 @@
 """Sales engine."""
 import uuid
-from datetime import datetime
-from typing import Dict, List, Optional
-from .models import SalesLead, SalesPrediction, SalesActivity, LeadSource, SalesStage
+
+from .models import LeadSource, SalesActivity, SalesLead, SalesPrediction, SalesStage
 
 
 class SalesEngine:
     def __init__(self):
-        self._leads: Dict[str, SalesLead] = {}
-        self._predictions: Dict[str, SalesPrediction] = {}
-        self._activities: Dict[str, List[SalesActivity]] = {}
+        self._leads: dict[str, SalesLead] = {}
+        self._predictions: dict[str, SalesPrediction] = {}
+        self._activities: dict[str, list[SalesActivity]] = {}
 
     def add_lead(self, lead: SalesLead) -> SalesLead:
         self._leads[lead.lead_id] = lead
         return lead
 
-    def get_lead(self, lead_id: str) -> Optional[SalesLead]:
+    def get_lead(self, lead_id: str) -> SalesLead | None:
         return self._leads.get(lead_id)
 
     def score_lead(self, lead_id: str) -> float:
@@ -58,7 +57,7 @@ class SalesEngine:
         self._predictions[lead_id] = pred
         return pred
 
-    def get_leads(self, stage: Optional[SalesStage] = None, min_score: Optional[float] = None) -> List[SalesLead]:
+    def get_leads(self, stage: SalesStage | None = None, min_score: float | None = None) -> list[SalesLead]:
         leads = list(self._leads.values())
         if stage:
             leads = [l for l in leads if l.stage == stage]
@@ -70,13 +69,13 @@ class SalesEngine:
         self._activities.setdefault(activity.lead_id, []).append(activity)
         return activity
 
-    def get_activities(self, lead_id: str) -> List[SalesActivity]:
+    def get_activities(self, lead_id: str) -> list[SalesActivity]:
         return self._activities.get(lead_id, [])
 
-    def get_prediction(self, lead_id: str) -> Optional[SalesPrediction]:
+    def get_prediction(self, lead_id: str) -> SalesPrediction | None:
         return self._predictions.get(lead_id)
 
-    def get_pipeline_summary(self) -> Dict[str, Any]:
+    def get_pipeline_summary(self) -> dict[str, Any]:
         leads = list(self._leads.values())
         total_value = sum(l.value for l in leads)
         qualified = [l for l in leads if l.is_qualified]

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Literal, TypedDict, TypeAlias
+from typing import Any, Literal, TypeAlias, TypedDict
 
 ProviderType: TypeAlias = Literal[
     "openai", "anthropic", "gemini", "ollama", "openrouter"

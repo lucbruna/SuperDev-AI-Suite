@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class TaskDecomposer:
@@ -12,9 +12,9 @@ class TaskDecomposer:
         self._decomposition_count: int = 0
 
     def decompose(self, goal: str,
-                  context: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+                  context: dict[str, Any] | None = None) -> list[dict[str, Any]]:
         self._decomposition_count += 1
-        tasks: List[Dict[str, Any]] = []
+        tasks: list[dict[str, Any]] = []
         keywords = goal.lower().split()
         task_templates = self._infer_tasks(keywords, context)
         for i, template in enumerate(task_templates):
@@ -33,9 +33,9 @@ class TaskDecomposer:
             tasks.append(task)
         return tasks
 
-    def _infer_tasks(self, keywords: List[str],
-                     context: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
-        templates: List[Dict[str, Any]] = []
+    def _infer_tasks(self, keywords: list[str],
+                     context: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+        templates: list[dict[str, Any]] = []
         templates.append({
             "title": "Analyze requirements",
             "description": "Understand and document all requirements",
@@ -85,8 +85,8 @@ class TaskDecomposer:
             })
         return templates
 
-    def flatten(self, tasks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        flat: List[Dict[str, Any]] = []
+    def flatten(self, tasks: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        flat: list[dict[str, Any]] = []
         for task in tasks:
             flat.append(task)
         return sorted(flat, key=lambda t: t.get("order", 0))
@@ -94,5 +94,5 @@ class TaskDecomposer:
     def count(self) -> int:
         return self._decomposition_count
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         return {"total_decompositions": self._decomposition_count}

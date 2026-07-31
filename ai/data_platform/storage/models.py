@@ -1,8 +1,8 @@
 """Storage models."""
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
 from enum import Enum
+from typing import Any
 
 
 class StorageType(Enum):
@@ -43,9 +43,9 @@ class StoredObject:
     content_type: str = ""
     size_bytes: int = 0
     checksum: str = ""
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     created_at: datetime = field(default_factory=datetime.now)
-    last_accessed: Optional[datetime] = None
+    last_accessed: datetime | None = None
 
 
 @dataclass
@@ -57,4 +57,4 @@ class DataPartition:
     record_count: int = 0
     size_bytes: int = 0
     created_at: datetime = field(default_factory=datetime.now)
-    expires_at: Optional[datetime] = None
+    expires_at: datetime | None = None

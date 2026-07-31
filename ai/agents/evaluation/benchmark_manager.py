@@ -1,14 +1,14 @@
 """Benchmark management for comparing agent performance."""
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 
 class BenchmarkManager:
     """Manages performance benchmarks and comparison."""
 
     def __init__(self) -> None:
-        self._benchmarks: Dict[str, Dict[str, Any]] = {}
+        self._benchmarks: dict[str, dict[str, Any]] = {}
         self._defaults = {
             "speed": 0.7,
             "accuracy": 0.8,
@@ -16,12 +16,12 @@ class BenchmarkManager:
             "efficiency": 0.7,
         }
 
-    def set_benchmark(self, name: str, values: Dict[str, float]) -> None:
+    def set_benchmark(self, name: str, values: dict[str, float]) -> None:
         self._benchmarks[name] = dict(values)
 
-    def compare(self, agent_id: str, metrics: Dict[str, Any]) -> Dict[str, Any]:
+    def compare(self, agent_id: str, metrics: dict[str, Any]) -> dict[str, Any]:
         benchmark = self._benchmarks.get("default", self._defaults)
-        comparison: Dict[str, Any] = {}
+        comparison: dict[str, Any] = {}
         meets_all = True
         for key, target in benchmark.items():
             actual = float(metrics.get(key, 0.0))
@@ -36,5 +36,5 @@ class BenchmarkManager:
             "details": comparison,
         }
 
-    def get_benchmarks(self) -> Dict[str, Dict[str, float]]:
+    def get_benchmarks(self) -> dict[str, dict[str, float]]:
         return dict(self._benchmarks)

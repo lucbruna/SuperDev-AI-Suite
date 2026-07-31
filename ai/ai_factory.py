@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from .ai_config import AIConfig, get_ai_config
 from .ai_types import ProviderType

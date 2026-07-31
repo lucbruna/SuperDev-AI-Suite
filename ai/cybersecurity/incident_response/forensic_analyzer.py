@@ -1,11 +1,11 @@
 """
 Digital Forensics Analyzer
 """
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class EvidenceType(Enum):
@@ -24,8 +24,8 @@ class EvidenceItem:
     source: str
     hash_sha256: str = ""
     collected_at: datetime = field(default_factory=datetime.now)
-    chain_of_custody: List[Dict[str, str]] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    chain_of_custody: list[dict[str, str]] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -39,8 +39,8 @@ class TimelineEntry:
 
 class ForensicAnalyzer:
     def __init__(self):
-        self.evidence: Dict[str, EvidenceItem] = {}
-        self.timeline: List[TimelineEntry] = []
+        self.evidence: dict[str, EvidenceItem] = {}
+        self.timeline: list[TimelineEntry] = []
 
     def collect_evidence(self, evidence_type: EvidenceType, source: str, data: str = "", **kwargs) -> EvidenceItem:
         evidence_id = hashlib.sha256(f"{evidence_type.value}{source}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
@@ -62,7 +62,7 @@ class ForensicAnalyzer:
         self.timeline.sort(key=lambda e: e.timestamp)
         return entry
 
-    def get_timeline(self, start: datetime = None, end: datetime = None) -> List[TimelineEntry]:
+    def get_timeline(self, start: datetime = None, end: datetime = None) -> list[TimelineEntry]:
         results = self.timeline
         if start:
             results = [e for e in results if e.timestamp >= start]
@@ -73,10 +73,10 @@ class ForensicAnalyzer:
     def verify_evidence(self, evidence_id: str) -> bool:
         return evidence_id in self.evidence
 
-    def get_evidence(self, evidence_id: str) -> Optional[EvidenceItem]:
+    def get_evidence(self, evidence_id: str) -> EvidenceItem | None:
         return self.evidence.get(evidence_id)
 
-    def get_evidence_by_type(self, evidence_type: EvidenceType) -> List[EvidenceItem]:
+    def get_evidence_by_type(self, evidence_type: EvidenceType) -> list[EvidenceItem]:
         return [e for e in self.evidence.values() if e.evidence_type == evidence_type]
 
     def count(self) -> int:

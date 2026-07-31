@@ -1,11 +1,14 @@
 """DevOps context."""
 from __future__ import annotations
-from typing import Any, Dict
-import time, uuid
+
+import time
+import uuid
+from typing import Any
+
 
 class DevOpsContext:
     def __init__(self) -> None:
-        self._context: Dict[str, Any] = {}
+        self._context: dict[str, Any] = {}
         self._session_id = str(uuid.uuid4())[:8]
         self._started_at = time.time()
     def set(self, key: str, value: Any) -> None:
@@ -17,7 +20,7 @@ class DevOpsContext:
             del self._context[key]
             return True
         return False
-    def get_all(self) -> Dict[str, Any]:
+    def get_all(self) -> dict[str, Any]:
         return {**self._context, "session_id": self._session_id, "started_at": self._started_at}
     def clear(self) -> None:
         self._context.clear()

@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class ActiveTask:
     """A task currently tracked in short-term memory."""
 
-    def __init__(self, task_id: str, name: str, status: str = "pending", metadata: Dict[str, Any] | None = None):
+    def __init__(self, task_id: str, name: str, status: str = "pending", metadata: dict[str, Any] | None = None):
         self._task_id = task_id
         self._name = name
         self._status = status
@@ -31,7 +31,7 @@ class ActiveTask:
         self._status = value
 
     @property
-    def metadata(self) -> Dict[str, Any]:
+    def metadata(self) -> dict[str, Any]:
         return dict(self._metadata)
 
     @property
@@ -42,7 +42,7 @@ class ActiveTask:
     def age(self) -> float:
         return time.time() - self._created_at
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "task_id": self._task_id,
             "name": self._name,
@@ -56,13 +56,13 @@ class ActiveTasks:
     """Registry of currently active tasks."""
 
     def __init__(self):
-        self._tasks: Dict[str, ActiveTask] = {}
+        self._tasks: dict[str, ActiveTask] = {}
 
     @property
     def count(self) -> int:
         return len(self._tasks)
 
-    def register(self, task_id: str, name: str, metadata: Dict[str, Any] | None = None) -> ActiveTask:
+    def register(self, task_id: str, name: str, metadata: dict[str, Any] | None = None) -> ActiveTask:
         task = ActiveTask(task_id, name, metadata=metadata)
         self._tasks[task_id] = task
         return task
@@ -86,14 +86,14 @@ class ActiveTasks:
     def remove(self, task_id: str) -> bool:
         return self._tasks.pop(task_id, None) is not None
 
-    def list_active(self) -> List[ActiveTask]:
+    def list_active(self) -> list[ActiveTask]:
         return [t for t in self._tasks.values() if t.status in ("pending", "running")]
 
-    def list_by_status(self, status: str) -> List[ActiveTask]:
+    def list_by_status(self, status: str) -> list[ActiveTask]:
         return [t for t in self._tasks.values() if t.status == status]
 
     def clear(self) -> None:
         self._tasks.clear()
 
-    def to_dict_list(self) -> List[Dict[str, Any]]:
+    def to_dict_list(self) -> list[dict[str, Any]]:
         return [t.to_dict() for t in self._tasks.values()]

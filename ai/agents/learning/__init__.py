@@ -1,12 +1,12 @@
 """Learning subsystem for adaptive improvement and knowledge transfer."""
 from __future__ import annotations
 
-from .learning_engine import LearningEngine
-from .transfer import TransferLearning
 from .adaptation import AdaptationEngine
-from .knowledge_sharing import KnowledgeSharing
 from .experience_replay import ExperienceReplay
+from .knowledge_sharing import KnowledgeSharing
+from .learning_engine import LearningEngine
 from .meta_learning import MetaLearner
+from .transfer import TransferLearning
 
 __all__ = [
     "LearningEngine",

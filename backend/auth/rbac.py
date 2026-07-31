@@ -7,20 +7,21 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from datetime import UTC, datetime
-from enum import Enum
+from enum import StrEnum
+
+from fastapi import Depends, HTTPException, Request, status
+from sqlalchemy import and_, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.auth.deps import get_current_user
 from backend.database.models.role import Permission, Role, UserRole, role_permissions
 from backend.database.models.user import User
-from fastapi import Depends, HTTPException, Request, status
-from sqlalchemy import and_, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 # ---------------------------------------------------------------------------
 # System constants
 # ---------------------------------------------------------------------------
 
-class RoleName(str, Enum):
+class RoleName(StrEnum):
     SUPER_ADMIN = "super_admin"
     ADMIN = "admin"
     MANAGER = "manager"
@@ -29,7 +30,7 @@ class RoleName(str, Enum):
     GUEST = "guest"
 
 
-class Resource(str, Enum):
+class Resource(StrEnum):
     USERS = "users"
     PROJECTS = "projects"
     WORKFLOWS = "workflows"
@@ -43,7 +44,7 @@ class Resource(str, Enum):
     SETTINGS = "settings"
 
 
-class Action(str, Enum):
+class Action(StrEnum):
     CREATE = "create"
     READ = "read"
     UPDATE = "update"

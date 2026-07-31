@@ -1,9 +1,10 @@
 """
 Transformation - Data transformations
 """
-from typing import Dict, Any, Optional, List, Callable
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any
 
 
 class TransformType(Enum):
@@ -22,15 +23,15 @@ class TransformType(Enum):
 class TransformDef:
     name: str
     transform_type: TransformType
-    params: Dict[str, Any] = field(default_factory=dict)
+    params: dict[str, Any] = field(default_factory=dict)
 
 
 class TransformationEngine:
     def __init__(self):
-        self.transforms: Dict[str, TransformDef] = {}
-        self.functions: Dict[str, Callable] = {}
+        self.transforms: dict[str, TransformDef] = {}
+        self.functions: dict[str, Callable] = {}
 
-    def register_transform(self, name: str, transform_type: TransformType, params: Dict[str, Any] = None) -> TransformDef:
+    def register_transform(self, name: str, transform_type: TransformType, params: dict[str, Any] = None) -> TransformDef:
         t = TransformDef(name=name, transform_type=transform_type, params=params or {})
         self.transforms[name] = t
         return t
@@ -55,10 +56,10 @@ class TransformationEngine:
             return "".join(str(value) if p == "$value" else p for p in parts)
         return value
 
-    def get_transform(self, name: str) -> Optional[TransformDef]:
+    def get_transform(self, name: str) -> TransformDef | None:
         return self.transforms.get(name)
 
-    def list_transforms(self) -> List[TransformDef]:
+    def list_transforms(self) -> list[TransformDef]:
         return list(self.transforms.values())
 
     def count(self) -> int:

@@ -1,8 +1,8 @@
 """Knowledge graph subsystem engine — Entity-relationship knowledge graph."""
 import uuid
-from datetime import datetime
-from typing import Dict, Any, List, Optional, Set
 from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Any
 
 
 @dataclass
@@ -10,7 +10,7 @@ class Entity:
     entity_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     name: str = ""
     entity_type: str = "concept"
-    properties: Dict[str, Any] = field(default_factory=dict)
+    properties: dict[str, Any] = field(default_factory=dict)
     created_at: datetime = field(default_factory=datetime.now)
 
 
@@ -21,26 +21,26 @@ class Relationship:
     target_id: str = ""
     relationship_type: str = "related_to"
     weight: float = 1.0
-    properties: Dict[str, Any] = field(default_factory=dict)
+    properties: dict[str, Any] = field(default_factory=dict)
     created_at: datetime = field(default_factory=datetime.now)
 
 
 @dataclass
 class GraphPath:
     path_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
-    nodes: List[str] = field(default_factory=list)
-    edges: List[str] = field(default_factory=list)
+    nodes: list[str] = field(default_factory=list)
+    edges: list[str] = field(default_factory=list)
     length: int = 0
 
 
 class GraphSubEngine:
     def __init__(self):
-        self._entities: Dict[str, Entity] = {}
-        self._relationships: Dict[str, Relationship] = {}
-        self._adjacency: Dict[str, List[str]] = {}
-        self._reverse_adjacency: Dict[str, List[str]] = {}
+        self._entities: dict[str, Entity] = {}
+        self._relationships: dict[str, Relationship] = {}
+        self._adjacency: dict[str, list[str]] = {}
+        self._reverse_adjacency: dict[str, list[str]] = {}
 
-    def add_entity(self, name: str, entity_type: str = "concept", properties: Optional[Dict[str, Any]] = None) -> Entity:
+    def add_entity(self, name: str, entity_type: str = "concept", properties: dict[str, Any] | None = None) -> Entity:
         entity = Entity(name=name, entity_type=entity_type, properties=properties or {})
         self._entities[entity.entity_id] = entity
         if entity.entity_id not in self._adjacency:
@@ -49,16 +49,16 @@ class GraphSubEngine:
             self._reverse_adjacency[entity.entity_id] = []
         return entity
 
-    def get_entity(self, entity_id: str) -> Optional[Entity]:
+    def get_entity(self, entity_id: str) -> Entity | None:
         return self._entities.get(entity_id)
 
-    def find_entity_by_name(self, name: str) -> Optional[Entity]:
+    def find_entity_by_name(self, name: str) -> Entity | None:
         for e in self._entities.values():
             if e.name == name:
                 return e
         return None
 
-    def add_relationship(self, source_id: str, target_id: str, relationship_type: str = "related_to", weight: float = 1.0) -> Optional[Relationship]:
+    def add_relationship(self, source_id: str, target_id: str, relationship_type: str = "related_to", weight: float = 1.0) -> Relationship | None:
         if source_id not in self._entities or target_id not in self._entities:
             return None
         rel = Relationship(source_id=source_id, target_id=target_id, relationship_type=relationship_type, weight=weight)
@@ -67,10 +67,10 @@ class GraphSubEngine:
         self._reverse_adjacency.setdefault(target_id, []).append(rel.relationship_id)
         return rel
 
-    def get_relationship(self, relationship_id: str) -> Optional[Relationship]:
+    def get_relationship(self, relationship_id: str) -> Relationship | None:
         return self._relationships.get(relationship_id)
 
-    def get_neighbors(self, entity_id: str) -> List[Entity]:
+    def get_neighbors(self, entity_id: str) -> list[Entity]:
         neighbors = []
         for rel_id in self._adjacency.get(entity_id, []):
             rel = self._relationships.get(rel_id)
@@ -80,7 +80,7 @@ class GraphSubEngine:
                     neighbors.append(neighbor)
         return neighbors
 
-    def get_reverse_neighbors(self, entity_id: str) -> List[Entity]:
+    def get_reverse_neighbors(self, entity_id: str) -> list[Entity]:
         neighbors = []
         for rel_id in self._reverse_adjacency.get(entity_id, []):
             rel = self._relationships.get(rel_id)
@@ -90,10 +90,10 @@ class GraphSubEngine:
                     neighbors.append(neighbor)
         return neighbors
 
-    def find_path(self, source_id: str, target_id: str, max_depth: int = 5) -> Optional[GraphPath]:
+    def find_path(self, source_id: str, target_id: str, max_depth: int = 5) -> GraphPath | None:
         if source_id not in self._entities or target_id not in self._entities:
             return None
-        visited: Set[str] = set()
+        visited: set[str] = set()
         queue = [(source_id, [source_id], [])]
         visited.add(source_id)
         while queue:
@@ -109,7 +109,7 @@ class GraphSubEngine:
                     queue.append((rel.target_id, path_nodes + [rel.target_id], path_edges + [rel_id]))
         return None
 
-    def get_entity_relationships(self, entity_id: str) -> List[Relationship]:
+    def get_entity_relationships(self, entity_id: str) -> list[Relationship]:
         rels = []
         for rel_id in self._adjacency.get(entity_id, []):
             rel = self._relationships.get(rel_id)
@@ -133,8 +133,8 @@ class GraphSubEngine:
         del self._entities[entity_id]
         return True
 
-    def get_subgraph(self, entity_id: str, depth: int = 2) -> Dict[str, Any]:
-        visited: Set[str] = set()
+    def get_subgraph(self, entity_id: str, depth: int = 2) -> dict[str, Any]:
+        visited: set[str] = set()
         entities = []
         relationships = []
         queue = [(entity_id, 0)]

@@ -1,9 +1,11 @@
 """BI Events — Event-driven messaging for BI operations."""
-from typing import Dict, Any, Optional, List, Callable
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
+import contextlib
 import hashlib
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class BIEventType(Enum):
@@ -22,30 +24,28 @@ class BIEvent:
     event_id: str
     event_type: BIEventType
     source: str
-    data: Dict[str, Any] = field(default_factory=dict)
+    data: dict[str, Any] = field(default_factory=dict)
     timestamp: datetime = field(default_factory=datetime.now)
 
 
 class BIEventBus:
     def __init__(self):
-        self.events: List[BIEvent] = []
-        self.subscribers: Dict[BIEventType, List[Callable]] = {}
+        self.events: list[BIEvent] = []
+        self.subscribers: dict[BIEventType, list[Callable]] = {}
 
-    def publish(self, event_type: BIEventType, source: str, data: Dict[str, Any] = None) -> BIEvent:
+    def publish(self, event_type: BIEventType, source: str, data: dict[str, Any] = None) -> BIEvent:
         event_id = hashlib.sha256(f"{event_type.value}{source}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
         event = BIEvent(event_id=event_id, event_type=event_type, source=source, data=data or {})
         self.events.append(event)
         for handler in self.subscribers.get(event_type, []):
-            try:
+            with contextlib.suppress(Exception):
                 handler(event)
-            except Exception:
-                pass
         return event
 
     def subscribe(self, event_type: BIEventType, handler: Callable) -> None:
         self.subscribers.setdefault(event_type, []).append(handler)
 
-    def get_events(self, event_type: BIEventType = None, source: str = None, limit: int = 100) -> List[BIEvent]:
+    def get_events(self, event_type: BIEventType = None, source: str = None, limit: int = 100) -> list[BIEvent]:
         events = self.events
         if event_type:
             events = [e for e in events if e.event_type == event_type]

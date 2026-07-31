@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 from .archive_manager import ArchiveManager
 from .cleanup_scheduler import CleanupScheduler
@@ -52,7 +52,7 @@ class ForgettingEngine:
     def retention(self) -> RetentionPolicy:
         return self._retention
 
-    def run_forgetting_cycle(self, entries: Dict[str, Any]) -> Dict[str, Any]:
+    def run_forgetting_cycle(self, entries: dict[str, Any]) -> dict[str, Any]:
         expired = self._expiration.find_expired(entries)
         decayed = self._decay.apply_decay(entries)
         redundant = self._redundancy.find_redundant(entries)
@@ -69,7 +69,7 @@ class ForgettingEngine:
             "cycle": self._forgetting_count,
         }
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         return {
             "forgetting_cycles": self._forgetting_count,
             "archived_entries": self._archive.archived_count,

@@ -6,8 +6,9 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from backend.settings import LoggingSettings
 from pydantic import BaseModel, Field
+
+from backend.settings import LoggingSettings
 
 
 class LogConfig(BaseModel):

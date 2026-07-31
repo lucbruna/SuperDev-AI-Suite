@@ -209,7 +209,6 @@ class GoogleProvider(BaseLLMProvider):
             stream = await loop.run_in_executor(None, fn)
 
             # Iterate the sync stream in executor
-            import concurrent.futures
             for chunk in stream:
                 text = chunk.text if hasattr(chunk, "text") else ""
                 yield {
@@ -247,7 +246,7 @@ class GoogleProvider(BaseLLMProvider):
         import time as time_module
         start = time_module.monotonic()
         try:
-            model = self._get_model()
+            self._get_model()
             # Simple test - list models via SDK
             import functools
             fn = functools.partial(self._genai.list_models)
@@ -302,7 +301,6 @@ class GoogleProvider(BaseLLMProvider):
         if not tools:
             return None
 
-        import google.generativeai as genai
         from google.generativeai.types import FunctionDeclaration, Tool
 
         declarations = []

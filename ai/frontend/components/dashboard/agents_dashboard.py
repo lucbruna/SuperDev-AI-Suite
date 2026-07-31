@@ -1,9 +1,9 @@
 """
 Agents Dashboard
 """
-from typing import Optional, List, Dict, Any
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
+from typing import Any
 
 
 class AgentDashboardStatus(Enum):
@@ -26,21 +26,21 @@ class AgentDashboardInfo:
 
 class AgentsDashboard:
     def __init__(self):
-        self.agents: List[AgentDashboardInfo] = []
-        
+        self.agents: list[AgentDashboardInfo] = []
+
     def add_agent(self, agent: AgentDashboardInfo) -> None:
         self.agents.append(agent)
-        
+
     def get_active_count(self) -> int:
         return sum(1 for a in self.agents if a.status == AgentDashboardStatus.ACTIVE)
-        
-    def get_stats(self) -> Dict[str, int]:
+
+    def get_stats(self) -> dict[str, int]:
         stats = {}
         for status in AgentDashboardStatus:
             stats[status.value] = sum(1 for a in self.agents if a.status == status)
         return stats
-        
-    def render(self) -> Dict[str, Any]:
+
+    def render(self) -> dict[str, Any]:
         return {
             "agents": [{"id": a.id, "name": a.name, "status": a.status.value} for a in self.agents],
             "activeCount": self.get_active_count(),

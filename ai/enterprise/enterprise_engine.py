@@ -1,11 +1,14 @@
 """Central enterprise engine."""
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
+
+from typing import Any
+
 from .enterprise_config import EnterpriseConfig
 from .enterprise_manager import EnterpriseManager
 
+
 class EnterpriseEngine:
-    def __init__(self, config: Optional[EnterpriseConfig] = None) -> None:
+    def __init__(self, config: EnterpriseConfig | None = None) -> None:
         self._config = config or EnterpriseConfig()
         self._manager = EnterpriseManager(self._config)
         self._started = False
@@ -19,7 +22,7 @@ class EnterpriseEngine:
             self._started = False
     def is_running(self) -> bool:
         return self._started
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         return {**self._manager.get_status(), "started": self._started, "config_enabled": self._config.enabled}
     def get_manager(self) -> EnterpriseManager:
         return self._manager

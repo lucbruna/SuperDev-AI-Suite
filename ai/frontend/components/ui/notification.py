@@ -1,10 +1,10 @@
 """
 Notification UI Component
 """
-from typing import Optional, Callable
+from collections.abc import Callable
 from dataclasses import dataclass
-from enum import Enum
 from datetime import datetime
+from enum import Enum
 
 
 class NotificationType(Enum):
@@ -29,30 +29,30 @@ class NotificationProps:
     duration: int = 5000
     position: NotificationPosition = NotificationPosition.TOP_RIGHT
     dismissible: bool = True
-    onClose: Optional[Callable] = None
+    onClose: Callable | None = None
 
 
 class Notification:
-    def __init__(self, props: Optional[NotificationProps] = None):
+    def __init__(self, props: NotificationProps | None = None):
         self.props = props or NotificationProps()
         self._visible = True
         self._createdAt = datetime.now()
-        
+
     @property
     def age(self):
         return (datetime.now() - self._createdAt).total_seconds()
-        
+
     @property
     def progress(self):
         if self.props.duration <= 0:
             return 100
         return min(100, (self.age / self.props.duration) * 100)
-        
+
     def dismiss(self):
         self._visible = False
         if self.props.onClose:
             self.props.onClose()
-            
+
     def get_icon(self):
         icons = {
             NotificationType.INFO: "info",

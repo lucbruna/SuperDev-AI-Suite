@@ -1,16 +1,17 @@
 """Renderer for generating architecture documentation and diagrams."""
-from typing import List, Dict, Any, Optional
-from .models import ArchitectureComponent, Connector, ArchitectureView
+from typing import Any
+
+from .models import ArchitectureComponent, ArchitectureView, Connector
 
 
 class ArchitectureRenderer:
     """Generates documentation and diagram representations of architectures."""
 
     def __init__(self):
-        self._formats: List[str] = ["text", "mermaid", "plantuml", "json"]
+        self._formats: list[str] = ["text", "mermaid", "plantuml", "json"]
 
-    def render_text(self, components: List[ArchitectureComponent],
-                    connectors: List[Connector]) -> str:
+    def render_text(self, components: list[ArchitectureComponent],
+                    connectors: list[Connector]) -> str:
         lines = ["=== Architecture Overview ===\n"]
         lines.append("Components:")
         for c in components:
@@ -20,8 +21,8 @@ class ArchitectureRenderer:
             lines.append(f"  - {conn.source_id} -> {conn.target_id} ({conn.connector_type.value})")
         return "\n".join(lines)
 
-    def render_mermaid(self, components: List[ArchitectureComponent],
-                       connectors: List[Connector]) -> str:
+    def render_mermaid(self, components: list[ArchitectureComponent],
+                       connectors: list[Connector]) -> str:
         lines = ["graph TD"]
         id_map = {c.component_id: c.name.replace(" ", "_") for c in components}
         for c in components:
@@ -32,8 +33,8 @@ class ArchitectureRenderer:
             lines.append(f"    {src} -->|{conn.connector_type.value}| {tgt}")
         return "\n".join(lines)
 
-    def render_json(self, components: List[ArchitectureComponent],
-                    connectors: List[Connector]) -> Dict[str, Any]:
+    def render_json(self, components: list[ArchitectureComponent],
+                    connectors: list[Connector]) -> dict[str, Any]:
         return {
             "components": [
                 {"id": c.component_id, "name": c.name, "type": c.component_type.value}
@@ -46,12 +47,12 @@ class ArchitectureRenderer:
         }
 
     def render_view(self, view: ArchitectureView,
-                    components: List[ArchitectureComponent],
-                    connectors: List[Connector]) -> str:
+                    components: list[ArchitectureComponent],
+                    connectors: list[Connector]) -> str:
         filtered_c = [c for c in components if c.component_id in view.components]
         filtered_conn = [c for c in connectors if c.connector_id in view.connectors]
         header = f"View: {view.name}\nPerspective: {view.perspective}\n"
         return header + self.render_text(filtered_c, filtered_conn)
 
-    def get_supported_formats(self) -> List[str]:
+    def get_supported_formats(self) -> list[str]:
         return list(self._formats)

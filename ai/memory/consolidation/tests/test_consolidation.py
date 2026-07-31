@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-from ..consolidation_engine import ConsolidationEngine
-from ..learning import Learning
-from ..reinforcement import Reinforcement
-from ..pattern_detector import PatternDetector
-from ..duplication_detector import DuplicationDetector
-from ..summarizer import Summarizer
 from ..abstraction import Abstraction
-from ..knowledge_merger import KnowledgeMerger
 from ..concept_merger import ConceptMerger
+from ..consolidation_engine import ConsolidationEngine
+from ..duplication_detector import DuplicationDetector
+from ..knowledge_merger import KnowledgeMerger
+from ..learning import Learning
+from ..pattern_detector import PatternDetector
+from ..reinforcement import Reinforcement
+from ..summarizer import Summarizer
 
 
 class TestConsolidationEngine:

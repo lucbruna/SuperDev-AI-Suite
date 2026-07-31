@@ -8,12 +8,13 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from typing import Any
 
-from backend.config import config
 from redis.asyncio import Redis
 from redis.asyncio.connection import ConnectionPool
 from redis.asyncio.retry import Retry
 from redis.backoff import ExponentialBackoff
 from redis.exceptions import ConnectionError, TimeoutError
+
+from backend.config import config
 
 logger = logging.getLogger(__name__)
 
@@ -151,7 +152,7 @@ class RedisClusterManager:
         from redis.asyncio.cluster import RedisCluster
 
         startup_nodes = [
-            {"host": n.host, "port": n.port} 
+            {"host": n.host, "port": n.port}
             for n in redis_config.cluster_nodes
         ]
 

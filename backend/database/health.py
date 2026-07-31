@@ -1,5 +1,6 @@
-from backend.database.session import async_session_factory
 from sqlalchemy import text
+
+from backend.database.session import async_session_factory
 
 
 async def check_database_health() -> bool:

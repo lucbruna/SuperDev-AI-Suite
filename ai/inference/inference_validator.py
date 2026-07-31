@@ -23,7 +23,4 @@ class InferenceValidator:
         return validated
 
     async def verify(self, result: dict[str, Any], expected: dict[str, Any]) -> bool:
-        for key, value in expected.items():
-            if result.get(key) != value:
-                return False
-        return True
+        return all(result.get(key) == value for key, value in expected.items())

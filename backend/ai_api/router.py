@@ -1,9 +1,9 @@
 """AI Module API Router — REST endpoints for all AI subsystem stats."""
 from __future__ import annotations
 
-import sys
-import os
 import logging
+import os
+import sys
 from typing import Any
 
 from fastapi import APIRouter, HTTPException

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 from typing import Any
 
 from backend.agents.base_agent import BaseAgent
@@ -162,7 +163,5 @@ BUILTIN_AGENTS = [
 ]
 
 for agent_data in BUILTIN_AGENTS:
-    try:
+    with contextlib.suppress(Exception):
         agent_manager.create_agent(**agent_data)
-    except Exception:
-        pass

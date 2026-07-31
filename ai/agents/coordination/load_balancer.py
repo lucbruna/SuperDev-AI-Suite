@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class LoadBalancer:
     """Balances workload across agents."""
 
     def __init__(self) -> None:
-        self._load: Dict[str, int] = {}
+        self._load: dict[str, int] = {}
 
     def register(self, agent_id: str) -> None:
         if agent_id not in self._load:
@@ -23,7 +23,7 @@ class LoadBalancer:
     def get_load(self, agent_id: str) -> int:
         return self._load.get(agent_id, 0)
 
-    def get_least_loaded(self) -> Optional[str]:
+    def get_least_loaded(self) -> str | None:
         if not self._load:
             return None
         return min(self._load, key=self._load.get)
@@ -31,5 +31,5 @@ class LoadBalancer:
     def clear(self) -> None:
         self._load.clear()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {"loads": dict(self._load)}

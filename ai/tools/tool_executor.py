@@ -4,7 +4,7 @@ import time
 import uuid
 from typing import Any
 
-from .tool_interfaces import ITool, IToolExecutor
+from .tool_interfaces import IToolExecutor
 from .tool_logger import ToolLogger
 from .tool_metrics import ToolMetrics
 from .tool_registry import ToolRegistry

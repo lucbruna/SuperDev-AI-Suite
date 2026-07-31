@@ -1,12 +1,12 @@
 """
 Integration Monitor - Core monitoring
 """
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
 import statistics
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class HealthStatus(Enum):
@@ -33,14 +33,14 @@ class IntegrationStatus:
     uptime_percent: float = 100.0
     avg_latency_ms: float = 0.0
     error_rate: float = 0.0
-    last_check: Optional[datetime] = None
+    last_check: datetime | None = None
 
 
 class IntegrationMonitor:
     def __init__(self):
-        self.health_checks: Dict[str, List[HealthCheck]] = {}
-        self.statuses: Dict[str, IntegrationStatus] = {}
-        self.alerts: List[Dict[str, Any]] = []
+        self.health_checks: dict[str, list[HealthCheck]] = {}
+        self.statuses: dict[str, IntegrationStatus] = {}
+        self.alerts: list[dict[str, Any]] = []
 
     def check_health(self, integration_id: str, status: HealthStatus = HealthStatus.HEALTHY, message: str = "", latency_ms: float = 0.0) -> HealthCheck:
         check_id = hashlib.sha256(f"{integration_id}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
@@ -52,16 +52,16 @@ class IntegrationMonitor:
         self.statuses[integration_id].is_online = status == HealthStatus.HEALTHY
         return check
 
-    def get_status(self, integration_id: str) -> Optional[IntegrationStatus]:
+    def get_status(self, integration_id: str) -> IntegrationStatus | None:
         return self.statuses.get(integration_id)
 
-    def get_health_history(self, integration_id: str, limit: int = 100) -> List[HealthCheck]:
+    def get_health_history(self, integration_id: str, limit: int = 100) -> list[HealthCheck]:
         return self.health_checks.get(integration_id, [])[-limit:]
 
     def alert(self, integration_id: str, message: str, severity: str = "warning") -> None:
         self.alerts.append({"integration_id": integration_id, "message": message, "severity": severity, "timestamp": datetime.now().isoformat()})
 
-    def get_alerts(self, integration_id: str = None) -> List[Dict[str, Any]]:
+    def get_alerts(self, integration_id: str = None) -> list[dict[str, Any]]:
         if integration_id:
             return [a for a in self.alerts if a["integration_id"] == integration_id]
         return self.alerts

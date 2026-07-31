@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict
+from typing import Any
 
 
 class Message:
     """A single message between agents."""
 
-    def __init__(self, sender: str, recipient: str, msg_type: str, payload: Dict[str, Any]) -> None:
+    def __init__(self, sender: str, recipient: str, msg_type: str, payload: dict[str, Any]) -> None:
         self._msg_id = f"{sender}_{recipient}_{time.time()}"
         self._sender = sender
         self._recipient = recipient
@@ -32,10 +32,10 @@ class Message:
         return self._msg_type
 
     @property
-    def payload(self) -> Dict[str, Any]:
+    def payload(self) -> dict[str, Any]:
         return dict(self._payload)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "msg_id": self._msg_id,
             "sender": self._sender,

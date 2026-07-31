@@ -1,12 +1,14 @@
 """Billing calculator."""
 from __future__ import annotations
-from typing import Any, Dict, List
+
+from typing import Any
+
 
 class BillingCalculator:
     def __init__(self, tax_rate: float = 0.0, discount: float = 0.0) -> None:
         self._tax_rate = tax_rate
         self._discount = discount
-    def calculate(self, items: List[Dict[str, Any]]) -> Dict[str, float]:
+    def calculate(self, items: list[dict[str, Any]]) -> dict[str, float]:
         subtotal = sum(item.get("amount", 0) * item.get("quantity", 1) for item in items)
         discount = subtotal * (self._discount / 100)
         taxable = subtotal - discount

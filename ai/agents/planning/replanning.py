@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import time
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class Replanner:
@@ -11,10 +11,10 @@ class Replanner:
 
     def __init__(self) -> None:
         self._replan_count: int = 0
-        self._replan_history: List[Dict[str, Any]] = []
+        self._replan_history: list[dict[str, Any]] = []
 
-    def replan(self, plan: Dict[str, Any], reason: str,
-               context: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    def replan(self, plan: dict[str, Any], reason: str,
+               context: dict[str, Any] | None = None) -> list[dict[str, Any]]:
         self._replan_count += 1
         original_tasks = plan.get("tasks", [])
         completed = [t for t in original_tasks if t.get("status") == "completed"]
@@ -40,9 +40,9 @@ class Replanner:
         })
         return new_tasks
 
-    def analyze_failure(self, task: Dict[str, Any]) -> Dict[str, Any]:
+    def analyze_failure(self, task: dict[str, Any]) -> dict[str, Any]:
         error = task.get("result", {}).get("error", "")
-        suggestions: List[str] = []
+        suggestions: list[str] = []
         if "timeout" in error.lower():
             suggestions.append("Increase timeout or split into smaller tasks")
         if "permission" in error.lower():
@@ -57,10 +57,10 @@ class Replanner:
             "suggestions": suggestions,
         }
 
-    def get_history(self) -> List[Dict[str, Any]]:
+    def get_history(self) -> list[dict[str, Any]]:
         return list(self._replan_history)
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         return {
             "total_replans": self._replan_count,
             "history_size": len(self._replan_history),

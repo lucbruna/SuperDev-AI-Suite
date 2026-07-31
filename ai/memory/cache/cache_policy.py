@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 
 class CachePolicy:
@@ -25,14 +25,14 @@ class CachePolicy:
     def should_evict(self, current_size: int) -> bool:
         return current_size >= self._max_size
 
-    def select_victim(self, entries: List[Dict[str, Any]]) -> str:
+    def select_victim(self, entries: list[dict[str, Any]]) -> str:
         if self._eviction_strategy == self.EVICT_LRU:
             return min(entries, key=lambda e: e["accessed_at"])["key"]
         if self._eviction_strategy == self.EVICT_LFU:
             return min(entries, key=lambda e: e["access_count"])["key"]
         return min(entries, key=lambda e: e["created_at"])["key"]
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "eviction_strategy": self._eviction_strategy,
             "max_size": self._max_size,

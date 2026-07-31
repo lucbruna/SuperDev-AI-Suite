@@ -1,8 +1,8 @@
 """Streaming models."""
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
 from enum import Enum
+from typing import Any
 
 
 class StreamStatus(Enum):
@@ -34,7 +34,7 @@ class StreamEvent:
     event_id: str
     topic_id: str = ""
     event_type: EventType = EventType.DATA
-    payload: Dict[str, Any] = field(default_factory=dict)
+    payload: dict[str, Any] = field(default_factory=dict)
     partition_key: str = ""
     timestamp: datetime = field(default_factory=datetime.now)
     sequence: int = 0
@@ -47,7 +47,7 @@ class StreamConsumer:
     group_id: str = ""
     offset: int = 0
     status: StreamStatus = StreamStatus.IDLE
-    last_commit: Optional[datetime] = None
+    last_commit: datetime | None = None
 
 
 @dataclass
@@ -56,6 +56,6 @@ class StreamPipeline:
     name: str = ""
     source_topic: str = ""
     target_topic: str = ""
-    transforms: List[Dict[str, Any]] = field(default_factory=list)
+    transforms: list[dict[str, Any]] = field(default_factory=list)
     status: StreamStatus = StreamStatus.IDLE
     processed_count: int = 0

@@ -1,12 +1,14 @@
 """Cost optimizer for model selection."""
 from __future__ import annotations
-from typing import Any, Dict, List
+
+from typing import Any
+
 
 class CostOptimizer:
     def __init__(self, budget_limit: float = 1000.0) -> None:
         self._budget = budget_limit
-        self._spent: Dict[str, float] = {}
-        self._models: Dict[str, float] = {}
+        self._spent: dict[str, float] = {}
+        self._models: dict[str, float] = {}
     def set_budget(self, limit: float) -> None:
         self._budget = limit
     def set_model_cost(self, model_id: str, cost_per_1k: float) -> None:
@@ -29,9 +31,9 @@ class CostOptimizer:
         if not affordable:
             return min(self._models.keys(), key=lambda m: self._models[m]) if self._models else ""
         return min(affordable, key=lambda x: x[1])[0]
-    def get_spend_by_model(self) -> Dict[str, float]:
+    def get_spend_by_model(self) -> dict[str, float]:
         return dict(self._spent)
-    def get_budget_status(self) -> Dict[str, Any]:
+    def get_budget_status(self) -> dict[str, Any]:
         return {"budget": self._budget, "spent": self.total_spent(), "remaining": self.remaining_budget(), "percent_used": (self.total_spent() / self._budget * 100) if self._budget > 0 else 0}
-    def list_models(self) -> Dict[str, float]:
+    def list_models(self) -> dict[str, float]:
         return dict(self._models)

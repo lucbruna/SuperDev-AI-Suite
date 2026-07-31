@@ -1,11 +1,14 @@
 """Digital Twin engine — main orchestrator."""
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
+
+from typing import Any
+
 from .twin_config import TwinConfig
-from .twin_models import DigitalEntity, SimulationConfig, SimulationResult, ScenarioConfig
 from .twin_events import TwinEvents
-from .twin_metrics import TwinMetrics
 from .twin_logger import TwinLogger
+from .twin_metrics import TwinMetrics
+from .twin_models import DigitalEntity, ScenarioConfig, SimulationConfig, SimulationResult
+
 
 class TwinEngine:
     def __init__(self, config: TwinConfig = None) -> None:
@@ -13,9 +16,9 @@ class TwinEngine:
         self._events = TwinEvents()
         self._metrics = TwinMetrics()
         self._logger = TwinLogger()
-        self._entities: Dict[str, DigitalEntity] = {}
-        self._simulations: Dict[str, SimulationConfig] = {}
-        self._scenarios: Dict[str, Dict[str, Any]] = {}
+        self._entities: dict[str, DigitalEntity] = {}
+        self._simulations: dict[str, SimulationConfig] = {}
+        self._scenarios: dict[str, dict[str, Any]] = {}
         self._started = False
     def start(self) -> None:
         self._started = True
@@ -24,15 +27,15 @@ class TwinEngine:
     def stop(self) -> None:
         self._started = False
         self._events.emit("engine.stopped")
-    def create_entity(self, name: str, entity_type: str = "generic", attributes: Dict[str, Any] = None) -> DigitalEntity:
+    def create_entity(self, name: str, entity_type: str = "generic", attributes: dict[str, Any] = None) -> DigitalEntity:
         entity = DigitalEntity(name=name, entity_type=entity_type, attributes=attributes or {})
         self._entities[entity.entity_id] = entity
         self._metrics.increment("entities_created")
         self._events.emit("entity.created", {"entity_id": entity.entity_id})
         return entity
-    def get_entity(self, entity_id: str) -> Optional[DigitalEntity]:
+    def get_entity(self, entity_id: str) -> DigitalEntity | None:
         return self._entities.get(entity_id)
-    def update_entity(self, entity_id: str, attributes: Dict[str, Any]) -> bool:
+    def update_entity(self, entity_id: str, attributes: dict[str, Any]) -> bool:
         entity = self._entities.get(entity_id)
         if not entity:
             return False
@@ -44,7 +47,7 @@ class TwinEngine:
             del self._entities[entity_id]
             return True
         return False
-    def list_entities(self, entity_type: str = "") -> List[DigitalEntity]:
+    def list_entities(self, entity_type: str = "") -> list[DigitalEntity]:
         if entity_type:
             return [e for e in self._entities.values() if e.entity_type == entity_type]
         return list(self._entities.values())
@@ -69,14 +72,14 @@ class TwinEngine:
         self._metrics.increment("simulations_completed")
         self._events.emit("simulation.completed", {"sim_id": sim_id})
         return result
-    def create_scenario(self, name: str, parameters: Dict[str, Any] = None) -> ScenarioConfig:
+    def create_scenario(self, name: str, parameters: dict[str, Any] = None) -> ScenarioConfig:
         scenario = ScenarioConfig(name=name, parameters=parameters or {})
         self._scenarios[scenario.scenario_id] = {"config": scenario, "results": []}
         self._metrics.increment("scenarios_created")
         return scenario
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         return self._metrics.summary()
-    def get_events(self, limit: int = 20) -> List[Dict[str, Any]]:
+    def get_events(self, limit: int = 20) -> list[dict[str, Any]]:
         return self._events.get_log(limit=limit)
     def is_running(self) -> bool:
         return self._started

@@ -1,8 +1,11 @@
 """Consent management."""
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
+
+import time
+import uuid
 from enum import Enum
-import time, uuid
+from typing import Any
+
 
 class ConsentType(Enum):
     IMPLICIT = "implicit"
@@ -22,8 +25,8 @@ class ConsentRecord:
 
 class ConsentManager:
     def __init__(self) -> None:
-        self._records: Dict[str, ConsentRecord] = {}
-        self._purposes: Dict[str, Dict[str, Any]] = {}
+        self._records: dict[str, ConsentRecord] = {}
+        self._purposes: dict[str, dict[str, Any]] = {}
     def register_purpose(self, purpose: str, description: str = "", required: bool = False) -> None:
         self._purposes[purpose] = {"description": description, "required": required}
     def record_consent(self, user_id: str, purpose: str, consent_type: ConsentType, granted: bool) -> ConsentRecord:
@@ -41,11 +44,11 @@ class ConsentManager:
                 r.granted = False
                 return True
         return False
-    def get_user_consents(self, user_id: str) -> List[Dict[str, Any]]:
+    def get_user_consents(self, user_id: str) -> list[dict[str, Any]]:
         return [{"consent_id": r.consent_id, "purpose": r.purpose, "type": r.consent_type.value, "granted": r.granted, "timestamp": r.timestamp} for r in self._records.values() if r.user_id == user_id]
-    def list_purposes(self) -> List[str]:
+    def list_purposes(self) -> list[str]:
         return list(self._purposes.keys())
-    def get_purpose_info(self, purpose: str) -> Optional[Dict[str, Any]]:
+    def get_purpose_info(self, purpose: str) -> dict[str, Any] | None:
         return self._purposes.get(purpose)
     def cleanup_expired(self) -> int:
         now = time.time()

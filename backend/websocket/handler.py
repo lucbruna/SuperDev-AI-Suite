@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import json
 
+from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
+
 from backend.websocket.events import EventType, WSEvent
 from backend.websocket.manager import manager
-from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 
 router = APIRouter()
 

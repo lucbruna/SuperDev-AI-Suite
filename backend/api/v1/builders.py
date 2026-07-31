@@ -14,9 +14,10 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
-from backend.dependencies import get_current_active_user
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
+
+from backend.dependencies import get_current_active_user
 
 router = APIRouter(
     tags=["builders"],

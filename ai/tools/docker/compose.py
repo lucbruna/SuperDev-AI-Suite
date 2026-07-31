@@ -30,7 +30,7 @@ class DockerCompose(BaseTool):
     async def execute(self, params: dict[str, Any]) -> dict[str, Any]:
         action = params.get("action", "")
         project = params.get("project", "")
-        file = params.get("file", "docker-compose.yml")
+        params.get("file", "docker-compose.yml")
         try:
             if action == "up":
                 detach = params.get("detach", True)

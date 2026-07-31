@@ -1,9 +1,9 @@
 """Data models for documentation."""
-from dataclasses import dataclass, field
-from enum import Enum
-from typing import List, Optional, Dict, Any
-from datetime import datetime
 import uuid
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class DocType(Enum):
@@ -23,7 +23,7 @@ class DocSection:
     title: str = ""
     content: str = ""
     level: int = 1
-    subsections: List["DocSection"] = field(default_factory=list)
+    subsections: list["DocSection"] = field(default_factory=list)
 
     def add_subsection(self, subsection: "DocSection") -> None:
         self.subsections.append(subsection)
@@ -43,8 +43,8 @@ class DocPage:
     page_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     title: str = ""
     doc_type: DocType = DocType.GUIDE
-    sections: List[DocSection] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    sections: list[DocSection] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
     created_at: datetime = field(default_factory=datetime.utcnow)
     updated_at: datetime = field(default_factory=datetime.utcnow)
 
@@ -78,9 +78,9 @@ class ApiEndpoint:
     method: str = "GET"
     summary: str = ""
     description: str = ""
-    parameters: List[ApiParameter] = field(default_factory=list)
+    parameters: list[ApiParameter] = field(default_factory=list)
     response_example: str = ""
-    tags: List[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -89,9 +89,9 @@ class ChangelogEntry:
     entry_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     version: str = ""
     date: datetime = field(default_factory=datetime.utcnow)
-    changes: List[str] = field(default_factory=list)
-    breaking: List[str] = field(default_factory=list)
-    deprecations: List[str] = field(default_factory=list)
+    changes: list[str] = field(default_factory=list)
+    breaking: list[str] = field(default_factory=list)
+    deprecations: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -104,4 +104,4 @@ class DocumentationConfig:
     include_api: bool = True
     include_guides: bool = True
     include_changelog: bool = True
-    template_vars: Dict[str, Any] = field(default_factory=dict)
+    template_vars: dict[str, Any] = field(default_factory=dict)

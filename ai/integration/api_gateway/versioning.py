@@ -1,7 +1,6 @@
 """
 API Versioning - Version management
 """
-from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
 from datetime import datetime
 
@@ -11,15 +10,15 @@ class APIVersion:
     version: str
     status: str = "active"
     base_path: str = ""
-    release_date: Optional[datetime] = None
+    release_date: datetime | None = None
     deprecated: bool = False
-    sunset_date: Optional[datetime] = None
-    changelog: List[str] = field(default_factory=list)
+    sunset_date: datetime | None = None
+    changelog: list[str] = field(default_factory=list)
 
 
 class VersionManager:
     def __init__(self):
-        self.versions: Dict[str, APIVersion] = {}
+        self.versions: dict[str, APIVersion] = {}
         self.default_version: str = "v1"
 
     def register_version(self, version: str, base_path: str = "", **kwargs) -> APIVersion:
@@ -27,7 +26,7 @@ class VersionManager:
         self.versions[version] = api_version
         return api_version
 
-    def get_version(self, version: str) -> Optional[APIVersion]:
+    def get_version(self, version: str) -> APIVersion | None:
         return self.versions.get(version)
 
     def deprecate_version(self, version: str) -> bool:
@@ -44,10 +43,10 @@ class VersionManager:
             return True
         return False
 
-    def get_active(self) -> List[APIVersion]:
+    def get_active(self) -> list[APIVersion]:
         return [v for v in self.versions.values() if v.status == "active"]
 
-    def list_all(self) -> List[APIVersion]:
+    def list_all(self) -> list[APIVersion]:
         return list(self.versions.values())
 
     def count(self) -> int:

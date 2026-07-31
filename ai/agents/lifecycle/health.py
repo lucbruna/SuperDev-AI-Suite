@@ -2,17 +2,17 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class HealthMonitor:
     """Monitors agent health via heartbeats and timeout detection."""
 
     def __init__(self) -> None:
-        self._heartbeats: Dict[str, float] = {}
-        self._intervals: Dict[str, float] = {}
+        self._heartbeats: dict[str, float] = {}
+        self._intervals: dict[str, float] = {}
         self._timeout_threshold: float = 30.0
-        self._check_results: Dict[str, Dict[str, Any]] = {}
+        self._check_results: dict[str, dict[str, Any]] = {}
         self._default_interval: float = 10.0
 
     def register_agent(self, agent_id: str,
@@ -33,7 +33,7 @@ class HealthMonitor:
     def set_timeout_threshold(self, seconds: float) -> None:
         self._timeout_threshold = seconds
 
-    def check_health(self, agent_id: str) -> Dict[str, Any]:
+    def check_health(self, agent_id: str) -> dict[str, Any]:
         last = self._heartbeats.get(agent_id)
         interval = self._intervals.get(agent_id, self._default_interval)
         now = time.time()
@@ -62,25 +62,25 @@ class HealthMonitor:
         self._check_results[agent_id] = result
         return result
 
-    def check_all(self) -> Dict[str, Dict[str, Any]]:
-        results: Dict[str, Dict[str, Any]] = {}
+    def check_all(self) -> dict[str, dict[str, Any]]:
+        results: dict[str, dict[str, Any]] = {}
         for aid in list(self._heartbeats.keys()):
             results[aid] = self.check_health(aid)
         return results
 
-    def get_healthy_agents(self) -> List[str]:
+    def get_healthy_agents(self) -> list[str]:
         return [
             aid for aid, r in self._check_results.items()
             if r.get("status") == "healthy"
         ]
 
-    def get_unhealthy_agents(self) -> List[str]:
+    def get_unhealthy_agents(self) -> list[str]:
         return [
             aid for aid, r in self._check_results.items()
             if r.get("status") in ("unhealthy", "degraded")
         ]
 
-    def get_all_statuses(self) -> Dict[str, str]:
+    def get_all_statuses(self) -> dict[str, str]:
         return {
             aid: self._check_results.get(aid, {}).get("status", "unknown")
             for aid in self._heartbeats
@@ -89,7 +89,7 @@ class HealthMonitor:
     def is_healthy(self, agent_id: str) -> bool:
         return self._check_results.get(agent_id, {}).get("status") == "healthy"
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         return {
             "monitored_agents": len(self._heartbeats),
             "healthy": len(self.get_healthy_agents()),

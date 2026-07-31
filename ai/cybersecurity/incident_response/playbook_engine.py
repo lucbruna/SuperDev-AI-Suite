@@ -1,11 +1,11 @@
 """
 Incident Response Playbook Engine
 """
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class StepStatus(Enum):
@@ -24,8 +24,8 @@ class PlaybookStep:
     status: StepStatus = StepStatus.PENDING
     assignee: str = ""
     notes: str = ""
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
 
 
 @dataclass
@@ -33,7 +33,7 @@ class Playbook:
     playbook_id: str
     name: str
     description: str = ""
-    steps: List[PlaybookStep] = field(default_factory=list)
+    steps: list[PlaybookStep] = field(default_factory=list)
     triggered: bool = False
     incident_id: str = ""
     created_at: datetime = field(default_factory=datetime.now)
@@ -41,10 +41,10 @@ class Playbook:
 
 class PlaybookEngine:
     def __init__(self):
-        self.playbooks: Dict[str, Playbook] = {}
-        self.templates: Dict[str, List[Dict[str, str]]] = {}
+        self.playbooks: dict[str, Playbook] = {}
+        self.templates: dict[str, list[dict[str, str]]] = {}
 
-    def register_template(self, name: str, steps: List[Dict[str, str]]) -> None:
+    def register_template(self, name: str, steps: list[dict[str, str]]) -> None:
         self.templates[name] = steps
 
     def create_playbook(self, name: str, incident_id: str, template_name: str = None) -> Playbook:
@@ -78,7 +78,7 @@ class PlaybookEngine:
                     return True
         return False
 
-    def get_progress(self, playbook_id: str) -> Dict[str, Any]:
+    def get_progress(self, playbook_id: str) -> dict[str, Any]:
         playbook = self.playbooks.get(playbook_id)
         if not playbook:
             return {"total": 0, "completed": 0, "percentage": 0}
@@ -86,10 +86,10 @@ class PlaybookEngine:
         completed = sum(1 for s in playbook.steps if s.status == StepStatus.COMPLETED)
         return {"total": total, "completed": completed, "percentage": (completed / max(total, 1)) * 100}
 
-    def get_playbook(self, playbook_id: str) -> Optional[Playbook]:
+    def get_playbook(self, playbook_id: str) -> Playbook | None:
         return self.playbooks.get(playbook_id)
 
-    def get_pending_steps(self, playbook_id: str) -> List[PlaybookStep]:
+    def get_pending_steps(self, playbook_id: str) -> list[PlaybookStep]:
         playbook = self.playbooks.get(playbook_id)
         if playbook:
             return [s for s in playbook.steps if s.status == StepStatus.PENDING]

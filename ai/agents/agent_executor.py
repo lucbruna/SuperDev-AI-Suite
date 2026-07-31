@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class AgentExecutor:
@@ -9,7 +9,7 @@ class AgentExecutor:
 
     def __init__(self) -> None:
         self._execution_count: int = 0
-        self._history: List[Dict[str, Any]] = []
+        self._history: list[dict[str, Any]] = []
         self._max_history: int = 100
 
     @property
@@ -17,10 +17,10 @@ class AgentExecutor:
         return self._execution_count
 
     @property
-    def history(self) -> List[Dict[str, Any]]:
+    def history(self) -> list[dict[str, Any]]:
         return list(self._history)
 
-    def execute(self, agent_id: str, task: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, agent_id: str, task: dict[str, Any]) -> dict[str, Any]:
         self._execution_count += 1
         result = {
             "execution_id": f"e{self._execution_count}",

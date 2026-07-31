@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import time
 from datetime import UTC, datetime
 from typing import Any
 
@@ -48,7 +47,7 @@ class AIRuntime:
             self._tasks[task_id]["status"] = "completed"
             self._tasks[task_id]["completed_at"] = datetime.now(UTC).isoformat()
             return result
-        except asyncio.TimeoutError:
+        except TimeoutError:
             self._tasks[task_id]["status"] = "failed"
             self._tasks[task_id]["error"] = "timeout"
             raise RuntimeError(f"Task '{task_id}' timed out after {task_timeout}s", code="TIMEOUT")

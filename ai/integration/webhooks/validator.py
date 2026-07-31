@@ -1,28 +1,28 @@
 """
 Webhook Validator - Validate webhook payloads
 """
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
 import hashlib
 import hmac
+from dataclasses import dataclass, field
+from typing import Any
 
 
 @dataclass
 class ValidationResult:
     valid: bool
-    errors: List[str] = field(default_factory=list)
-    warnings: List[str] = field(default_factory=list)
+    errors: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
 
 
 class WebhookValidator:
     def __init__(self):
-        self.schemas: Dict[str, Dict[str, Any]] = {}
-        self.secrets: Dict[str, str] = {}
+        self.schemas: dict[str, dict[str, Any]] = {}
+        self.secrets: dict[str, str] = {}
 
-    def register_schema(self, event_type: str, schema: Dict[str, Any]) -> None:
+    def register_schema(self, event_type: str, schema: dict[str, Any]) -> None:
         self.schemas[event_type] = schema
 
-    def validate_payload(self, event_type: str, payload: Dict[str, Any]) -> ValidationResult:
+    def validate_payload(self, event_type: str, payload: dict[str, Any]) -> ValidationResult:
         errors = []
         warnings = []
         schema = self.schemas.get(event_type)

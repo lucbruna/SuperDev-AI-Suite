@@ -1,9 +1,9 @@
 """Data models for code quality."""
-from dataclasses import dataclass, field
-from enum import Enum
-from typing import List, Optional, Dict, Any
-from datetime import datetime
 import uuid
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class IssueSeverity(Enum):
@@ -48,7 +48,7 @@ class QualityRule:
     severity: IssueSeverity = IssueSeverity.WARNING
     enabled: bool = True
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "rule_id": self.rule_id,
             "name": self.name,
@@ -76,8 +76,8 @@ class QualityReport:
     """A comprehensive quality analysis report."""
     report_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     file_path: str = ""
-    issues: List[QualityIssue] = field(default_factory=list)
-    metrics: List[QualityMetric] = field(default_factory=list)
+    issues: list[QualityIssue] = field(default_factory=list)
+    metrics: list[QualityMetric] = field(default_factory=list)
     score: float = 0.0
     generated_at: datetime = field(default_factory=datetime.utcnow)
 

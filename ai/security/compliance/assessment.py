@@ -1,7 +1,10 @@
 """Compliance assessment."""
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
-import time, uuid
+
+import time
+import uuid
+from typing import Any
+
 
 class Assessment:
     def __init__(self, standard: str, assessor: str, scope: str = "") -> None:
@@ -10,13 +13,13 @@ class Assessment:
         self.assessor = assessor
         self.scope = scope
         self.started_at = time.time()
-        self.completed_at: Optional[float] = None
-        self.results: List[Dict[str, Any]] = []
+        self.completed_at: float | None = None
+        self.results: list[dict[str, Any]] = []
         self.status = "in_progress"
 
 class ComplianceAssessor:
     def __init__(self) -> None:
-        self._assessments: Dict[str, Assessment] = {}
+        self._assessments: dict[str, Assessment] = {}
     def start_assessment(self, standard: str, assessor: str, scope: str = "") -> Assessment:
         assessment = Assessment(standard, assessor, scope)
         self._assessments[assessment.assessment_id] = assessment
@@ -34,14 +37,14 @@ class ComplianceAssessor:
             assessment.status = "completed"
             return True
         return False
-    def get_assessment(self, assessment_id: str) -> Optional[Dict[str, Any]]:
+    def get_assessment(self, assessment_id: str) -> dict[str, Any] | None:
         assessment = self._assessments.get(assessment_id)
         if assessment:
             passed = sum(1 for r in assessment.results if r["status"] == "pass")
             total = len(assessment.results)
             return {"id": assessment.assessment_id, "standard": assessment.standard, "status": assessment.status, "results_count": total, "passed": passed, "score": (passed / max(total, 1)) * 100}
         return None
-    def list_assessments(self, standard: str = "") -> List[str]:
+    def list_assessments(self, standard: str = "") -> list[str]:
         if standard:
             return [a.assessment_id for a in self._assessments.values() if a.standard == standard]
         return list(self._assessments.keys())

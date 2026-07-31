@@ -1,5 +1,6 @@
 """Anomaly subsystem generator."""
 import os
+
 BASE = r'C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\observability\anomaly'
 
 def w(path, content):

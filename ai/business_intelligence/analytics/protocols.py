@@ -1,12 +1,12 @@
 """Analytics protocols."""
-from typing import Any, Dict, Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 
 @runtime_checkable
 class Serializable(Protocol):
-    def to_dict(self) -> Dict[str, Any]: ...
+    def to_dict(self) -> dict[str, Any]: ...
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]): ...
+    def from_dict(cls, data: dict[str, Any]): ...
 
 
 @runtime_checkable

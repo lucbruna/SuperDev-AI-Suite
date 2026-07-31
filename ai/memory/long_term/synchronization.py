@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Callable, Dict, List, Optional
+from collections.abc import Callable
+from typing import Any
 
 
 class SyncEntry:
@@ -37,7 +38,7 @@ class SyncEntry:
     def mark_synced(self) -> None:
         self._synced = True
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "key": self._key,
             "action": self._action,
@@ -50,8 +51,8 @@ class Synchronization:
     """Synchronization between memory layers."""
 
     def __init__(self):
-        self._queue: List[SyncEntry] = []
-        self._handlers: Dict[str, Callable] = {}
+        self._queue: list[SyncEntry] = []
+        self._handlers: dict[str, Callable] = {}
 
     @property
     def queue_size(self) -> int:
@@ -94,7 +95,7 @@ class Synchronization:
                         return False
         return False
 
-    def pending_entries(self) -> List[SyncEntry]:
+    def pending_entries(self) -> list[SyncEntry]:
         return [e for e in self._queue if not e.synced]
 
     def clear(self) -> None:

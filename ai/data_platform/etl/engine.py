@@ -1,20 +1,19 @@
 """ETL engine."""
-import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional
-from .models import ETLStep, ETLPipeline, ETLLog, StepType, ETLStatus
+
+from .models import ETLLog, ETLPipeline, ETLStatus, ETLStep, StepType
 
 
 class ETLEngine:
     def __init__(self):
-        self._pipelines: Dict[str, ETLPipeline] = {}
-        self._logs: List[ETLLog] = []
+        self._pipelines: dict[str, ETLPipeline] = {}
+        self._logs: list[ETLLog] = []
 
     def create_pipeline(self, pipeline: ETLPipeline) -> ETLPipeline:
         self._pipelines[pipeline.pipeline_id] = pipeline
         return pipeline
 
-    def get_pipeline(self, pipeline_id: str) -> Optional[ETLPipeline]:
+    def get_pipeline(self, pipeline_id: str) -> ETLPipeline | None:
         return self._pipelines.get(pipeline_id)
 
     def add_step(self, pipeline_id: str, step: ETLStep) -> bool:
@@ -69,7 +68,7 @@ class ETLEngine:
         self._logs.append(log)
         return log
 
-    def get_logs(self, pipeline_id: Optional[str] = None) -> List[ETLLog]:
+    def get_logs(self, pipeline_id: str | None = None) -> list[ETLLog]:
         if pipeline_id:
             return [l for l in self._logs if l.pipeline_id == pipeline_id]
         return list(self._logs)

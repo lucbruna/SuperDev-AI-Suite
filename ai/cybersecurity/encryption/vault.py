@@ -1,12 +1,12 @@
 """
 Secure Vault
 """
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
-import secrets
 import hashlib
+import secrets
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class VaultState(Enum):
@@ -25,10 +25,10 @@ class TransitAction(Enum):
 @dataclass
 class VaultSecret:
     path: str
-    data: Dict[str, str] = field(default_factory=dict)
+    data: dict[str, str] = field(default_factory=dict)
     version: int = 1
     created_at: datetime = field(default_factory=datetime.now)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -43,9 +43,9 @@ class TransitKey:
 class Vault:
     def __init__(self):
         self.state = VaultState.SEALED
-        self.secrets: Dict[str, VaultSecret] = {}
-        self.transit_keys: Dict[str, TransitKey] = {}
-        self.unseal_keys: List[str] = []
+        self.secrets: dict[str, VaultSecret] = {}
+        self.transit_keys: dict[str, TransitKey] = {}
+        self.unseal_keys: list[str] = []
         self.audit_log: list = []
         self._setup_unseal_keys()
 
@@ -57,7 +57,7 @@ class Vault:
         self.audit_log.append({"action": "seal", "time": datetime.now().isoformat()})
         return True
 
-    def unseal(self, keys: List[str]) -> bool:
+    def unseal(self, keys: list[str]) -> bool:
         if len(keys) < 3:
             return False
         self.state = VaultState.UNSEALED
@@ -67,7 +67,7 @@ class Vault:
     def is_unsealed(self) -> bool:
         return self.state == VaultState.UNSEALED
 
-    def write_secret(self, path: str, data: Dict[str, str]) -> VaultSecret:
+    def write_secret(self, path: str, data: dict[str, str]) -> VaultSecret:
         if self.state != VaultState.UNSEALED:
             raise RuntimeError("Vault is sealed")
         secret = VaultSecret(path=path, data=data.copy())
@@ -75,7 +75,7 @@ class Vault:
         self.audit_log.append({"action": "write", "path": path, "time": datetime.now().isoformat()})
         return secret
 
-    def read_secret(self, path: str) -> Optional[VaultSecret]:
+    def read_secret(self, path: str) -> VaultSecret | None:
         if self.state != VaultState.UNSEALED:
             raise RuntimeError("Vault is sealed")
         self.audit_log.append({"action": "read", "path": path, "time": datetime.now().isoformat()})
@@ -103,7 +103,7 @@ class Vault:
             raise ValueError(f"Transit key {key_name} not found")
         return ciphertext
 
-    def list_secrets(self, prefix: str = "") -> List[str]:
+    def list_secrets(self, prefix: str = "") -> list[str]:
         if prefix:
             return [p for p in self.secrets if p.startswith(prefix)]
         return list(self.secrets.keys())

@@ -1,8 +1,8 @@
 """Mobile Configuration - Platform and device configuration management."""
-from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
-from enum import Enum
 from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class ConfigScope(Enum):
@@ -27,9 +27,9 @@ class MobileConfigEntry:
 
 class MobileConfig:
     def __init__(self):
-        self.entries: Dict[str, MobileConfigEntry] = {}
-        self.overrides: Dict[str, Dict[str, Any]] = {}
-        self.history: List[Dict[str, Any]] = []
+        self.entries: dict[str, MobileConfigEntry] = {}
+        self.overrides: dict[str, dict[str, Any]] = {}
+        self.history: list[dict[str, Any]] = []
 
     def set(self, key: str, value: Any, scope: ConfigScope = ConfigScope.GLOBAL, **kwargs) -> MobileConfigEntry:
         entry = MobileConfigEntry(key=key, value=value, scope=scope, **kwargs)
@@ -59,13 +59,13 @@ class MobileConfig:
     def set_override(self, key: str, device_id: str, value: Any) -> None:
         self.overrides.setdefault(key, {})[device_id] = value
 
-    def list_entries(self, scope: ConfigScope = None) -> List[MobileConfigEntry]:
+    def list_entries(self, scope: ConfigScope = None) -> list[MobileConfigEntry]:
         entries = list(self.entries.values())
         if scope:
             entries = [e for e in entries if e.scope == scope]
         return entries
 
-    def get_all(self, platform: str = "", device_id: str = "") -> Dict[str, Any]:
+    def get_all(self, platform: str = "", device_id: str = "") -> dict[str, Any]:
         result = {}
         for key, entry in self.entries.items():
             if platform and entry.platform and entry.platform != platform:

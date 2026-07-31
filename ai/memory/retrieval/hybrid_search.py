@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 from .keyword_search import KeywordSearch
 from .semantic_search import SemanticSearch
@@ -20,7 +20,7 @@ class HybridSearch:
     def search_count(self) -> int:
         return self._search_count
 
-    def search(self, query: str, entries: List[Dict[str, Any]], top_k: int = 10) -> List[Dict[str, Any]]:
+    def search(self, query: str, entries: list[dict[str, Any]], top_k: int = 10) -> list[dict[str, Any]]:
         kw_results = self._keyword.search(query, entries)
         sem_results = self._semantic.search(query, entries, top_k * 2)
         combined: dict = {}

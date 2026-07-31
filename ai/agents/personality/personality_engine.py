@@ -1,17 +1,17 @@
 """Personality engine for agent behavior customization."""
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any
 
+from .collaboration_style import CollaborationStyle
 from .communication_style import CommunicationStyle
 from .decision_style import DecisionStyle
-from .collaboration_style import CollaborationStyle
 
 
 class PersonalityEngine:
     """Manages agent personality traits and behavioral patterns."""
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(self, config: dict[str, Any] | None = None) -> None:
         self._config = config or {}
         self._communication = CommunicationStyle(
             tone=self._config.get("tone", "professional"),
@@ -26,7 +26,7 @@ class PersonalityEngine:
             leadership=self._config.get("leadership", False),
         )
 
-    def get_personality(self) -> Dict[str, Any]:
+    def get_personality(self) -> dict[str, Any]:
         return {
             "communication": self._communication.get_profile(),
             "decision": self._decision.get_profile(),
@@ -47,5 +47,5 @@ class PersonalityEngine:
         elif trait == "leadership":
             self._collaboration.set_leadership(value)
 
-    def get_snapshot(self) -> Dict[str, Any]:
+    def get_snapshot(self) -> dict[str, Any]:
         return self.get_personality()

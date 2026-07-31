@@ -1,8 +1,8 @@
 """Analytics data models."""
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
 from enum import Enum
+from typing import Any
 
 
 class AnalysisType(Enum):
@@ -31,8 +31,8 @@ class DataPoint:
     timestamp: datetime
     value: float
     metric_name: str
-    dimensions: Dict[str, str] = field(default_factory=dict)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    dimensions: dict[str, str] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -42,8 +42,8 @@ class Insight:
     title: str
     description: str
     confidence: float
-    data_points: List[DataPoint] = field(default_factory=list)
-    recommendations: List[str] = field(default_factory=list)
+    data_points: list[DataPoint] = field(default_factory=list)
+    recommendations: list[str] = field(default_factory=list)
     created_at: datetime = field(default_factory=datetime.now)
 
 
@@ -52,18 +52,18 @@ class AnalysisRequest:
     request_id: str
     analysis_type: AnalysisType
     query: str
-    time_range_start: Optional[datetime] = None
-    time_range_end: Optional[datetime] = None
-    dimensions: List[str] = field(default_factory=list)
-    filters: Dict[str, Any] = field(default_factory=dict)
+    time_range_start: datetime | None = None
+    time_range_end: datetime | None = None
+    dimensions: list[str] = field(default_factory=list)
+    filters: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
 class AnalysisResult:
     request_id: str
     status: str = "pending"
-    data_points: List[DataPoint] = field(default_factory=list)
-    insights: List[Insight] = field(default_factory=list)
-    summary: Dict[str, Any] = field(default_factory=dict)
+    data_points: list[DataPoint] = field(default_factory=list)
+    insights: list[Insight] = field(default_factory=list)
+    summary: dict[str, Any] = field(default_factory=dict)
     execution_time_ms: float = 0.0
-    error: Optional[str] = None
+    error: str | None = None

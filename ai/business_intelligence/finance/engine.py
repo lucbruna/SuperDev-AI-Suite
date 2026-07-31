@@ -1,24 +1,28 @@
 """Finance engine."""
-import uuid
 from datetime import datetime
-from typing import Dict, List, Optional
+
 from .models import (
-    Transaction, TransactionType, Account, AccountType, Budget,
-    PnLReport, CashFlowEntry, CashFlowReport,
+    Account,
+    Budget,
+    CashFlowEntry,
+    CashFlowReport,
+    PnLReport,
+    Transaction,
+    TransactionType,
 )
 
 
 class FinanceEngine:
     def __init__(self):
-        self._accounts: Dict[str, Account] = {}
-        self._transactions: List[Transaction] = []
-        self._budgets: Dict[str, Budget] = {}
+        self._accounts: dict[str, Account] = {}
+        self._transactions: list[Transaction] = []
+        self._budgets: dict[str, Budget] = {}
 
     def create_account(self, account: Account) -> Account:
         self._accounts[account.account_id] = account
         return account
 
-    def get_account(self, account_id: str) -> Optional[Account]:
+    def get_account(self, account_id: str) -> Account | None:
         return self._accounts.get(account_id)
 
     def record_transaction(self, transaction: Transaction) -> Transaction:
@@ -36,7 +40,7 @@ class FinanceEngine:
                     b.spent += transaction.amount
         return transaction
 
-    def get_transactions(self, category: Optional[str] = None, since: Optional[datetime] = None) -> List[Transaction]:
+    def get_transactions(self, category: str | None = None, since: datetime | None = None) -> list[Transaction]:
         result = self._transactions
         if category:
             result = [t for t in result if t.category == category]
@@ -48,13 +52,13 @@ class FinanceEngine:
         self._budgets[budget.budget_id] = budget
         return budget
 
-    def get_budgets(self) -> List[Budget]:
+    def get_budgets(self) -> list[Budget]:
         return list(self._budgets.values())
 
     def generate_pnl(self, period: str = "monthly") -> PnLReport:
         revenue = sum(t.amount for t in self._transactions if t.transaction_type == TransactionType.INCOME)
         expenses = sum(t.amount for t in self._transactions if t.transaction_type == TransactionType.EXPENSE)
-        categories: Dict[str, float] = {}
+        categories: dict[str, float] = {}
         for t in self._transactions:
             if t.transaction_type == TransactionType.EXPENSE and t.category:
                 categories[t.category] = categories.get(t.category, 0) + t.amount
@@ -67,7 +71,7 @@ class FinanceEngine:
         )
 
     def generate_cash_flow(self, period: str = "monthly") -> CashFlowReport:
-        entries: List[CashFlowEntry] = []
+        entries: list[CashFlowEntry] = []
         total_in = 0.0
         total_out = 0.0
         for t in self._transactions:

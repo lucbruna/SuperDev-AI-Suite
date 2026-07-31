@@ -10,15 +10,14 @@ import httpx
 
 from .base_provider import (
     BaseLLMProvider,
+    PricingRow,
     ProviderError,
     ProviderErrorCode,
-    PricingRow,
     StreamDelta,
     _exponential_backoff,
     _is_retryable,
     count_tokens,
 )
-
 
 TOGETHER_PRICING: dict[str, PricingRow] = {
     "meta-llama/Llama-3.3-70B-Instruct-Turbo": PricingRow(0.00059, 0.00079),

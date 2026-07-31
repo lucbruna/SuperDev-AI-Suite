@@ -1,16 +1,18 @@
 """Report export."""
 from __future__ import annotations
-from typing import Any, Dict
+
 import json
+from typing import Any
+
 
 class ReportExporter:
     def __init__(self) -> None:
         self._exports: list = []
-    def export_json(self, data: Dict[str, Any]) -> str:
+    def export_json(self, data: dict[str, Any]) -> str:
         result = json.dumps(data, indent=2)
         self._exports.append({"format": "json", "size": len(result)})
         return result
-    def export_csv(self, data: Dict[str, Any]) -> str:
+    def export_csv(self, data: dict[str, Any]) -> str:
         lines = ["key,value"]
         for k, v in data.items():
             if isinstance(v, dict):
@@ -21,7 +23,7 @@ class ReportExporter:
         result = "\n".join(lines)
         self._exports.append({"format": "csv", "size": len(result)})
         return result
-    def export_markdown(self, data: Dict[str, Any], title: str = "Report") -> str:
+    def export_markdown(self, data: dict[str, Any], title: str = "Report") -> str:
         lines = [f"# {title}", ""]
         for k, v in data.items():
             lines.append(f"## {k}")

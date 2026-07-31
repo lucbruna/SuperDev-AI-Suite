@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-from typing import Any
-
 from .reasoning_engine import ReasoningEngine
 from .reasoning_manager import ReasoningManager
-from .reasoning_service import ReasoningService
 from .reasoning_memory import ReasoningMemory
+from .reasoning_service import ReasoningService
 
 
 class ReasoningFactory:

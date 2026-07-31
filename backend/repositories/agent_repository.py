@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from backend.database.models.agent import Agent, AgentExecution
-from backend.repositories.base_repository import BaseRepository
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from backend.database.models.agent import Agent, AgentExecution
+from backend.repositories.base_repository import BaseRepository
 
 
 class AgentRepository(BaseRepository[Agent]):
@@ -34,7 +35,7 @@ class AgentRepository(BaseRepository[Agent]):
         """Get all active agents for a project."""
         query = select(self.model).where(
             self.model.project_id == project_id,
-            self.model.is_active == True,
+            self.model.is_active,
         )
         result = await self.db.execute(query)
         return list(result.scalars().all())

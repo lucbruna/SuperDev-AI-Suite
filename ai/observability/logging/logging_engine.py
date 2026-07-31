@@ -1,12 +1,13 @@
 """Logging subsystem engine."""
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
-import time
+
+from typing import Any
+
 
 class LoggingEngine:
     def __init__(self) -> None:
-        self._collectors: List[str] = []
-        self._processors: List[str] = []
+        self._collectors: list[str] = []
+        self._processors: list[str] = []
         self._storage_active = False
         self._started = False
     def start(self) -> None:
@@ -21,5 +22,5 @@ class LoggingEngine:
         self._processors.append(name)
     def enable_storage(self) -> None:
         self._storage_active = True
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         return {"running": self._started, "collectors": len(self._collectors), "processors": len(self._processors), "storage": self._storage_active}

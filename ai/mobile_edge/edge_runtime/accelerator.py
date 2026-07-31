@@ -1,8 +1,8 @@
 """Accelerator - Hardware acceleration management."""
-from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
-from enum import Enum
 from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class AcceleratorStatus(Enum):
@@ -21,13 +21,13 @@ class AcceleratorInfo:
     compute_units: int = 1
     memory_mb: float = 0.0
     utilization: float = 0.0
-    last_used: Optional[datetime] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    last_used: datetime | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class AcceleratorManager:
     def __init__(self):
-        self.accelerators: Dict[str, AcceleratorInfo] = {}
+        self.accelerators: dict[str, AcceleratorInfo] = {}
 
     def register(self, name: str, type: str = "cpu", compute_units: int = 1, memory_mb: float = 0.0) -> AcceleratorInfo:
         acc = AcceleratorInfo(accelerator_id=name, name=name, type=type, compute_units=compute_units, memory_mb=memory_mb)
@@ -49,10 +49,10 @@ class AcceleratorManager:
             return True
         return False
 
-    def get(self, accelerator_id: str) -> Optional[AcceleratorInfo]:
+    def get(self, accelerator_id: str) -> AcceleratorInfo | None:
         return self.accelerators.get(accelerator_id)
 
-    def list_available(self) -> List[AcceleratorInfo]:
+    def list_available(self) -> list[AcceleratorInfo]:
         return [a for a in self.accelerators.values() if a.status == AcceleratorStatus.AVAILABLE]
 
     def count(self) -> int:

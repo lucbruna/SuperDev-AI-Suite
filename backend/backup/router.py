@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from backend.backup.backup_manager import BackupType, backup_manager
-from backend.dependencies import get_current_active_user
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
+
+from backend.backup.backup_manager import BackupType, backup_manager
+from backend.dependencies import get_current_active_user
 
 router = APIRouter(dependencies=[Depends(get_current_active_user)])
 

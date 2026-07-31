@@ -19,7 +19,7 @@ class LLMContextBuilder(ILLMContext):
             "top_p": kwargs.get("top_p", 1.0),
             "frequency_penalty": kwargs.get("frequency_penalty", 0.0),
             "presence_penalty": kwargs.get("presence_penalty", 0.0),
-            "stop": kwargs.get("stop", None),
+            "stop": kwargs.get("stop"),
         }
 
         if "system" in kwargs:

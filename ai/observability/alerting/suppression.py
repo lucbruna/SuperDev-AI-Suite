@@ -1,12 +1,14 @@
 """Alert suppression."""
 from __future__ import annotations
-from typing import Any, Dict, List
+
 import time
+from typing import Any
+
 
 class AlertSuppression:
     def __init__(self) -> None:
-        self._suppressions: List[Dict[str, Any]] = []
-    def suppress(self, alert_type: str, duration_seconds: int = 300, reason: str = "") -> Dict[str, Any]:
+        self._suppressions: list[dict[str, Any]] = []
+    def suppress(self, alert_type: str, duration_seconds: int = 300, reason: str = "") -> dict[str, Any]:
         entry = {"type": alert_type, "duration": duration_seconds, "reason": reason, "start_time": time.time(), "end_time": time.time() + duration_seconds}
         self._suppressions.append(entry)
         return entry
@@ -17,7 +19,7 @@ class AlertSuppression:
         before = len(self._suppressions)
         self._suppressions = [s for s in self._suppressions if s["type"] != alert_type]
         return len(self._suppressions) < before
-    def get_active(self) -> List[Dict[str, Any]]:
+    def get_active(self) -> list[dict[str, Any]]:
         now = time.time()
         return [s for s in self._suppressions if s["end_time"] > now]
     def cleanup(self) -> int:

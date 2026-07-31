@@ -1,7 +1,7 @@
 """Strategy engine for selecting planning approaches."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class StrategyEngine:
@@ -17,10 +17,10 @@ class StrategyEngine:
     }
 
     def __init__(self) -> None:
-        self._custom_strategies: Dict[str, Dict[str, Any]] = {}
+        self._custom_strategies: dict[str, dict[str, Any]] = {}
 
-    def select_strategy(self, goal: str, tasks: List[Dict[str, Any]],
-                        context: Optional[Dict[str, Any]] = None) -> str:
+    def select_strategy(self, goal: str, tasks: list[dict[str, Any]],
+                        context: dict[str, Any] | None = None) -> str:
         if not tasks:
             return "sequential"
         has_deps = any(t.get("dependencies") for t in tasks)
@@ -33,14 +33,14 @@ class StrategyEngine:
             return "divide_and_conquer"
         return "sequential"
 
-    def get_strategy(self, name: str) -> Optional[Dict[str, Any]]:
+    def get_strategy(self, name: str) -> dict[str, Any] | None:
         return self.STRATEGIES.get(name) or self._custom_strategies.get(name)
 
-    def register_strategy(self, name: str, config: Dict[str, Any]) -> None:
+    def register_strategy(self, name: str, config: dict[str, Any]) -> None:
         self._custom_strategies[name] = config
 
-    def list_strategies(self) -> List[str]:
+    def list_strategies(self) -> list[str]:
         return list(self.STRATEGIES.keys()) + list(self._custom_strategies.keys())
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         return {"strategies": self.list_strategies()}

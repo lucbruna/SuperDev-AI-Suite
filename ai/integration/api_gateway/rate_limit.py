@@ -1,8 +1,7 @@
 """
 Rate Limiter - Request rate limiting
 """
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 
@@ -19,15 +18,15 @@ class RateLimitResult:
     allowed: bool
     remaining: int
     limit: int
-    reset_at: Optional[datetime] = None
+    reset_at: datetime | None = None
     retry_after: int = 0
 
 
 class RateLimiter:
     def __init__(self):
-        self.configs: Dict[str, RateLimitConfig] = {}
-        self.counters: Dict[str, List[datetime]] = {}
-        self.blocked: Dict[str, datetime] = {}
+        self.configs: dict[str, RateLimitConfig] = {}
+        self.counters: dict[str, list[datetime]] = {}
+        self.blocked: dict[str, datetime] = {}
 
     def set_config(self, key: str, max_requests: int = 1000, window_seconds: int = 60) -> RateLimitConfig:
         config = RateLimitConfig(max_requests=max_requests, window_seconds=window_seconds)

@@ -1,7 +1,9 @@
 """Port management."""
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
+
 from enum import Enum
+from typing import Any
+
 
 class PortState(Enum):
     OPEN = "open"
@@ -17,8 +19,8 @@ class PortRule:
 
 class PortManager:
     def __init__(self) -> None:
-        self._rules: Dict[int, PortRule] = {}
-        self._scan_history: List[Dict[str, Any]] = []
+        self._rules: dict[int, PortRule] = {}
+        self._scan_history: list[dict[str, Any]] = []
         self._default_state = PortState.CLOSED
     def add_rule(self, port: int, state: PortState, service: str = "", description: str = "") -> PortRule:
         rule = PortRule(port, state, service, description)
@@ -40,9 +42,9 @@ class PortManager:
         self._rules[port] = PortRule(port, PortState.OPEN, service)
     def close_port(self, port: int) -> None:
         self._rules[port] = PortRule(port, PortState.CLOSED)
-    def list_open_ports(self) -> List[int]:
+    def list_open_ports(self) -> list[int]:
         return sorted([p for p, r in self._rules.items() if r.state == PortState.OPEN])
-    def list_all_rules(self) -> List[Dict[str, Any]]:
+    def list_all_rules(self) -> list[dict[str, Any]]:
         return [{"port": r.port, "state": r.state.value, "service": r.service, "description": r.description} for r in sorted(self._rules.values(), key=lambda r: r.port)]
     def scan_result(self, host: str, port: int, state: PortState) -> None:
         self._scan_history.append({"host": host, "port": port, "state": state.value})

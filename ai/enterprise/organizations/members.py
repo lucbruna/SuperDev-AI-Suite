@@ -1,12 +1,14 @@
 """Organization members."""
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
+
 import time
+from typing import Any
+
 
 class MemberManager:
     def __init__(self) -> None:
-        self._memberships: Dict[str, Dict[str, Dict[str, Any]]] = {}
-    def add(self, org_id: str, user_id: str, role: str = "member") -> Dict[str, Any]:
+        self._memberships: dict[str, dict[str, dict[str, Any]]] = {}
+    def add(self, org_id: str, user_id: str, role: str = "member") -> dict[str, Any]:
         membership = {"org_id": org_id, "user_id": user_id, "role": role, "joined_at": time.time(), "active": True}
         self._memberships.setdefault(org_id, {})[user_id] = membership
         return membership
@@ -15,9 +17,9 @@ class MemberManager:
             del self._memberships[org_id][user_id]
             return True
         return False
-    def get(self, org_id: str, user_id: str) -> Optional[Dict[str, Any]]:
+    def get(self, org_id: str, user_id: str) -> dict[str, Any] | None:
         return self._memberships.get(org_id, {}).get(user_id)
-    def list_members(self, org_id: str) -> List[Dict[str, Any]]:
+    def list_members(self, org_id: str) -> list[dict[str, Any]]:
         return list(self._memberships.get(org_id, {}).values())
     def count(self, org_id: str) -> int:
         return len(self._memberships.get(org_id, {}))
@@ -27,5 +29,5 @@ class MemberManager:
             member["role"] = new_role
             return True
         return False
-    def list_by_role(self, org_id: str, role: str) -> List[Dict[str, Any]]:
+    def list_by_role(self, org_id: str, role: str) -> list[dict[str, Any]]:
         return [m for m in self._memberships.get(org_id, {}).values() if m["role"] == role]

@@ -38,7 +38,7 @@ class ProcessMonitor(BaseTool):
                             with open(f"/proc/{pid}/comm") as f:
                                 name = f.read().strip()
                             processes.append({"pid": int(pid), "name": name})
-                        except (IOError, OSError):
+                        except OSError:
                             pass
                 if os.name == "nt":
                     import subprocess

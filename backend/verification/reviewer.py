@@ -44,42 +44,42 @@ class CodeReviewer:
 
     def _basic_review(self, code: str, language: str) -> ReviewResult:
         import re
-        
+
         issues = []
         security_issues = []
         score = 100
-        
+
         lines = code.split("\n")
-        
+
         if language == "python":
             if "import *" in code:
                 issues.append({"type": "style", "message": "Avoid wildcard imports", "severity": "warning"})
                 score -= 5
-            
+
             if re.search(r"except:\s*pass", code):
                 issues.append({"type": "style", "message": "Bare except with pass", "severity": "warning"})
                 score -= 10
-            
+
             if "eval(" in code or "exec(" in code:
                 security_issues.append({"type": "security", "message": "Use of eval/exec is dangerous", "severity": "critical"})
                 score -= 30
-            
+
             if "os.system(" in code or "os.popen(" in code:
                 security_issues.append({"type": "security", "message": "Use of os.system/os.popen is dangerous", "severity": "critical"})
                 score -= 30
-            
+
             if "subprocess" in code and ("shell=True" in code or "call(" in code or "Popen(" in code):
                 security_issues.append({"type": "security", "message": "subprocess with shell or direct call can be dangerous", "severity": "high"})
                 score -= 20
-            
+
             if "__import__(" in code:
                 security_issues.append({"type": "security", "message": "Dynamic imports with __import__ are risky", "severity": "high"})
                 score -= 15
-            
+
             if len(lines) > 500:
                 issues.append({"type": "style", "message": "File too long, consider splitting", "severity": "info"})
                 score -= 5
-        
+
         return ReviewResult(
             success=True,
             score=max(0, score),
@@ -117,7 +117,7 @@ Output JSON format:
             json_match = re.search(r"\{.*\}", content, re.DOTALL)
             if json_match:
                 data = json.loads(json_match.group())
-                
+
                 return ReviewResult(
                     success=True,
                     score=data.get("score", 50),
@@ -129,7 +129,7 @@ Output JSON format:
                 )
         except Exception:
             pass
-        
+
         return ReviewResult(
             success=False,
             error="Failed to parse review response",

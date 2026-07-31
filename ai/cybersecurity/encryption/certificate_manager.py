@@ -1,12 +1,12 @@
 """
 Certificate Management
 """
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
 import secrets
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class CertStatus(Enum):
@@ -22,18 +22,18 @@ class Certificate:
     subject: str
     issuer: str
     not_before: datetime = field(default_factory=datetime.now)
-    not_after: Optional[datetime] = None
+    not_after: datetime | None = None
     serial_number: str = ""
     fingerprint: str = ""
     status: CertStatus = CertStatus.ACTIVE
-    san: List[str] = field(default_factory=list)
-    key_usage: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    san: list[str] = field(default_factory=list)
+    key_usage: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class CertificateManager:
     def __init__(self):
-        self.certificates: Dict[str, Certificate] = {}
+        self.certificates: dict[str, Certificate] = {}
         self.revoked_serials: set = set()
 
     def generate_self_signed(self, subject: str, valid_days: int = 365) -> Certificate:
@@ -71,17 +71,15 @@ class CertificateManager:
             return False
         if cert.status != CertStatus.ACTIVE:
             return False
-        if cert.serial_number in self.revoked_serials:
-            return False
-        return True
+        return cert.serial_number not in self.revoked_serials
 
-    def get_certificate(self, cert_id: str) -> Optional[Certificate]:
+    def get_certificate(self, cert_id: str) -> Certificate | None:
         return self.certificates.get(cert_id)
 
-    def find_by_subject(self, subject: str) -> List[Certificate]:
+    def find_by_subject(self, subject: str) -> list[Certificate]:
         return [c for c in self.certificates.values() if c.subject == subject]
 
-    def list_active(self) -> List[Certificate]:
+    def list_active(self) -> list[Certificate]:
         return [c for c in self.certificates.values() if c.status == CertStatus.ACTIVE]
 
     def count(self) -> int:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 
 class ConflictResolution:
@@ -13,8 +13,8 @@ class ConflictResolution:
     def conflicts_resolved(self) -> int:
         return self._conflicts_resolved
 
-    def detect(self, local: Dict[str, Any], remote: Dict[str, Any]) -> List[Dict[str, Any]]:
-        conflicts: List[Dict[str, Any]] = []
+    def detect(self, local: dict[str, Any], remote: dict[str, Any]) -> list[dict[str, Any]]:
+        conflicts: list[dict[str, Any]] = []
         for key in set(local.keys()) & set(remote.keys()):
             if local[key] != remote[key]:
                 conflicts.append({
@@ -24,8 +24,7 @@ class ConflictResolution:
                 })
         return conflicts
 
-    def resolve(self, data: Dict[str, Any], conflicts: List[Dict[str, Any]], strategy: str = "last_write") -> Dict[str, Any]:
-        import time
+    def resolve(self, data: dict[str, Any], conflicts: list[dict[str, Any]], strategy: str = "last_write") -> dict[str, Any]:
 
         resolved = dict(data)
         for conflict in conflicts:
@@ -39,11 +38,11 @@ class ConflictResolution:
             self._conflicts_resolved += 1
         return resolved
 
-    def resolve_all(self, local: Dict[str, Any], remote: Dict[str, Any], strategy: str = "last_write") -> Dict[str, Any]:
+    def resolve_all(self, local: dict[str, Any], remote: dict[str, Any], strategy: str = "last_write") -> dict[str, Any]:
         conflicts = self.detect(local, remote)
         return self.resolve({**local, **remote}, conflicts, strategy)
 
-    def stats(self) -> Dict[str, Any]:
+    def stats(self) -> dict[str, Any]:
         return {"conflicts_resolved": self._conflicts_resolved}
 
     def clear(self) -> None:

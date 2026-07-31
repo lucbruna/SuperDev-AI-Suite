@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class Entity:
@@ -11,7 +11,7 @@ class Entity:
         entity_id: str,
         name: str,
         entity_type: str = "unknown",
-        properties: Dict[str, Any] | None = None,
+        properties: dict[str, Any] | None = None,
     ):
         self._entity_id = entity_id
         self._name = name
@@ -31,7 +31,7 @@ class Entity:
         return self._type
 
     @property
-    def properties(self) -> Dict[str, Any]:
+    def properties(self) -> dict[str, Any]:
         return dict(self._properties)
 
     def get_property(self, key: str, default: Any = None) -> Any:
@@ -40,7 +40,7 @@ class Entity:
     def set_property(self, key: str, value: Any) -> None:
         self._properties[key] = value
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "entity_id": self._entity_id,
             "name": self._name,
@@ -49,7 +49,7 @@ class Entity:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> Entity:
+    def from_dict(cls, data: dict[str, Any]) -> Entity:
         return cls(
             entity_id=data["entity_id"],
             name=data["name"],

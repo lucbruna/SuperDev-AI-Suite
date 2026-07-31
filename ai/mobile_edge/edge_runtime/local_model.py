@@ -1,9 +1,9 @@
 """Local Model - Edge model management."""
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class LocalModelStatus(Enum):
@@ -22,14 +22,14 @@ class LocalModel:
     size_mb: float = 0.0
     status: LocalModelStatus = LocalModelStatus.AVAILABLE
     accuracy: float = 0.0
-    loaded_at: Optional[datetime] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    loaded_at: datetime | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class LocalModelManager:
     def __init__(self):
-        self.models: Dict[str, LocalModel] = {}
-        self.load_order: List[str] = []
+        self.models: dict[str, LocalModel] = {}
+        self.load_order: list[str] = []
 
     def register(self, name: str, version: str = "1.0", size_mb: float = 0.0) -> LocalModel:
         model_id = hashlib.sha256(f"{name}{version}".encode()).hexdigest()[:16]
@@ -53,10 +53,10 @@ class LocalModelManager:
             return True
         return False
 
-    def get(self, model_id: str) -> Optional[LocalModel]:
+    def get(self, model_id: str) -> LocalModel | None:
         return self.models.get(model_id)
 
-    def list_models(self, status: LocalModelStatus = None) -> List[LocalModel]:
+    def list_models(self, status: LocalModelStatus = None) -> list[LocalModel]:
         if status:
             return [m for m in self.models.values() if m.status == status]
         return list(self.models.values())

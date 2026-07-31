@@ -1,7 +1,7 @@
 """Factory Context - Shared context for factory operations."""
-from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
 from datetime import datetime
+from typing import Any
 
 
 @dataclass
@@ -16,8 +16,8 @@ class FactoryContextItem:
 
 class FactoryContext:
     def __init__(self):
-        self.items: Dict[str, FactoryContextItem] = {}
-        self.project_contexts: Dict[str, Dict[str, Any]] = {}
+        self.items: dict[str, FactoryContextItem] = {}
+        self.project_contexts: dict[str, dict[str, Any]] = {}
 
     def set(self, key: str, value: Any, scope: str = "global", project_id: str = "") -> FactoryContextItem:
         item = FactoryContextItem(key=key, value=value, scope=scope, project_id=project_id)
@@ -27,9 +27,8 @@ class FactoryContext:
         return item
 
     def get(self, key: str, project_id: str = "") -> Any:
-        if project_id and project_id in self.project_contexts:
-            if key in self.project_contexts[project_id]:
-                return self.project_contexts[project_id][key]
+        if project_id and project_id in self.project_contexts and key in self.project_contexts[project_id]:
+            return self.project_contexts[project_id][key]
         item = self.items.get(key)
         return item.value if item else None
 
@@ -39,10 +38,10 @@ class FactoryContext:
             return True
         return False
 
-    def get_project_context(self, project_id: str) -> Dict[str, Any]:
+    def get_project_context(self, project_id: str) -> dict[str, Any]:
         return self.project_contexts.get(project_id, {})
 
-    def list_keys(self, scope: str = None) -> List[str]:
+    def list_keys(self, scope: str = None) -> list[str]:
         if scope:
             return [k for k, v in self.items.items() if v.scope == scope]
         return list(self.items.keys())

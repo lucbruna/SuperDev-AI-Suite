@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 
 class AgentMetrics:
     """Metrics collection for agents."""
 
     def __init__(self) -> None:
-        self._counters: Dict[str, int] = {}
-        self._gauges: Dict[str, float] = {}
+        self._counters: dict[str, int] = {}
+        self._gauges: dict[str, float] = {}
 
     def increment(self, key: str, value: int = 1) -> None:
         self._counters[key] = self._counters.get(key, 0) + value
@@ -22,7 +22,7 @@ class AgentMetrics:
     def get_gauge(self, key: str) -> float:
         return self._gauges.get(key, 0.0)
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         return {
             "counters": dict(self._counters),
             "gauges": dict(self._gauges),

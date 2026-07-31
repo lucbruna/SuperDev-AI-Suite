@@ -1,7 +1,18 @@
 """Data Platform Factory — Factory for creating data platform components."""
-from typing import Dict, Any, List, Optional
-from .data_models import DataSource, DataRecord, DataPipeline, DataSchema, DataCatalogEntry, DataPartition, DataLineage
-from .data_models import DataSourceType, DataFormat, PipelineStatus, StorageTier, DataQualityLevel
+from typing import Any
+
+from .data_models import (
+    DataCatalogEntry,
+    DataFormat,
+    DataLineage,
+    DataPartition,
+    DataPipeline,
+    DataRecord,
+    DataSchema,
+    DataSource,
+    DataSourceType,
+    StorageTier,
+)
 
 
 class DataPlatformFactory:
@@ -12,19 +23,19 @@ class DataPlatformFactory:
         return DataSource(name=name, source_type=st, connection_string=connection, format=df)
 
     @staticmethod
-    def create_record(source_id: str, dataset: str, payload: Dict[str, Any], tags: List[str] = None) -> DataRecord:
+    def create_record(source_id: str, dataset: str, payload: dict[str, Any], tags: list[str] = None) -> DataRecord:
         return DataRecord(source_id=source_id, dataset=dataset, payload=payload, tags=tags or [])
 
     @staticmethod
-    def create_pipeline(name: str, source_id: str, steps: List[Dict[str, Any]] = None) -> DataPipeline:
+    def create_pipeline(name: str, source_id: str, steps: list[dict[str, Any]] = None) -> DataPipeline:
         return DataPipeline(name=name, source_id=source_id, steps=steps or [])
 
     @staticmethod
-    def create_schema(name: str, dataset: str, fields: List[Dict[str, Any]], version: str = "1.0") -> DataSchema:
+    def create_schema(name: str, dataset: str, fields: list[dict[str, Any]], version: str = "1.0") -> DataSchema:
         return DataSchema(name=name, dataset=dataset, fields=fields, version=version)
 
     @staticmethod
-    def create_catalog_entry(dataset: str, description: str, owner: str, tags: List[str] = None) -> DataCatalogEntry:
+    def create_catalog_entry(dataset: str, description: str, owner: str, tags: list[str] = None) -> DataCatalogEntry:
         return DataCatalogEntry(dataset=dataset, description=description, owner=owner, tags=tags or [])
 
     @staticmethod
@@ -33,11 +44,11 @@ class DataPlatformFactory:
         return DataPartition(dataset=dataset, key=key, tier=st)
 
     @staticmethod
-    def create_lineage(dataset: str, source_datasets: List[str], transformation: str) -> DataLineage:
+    def create_lineage(dataset: str, source_datasets: list[str], transformation: str) -> DataLineage:
         return DataLineage(dataset=dataset, source_datasets=source_datasets, transformation=transformation)
 
     @staticmethod
-    def templates() -> Dict[str, Dict[str, Any]]:
+    def templates() -> dict[str, dict[str, Any]]:
         return {
             "sales_data": {
                 "fields": [

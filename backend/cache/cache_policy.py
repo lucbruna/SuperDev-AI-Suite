@@ -28,9 +28,7 @@ class CachePolicy:
     def should_cache(self, key: str, value: Any) -> bool:
         if value is None:
             return False
-        if isinstance(value, (list, dict, str)) and not value:
-            return False
-        return True
+        return not (isinstance(value, (list, dict, str)) and not value)
 
     def set_ttl(self, prefix: str, ttl: int) -> None:
         self._ttls[prefix] = ttl

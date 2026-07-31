@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from .cache_store import CacheStore
@@ -12,7 +12,7 @@ class CacheEngine:
     def __init__(self, default_ttl: float = 300.0, max_size: int = 1000) -> None:
         self._default_ttl = default_ttl
         self._max_size = max_size
-        self._stores: Dict[str, "CacheStore"] = {}
+        self._stores: dict[str, CacheStore] = {}
 
     @property
     def default_ttl(self) -> float:
@@ -23,13 +23,13 @@ class CacheEngine:
         return self._max_size
 
     @property
-    def store_names(self) -> List[str]:
+    def store_names(self) -> list[str]:
         return list(self._stores.keys())
 
-    def register_store(self, name: str, store: "CacheStore") -> None:
+    def register_store(self, name: str, store: CacheStore) -> None:
         self._stores[name] = store
 
-    def get(self, key: str, store_name: Optional[str] = None) -> Optional[Any]:
+    def get(self, key: str, store_name: str | None = None) -> Any | None:
         if store_name:
             store = self._stores.get(store_name)
             return store.get(key) if store else None
@@ -39,7 +39,7 @@ class CacheEngine:
                 return value
         return None
 
-    def set(self, key: str, value: Any, ttl: Optional[float] = None, store_name: Optional[str] = None) -> None:
+    def set(self, key: str, value: Any, ttl: float | None = None, store_name: str | None = None) -> None:
         ttl = ttl if ttl is not None else self._default_ttl
         if store_name:
             store = self._stores.get(store_name)
@@ -49,7 +49,7 @@ class CacheEngine:
             for store in self._stores.values():
                 store.set(key, value, ttl)
 
-    def delete(self, key: str, store_name: Optional[str] = None) -> bool:
+    def delete(self, key: str, store_name: str | None = None) -> bool:
         if store_name:
             store = self._stores.get(store_name)
             return store.delete(key) if store else False
@@ -59,7 +59,7 @@ class CacheEngine:
                 removed = True
         return removed
 
-    def clear(self, store_name: Optional[str] = None) -> None:
+    def clear(self, store_name: str | None = None) -> None:
         if store_name:
             store = self._stores.get(store_name)
             if store:
@@ -68,7 +68,7 @@ class CacheEngine:
             for store in self._stores.values():
                 store.clear()
 
-    def stats(self) -> Dict[str, Any]:
+    def stats(self) -> dict[str, Any]:
         return {
             "stores": len(self._stores),
             "default_ttl": self._default_ttl,

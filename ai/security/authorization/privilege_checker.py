@@ -1,7 +1,8 @@
 """Privilege checker."""
 from __future__ import annotations
-from typing import Any, Dict, List, Set
+
 from enum import Enum
+
 
 class Privilege(Enum):
     VIEW = "view"
@@ -15,8 +16,8 @@ class Privilege(Enum):
 
 class PrivilegeChecker:
     def __init__(self) -> None:
-        self._grants: Dict[str, Set[Privilege]] = {}
-        self._denials: Dict[str, Set[Privilege]] = {}
+        self._grants: dict[str, set[Privilege]] = {}
+        self._denials: dict[str, set[Privilege]] = {}
     def grant(self, user_id: str, privilege: Privilege) -> None:
         self._grants.setdefault(user_id, set()).add(privilege)
     def deny(self, user_id: str, privilege: Privilege) -> None:
@@ -35,7 +36,7 @@ class PrivilegeChecker:
         if user_id in self._denials and privilege in self._denials[user_id]:
             return False
         return privilege in self._grants.get(user_id, set())
-    def get_privileges(self, user_id: str) -> List[str]:
+    def get_privileges(self, user_id: str) -> list[str]:
         return [p.value for p in self._grants.get(user_id, set())]
     def check_admin(self, user_id: str) -> bool:
         return self.check(user_id, Privilege.ADMIN)

@@ -1,42 +1,49 @@
 """Data Platform Engine — Core data platform engine."""
-from typing import Dict, Any, Optional, List
 from datetime import datetime
-from .data_models import (
-    DataSource, DataRecord, DataPipeline, DataSchema, DataCatalogEntry,
-    DataPartition, DataLineage, DataSourceType, PipelineStatus, DataQualityLevel, StorageTier,
-)
+from typing import Any
+
 from .data_config import DataPlatformConfig
+from .data_models import (
+    DataCatalogEntry,
+    DataLineage,
+    DataPartition,
+    DataPipeline,
+    DataRecord,
+    DataSchema,
+    DataSource,
+    PipelineStatus,
+)
 
 
 class DataPlatformEngine:
-    def __init__(self, config: Optional[DataPlatformConfig] = None):
+    def __init__(self, config: DataPlatformConfig | None = None):
         self._config = config or DataPlatformConfig()
-        self._sources: Dict[str, DataSource] = {}
-        self._records: Dict[str, DataRecord] = {}
-        self._pipelines: Dict[str, DataPipeline] = {}
-        self._schemas: Dict[str, DataSchema] = {}
-        self._catalog: Dict[str, DataCatalogEntry] = {}
-        self._partitions: Dict[str, DataPartition] = {}
-        self._lineage: List[DataLineage] = []
+        self._sources: dict[str, DataSource] = {}
+        self._records: dict[str, DataRecord] = {}
+        self._pipelines: dict[str, DataPipeline] = {}
+        self._schemas: dict[str, DataSchema] = {}
+        self._catalog: dict[str, DataCatalogEntry] = {}
+        self._partitions: dict[str, DataPartition] = {}
+        self._lineage: list[DataLineage] = []
 
     def register_source(self, source: DataSource) -> DataSource:
         self._sources[source.source_id] = source
         return source
 
-    def get_source(self, source_id: str) -> Optional[DataSource]:
+    def get_source(self, source_id: str) -> DataSource | None:
         return self._sources.get(source_id)
 
-    def list_sources(self) -> List[DataSource]:
+    def list_sources(self) -> list[DataSource]:
         return list(self._sources.values())
 
     def ingest_record(self, record: DataRecord) -> DataRecord:
         self._records[record.record_id] = record
         return record
 
-    def get_record(self, record_id: str) -> Optional[DataRecord]:
+    def get_record(self, record_id: str) -> DataRecord | None:
         return self._records.get(record_id)
 
-    def query_records(self, dataset: str, filters: Optional[Dict[str, Any]] = None) -> List[DataRecord]:
+    def query_records(self, dataset: str, filters: dict[str, Any] | None = None) -> list[DataRecord]:
         records = [r for r in self._records.values() if r.dataset == dataset]
         if filters:
             for key, value in filters.items():
@@ -47,7 +54,7 @@ class DataPlatformEngine:
         self._pipelines[pipeline.pipeline_id] = pipeline
         return pipeline
 
-    def get_pipeline(self, pipeline_id: str) -> Optional[DataPipeline]:
+    def get_pipeline(self, pipeline_id: str) -> DataPipeline | None:
         return self._pipelines.get(pipeline_id)
 
     def start_pipeline(self, pipeline_id: str) -> bool:
@@ -79,17 +86,17 @@ class DataPlatformEngine:
         self._schemas[schema.schema_id] = schema
         return schema
 
-    def get_schema(self, schema_id: str) -> Optional[DataSchema]:
+    def get_schema(self, schema_id: str) -> DataSchema | None:
         return self._schemas.get(schema_id)
 
     def add_catalog_entry(self, entry: DataCatalogEntry) -> DataCatalogEntry:
         self._catalog[entry.entry_id] = entry
         return entry
 
-    def get_catalog_entry(self, entry_id: str) -> Optional[DataCatalogEntry]:
+    def get_catalog_entry(self, entry_id: str) -> DataCatalogEntry | None:
         return self._catalog.get(entry_id)
 
-    def search_catalog(self, query: str) -> List[DataCatalogEntry]:
+    def search_catalog(self, query: str) -> list[DataCatalogEntry]:
         q = query.lower()
         return [e for e in self._catalog.values()
                 if q in e.dataset.lower() or q in e.description.lower()
@@ -99,17 +106,17 @@ class DataPlatformEngine:
         self._partitions[partition.partition_id] = partition
         return partition
 
-    def get_partition(self, partition_id: str) -> Optional[DataPartition]:
+    def get_partition(self, partition_id: str) -> DataPartition | None:
         return self._partitions.get(partition_id)
 
     def add_lineage(self, lineage: DataLineage) -> DataLineage:
         self._lineage.append(lineage)
         return lineage
 
-    def get_lineage(self, dataset: str) -> List[DataLineage]:
+    def get_lineage(self, dataset: str) -> list[DataLineage]:
         return [l for l in self._lineage if l.dataset == dataset]
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         return {
             "sources": len(self._sources),
             "records": len(self._records),

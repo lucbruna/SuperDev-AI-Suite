@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .cache_entry import CacheEntry
 
@@ -10,8 +10,8 @@ class LRUCache:
 
     def __init__(self, max_size: int = 1000) -> None:
         self._max_size = max_size
-        self._entries: Dict[str, CacheEntry] = {}
-        self._order: List[str] = []
+        self._entries: dict[str, CacheEntry] = {}
+        self._order: list[str] = []
 
     @property
     def max_size(self) -> int:
@@ -21,7 +21,7 @@ class LRUCache:
     def size(self) -> int:
         return len(self._entries)
 
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         entry = self._entries.get(key)
         if entry is None or entry.is_expired:
             if entry:
@@ -47,7 +47,7 @@ class LRUCache:
         self._entries.clear()
         self._order.clear()
 
-    def keys(self) -> List[str]:
+    def keys(self) -> list[str]:
         return list(self._entries.keys())
 
     def _touch(self, key: str) -> None:
@@ -68,7 +68,7 @@ class LRUCache:
             oldest = self._order.pop(0)
             self._entries.pop(oldest, None)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "max_size": self._max_size,
             "size": self.size,

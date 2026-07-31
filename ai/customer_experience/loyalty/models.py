@@ -1,7 +1,6 @@
 """Loyalty models."""
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
 from enum import Enum
 
 

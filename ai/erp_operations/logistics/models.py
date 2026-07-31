@@ -1,7 +1,6 @@
 """Logistics models."""
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
 from enum import Enum
 
 
@@ -33,8 +32,8 @@ class Shipment:
     weight: float = 0.0
     cost: float = 0.0
     tracking_number: str = ""
-    estimated_delivery: Optional[datetime] = None
-    actual_delivery: Optional[datetime] = None
+    estimated_delivery: datetime | None = None
+    actual_delivery: datetime | None = None
     created_at: datetime = field(default_factory=datetime.now)
 
 
@@ -47,7 +46,7 @@ class Route:
     distance_km: float = 0.0
     estimated_hours: float = 0.0
     cost: float = 0.0
-    waypoints: List[str] = field(default_factory=list)
+    waypoints: list[str] = field(default_factory=list)
 
 
 @dataclass

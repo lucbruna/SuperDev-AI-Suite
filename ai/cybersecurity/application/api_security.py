@@ -1,12 +1,11 @@
 """
 API Security
 """
-from typing import Dict, Any, Optional, List, Tuple
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
-import secrets
 import hashlib
+import secrets
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
 
 
 class APIKeyState(Enum):
@@ -22,8 +21,8 @@ class APIKey:
     name: str
     state: APIKeyState = APIKeyState.ACTIVE
     created_at: datetime = field(default_factory=datetime.now)
-    expires_at: Optional[datetime] = None
-    scopes: List[str] = field(default_factory=list)
+    expires_at: datetime | None = None
+    scopes: list[str] = field(default_factory=list)
     rate_limit: int = 1000
 
 
@@ -31,18 +30,18 @@ class APIKey:
 class RateLimitResult:
     allowed: bool
     remaining: int
-    reset_at: Optional[datetime] = None
+    reset_at: datetime | None = None
     retry_after: int = 0
 
 
 class APISecurity:
     def __init__(self):
-        self.api_keys: Dict[str, APIKey] = {}
-        self.rate_counters: Dict[str, int] = {}
-        self.cors_origins: List[str] = ["*"]
+        self.api_keys: dict[str, APIKey] = {}
+        self.rate_counters: dict[str, int] = {}
+        self.cors_origins: list[str] = ["*"]
         self.blocked_ips: set = set()
 
-    def generate_api_key(self, name: str, scopes: List[str] = None, rate_limit: int = 1000) -> Tuple[str, APIKey]:
+    def generate_api_key(self, name: str, scopes: list[str] = None, rate_limit: int = 1000) -> tuple[str, APIKey]:
         key_id = secrets.token_hex(16)
         raw_key = secrets.token_urlsafe(32)
         key_hash = hashlib.sha256(raw_key.encode()).hexdigest()
@@ -50,7 +49,7 @@ class APISecurity:
         self.api_keys[key_id] = api_key
         return raw_key, api_key
 
-    def validate_api_key(self, raw_key: str) -> Optional[APIKey]:
+    def validate_api_key(self, raw_key: str) -> APIKey | None:
         key_hash = hashlib.sha256(raw_key.encode()).hexdigest()
         for key in self.api_keys.values():
             if key.key_hash == key_hash and key.state == APIKeyState.ACTIVE:
@@ -77,7 +76,7 @@ class APISecurity:
     def reset_rate_limit(self, key_id: str) -> None:
         self.rate_counters[key_id] = 0
 
-    def set_cors_origins(self, origins: List[str]) -> None:
+    def set_cors_origins(self, origins: list[str]) -> None:
         self.cors_origins = origins
 
     def check_cors(self, origin: str) -> bool:

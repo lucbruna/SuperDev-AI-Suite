@@ -1,9 +1,9 @@
 """
 Biometric Authentication
 """
-from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any
 
 
 class BiometricType(Enum):
@@ -21,13 +21,13 @@ class BiometricTemplate:
     template_data: str = ""
     quality: float = 0.0
     is_active: bool = True
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class BiometricManager:
     def __init__(self):
-        self.templates: Dict[str, List[BiometricTemplate]] = {}
-        
+        self.templates: dict[str, list[BiometricTemplate]] = {}
+
     def register_template(self, user_id: str, biometric_type: BiometricType, template_data: str) -> BiometricTemplate:
         template = BiometricTemplate(
             user_id=user_id,
@@ -38,7 +38,7 @@ class BiometricManager:
             self.templates[user_id] = []
         self.templates[user_id].append(template)
         return template
-        
+
     def verify(self, user_id: str, biometric_type: BiometricType, probe_data: str) -> bool:
         user_templates = self.templates.get(user_id, [])
         for template in user_templates:
@@ -46,10 +46,10 @@ class BiometricManager:
                 if template.template_data == probe_data:
                     return True
         return False
-        
-    def get_user_templates(self, user_id: str) -> List[BiometricTemplate]:
+
+    def get_user_templates(self, user_id: str) -> list[BiometricTemplate]:
         return self.templates.get(user_id, [])
-        
+
     def revoke_template(self, user_id: str, biometric_type: BiometricType) -> bool:
         templates = self.templates.get(user_id, [])
         for t in templates:
@@ -57,7 +57,7 @@ class BiometricManager:
                 t.is_active = False
                 return True
         return False
-        
+
     def revoke_all(self, user_id: str) -> int:
         templates = self.templates.get(user_id, [])
         count = 0

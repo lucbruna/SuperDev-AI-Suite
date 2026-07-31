@@ -1,11 +1,10 @@
 """
 Endpoint Detection and Response
 """
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
 
 
 class ThreatCategory(Enum):
@@ -44,18 +43,18 @@ class EndpointAlert:
     endpoint_id: str
     threat_category: ThreatCategory
     severity: str = "medium"
-    process: Optional[ProcessInfo] = None
+    process: ProcessInfo | None = None
     message: str = ""
     timestamp: datetime = field(default_factory=datetime.now)
 
 
 class EndpointDefense:
     def __init__(self):
-        self.processes: Dict[int, ProcessInfo] = {}
-        self.file_events: List[FileIntegrityEvent] = []
-        self.alerts: List[EndpointAlert] = []
+        self.processes: dict[int, ProcessInfo] = {}
+        self.file_events: list[FileIntegrityEvent] = []
+        self.alerts: list[EndpointAlert] = []
         self.blocked_hashes: set = set()
-        self.monitored_paths: List[str] = []
+        self.monitored_paths: list[str] = []
 
     def monitor_process(self, pid: int, name: str, path: str, command_line: str = "") -> ProcessInfo:
         file_hash = hashlib.sha256(f"{name}{path}".encode()).hexdigest()
@@ -78,15 +77,15 @@ class EndpointDefense:
     def add_monitored_path(self, path: str) -> None:
         self.monitored_paths.append(path)
 
-    def get_alerts(self, threat_category: ThreatCategory = None) -> List[EndpointAlert]:
+    def get_alerts(self, threat_category: ThreatCategory = None) -> list[EndpointAlert]:
         if threat_category:
             return [a for a in self.alerts if a.threat_category == threat_category]
         return self.alerts
 
-    def get_suspicious_processes(self) -> List[ProcessInfo]:
+    def get_suspicious_processes(self) -> list[ProcessInfo]:
         return [p for p in self.processes.values() if p.is_suspicious]
 
-    def get_file_events(self, file_path: str = None) -> List[FileIntegrityEvent]:
+    def get_file_events(self, file_path: str = None) -> list[FileIntegrityEvent]:
         if file_path:
             return [e for e in self.file_events if e.file_path == file_path]
         return self.file_events

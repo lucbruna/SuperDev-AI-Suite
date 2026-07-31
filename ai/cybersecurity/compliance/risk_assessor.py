@@ -1,11 +1,10 @@
 """
 Risk Assessment Engine
 """
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
 
 
 class RiskLevel(Enum):
@@ -36,20 +35,20 @@ class Risk:
     owner: str = ""
     status: str = "open"
     created_at: datetime = field(default_factory=datetime.now)
-    mitigations: List[str] = field(default_factory=list)
+    mitigations: list[str] = field(default_factory=list)
 
 
 @dataclass
 class RiskRegister:
     register_id: str
-    risks: List[Risk] = field(default_factory=list)
+    risks: list[Risk] = field(default_factory=list)
     created_at: datetime = field(default_factory=datetime.now)
 
 
 class RiskAssessor:
     def __init__(self):
-        self.risks: Dict[str, Risk] = {}
-        self.registers: List[RiskRegister] = []
+        self.risks: dict[str, Risk] = {}
+        self.registers: list[RiskRegister] = []
 
     def identify_risk(self, name: str, likelihood: float = 0.5, impact: float = 0.5, **kwargs) -> Risk:
         risk_id = hashlib.sha256(f"{name}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
@@ -84,13 +83,13 @@ class RiskAssessor:
             return True
         return False
 
-    def get_by_level(self, level: RiskLevel) -> List[Risk]:
+    def get_by_level(self, level: RiskLevel) -> list[Risk]:
         return [r for r in self.risks.values() if r.risk_level == level]
 
-    def get_open_risks(self) -> List[Risk]:
+    def get_open_risks(self) -> list[Risk]:
         return [r for r in self.risks.values() if r.status == "open"]
 
-    def get_risk(self, risk_id: str) -> Optional[Risk]:
+    def get_risk(self, risk_id: str) -> Risk | None:
         return self.risks.get(risk_id)
 
     def create_register(self) -> RiskRegister:

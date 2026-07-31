@@ -1,11 +1,9 @@
 """
 Prompt Injection Defense
 """
-from typing import Dict, Any, Optional, List
+import re
 from dataclasses import dataclass, field
 from enum import Enum
-from datetime import datetime
-import re
 
 
 class InjectionType(Enum):
@@ -20,15 +18,15 @@ class InjectionType(Enum):
 class PromptAnalysis:
     input_text: str
     is_safe: bool
-    injection_type: Optional[InjectionType] = None
+    injection_type: InjectionType | None = None
     confidence: float = 0.0
-    detected_patterns: List[str] = field(default_factory=list)
+    detected_patterns: list[str] = field(default_factory=list)
     sanitized_text: str = ""
 
 
 class PromptGuard:
     def __init__(self):
-        self.blocked_patterns: Dict[InjectionType, List[str]] = {
+        self.blocked_patterns: dict[InjectionType, list[str]] = {
             InjectionType.DIRECT_INJECTION: [
                 r"ignore\s+(previous|all|above)\s+instructions",
                 r"you\s+are\s+now\s+a\s+",
@@ -53,7 +51,7 @@ class PromptGuard:
                 r"new\s+persona",
             ],
         }
-        self.analysis_log: List[PromptAnalysis] = []
+        self.analysis_log: list[PromptAnalysis] = []
         self.max_input_length: int = 10000
 
     def analyze(self, input_text: str) -> PromptAnalysis:
@@ -88,10 +86,10 @@ class PromptGuard:
     def add_blocked_pattern(self, injection_type: InjectionType, pattern: str) -> None:
         self.blocked_patterns.setdefault(injection_type, []).append(pattern)
 
-    def get_recent_analyses(self, limit: int = 10) -> List[PromptAnalysis]:
+    def get_recent_analyses(self, limit: int = 10) -> list[PromptAnalysis]:
         return self.analysis_log[-limit:]
 
-    def get_threat_stats(self) -> Dict[str, int]:
+    def get_threat_stats(self) -> dict[str, int]:
         stats = {}
         for analysis in self.analysis_log:
             if analysis.injection_type:

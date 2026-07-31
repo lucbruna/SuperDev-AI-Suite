@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from backend.database.models.knowledge import KnowledgeBase, KnowledgeEntry
 from backend.exceptions import KnowledgeBaseNotFoundException, KnowledgeIndexException
 from backend.repositories.knowledge_repository import (
@@ -9,7 +11,6 @@ from backend.repositories.knowledge_repository import (
     KnowledgeChunkRepository,
     KnowledgeEntryRepository,
 )
-from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class KnowledgeService:

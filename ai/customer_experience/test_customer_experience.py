@@ -1,30 +1,41 @@
 """Comprehensive tests for customer_experience subsystem (Volume 34)."""
-import sys
 import os
+import sys
 import unittest
-from datetime import datetime, timedelta
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from customer_experience.cx_models import (
-    CustomerStatus, CustomerTier, InteractionType, TicketPriority, TicketStatus,
-    SentimentType, LeadStatus, LoyaltyAction,
-    Customer, CustomerProfile, Interaction, Ticket, Lead,
-    Recommendation, LoyaltyTransaction, CustomerJourney,
-)
-from customer_experience.journey.models import JourneyStage
-from customer_experience.cx_config import CXConfigEntry, CXConfig
+from customer_experience.cx_config import CXConfig, CXConfigEntry
+from customer_experience.cx_context import CXContext
 from customer_experience.cx_engine import CXEngine
-from customer_experience.cx_manager import CXProject, CXManager
+from customer_experience.cx_events import CXEventBus, CXEventType
 from customer_experience.cx_factory import CXFactory
-from customer_experience.cx_registry import CXComponent, CXRegistry
-from customer_experience.cx_runtime import CXTaskState, CXTask, CXRuntime
-from customer_experience.cx_context import CXContextItem, CXContext
-from customer_experience.cx_events import CXEventType, CXEvent, CXEventBus
-from customer_experience.cx_metrics import CXMetricPoint, CXMetricSummary, CXMetrics
-from customer_experience.cx_logger import CXLogLevel, CXLogEntry, CXLogger
-from customer_experience.cx_protocols import CXProtocolType, CXProtocolConfig, CXProtocols
-from customer_experience.cx_security import CXSecurityCheck, CXSeverity, CXSecurityIssue, CXSecurity
+from customer_experience.cx_logger import CXLogger, CXLogLevel
+from customer_experience.cx_manager import CXManager
+from customer_experience.cx_metrics import CXMetrics
+from customer_experience.cx_models import (
+    Customer,
+    CustomerJourney,
+    CustomerProfile,
+    CustomerStatus,
+    CustomerTier,
+    Interaction,
+    InteractionType,
+    Lead,
+    LeadStatus,
+    LoyaltyAction,
+    LoyaltyTransaction,
+    Recommendation,
+    SentimentType,
+    Ticket,
+    TicketPriority,
+    TicketStatus,
+)
+from customer_experience.cx_protocols import CXProtocols, CXProtocolType
+from customer_experience.cx_registry import CXRegistry
+from customer_experience.cx_runtime import CXRuntime, CXTaskState
+from customer_experience.cx_security import CXSecurity, CXSecurityCheck, CXSeverity
+from customer_experience.journey.models import JourneyStage
 
 
 class TestCXModels(unittest.TestCase):

@@ -1,7 +1,10 @@
 """Forensic analysis tools."""
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
-import time, uuid
+
+import time
+import uuid
+from typing import Any
+
 
 class ForensicCase:
     def __init__(self, case_id: str, title: str, investigator: str = "") -> None:
@@ -9,13 +12,13 @@ class ForensicCase:
         self.title = title
         self.investigator = investigator
         self.created_at = time.time()
-        self.evidence: List[Dict[str, Any]] = []
-        self.findings: List[Dict[str, Any]] = []
+        self.evidence: list[dict[str, Any]] = []
+        self.findings: list[dict[str, Any]] = []
         self.status = "open"
 
 class ForensicAnalyzer:
     def __init__(self) -> None:
-        self._cases: Dict[str, ForensicCase] = {}
+        self._cases: dict[str, ForensicCase] = {}
     def create_case(self, title: str, investigator: str = "") -> ForensicCase:
         cid = str(uuid.uuid4())[:8]
         case = ForensicCase(cid, title, investigator)
@@ -39,16 +42,16 @@ class ForensicAnalyzer:
             case.status = "closed"
             return True
         return False
-    def get_case(self, case_id: str) -> Optional[Dict[str, Any]]:
+    def get_case(self, case_id: str) -> dict[str, Any] | None:
         case = self._cases.get(case_id)
         if case:
             return {"id": case.case_id, "title": case.title, "status": case.status, "evidence_count": len(case.evidence), "findings_count": len(case.findings)}
         return None
-    def list_cases(self, status: str = "") -> List[str]:
+    def list_cases(self, status: str = "") -> list[str]:
         if status:
             return [c.case_id for c in self._cases.values() if c.status == status]
         return list(self._cases.keys())
-    def timeline(self, case_id: str) -> List[Dict[str, Any]]:
+    def timeline(self, case_id: str) -> list[dict[str, Any]]:
         case = self._cases.get(case_id)
         if not case:
             return []

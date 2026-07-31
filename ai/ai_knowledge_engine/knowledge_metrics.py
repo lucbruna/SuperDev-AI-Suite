@@ -1,6 +1,6 @@
 """Knowledge Engine Metrics — Metrics tracking for knowledge operations."""
-from typing import Dict, Any, List
 from datetime import datetime
+from typing import Any
 
 
 class KnowledgeMetrics:
@@ -13,7 +13,7 @@ class KnowledgeMetrics:
         self._validations_performed: int = 0
         self._experiences_recorded: int = 0
         self._embeddings_created: int = 0
-        self._events: List[Dict[str, Any]] = []
+        self._events: list[dict[str, Any]] = []
 
     def record_store(self) -> None:
         self._knowledge_stored += 1
@@ -39,14 +39,14 @@ class KnowledgeMetrics:
     def record_embedding(self) -> None:
         self._embeddings_created += 1
 
-    def record_event(self, event_type: str, details: Dict[str, Any] = None) -> None:
+    def record_event(self, event_type: str, details: dict[str, Any] = None) -> None:
         self._events.append({
             "event_type": event_type,
             "details": details or {},
             "timestamp": datetime.now().isoformat(),
         })
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         return {
             "knowledge_stored": self._knowledge_stored,
             "knowledge_retrieved": self._knowledge_retrieved,

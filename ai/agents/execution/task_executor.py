@@ -3,16 +3,16 @@ from __future__ import annotations
 
 import time
 import uuid
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 class TaskExecutor:
     """Executes individual tasks and tracks their state."""
 
     def __init__(self) -> None:
-        self._tasks: Dict[str, Dict[str, Any]] = {}
+        self._tasks: dict[str, dict[str, Any]] = {}
 
-    async def execute(self, task_spec: Dict[str, Any]) -> Dict[str, Any]:
+    async def execute(self, task_spec: dict[str, Any]) -> dict[str, Any]:
         task_id = task_spec.get("id", str(uuid.uuid4()))
         self._tasks[task_id] = {
             "id": task_id,
@@ -23,7 +23,7 @@ class TaskExecutor:
         }
         task_type = task_spec.get("type", "generic")
         payload = task_spec.get("payload", {})
-        result: Dict[str, Any] = {
+        result: dict[str, Any] = {
             "task_id": task_id,
             "type": task_type,
             "output": f"Executed {task_type} task with {len(payload)} payload items",
@@ -44,7 +44,7 @@ class TaskExecutor:
                 return True
         return False
 
-    def get_status(self, task_id: str) -> Optional[Dict[str, Any]]:
+    def get_status(self, task_id: str) -> dict[str, Any] | None:
         task = self._tasks.get(task_id)
         if task:
             return {
@@ -55,7 +55,7 @@ class TaskExecutor:
             }
         return None
 
-    def get_all_tasks(self) -> Dict[str, Dict[str, Any]]:
+    def get_all_tasks(self) -> dict[str, dict[str, Any]]:
         return {
             tid: {"id": t["id"], "status": t["status"]}
             for tid, t in self._tasks.items()

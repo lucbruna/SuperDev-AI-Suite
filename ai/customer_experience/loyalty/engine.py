@@ -1,19 +1,22 @@
 """Loyalty engine."""
 import uuid
 from datetime import datetime
-from typing import Dict, List, Optional
+
 from .models import (
-    LoyaltyAccount, LoyaltyTransaction, Reward, CustomerValue,
-    LoyaltyAction, RewardType,
+    CustomerValue,
+    LoyaltyAccount,
+    LoyaltyAction,
+    LoyaltyTransaction,
+    Reward,
 )
 
 
 class LoyaltyEngine:
     def __init__(self, points_per_dollar: int = 10):
-        self._accounts: Dict[str, LoyaltyAccount] = {}
-        self._transactions: Dict[str, List[LoyaltyTransaction]] = {}
-        self._rewards: Dict[str, Reward] = {}
-        self._customer_values: Dict[str, CustomerValue] = {}
+        self._accounts: dict[str, LoyaltyAccount] = {}
+        self._transactions: dict[str, list[LoyaltyTransaction]] = {}
+        self._rewards: dict[str, Reward] = {}
+        self._customer_values: dict[str, CustomerValue] = {}
         self._points_per_dollar = points_per_dollar
 
     def get_or_create_account(self, customer_id: str) -> LoyaltyAccount:
@@ -41,7 +44,7 @@ class LoyaltyEngine:
         points = int(amount * self._points_per_dollar)
         return self.earn_points(customer_id, points, f"Earned from purchase of {amount:.2f}")
 
-    def redeem_points(self, customer_id: str, points: int, description: str = "") -> Optional[LoyaltyTransaction]:
+    def redeem_points(self, customer_id: str, points: int, description: str = "") -> LoyaltyTransaction | None:
         account = self._accounts.get(customer_id)
         if not account or account.balance < points:
             return None
@@ -67,10 +70,10 @@ class LoyaltyEngine:
         self._rewards[reward.reward_id] = reward
         return reward
 
-    def get_rewards(self) -> List[Reward]:
+    def get_rewards(self) -> list[Reward]:
         return [r for r in self._rewards.values() if r.active]
 
-    def get_transactions(self, customer_id: str) -> List[LoyaltyTransaction]:
+    def get_transactions(self, customer_id: str) -> list[LoyaltyTransaction]:
         return self._transactions.get(customer_id, [])
 
     def calculate_customer_value(self, customer_id: str, total_spent: float = 0.0, orders: int = 0) -> CustomerValue:
@@ -87,7 +90,7 @@ class LoyaltyEngine:
         self._customer_values[customer_id] = cv
         return cv
 
-    def get_customer_value(self, customer_id: str) -> Optional[CustomerValue]:
+    def get_customer_value(self, customer_id: str) -> CustomerValue | None:
         return self._customer_values.get(customer_id)
 
     def update_tier(self, customer_id: str) -> str:

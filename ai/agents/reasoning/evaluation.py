@@ -1,7 +1,7 @@
 """Evaluation engine for reasoning quality assessment."""
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 
 class ReasoningEvaluator:
@@ -10,7 +10,7 @@ class ReasoningEvaluator:
     def __init__(self) -> None:
         self._evaluation_count: int = 0
 
-    def evaluate(self, hypothesis: str, facts: Dict[str, Any]) -> float:
+    def evaluate(self, hypothesis: str, facts: dict[str, Any]) -> float:
         self._evaluation_count += 1
         score = 0.3
         if facts:
@@ -23,7 +23,7 @@ class ReasoningEvaluator:
             score += 0.1
         return min(round(score, 2), 1.0)
 
-    def evaluate_decision(self, decision: Dict[str, Any]) -> Dict[str, Any]:
+    def evaluate_decision(self, decision: dict[str, Any]) -> dict[str, Any]:
         confidence = decision.get("confidence", 0.5)
         alternatives_count = decision.get("alternatives_count", 0)
         quality = {
@@ -33,5 +33,5 @@ class ReasoningEvaluator:
         }
         return quality
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         return {"total_evaluations": self._evaluation_count}

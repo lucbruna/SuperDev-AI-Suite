@@ -2,13 +2,14 @@ from __future__ import annotations
 
 from typing import Any
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from backend.database.models.organization import Organization, OrganizationMember
 from backend.exceptions import AppException
 from backend.repositories.organization_repository import (
     OrganizationMemberRepository,
     OrganizationRepository,
 )
-from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class OrganizationService:

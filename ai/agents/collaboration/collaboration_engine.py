@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
+from .planning_board import PlanningBoard
 from .shared_context import SharedContext
 from .shared_memory import SharedMemory
-from .planning_board import PlanningBoard
 
 
 class CollaborationEngine:
@@ -27,7 +27,7 @@ class CollaborationEngine:
     def planning_board(self) -> PlanningBoard:
         return self._planning_board
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         return {
             "context_keys": self._shared_context.key_count,
             "memory_keys": self._shared_memory.key_count,

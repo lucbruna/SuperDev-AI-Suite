@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import hashlib
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 class AgentSecurity:
@@ -21,5 +21,5 @@ class AgentSecurity:
     def sanitize_input(data: str) -> str:
         return data.strip().replace("<", "&lt;").replace(">", "&gt;")
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {"security": "active"}

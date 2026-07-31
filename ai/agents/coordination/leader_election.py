@@ -1,18 +1,18 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class LeaderElection:
     """Elects a leader among agents."""
 
     def __init__(self) -> None:
-        self._leader: Optional[str] = None
-        self._candidates: List[str] = []
+        self._leader: str | None = None
+        self._candidates: list[str] = []
         self._election_count: int = 0
 
     @property
-    def leader(self) -> Optional[str]:
+    def leader(self) -> str | None:
         return self._leader
 
     @property
@@ -23,7 +23,7 @@ class LeaderElection:
         if agent_id not in self._candidates:
             self._candidates.append(agent_id)
 
-    def elect(self) -> Optional[str]:
+    def elect(self) -> str | None:
         if not self._candidates:
             return None
         self._leader = self._candidates[0]
@@ -38,7 +38,7 @@ class LeaderElection:
         self._leader = None
         self._candidates.clear()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "leader": self._leader,
             "election_count": self._election_count,

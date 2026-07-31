@@ -1,7 +1,7 @@
 """Knowledge Engine Logger — Logging for knowledge operations."""
-from typing import Dict, Any, List, Optional
 from datetime import datetime
 from enum import Enum
+from typing import Any
 
 
 class KnowledgeLogLevel(Enum):
@@ -14,9 +14,9 @@ class KnowledgeLogLevel(Enum):
 
 class KnowledgeLogger:
     def __init__(self):
-        self._entries: List[Dict[str, Any]] = []
+        self._entries: list[dict[str, Any]] = []
 
-    def log(self, level: KnowledgeLogLevel, message: str, component: str = "", details: Dict[str, Any] = None) -> None:
+    def log(self, level: KnowledgeLogLevel, message: str, component: str = "", details: dict[str, Any] = None) -> None:
         self._entries.append({
             "level": level.value,
             "message": message,
@@ -25,22 +25,22 @@ class KnowledgeLogger:
             "details": details or {},
         })
 
-    def debug(self, message: str, component: str = "", details: Dict[str, Any] = None) -> None:
+    def debug(self, message: str, component: str = "", details: dict[str, Any] = None) -> None:
         self.log(KnowledgeLogLevel.DEBUG, message, component, details)
 
-    def info(self, message: str, component: str = "", details: Dict[str, Any] = None) -> None:
+    def info(self, message: str, component: str = "", details: dict[str, Any] = None) -> None:
         self.log(KnowledgeLogLevel.INFO, message, component, details)
 
-    def warning(self, message: str, component: str = "", details: Dict[str, Any] = None) -> None:
+    def warning(self, message: str, component: str = "", details: dict[str, Any] = None) -> None:
         self.log(KnowledgeLogLevel.WARNING, message, component, details)
 
-    def error(self, message: str, component: str = "", details: Dict[str, Any] = None) -> None:
+    def error(self, message: str, component: str = "", details: dict[str, Any] = None) -> None:
         self.log(KnowledgeLogLevel.ERROR, message, component, details)
 
-    def critical(self, message: str, component: str = "", details: Dict[str, Any] = None) -> None:
+    def critical(self, message: str, component: str = "", details: dict[str, Any] = None) -> None:
         self.log(KnowledgeLogLevel.CRITICAL, message, component, details)
 
-    def get_entries(self, level: Optional[KnowledgeLogLevel] = None) -> List[Dict[str, Any]]:
+    def get_entries(self, level: KnowledgeLogLevel | None = None) -> list[dict[str, Any]]:
         if level:
             return [e for e in self._entries if e["level"] == level.value]
         return list(self._entries)

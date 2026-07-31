@@ -1,15 +1,17 @@
 """Container engine."""
 from __future__ import annotations
-from typing import Any, Dict, List
+
 import time
+from typing import Any
+
 
 class ContainerEngine:
     def __init__(self) -> None:
-        self._containers: Dict[str, Dict[str, Any]] = {}
+        self._containers: dict[str, dict[str, Any]] = {}
         self._started = False
     def start(self) -> None:
         self._started = True
-    def create(self, name: str, image: str, ports: List[int] = None, env: Dict[str, str] = None) -> Dict[str, Any]:
+    def create(self, name: str, image: str, ports: list[int] = None, env: dict[str, str] = None) -> dict[str, Any]:
         import uuid
         cid = str(uuid.uuid4())[:8]
         container = {"container_id": cid, "name": name, "image": image, "state": "running", "ports": ports or [], "env": env or {}, "created_at": time.time()}
@@ -30,11 +32,11 @@ class ContainerEngine:
             del self._containers[container_id]
             return True
         return False
-    def get(self, container_id: str) -> Dict[str, Any]:
+    def get(self, container_id: str) -> dict[str, Any]:
         return self._containers.get(container_id, {"error": "not_found"})
-    def list_all(self) -> List[Dict[str, Any]]:
+    def list_all(self) -> list[dict[str, Any]]:
         return list(self._containers.values())
-    def list_running(self) -> List[Dict[str, Any]]:
+    def list_running(self) -> list[dict[str, Any]]:
         return [c for c in self._containers.values() if c["state"] == "running"]
     def count(self) -> int:
         return len(self._containers)

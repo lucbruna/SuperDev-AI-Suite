@@ -1,11 +1,10 @@
 """
 Credential Detection Engine
 """
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
 import math
 import re
+from dataclasses import dataclass
+from enum import Enum
 
 
 class CredentialType(Enum):
@@ -30,17 +29,17 @@ class CredentialFinding:
 
 class CredentialDetector:
     def __init__(self):
-        self.patterns: Dict[CredentialType, str] = {
+        self.patterns: dict[CredentialType, str] = {
             CredentialType.BASIC_AUTH: r'Basic\s+[A-Za-z0-9+/=]+',
             CredentialType.BEARER_TOKEN: r'Bearer\s+[\w.-]+',
             CredentialType.JWT_SECRET: r'eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+',
             CredentialType.DATABASE_CRED: r'(user|password|passwd|pwd)\s*[=:]\s*["\']([^"\']+)',
             CredentialType.SSH_CREDENTIAL: r'-----BEGIN\s+OPENSSH\s+PRIVATE\s+KEY-----',
         }
-        self.findings: List[CredentialFinding] = []
-        self.false_positive_patterns: List[str] = ["example", "placeholder", "test", "dummy", "xxx"]
+        self.findings: list[CredentialFinding] = []
+        self.false_positive_patterns: list[str] = ["example", "placeholder", "test", "dummy", "xxx"]
 
-    def detect(self, file_path: str, content: str) -> List[CredentialFinding]:
+    def detect(self, file_path: str, content: str) -> list[CredentialFinding]:
         findings = []
         lines = content.split("\n")
         for line_num, line in enumerate(lines, 1):
@@ -64,7 +63,7 @@ class CredentialDetector:
         entropy = -sum((count / length) * math.log2(count / length) for count in freq.values())
         return entropy
 
-    def get_findings(self, exclude_false_positives: bool = True) -> List[CredentialFinding]:
+    def get_findings(self, exclude_false_positives: bool = True) -> list[CredentialFinding]:
         if exclude_false_positives:
             return [f for f in self.findings if not f.is_false_positive]
         return self.findings

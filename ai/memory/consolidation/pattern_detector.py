@@ -1,26 +1,26 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 
 class PatternDetector:
     """Detects recurring patterns in memory entries."""
 
     def __init__(self):
-        self._patterns: Dict[str, int] = {}
+        self._patterns: dict[str, int] = {}
         self._pattern_count: int = 0
 
     @property
-    def patterns(self) -> Dict[str, int]:
+    def patterns(self) -> dict[str, int]:
         return dict(self._patterns)
 
     @property
     def pattern_count(self) -> int:
         return self._pattern_count
 
-    def detect(self, entries: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        detected: List[Dict[str, Any]] = []
-        type_groups: Dict[str, List[Dict[str, Any]]] = {}
+    def detect(self, entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        detected: list[dict[str, Any]] = []
+        type_groups: dict[str, list[dict[str, Any]]] = {}
         for entry in entries:
             t = entry.get("type", "unknown")
             type_groups.setdefault(t, []).append(entry)
@@ -37,7 +37,7 @@ class PatternDetector:
                 self._pattern_count += 1
         return detected
 
-    def _find_common_keys(self, entries: List[Dict[str, Any]]) -> List[str]:
+    def _find_common_keys(self, entries: list[dict[str, Any]]) -> list[str]:
         if not entries:
             return []
         common = set(entries[0].keys())
@@ -45,8 +45,8 @@ class PatternDetector:
             common &= set(entry.keys())
         return list(common)
 
-    def detect_sequence(self, entries: List[Dict[str, Any]], window: int = 3) -> List[Dict[str, Any]]:
-        sequences: List[Dict[str, Any]] = []
+    def detect_sequence(self, entries: list[dict[str, Any]], window: int = 3) -> list[dict[str, Any]]:
+        sequences: list[dict[str, Any]] = []
         for i in range(len(entries) - window + 1):
             chunk = entries[i : i + window]
             types = [e.get("type", "?") for e in chunk]

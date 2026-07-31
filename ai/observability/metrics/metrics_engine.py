@@ -1,12 +1,13 @@
 """Metrics subsystem engine."""
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
-import time
+
+from typing import Any
+
 
 class MetricsEngine:
     def __init__(self) -> None:
-        self._collectors: List[str] = []
-        self._aggregators: List[str] = []
+        self._collectors: list[str] = []
+        self._aggregators: list[str] = []
         self._started = False
     def start(self) -> None:
         self._started = True
@@ -18,5 +19,5 @@ class MetricsEngine:
         self._collectors.append(name)
     def add_aggregator(self, name: str) -> None:
         self._aggregators.append(name)
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         return {"running": self._started, "collectors": len(self._collectors), "aggregators": len(self._aggregators)}

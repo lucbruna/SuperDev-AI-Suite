@@ -1,24 +1,24 @@
 """Performance tuning for agent operations."""
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 
 class PerformanceTuner:
     """Tunes agent performance parameters based on metrics."""
 
     def __init__(self) -> None:
-        self._tuning_history: List[Dict[str, Any]] = []
-        self._parameters: Dict[str, float] = {
+        self._tuning_history: list[dict[str, Any]] = []
+        self._parameters: dict[str, float] = {
             "batch_size": 10.0,
             "cache_ttl": 300.0,
             "retry_limit": 3.0,
             "timeout_seconds": 30.0,
         }
 
-    def tune(self, context: Dict[str, Any]) -> Dict[str, Any]:
+    def tune(self, context: dict[str, Any]) -> dict[str, Any]:
         metrics = context.get("metrics", {})
-        adjustments: Dict[str, str] = {}
+        adjustments: dict[str, str] = {}
         latency = float(metrics.get("avg_latency_ms", 0))
         if latency > 500:
             adjustments["timeout_seconds"] = "increased to 60"
@@ -38,7 +38,7 @@ class PerformanceTuner:
         self._tuning_history.append(result)
         return result
 
-    def get_parameters(self) -> Dict[str, float]:
+    def get_parameters(self) -> dict[str, float]:
         return dict(self._parameters)
 
     def set_parameter(self, name: str, value: float) -> None:

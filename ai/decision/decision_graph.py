@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
-
 
 class DecisionGraph:
     """Graph-based decision structure with weighted edges."""

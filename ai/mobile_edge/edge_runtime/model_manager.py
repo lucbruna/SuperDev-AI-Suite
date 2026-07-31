@@ -1,9 +1,9 @@
 """Model Manager - Edge model lifecycle management."""
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class ModelLifecycle(Enum):
@@ -22,14 +22,14 @@ class ManagedModel:
     version: str = "1.0"
     download_url: str = ""
     checksum: str = ""
-    downloaded_at: Optional[datetime] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    downloaded_at: datetime | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class EdgeModelManager:
     def __init__(self):
-        self.models: Dict[str, ManagedModel] = {}
-        self.download_queue: List[str] = []
+        self.models: dict[str, ManagedModel] = {}
+        self.download_queue: list[str] = []
 
     def add_model(self, name: str, version: str = "1.0", download_url: str = "") -> ManagedModel:
         model_id = hashlib.sha256(f"{name}{version}".encode()).hexdigest()[:16]
@@ -66,10 +66,10 @@ class EdgeModelManager:
             return True
         return False
 
-    def get(self, model_id: str) -> Optional[ManagedModel]:
+    def get(self, model_id: str) -> ManagedModel | None:
         return self.models.get(model_id)
 
-    def list_models(self, lifecycle: ModelLifecycle = None) -> List[ManagedModel]:
+    def list_models(self, lifecycle: ModelLifecycle = None) -> list[ManagedModel]:
         if lifecycle:
             return [m for m in self.models.values() if m.lifecycle == lifecycle]
         return list(self.models.values())

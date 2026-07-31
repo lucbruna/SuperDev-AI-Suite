@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import pytest
-
-from ..llm_models import LLMRequest, LLMResponse, ProviderInfo, ProviderState, TokenUsage, LLMMetrics, LLMContext
+from ..llm_models import LLMContext, LLMMetrics, LLMRequest, LLMResponse, ProviderInfo, ProviderState, TokenUsage
 
 
 class TestLLMRequest:

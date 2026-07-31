@@ -3,12 +3,12 @@ from __future__ import annotations
 from typing import Any
 
 from ...base.base_tool import BaseTool
-from .repository import GitRepository
 from .branch import GitBranch
 from .commit import GitCommit
 from .diff import GitDiff
-from .merge import GitMerge
 from .history import GitHistory
+from .merge import GitMerge
+from .repository import GitRepository
 from .stash import GitStash
 
 

@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from backend.dependencies import get_current_active_user
-from backend.notifications.notification_manager import NotificationType, notification_manager
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
+
+from backend.dependencies import get_current_active_user
+from backend.notifications.notification_manager import notification_manager
 
 router = APIRouter(dependencies=[Depends(get_current_active_user)])
 

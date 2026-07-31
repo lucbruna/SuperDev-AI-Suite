@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, Optional
+from collections.abc import Callable
+from typing import Any
 
 
 class Retry:
@@ -19,9 +20,9 @@ class Retry:
     def attempts(self) -> int:
         return self._attempts
 
-    def execute(self, func: Callable[[], Any]) -> Optional[Any]:
+    def execute(self, func: Callable[[], Any]) -> Any | None:
         self._attempts = 0
-        last_error: Optional[Exception] = None
+        last_error: Exception | None = None
         while self._attempts < self._max_retries:
             try:
                 self._attempts += 1

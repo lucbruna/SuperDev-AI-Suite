@@ -1,11 +1,11 @@
 """
 Evidence Collection and Management
 """
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class EvidenceFormat(Enum):
@@ -27,15 +27,15 @@ class CollectedEvidence:
     collector: str = ""
     collected_at: datetime = field(default_factory=datetime.now)
     storage_path: str = ""
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     tamper_detected: bool = False
 
 
 class EvidenceCollector:
     def __init__(self):
-        self.evidence: Dict[str, CollectedEvidence] = {}
+        self.evidence: dict[str, CollectedEvidence] = {}
         self.storage_path: str = "/evidence/"
-        self.hash_log: List[Dict[str, str]] = []
+        self.hash_log: list[dict[str, str]] = []
 
     def collect(self, name: str, data: str, evidence_format: EvidenceFormat = EvidenceFormat.RAW, source: str = "", collector: str = "") -> CollectedEvidence:
         evidence_id = hashlib.sha256(f"{name}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
@@ -56,13 +56,13 @@ class EvidenceCollector:
             evidence.tamper_detected = True
         return is_valid
 
-    def get_evidence(self, evidence_id: str) -> Optional[CollectedEvidence]:
+    def get_evidence(self, evidence_id: str) -> CollectedEvidence | None:
         return self.evidence.get(evidence_id)
 
-    def get_all_evidence(self) -> List[CollectedEvidence]:
+    def get_all_evidence(self) -> list[CollectedEvidence]:
         return list(self.evidence.values())
 
-    def get_tampered(self) -> List[CollectedEvidence]:
+    def get_tampered(self) -> list[CollectedEvidence]:
         return [e for e in self.evidence.values() if e.tamper_detected]
 
     def delete_evidence(self, evidence_id: str) -> bool:

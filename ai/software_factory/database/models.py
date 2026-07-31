@@ -1,9 +1,9 @@
 """Data models for database management."""
-from dataclasses import dataclass, field
-from enum import Enum
-from typing import List, Optional, Dict, Any
-from datetime import datetime
 import uuid
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class ColumnType(Enum):
@@ -41,7 +41,7 @@ class Column:
     primary_key: bool = False
     auto_increment: bool = False
     unique: bool = False
-    max_length: Optional[int] = None
+    max_length: int | None = None
     description: str = ""
 
 
@@ -50,7 +50,7 @@ class Index:
     """A database index."""
     index_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     name: str = ""
-    columns: List[str] = field(default_factory=list)
+    columns: list[str] = field(default_factory=list)
     unique: bool = False
     table_name: str = ""
 
@@ -59,9 +59,9 @@ class Index:
 class ForeignKey:
     """A foreign key constraint."""
     name: str = ""
-    columns: List[str] = field(default_factory=list)
+    columns: list[str] = field(default_factory=list)
     reference_table: str = ""
-    reference_columns: List[str] = field(default_factory=list)
+    reference_columns: list[str] = field(default_factory=list)
     on_delete: str = "CASCADE"
     on_update: str = "CASCADE"
 
@@ -71,21 +71,21 @@ class Table:
     """A database table."""
     table_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     name: str = ""
-    columns: List[Column] = field(default_factory=list)
-    indexes: List[Index] = field(default_factory=list)
-    foreign_keys: List[ForeignKey] = field(default_factory=list)
+    columns: list[Column] = field(default_factory=list)
+    indexes: list[Index] = field(default_factory=list)
+    foreign_keys: list[ForeignKey] = field(default_factory=list)
     description: str = ""
 
     def add_column(self, column: Column) -> None:
         self.columns.append(column)
 
-    def get_column(self, name: str) -> Optional[Column]:
+    def get_column(self, name: str) -> Column | None:
         for c in self.columns:
             if c.name == name:
                 return c
         return None
 
-    def primary_key_columns(self) -> List[Column]:
+    def primary_key_columns(self) -> list[Column]:
         return [c for c in self.columns if c.primary_key]
 
     def has_column(self, name: str) -> bool:
@@ -98,20 +98,20 @@ class DatabaseSchema:
     schema_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     name: str = ""
     version: str = "1.0.0"
-    tables: List[Table] = field(default_factory=list)
+    tables: list[Table] = field(default_factory=list)
     description: str = ""
     created_at: datetime = field(default_factory=datetime.utcnow)
 
     def add_table(self, table: Table) -> None:
         self.tables.append(table)
 
-    def get_table(self, name: str) -> Optional[Table]:
+    def get_table(self, name: str) -> Table | None:
         for t in self.tables:
             if t.name == name:
                 return t
         return None
 
-    def table_names(self) -> List[str]:
+    def table_names(self) -> list[str]:
         return [t.name for t in self.tables]
 
     def total_columns(self) -> int:
@@ -125,7 +125,7 @@ class MigrationStep:
     operation: str = ""
     table_name: str = ""
     sql: str = ""
-    params: Dict[str, Any] = field(default_factory=dict)
+    params: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -134,11 +134,11 @@ class Migration:
     migration_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     name: str = ""
     description: str = ""
-    steps: List[MigrationStep] = field(default_factory=list)
+    steps: list[MigrationStep] = field(default_factory=list)
     status: MigrationStatus = MigrationStatus.PENDING
     version: str = ""
     created_at: datetime = field(default_factory=datetime.utcnow)
-    executed_at: Optional[datetime] = None
+    executed_at: datetime | None = None
 
 
 @dataclass
@@ -152,7 +152,7 @@ class DatabaseConnection:
     database: str = ""
     username: str = ""
     password: str = ""
-    options: Dict[str, Any] = field(default_factory=dict)
+    options: dict[str, Any] = field(default_factory=dict)
 
     def connection_string(self) -> str:
         return f"{self.engine}://{self.username}:{self.password}@{self.host}:{self.port}/{self.database}"

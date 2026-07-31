@@ -1,9 +1,9 @@
 """ERP Security — Security validation for ERP operations."""
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class ERPSecurityCheck(Enum):
@@ -37,10 +37,10 @@ class ERPSecurityIssue:
 
 class ERPSecurity:
     def __init__(self):
-        self.issues: List[ERPSecurityIssue] = []
-        self.policies: Dict[str, Dict[str, Any]] = {}
+        self.issues: list[ERPSecurityIssue] = []
+        self.policies: dict[str, dict[str, Any]] = {}
 
-    def create_policy(self, name: str, rules: Optional[Dict[str, Any]] = None) -> None:
+    def create_policy(self, name: str, rules: dict[str, Any] | None = None) -> None:
         self.policies[name] = rules or {}
 
     def report_issue(self, check: ERPSecurityCheck, severity: ERPSeverity, description: str = "", resource: str = "", **kwargs) -> ERPSecurityIssue:
@@ -56,7 +56,7 @@ class ERPSecurity:
                 return True
         return False
 
-    def get_issues(self, severity: Optional[ERPSeverity] = None, resolved: Optional[bool] = None) -> List[ERPSecurityIssue]:
+    def get_issues(self, severity: ERPSeverity | None = None, resolved: bool | None = None) -> list[ERPSecurityIssue]:
         issues = self.issues
         if severity:
             issues = [i for i in issues if i.severity == severity]

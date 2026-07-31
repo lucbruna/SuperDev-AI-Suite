@@ -1,10 +1,12 @@
 """Latency optimizer."""
 from __future__ import annotations
-from typing import Any, Dict, List
+
+from typing import Any
+
 
 class LatencyOptimizer:
     def __init__(self) -> None:
-        self._latencies: Dict[str, List[float]] = {}
+        self._latencies: dict[str, list[float]] = {}
     def record(self, model_id: str, latency_ms: float) -> None:
         self._latencies.setdefault(model_id, []).append(latency_ms)
         if len(self._latencies[model_id]) > 100:
@@ -23,9 +25,9 @@ class LatencyOptimizer:
         if not averages:
             return ""
         return min(averages, key=averages.get)
-    def compare(self, model_ids: List[str]) -> List[Dict[str, Any]]:
+    def compare(self, model_ids: list[str]) -> list[dict[str, Any]]:
         return [{"model_id": mid, "avg_ms": self.get_average(mid), "p95_ms": self.get_p95(mid)} for mid in model_ids]
-    def list_models(self) -> List[str]:
+    def list_models(self) -> list[str]:
         return list(self._latencies.keys())
     def clear(self, model_id: str = "") -> int:
         if model_id:

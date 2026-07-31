@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 
 class Consensus:
     """Reaches consensus among agents."""
 
     def __init__(self) -> None:
-        self._votes: Dict[str, Dict[str, Any]] = {}
+        self._votes: dict[str, dict[str, Any]] = {}
 
     def vote(self, agent_id: str, topic: str, choice: Any) -> None:
         key = f"{topic}:{agent_id}"
@@ -23,5 +23,5 @@ class Consensus:
     def clear(self) -> None:
         self._votes.clear()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {"votes": list(self._votes.values())}

@@ -1,8 +1,8 @@
 """Recommendation models."""
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
 from enum import Enum
+from typing import Any
 
 
 class RecommendationType(Enum):
@@ -32,7 +32,7 @@ class ProductRecommendation:
     recommendation_type: RecommendationType = RecommendationType.PRODUCT
     status: RecommendationStatus = RecommendationStatus.PENDING
     created_at: datetime = field(default_factory=datetime.now)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -54,6 +54,6 @@ class Offer:
     offer_type: str = ""
     discount_percent: float = 0.0
     description: str = ""
-    valid_until: Optional[datetime] = None
+    valid_until: datetime | None = None
     accepted: bool = False
     created_at: datetime = field(default_factory=datetime.now)

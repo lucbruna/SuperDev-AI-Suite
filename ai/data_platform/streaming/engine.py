@@ -1,23 +1,22 @@
 """Streaming engine."""
-import uuid
 from datetime import datetime
-from typing import Dict, List, Optional
-from .models import StreamTopic, StreamEvent, StreamConsumer, StreamPipeline, StreamStatus, EventType
+
+from .models import StreamConsumer, StreamEvent, StreamPipeline, StreamStatus, StreamTopic
 
 
 class StreamingEngine:
     def __init__(self):
-        self._topics: Dict[str, StreamTopic] = {}
-        self._events: Dict[str, List[StreamEvent]] = {}
-        self._consumers: Dict[str, StreamConsumer] = {}
-        self._pipelines: Dict[str, StreamPipeline] = {}
+        self._topics: dict[str, StreamTopic] = {}
+        self._events: dict[str, list[StreamEvent]] = {}
+        self._consumers: dict[str, StreamConsumer] = {}
+        self._pipelines: dict[str, StreamPipeline] = {}
 
     def create_topic(self, topic: StreamTopic) -> StreamTopic:
         self._topics[topic.topic_id] = topic
         self._events[topic.topic_id] = []
         return topic
 
-    def get_topic(self, topic_id: str) -> Optional[StreamTopic]:
+    def get_topic(self, topic_id: str) -> StreamTopic | None:
         return self._topics.get(topic_id)
 
     def produce_event(self, event: StreamEvent) -> StreamEvent:
@@ -30,7 +29,7 @@ class StreamingEngine:
             topic.message_count += 1
         return event
 
-    def consume_events(self, topic_id: str, consumer_id: str, max_count: int = 10) -> List[StreamEvent]:
+    def consume_events(self, topic_id: str, consumer_id: str, max_count: int = 10) -> list[StreamEvent]:
         consumer = self._consumers.get(consumer_id)
         events = self._events.get(topic_id, [])
         if consumer:
@@ -45,14 +44,14 @@ class StreamingEngine:
         self._consumers[consumer.consumer_id] = consumer
         return consumer
 
-    def get_consumer(self, consumer_id: str) -> Optional[StreamConsumer]:
+    def get_consumer(self, consumer_id: str) -> StreamConsumer | None:
         return self._consumers.get(consumer_id)
 
     def create_pipeline(self, pipeline: StreamPipeline) -> StreamPipeline:
         self._pipelines[pipeline.pipeline_id] = pipeline
         return pipeline
 
-    def get_pipeline(self, pipeline_id: str) -> Optional[StreamPipeline]:
+    def get_pipeline(self, pipeline_id: str) -> StreamPipeline | None:
         return self._pipelines.get(pipeline_id)
 
     def start_pipeline(self, pipeline_id: str) -> bool:
@@ -62,7 +61,7 @@ class StreamingEngine:
         pipeline.status = StreamStatus.STREAMING
         return True
 
-    def get_events(self, topic_id: str, limit: int = 100) -> List[StreamEvent]:
+    def get_events(self, topic_id: str, limit: int = 100) -> list[StreamEvent]:
         return self._events.get(topic_id, [])[:limit]
 
     def get_stats(self) -> dict:

@@ -1,8 +1,8 @@
 """Production models."""
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
 from enum import Enum
+from typing import Any
 
 
 class ProductionStatus(Enum):
@@ -26,8 +26,8 @@ class ProductionOrder:
     product_id: str = ""
     quantity: int = 0
     status: ProductionStatus = ProductionStatus.PLANNED
-    start_date: Optional[datetime] = None
-    end_date: Optional[datetime] = None
+    start_date: datetime | None = None
+    end_date: datetime | None = None
     assigned_line: str = ""
     priority: int = 0
     notes: str = ""
@@ -41,7 +41,7 @@ class ProductionLine:
     current_load: int = 0
     status: str = "available"
     efficiency: float = 0.0
-    last_maintenance: Optional[datetime] = None
+    last_maintenance: datetime | None = None
 
     @property
     def utilization(self) -> float:
@@ -64,7 +64,7 @@ class QualityCheck:
 class BOM:
     bom_id: str
     product_id: str = ""
-    components: List[Dict[str, Any]] = field(default_factory=list)
+    components: list[dict[str, Any]] = field(default_factory=list)
     total_cost: float = 0.0
     version: str = "1.0"
     status: str = "active"

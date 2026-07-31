@@ -1,7 +1,9 @@
 """Authorization engine for RBAC + ABAC."""
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
+
 from enum import Enum
+from typing import Any
+
 
 class Permission(Enum):
     READ = "read"
@@ -12,9 +14,9 @@ class Permission(Enum):
 
 class AuthorizationEngine:
     def __init__(self) -> None:
-        self._user_roles: Dict[str, set[str]] = {}
-        self._role_permissions: Dict[str, set[Permission]] = {}
-        self._resource_policies: Dict[str, Dict[str, Any]] = {}
+        self._user_roles: dict[str, set[str]] = {}
+        self._role_permissions: dict[str, set[Permission]] = {}
+        self._resource_policies: dict[str, dict[str, Any]] = {}
     def assign_role(self, user_id: str, role: str) -> bool:
         if user_id not in self._user_roles:
             self._user_roles[user_id] = set()
@@ -37,20 +39,18 @@ class AuthorizationEngine:
             self._user_roles[user_id].discard(role)
             return True
         return False
-    def get_user_permissions(self, user_id: str) -> List[str]:
+    def get_user_permissions(self, user_id: str) -> list[str]:
         roles = self._user_roles.get(user_id, set())
         perms: set[Permission] = set()
         for role in roles:
             perms |= self._role_permissions.get(role, set())
         return [p.value for p in perms]
-    def add_resource_policy(self, resource: str, policy: Dict[str, Any]) -> None:
+    def add_resource_policy(self, resource: str, policy: dict[str, Any]) -> None:
         self._resource_policies[resource] = policy
-    def evaluate_abac(self, user_id: str, resource: str, attributes: Dict[str, Any]) -> bool:
+    def evaluate_abac(self, user_id: str, resource: str, attributes: dict[str, Any]) -> bool:
         policy = self._resource_policies.get(resource)
         if not policy:
             return True
         required_roles = policy.get("required_roles", [])
         user_roles = list(self._user_roles.get(user_id, set()))
-        if required_roles and not any(r in user_roles for r in required_roles):
-            return False
-        return True
+        return not (required_roles and not any(r in user_roles for r in required_roles))

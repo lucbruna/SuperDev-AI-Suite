@@ -1,12 +1,10 @@
 """
 Adversarial Attack Defense
 """
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
-import math
 import hashlib
+from dataclasses import dataclass
+from enum import Enum
+from typing import Any
 
 
 class AttackType(Enum):
@@ -40,8 +38,8 @@ class DefenseResult:
 
 class AdversarialDefense:
     def __init__(self):
-        self.detected_inputs: List[AdversarialInput] = []
-        self.defense_methods: List[str] = ["input_validation", "feature_squeezing", "randomized_smoothing", "adversarial_training"]
+        self.detected_inputs: list[AdversarialInput] = []
+        self.defense_methods: list[str] = ["input_validation", "feature_squeezing", "randomized_smoothing", "adversarial_training"]
         self.active_method: str = "input_validation"
         self.perturbation_threshold: float = 0.1
 
@@ -58,7 +56,7 @@ class AdversarialDefense:
         if original == perturbed:
             return 0.0
         max_len = max(len(original), len(perturbed))
-        diff_count = sum(1 for a, b in zip(original, perturbed) if a != b) + abs(len(original) - len(perturbed))
+        diff_count = sum(1 for a, b in zip(original, perturbed, strict=False) if a != b) + abs(len(original) - len(perturbed))
         return diff_count / max_len
 
     def defend(self, input_id: str, input_data: str) -> DefenseResult:
@@ -71,13 +69,13 @@ class AdversarialDefense:
             return True
         return False
 
-    def get_detected(self) -> List[AdversarialInput]:
+    def get_detected(self) -> list[AdversarialInput]:
         return [i for i in self.detected_inputs if i.detected]
 
     def set_threshold(self, threshold: float) -> None:
         self.perturbation_threshold = threshold
 
-    def get_stats(self) -> Dict[str, int]:
+    def get_stats(self) -> dict[str, int]:
         total = len(self.detected_inputs)
         detected = sum(1 for i in self.detected_inputs if i.detected)
         return {"total": total, "detected": detected, "clean": total - detected}

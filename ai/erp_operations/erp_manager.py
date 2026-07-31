@@ -1,7 +1,7 @@
 """ERP Manager — Project management for ERP operations."""
-from typing import Dict, Any, Optional, List
-from datetime import datetime
 import hashlib
+from datetime import datetime
+from typing import Any
 
 
 class ERPProject:
@@ -11,13 +11,13 @@ class ERPProject:
         self.description = description
         self.status = "active"
         self.created_at = datetime.now()
-        self.metadata: Dict[str, Any] = {}
+        self.metadata: dict[str, Any] = {}
 
 
 class ERPManager:
     def __init__(self):
-        self._projects: Dict[str, ERPProject] = {}
-        self._artifacts: Dict[str, List[Dict[str, Any]]] = {}
+        self._projects: dict[str, ERPProject] = {}
+        self._artifacts: dict[str, list[dict[str, Any]]] = {}
 
     def create_project(self, name: str, description: str = "") -> ERPProject:
         project_id = hashlib.sha256(f"{name}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
@@ -25,18 +25,18 @@ class ERPManager:
         self._projects[project_id] = project
         return project
 
-    def get_project(self, project_id: str) -> Optional[ERPProject]:
+    def get_project(self, project_id: str) -> ERPProject | None:
         return self._projects.get(project_id)
 
-    def list_projects(self) -> List[ERPProject]:
+    def list_projects(self) -> list[ERPProject]:
         return list(self._projects.values())
 
-    def add_artifact(self, project_id: str, artifact_type: str, content: Any) -> Dict[str, Any]:
+    def add_artifact(self, project_id: str, artifact_type: str, content: Any) -> dict[str, Any]:
         artifact = {"type": artifact_type, "content": content, "created_at": datetime.now().isoformat()}
         self._artifacts.setdefault(project_id, []).append(artifact)
         return artifact
 
-    def get_artifacts(self, project_id: str) -> List[Dict[str, Any]]:
+    def get_artifacts(self, project_id: str) -> list[dict[str, Any]]:
         return self._artifacts.get(project_id, [])
 
     def count(self) -> int:

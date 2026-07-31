@@ -1,11 +1,11 @@
 """
 Intrusion Detection System
 """
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class AlertSeverity(Enum):
@@ -34,13 +34,13 @@ class Alert:
     message: str = ""
     severity: AlertSeverity = AlertSeverity.MEDIUM
     timestamp: datetime = field(default_factory=datetime.now)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class IntrusionDetector:
     def __init__(self):
-        self.signatures: Dict[str, DetectionSignature] = {}
-        self.alerts: List[Alert] = []
+        self.signatures: dict[str, DetectionSignature] = {}
+        self.alerts: list[Alert] = []
         self.blocked_ips: set = set()
         self.threshold: int = 10
 
@@ -50,7 +50,7 @@ class IntrusionDetector:
         self.signatures[sig_id] = sig
         return sig
 
-    def analyze_packet(self, source_ip: str, payload: str) -> Optional[Alert]:
+    def analyze_packet(self, source_ip: str, payload: str) -> Alert | None:
         for sig in self.signatures.values():
             if not sig.enabled:
                 continue
@@ -66,12 +66,12 @@ class IntrusionDetector:
     def is_blocked(self, ip: str) -> bool:
         return ip in self.blocked_ips
 
-    def get_alerts(self, severity: AlertSeverity = None) -> List[Alert]:
+    def get_alerts(self, severity: AlertSeverity = None) -> list[Alert]:
         if severity:
             return [a for a in self.alerts if a.severity == severity]
         return self.alerts
 
-    def get_alerts_by_ip(self, ip: str) -> List[Alert]:
+    def get_alerts_by_ip(self, ip: str) -> list[Alert]:
         return [a for a in self.alerts if a.source_ip == ip]
 
     def disable_signature(self, sig_id: str) -> bool:

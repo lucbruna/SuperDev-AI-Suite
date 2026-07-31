@@ -1,16 +1,18 @@
 """Constraint solver."""
 from __future__ import annotations
-from typing import Any, Dict, List
+
+from typing import Any
+
 
 class ConstraintSolver:
     def __init__(self) -> None:
-        self._constraints: List[Dict[str, Any]] = []
-        self._solutions: List[Dict[str, Any]] = []
-    def add_constraint(self, name: str, constraint_type: str, parameters: Dict[str, Any]) -> Dict[str, Any]:
+        self._constraints: list[dict[str, Any]] = []
+        self._solutions: list[dict[str, Any]] = []
+    def add_constraint(self, name: str, constraint_type: str, parameters: dict[str, Any]) -> dict[str, Any]:
         constraint = {"name": name, "type": constraint_type, "parameters": parameters}
         self._constraints.append(constraint)
         return constraint
-    def solve(self, variables: Dict[str, Any], objective: str = "satisfy") -> Dict[str, Any]:
+    def solve(self, variables: dict[str, Any], objective: str = "satisfy") -> dict[str, Any]:
         feasible = True
         violations = []
         for c in self._constraints:
@@ -31,9 +33,9 @@ class ConstraintSolver:
         solution = {"variables": variables, "feasible": feasible, "violations": violations}
         self._solutions.append(solution)
         return solution
-    def get_solutions(self, limit: int = 20) -> List[Dict[str, Any]]:
+    def get_solutions(self, limit: int = 20) -> list[dict[str, Any]]:
         return self._solutions[-limit:]
-    def list_constraints(self) -> List[Dict[str, Any]]:
+    def list_constraints(self) -> list[dict[str, Any]]:
         return self._constraints
     def clear_constraints(self) -> int:
         n = len(self._constraints)

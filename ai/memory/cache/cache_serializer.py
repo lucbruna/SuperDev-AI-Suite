@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict
+from typing import Any
 
 
 class CacheSerializer:
@@ -16,9 +16,9 @@ class CacheSerializer:
         return json.loads(data)
 
     @staticmethod
-    def serialize_entry(key: str, value: Any, ttl: float) -> Dict[str, Any]:
+    def serialize_entry(key: str, value: Any, ttl: float) -> dict[str, Any]:
         return {"key": key, "value": value, "ttl": ttl}
 
     @staticmethod
-    def deserialize_entry(data: Dict[str, Any]) -> Dict[str, Any]:
+    def deserialize_entry(data: dict[str, Any]) -> dict[str, Any]:
         return data

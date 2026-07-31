@@ -1,16 +1,17 @@
 """Widget renderer."""
 from datetime import datetime
-from typing import Any, Dict, List, Optional
-from .models import Widget, WidgetData
+from typing import Any
+
 from .interfaces import WidgetRendererInterface
+from .models import Widget, WidgetData
 
 
 class WidgetRenderer(WidgetRendererInterface):
-    def __init__(self, data_sources: Optional[Dict[str, Any]] = None):
+    def __init__(self, data_sources: dict[str, Any] | None = None):
         self._data_sources = data_sources or {}
-        self._cache: Dict[str, WidgetData] = {}
+        self._cache: dict[str, WidgetData] = {}
 
-    async def render_widget(self, widget: Widget, filters: Optional[Dict] = None) -> WidgetData:
+    async def render_widget(self, widget: Widget, filters: dict | None = None) -> WidgetData:
         source = self._data_sources.get(widget.data_source)
         data = None
         if source and callable(source):

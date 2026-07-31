@@ -33,8 +33,8 @@ class LlmCompletion(BaseTool):
             if action == "complete":
                 prompt = params.get("prompt", "")
                 model = params.get("model", "gpt-4")
-                max_tokens = params.get("max_tokens", 256)
-                temperature = params.get("temperature", 0.7)
+                params.get("max_tokens", 256)
+                params.get("temperature", 0.7)
                 result = {
                     "model": model,
                     "prompt": prompt,

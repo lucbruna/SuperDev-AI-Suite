@@ -14,7 +14,6 @@ from .base_provider import (
     StreamDelta,
     _exponential_backoff,
     _is_retryable,
-    convert_messages,
     count_tokens,
 )
 
@@ -152,7 +151,7 @@ class AWSBedrockProvider(BaseLLMProvider):
                 import aioboto3
                 import botocore.config
 
-                config = botocore.config.Config(
+                botocore.config.Config(
                     retries={"max_attempts": 0, "mode": "standard"},
                     connect_timeout=30,
                     read_timeout=120,
@@ -322,7 +321,6 @@ class AWSBedrockProvider(BaseLLMProvider):
                 yield result
                 return
 
-            usage_info: dict[str, int] = {}
             async for event in stream:
                 if "contentBlockDelta" in event:
                     delta = event["contentBlockDelta"]["delta"]
@@ -345,7 +343,7 @@ class AWSBedrockProvider(BaseLLMProvider):
                     metadata = event["metadata"]
                     if "usage" in metadata:
                         u = metadata["usage"]
-                        usage_info = {
+                        {
                             "prompt_tokens": u.get("inputTokens", 0),
                             "completion_tokens": u.get("outputTokens", 0),
                             "total_tokens": u.get("totalTokens", 0),

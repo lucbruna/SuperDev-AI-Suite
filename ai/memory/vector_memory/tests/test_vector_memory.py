@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-from ..vector_store import VectorStore
+from ..backup import Backup
+from ..cache import Cache
 from ..embedding_manager import EmbeddingManager
 from ..embedding_repository import EmbeddingRepository
-from ..similarity_engine import SimilarityEngine
-from ..retrieval_engine import RetrievalEngine
-from ..reranker import Reranker
 from ..optimizer import Optimizer
-from ..statistics import Statistics
-from ..backup import Backup
+from ..reranker import Reranker
 from ..restore import Restore
-from ..cache import Cache
+from ..retrieval_engine import RetrievalEngine
+from ..similarity_engine import SimilarityEngine
+from ..statistics import Statistics
+from ..vector_store import VectorStore
 
 
 class TestVectorStore:
@@ -59,7 +59,7 @@ class TestVectorStore:
         self.store.insert("v1", [1.0, 0.0, 0.0])
         try:
             self.store.insert("v2", [1.0, 0.0])
-            assert False, "Should raise ValueError"
+            raise AssertionError("Should raise ValueError")
         except ValueError:
             pass
 
@@ -110,14 +110,14 @@ class TestSimilarityEngine:
     def test_compare_unknown_metric(self) -> None:
         try:
             self.engine.compare([1.0, 0.0], [0.0, 1.0], "unknown")
-            assert False, "Should raise ValueError"
+            raise AssertionError("Should raise ValueError")
         except ValueError:
             pass
 
     def test_dimension_mismatch(self) -> None:
         try:
             self.engine.cosine_similarity([1.0], [1.0, 0.0])
-            assert False, "Should raise ValueError"
+            raise AssertionError("Should raise ValueError")
         except ValueError:
             pass
 

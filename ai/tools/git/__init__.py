@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from .git_tool import GitTool
-from .repository import GitRepository
 from .branch import GitBranch
 from .commit import GitCommit
 from .diff import GitDiff
-from .merge import GitMerge
+from .git_tool import GitTool
 from .history import GitHistory
+from .merge import GitMerge
+from .repository import GitRepository
 from .stash import GitStash
 
 __all__ = [

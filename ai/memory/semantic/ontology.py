@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .concepts import Concept
 from .relationships import Relationship
@@ -11,20 +11,20 @@ class Ontology:
 
     def __init__(self, name: str = ""):
         self._name = name
-        self._concepts: Dict[str, Concept] = {}
-        self._relationships: Dict[str, Relationship] = {}
-        self._axioms: List[Dict[str, Any]] = []
+        self._concepts: dict[str, Concept] = {}
+        self._relationships: dict[str, Relationship] = {}
+        self._axioms: list[dict[str, Any]] = []
 
     @property
     def name(self) -> str:
         return self._name
 
     @property
-    def concepts(self) -> Dict[str, Concept]:
+    def concepts(self) -> dict[str, Concept]:
         return dict(self._concepts)
 
     @property
-    def relationships(self) -> Dict[str, Relationship]:
+    def relationships(self) -> dict[str, Relationship]:
         return dict(self._relationships)
 
     def add_concept(self, concept: Concept) -> None:
@@ -42,7 +42,7 @@ class Ontology:
     def get_relationship(self, name: str) -> Relationship | None:
         return self._relationships.get(name)
 
-    def add_axiom(self, axiom: Dict[str, Any]) -> None:
+    def add_axiom(self, axiom: dict[str, Any]) -> None:
         self._axioms.append(axiom)
 
     def clear(self) -> None:

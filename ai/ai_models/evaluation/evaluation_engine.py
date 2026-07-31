@@ -1,16 +1,18 @@
 """Evaluation engine."""
 from __future__ import annotations
-from typing import Any, Dict, List
+
 import time
+from typing import Any
+
 
 class EvaluationEngine:
     def __init__(self) -> None:
-        self._results: Dict[str, List[Dict[str, Any]]] = {}
-        self._benchmarks: Dict[str, Dict[str, Any]] = {}
+        self._results: dict[str, list[dict[str, Any]]] = {}
+        self._benchmarks: dict[str, dict[str, Any]] = {}
         self._started = False
     def start(self) -> None:
         self._started = True
-    def evaluate(self, model_id: str, test_cases: List[Dict[str, Any]], evaluator: str = "default") -> Dict[str, Any]:
+    def evaluate(self, model_id: str, test_cases: list[dict[str, Any]], evaluator: str = "default") -> dict[str, Any]:
         scores = []
         for tc in test_cases:
             score = tc.get("expected_score", 0.8)
@@ -19,9 +21,9 @@ class EvaluationEngine:
         result = {"model_id": model_id, "evaluator": evaluator, "test_count": len(test_cases), "avg_score": avg_score, "scores": scores, "timestamp": time.time()}
         self._results.setdefault(model_id, []).append(result)
         return result
-    def get_results(self, model_id: str, limit: int = 10) -> List[Dict[str, Any]]:
+    def get_results(self, model_id: str, limit: int = 10) -> list[dict[str, Any]]:
         return self._results.get(model_id, [])[-limit:]
-    def compare(self, model_ids: List[str]) -> Dict[str, Any]:
+    def compare(self, model_ids: list[str]) -> dict[str, Any]:
         comparison = {}
         for mid in model_ids:
             results = self._results.get(mid, [])
@@ -39,7 +41,7 @@ class EvaluationEngine:
                     best_score = score
                     best = mid
         return best
-    def list_models(self) -> List[str]:
+    def list_models(self) -> list[str]:
         return list(self._results.keys())
     def is_running(self) -> bool:
         return self._started

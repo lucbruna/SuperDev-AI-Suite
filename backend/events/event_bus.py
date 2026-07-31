@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -42,10 +43,8 @@ class EventBus:
         )
         self._history.append(event)
         for handler in self._handlers.get(event_type, []):
-            try:
+            with contextlib.suppress(Exception):
                 await handler(event)
-            except Exception:
-                pass
         return event
 
     def get_history(self, event_type: str | None = None, limit: int = 100) -> list[Event]:

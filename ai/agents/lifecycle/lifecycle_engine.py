@@ -1,9 +1,11 @@
 """Central lifecycle engine coordinating all lifecycle phases."""
 from __future__ import annotations
 
+import contextlib
 import time
+from collections.abc import Callable
 from enum import Enum, auto
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 
 class AgentLifecycleState(Enum):
@@ -18,7 +20,7 @@ class AgentLifecycleState(Enum):
     ERROR = auto()
 
     @classmethod
-    def transitions(cls) -> Dict["AgentLifecycleState", set["AgentLifecycleState"]]:
+    def transitions(cls) -> dict[AgentLifecycleState, set[AgentLifecycleState]]:
         return {
             cls.CREATED: {cls.INITIALIZING, cls.ERROR},
             cls.INITIALIZING: {cls.READY, cls.ERROR},
@@ -31,21 +33,21 @@ class AgentLifecycleState(Enum):
             cls.ERROR: {cls.CREATED, cls.STOPPED},
         }
 
-    def can_transition_to(self, target: "AgentLifecycleState") -> bool:
+    def can_transition_to(self, target: AgentLifecycleState) -> bool:
         return target in self.transitions().get(self, set())
 
 
 class LifecycleEvent:
     def __init__(self, agent_id: str, from_state: AgentLifecycleState,
                  to_state: AgentLifecycleState, timestamp: float,
-                 metadata: Optional[Dict[str, Any]] = None) -> None:
+                 metadata: dict[str, Any] | None = None) -> None:
         self.agent_id = agent_id
         self.from_state = from_state
         self.to_state = to_state
         self.timestamp = timestamp
         self.metadata = metadata or {}
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "agent_id": self.agent_id,
             "from": self.from_state.name,
@@ -59,9 +61,9 @@ class LifecycleEngine:
     """Central engine coordinating all agent lifecycle phases."""
 
     def __init__(self) -> None:
-        self._states: Dict[str, AgentLifecycleState] = {}
-        self._history: Dict[str, List[LifecycleEvent]] = {}
-        self._hooks: Dict[str, List[Callable[..., Any]]] = {}
+        self._states: dict[str, AgentLifecycleState] = {}
+        self._history: dict[str, list[LifecycleEvent]] = {}
+        self._hooks: dict[str, list[Callable[..., Any]]] = {}
         self._transitions_count: int = 0
 
     def register_agent(self, agent_id: str,
@@ -76,11 +78,11 @@ class LifecycleEngine:
             return True
         return False
 
-    def get_state(self, agent_id: str) -> Optional[AgentLifecycleState]:
+    def get_state(self, agent_id: str) -> AgentLifecycleState | None:
         return self._states.get(agent_id)
 
     def transition(self, agent_id: str, target: AgentLifecycleState,
-                   metadata: Optional[Dict[str, Any]] = None) -> bool:
+                   metadata: dict[str, Any] | None = None) -> bool:
         current = self._states.get(agent_id)
         if current is None or not current.can_transition_to(target):
             return False
@@ -100,19 +102,17 @@ class LifecycleEngine:
     def _fire_hooks(self, agent_id: str, from_s: AgentLifecycleState,
                     to_s: AgentLifecycleState, event: LifecycleEvent) -> None:
         for cb in self._hooks.get(to_s.name, []):
-            try:
+            with contextlib.suppress(Exception):
                 cb(event)
-            except Exception:
-                pass
 
-    def get_history(self, agent_id: str, limit: int = 50) -> List[Dict[str, Any]]:
+    def get_history(self, agent_id: str, limit: int = 50) -> list[dict[str, Any]]:
         events = self._history.get(agent_id, [])
         return [e.to_dict() for e in events[-limit:]]
 
-    def all_states(self) -> Dict[str, str]:
+    def all_states(self) -> dict[str, str]:
         return {aid: st.name for aid, st in self._states.items()}
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         return {
             "agents": len(self._states),
             "transitions": self._transitions_count,

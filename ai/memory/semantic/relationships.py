@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 class Relationship:
@@ -12,7 +12,7 @@ class Relationship:
         source_type: str,
         target_type: str,
         description: str = "",
-        properties: Dict[str, Any] | None = None,
+        properties: dict[str, Any] | None = None,
     ):
         self._name = name
         self._source_type = source_type
@@ -37,10 +37,10 @@ class Relationship:
         return self._description
 
     @property
-    def properties(self) -> Dict[str, Any]:
+    def properties(self) -> dict[str, Any]:
         return dict(self._properties)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "name": self._name,
             "source_type": self._source_type,

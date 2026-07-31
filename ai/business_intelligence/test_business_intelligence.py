@@ -1,28 +1,36 @@
 """Comprehensive tests for business_intelligence subsystem (Volume 33)."""
-import sys
 import os
-import asyncio
+import sys
 import unittest
-from datetime import datetime, timedelta
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from business_intelligence.bi_models import (
-    DataSourceType, AnalysisType, MetricType, DecisionType, RiskLevel,
-    DataSource, DataPoint, KPI, Insight, Prediction, Decision, Report,
-)
-from business_intelligence.bi_config import ConfigEntry, BIConfig
+from business_intelligence.bi_config import BIConfig, ConfigEntry
+from business_intelligence.bi_context import BIContext, BIContextItem
 from business_intelligence.bi_engine import BIEngine
-from business_intelligence.bi_manager import BIProject, BIManager
+from business_intelligence.bi_events import BIEvent, BIEventBus, BIEventType
 from business_intelligence.bi_factory import BIFactory
+from business_intelligence.bi_logger import BILogEntry, BILogger, BILogLevel
+from business_intelligence.bi_manager import BIManager, BIProject
+from business_intelligence.bi_metrics import BIMetrics, MetricPoint, MetricSummary
+from business_intelligence.bi_models import (
+    KPI,
+    AnalysisType,
+    DataPoint,
+    DataSource,
+    DataSourceType,
+    Decision,
+    DecisionType,
+    Insight,
+    MetricType,
+    Prediction,
+    Report,
+    RiskLevel,
+)
+from business_intelligence.bi_protocols import BIProtocolConfig, BIProtocols, BIProtocolType
 from business_intelligence.bi_registry import BIComponent, BIRegistry
-from business_intelligence.bi_runtime import BITaskState, BITask, BIRuntime
-from business_intelligence.bi_context import BIContextItem, BIContext
-from business_intelligence.bi_events import BIEventType, BIEvent, BIEventBus
-from business_intelligence.bi_metrics import MetricPoint, MetricSummary, BIMetrics
-from business_intelligence.bi_logger import BILogLevel, BILogEntry, BILogger
-from business_intelligence.bi_protocols import BIProtocolType, BIProtocolConfig, BIProtocols
-from business_intelligence.bi_security import BISecurityCheck, BISeverity, BISecurityIssue, BISecurity
+from business_intelligence.bi_runtime import BIRuntime, BITask, BITaskState
+from business_intelligence.bi_security import BISecurity, BISecurityCheck, BISecurityIssue, BISeverity
 
 
 class TestBIModels(unittest.TestCase):
@@ -148,13 +156,13 @@ class TestBIEngine(unittest.TestCase):
     def test_engine_add_prediction(self):
         engine = BIEngine()
         pred = Prediction(prediction_id="p1", target_metric="revenue", predicted_value=50000)
-        pid = engine.add_prediction(pred)
+        engine.add_prediction(pred)
         self.assertEqual(len(engine.get_predictions()), 1)
 
     def test_engine_add_decision(self):
         engine = BIEngine()
         dec = Decision(decision_id="d1", recommendation="go")
-        did = engine.add_decision(dec)
+        engine.add_decision(dec)
         self.assertEqual(len(engine.get_decisions()), 1)
 
     def test_engine_stats(self):

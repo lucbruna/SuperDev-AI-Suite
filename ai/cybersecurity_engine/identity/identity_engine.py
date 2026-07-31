@@ -1,9 +1,9 @@
 """Identity and access management engine."""
 import uuid
-from datetime import datetime
-from typing import Dict, Any, List, Optional
-from enum import Enum
 from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class AccessLevel(Enum):
@@ -27,12 +27,12 @@ class IdentityUser:
     username: str = ""
     email: str = ""
     role: str = "viewer"
-    permissions: List[AccessLevel] = field(default_factory=list)
+    permissions: list[AccessLevel] = field(default_factory=list)
     is_active: bool = True
     mfa_enabled: bool = False
     failed_attempts: int = 0
-    locked_until: Optional[datetime] = None
-    last_login: Optional[datetime] = None
+    locked_until: datetime | None = None
+    last_login: datetime | None = None
     created_at: datetime = field(default_factory=datetime.now)
 
 
@@ -41,7 +41,7 @@ class Permission:
     permission_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     resource: str = ""
     access_level: AccessLevel = AccessLevel.READ
-    conditions: Dict[str, Any] = field(default_factory=dict)
+    conditions: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -57,9 +57,9 @@ class AuthLog:
 
 class IdentityEngine:
     def __init__(self, max_attempts: int = 5, lockout_minutes: int = 30):
-        self._users: Dict[str, IdentityUser] = {}
-        self._roles: Dict[str, List[Permission]] = {}
-        self._auth_log: List[AuthLog] = []
+        self._users: dict[str, IdentityUser] = {}
+        self._roles: dict[str, list[Permission]] = {}
+        self._auth_log: list[AuthLog] = []
         self._max_attempts = max_attempts
         self._lockout_minutes = lockout_minutes
 
@@ -67,10 +67,10 @@ class IdentityEngine:
         self._users[user.user_id] = user
         return user
 
-    def get_user(self, user_id: str) -> Optional[IdentityUser]:
+    def get_user(self, user_id: str) -> IdentityUser | None:
         return self._users.get(user_id)
 
-    def get_user_by_username(self, username: str) -> Optional[IdentityUser]:
+    def get_user_by_username(self, username: str) -> IdentityUser | None:
         for u in self._users.values():
             if u.username == username:
                 return u
@@ -104,12 +104,9 @@ class IdentityEngine:
         if user.role == "admin":
             return True
         role_perms = self._roles.get(user.role, [])
-        for perm in role_perms:
-            if perm.resource == resource and perm.access_level.value >= required_level.value:
-                return True
-        return False
+        return any(perm.resource == resource and perm.access_level.value >= required_level.value for perm in role_perms)
 
-    def set_role_permissions(self, role: str, permissions: List[Permission]) -> None:
+    def set_role_permissions(self, role: str, permissions: list[Permission]) -> None:
         self._roles[role] = permissions
 
     def lock_user(self, user_id: str) -> bool:
@@ -128,7 +125,7 @@ class IdentityEngine:
         user.failed_attempts = 0
         return True
 
-    def get_auth_log(self, user_id: Optional[str] = None) -> List[AuthLog]:
+    def get_auth_log(self, user_id: str | None = None) -> list[AuthLog]:
         log = list(self._auth_log)
         if user_id:
             log = [e for e in log if e.user_id == user_id]

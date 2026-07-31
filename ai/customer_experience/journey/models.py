@@ -1,8 +1,8 @@
 """Journey models."""
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
 from enum import Enum
+from typing import Any
 
 
 class JourneyStage(Enum):
@@ -31,7 +31,7 @@ class Touchpoint:
     touchpoint_type: TouchpointType = TouchpointType.WEBSITE
     channel: str = ""
     action: str = ""
-    data: Dict[str, Any] = field(default_factory=dict)
+    data: dict[str, Any] = field(default_factory=dict)
     timestamp: datetime = field(default_factory=datetime.now)
 
 
@@ -39,7 +39,7 @@ class Touchpoint:
 class LifecycleStage:
     stage: JourneyStage
     entered_at: datetime = field(default_factory=datetime.now)
-    exited_at: Optional[datetime] = None
+    exited_at: datetime | None = None
     duration_days: float = 0.0
     conversion_rate: float = 0.0
 
@@ -49,12 +49,12 @@ class CustomerJourney:
     journey_id: str
     customer_id: str = ""
     current_stage: JourneyStage = JourneyStage.AWARENESS
-    stages: List[LifecycleStage] = field(default_factory=list)
-    touchpoints: List[Touchpoint] = field(default_factory=list)
+    stages: list[LifecycleStage] = field(default_factory=list)
+    touchpoints: list[Touchpoint] = field(default_factory=list)
     started_at: datetime = field(default_factory=datetime.now)
     last_activity: datetime = field(default_factory=datetime.now)
     conversion_score: float = 0.0
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass

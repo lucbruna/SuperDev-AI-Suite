@@ -1,9 +1,9 @@
 """Device Engine - Core device management for mobile/edge."""
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class DeviceStatus(Enum):
@@ -21,15 +21,15 @@ class ManagedDevice:
     status: DeviceStatus = DeviceStatus.ACTIVE
     platform: str = ""
     os_version: str = ""
-    last_seen: Optional[datetime] = None
+    last_seen: datetime | None = None
     registered_at: datetime = field(default_factory=datetime.now)
-    tags: List[str] = field(default_factory=list)
-    config: Dict[str, Any] = field(default_factory=dict)
+    tags: list[str] = field(default_factory=list)
+    config: dict[str, Any] = field(default_factory=dict)
 
 
 class DeviceEngine:
     def __init__(self):
-        self.devices: Dict[str, ManagedDevice] = {}
+        self.devices: dict[str, ManagedDevice] = {}
 
     def register(self, name: str, platform: str = "", os_version: str = "") -> ManagedDevice:
         device_id = hashlib.sha256(f"{name}{platform}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
@@ -37,7 +37,7 @@ class DeviceEngine:
         self.devices[device_id] = device
         return device
 
-    def get(self, device_id: str) -> Optional[ManagedDevice]:
+    def get(self, device_id: str) -> ManagedDevice | None:
         return self.devices.get(device_id)
 
     def update_status(self, device_id: str, status: DeviceStatus) -> bool:
@@ -61,10 +61,10 @@ class DeviceEngine:
             return True
         return False
 
-    def search(self, query: str) -> List[ManagedDevice]:
+    def search(self, query: str) -> list[ManagedDevice]:
         return [d for d in self.devices.values() if query.lower() in d.name.lower() or any(query.lower() in t.lower() for t in d.tags)]
 
-    def list_devices(self, status: DeviceStatus = None) -> List[ManagedDevice]:
+    def list_devices(self, status: DeviceStatus = None) -> list[ManagedDevice]:
         if status:
             return [d for d in self.devices.values() if d.status == status]
         return list(self.devices.values())

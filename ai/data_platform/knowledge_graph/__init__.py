@@ -1,6 +1,6 @@
 """Knowledge Graph subsystem."""
-from .models import EntityType, RelationType, Entity, Relation, KnowledgePath, GraphQuery
 from .engine import KnowledgeGraphEngine
+from .models import Entity, EntityType, GraphQuery, KnowledgePath, Relation, RelationType
 
 __all__ = [
     "EntityType", "RelationType", "Entity", "Relation", "KnowledgePath", "GraphQuery",

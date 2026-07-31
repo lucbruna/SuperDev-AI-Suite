@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 from .memory_cache import MemoryCache
 from .memory_checkpoint import MemoryCheckpoint
@@ -66,7 +66,7 @@ class MemoryFactory:
     def create_statistics(self) -> MemoryStatistics:
         return MemoryStatistics()
 
-    def create_all(self) -> Dict[str, Any]:
+    def create_all(self) -> dict[str, Any]:
         return {
             "cache": self.create_cache(),
             "metrics": self.create_metrics(),

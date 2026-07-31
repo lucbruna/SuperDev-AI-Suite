@@ -1,8 +1,8 @@
 """Factory Manager - Project lifecycle management."""
-from typing import Dict, Any, Optional, List
+import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
-import hashlib
+from typing import Any
 
 
 @dataclass
@@ -14,13 +14,13 @@ class ProjectArtifact:
     content: Any = None
     path: str = ""
     created_at: datetime = field(default_factory=datetime.now)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class FactoryManager:
     def __init__(self):
-        self.artifacts: Dict[str, List[ProjectArtifact]] = {}
-        self.approvals: Dict[str, Dict[str, Any]] = {}
+        self.artifacts: dict[str, list[ProjectArtifact]] = {}
+        self.approvals: dict[str, dict[str, Any]] = {}
 
     def add_artifact(self, project_id: str, name: str, artifact_type: str = "", content: Any = None, path: str = "") -> ProjectArtifact:
         artifact_id = hashlib.sha256(f"{project_id}{name}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
@@ -28,7 +28,7 @@ class FactoryManager:
         self.artifacts.setdefault(project_id, []).append(artifact)
         return artifact
 
-    def get_artifacts(self, project_id: str) -> List[ProjectArtifact]:
+    def get_artifacts(self, project_id: str) -> list[ProjectArtifact]:
         return self.artifacts.get(project_id, [])
 
     def request_approval(self, project_id: str, reviewer: str, notes: str = "") -> str:
@@ -43,7 +43,7 @@ class FactoryManager:
             return True
         return False
 
-    def get_approval(self, approval_id: str) -> Optional[Dict[str, Any]]:
+    def get_approval(self, approval_id: str) -> dict[str, Any] | None:
         return self.approvals.get(approval_id)
 
     def count_artifacts(self, project_id: str) -> int:

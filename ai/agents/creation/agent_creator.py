@@ -3,22 +3,22 @@ from __future__ import annotations
 
 import time
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class AgentCreator:
     """Creates agent instances from templates and configurations."""
 
     def __init__(self) -> None:
-        self._created_agents: Dict[str, Dict[str, Any]] = {}
+        self._created_agents: dict[str, dict[str, Any]] = {}
         self._creation_count: int = 0
 
     def create_agent(
         self,
         name: str,
         agent_type: str,
-        config: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        config: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         agent_id = f"agent_{uuid.uuid4().hex[:12]}"
         agent = {
             "agent_id": agent_id,
@@ -36,8 +36,8 @@ class AgentCreator:
     def create_from_template(
         self,
         template_name: str,
-        overrides: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        overrides: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         from .template_manager import TemplateManager
 
         mgr = TemplateManager()
@@ -52,10 +52,10 @@ class AgentCreator:
     def create_specialized_team(
         self,
         team_name: str,
-        specializations: List[str],
-        base_config: Optional[Dict[str, Any]] = None,
-    ) -> List[Dict[str, Any]]:
-        agents: List[Dict[str, Any]] = []
+        specializations: list[str],
+        base_config: dict[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
+        agents: list[dict[str, Any]] = []
         for spec in specializations:
             agent = self.create_agent(
                 name=f"{team_name}_{spec}",
@@ -65,18 +65,18 @@ class AgentCreator:
             agents.append(agent)
         return agents
 
-    def validate_creation(self, agent_data: Dict[str, Any]) -> Dict[str, Any]:
-        errors: List[str] = []
+    def validate_creation(self, agent_data: dict[str, Any]) -> dict[str, Any]:
+        errors: list[str] = []
         if not agent_data.get("name"):
             errors.append("Agent name is required")
         if not agent_data.get("type"):
             errors.append("Agent type is required")
         return {"valid": len(errors) == 0, "errors": errors}
 
-    def get_agent(self, agent_id: str) -> Optional[Dict[str, Any]]:
+    def get_agent(self, agent_id: str) -> dict[str, Any] | None:
         return self._created_agents.get(agent_id)
 
-    def list_agents(self) -> List[Dict[str, Any]]:
+    def list_agents(self) -> list[dict[str, Any]]:
         return list(self._created_agents.values())
 
     def remove_agent(self, agent_id: str) -> bool:
@@ -86,7 +86,7 @@ class AgentCreator:
     def creation_count(self) -> int:
         return self._creation_count
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         return {
             "total_created": self._creation_count,
             "active_agents": len(self._created_agents),

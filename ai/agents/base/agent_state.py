@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum, auto
-from typing import Any, Dict
+from typing import Any
 
 
 class AgentState(Enum):
@@ -39,5 +39,5 @@ class AgentStateManager:
             return True
         return False
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {"state": self._state.name}

@@ -1,6 +1,7 @@
+from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+
 from backend.database.base import Base
 from backend.database.engine import dispose_engine, get_engine_instance
-from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 
 class DatabaseConfig:

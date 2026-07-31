@@ -2,22 +2,22 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from .short_term import ShortTermMemory
-from .long_term import LongTermMemory
 from .episodic import EpisodicMemory
-from .semantic import SemanticMemory
-from .working_memory import WorkingMemory
-from .vector_memory import VectorMemory
-from .memory_search import MemorySearch
+from .long_term import LongTermMemory
 from .memory_cleanup import MemoryCleanup
+from .memory_search import MemorySearch
+from .semantic import SemanticMemory
+from .short_term import ShortTermMemory
+from .vector_memory import VectorMemory
+from .working_memory import WorkingMemory
 
 
 class MemoryEngine:
     """Central memory engine coordinating all memory subsystems for agents."""
 
-    def __init__(self, agent_id: str, config: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(self, agent_id: str, config: dict[str, Any] | None = None) -> None:
         self._agent_id = agent_id
         self._config = config or {}
         self._short_term = ShortTermMemory(
@@ -62,7 +62,7 @@ class MemoryEngine:
         return self._vector
 
     def store(self, key: str, value: Any, memory_type: str = "short_term",
-              metadata: Optional[Dict[str, Any]] = None) -> bool:
+              metadata: dict[str, Any] | None = None) -> bool:
         entry = {
             "key": key,
             "value": value,
@@ -87,7 +87,7 @@ class MemoryEngine:
         self._total_store_count += 1
         return True
 
-    def retrieve(self, key: str, memory_type: str = "short_term") -> Optional[Any]:
+    def retrieve(self, key: str, memory_type: str = "short_term") -> Any | None:
         self._total_retrieve_count += 1
         if memory_type == "short_term":
             return self._short_term.retrieve(key)
@@ -103,9 +103,9 @@ class MemoryEngine:
             return self._vector.retrieve(key)
         return None
 
-    def recall(self, query: str, memory_type: Optional[str] = None,
-               limit: int = 10) -> List[Dict[str, Any]]:
-        results: List[Dict[str, Any]] = []
+    def recall(self, query: str, memory_type: str | None = None,
+               limit: int = 10) -> list[dict[str, Any]]:
+        results: list[dict[str, Any]] = []
         types = [memory_type] if memory_type else [
             "short_term", "long_term", "episodic", "semantic",
         ]
@@ -126,7 +126,7 @@ class MemoryEngine:
         }
         return mapping.get(memory_type, self._short_term)
 
-    def consolidate(self) -> Dict[str, Any]:
+    def consolidate(self) -> dict[str, Any]:
         promoted = 0
         for key, entry in self._short_term.get_all().items():
             if entry.get("metadata", {}).get("importance", 0) > 0.7:
@@ -134,10 +134,10 @@ class MemoryEngine:
                 promoted += 1
         return {"promoted_to_long_term": promoted}
 
-    def cleanup(self, max_age_hours: int = 168) -> Dict[str, Any]:
+    def cleanup(self, max_age_hours: int = 168) -> dict[str, Any]:
         return self._cleanup.cleanup_all(self, max_age_hours)
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         return {
             "agent_id": self._agent_id,
             "short_term_count": self._short_term.count(),

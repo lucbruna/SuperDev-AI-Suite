@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 
 class BaseAgent:
@@ -27,8 +27,8 @@ class BaseAgent:
     def status(self, value: str) -> None:
         self._status = value
 
-    def execute(self, task: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, task: dict[str, Any]) -> dict[str, Any]:
         return {"agent_id": self._agent_id, "status": "completed", "task": task}
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {"agent_id": self._agent_id, "name": self._name, "status": self._status}

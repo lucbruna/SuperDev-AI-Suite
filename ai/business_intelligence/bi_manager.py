@@ -1,7 +1,7 @@
 """BI Manager — Project and lifecycle management for BI operations."""
-from typing import Dict, Any, Optional, List
-from datetime import datetime
 import hashlib
+from datetime import datetime
+from typing import Any
 
 
 class BIProject:
@@ -11,14 +11,14 @@ class BIProject:
         self.description = description
         self.status = "active"
         self.created_at = datetime.now()
-        self.metadata: Dict[str, Any] = {}
+        self.metadata: dict[str, Any] = {}
 
 
 class BIManager:
     def __init__(self):
-        self._projects: Dict[str, BIProject] = {}
-        self._artifacts: Dict[str, List[Dict[str, Any]]] = {}
-        self._approvals: Dict[str, Dict[str, Any]] = {}
+        self._projects: dict[str, BIProject] = {}
+        self._artifacts: dict[str, list[dict[str, Any]]] = {}
+        self._approvals: dict[str, dict[str, Any]] = {}
 
     def create_project(self, name: str, description: str = "") -> BIProject:
         project_id = hashlib.sha256(f"{name}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
@@ -26,13 +26,13 @@ class BIManager:
         self._projects[project_id] = project
         return project
 
-    def get_project(self, project_id: str) -> Optional[BIProject]:
+    def get_project(self, project_id: str) -> BIProject | None:
         return self._projects.get(project_id)
 
-    def list_projects(self) -> List[BIProject]:
+    def list_projects(self) -> list[BIProject]:
         return list(self._projects.values())
 
-    def add_artifact(self, project_id: str, artifact_type: str, content: Any) -> Dict[str, Any]:
+    def add_artifact(self, project_id: str, artifact_type: str, content: Any) -> dict[str, Any]:
         artifact = {
             "type": artifact_type,
             "content": content,
@@ -41,7 +41,7 @@ class BIManager:
         self._artifacts.setdefault(project_id, []).append(artifact)
         return artifact
 
-    def get_artifacts(self, project_id: str) -> List[Dict[str, Any]]:
+    def get_artifacts(self, project_id: str) -> list[dict[str, Any]]:
         return self._artifacts.get(project_id, [])
 
     def approve(self, project_id: str, approver: str) -> bool:

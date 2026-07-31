@@ -1,11 +1,10 @@
 """
 Compliance Framework Engine
 """
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
 
 
 class Framework(Enum):
@@ -33,14 +32,14 @@ class Control:
     status: ControlStatus = ControlStatus.NOT_IMPLEMENTED
     evidence: str = ""
     owner: str = ""
-    last_assessed: Optional[datetime] = None
+    last_assessed: datetime | None = None
 
 
 @dataclass
 class ComplianceAssessment:
     assessment_id: str
     framework: Framework
-    controls: List[Control] = field(default_factory=list)
+    controls: list[Control] = field(default_factory=list)
     score: float = 0.0
     assessed_at: datetime = field(default_factory=datetime.now)
     assessor: str = ""
@@ -53,14 +52,14 @@ class GapAnalysis:
     implemented: int = 0
     partial: int = 0
     not_implemented: int = 0
-    gaps: List[Control] = field(default_factory=list)
+    gaps: list[Control] = field(default_factory=list)
 
 
 class ComplianceEngine:
     def __init__(self):
-        self.controls: Dict[str, Control] = {}
-        self.assessments: List[ComplianceAssessment] = []
-        self.gap_analyses: List[GapAnalysis] = []
+        self.controls: dict[str, Control] = {}
+        self.assessments: list[ComplianceAssessment] = []
+        self.gap_analyses: list[GapAnalysis] = []
 
     def add_control(self, control_id: str, framework: Framework, name: str, description: str = "") -> Control:
         control = Control(control_id=control_id, framework=framework, name=name, description=description)
@@ -94,13 +93,13 @@ class ComplianceEngine:
         self.gap_analyses.append(analysis)
         return analysis
 
-    def get_controls_by_framework(self, framework: Framework) -> List[Control]:
+    def get_controls_by_framework(self, framework: Framework) -> list[Control]:
         return [c for c in self.controls.values() if c.framework == framework]
 
-    def get_controls_by_status(self, status: ControlStatus) -> List[Control]:
+    def get_controls_by_status(self, status: ControlStatus) -> list[Control]:
         return [c for c in self.controls.values() if c.status == status]
 
-    def get_control(self, control_id: str) -> Optional[Control]:
+    def get_control(self, control_id: str) -> Control | None:
         return self.controls.get(control_id)
 
     def count(self) -> int:

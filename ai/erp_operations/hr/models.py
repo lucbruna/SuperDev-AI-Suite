@@ -1,7 +1,6 @@
 """HR models."""
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Optional
 from enum import Enum
 
 
@@ -34,7 +33,7 @@ class Employee:
     department: str = ""
     position: str = ""
     status: EmployeeStatus = EmployeeStatus.ACTIVE
-    hire_date: Optional[datetime] = None
+    hire_date: datetime | None = None
     salary: float = 0.0
     manager_id: str = ""
     email: str = ""
@@ -46,8 +45,8 @@ class LeaveRequest:
     request_id: str
     employee_id: str = ""
     leave_type: LeaveType = LeaveType.ANNUAL
-    start_date: Optional[datetime] = None
-    end_date: Optional[datetime] = None
+    start_date: datetime | None = None
+    end_date: datetime | None = None
     days: int = 0
     status: LeaveStatus = LeaveStatus.PENDING
     approved_by: str = ""
@@ -64,7 +63,7 @@ class PayrollRecord:
     deductions: float = 0.0
     net_pay: float = 0.0
     status: str = "pending"
-    processed_at: Optional[datetime] = None
+    processed_at: datetime | None = None
 
 
 @dataclass

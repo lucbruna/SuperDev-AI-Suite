@@ -1,18 +1,20 @@
 """Forecasting engine."""
-import math
-import uuid
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+
 from .models import (
-    ForecastRequest, ForecastResult, ForecastPoint, ForecastMethod,
-    ForecastModel, TimeSeriesData, SeasonalityType,
+    ForecastMethod,
+    ForecastModel,
+    ForecastPoint,
+    ForecastRequest,
+    ForecastResult,
+    TimeSeriesData,
 )
 
 
 class ForecastingEngine:
     def __init__(self):
-        self._models: Dict[str, ForecastModel] = {}
-        self._results: Dict[str, ForecastResult] = {}
+        self._models: dict[str, ForecastModel] = {}
+        self._results: dict[str, ForecastResult] = {}
 
     async def train_model(self, model: ForecastModel, data: TimeSeriesData) -> ForecastModel:
         if len(data.values) < 2:
@@ -52,7 +54,7 @@ class ForecastingEngine:
         self._results[request.request_id] = result
         return result
 
-    def _linear_forecast(self, data: TimeSeriesData, horizon: int) -> List[ForecastPoint]:
+    def _linear_forecast(self, data: TimeSeriesData, horizon: int) -> list[ForecastPoint]:
         n = len(data.values)
         if n == 0:
             return []
@@ -89,7 +91,7 @@ class ForecastingEngine:
             ))
         return points
 
-    def _moving_avg_forecast(self, data: TimeSeriesData, horizon: int, window: int = 3) -> List[ForecastPoint]:
+    def _moving_avg_forecast(self, data: TimeSeriesData, horizon: int, window: int = 3) -> list[ForecastPoint]:
         values = data.values
         if not values:
             return []
@@ -109,7 +111,7 @@ class ForecastingEngine:
             ))
         return points
 
-    def _exponential_forecast(self, data: TimeSeriesData, horizon: int, alpha: float = 0.3) -> List[ForecastPoint]:
+    def _exponential_forecast(self, data: TimeSeriesData, horizon: int, alpha: float = 0.3) -> list[ForecastPoint]:
         values = data.values
         if not values:
             return []

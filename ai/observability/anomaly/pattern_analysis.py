@@ -1,10 +1,10 @@
 """Pattern analysis."""
 from __future__ import annotations
-from typing import Any, Dict, List
+
 
 class PatternAnalyzer:
     def __init__(self) -> None:
-        self._patterns: Dict[str, List[float]] = {}
+        self._patterns: dict[str, list[float]] = {}
     def record(self, metric_name: str, value: float) -> None:
         self._patterns.setdefault(metric_name, []).append(value)
         if len(self._patterns[metric_name]) > 1000:
@@ -28,7 +28,7 @@ class PatternAnalyzer:
             correlations.append(values[i] * values[i + period])
         avg_corr = sum(correlations) / len(correlations) if correlations else 0
         return avg_corr > 0
-    def list_metrics(self) -> List[str]:
+    def list_metrics(self) -> list[str]:
         return list(self._patterns.keys())
-    def get_values(self, metric_name: str) -> List[float]:
+    def get_values(self, metric_name: str) -> list[float]:
         return list(self._patterns.get(metric_name, []))

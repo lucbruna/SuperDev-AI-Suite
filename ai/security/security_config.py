@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional
 
 
 class SecurityLevel(Enum):
@@ -72,7 +71,7 @@ class FirewallConfig:
     enabled: bool = True
     default_action: str = "deny"
     rate_limit_rpm: int = 1000
-    blocked_ips: List[str] = field(default_factory=list)
+    blocked_ips: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -80,7 +79,7 @@ class ThreatDetectionConfig:
     enabled: bool = True
     anomaly_threshold: float = 0.7
     auto_block: bool = False
-    alert_channels: List[str] = field(default_factory=lambda: ["log"])
+    alert_channels: list[str] = field(default_factory=lambda: ["log"])
 
 
 @dataclass
@@ -92,7 +91,7 @@ class SecurityConfig:
     audit: AuditConfig = field(default_factory=AuditConfig)
     firewall: FirewallConfig = field(default_factory=FirewallConfig)
     threat_detection: ThreatDetectionConfig = field(default_factory=ThreatDetectionConfig)
-    compliance_standards: List[ComplianceStandard] = field(
+    compliance_standards: list[ComplianceStandard] = field(
         default_factory=lambda: [ComplianceStandard.LGPD, ComplianceStandard.SOC2]
     )
     agent_security_enabled: bool = True

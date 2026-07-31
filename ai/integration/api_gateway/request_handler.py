@@ -1,11 +1,11 @@
 """
 Request Handler - Process incoming requests
 """
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from datetime import datetime
 import hashlib
 import json
+from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Any
 
 
 @dataclass
@@ -13,26 +13,26 @@ class RequestData:
     request_id: str
     method: str
     path: str
-    headers: Dict[str, str] = field(default_factory=dict)
+    headers: dict[str, str] = field(default_factory=dict)
     body: Any = None
-    query: Dict[str, str] = field(default_factory=dict)
+    query: dict[str, str] = field(default_factory=dict)
     timestamp: datetime = field(default_factory=datetime.now)
 
 
 @dataclass
 class ValidationResult:
     valid: bool
-    errors: List[str] = field(default_factory=list)
-    warnings: List[str] = field(default_factory=list)
+    errors: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
 
 
 class RequestHandler:
     def __init__(self):
-        self.processed: List[RequestData] = []
-        self.validators: Dict[str, Any] = {}
-        self.transformers: List[Any] = []
+        self.processed: list[RequestData] = []
+        self.validators: dict[str, Any] = {}
+        self.transformers: list[Any] = []
 
-    def create_request(self, method: str, path: str, headers: Dict[str, str] = None, body: Any = None) -> RequestData:
+    def create_request(self, method: str, path: str, headers: dict[str, str] = None, body: Any = None) -> RequestData:
         request_id = hashlib.sha256(f"{method}{path}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
         req = RequestData(request_id=request_id, method=method, path=path, headers=headers or {}, body=body)
         self.processed.append(req)
@@ -57,7 +57,7 @@ class RequestHandler:
     def add_validator(self, name: str, validator: Any) -> None:
         self.validators[name] = validator
 
-    def get_recent(self, limit: int = 10) -> List[RequestData]:
+    def get_recent(self, limit: int = 10) -> list[RequestData]:
         return self.processed[-limit:]
 
     def count(self) -> int:

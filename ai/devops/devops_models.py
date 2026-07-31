@@ -1,9 +1,11 @@
 """DevOps data models."""
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
-from enum import Enum
+
+import time
+import uuid
 from dataclasses import dataclass, field
-import time, uuid
+from enum import Enum
+
 
 class ServerState(Enum):
     RUNNING = "running"
@@ -43,15 +45,15 @@ class Container:
     name: str = ""
     image: str = ""
     state: ContainerState = ContainerState.CREATED
-    ports: List[int] = field(default_factory=list)
-    env: Dict[str, str] = field(default_factory=dict)
+    ports: list[int] = field(default_factory=list)
+    env: dict[str, str] = field(default_factory=dict)
     created_at: float = field(default_factory=time.time)
 
 @dataclass
 class Pipeline:
     pipeline_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     name: str = ""
-    stages: List[str] = field(default_factory=list)
+    stages: list[str] = field(default_factory=list)
     state: PipelineState = PipelineState.IDLE
     current_stage: int = 0
     created_at: float = field(default_factory=time.time)

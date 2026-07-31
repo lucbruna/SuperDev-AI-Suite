@@ -1,16 +1,18 @@
 """Pod manager."""
 from __future__ import annotations
-from typing import Any, Dict, List
+
 import time
+from typing import Any
+
 
 class PodManager:
     def __init__(self) -> None:
-        self._pods: Dict[str, Dict[str, Any]] = {}
-    def create(self, name: str, namespace: str, image: str, replicas: int = 1) -> Dict[str, Any]:
+        self._pods: dict[str, dict[str, Any]] = {}
+    def create(self, name: str, namespace: str, image: str, replicas: int = 1) -> dict[str, Any]:
         pod = {"name": name, "namespace": namespace, "image": image, "replicas": replicas, "status": "running", "created_at": time.time()}
         self._pods[name] = pod
         return pod
-    def get(self, name: str) -> Dict[str, Any]:
+    def get(self, name: str) -> dict[str, Any]:
         return self._pods.get(name, {"error": "not_found"})
     def delete(self, name: str) -> bool:
         if name in self._pods:
@@ -22,9 +24,9 @@ class PodManager:
             self._pods[name]["replicas"] = replicas
             return True
         return False
-    def list_all(self) -> List[Dict[str, Any]]:
+    def list_all(self) -> list[dict[str, Any]]:
         return list(self._pods.values())
-    def list_by_namespace(self, namespace: str) -> List[Dict[str, Any]]:
+    def list_by_namespace(self, namespace: str) -> list[dict[str, Any]]:
         return [p for p in self._pods.values() if p.get("namespace") == namespace]
     def count(self) -> int:
         return len(self._pods)

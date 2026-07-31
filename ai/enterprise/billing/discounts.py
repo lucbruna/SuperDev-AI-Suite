@@ -1,15 +1,17 @@
 """Discount management."""
 from __future__ import annotations
-from typing import Any, Dict, List
+
+from typing import Any
+
 
 class DiscountManager:
     def __init__(self) -> None:
-        self._discounts: Dict[str, Dict[str, Any]] = {}
-    def add(self, code: str, percent: float, description: str = "", max_uses: int = 0, valid_until: float = 0) -> Dict[str, Any]:
+        self._discounts: dict[str, dict[str, Any]] = {}
+    def add(self, code: str, percent: float, description: str = "", max_uses: int = 0, valid_until: float = 0) -> dict[str, Any]:
         discount = {"code": code, "percent": percent, "description": description, "max_uses": max_uses, "used": 0, "valid_until": valid_until, "active": True}
         self._discounts[code] = discount
         return discount
-    def get(self, code: str) -> Dict[str, Any]:
+    def get(self, code: str) -> dict[str, Any]:
         return self._discounts.get(code, {})
     def apply(self, code: str, amount: float) -> float:
         discount = self._discounts.get(code)
@@ -24,7 +26,7 @@ class DiscountManager:
             self._discounts[code]["active"] = False
             return True
         return False
-    def list_active(self) -> List[Dict[str, Any]]:
+    def list_active(self) -> list[dict[str, Any]]:
         return [d for d in self._discounts.values() if d["active"]]
     def remove(self, code: str) -> bool:
         if code in self._discounts:

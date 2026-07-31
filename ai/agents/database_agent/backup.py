@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from typing import Any
-from datetime import datetime, timezone
 
 
 class Backup:
@@ -23,7 +23,7 @@ class Backup:
             "tables": tables or [],
             "status": "completed",
             "size_mb": round(len(name) * 10.5, 2),
-            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
         }
         return bid
 

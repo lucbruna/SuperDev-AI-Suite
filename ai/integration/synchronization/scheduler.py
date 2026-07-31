@@ -1,9 +1,9 @@
 """
 Sync Scheduler - Schedule sync jobs
 """
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
 
 @dataclass
@@ -12,15 +12,15 @@ class Schedule:
     job_id: str
     interval_seconds: int = 3600
     enabled: bool = True
-    last_run: Optional[datetime] = None
-    next_run: Optional[datetime] = None
+    last_run: datetime | None = None
+    next_run: datetime | None = None
     run_count: int = 0
 
 
 class SyncScheduler:
     def __init__(self):
-        self.schedules: Dict[str, Schedule] = {}
-        self.execution_log: List[Dict[str, Any]] = []
+        self.schedules: dict[str, Schedule] = {}
+        self.execution_log: list[dict[str, Any]] = []
 
     def create_schedule(self, job_id: str, interval_seconds: int = 3600) -> Schedule:
         schedule_id = f"sch_{len(self.schedules)}"
@@ -42,7 +42,7 @@ class SyncScheduler:
             return True
         return False
 
-    def get_due(self) -> List[Schedule]:
+    def get_due(self) -> list[Schedule]:
         now = datetime.now()
         return [s for s in self.schedules.values() if s.enabled and s.next_run and s.next_run <= now]
 
@@ -56,10 +56,10 @@ class SyncScheduler:
             return True
         return False
 
-    def get_schedule(self, schedule_id: str) -> Optional[Schedule]:
+    def get_schedule(self, schedule_id: str) -> Schedule | None:
         return self.schedules.get(schedule_id)
 
-    def list_all(self) -> List[Schedule]:
+    def list_all(self) -> list[Schedule]:
         return list(self.schedules.values())
 
     def count(self) -> int:

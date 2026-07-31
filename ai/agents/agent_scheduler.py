@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class ScheduledTask:
     """A task scheduled for future execution."""
 
-    def __init__(self, task_id: str, task: Dict[str, Any], run_at: float) -> None:
+    def __init__(self, task_id: str, task: dict[str, Any], run_at: float) -> None:
         self._task_id = task_id
         self._task = task
         self._run_at = run_at
@@ -18,7 +18,7 @@ class ScheduledTask:
         return self._task_id
 
     @property
-    def task(self) -> Dict[str, Any]:
+    def task(self) -> dict[str, Any]:
         return self._task
 
     @property
@@ -37,7 +37,7 @@ class AgentScheduler:
     """Handles task scheduling for agents."""
 
     def __init__(self) -> None:
-        self._tasks: Dict[str, ScheduledTask] = {}
+        self._tasks: dict[str, ScheduledTask] = {}
         self._scheduled_count: int = 0
 
     @property
@@ -48,7 +48,7 @@ class AgentScheduler:
     def scheduled_count(self) -> int:
         return self._scheduled_count
 
-    def schedule(self, task_id: str, task: Dict[str, Any], delay: float = 0.0) -> None:
+    def schedule(self, task_id: str, task: dict[str, Any], delay: float = 0.0) -> None:
         run_at = time.time() + delay
         self._tasks[task_id] = ScheduledTask(task_id, task, run_at)
         self._scheduled_count += 1
@@ -56,7 +56,7 @@ class AgentScheduler:
     def cancel(self, task_id: str) -> bool:
         return self._tasks.pop(task_id, None) is not None
 
-    def pending(self) -> List[ScheduledTask]:
+    def pending(self) -> list[ScheduledTask]:
         now = time.time()
         return [t for t in self._tasks.values() if not t.executed and t.run_at <= now]
 

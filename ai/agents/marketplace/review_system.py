@@ -2,16 +2,16 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List
+from typing import Any
 
 
 class ReviewSystem:
     """Manages user reviews and ratings for marketplace agents."""
 
     def __init__(self) -> None:
-        self._reviews: Dict[str, List[Dict[str, Any]]] = {}
+        self._reviews: dict[str, list[dict[str, Any]]] = {}
 
-    def add_review(self, agent_id: str, rating: float, text: str) -> Dict[str, Any]:
+    def add_review(self, agent_id: str, rating: float, text: str) -> dict[str, Any]:
         if agent_id not in self._reviews:
             self._reviews[agent_id] = []
         review = {
@@ -28,7 +28,7 @@ class ReviewSystem:
             "total_reviews": len(self._reviews[agent_id]),
         }
 
-    def get_reviews(self, agent_id: str) -> List[Dict[str, Any]]:
+    def get_reviews(self, agent_id: str) -> list[dict[str, Any]]:
         return list(self._reviews.get(agent_id, []))
 
     def get_average(self, agent_id: str) -> float:

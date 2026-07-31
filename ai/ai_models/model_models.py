@@ -1,9 +1,12 @@
 """AI Model data models."""
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
-from enum import Enum
+
+import time
+import uuid
 from dataclasses import dataclass, field
-import time, uuid
+from enum import Enum
+from typing import Any
+
 
 class ModelStatus(Enum):
     ACTIVE = "active"
@@ -30,8 +33,8 @@ class AIModel:
     max_tokens: int = 4096
     cost_per_1k_input: float = 0.01
     cost_per_1k_output: float = 0.03
-    capabilities: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    capabilities: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 @dataclass
 class InferenceRequest:
@@ -41,7 +44,7 @@ class InferenceRequest:
     max_tokens: int = 1024
     temperature: float = 0.7
     stream: bool = False
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     created_at: float = field(default_factory=time.time)
 
 @dataclass
@@ -60,7 +63,7 @@ class EvaluationResult:
     model_id: str = ""
     task_type: str = ""
     score: float = 0.0
-    metrics: Dict[str, float] = field(default_factory=dict)
+    metrics: dict[str, float] = field(default_factory=dict)
     evaluated_at: float = field(default_factory=time.time)
 
 @dataclass

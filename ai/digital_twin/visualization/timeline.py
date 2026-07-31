@@ -1,17 +1,18 @@
 """Timeline view."""
 from __future__ import annotations
-from typing import Any, Dict, List
-import time
+
+from typing import Any
+
 
 class Timeline:
     def __init__(self) -> None:
-        self._events: List[Dict[str, Any]] = []
-    def add_event(self, event_id: str, timestamp: float, title: str, description: str = "", category: str = "general") -> Dict[str, Any]:
+        self._events: list[dict[str, Any]] = []
+    def add_event(self, event_id: str, timestamp: float, title: str, description: str = "", category: str = "general") -> dict[str, Any]:
         event = {"event_id": event_id, "timestamp": timestamp, "title": title, "description": description, "category": category}
         self._events.append(event)
         self._events.sort(key=lambda e: e["timestamp"])
         return event
-    def get_events(self, start: float = 0, end: float = float("inf"), category: str = "") -> List[Dict[str, Any]]:
+    def get_events(self, start: float = 0, end: float = float("inf"), category: str = "") -> list[dict[str, Any]]:
         events = self._events
         if start > 0:
             events = [e for e in events if e["timestamp"] >= start]
@@ -26,7 +27,7 @@ class Timeline:
         return len(self._events) < original
     def count(self) -> int:
         return len(self._events)
-    def categories(self) -> List[str]:
+    def categories(self) -> list[str]:
         return list(set(e["category"] for e in self._events))
     def clear(self) -> int:
         n = len(self._events)

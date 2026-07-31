@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, List, Optional
+from collections.abc import Callable
+from typing import Any
 
 
 class ContextFilter:
@@ -13,7 +14,7 @@ class ContextFilter:
     def filter_count(self) -> int:
         return self._filter_count
 
-    def filter_by_key(self, context: Dict[str, Any], include_keys: List[str]) -> Dict[str, Any]:
+    def filter_by_key(self, context: dict[str, Any], include_keys: list[str]) -> dict[str, Any]:
         content = context.get("content", {})
         filtered = {k: v for k, v in content.items() if k in include_keys}
         result = dict(context)
@@ -23,13 +24,11 @@ class ContextFilter:
         self._filter_count += 1
         return result
 
-    def filter_by_type(self, context: Dict[str, Any], include_types: List[str]) -> Dict[str, Any]:
+    def filter_by_type(self, context: dict[str, Any], include_types: list[str]) -> dict[str, Any]:
         content = context.get("content", {})
-        filtered: Dict[str, Any] = {}
+        filtered: dict[str, Any] = {}
         for k, v in content.items():
-            if isinstance(v, dict) and v.get("type") in include_types:
-                filtered[k] = v
-            elif isinstance(v, str) and "type" not in include_types:
+            if isinstance(v, dict) and v.get("type") in include_types or isinstance(v, str) and "type" not in include_types:
                 filtered[k] = v
         result = dict(context)
         result["content"] = filtered
@@ -39,8 +38,8 @@ class ContextFilter:
         return result
 
     def filter_by_predicate(
-        self, context: Dict[str, Any], predicate: Callable[[str, Any], bool]
-    ) -> Dict[str, Any]:
+        self, context: dict[str, Any], predicate: Callable[[str, Any], bool]
+    ) -> dict[str, Any]:
         content = context.get("content", {})
         filtered = {k: v for k, v in content.items() if predicate(k, v)}
         result = dict(context)
@@ -51,8 +50,8 @@ class ContextFilter:
         return result
 
     def filter_items(
-        self, items: List[Dict[str, Any]], key: str, value: Any
-    ) -> List[Dict[str, Any]]:
+        self, items: list[dict[str, Any]], key: str, value: Any
+    ) -> list[dict[str, Any]]:
         self._filter_count += 1
         return [item for item in items if item.get(key) == value]
 

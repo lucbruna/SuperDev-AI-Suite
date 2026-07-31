@@ -236,7 +236,7 @@ class TestI18n:
 
 class TestFullTextSearch:
     def setup_method(self):
-        from backend.search.full_text_search import FullTextSearch, SearchDocument, SearchableType
+        from backend.search.full_text_search import FullTextSearch, SearchableType, SearchDocument
         self.search = FullTextSearch()
         self.SearchDocument = SearchDocument
         self.SearchableType = SearchableType
@@ -417,9 +417,7 @@ class TestWebSocketManager:
 
 class TestSSOManager:
     def test_register_provider(self):
-        from backend.security.sso import (
-            SSOManager, SSOConfig, SSOProviderType, OIDCProvider
-        )
+        from backend.security.sso import OIDCProvider, SSOConfig, SSOManager, SSOProviderType
         mgr = SSOManager()
         config = SSOConfig(
             provider_type=SSOProviderType.OIDC,

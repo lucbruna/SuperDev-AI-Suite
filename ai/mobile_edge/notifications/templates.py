@@ -1,7 +1,7 @@
 """Templates - Notification templates."""
-from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
 from datetime import datetime
+from typing import Any
 
 
 @dataclass
@@ -10,21 +10,21 @@ class NotificationTemplate:
     name: str
     title_template: str = ""
     message_template: str = ""
-    variables: List[str] = field(default_factory=list)
-    default_data: Dict[str, Any] = field(default_factory=dict)
+    variables: list[str] = field(default_factory=list)
+    default_data: dict[str, Any] = field(default_factory=dict)
     created_at: datetime = field(default_factory=datetime.now)
 
 
 class TemplateManager:
     def __init__(self):
-        self.templates: Dict[str, NotificationTemplate] = {}
+        self.templates: dict[str, NotificationTemplate] = {}
 
-    def create(self, template_id: str, name: str, title_template: str = "", message_template: str = "", variables: List[str] = None) -> NotificationTemplate:
+    def create(self, template_id: str, name: str, title_template: str = "", message_template: str = "", variables: list[str] = None) -> NotificationTemplate:
         template = NotificationTemplate(template_id=template_id, name=name, title_template=title_template, message_template=message_template, variables=variables or [])
         self.templates[template_id] = template
         return template
 
-    def render(self, template_id: str, context: Dict[str, Any]) -> Dict[str, str]:
+    def render(self, template_id: str, context: dict[str, Any]) -> dict[str, str]:
         template = self.templates.get(template_id)
         if not template:
             return {"title": "", "message": ""}
@@ -35,10 +35,10 @@ class TemplateManager:
             message = message.replace(f"{{{{{key}}}}}", str(value))
         return {"title": title, "message": message}
 
-    def get(self, template_id: str) -> Optional[NotificationTemplate]:
+    def get(self, template_id: str) -> NotificationTemplate | None:
         return self.templates.get(template_id)
 
-    def list_templates(self) -> List[NotificationTemplate]:
+    def list_templates(self) -> list[NotificationTemplate]:
         return list(self.templates.values())
 
     def count(self) -> int:

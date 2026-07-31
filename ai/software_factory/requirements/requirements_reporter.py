@@ -1,6 +1,7 @@
 """Reporter for requirements analysis and status reports."""
-from typing import List, Dict, Any, Optional
 from datetime import datetime
+from typing import Any
+
 from .models import Requirement, RequirementSet
 from .requirements_analyzer import RequirementsAnalyzer
 from .requirements_mapper import RequirementsMapper
@@ -13,7 +14,7 @@ class RequirementsReporter:
         self.analyzer = RequirementsAnalyzer()
         self.mapper = RequirementsMapper()
 
-    def generate_status_report(self, req_set: RequirementSet) -> Dict[str, Any]:
+    def generate_status_report(self, req_set: RequirementSet) -> dict[str, Any]:
         """Generate a status report for a requirement set."""
         analysis = self.analyzer.analyze_set(req_set)
         quality = self.analyzer.compute_quality_score(req_set)
@@ -25,7 +26,7 @@ class RequirementsReporter:
             "quality_score": quality,
         }
 
-    def generate_coverage_report(self, requirements: List[Requirement]) -> Dict[str, Any]:
+    def generate_coverage_report(self, requirements: list[Requirement]) -> dict[str, Any]:
         """Generate a coverage report."""
         coverage = self.mapper.compute_coverage(requirements)
         return {
@@ -34,7 +35,7 @@ class RequirementsReporter:
             "coverage": coverage,
         }
 
-    def generate_gap_report(self, req_set: RequirementSet) -> Dict[str, Any]:
+    def generate_gap_report(self, req_set: RequirementSet) -> dict[str, Any]:
         """Generate a gap analysis report."""
         gaps = self.analyzer.find_gaps(req_set)
         return {
@@ -44,7 +45,7 @@ class RequirementsReporter:
             "gaps": gaps,
         }
 
-    def generate_full_report(self, req_set: RequirementSet) -> Dict[str, Any]:
+    def generate_full_report(self, req_set: RequirementSet) -> dict[str, Any]:
         """Generate a comprehensive report combining all report types."""
         return {
             "report_type": "full",

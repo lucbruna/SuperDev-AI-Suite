@@ -60,7 +60,7 @@ class LLMManager:
         self.factory.register_all(PROVIDER_CLASSES)
 
         env_registered: list[str] = []
-        for name, cls in PROVIDER_CLASSES.items():
+        for name, _cls in PROVIDER_CLASSES.items():
             env_config = PROVIDER_ENV_MAP.get(name, {})
             has_key = any(self._get_env(key) for key in env_config.values())
             if has_key:

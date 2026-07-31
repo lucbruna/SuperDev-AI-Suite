@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Any
 
-
 CHART_TYPES = {"bar", "line", "pie", "area", "scatter"}
 
 
@@ -43,7 +42,7 @@ class Charts:
         chart = self._charts.get(name)
         if chart is None:
             return f"// Chart '{name}' not found"
-        fields = ", ".join(chart["data_fields"])
+        ", ".join(chart["data_fields"])
         return (
             f"import React from 'react';\n"
             f"import {{ {chart['type'].title()} }} from 'react-chartjs-2';\n\n"

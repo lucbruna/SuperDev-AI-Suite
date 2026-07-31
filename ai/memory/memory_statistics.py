@@ -2,10 +2,9 @@ from __future__ import annotations
 
 import time
 from collections import Counter
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .memory_models import MemoryEntry
-from .memory_types import MemoryCategory, MemoryScope, MemoryStatus
 
 
 class MemoryStatistics:
@@ -16,8 +15,8 @@ class MemoryStatistics:
         self._category_distribution: Counter[str] = Counter()
         self._status_distribution: Counter[str] = Counter()
         self._tag_frequency: Counter[str] = Counter()
-        self._access_frequency: Dict[str, int] = {}
-        self._size_history: List[Dict[str, Any]] = []
+        self._access_frequency: dict[str, int] = {}
+        self._size_history: list[dict[str, Any]] = []
         self._growth_rate: float = 0.0
         self._peak_size: int = 0
         self._last_update: float = time.time()
@@ -52,19 +51,19 @@ class MemoryStatistics:
         self._last_update = now
 
     @property
-    def scope_distribution(self) -> Dict[str, int]:
+    def scope_distribution(self) -> dict[str, int]:
         return dict(self._scope_distribution)
 
     @property
-    def category_distribution(self) -> Dict[str, int]:
+    def category_distribution(self) -> dict[str, int]:
         return dict(self._category_distribution)
 
     @property
-    def status_distribution(self) -> Dict[str, int]:
+    def status_distribution(self) -> dict[str, int]:
         return dict(self._status_distribution)
 
     @property
-    def tag_frequency(self) -> Dict[str, int]:
+    def tag_frequency(self) -> dict[str, int]:
         return dict(self._tag_frequency)
 
     @property
@@ -76,11 +75,11 @@ class MemoryStatistics:
         return self._peak_size
 
     @property
-    def top_tags(self, n: int = 10) -> List[tuple[str, int]]:
+    def top_tags(self, n: int = 10) -> list[tuple[str, int]]:
         return self._tag_frequency.most_common(n)
 
     @property
-    def most_accessed(self, n: int = 10) -> List[tuple[str, int]]:
+    def most_accessed(self, n: int = 10) -> list[tuple[str, int]]:
         sorted_keys = sorted(
             self._access_frequency.items(),
             key=lambda x: x[1],
@@ -88,7 +87,7 @@ class MemoryStatistics:
         )
         return sorted_keys[:n]
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         return {
             "scope_distribution": dict(self._scope_distribution),
             "category_distribution": dict(self._category_distribution),

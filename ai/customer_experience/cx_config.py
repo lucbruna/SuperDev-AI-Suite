@@ -1,6 +1,6 @@
 """CX Config — Configuration for customer experience."""
 from dataclasses import dataclass, field
-from typing import Dict, Any, List
+from typing import Any
 
 
 @dataclass
@@ -22,10 +22,10 @@ class CXConfig:
     recommendation_limit: int = 5
     ticket_timeout_hours: int = 24
     lead_score_threshold: float = 0.7
-    journey_stages: List[str] = field(default_factory=lambda: [
+    journey_stages: list[str] = field(default_factory=lambda: [
         "awareness", "interest", "consideration", "purchase", "retention", "advocacy"
     ])
-    custom_settings: Dict[str, Any] = field(default_factory=dict)
+    custom_settings: dict[str, Any] = field(default_factory=dict)
 
     def get(self, key: str, default: Any = None) -> Any:
         return self.custom_settings.get(key, default)

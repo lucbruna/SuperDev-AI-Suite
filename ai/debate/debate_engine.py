@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from .debate_manager import DebateManager
 from .debate_agent import DebateAgent
-from .debate_judge import DebateJudge
 from .debate_consensus import DebateConsensus
+from .debate_judge import DebateJudge
+from .debate_manager import DebateManager
 
 
 class DebateEngine:

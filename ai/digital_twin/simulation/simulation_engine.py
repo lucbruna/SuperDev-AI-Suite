@@ -1,19 +1,21 @@
 """Simulation engine."""
 from __future__ import annotations
-from typing import Any, Dict, List
+
 import time
+from typing import Any
+
 
 class SimulationEngine:
     def __init__(self) -> None:
-        self._simulations: Dict[str, Dict[str, Any]] = {}
+        self._simulations: dict[str, dict[str, Any]] = {}
         self._started = False
     def start(self) -> None:
         self._started = True
-    def create(self, sim_id: str, name: str, config: Dict[str, Any] = None) -> Dict[str, Any]:
+    def create(self, sim_id: str, name: str, config: dict[str, Any] = None) -> dict[str, Any]:
         sim = {"sim_id": sim_id, "name": name, "config": config or {"time_steps": 100, "dt": 1.0}, "state": "idle", "results": [], "created_at": time.time()}
         self._simulations[sim_id] = sim
         return sim
-    def run(self, sim_id: str, steps: int = None) -> Dict[str, Any]:
+    def run(self, sim_id: str, steps: int = None) -> dict[str, Any]:
         if sim_id not in self._simulations:
             return {"error": "not_found"}
         sim = self._simulations[sim_id]
@@ -35,9 +37,9 @@ class SimulationEngine:
             self._simulations[sim_id]["state"] = "running"
             return True
         return False
-    def get(self, sim_id: str) -> Dict[str, Any]:
+    def get(self, sim_id: str) -> dict[str, Any]:
         return self._simulations.get(sim_id, {"error": "not_found"})
-    def list_all(self) -> List[Dict[str, Any]]:
+    def list_all(self) -> list[dict[str, Any]]:
         return list(self._simulations.values())
     def count(self) -> int:
         return len(self._simulations)

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict
+from typing import Any
 
 
 class MemoryCleanup:
@@ -13,7 +13,7 @@ class MemoryCleanup:
         self._total_removed: int = 0
 
     def cleanup_all(self, memory_engine: Any,
-                    max_age_hours: int = 168) -> Dict[str, Any]:
+                    max_age_hours: int = 168) -> dict[str, Any]:
         max_age_seconds = max_age_hours * 3600
         now = time.time()
         removed = 0
@@ -38,17 +38,17 @@ class MemoryCleanup:
             "cleanup_number": self._cleanup_count,
         }
 
-    def cleanup_short_term(self, memory_engine: Any) -> Dict[str, Any]:
+    def cleanup_short_term(self, memory_engine: Any) -> dict[str, Any]:
         st = memory_engine.short_term
         before = st.count()
         excess = before - st._max_size if hasattr(st, "_max_size") else 0
         return {"short_term_before": before, "excess_evicted": max(0, excess)}
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         return {
             "total_cleanups": self._cleanup_count,
             "total_entries_removed": self._total_removed,
         }
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         return self.get_stats()

@@ -1,7 +1,8 @@
 """ERP Interfaces — Protocol interfaces for ERP operations."""
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
-from .erp_models import Product, Order, PurchaseOrder, Supplier, Employee, Delivery
+from typing import Any
+
+from .erp_models import Delivery, Employee, Order, Product, PurchaseOrder, Supplier
 
 
 class InventoryInterface(ABC):
@@ -10,7 +11,7 @@ class InventoryInterface(ABC):
         pass
 
     @abstractmethod
-    def get_product(self, product_id: str) -> Optional[Product]:
+    def get_product(self, product_id: str) -> Product | None:
         pass
 
     @abstractmethod
@@ -18,7 +19,7 @@ class InventoryInterface(ABC):
         pass
 
     @abstractmethod
-    def get_low_stock_products(self) -> List[Product]:
+    def get_low_stock_products(self) -> list[Product]:
         pass
 
 
@@ -28,7 +29,7 @@ class SalesInterface(ABC):
         pass
 
     @abstractmethod
-    def get_order(self, order_id: str) -> Optional[Order]:
+    def get_order(self, order_id: str) -> Order | None:
         pass
 
     @abstractmethod
@@ -42,7 +43,7 @@ class PurchaseInterface(ABC):
         pass
 
     @abstractmethod
-    def get_purchase_order(self, po_id: str) -> Optional[PurchaseOrder]:
+    def get_purchase_order(self, po_id: str) -> PurchaseOrder | None:
         pass
 
     @abstractmethod
@@ -56,7 +57,7 @@ class SupplierInterface(ABC):
         pass
 
     @abstractmethod
-    def get_supplier(self, supplier_id: str) -> Optional[Supplier]:
+    def get_supplier(self, supplier_id: str) -> Supplier | None:
         pass
 
     @abstractmethod
@@ -70,7 +71,7 @@ class ProductionInterface(ABC):
         pass
 
     @abstractmethod
-    def get_work_order(self, work_order_id: str) -> Optional[Any]:
+    def get_work_order(self, work_order_id: str) -> Any | None:
         pass
 
     @abstractmethod
@@ -84,11 +85,11 @@ class LogisticsInterface(ABC):
         pass
 
     @abstractmethod
-    def track_delivery(self, delivery_id: str) -> Optional[Delivery]:
+    def track_delivery(self, delivery_id: str) -> Delivery | None:
         pass
 
     @abstractmethod
-    def optimize_route(self, deliveries: List[str]) -> List[str]:
+    def optimize_route(self, deliveries: list[str]) -> list[str]:
         pass
 
 
@@ -98,11 +99,11 @@ class HRInterface(ABC):
         pass
 
     @abstractmethod
-    def get_employee(self, employee_id: str) -> Optional[Employee]:
+    def get_employee(self, employee_id: str) -> Employee | None:
         pass
 
     @abstractmethod
-    def get_department_employees(self, department: str) -> List[Employee]:
+    def get_department_employees(self, department: str) -> list[Employee]:
         pass
 
 

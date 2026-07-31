@@ -1,11 +1,11 @@
 """Compliance subsystem"""
-from .compliance_engine import ComplianceEngine, Framework, ControlStatus
-from .audit_logger import AuditLogger, AuditEventType
-from .policy_manager import PolicyManager, PolicyStatus
-from .risk_assessor import RiskAssessor, RiskLevel, TreatmentType
-from .data_governance import DataGovernance, DataClassification
-from .privacy_manager import PrivacyManager, ConsentType, DataSubjectRequest
+from .audit_logger import AuditEventType, AuditLogger
+from .compliance_engine import ComplianceEngine, ControlStatus, Framework
 from .compliance_reporter import ComplianceReporter, ReportFormat, TrendDirection
+from .data_governance import DataClassification, DataGovernance
+from .policy_manager import PolicyManager, PolicyStatus
+from .privacy_manager import ConsentType, DataSubjectRequest, PrivacyManager
+from .risk_assessor import RiskAssessor, RiskLevel, TreatmentType
 
 __all__ = [
     "ComplianceEngine", "Framework", "ControlStatus",

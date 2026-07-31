@@ -1,6 +1,5 @@
 """Knowledge Engine Configuration."""
 from dataclasses import dataclass, field
-from typing import List, Optional
 
 
 @dataclass
@@ -15,7 +14,7 @@ class KnowledgeConfig:
     max_document_size_mb: int = 50
     chunk_size: int = 512
     chunk_overlap: int = 50
-    research_sources: List[str] = field(default_factory=lambda: ["web", "documents", "database"])
+    research_sources: list[str] = field(default_factory=lambda: ["web", "documents", "database"])
     cache_ttl_seconds: int = 3600
     max_concurrent_research: int = 5
     knowledge_graph_enabled: bool = True

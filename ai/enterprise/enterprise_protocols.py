@@ -1,6 +1,8 @@
 """Enterprise protocols."""
 from __future__ import annotations
-from typing import Any, Dict, Protocol, runtime_checkable
+
+from typing import Any, Protocol, runtime_checkable
+
 
 @runtime_checkable
 class Billable(Protocol):
@@ -10,7 +12,7 @@ class Billable(Protocol):
 @runtime_checkable
 class Subscribable(Protocol):
     def get_subscription_status(self) -> str: ...
-    def get_plan_features(self) -> Dict[str, Any]: ...
+    def get_plan_features(self) -> dict[str, Any]: ...
 
 @runtime_checkable
 class Licensable(Protocol):
@@ -19,9 +21,9 @@ class Licensable(Protocol):
 
 @runtime_checkable
 class Trackable(Protocol):
-    def get_usage(self) -> Dict[str, float]: ...
-    def get_quota_remaining(self) -> Dict[str, float]: ...
+    def get_usage(self) -> dict[str, float]: ...
+    def get_quota_remaining(self) -> dict[str, float]: ...
 
 @runtime_checkable
 class Reportable(Protocol):
-    def generate_report(self, report_type: str = "") -> Dict[str, Any]: ...
+    def generate_report(self, report_type: str = "") -> dict[str, Any]: ...

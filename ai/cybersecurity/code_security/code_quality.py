@@ -1,9 +1,9 @@
 """
 Security-Focused Code Quality Analysis
 """
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
+from typing import Any
 
 
 class QualityRule(Enum):
@@ -36,15 +36,15 @@ class QualityFinding:
 
 class CodeQualityAnalyzer:
     def __init__(self):
-        self.findings: List[QualityFinding] = []
-        self.rules_config: Dict[QualityRule, Dict[str, Any]] = {
+        self.findings: list[QualityFinding] = []
+        self.rules_config: dict[QualityRule, dict[str, Any]] = {
             QualityRule.NO_EVAL: {"patterns": ["eval(", "exec("], "severity": Severity.CRITICAL},
             QualityRule.VALIDATE_INPUT: {"patterns": ["request.args", "request.form"], "severity": Severity.HIGH},
             QualityRule.LOG_SENSITIVE: {"patterns": ["print(password", "log(password", "print(token"], "severity": Severity.HIGH},
             QualityRule.AVOID_HARDcoded: {"patterns": ["password = \"", "api_key = \""], "severity": Severity.CRITICAL},
         }
 
-    def analyze_file(self, file_path: str, content: str) -> List[QualityFinding]:
+    def analyze_file(self, file_path: str, content: str) -> list[QualityFinding]:
         findings = []
         lines = content.split("\n")
         for line_num, line in enumerate(lines, 1):
@@ -56,12 +56,12 @@ class CodeQualityAnalyzer:
         self.findings.extend(findings)
         return findings
 
-    def get_findings(self, severity: Severity = None) -> List[QualityFinding]:
+    def get_findings(self, severity: Severity = None) -> list[QualityFinding]:
         if severity:
             return [f for f in self.findings if f.severity == severity]
         return self.findings
 
-    def add_rule(self, rule: QualityRule, patterns: List[str], severity: Severity = Severity.MEDIUM) -> None:
+    def add_rule(self, rule: QualityRule, patterns: list[str], severity: Severity = Severity.MEDIUM) -> None:
         self.rules_config[rule] = {"patterns": patterns, "severity": severity}
 
     def get_score(self) -> float:

@@ -26,7 +26,7 @@ class VerificationLoop:
         self.registry = ProviderRegistry()
         self.provider = provider or self._get_provider(provider_name)
         self.max_iterations = max_iterations
-        
+
         self.generator = CodeGenerator(self.provider)
         self.executor = CodeExecutor()
         self.tester = CodeTester()
@@ -72,7 +72,7 @@ class VerificationLoop:
 
         for iteration in range(self.max_iterations):
             result.iterations = iteration + 1
-            
+
             execution = await self.executor.execute(current_code, language)
             result.execution = execution
 
@@ -181,7 +181,7 @@ class VerificationLoop:
 
         for iteration in range(self.max_iterations):
             result.iterations = iteration + 1
-            
+
             execution = await self.executor.execute(current_code, language)
             result.execution = execution
             if on_stage_complete:

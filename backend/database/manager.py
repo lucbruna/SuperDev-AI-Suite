@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
-from backend.config import config
 from sqlalchemy import event, text
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -12,6 +11,8 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 from sqlalchemy.pool import NullPool, QueuePool
+
+from backend.config import config
 
 
 class DatabaseManager:
@@ -35,7 +36,7 @@ class DatabaseManager:
         is_readonly: bool = False,
     ) -> AsyncEngine:
         """Create async engine with production-ready connection pooling."""
-        
+
         if is_readonly:
             # Read-only replica can use larger pool
             pool_size = pool_size * 2
@@ -184,9 +185,8 @@ class DatabaseManager:
     @asynccontextmanager
     async def get_transaction(self, readonly: bool = False) -> AsyncGenerator[AsyncSession, None]:
         """Get session with explicit transaction control."""
-        async with self.get_session(readonly=readonly) as session:
-            async with session.begin():
-                yield session
+        async with self.get_session(readonly=readonly) as session, session.begin():
+            yield session
 
     async def execute_raw(self, query: str, params: dict = None, readonly: bool = False) -> list:
         """Execute raw SQL query."""

@@ -1,14 +1,16 @@
 """Token optimization."""
 from __future__ import annotations
-from typing import Any, Dict, List
+
+from typing import Any
+
 
 class TokenOptimizer:
     def __init__(self, max_tokens: int = 4096) -> None:
         self._max_tokens = max_tokens
-        self._history: List[Dict[str, Any]] = []
+        self._history: list[dict[str, Any]] = []
     def count_tokens(self, text: str) -> int:
         return len(text) // 4
-    def optimize(self, text: str, target_tokens: int = None) -> Dict[str, Any]:
+    def optimize(self, text: str, target_tokens: int = None) -> dict[str, Any]:
         target = target_tokens or self._max_tokens
         current = self.count_tokens(text)
         if current <= target:
@@ -22,10 +24,10 @@ class TokenOptimizer:
     def truncate(self, text: str, max_tokens: int) -> str:
         max_chars = max_tokens * 4
         return text[:max_chars] if len(text) > max_chars else text
-    def summarize_tokens(self, texts: List[str]) -> Dict[str, Any]:
+    def summarize_tokens(self, texts: list[str]) -> dict[str, Any]:
         tokens = [self.count_tokens(t) for t in texts]
         return {"total": sum(tokens), "avg": sum(tokens) / len(tokens) if tokens else 0, "min": min(tokens) if tokens else 0, "max": max(tokens) if tokens else 0}
-    def get_history(self, limit: int = 20) -> List[Dict[str, Any]]:
+    def get_history(self, limit: int = 20) -> list[dict[str, Any]]:
         return self._history[-limit:]
     def count(self) -> int:
         return len(self._history)

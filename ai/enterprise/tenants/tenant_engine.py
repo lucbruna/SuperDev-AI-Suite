@@ -1,23 +1,25 @@
 """Tenant engine."""
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
+
 import time
+from typing import Any
+
 
 class TenantEngine:
     def __init__(self) -> None:
-        self._tenants: Dict[str, Dict[str, Any]] = {}
+        self._tenants: dict[str, dict[str, Any]] = {}
         self._started = False
     def start(self) -> None:
         self._started = True
     def stop(self) -> None:
         self._started = False
-    def create(self, org_id: str, isolation: str = "shared", config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def create(self, org_id: str, isolation: str = "shared", config: dict[str, Any] | None = None) -> dict[str, Any]:
         tenant = {"org_id": org_id, "isolation": isolation, "config": config or {}, "status": "active", "created_at": time.time()}
         self._tenants[org_id] = tenant
         return tenant
-    def get(self, org_id: str) -> Optional[Dict[str, Any]]:
+    def get(self, org_id: str) -> dict[str, Any] | None:
         return self._tenants.get(org_id)
-    def update(self, org_id: str, **kwargs: Any) -> Optional[Dict[str, Any]]:
+    def update(self, org_id: str, **kwargs: Any) -> dict[str, Any] | None:
         t = self._tenants.get(org_id)
         if t:
             t.update(kwargs)
@@ -28,7 +30,7 @@ class TenantEngine:
             del self._tenants[org_id]
             return True
         return False
-    def list_all(self) -> List[Dict[str, Any]]:
+    def list_all(self) -> list[dict[str, Any]]:
         return list(self._tenants.values())
     def count(self) -> int:
         return len(self._tenants)

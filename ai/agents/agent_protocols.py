@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 
 @runtime_checkable
 class Executable(Protocol):
-    def execute(self, task: Dict[str, Any]) -> Dict[str, Any]: ...
+    def execute(self, task: dict[str, Any]) -> dict[str, Any]: ...
 
 
 @runtime_checkable
 class Routable(Protocol):
-    def route(self, task: Dict[str, Any]) -> str: ...
+    def route(self, task: dict[str, Any]) -> str: ...
 
 
 @runtime_checkable

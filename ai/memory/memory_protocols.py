@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
-from .memory_types import MemoryData, MemoryID, Metadata, Tags, Timestamp
+from .memory_types import MemoryData, MemoryID, Tags, Timestamp
 
 
 @runtime_checkable

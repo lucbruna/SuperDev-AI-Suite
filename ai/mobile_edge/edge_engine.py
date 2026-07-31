@@ -1,9 +1,10 @@
 """Edge AI Runtime Engine - Local AI processing on edge devices."""
-from typing import Dict, Any, Optional, List, Callable
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class ModelStatus(Enum):
@@ -29,11 +30,11 @@ class EdgeModel:
     size_mb: float = 0.0
     status: ModelStatus = ModelStatus.UNLOADED
     accelerator: AcceleratorType = AcceleratorType.CPU
-    input_shape: List[int] = field(default_factory=list)
-    output_shape: List[int] = field(default_factory=list)
+    input_shape: list[int] = field(default_factory=list)
+    output_shape: list[int] = field(default_factory=list)
     accuracy: float = 0.0
-    loaded_at: Optional[datetime] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    loaded_at: datetime | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -49,10 +50,10 @@ class InferenceResult:
 
 class EdgeEngine:
     def __init__(self):
-        self.models: Dict[str, EdgeModel] = {}
-        self.inference_cache: Dict[str, InferenceResult] = {}
-        self.inference_log: List[InferenceResult] = []
-        self.handlers: Dict[str, Callable] = {}
+        self.models: dict[str, EdgeModel] = {}
+        self.inference_cache: dict[str, InferenceResult] = {}
+        self.inference_log: list[InferenceResult] = []
+        self.handlers: dict[str, Callable] = {}
 
     def register_model(self, name: str, version: str = "1.0", size_mb: float = 0.0, accelerator: AcceleratorType = AcceleratorType.CPU) -> EdgeModel:
         model_id = hashlib.sha256(f"{name}{version}".encode()).hexdigest()[:16]
@@ -89,7 +90,7 @@ class EdgeEngine:
     def register_handler(self, model_id: str, handler: Callable) -> None:
         self.handlers[model_id] = handler
 
-    def infer(self, model_id: str, input_data: Any) -> Optional[InferenceResult]:
+    def infer(self, model_id: str, input_data: Any) -> InferenceResult | None:
         model = self.models.get(model_id)
         if not model or model.status != ModelStatus.LOADED:
             return None
@@ -107,18 +108,18 @@ class EdgeEngine:
         self.inference_cache[result_id] = result
         return result
 
-    def get_model(self, model_id: str) -> Optional[EdgeModel]:
+    def get_model(self, model_id: str) -> EdgeModel | None:
         return self.models.get(model_id)
 
-    def list_models(self, status: ModelStatus = None) -> List[EdgeModel]:
+    def list_models(self, status: ModelStatus = None) -> list[EdgeModel]:
         if status:
             return [m for m in self.models.values() if m.status == status]
         return list(self.models.values())
 
-    def get_loaded_models(self) -> List[EdgeModel]:
+    def get_loaded_models(self) -> list[EdgeModel]:
         return self.list_models(status=ModelStatus.LOADED)
 
-    def get_inference_log(self, limit: int = 100) -> List[InferenceResult]:
+    def get_inference_log(self, limit: int = 100) -> list[InferenceResult]:
         return self.inference_log[-limit:]
 
     def count(self) -> int:

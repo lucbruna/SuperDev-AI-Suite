@@ -1,10 +1,9 @@
 """
 Adapter Manager - Adapter lifecycle
 """
-from typing import Dict, Any, Optional, List
+import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
-import hashlib
 
 
 @dataclass
@@ -21,7 +20,7 @@ class AdapterInfo:
 
 class AdapterManager:
     def __init__(self):
-        self.adapters: Dict[str, AdapterInfo] = {}
+        self.adapters: dict[str, AdapterInfo] = {}
 
     def register(self, name: str, adapter_type: str, source_format: str, target_format: str) -> AdapterInfo:
         adapter_id = hashlib.sha256(f"{name}{adapter_type}".encode()).hexdigest()[:16]
@@ -35,13 +34,13 @@ class AdapterManager:
             return True
         return False
 
-    def get_adapter(self, adapter_id: str) -> Optional[AdapterInfo]:
+    def get_adapter(self, adapter_id: str) -> AdapterInfo | None:
         return self.adapters.get(adapter_id)
 
-    def find_by_formats(self, source: str, target: str) -> List[AdapterInfo]:
+    def find_by_formats(self, source: str, target: str) -> list[AdapterInfo]:
         return [a for a in self.adapters.values() if a.source_format == source and a.target_format == target]
 
-    def list_all(self) -> List[AdapterInfo]:
+    def list_all(self) -> list[AdapterInfo]:
         return list(self.adapters.values())
 
     def count(self) -> int:

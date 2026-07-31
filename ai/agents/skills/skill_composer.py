@@ -1,19 +1,19 @@
 """Skill composition for complex task execution."""
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 
 class SkillComposer:
     """Combines multiple skills into composite capabilities."""
 
     def __init__(self) -> None:
-        self._compositions: List[Dict[str, Any]] = []
+        self._compositions: list[dict[str, Any]] = []
 
-    def compose(self, skill_ids: List[str], task: Dict[str, Any],
-                manager: Any) -> Dict[str, Any]:
+    def compose(self, skill_ids: list[str], task: dict[str, Any],
+                manager: Any) -> dict[str, Any]:
         available_skills = []
-        missing: List[str] = []
+        missing: list[str] = []
         for sid in skill_ids:
             skill = manager.get(sid)
             if skill:
@@ -31,8 +31,8 @@ class SkillComposer:
         self._compositions.append(composition)
         return composition
 
-    def _resolve_order(self, skills: List[Dict[str, Any]]) -> List[str]:
-        resolved: List[str] = []
+    def _resolve_order(self, skills: list[dict[str, Any]]) -> list[str]:
+        resolved: list[str] = []
         remaining = list(skills)
         while remaining:
             progress = False
@@ -48,5 +48,5 @@ class SkillComposer:
                 break
         return resolved
 
-    def get_compositions(self) -> List[Dict[str, Any]]:
+    def get_compositions(self) -> list[dict[str, Any]]:
         return list(self._compositions)

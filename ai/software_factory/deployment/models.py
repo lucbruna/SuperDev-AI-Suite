@@ -1,9 +1,9 @@
 """Data models for deployment management."""
-from dataclasses import dataclass, field
-from enum import Enum
-from typing import List, Optional, Dict, Any
-from datetime import datetime
 import uuid
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class DeploymentStatus(Enum):
@@ -31,10 +31,10 @@ class Deployment:
     version: str = ""
     environment: str = ""
     status: DeploymentStatus = DeploymentStatus.PENDING
-    steps: List[str] = field(default_factory=list)
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    steps: list[str] = field(default_factory=list)
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -44,7 +44,7 @@ class Environment:
     name: str = ""
     environment_type: EnvironmentType = EnvironmentType.DEVELOPMENT
     url: str = ""
-    config: Dict[str, Any] = field(default_factory=dict)
+    config: dict[str, Any] = field(default_factory=dict)
     active: bool = True
 
 
@@ -55,9 +55,9 @@ class Release:
     version: str = ""
     name: str = ""
     description: str = ""
-    changelog: List[str] = field(default_factory=list)
-    deployed_environments: List[str] = field(default_factory=list)
-    released_at: Optional[datetime] = None
+    changelog: list[str] = field(default_factory=list)
+    deployed_environments: list[str] = field(default_factory=list)
+    released_at: datetime | None = None
 
 
 @dataclass
@@ -65,8 +65,8 @@ class RollbackPlan:
     """A rollback plan for a deployment."""
     plan_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     deployment_id: str = ""
-    steps: List[str] = field(default_factory=list)
-    triggers: List[str] = field(default_factory=list)
+    steps: list[str] = field(default_factory=list)
+    triggers: list[str] = field(default_factory=list)
     estimated_time: float = 0.0
 
 
@@ -79,4 +79,4 @@ class DeploymentConfig:
     health_check_url: str = ""
     health_check_timeout: float = 60.0
     max_retries: int = 3
-    notification_channels: List[str] = field(default_factory=list)
+    notification_channels: list[str] = field(default_factory=list)

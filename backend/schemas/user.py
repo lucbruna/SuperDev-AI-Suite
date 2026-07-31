@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from backend.schemas.base import BaseSchema
 from pydantic import BaseModel, EmailStr, Field, field_validator
+
+from backend.schemas.base import BaseSchema
 
 
 class UserBase(BaseSchema):

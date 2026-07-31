@@ -1,9 +1,9 @@
 """
 AI Suggestion Panel
 """
-from typing import Optional, List, Dict, Any, Callable
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any
 
 
 class SuggestionType(Enum):
@@ -36,8 +36,8 @@ class Suggestion:
     line: int = 0
     priority: SuggestionPriority = SuggestionPriority.MEDIUM
     confidence: float = 0.8
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    
+    metadata: dict[str, Any] = field(default_factory=dict)
+
     @property
     def is_acceptable(self):
         return self.confidence >= 0.7
@@ -49,11 +49,11 @@ class SuggestionPanel:
         self.selected_suggestion = None
         self.auto_apply = False
         self.listeners = []
-        
+
     def add_suggestion(self, suggestion):
         self.suggestions.append(suggestion)
         self._emit("suggestion_added", {"suggestion": suggestion})
-        
+
     def remove_suggestion(self, suggestion_id):
         for i, s in enumerate(self.suggestions):
             if s.id == suggestion_id:
@@ -61,7 +61,7 @@ class SuggestionPanel:
                 self._emit("suggestion_removed", {"suggestion": removed})
                 return True
         return False
-        
+
     def accept_suggestion(self, suggestion_id):
         suggestion = next((s for s in self.suggestions if s.id == suggestion_id), None)
         if suggestion:
@@ -69,7 +69,7 @@ class SuggestionPanel:
             self.remove_suggestion(suggestion_id)
             return True
         return False
-        
+
     def reject_suggestion(self, suggestion_id):
         suggestion = next((s for s in self.suggestions if s.id == suggestion_id), None)
         if suggestion:
@@ -77,11 +77,11 @@ class SuggestionPanel:
             self.remove_suggestion(suggestion_id)
             return True
         return False
-        
+
     def dismiss_all(self):
         self.suggestions.clear()
         self._emit("suggestions_cleared", {})
-        
+
     def filter_suggestions(self, type_filter=None, priority_filter=None, min_confidence=0.5):
         results = self.suggestions
         if type_filter:
@@ -90,19 +90,19 @@ class SuggestionPanel:
             results = [s for s in results if s.priority == priority_filter]
         results = [s for s in results if s.confidence >= min_confidence]
         return results
-        
+
     def sort_by_confidence(self):
         return sorted(self.suggestions, key=lambda s: s.confidence, reverse=True)
-        
+
     def select(self, suggestion_id):
         self.selected_suggestion = next((s for s in self.suggestions if s.id == suggestion_id), None)
         if self.selected_suggestion:
             self._emit("suggestion_selected", {"suggestion": self.selected_suggestion})
         return self.selected_suggestion
-        
+
     def on(self, event, callback):
         self.listeners.append({"event": event, "callback": callback})
-        
+
     def _emit(self, event, data):
         for listener in self.listeners:
             if listener["event"] == event:

@@ -1,10 +1,9 @@
 """Factory Security - Security validation for factory operations."""
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
-import secrets
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class SecurityCheck(Enum):
@@ -41,11 +40,11 @@ class SecurityIssue:
 
 class FactorySecurity:
     def __init__(self):
-        self.issues: List[SecurityIssue] = []
-        self.scan_results: Dict[str, List[SecurityIssue]] = {}
-        self.policies: Dict[str, Dict[str, Any]] = {}
+        self.issues: list[SecurityIssue] = []
+        self.scan_results: dict[str, list[SecurityIssue]] = {}
+        self.policies: dict[str, dict[str, Any]] = {}
 
-    def create_policy(self, name: str, rules: Dict[str, Any] = None) -> None:
+    def create_policy(self, name: str, rules: dict[str, Any] = None) -> None:
         self.policies[name] = rules or {}
 
     def report_issue(self, check: SecurityCheck, severity: SecuritySeverity, description: str = "", file_path: str = "", **kwargs) -> SecurityIssue:
@@ -61,7 +60,7 @@ class FactorySecurity:
                 return True
         return False
 
-    def get_issues(self, severity: SecuritySeverity = None, resolved: bool = None) -> List[SecurityIssue]:
+    def get_issues(self, severity: SecuritySeverity = None, resolved: bool = None) -> list[SecurityIssue]:
         issues = self.issues
         if severity:
             issues = [i for i in issues if i.severity == severity]
@@ -69,7 +68,7 @@ class FactorySecurity:
             issues = [i for i in issues if i.resolved == resolved]
         return issues
 
-    def scan_project(self, project_id: str, files: List[str] = None) -> List[SecurityIssue]:
+    def scan_project(self, project_id: str, files: list[str] = None) -> list[SecurityIssue]:
         found = []
         for f in (files or []):
             issue = self.report_issue(SecurityCheck.CODE_INJECTION, SecuritySeverity.INFO, f"Scanned {f}", file_path=f)

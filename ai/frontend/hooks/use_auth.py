@@ -1,33 +1,33 @@
 """
 useAuth Hook
 """
-from typing import Optional, Dict, Any, Callable
 from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
 class AuthState:
-    user: Optional[Dict[str, Any]] = None
+    user: dict[str, Any] | None = None
     isAuthenticated: bool = False
     loading: bool = False
-    error: Optional[str] = None
+    error: str | None = None
 
 
 class UseAuth:
     def __init__(self):
         self.state = AuthState()
         self.listeners: list = []
-        
+
     def login(self, email: str, password: str) -> bool:
         self.state.loading = True
         self.state.error = None
         return True
-        
+
     def logout(self) -> None:
         self.state = AuthState()
-        
-    def get_user(self) -> Optional[Dict[str, Any]]:
+
+    def get_user(self) -> dict[str, Any] | None:
         return self.state.user
-        
-    def render(self) -> Dict[str, Any]:
+
+    def render(self) -> dict[str, Any]:
         return {"user": self.state.user, "isAuthenticated": self.state.isAuthenticated, "loading": self.state.loading}

@@ -1,6 +1,5 @@
 """Cybersecurity Engine Config — Configuration for the cybersecurity platform."""
 from dataclasses import dataclass, field
-from typing import Dict, Any, List
 
 
 @dataclass
@@ -17,5 +16,5 @@ class CybersecurityConfig:
     max_concurrent_sessions: int = 3
     alert_severity_threshold: str = "medium"
     auto_block_threshold: float = 0.8
-    compliance_standards: List[str] = field(default_factory=lambda: ["LGPD", "SOC2"])
-    monitored_resources: List[str] = field(default_factory=lambda: ["servers", "databases", "apis", "users"])
+    compliance_standards: list[str] = field(default_factory=lambda: ["LGPD", "SOC2"])
+    monitored_resources: list[str] = field(default_factory=lambda: ["servers", "databases", "apis", "users"])

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Literal, TypedDict
+from typing import Literal, TypedDict
 
 ReasoningPhase: type = Literal[
     "idle", "analyzing", "generating", "evaluating",

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Set
-
 from .concepts import Concept
 from .entities import Entity
 
@@ -10,9 +8,9 @@ class SemanticIndex:
     """Index structures for efficient semantic retrieval."""
 
     def __init__(self):
-        self._concept_names: Set[str] = set()
-        self._entity_ids: Set[str] = set()
-        self._keyword_index: Dict[str, Set[str]] = {}
+        self._concept_names: set[str] = set()
+        self._entity_ids: set[str] = set()
+        self._keyword_index: dict[str, set[str]] = {}
 
     @property
     def count(self) -> int:
@@ -31,9 +29,9 @@ class SemanticIndex:
         for word in entity.name.lower().split():
             self._keyword_index.setdefault(word, set()).add(entity.entity_id)
 
-    def search(self, query: str) -> List[str]:
+    def search(self, query: str) -> list[str]:
         q = query.lower()
-        results: Set[str] = set()
+        results: set[str] = set()
         for keyword, ids in self._keyword_index.items():
             if q in keyword or keyword in q:
                 results.update(ids)

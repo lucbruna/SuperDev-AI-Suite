@@ -1,18 +1,18 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 class RequestContext:
     """Per-request context for isolating operation data."""
 
     def __init__(self):
-        self._data: Dict[str, Any] = {}
-        self._headers: Dict[str, str] = {}
-        self._params: Dict[str, str] = {}
+        self._data: dict[str, Any] = {}
+        self._headers: dict[str, str] = {}
+        self._params: dict[str, str] = {}
 
     @property
-    def data(self) -> Dict[str, Any]:
+    def data(self) -> dict[str, Any]:
         return dict(self._data)
 
     def set_data(self, key: str, value: Any) -> None:
@@ -38,7 +38,7 @@ class RequestContext:
         self._headers.clear()
         self._params.clear()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "data": dict(self._data),
             "headers": dict(self._headers),

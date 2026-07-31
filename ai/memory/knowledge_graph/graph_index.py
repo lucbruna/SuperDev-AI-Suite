@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .graph_node import GraphNode
 
@@ -9,8 +9,8 @@ class GraphIndex:
     """Index for efficient node lookups."""
 
     def __init__(self) -> None:
-        self._label_index: Dict[str, List[str]] = {}
-        self._property_index: Dict[str, Dict[Any, List[str]]] = {}
+        self._label_index: dict[str, list[str]] = {}
+        self._property_index: dict[str, dict[Any, list[str]]] = {}
 
     def add_node(self, node: GraphNode) -> None:
         label = node.label
@@ -34,17 +34,17 @@ class GraphIndex:
                 for val in list(self._property_index[key]):
                     self._property_index[key][val] = [n for n in self._property_index[key][val] if n != node.node_id]
 
-    def find_by_label(self, label: str) -> List[str]:
+    def find_by_label(self, label: str) -> list[str]:
         return list(self._label_index.get(label, []))
 
-    def find_by_property(self, key: str, value: Any) -> List[str]:
+    def find_by_property(self, key: str, value: Any) -> list[str]:
         return list(self._property_index.get(key, {}).get(value, []))
 
     def clear(self) -> None:
         self._label_index.clear()
         self._property_index.clear()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "labels": dict(self._label_index),
             "properties": {k: {str(vv): ids for vv, ids in v.items()} for k, v in self._property_index.items()},

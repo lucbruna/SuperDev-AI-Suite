@@ -180,13 +180,7 @@ class CohereProvider(BaseLLMProvider):
                             "delta": StreamDelta(content=text),
                         }
 
-            elif event_type == "ContentEndV2ChatStreamResponse":
-                pass
-
-            elif event_type == "ToolCallStartV2ChatStreamResponse":
-                pass
-
-            elif event_type == "ToolCallDeltaV2ChatStreamResponse":
+            elif event_type == "ContentEndV2ChatStreamResponse" or event_type == "ToolCallStartV2ChatStreamResponse" or event_type == "ToolCallDeltaV2ChatStreamResponse":
                 pass
 
             elif event_type == "MessageEndV2ChatStreamResponse":

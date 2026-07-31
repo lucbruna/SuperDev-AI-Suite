@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 
 class AdaptiveLearning:
@@ -8,7 +8,7 @@ class AdaptiveLearning:
 
     def __init__(self, initial_rate: float = 0.5):
         self._learning_rate = initial_rate
-        self._adaptations: List[Dict[str, Any]] = []
+        self._adaptations: list[dict[str, Any]] = []
 
     @property
     def learning_rate(self) -> float:

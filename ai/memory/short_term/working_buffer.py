@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Deque, Dict, List, Optional
 from collections import deque
+from typing import Any
 
 
 class WorkingBuffer:
@@ -9,8 +9,8 @@ class WorkingBuffer:
 
     def __init__(self, max_size: int = 100):
         self._max_size = max_size
-        self._items: Deque[Any] = deque(maxlen=max_size)
-        self._metadata: Dict[str, Any] = {}
+        self._items: deque[Any] = deque(maxlen=max_size)
+        self._metadata: dict[str, Any] = {}
 
     @property
     def max_size(self) -> int:
@@ -42,7 +42,7 @@ class WorkingBuffer:
             return None
         return self._items[0]
 
-    def items(self) -> List[Any]:
+    def items(self) -> list[Any]:
         return list(self._items)
 
     def clear(self) -> None:
@@ -55,7 +55,7 @@ class WorkingBuffer:
     def get_metadata(self, key: str, default: Any = None) -> Any:
         return self._metadata.get(key, default)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "max_size": self._max_size,
             "current_size": len(self._items),

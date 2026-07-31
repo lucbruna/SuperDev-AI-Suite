@@ -1,6 +1,6 @@
 """Invoice numbering."""
 from __future__ import annotations
-import time
+
 
 class InvoiceNumbering:
     def __init__(self, prefix: str = "INV", padding: int = 6) -> None:

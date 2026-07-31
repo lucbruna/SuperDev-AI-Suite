@@ -1,16 +1,18 @@
 """User identity management."""
 from __future__ import annotations
-from typing import Any, Dict, Optional
+
 import time
+from typing import Any
+
 
 class UserIdentityManager:
     def __init__(self) -> None:
-        self._users: Dict[str, Dict[str, Any]] = {}
-    def create(self, user_id: str, username: str, email: str, role: str = "viewer") -> Dict[str, Any]:
+        self._users: dict[str, dict[str, Any]] = {}
+    def create(self, user_id: str, username: str, email: str, role: str = "viewer") -> dict[str, Any]:
         user = {"user_id": user_id, "username": username, "email": email, "role": role, "active": True, "created_at": time.time()}
         self._users[user_id] = user
         return user
-    def get(self, user_id: str) -> Optional[Dict[str, Any]]:
+    def get(self, user_id: str) -> dict[str, Any] | None:
         return dict(self._users[user_id]) if user_id in self._users else None
     def deactivate(self, user_id: str) -> bool:
         if user_id in self._users:

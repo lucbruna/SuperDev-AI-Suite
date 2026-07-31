@@ -3,6 +3,9 @@ from __future__ import annotations
 from collections.abc import AsyncGenerator
 from typing import Any
 
+from fastapi import Depends
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+
 from backend.auth.jwt import JWTManager
 from backend.config import config
 from backend.database.session import get_db as _get_db_session
@@ -10,8 +13,6 @@ from backend.exceptions import (
     AuthenticationException,
     AuthorizationException,
 )
-from fastapi import Depends
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 security_scheme = HTTPBearer(auto_error=False)
 

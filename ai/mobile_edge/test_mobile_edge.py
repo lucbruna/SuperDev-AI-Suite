@@ -1,62 +1,59 @@
 """Comprehensive tests for Mobile Platform & Edge AI Engine (Volume 30)."""
-import sys
 import os
+import sys
 import unittest
-from datetime import datetime
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 # ── Core imports ──────────────────────────────────────────────────────────
-from mobile_edge.mobile_engine import MobileEngine, PlatformType, MobileState
-from mobile_edge.edge_engine import EdgeEngine, ModelStatus, AcceleratorType
-from mobile_edge.device_manager import DeviceManager, DeviceCategory, DeviceHealth
-from mobile_edge.mobile_security import MobileSecurityManager, SecurityLevel, ThreatType
-from mobile_edge.mobile_config import MobileConfig, ConfigScope
-from mobile_edge.mobile_events import MobileEventBus, MobileEventType
-from mobile_edge.mobile_metrics import MobileMetrics
-from mobile_edge.mobile_logger import MobileLogger, LogLevel
-from mobile_edge.mobile_models import SyncStrategy, ConnectionType, BatteryMode
-
-# ── Edge Runtime ──────────────────────────────────────────────────────────
-from mobile_edge.edge_runtime.edge_runtime_engine import EdgeRuntimeEngine, RuntimeState
-from mobile_edge.edge_runtime.local_model import LocalModelManager, LocalModelStatus
-from mobile_edge.edge_runtime.inference import InferenceEngine, InferenceRequest
-from mobile_edge.edge_runtime.model_manager import EdgeModelManager, ModelLifecycle
-from mobile_edge.edge_runtime.resource_manager import EdgeResourceManager, ResourceSnapshot
-from mobile_edge.edge_runtime.accelerator import AcceleratorManager, AcceleratorStatus
-
-# ── Offline ───────────────────────────────────────────────────────────────
-from mobile_edge.offline.offline_engine import OfflineEngine, OfflineMode
-from mobile_edge.offline.cache_manager import CacheManager, CacheEntry
-from mobile_edge.offline.local_database import LocalDatabase, LocalRecord
-from mobile_edge.offline.queue_manager import OfflineQueueManager, QueuePriority, QueueItemStatus
-from mobile_edge.offline.sync_queue import SyncQueue, SyncItemStatus
-
-# ── Synchronization ──────────────────────────────────────────────────────
-from mobile_edge.synchronization.sync_engine import MobileSyncEngine, SyncDirection, SyncState
-from mobile_edge.synchronization.conflict_resolution import ConflictResolver, ConflictStrategy
-from mobile_edge.synchronization.data_merge import DataMerger
-from mobile_edge.synchronization.cloud_sync import CloudSyncManager, CloudSyncStatus
+# ── Biometrics ───────────────────────────────────────────────────────────
+from mobile_edge.biometrics.biometric_engine import AuthResult, BiometricEngine, BiometricType
+from mobile_edge.biometrics.face import FaceRecognitionManager
+from mobile_edge.biometrics.fingerprint import FingerprintManager
+from mobile_edge.biometrics.voice import VoiceRecognitionManager
+from mobile_edge.device_manager import DeviceCategory, DeviceHealth, DeviceManager
 
 # ── Devices ───────────────────────────────────────────────────────────────
 from mobile_edge.devices.device_engine import DeviceEngine, DeviceStatus
+from mobile_edge.devices.device_health import DeviceHealthMonitor
 from mobile_edge.devices.device_registry import DeviceRegistry
-from mobile_edge.devices.device_health import DeviceHealthMonitor, HealthLevel
-from mobile_edge.devices.remote_control import RemoteControlManager, RemoteCommand, CommandStatus
 from mobile_edge.devices.inventory import DeviceInventory
+from mobile_edge.devices.remote_control import CommandStatus, RemoteCommand, RemoteControlManager
+from mobile_edge.edge_engine import EdgeEngine, ModelStatus
+from mobile_edge.edge_runtime.accelerator import AcceleratorManager, AcceleratorStatus
+
+# ── Edge Runtime ──────────────────────────────────────────────────────────
+from mobile_edge.edge_runtime.edge_runtime_engine import EdgeRuntimeEngine, RuntimeState
+from mobile_edge.edge_runtime.inference import InferenceEngine
+from mobile_edge.edge_runtime.local_model import LocalModelManager, LocalModelStatus
+from mobile_edge.edge_runtime.model_manager import EdgeModelManager, ModelLifecycle
+from mobile_edge.edge_runtime.resource_manager import EdgeResourceManager
+from mobile_edge.mobile_config import MobileConfig
+from mobile_edge.mobile_engine import MobileEngine, MobileState, PlatformType
+from mobile_edge.mobile_events import MobileEventBus, MobileEventType
+from mobile_edge.mobile_logger import LogLevel, MobileLogger
+from mobile_edge.mobile_metrics import MobileMetrics
+from mobile_edge.mobile_models import BatteryMode, ConnectionType, SyncStrategy
+from mobile_edge.mobile_security import MobileSecurityManager, SecurityLevel, ThreatType
+from mobile_edge.notifications.alert_rules import AlertCondition, AlertRuleManager
 
 # ── Notifications ────────────────────────────────────────────────────────
-from mobile_edge.notifications.notification_engine import NotificationEngine, NotificationType, NotificationPriority
+from mobile_edge.notifications.notification_engine import NotificationEngine, NotificationPriority, NotificationType
 from mobile_edge.notifications.push_manager import PushManager
-from mobile_edge.notifications.alert_rules import AlertRuleManager, AlertCondition
 from mobile_edge.notifications.templates import TemplateManager
+from mobile_edge.offline.cache_manager import CacheManager
+from mobile_edge.offline.local_database import LocalDatabase
 
-# ── Biometrics ───────────────────────────────────────────────────────────
-from mobile_edge.biometrics.biometric_engine import BiometricEngine, BiometricType, AuthResult
-from mobile_edge.biometrics.fingerprint import FingerprintManager
-from mobile_edge.biometrics.face import FaceRecognitionManager
-from mobile_edge.biometrics.voice import VoiceRecognitionManager
+# ── Offline ───────────────────────────────────────────────────────────────
+from mobile_edge.offline.offline_engine import OfflineEngine, OfflineMode
+from mobile_edge.offline.queue_manager import OfflineQueueManager, QueuePriority
+from mobile_edge.offline.sync_queue import SyncQueue
+from mobile_edge.synchronization.cloud_sync import CloudSyncManager, CloudSyncStatus
+from mobile_edge.synchronization.conflict_resolution import ConflictResolver, ConflictStrategy
+from mobile_edge.synchronization.data_merge import DataMerger
 
+# ── Synchronization ──────────────────────────────────────────────────────
+from mobile_edge.synchronization.sync_engine import MobileSyncEngine, SyncDirection, SyncState
 
 # ═══════════════════════════════════════════════════════════════════════════
 # CORE TESTS
@@ -147,7 +144,7 @@ class TestMobileEngine(unittest.TestCase):
         self.assertEqual(len(android), 1)
 
     def test_get_online_devices(self):
-        d1 = self.engine.register_device("A", PlatformType.ANDROID)
+        self.engine.register_device("A", PlatformType.ANDROID)
         d2 = self.engine.register_device("B", PlatformType.IOS)
         self.engine.update_state(d2.device_id, MobileState.OFFLINE)
         online = self.engine.get_online_devices()
@@ -204,7 +201,7 @@ class TestEdgeEngine(unittest.TestCase):
 
     def test_get_loaded(self):
         m1 = self.engine.register_model("a", "1.0")
-        m2 = self.engine.register_model("b", "1.0")
+        self.engine.register_model("b", "1.0")
         self.engine.load_model(m1.model_id)
         loaded = self.engine.get_loaded_models()
         self.assertEqual(len(loaded), 1)
@@ -645,27 +642,45 @@ class TestBiometrics(unittest.TestCase):
 
 class TestSubsystemImports(unittest.TestCase):
     def test_edge_runtime_imports(self):
-        from mobile_edge.edge_runtime import EdgeRuntimeEngine, LocalModelManager, InferenceEngine, EdgeModelManager, EdgeResourceManager, AcceleratorManager
+        from mobile_edge.edge_runtime import (
+            AcceleratorManager,
+            EdgeModelManager,
+            EdgeResourceManager,
+            EdgeRuntimeEngine,
+            InferenceEngine,
+            LocalModelManager,
+        )
         self.assertTrue(all([EdgeRuntimeEngine, LocalModelManager, InferenceEngine, EdgeModelManager, EdgeResourceManager, AcceleratorManager]))
 
     def test_offline_imports(self):
-        from mobile_edge.offline import OfflineEngine, CacheManager, LocalDatabase, OfflineQueueManager, SyncQueue
+        from mobile_edge.offline import CacheManager, LocalDatabase, OfflineEngine, OfflineQueueManager, SyncQueue
         self.assertTrue(all([OfflineEngine, CacheManager, LocalDatabase, OfflineQueueManager, SyncQueue]))
 
     def test_synchronization_imports(self):
-        from mobile_edge.synchronization import MobileSyncEngine, ConflictResolver, DataMerger, CloudSyncManager
+        from mobile_edge.synchronization import CloudSyncManager, ConflictResolver, DataMerger, MobileSyncEngine
         self.assertTrue(all([MobileSyncEngine, ConflictResolver, DataMerger, CloudSyncManager]))
 
     def test_devices_imports(self):
-        from mobile_edge.devices import DeviceEngine, DeviceRegistry, DeviceHealthMonitor, RemoteControlManager, DeviceInventory
+        from mobile_edge.devices import (
+            DeviceEngine,
+            DeviceHealthMonitor,
+            DeviceInventory,
+            DeviceRegistry,
+            RemoteControlManager,
+        )
         self.assertTrue(all([DeviceEngine, DeviceRegistry, DeviceHealthMonitor, RemoteControlManager, DeviceInventory]))
 
     def test_notifications_imports(self):
-        from mobile_edge.notifications import NotificationEngine, PushManager, AlertRuleManager, TemplateManager
+        from mobile_edge.notifications import AlertRuleManager, NotificationEngine, PushManager, TemplateManager
         self.assertTrue(all([NotificationEngine, PushManager, AlertRuleManager, TemplateManager]))
 
     def test_biometrics_imports(self):
-        from mobile_edge.biometrics import BiometricEngine, FingerprintManager, FaceRecognitionManager, VoiceRecognitionManager
+        from mobile_edge.biometrics import (
+            BiometricEngine,
+            FaceRecognitionManager,
+            FingerprintManager,
+            VoiceRecognitionManager,
+        )
         self.assertTrue(all([BiometricEngine, FingerprintManager, FaceRecognitionManager, VoiceRecognitionManager]))
 
 
@@ -742,7 +757,7 @@ class TestCrossSubsystemIntegration(unittest.TestCase):
         auth = bio.authenticate("emp_1", BiometricType.FINGERPRINT)
         self.assertEqual(auth, AuthResult.SUCCESS)
 
-        session = offline.enter_offline(device.device_id)
+        offline.enter_offline(device.device_id)
         result = edge.infer(model.model_id, "enterprise data")
         self.assertIsNotNone(result)
 

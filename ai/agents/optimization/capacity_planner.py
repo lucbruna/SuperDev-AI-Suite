@@ -1,7 +1,7 @@
 """Capacity planning for resource provisioning."""
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 
 class CapacityPlanner:
@@ -11,7 +11,7 @@ class CapacityPlanner:
         self._utilization_target: float = 0.75
         self._safety_margin: float = 1.2
 
-    def plan(self, demand: Dict[str, Any]) -> Dict[str, Any]:
+    def plan(self, demand: dict[str, Any]) -> dict[str, Any]:
         agents_needed = int(demand.get("expected_agents", 5))
         tasks_per_agent = int(demand.get("tasks_per_agent", 10))
         peak_multiplier = float(demand.get("peak_multiplier", 1.5))

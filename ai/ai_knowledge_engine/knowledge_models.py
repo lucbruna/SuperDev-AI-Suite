@@ -1,9 +1,9 @@
 """Knowledge Engine Models — Core data models for the knowledge platform."""
-from dataclasses import dataclass, field
-from enum import Enum
-from typing import List, Optional, Dict, Any
-from datetime import datetime
 import uuid
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class KnowledgeType(Enum):
@@ -60,13 +60,13 @@ class Knowledge:
     source_reference: str = ""
     confidence: ConfidenceLevel = ConfidenceLevel.MEDIUM
     validation_status: ValidationStatus = ValidationStatus.PENDING
-    tags: List[str] = field(default_factory=list)
-    embeddings: List[float] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    related_ids: List[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
+    embeddings: list[float] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
+    related_ids: list[str] = field(default_factory=list)
     created_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)
-    accessed_at: Optional[datetime] = None
+    accessed_at: datetime | None = None
     access_count: int = 0
     version: int = 1
 
@@ -78,10 +78,10 @@ class Document:
     content: str = ""
     document_type: str = "text"
     source_path: str = ""
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    chunks: List[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
+    chunks: list[str] = field(default_factory=list)
     summary: str = ""
-    keywords: List[str] = field(default_factory=list)
+    keywords: list[str] = field(default_factory=list)
     processed: bool = False
     created_at: datetime = field(default_factory=datetime.now)
 
@@ -91,9 +91,9 @@ class ResearchQuery:
     query_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     query_text: str = ""
     query_type: str = "info"
-    parameters: Dict[str, Any] = field(default_factory=dict)
+    parameters: dict[str, Any] = field(default_factory=dict)
     max_results: int = 10
-    sources: List[SourceType] = field(default_factory=list)
+    sources: list[SourceType] = field(default_factory=list)
     created_at: datetime = field(default_factory=datetime.now)
 
 
@@ -107,7 +107,7 @@ class ResearchResult:
     source_url: str = ""
     relevance_score: float = 0.0
     confidence: ConfidenceLevel = ConfidenceLevel.MEDIUM
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     collected_at: datetime = field(default_factory=datetime.now)
 
 
@@ -118,8 +118,8 @@ class LearningExperience:
     description: str = ""
     outcome: str = ""
     success: bool = True
-    lessons: List[str] = field(default_factory=list)
-    context: Dict[str, Any] = field(default_factory=dict)
+    lessons: list[str] = field(default_factory=list)
+    context: dict[str, Any] = field(default_factory=dict)
     phase: LearningPhase = LearningPhase.COLLECTION
     created_at: datetime = field(default_factory=datetime.now)
 
@@ -128,8 +128,8 @@ class LearningExperience:
 class EmbeddingVector:
     vector_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     text: str = ""
-    vector: List[float] = field(default_factory=list)
+    vector: list[float] = field(default_factory=list)
     model: str = "default"
     dimensions: int = 0
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     created_at: datetime = field(default_factory=datetime.now)

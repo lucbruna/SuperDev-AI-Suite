@@ -1,8 +1,7 @@
 """
 Static Application Security Testing
 """
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 
 
@@ -45,13 +44,13 @@ class SASTFinding:
 
 class SASTEngine:
     def __init__(self):
-        self.rules: Dict[str, SASTRule] = {}
-        self.findings: List[SASTFinding] = []
+        self.rules: dict[str, SASTRule] = {}
+        self.findings: list[SASTFinding] = []
 
     def add_rule(self, rule: SASTRule) -> None:
         self.rules[rule.rule_id] = rule
 
-    def scan_code(self, file_path: str, code: str) -> List[SASTFinding]:
+    def scan_code(self, file_path: str, code: str) -> list[SASTFinding]:
         findings = []
         lines = code.split("\n")
         for rule in self.rules.values():
@@ -64,7 +63,7 @@ class SASTEngine:
         self.findings.extend(findings)
         return findings
 
-    def get_findings(self, file_path: str = None, severity: RuleSeverity = None) -> List[SASTFinding]:
+    def get_findings(self, file_path: str = None, severity: RuleSeverity = None) -> list[SASTFinding]:
         results = self.findings
         if file_path:
             results = [f for f in results if f.file_path == file_path]

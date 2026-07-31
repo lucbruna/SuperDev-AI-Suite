@@ -1,17 +1,17 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, List
+from typing import Any
 
-from .graph_node import GraphNode
 from .graph_edge import GraphEdge
+from .graph_node import GraphNode
 
 
 class GraphSerializer:
     """Serializes knowledge graph to/from JSON."""
 
     @staticmethod
-    def serialize(nodes: List[GraphNode], edges: List[GraphEdge]) -> str:
+    def serialize(nodes: list[GraphNode], edges: list[GraphEdge]) -> str:
         data = {
             "nodes": [n.to_dict() for n in nodes],
             "edges": [e.to_dict() for e in edges],
@@ -19,13 +19,13 @@ class GraphSerializer:
         return json.dumps(data, default=str)
 
     @staticmethod
-    def deserialize(data: str) -> Dict[str, Any]:
+    def deserialize(data: str) -> dict[str, Any]:
         return json.loads(data)
 
     @staticmethod
-    def node_to_dict(node: GraphNode) -> Dict[str, Any]:
+    def node_to_dict(node: GraphNode) -> dict[str, Any]:
         return node.to_dict()
 
     @staticmethod
-    def edge_to_dict(edge: GraphEdge) -> Dict[str, Any]:
+    def edge_to_dict(edge: GraphEdge) -> dict[str, Any]:
         return edge.to_dict()

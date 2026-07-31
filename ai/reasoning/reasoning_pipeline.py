@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from .reasoning_context import ReasoningContext
 from .reasoning_models import ReasoningResult
@@ -18,7 +19,7 @@ class ReasoningPipeline:
     async def run(self, context: ReasoningContext) -> ReasoningResult:
         current = context
         for stage in self._stages:
-            result = await stage(current) if hasattr(stage, "__call__") else stage(current)
+            result = await stage(current) if callable(stage) else stage(current)
             if isinstance(result, ReasoningResult):
                 return result
         return ReasoningResult(decision="pipeline_completed", context_id=context.context_id)

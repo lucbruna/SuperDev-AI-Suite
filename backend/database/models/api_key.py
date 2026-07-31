@@ -3,11 +3,12 @@ from __future__ import annotations
 from datetime import datetime
 
 import sqlalchemy as sa
-from backend.database.base import Base, TimestampMixin
 from sqlalchemy import ForeignKey, String
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from backend.database.base import Base, TimestampMixin
 
 
 class APIKey(Base, TimestampMixin):

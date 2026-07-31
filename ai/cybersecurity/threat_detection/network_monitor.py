@@ -1,11 +1,10 @@
 """
 Network Traffic Monitoring
 """
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
 
 
 class Protocol(Enum):
@@ -45,9 +44,9 @@ class TrafficAnomaly:
 
 class NetworkMonitor:
     def __init__(self):
-        self.flows: Dict[str, NetworkFlow] = {}
-        self.anomalies: List[TrafficAnomaly] = []
-        self.baseline: Dict[str, float] = {}
+        self.flows: dict[str, NetworkFlow] = {}
+        self.anomalies: list[TrafficAnomaly] = []
+        self.baseline: dict[str, float] = {}
         self.blocked_connections: set = set()
 
     def record_flow(self, src_ip: str, dst_ip: str, src_port: int, dst_port: int, protocol: Protocol = Protocol.TCP, bytes_sent: int = 0, bytes_received: int = 0) -> NetworkFlow:
@@ -56,7 +55,7 @@ class NetworkMonitor:
         self.flows[flow_id] = flow
         return flow
 
-    def detect_anomaly(self, flow: NetworkFlow) -> Optional[TrafficAnomaly]:
+    def detect_anomaly(self, flow: NetworkFlow) -> TrafficAnomaly | None:
         avg_bytes = self.baseline.get("avg_bytes", 1000)
         if flow.bytes_sent > avg_bytes * 10:
             anomaly = TrafficAnomaly(anomaly_id=hashlib.sha256(flow.flow_id.encode()).hexdigest()[:16], flow_id=flow.flow_id, anomaly_type="high_volume", description=f"Bytes sent: {flow.bytes_sent}", severity="high")
@@ -73,13 +72,13 @@ class NetworkMonitor:
     def update_baseline(self, metric: str, value: float) -> None:
         self.baseline[metric] = value
 
-    def get_flows_by_ip(self, ip: str) -> List[NetworkFlow]:
+    def get_flows_by_ip(self, ip: str) -> list[NetworkFlow]:
         return [f for f in self.flows.values() if f.src_ip == ip or f.dst_ip == ip]
 
-    def get_flows_by_protocol(self, protocol: Protocol) -> List[NetworkFlow]:
+    def get_flows_by_protocol(self, protocol: Protocol) -> list[NetworkFlow]:
         return [f for f in self.flows.values() if f.protocol == protocol]
 
-    def get_anomalies(self) -> List[TrafficAnomaly]:
+    def get_anomalies(self) -> list[TrafficAnomaly]:
         return self.anomalies
 
     def count(self) -> int:

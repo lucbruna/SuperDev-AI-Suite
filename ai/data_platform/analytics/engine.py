@@ -1,25 +1,26 @@
 """Analytics engine."""
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional
-from .models import AnalyticsQuery, QueryResult, Insight, Dashboard, QueryType, InsightType
+from typing import Any
+
+from .models import AnalyticsQuery, Dashboard, Insight, InsightType, QueryResult, QueryType
 
 
 class AnalyticsEngine:
     def __init__(self):
-        self._queries: Dict[str, AnalyticsQuery] = {}
-        self._results: List[QueryResult] = []
-        self._insights: List[Insight] = []
-        self._dashboards: Dict[str, Dashboard] = {}
+        self._queries: dict[str, AnalyticsQuery] = {}
+        self._results: list[QueryResult] = []
+        self._insights: list[Insight] = []
+        self._dashboards: dict[str, Dashboard] = {}
 
-    def execute_query(self, records: List[Dict[str, Any]], query: AnalyticsQuery) -> QueryResult:
+    def execute_query(self, records: list[dict[str, Any]], query: AnalyticsQuery) -> QueryResult:
         start = datetime.now()
         result_data = list(records)
         if query.filters:
             for key, value in query.filters.items():
                 result_data = [r for r in result_data if r.get(key) == value]
         if query.query_type == QueryType.GROUP_BY and query.group_by and query.metrics:
-            groups: Dict[str, List[Dict]] = {}
+            groups: dict[str, list[dict]] = {}
             for r in result_data:
                 key = tuple(str(r.get(g, "")) for g in query.group_by)
                 groups.setdefault(key, []).append(r)
@@ -55,7 +56,7 @@ class AnalyticsEngine:
         self._queries[query.query_id] = query
         return result
 
-    def generate_insights(self, dataset: str, records: List[Dict[str, Any]]) -> List[Insight]:
+    def generate_insights(self, dataset: str, records: list[dict[str, Any]]) -> list[Insight]:
         insights = []
         if records:
             numeric_fields = [k for k, v in records[0].items() if isinstance(v, (int, float))]
@@ -76,7 +77,7 @@ class AnalyticsEngine:
                     self._insights.append(insight)
         return insights
 
-    def detect_anomalies(self, dataset: str, records: List[Dict[str, Any]], field_name: str, threshold: float = 2.0) -> List[Insight]:
+    def detect_anomalies(self, dataset: str, records: list[dict[str, Any]], field_name: str, threshold: float = 2.0) -> list[Insight]:
         values = [r.get(field_name, 0) for r in records if isinstance(r.get(field_name), (int, float))]
         if not values:
             return []
@@ -103,10 +104,10 @@ class AnalyticsEngine:
         self._dashboards[dashboard.dashboard_id] = dashboard
         return dashboard
 
-    def get_dashboard(self, dashboard_id: str) -> Optional[Dashboard]:
+    def get_dashboard(self, dashboard_id: str) -> Dashboard | None:
         return self._dashboards.get(dashboard_id)
 
-    def get_insights(self, dataset: Optional[str] = None) -> List[Insight]:
+    def get_insights(self, dataset: str | None = None) -> list[Insight]:
         if dataset:
             return [i for i in self._insights if i.dataset == dataset]
         return list(self._insights)

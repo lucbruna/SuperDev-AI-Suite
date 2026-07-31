@@ -1,10 +1,10 @@
 """Tenant isolation."""
 from __future__ import annotations
-from typing import Any, Dict
+
 
 class TenantIsolation:
     def __init__(self) -> None:
-        self._isolation: Dict[str, str] = {}
+        self._isolation: dict[str, str] = {}
     def set_level(self, org_id: str, level: str) -> None:
         self._isolation[org_id] = level
     def get_level(self, org_id: str) -> str:

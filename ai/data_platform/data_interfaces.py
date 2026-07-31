@@ -1,7 +1,8 @@
 """Data Platform Interfaces — Protocol interfaces for data platform operations."""
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
-from .data_models import DataSource, DataRecord, DataPipeline, DataSchema
+from typing import Any
+
+from .data_models import DataRecord, DataSource
 
 
 class IngestionInterface(ABC):
@@ -10,11 +11,11 @@ class IngestionInterface(ABC):
         pass
 
     @abstractmethod
-    def ingest(self, source_id: str, records: List[DataRecord]) -> int:
+    def ingest(self, source_id: str, records: list[DataRecord]) -> int:
         pass
 
     @abstractmethod
-    def get_source(self, source_id: str) -> Optional[DataSource]:
+    def get_source(self, source_id: str) -> DataSource | None:
         pass
 
 
@@ -24,31 +25,31 @@ class StorageInterface(ABC):
         pass
 
     @abstractmethod
-    def retrieve(self, dataset: str, record_id: str) -> Optional[DataRecord]:
+    def retrieve(self, dataset: str, record_id: str) -> DataRecord | None:
         pass
 
     @abstractmethod
-    def list_datasets(self) -> List[str]:
+    def list_datasets(self) -> list[str]:
         pass
 
 
 class ProcessingInterface(ABC):
     @abstractmethod
-    def transform(self, records: List[DataRecord], rules: List[Dict[str, Any]]) -> List[DataRecord]:
+    def transform(self, records: list[DataRecord], rules: list[dict[str, Any]]) -> list[DataRecord]:
         pass
 
     @abstractmethod
-    def aggregate(self, dataset: str, group_by: List[str]) -> List[Dict[str, Any]]:
+    def aggregate(self, dataset: str, group_by: list[str]) -> list[dict[str, Any]]:
         pass
 
 
 class AnalyticsInterface(ABC):
     @abstractmethod
-    def query(self, dataset: str, filters: Dict[str, Any]) -> List[DataRecord]:
+    def query(self, dataset: str, filters: dict[str, Any]) -> list[DataRecord]:
         pass
 
     @abstractmethod
-    def generate_insights(self, dataset: str) -> List[Dict[str, Any]]:
+    def generate_insights(self, dataset: str) -> list[dict[str, Any]]:
         pass
 
 
@@ -58,7 +59,7 @@ class MLInterface(ABC):
         pass
 
     @abstractmethod
-    def predict(self, model_id: str, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    def predict(self, model_id: str, input_data: dict[str, Any]) -> dict[str, Any]:
         pass
 
 
@@ -68,5 +69,5 @@ class GovernanceInterface(ABC):
         pass
 
     @abstractmethod
-    def apply_policy(self, dataset: str, policy: Dict[str, Any]) -> bool:
+    def apply_policy(self, dataset: str, policy: dict[str, Any]) -> bool:
         pass

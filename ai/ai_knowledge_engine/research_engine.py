@@ -1,15 +1,16 @@
 """Research Engine — Intelligent research and information collection."""
-from typing import Dict, Any, List, Optional
 from datetime import datetime
-from .knowledge_models import ResearchQuery, ResearchResult, SourceType, ConfidenceLevel
+from typing import Any
+
+from .knowledge_models import ResearchQuery, ResearchResult, SourceType
 
 
 class ResearchEngine:
     def __init__(self):
-        self._queries: Dict[str, ResearchQuery] = {}
-        self._results: Dict[str, ResearchResult] = {}
-        self._sources: Dict[str, Dict[str, Any]] = {}
-        self._plans: Dict[str, Dict[str, Any]] = {}
+        self._queries: dict[str, ResearchQuery] = {}
+        self._results: dict[str, ResearchResult] = {}
+        self._sources: dict[str, dict[str, Any]] = {}
+        self._plans: dict[str, dict[str, Any]] = {}
 
     def create_query(self, query_text: str, query_type: str = "info", max_results: int = 10) -> ResearchQuery:
         query = ResearchQuery(query_text=query_text, query_type=query_type, max_results=max_results)
@@ -20,19 +21,19 @@ class ResearchEngine:
         self._results[result.result_id] = result
         return result
 
-    def get_result(self, result_id: str) -> Optional[ResearchResult]:
+    def get_result(self, result_id: str) -> ResearchResult | None:
         return self._results.get(result_id)
 
-    def get_results_for_query(self, query_id: str) -> List[ResearchResult]:
+    def get_results_for_query(self, query_id: str) -> list[ResearchResult]:
         return [r for r in self._results.values() if r.query_id == query_id]
 
-    def register_source(self, name: str, source_type: SourceType, config: Dict[str, Any]) -> None:
+    def register_source(self, name: str, source_type: SourceType, config: dict[str, Any]) -> None:
         self._sources[name] = {"type": source_type, "config": config, "active": True}
 
-    def get_source(self, name: str) -> Optional[Dict[str, Any]]:
+    def get_source(self, name: str) -> dict[str, Any] | None:
         return self._sources.get(name)
 
-    def plan_research(self, topic: str, depth: int = 3) -> Dict[str, Any]:
+    def plan_research(self, topic: str, depth: int = 3) -> dict[str, Any]:
         plan = {
             "topic": topic,
             "depth": depth,
@@ -48,7 +49,7 @@ class ResearchEngine:
         self._plans[plan_id] = plan
         return plan
 
-    def get_plan(self, plan_id: str) -> Optional[Dict[str, Any]]:
+    def get_plan(self, plan_id: str) -> dict[str, Any] | None:
         return self._plans.get(plan_id)
 
     def score_relevance(self, result: ResearchResult, query: ResearchQuery) -> float:
@@ -59,7 +60,7 @@ class ResearchEngine:
         overlap = len(query_words & result_words)
         return min(overlap / len(query_words), 1.0)
 
-    def deduplicate_results(self, results: List[ResearchResult]) -> List[ResearchResult]:
+    def deduplicate_results(self, results: list[ResearchResult]) -> list[ResearchResult]:
         seen = set()
         unique = []
         for r in results:
@@ -69,7 +70,7 @@ class ResearchEngine:
                 unique.append(r)
         return unique
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         return {
             "total_queries": len(self._queries),
             "total_results": len(self._results),

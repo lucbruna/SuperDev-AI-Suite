@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from backend.database.models.user import User
-from backend.repositories.base_repository import BaseRepository
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from backend.database.models.user import User
+from backend.repositories.base_repository import BaseRepository
 
 
 class UserRepository(BaseRepository[User]):
@@ -66,6 +67,6 @@ class UserRepository(BaseRepository[User]):
 
     async def get_superusers(self) -> list[User]:
         """List all superuser accounts."""
-        query = select(self.model).where(self.model.is_superuser == True)
+        query = select(self.model).where(self.model.is_superuser)
         result = await self.db.execute(query)
         return list(result.scalars().all())

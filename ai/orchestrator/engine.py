@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import os
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
-from ..base.base_agent import AgentResult, BaseAgent
 from ..manager.agent_manager import AgentManager
 from ..registry.agent_registry import AgentRegistry
 from .hub import OrchestrationHub
@@ -62,7 +62,7 @@ class OrchestratorEngine:
         # Start health checker
         self._health_task = asyncio.create_task(self._health_loop())
         await self.hub._bus.publish("orchestrator.started", {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         })
 
     async def stop(self) -> None:
@@ -70,12 +70,10 @@ class OrchestratorEngine:
         self._running = False
         if self._health_task:
             self._health_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._health_task
-            except asyncio.CancelledError:
-                pass
         await self.hub._bus.publish("orchestrator.stopped", {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         })
 
     async def create_orchestration(

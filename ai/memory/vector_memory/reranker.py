@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 from .similarity_engine import SimilarityEngine
 
@@ -12,8 +12,8 @@ class Reranker:
         self._similarity = SimilarityEngine()
 
     def rerank(
-        self, query_vector: List[float], results: List[Any], weight: float = 0.5
-    ) -> List[Any]:
+        self, query_vector: list[float], results: list[Any], weight: float = 0.5
+    ) -> list[Any]:
         if not results:
             return results
         scored = []
@@ -30,7 +30,7 @@ class Reranker:
         scored.sort(key=lambda x: x[0], reverse=True)
         return [item for _, item in scored]
 
-    def _metadata_score(self, metadata: Dict[str, Any]) -> float:
+    def _metadata_score(self, metadata: dict[str, Any]) -> float:
         score = 0.0
         if metadata.get("relevance"):
             score += float(metadata["relevance"]) * 0.5

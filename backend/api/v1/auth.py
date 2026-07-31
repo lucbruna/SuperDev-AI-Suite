@@ -13,17 +13,17 @@ import re
 from datetime import UTC, datetime
 from typing import Any
 
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from backend.auth.jwt import get_jwt_manager
 from backend.auth.passwords import verify_password
-from backend.config import config
 from backend.database.session import get_db
 from backend.dependencies import get_current_active_user
 from backend.middleware.auth_rate_limit import login_limiter
 from backend.middleware.authentication import account_lockout
 from backend.users.service import UserService
-from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, EmailStr
-from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter()
 

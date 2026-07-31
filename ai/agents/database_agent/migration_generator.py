@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from typing import Any
-from datetime import datetime, timezone
 
 
 class MigrationGenerator:
@@ -18,7 +18,7 @@ class MigrationGenerator:
             "up_sql": up_sql,
             "down_sql": down_sql,
             "applied": False,
-            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
         }
         return mid
 

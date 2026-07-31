@@ -1,10 +1,11 @@
 """Core engine for deployment operations."""
-from typing import List, Dict, Any, Optional
 from datetime import datetime
-from .models import Deployment, DeploymentStatus, Environment, Release
+from typing import Any
+
 from .deployer import Deployer
-from .release_manager import ReleaseManager
 from .environment_manager import EnvironmentManager
+from .models import Deployment, DeploymentStatus, Release
+from .release_manager import ReleaseManager
 
 
 class DeploymentEngine:
@@ -14,8 +15,8 @@ class DeploymentEngine:
         self.deployer = Deployer()
         self.release_manager = ReleaseManager()
         self.env_manager = EnvironmentManager()
-        self._deployments: Dict[str, Deployment] = {}
-        self._releases: List[Release] = []
+        self._deployments: dict[str, Deployment] = {}
+        self._releases: list[Release] = []
 
     def create_deployment(self, name: str, version: str, environment: str) -> Deployment:
         deployment = Deployment(name=name, version=version, environment=environment)
@@ -38,13 +39,13 @@ class DeploymentEngine:
         self._releases.append(release)
         return release
 
-    def get_deployment(self, deployment_id: str) -> Optional[Deployment]:
+    def get_deployment(self, deployment_id: str) -> Deployment | None:
         return self._deployments.get(deployment_id)
 
-    def get_all_deployments(self) -> List[Deployment]:
+    def get_all_deployments(self) -> list[Deployment]:
         return list(self._deployments.values())
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         return {
             "deployments": len(self._deployments),
             "releases": len(self._releases),

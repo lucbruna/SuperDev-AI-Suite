@@ -1,18 +1,18 @@
 """Time engine."""
 from __future__ import annotations
-from typing import Any, Dict, List
+
 
 class TimeEngine:
     def __init__(self, start: float = 0.0, dt: float = 1.0) -> None:
         self._current = start
         self._dt = dt
-        self._history: List[float] = []
+        self._history: list[float] = []
         self._paused = False
     def advance(self) -> float:
         self._history.append(self._current)
         self._current += self._dt
         return self._current
-    def advance_by(self, steps: int) -> List[float]:
+    def advance_by(self, steps: int) -> list[float]:
         for _ in range(steps):
             self._history.append(self._current)
             self._current += self._dt
@@ -32,7 +32,7 @@ class TimeEngine:
         self._paused = False
     def is_paused(self) -> bool:
         return self._paused
-    def get_history(self, limit: int = 100) -> List[float]:
+    def get_history(self, limit: int = 100) -> list[float]:
         return self._history[-limit:]
     def elapsed(self) -> float:
         return self._current - (self._history[0] if self._history else 0)

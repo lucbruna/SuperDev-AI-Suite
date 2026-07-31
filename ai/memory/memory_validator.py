@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
-
 from .memory_exceptions import MemoryValidationError
 from .memory_models import MemoryEntry
 from .memory_types import MemoryData, MemoryID, Tags
@@ -11,10 +9,10 @@ class MemoryValidator:
     """Validation logic for memory data integrity and constraints."""
 
     def __init__(self):
-        self._errors: List[str] = []
+        self._errors: list[str] = []
 
     @property
-    def errors(self) -> List[str]:
+    def errors(self) -> list[str]:
         return list(self._errors)
 
     def validate_entry(self, entry: MemoryEntry) -> bool:

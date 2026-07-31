@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from backend.database.models.audit_log import AuditLog
-from backend.repositories.base_repository import BaseRepository
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from backend.database.models.audit_log import AuditLog
+from backend.repositories.base_repository import BaseRepository
 
 
 class AuditLogRepository(BaseRepository[AuditLog]):

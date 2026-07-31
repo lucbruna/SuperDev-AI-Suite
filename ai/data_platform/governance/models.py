@@ -1,8 +1,8 @@
 """Governance models."""
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
 from enum import Enum
+from typing import Any
 
 
 class AccessLevel(Enum):
@@ -31,7 +31,7 @@ class AccessPolicy:
     user_id: str = ""
     dataset: str = ""
     access_level: AccessLevel = AccessLevel.READ
-    expires_at: Optional[datetime] = None
+    expires_at: datetime | None = None
     created_at: datetime = field(default_factory=datetime.now)
 
 
@@ -52,7 +52,7 @@ class AuditEntry:
     dataset: str = ""
     action: str = ""
     success: bool = True
-    details: Dict[str, Any] = field(default_factory=dict)
+    details: dict[str, Any] = field(default_factory=dict)
     timestamp: datetime = field(default_factory=datetime.now)
 
 
@@ -62,5 +62,5 @@ class ComplianceRule:
     standard: ComplianceStandard = ComplianceStandard.LGPD
     name: str = ""
     description: str = ""
-    config: Dict[str, Any] = field(default_factory=dict)
+    config: dict[str, Any] = field(default_factory=dict)
     status: PolicyStatus = PolicyStatus.ACTIVE

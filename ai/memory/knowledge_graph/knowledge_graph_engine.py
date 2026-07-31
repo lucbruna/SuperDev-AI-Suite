@@ -1,17 +1,17 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from .graph_node import GraphNode
 from .graph_edge import GraphEdge
+from .graph_node import GraphNode
 
 
 class KnowledgeGraphEngine:
     """Central knowledge graph orchestrator."""
 
     def __init__(self) -> None:
-        self._nodes: Dict[str, GraphNode] = {}
-        self._edges: List[GraphEdge] = []
+        self._nodes: dict[str, GraphNode] = {}
+        self._edges: list[GraphEdge] = []
 
     @property
     def node_count(self) -> int:
@@ -22,13 +22,13 @@ class KnowledgeGraphEngine:
         return len(self._edges)
 
     @property
-    def node_ids(self) -> List[str]:
+    def node_ids(self) -> list[str]:
         return list(self._nodes.keys())
 
     def add_node(self, node: GraphNode) -> None:
         self._nodes[node.node_id] = node
 
-    def get_node(self, node_id: str) -> Optional[GraphNode]:
+    def get_node(self, node_id: str) -> GraphNode | None:
         return self._nodes.get(node_id)
 
     def remove_node(self, node_id: str) -> bool:
@@ -41,7 +41,7 @@ class KnowledgeGraphEngine:
     def add_edge(self, edge: GraphEdge) -> None:
         self._edges.append(edge)
 
-    def get_edges(self, node_id: Optional[str] = None) -> List[GraphEdge]:
+    def get_edges(self, node_id: str | None = None) -> list[GraphEdge]:
         if node_id is None:
             return list(self._edges)
         return [e for e in self._edges if e.source == node_id or e.target == node_id]
@@ -57,7 +57,7 @@ class KnowledgeGraphEngine:
         self._nodes.clear()
         self._edges.clear()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "node_count": self.node_count,
             "edge_count": self.edge_count,

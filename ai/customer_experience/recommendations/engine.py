@@ -1,20 +1,22 @@
 """Recommendation engine."""
 import uuid
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional
+
 from .models import (
-    ProductRecommendation, ContentRecommendation, Offer,
-    RecommendationType, RecommendationStatus,
+    ContentRecommendation,
+    Offer,
+    ProductRecommendation,
+    RecommendationStatus,
 )
 
 
 class RecommendationEngine:
     def __init__(self):
-        self._product_recs: Dict[str, List[ProductRecommendation]] = {}
-        self._content_recs: Dict[str, List[ContentRecommendation]] = {}
-        self._offers: Dict[str, List[Offer]] = {}
+        self._product_recs: dict[str, list[ProductRecommendation]] = {}
+        self._content_recs: dict[str, list[ContentRecommendation]] = {}
+        self._offers: dict[str, list[Offer]] = {}
 
-    def recommend_products(self, customer_id: str, context: Optional[Dict] = None) -> List[ProductRecommendation]:
+    def recommend_products(self, customer_id: str, context: dict | None = None) -> list[ProductRecommendation]:
         recs = []
         for i in range(3):
             rec = ProductRecommendation(
@@ -29,7 +31,7 @@ class RecommendationEngine:
         self._product_recs.setdefault(customer_id, []).extend(recs)
         return recs
 
-    def recommend_content(self, customer_id: str) -> List[ContentRecommendation]:
+    def recommend_content(self, customer_id: str) -> list[ContentRecommendation]:
         recs = []
         for i in range(2):
             rec = ContentRecommendation(
@@ -65,10 +67,10 @@ class RecommendationEngine:
                     return True
         return False
 
-    def get_customer_recommendations(self, customer_id: str) -> List[ProductRecommendation]:
+    def get_customer_recommendations(self, customer_id: str) -> list[ProductRecommendation]:
         return self._product_recs.get(customer_id, [])
 
-    def get_customer_offers(self, customer_id: str) -> List[Offer]:
+    def get_customer_offers(self, customer_id: str) -> list[Offer]:
         return self._offers.get(customer_id, [])
 
     def get_stats(self) -> dict:

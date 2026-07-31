@@ -1,10 +1,10 @@
 """Compliance subsystem."""
-from .compliance_engine import ComplianceEngine, ComplianceStandard, ComplianceControl
-from .assessment import ComplianceAssessor, Assessment
+from .assessment import Assessment, ComplianceAssessor
+from .compliance_engine import ComplianceControl, ComplianceEngine, ComplianceStandard
 from .control_mapping import ControlMapping
+from .gdpr import DataSubjectRights, GDPRCompliance
+from .lgpd import LGPDBasis, LGPDCompliance
 from .reporting import ComplianceReportBuilder, ReportStatus
-from .gdpr import GDPRCompliance, DataSubjectRights
-from .lgpd import LGPDCompliance, LGPDBasis
 
 __all__ = [
     "ComplianceEngine", "ComplianceStandard", "ComplianceControl",

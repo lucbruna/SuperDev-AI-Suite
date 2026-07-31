@@ -1,7 +1,6 @@
 """Metrics models."""
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
 from enum import Enum
 
 
@@ -27,7 +26,7 @@ class MetricDefinition:
     metric_type: str
     description: str = ""
     unit: str = ""
-    dimensions: List[str] = field(default_factory=list)
+    dimensions: list[str] = field(default_factory=list)
     aggregation: AggregationType = AggregationType.SUM
     retention_days: int = 30
 
@@ -37,17 +36,17 @@ class MetricValue:
     name: str
     value: float
     timestamp: datetime = field(default_factory=datetime.now)
-    dimensions: Dict[str, str] = field(default_factory=dict)
-    tags: Dict[str, str] = field(default_factory=dict)
+    dimensions: dict[str, str] = field(default_factory=dict)
+    tags: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
 class MetricThreshold:
     metric_name: str
-    warning_min: Optional[float] = None
-    warning_max: Optional[float] = None
-    critical_min: Optional[float] = None
-    critical_max: Optional[float] = None
+    warning_min: float | None = None
+    warning_max: float | None = None
+    critical_min: float | None = None
+    critical_max: float | None = None
 
 
 @dataclass
@@ -56,7 +55,7 @@ class MetricAlert:
     metric_name: str
     status: MetricStatus
     current_value: float
-    threshold: Optional[MetricThreshold] = None
+    threshold: MetricThreshold | None = None
     message: str = ""
     timestamp: datetime = field(default_factory=datetime.now)
 

@@ -25,11 +25,10 @@ class TheoremEngine:
     async def prove(self, goal: str, axioms: list[str]) -> dict[str, Any]:
         steps: list[str] = []
         for theorem in self._theorems.values():
-            if all(p in axioms for p in theorem.premises):
-                if theorem.conclusion == goal:
-                    steps.extend(theorem.proof or [])
-                    steps.append(theorem.conclusion)
-                    return {"proved": True, "steps": steps, "theorem": theorem.name}
+            if all(p in axioms for p in theorem.premises) and theorem.conclusion == goal:
+                steps.extend(theorem.proof or [])
+                steps.append(theorem.conclusion)
+                return {"proved": True, "steps": steps, "theorem": theorem.name}
         return {"proved": False, "steps": steps, "theorem": None}
 
     async def execute(self, context: dict[str, Any]) -> dict[str, Any]:

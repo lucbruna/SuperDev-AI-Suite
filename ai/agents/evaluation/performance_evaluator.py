@@ -1,22 +1,22 @@
 """Performance evaluator for agent metrics."""
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 
 class PerformanceEvaluator:
     """Evaluates agent performance across multiple dimensions."""
 
     def __init__(self) -> None:
-        self._weights: Dict[str, float] = {
+        self._weights: dict[str, float] = {
             "speed": 0.25,
             "accuracy": 0.30,
             "completeness": 0.25,
             "efficiency": 0.20,
         }
 
-    def evaluate(self, metrics: Dict[str, Any]) -> Dict[str, Any]:
-        scores: Dict[str, float] = {}
+    def evaluate(self, metrics: dict[str, Any]) -> dict[str, Any]:
+        scores: dict[str, float] = {}
         for dim, weight in self._weights.items():
             raw = metrics.get(dim, 0.5)
             if isinstance(raw, (int, float)):
@@ -39,5 +39,5 @@ class PerformanceEvaluator:
             return "average"
         return "needs_improvement"
 
-    def set_weights(self, weights: Dict[str, float]) -> None:
+    def set_weights(self, weights: dict[str, float]) -> None:
         self._weights.update(weights)

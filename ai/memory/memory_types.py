@@ -1,14 +1,15 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from enum import Enum, auto
-from typing import Any, Callable, Dict, List, Optional, TypeVar
+from typing import Any, TypeVar
 
 T = TypeVar("T")
 
 MemoryID = str
-MemoryData = Dict[str, Any]
-Metadata = Dict[str, Any]
-Tags = List[str]
+MemoryData = dict[str, Any]
+Metadata = dict[str, Any]
+Tags = list[str]
 Timestamp = float
 Priority = int
 

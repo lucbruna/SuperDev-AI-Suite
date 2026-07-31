@@ -1,9 +1,9 @@
 """Threat detection engine."""
 import uuid
-from datetime import datetime
-from typing import Dict, Any, List, Optional
-from enum import Enum
 from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class ThreatSeverity(Enum):
@@ -40,7 +40,7 @@ class DetectedThreat:
     source_ip: str = ""
     target: str = ""
     description: str = ""
-    indicators: List[ThreatIndicator] = field(default_factory=list)
+    indicators: list[ThreatIndicator] = field(default_factory=list)
     risk_score: float = 0.0
     detected_at: datetime = field(default_factory=datetime.now)
     status: str = "active"
@@ -48,14 +48,14 @@ class DetectedThreat:
 
 class ThreatDetectionEngine:
     def __init__(self):
-        self._threats: Dict[str, DetectedThreat] = {}
-        self._rules: List[Dict[str, Any]] = []
-        self._blocked_ips: Dict[str, datetime] = {}
+        self._threats: dict[str, DetectedThreat] = {}
+        self._rules: list[dict[str, Any]] = []
+        self._blocked_ips: dict[str, datetime] = {}
 
-    def add_rule(self, name: str, condition: Dict[str, Any], action: str = "alert") -> None:
+    def add_rule(self, name: str, condition: dict[str, Any], action: str = "alert") -> None:
         self._rules.append({"name": name, "condition": condition, "action": action})
 
-    def analyze_event(self, event: Dict[str, Any]) -> Optional[DetectedThreat]:
+    def analyze_event(self, event: dict[str, Any]) -> DetectedThreat | None:
         for rule in self._rules:
             cond = rule["condition"]
             match = all(event.get(k) == v for k, v in cond.items() if k != "threshold")
@@ -84,7 +84,7 @@ class ThreatDetectionEngine:
     def is_blocked(self, ip: str) -> bool:
         return ip in self._blocked_ips
 
-    def get_threats(self, severity: Optional[ThreatSeverity] = None) -> List[DetectedThreat]:
+    def get_threats(self, severity: ThreatSeverity | None = None) -> list[DetectedThreat]:
         threats = list(self._threats.values())
         if severity:
             threats = [t for t in threats if t.severity == severity]

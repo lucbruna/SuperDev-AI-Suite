@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class ValidationResult:
     """Result of a validation operation."""
 
-    def __init__(self, valid: bool, errors: List[str] | None = None):
+    def __init__(self, valid: bool, errors: list[str] | None = None):
         self._valid = valid
         self._errors = errors or []
 
@@ -15,7 +15,7 @@ class ValidationResult:
         return self._valid
 
     @property
-    def errors(self) -> List[str]:
+    def errors(self) -> list[str]:
         return list(self._errors)
 
 
@@ -27,7 +27,7 @@ class Validator:
         return result.valid
 
     def validate_detailed(self, data: Any) -> ValidationResult:
-        errors: List[str] = []
+        errors: list[str] = []
         if data is None:
             errors.append("Data cannot be None")
             return ValidationResult(False, errors)
@@ -50,8 +50,8 @@ class Validator:
             return False
         return bool(key.strip())
 
-    def validate_batch(self, items: Dict[str, Any]) -> Dict[str, List[str]]:
-        results: Dict[str, List[str]] = {}
+    def validate_batch(self, items: dict[str, Any]) -> dict[str, list[str]]:
+        results: dict[str, list[str]] = {}
         for key, data in items.items():
             result = self.validate_detailed(data)
             if not result.valid:

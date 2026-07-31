@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict
+from typing import Any
 
 
 class AbstractAgent(ABC):
     """Abstract blueprint for all agents."""
 
     @abstractmethod
-    def execute(self, task: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, task: dict[str, Any]) -> dict[str, Any]:
         ...
 
     @abstractmethod
@@ -20,5 +20,5 @@ class AbstractAgent(ABC):
         ...
 
     @abstractmethod
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         ...

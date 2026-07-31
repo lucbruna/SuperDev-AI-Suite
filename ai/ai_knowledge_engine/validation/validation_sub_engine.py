@@ -1,9 +1,9 @@
 """Validation subsystem engine — Knowledge validation and fact-checking."""
 import uuid
-from datetime import datetime
-from typing import Dict, Any, List, Optional
-from enum import Enum
 from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class ValidationMethod(Enum):
@@ -28,7 +28,7 @@ class ValidationCheck:
     method: ValidationMethod = ValidationMethod.SOURCE_CHECK
     result: ValidationResult = ValidationResult.INCONCLUSIVE
     confidence: float = 0.0
-    evidence: List[str] = field(default_factory=list)
+    evidence: list[str] = field(default_factory=list)
     checked_at: datetime = field(default_factory=datetime.now)
 
 
@@ -36,9 +36,9 @@ class ValidationCheck:
 class FactCheck:
     fact_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     statement: str = ""
-    is_true: Optional[bool] = None
+    is_true: bool | None = None
     confidence: float = 0.0
-    sources: List[str] = field(default_factory=list)
+    sources: list[str] = field(default_factory=list)
     explanation: str = ""
     checked_at: datetime = field(default_factory=datetime.now)
 
@@ -49,15 +49,15 @@ class Source:
     name: str = ""
     url: str = ""
     reliability: float = 0.5
-    last_verified: Optional[datetime] = None
+    last_verified: datetime | None = None
     is_active: bool = True
 
 
 class ValidationSubEngine:
     def __init__(self, confidence_threshold: float = 0.7):
-        self._checks: Dict[str, ValidationCheck] = {}
-        self._fact_checks: Dict[str, FactCheck] = {}
-        self._sources: Dict[str, Source] = {}
+        self._checks: dict[str, ValidationCheck] = {}
+        self._fact_checks: dict[str, FactCheck] = {}
+        self._sources: dict[str, Source] = {}
         self._confidence_threshold = confidence_threshold
 
     def validate_content(self, content: str, method: str = "source_check") -> ValidationCheck:
@@ -68,7 +68,7 @@ class ValidationSubEngine:
         self._checks[check.check_id] = check
         return check
 
-    def get_check(self, check_id: str) -> Optional[ValidationCheck]:
+    def get_check(self, check_id: str) -> ValidationCheck | None:
         return self._checks.get(check_id)
 
     def fact_check(self, statement: str) -> FactCheck:
@@ -76,7 +76,7 @@ class ValidationSubEngine:
         self._fact_checks[fc.fact_id] = fc
         return fc
 
-    def get_fact_check(self, fact_id: str) -> Optional[FactCheck]:
+    def get_fact_check(self, fact_id: str) -> FactCheck | None:
         return self._fact_checks.get(fact_id)
 
     def add_source(self, name: str, url: str, reliability: float = 0.5) -> Source:
@@ -84,14 +84,14 @@ class ValidationSubEngine:
         self._sources[source.source_id] = source
         return source
 
-    def get_source(self, source_id: str) -> Optional[Source]:
+    def get_source(self, source_id: str) -> Source | None:
         return self._sources.get(source_id)
 
     def check_source_reliability(self, source_id: str) -> float:
         source = self._sources.get(source_id)
         return source.reliability if source else 0.0
 
-    def cross_validate(self, content: str, source_ids: Optional[List[str]] = None) -> Dict[str, Any]:
+    def cross_validate(self, content: str, source_ids: list[str] | None = None) -> dict[str, Any]:
         checks = []
         for check in self._checks.values():
             if content.lower() in check.content.lower() or check.content.lower() in content.lower():
@@ -105,10 +105,10 @@ class ValidationSubEngine:
             "confidence": valid_count / total if total > 0 else 0.0,
         }
 
-    def get_validated_content(self) -> List[ValidationCheck]:
+    def get_validated_content(self) -> list[ValidationCheck]:
         return [c for c in self._checks.values() if c.result == ValidationResult.VALID]
 
-    def get_invalid_content(self) -> List[ValidationCheck]:
+    def get_invalid_content(self) -> list[ValidationCheck]:
         return [c for c in self._checks.values() if c.result == ValidationResult.INVALID]
 
     def get_stats(self) -> dict:

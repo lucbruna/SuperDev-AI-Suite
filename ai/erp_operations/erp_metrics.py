@@ -1,8 +1,7 @@
 """ERP Metrics — Performance metrics for ERP operations."""
-from typing import Dict, Any, Optional, List
+import statistics
 from dataclasses import dataclass, field
 from datetime import datetime
-import statistics
 
 
 @dataclass
@@ -12,7 +11,7 @@ class ERPMetricPoint:
     unit: str = ""
     project_id: str = ""
     timestamp: datetime = field(default_factory=datetime.now)
-    tags: Dict[str, str] = field(default_factory=dict)
+    tags: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -27,9 +26,9 @@ class ERPMetricSummary:
 
 class ERPMetrics:
     def __init__(self):
-        self.metrics: Dict[str, List[ERPMetricPoint]] = {}
+        self.metrics: dict[str, list[ERPMetricPoint]] = {}
 
-    def record(self, name: str, value: float, unit: str = "", project_id: str = "", tags: Optional[Dict[str, str]] = None) -> ERPMetricPoint:
+    def record(self, name: str, value: float, unit: str = "", project_id: str = "", tags: dict[str, str] | None = None) -> ERPMetricPoint:
         point = ERPMetricPoint(name=name, value=value, unit=unit, project_id=project_id, tags=tags or {})
         self.metrics.setdefault(name, []).append(point)
         return point
@@ -44,7 +43,7 @@ class ERPMetrics:
             avg_val=statistics.mean(values), latest=values[-1],
         )
 
-    def get_all_metrics(self) -> List[ERPMetricSummary]:
+    def get_all_metrics(self) -> list[ERPMetricSummary]:
         return [self.get_summary(name) for name in self.metrics]
 
     def count(self) -> int:

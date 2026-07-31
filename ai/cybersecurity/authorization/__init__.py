@@ -1,9 +1,9 @@
 """Authorization subsystem"""
-from .authorization_engine import AuthorizationEngine, AccessDecision, AccessRequest, AccessPolicy
-from .role_manager import RoleManager, Role
-from .permission_manager import PermissionManager, Permission
-from .policy_engine import PolicyEngine, PolicyEffect
 from .access_control import AccessControl, AccessLevel
+from .authorization_engine import AccessDecision, AccessPolicy, AccessRequest, AuthorizationEngine
+from .permission_manager import Permission, PermissionManager
+from .policy_engine import PolicyEffect, PolicyEngine
+from .role_manager import Role, RoleManager
 
 __all__ = [
     "AuthorizationEngine", "AccessDecision", "AccessRequest", "AccessPolicy",

@@ -3,13 +3,14 @@ from __future__ import annotations
 from typing import Any
 from uuid import UUID
 
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from backend.auth.rbac import Action, Resource, require_permission
 from backend.database.session import get_db
 from backend.dependencies import get_current_active_user
 from backend.workflow_integration.service import WorkflowIntegrationService, get_workflow_integration_service
-from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
-from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(dependencies=[Depends(get_current_active_user)])
 
@@ -79,7 +80,7 @@ async def create_workflow(
         variables=request.variables,
         tags=request.tags,
     )
-    
+
     return CreateWorkflowResponse(
         workflow_id=str(definition.id),
         name=definition.name,
@@ -96,7 +97,7 @@ async def list_workflows(
     service: WorkflowIntegrationService = Depends(get_workflow_integration_service),
 ) -> list[CreateWorkflowResponse]:
     definitions = service.list_workflows(tags)
-    
+
     return [
         CreateWorkflowResponse(
             workflow_id=str(d.id),
@@ -118,7 +119,7 @@ async def get_workflow(
     definition = service.workflow_manager.get_definition(str(workflow_id))
     if not definition:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workflow not found")
-    
+
     return CreateWorkflowResponse(
         workflow_id=str(definition.id),
         name=definition.name,
@@ -140,7 +141,7 @@ async def execute_workflow(
         workflow_id=str(workflow_id),
         variables=request.variables,
     )
-    
+
     return ExecuteWorkflowResponse(
         run_id=str(result.get("run_id", "")),
         workflow_id=str(workflow_id),
@@ -166,7 +167,7 @@ async def run_verification(
         max_iterations=request.max_iterations,
         provider_name=request.provider,
     )
-    
+
     return VerificationWorkflowResponse(
         success=result.success,
         stage=result.stage.value,
@@ -199,7 +200,7 @@ async def create_verification_workflow(
         max_iterations=request.max_iterations,
         provider_name=request.provider,
     )
-    
+
     return CreateWorkflowResponse(
         workflow_id=str(definition.id),
         name=definition.name,

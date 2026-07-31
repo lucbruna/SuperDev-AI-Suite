@@ -1,13 +1,13 @@
 """Security Engine — central orchestrator for all security operations."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from .security_config import SecurityConfig, SecurityLevel
-from .security_manager import SecurityManager
+from .security_config import SecurityConfig
 from .security_events import SecurityEvents
-from .security_metrics import SecurityMetrics
 from .security_logger import SecurityLogger
+from .security_manager import SecurityManager
+from .security_metrics import SecurityMetrics
 from .security_registry import SecurityRegistry
 from .security_runtime import SecurityRuntime
 
@@ -15,7 +15,7 @@ from .security_runtime import SecurityRuntime
 class SecurityEngine:
     """Central security engine coordinating all security subsystems."""
 
-    def __init__(self, config: Optional[SecurityConfig] = None) -> None:
+    def __init__(self, config: SecurityConfig | None = None) -> None:
         self._config = config or SecurityConfig()
         self._manager = SecurityManager(self._config)
         self._events = SecurityEvents()
@@ -26,7 +26,7 @@ class SecurityEngine:
         self._check_count: int = 0
         self._blocked_count: int = 0
 
-    def check_access(self, user_id: str, resource: str, permission: str) -> Dict[str, Any]:
+    def check_access(self, user_id: str, resource: str, permission: str) -> dict[str, Any]:
         self._check_count += 1
         ctx = self._manager.get_context(user_id)
         allowed = ctx is not None and ctx.has_permission(permission)
@@ -40,7 +40,7 @@ class SecurityEngine:
                 "permission": permission}
 
     def protect_agent_action(self, agent_id: str, action: str,
-                             context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+                             context: dict[str, Any] | None = None) -> dict[str, Any]:
         self._check_count += 1
         risk_level = self._assess_risk(action, context or {})
         approved = risk_level != "critical"
@@ -52,7 +52,7 @@ class SecurityEngine:
         return {"approved": approved, "risk_level": risk_level, "agent_id": agent_id,
                 "action": action}
 
-    def _assess_risk(self, action: str, context: Dict[str, Any]) -> str:
+    def _assess_risk(self, action: str, context: dict[str, Any]) -> str:
         dangerous_actions = {"delete", "drop", "execute", "deploy", "destroy", "modify_security"}
         if action.lower() in dangerous_actions:
             return "high"
@@ -61,7 +61,7 @@ class SecurityEngine:
             return "medium"
         return "low"
 
-    def get_security_status(self) -> Dict[str, Any]:
+    def get_security_status(self) -> dict[str, Any]:
         return {
             "level": self._config.level.value,
             "total_checks": self._check_count,
@@ -71,8 +71,8 @@ class SecurityEngine:
             "metrics": self._metrics.get_all(),
         }
 
-    def get_events(self, limit: int = 50) -> List[Dict[str, Any]]:
+    def get_events(self, limit: int = 50) -> list[dict[str, Any]]:
         return self._events.get_log(limit=limit)
 
-    def get_logs(self, limit: int = 50) -> List[Dict[str, Any]]:
+    def get_logs(self, limit: int = 50) -> list[dict[str, Any]]:
         return self._logger.get_entries(limit=limit)

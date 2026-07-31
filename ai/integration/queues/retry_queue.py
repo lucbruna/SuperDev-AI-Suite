@@ -1,10 +1,9 @@
 """
 Retry Queue - Failed message retry
 """
-from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-import hashlib
+from typing import Any
 
 
 @dataclass
@@ -14,14 +13,14 @@ class RetryMessage:
     payload: Any = None
     attempt: int = 0
     max_retries: int = 3
-    next_retry_at: Optional[datetime] = None
+    next_retry_at: datetime | None = None
     last_error: str = ""
     created_at: datetime = field(default_factory=datetime.now)
 
 
 class RetryQueue:
     def __init__(self):
-        self.messages: Dict[str, RetryMessage] = {}
+        self.messages: dict[str, RetryMessage] = {}
         self.backoff_base: int = 5
         self.backoff_multiplier: float = 2.0
 
@@ -31,7 +30,7 @@ class RetryQueue:
         self.messages[message_id] = msg
         return msg
 
-    def get_ready(self) -> List[RetryMessage]:
+    def get_ready(self) -> list[RetryMessage]:
         now = datetime.now()
         return [m for m in self.messages.values() if m.next_retry_at and m.next_retry_at <= now and m.attempt < m.max_retries]
 
@@ -48,10 +47,10 @@ class RetryQueue:
             return True
         return False
 
-    def get_message(self, message_id: str) -> Optional[RetryMessage]:
+    def get_message(self, message_id: str) -> RetryMessage | None:
         return self.messages.get(message_id)
 
-    def list_all(self) -> List[RetryMessage]:
+    def list_all(self) -> list[RetryMessage]:
         return list(self.messages.values())
 
     def count(self) -> int:

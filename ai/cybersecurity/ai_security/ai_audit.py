@@ -1,12 +1,12 @@
 """
 AI Decision Audit System
 """
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
 import json
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class AuditAction(Enum):
@@ -26,25 +26,25 @@ class AuditEntry:
     output_hash: str = ""
     user_id: str = ""
     timestamp: datetime = field(default_factory=datetime.now)
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    explainability: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
+    explainability: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
 class AuditReport:
     model_id: str
     total_entries: int
-    actions: Dict[str, int] = field(default_factory=dict)
+    actions: dict[str, int] = field(default_factory=dict)
     time_range: str = ""
-    entries: List[AuditEntry] = field(default_factory=list)
+    entries: list[AuditEntry] = field(default_factory=list)
 
 
 class AIAudit:
     def __init__(self):
-        self.entries: List[AuditEntry] = []
-        self.immutable_log: List[str] = []
+        self.entries: list[AuditEntry] = []
+        self.immutable_log: list[str] = []
 
-    def log_decision(self, model_id: str, action: AuditAction, input_data: str = "", output: str = "", user_id: str = "", metadata: Dict[str, Any] = None, explainability: Dict[str, Any] = None) -> AuditEntry:
+    def log_decision(self, model_id: str, action: AuditAction, input_data: str = "", output: str = "", user_id: str = "", metadata: dict[str, Any] = None, explainability: dict[str, Any] = None) -> AuditEntry:
         entry_id = hashlib.sha256(f"{model_id}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
         input_hash = hashlib.sha256(input_data.encode()).hexdigest() if input_data else ""
         output_hash = hashlib.sha256(output.encode()).hexdigest() if output else ""
@@ -53,7 +53,7 @@ class AIAudit:
         self.immutable_log.append(json.dumps({"entry_id": entry_id, "model_id": model_id, "action": action.value, "timestamp": entry.timestamp.isoformat()}))
         return entry
 
-    def get_entries(self, model_id: str = None, action: AuditAction = None) -> List[AuditEntry]:
+    def get_entries(self, model_id: str = None, action: AuditAction = None) -> list[AuditEntry]:
         results = self.entries
         if model_id:
             results = [e for e in results if e.model_id == model_id]
@@ -71,13 +71,13 @@ class AIAudit:
     def verify_integrity(self) -> bool:
         return len(self.entries) == len(self.immutable_log)
 
-    def get_explainability(self, entry_id: str) -> Dict[str, Any]:
+    def get_explainability(self, entry_id: str) -> dict[str, Any]:
         for entry in self.entries:
             if entry.entry_id == entry_id:
                 return entry.explainability
         return {}
 
-    def search(self, query: str) -> List[AuditEntry]:
+    def search(self, query: str) -> list[AuditEntry]:
         return [e for e in self.entries if query in json.dumps(e.metadata)]
 
     def count(self) -> int:

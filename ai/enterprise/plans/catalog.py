@@ -1,22 +1,24 @@
 """Plan catalog."""
 from __future__ import annotations
-from typing import Any, Dict, List
+
+from typing import Any
+
 
 class PlanCatalog:
     def __init__(self) -> None:
-        self._catalog: List[Dict[str, Any]] = []
-    def add(self, plan_id: str, name: str, description: str, price: float, features: List[str]) -> Dict[str, Any]:
+        self._catalog: list[dict[str, Any]] = []
+    def add(self, plan_id: str, name: str, description: str, price: float, features: list[str]) -> dict[str, Any]:
         entry = {"plan_id": plan_id, "name": name, "description": description, "price": price, "features": features, "visible": True}
         self._catalog.append(entry)
         return entry
-    def get(self, plan_id: str) -> Dict[str, Any]:
+    def get(self, plan_id: str) -> dict[str, Any]:
         for entry in self._catalog:
             if entry["plan_id"] == plan_id:
                 return entry
         return {}
-    def list_visible(self) -> List[Dict[str, Any]]:
+    def list_visible(self) -> list[dict[str, Any]]:
         return [e for e in self._catalog if e.get("visible")]
-    def list_all(self) -> List[Dict[str, Any]]:
+    def list_all(self) -> list[dict[str, Any]]:
         return list(self._catalog)
     def hide(self, plan_id: str) -> bool:
         for e in self._catalog:

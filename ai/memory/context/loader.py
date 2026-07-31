@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class ContextLoader:
@@ -13,7 +13,7 @@ class ContextLoader:
     def load_count(self) -> int:
         return self._load_count
 
-    def load_text(self, text: str, source_name: str = "inline") -> Dict[str, Any]:
+    def load_text(self, text: str, source_name: str = "inline") -> dict[str, Any]:
         self._load_count += 1
         return {
             "source": source_name,
@@ -22,7 +22,7 @@ class ContextLoader:
             "metadata": {"length": len(text)},
         }
 
-    def load_dict(self, data: Dict[str, Any], source_name: str = "dict") -> Dict[str, Any]:
+    def load_dict(self, data: dict[str, Any], source_name: str = "dict") -> dict[str, Any]:
         self._load_count += 1
         return {
             "source": source_name,
@@ -31,7 +31,7 @@ class ContextLoader:
             "metadata": {"keys": list(data.keys())},
         }
 
-    def load_list(self, items: List[Any], source_name: str = "list") -> Dict[str, Any]:
+    def load_list(self, items: list[Any], source_name: str = "list") -> dict[str, Any]:
         self._load_count += 1
         return {
             "source": source_name,
@@ -40,7 +40,7 @@ class ContextLoader:
             "metadata": {"length": len(items)},
         }
 
-    def load_batch(self, sources: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def load_batch(self, sources: list[dict[str, Any]]) -> list[dict[str, Any]]:
         results = []
         for src in sources:
             st = src.get("type", "text")

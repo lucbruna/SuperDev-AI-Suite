@@ -1,9 +1,10 @@
 """Notification Engine - Core notification system."""
-from typing import Dict, Any, Optional, List, Callable
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class NotificationType(Enum):
@@ -30,17 +31,17 @@ class Notification:
     priority: NotificationPriority = NotificationPriority.NORMAL
     target_device: str = ""
     target_user: str = ""
-    data: Dict[str, Any] = field(default_factory=dict)
+    data: dict[str, Any] = field(default_factory=dict)
     read: bool = False
     created_at: datetime = field(default_factory=datetime.now)
-    sent_at: Optional[datetime] = None
+    sent_at: datetime | None = None
 
 
 class NotificationEngine:
     def __init__(self):
-        self.notifications: List[Notification] = []
-        self.handlers: Dict[NotificationType, Callable] = {}
-        self.rules: List[Dict[str, Any]] = []
+        self.notifications: list[Notification] = []
+        self.handlers: dict[NotificationType, Callable] = {}
+        self.rules: list[dict[str, Any]] = []
 
     def send(self, title: str, message: str, type: NotificationType = NotificationType.PUSH, priority: NotificationPriority = NotificationPriority.NORMAL, **kwargs) -> Notification:
         notif_id = hashlib.sha256(f"{title}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
@@ -58,7 +59,7 @@ class NotificationEngine:
     def register_handler(self, type: NotificationType, handler: Callable) -> None:
         self.handlers[type] = handler
 
-    def add_rule(self, rule: Dict[str, Any]) -> None:
+    def add_rule(self, rule: dict[str, Any]) -> None:
         self.rules.append(rule)
 
     def mark_read(self, notification_id: str) -> bool:
@@ -68,13 +69,13 @@ class NotificationEngine:
                 return True
         return False
 
-    def get_unread(self, user: str = None) -> List[Notification]:
+    def get_unread(self, user: str = None) -> list[Notification]:
         unread = [n for n in self.notifications if not n.read]
         if user:
             unread = [n for n in unread if n.target_user == user]
         return unread
 
-    def get_notifications(self, type: NotificationType = None, user: str = None, limit: int = 100) -> List[Notification]:
+    def get_notifications(self, type: NotificationType = None, user: str = None, limit: int = 100) -> list[Notification]:
         notifs = self.notifications
         if type:
             notifs = [n for n in notifs if n.type == type]

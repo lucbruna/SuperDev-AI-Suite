@@ -1,9 +1,9 @@
 """ERP Models — Core data models for ERP operations."""
-from dataclasses import dataclass, field
-from enum import Enum
-from typing import List, Optional, Dict, Any
-from datetime import datetime
 import uuid
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class ProductStatus(Enum):
@@ -81,7 +81,7 @@ class StockMovement:
 class Order:
     order_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     customer_id: str = ""
-    items: List[Dict[str, Any]] = field(default_factory=list)
+    items: list[dict[str, Any]] = field(default_factory=list)
     total: float = 0.0
     status: OrderStatus = OrderStatus.DRAFT
     priority: OrderPriority = OrderPriority.NORMAL
@@ -95,10 +95,10 @@ class Order:
 class PurchaseOrder:
     po_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     supplier_id: str = ""
-    items: List[Dict[str, Any]] = field(default_factory=list)
+    items: list[dict[str, Any]] = field(default_factory=list)
     total: float = 0.0
     status: OrderStatus = OrderStatus.DRAFT
-    expected_date: Optional[datetime] = None
+    expected_date: datetime | None = None
     created_at: datetime = field(default_factory=datetime.now)
     notes: str = ""
 
@@ -136,8 +136,8 @@ class WorkOrder:
     quantity: int = 0
     status: OrderStatus = OrderStatus.DRAFT
     assigned_to: str = ""
-    start_date: Optional[datetime] = None
-    end_date: Optional[datetime] = None
+    start_date: datetime | None = None
+    end_date: datetime | None = None
     created_at: datetime = field(default_factory=datetime.now)
     notes: str = ""
 
@@ -149,8 +149,8 @@ class Delivery:
     origin: str = ""
     destination: str = ""
     status: OrderStatus = OrderStatus.DRAFT
-    estimated_arrival: Optional[datetime] = None
-    actual_arrival: Optional[datetime] = None
+    estimated_arrival: datetime | None = None
+    actual_arrival: datetime | None = None
     tracking_number: str = ""
     created_at: datetime = field(default_factory=datetime.now)
 
@@ -177,4 +177,4 @@ class WorkflowApproval:
     status: WorkflowStatus = WorkflowStatus.PENDING
     comments: str = ""
     created_at: datetime = field(default_factory=datetime.now)
-    resolved_at: Optional[datetime] = None
+    resolved_at: datetime | None = None

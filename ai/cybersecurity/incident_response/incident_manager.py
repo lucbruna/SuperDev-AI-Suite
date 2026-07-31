@@ -1,11 +1,11 @@
 """
 Incident Lifecycle Management
 """
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class Severity(Enum):
@@ -36,15 +36,15 @@ class Incident:
     reporter: str = ""
     created_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)
-    resolved_at: Optional[datetime] = None
+    resolved_at: datetime | None = None
     sla_hours: int = 24
-    tags: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    tags: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class IncidentManager:
     def __init__(self):
-        self.incidents: Dict[str, Incident] = {}
+        self.incidents: dict[str, Incident] = {}
 
     def create_incident(self, title: str, severity: Severity = Severity.P3, description: str = "", reporter: str = "") -> Incident:
         incident_id = hashlib.sha256(f"{title}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
@@ -71,19 +71,19 @@ class IncidentManager:
             return True
         return False
 
-    def get_incident(self, incident_id: str) -> Optional[Incident]:
+    def get_incident(self, incident_id: str) -> Incident | None:
         return self.incidents.get(incident_id)
 
-    def get_open_incidents(self) -> List[Incident]:
+    def get_open_incidents(self) -> list[Incident]:
         return [i for i in self.incidents.values() if i.status not in (IncidentStatus.CLOSED, IncidentStatus.RECOVERED)]
 
-    def get_by_severity(self, severity: Severity) -> List[Incident]:
+    def get_by_severity(self, severity: Severity) -> list[Incident]:
         return [i for i in self.incidents.values() if i.severity == severity]
 
-    def get_by_assignee(self, assignee: str) -> List[Incident]:
+    def get_by_assignee(self, assignee: str) -> list[Incident]:
         return [i for i in self.incidents.values() if i.assignee == assignee]
 
-    def check_sla(self, incident_id: str) -> Dict[str, Any]:
+    def check_sla(self, incident_id: str) -> dict[str, Any]:
         incident = self.incidents.get(incident_id)
         if not incident:
             return {"breached": False}

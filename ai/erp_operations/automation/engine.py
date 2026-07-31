@@ -1,22 +1,22 @@
 """Automation engine."""
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional
-from .models import AutomationRule, AutomationExecution, ScheduledTask, AutomationMetrics
-from .models import AutomationStatus, TriggerType
+from typing import Any
+
+from .models import AutomationExecution, AutomationMetrics, AutomationRule, AutomationStatus, ScheduledTask
 
 
 class AutomationEngine:
     def __init__(self):
-        self._rules: Dict[str, AutomationRule] = {}
-        self._executions: List[AutomationExecution] = []
-        self._scheduled: Dict[str, ScheduledTask] = {}
+        self._rules: dict[str, AutomationRule] = {}
+        self._executions: list[AutomationExecution] = []
+        self._scheduled: dict[str, ScheduledTask] = {}
 
     def create_rule(self, rule: AutomationRule) -> AutomationRule:
         self._rules[rule.rule_id] = rule
         return rule
 
-    def get_rule(self, rule_id: str) -> Optional[AutomationRule]:
+    def get_rule(self, rule_id: str) -> AutomationRule | None:
         return self._rules.get(rule_id)
 
     def activate_rule(self, rule_id: str) -> bool:
@@ -33,7 +33,7 @@ class AutomationEngine:
         rule.status = AutomationStatus.INACTIVE
         return True
 
-    def execute_rule(self, rule_id: str, context: Optional[Dict[str, Any]] = None) -> AutomationExecution:
+    def execute_rule(self, rule_id: str, context: dict[str, Any] | None = None) -> AutomationExecution:
         rule = self._rules.get(rule_id)
         execution = AutomationExecution(
             execution_id=str(uuid.uuid4())[:8],
@@ -49,7 +49,7 @@ class AutomationEngine:
         self._executions.append(execution)
         return execution
 
-    def get_executions(self, rule_id: Optional[str] = None) -> List[AutomationExecution]:
+    def get_executions(self, rule_id: str | None = None) -> list[AutomationExecution]:
         if rule_id:
             return [e for e in self._executions if e.rule_id == rule_id]
         return list(self._executions)
@@ -58,10 +58,10 @@ class AutomationEngine:
         self._scheduled[task.task_id] = task
         return task
 
-    def get_scheduled_tasks(self) -> List[ScheduledTask]:
+    def get_scheduled_tasks(self) -> list[ScheduledTask]:
         return list(self._scheduled.values())
 
-    def get_active_rules(self) -> List[AutomationRule]:
+    def get_active_rules(self) -> list[AutomationRule]:
         return [r for r in self._rules.values() if r.status == AutomationStatus.ACTIVE]
 
     def get_metrics(self) -> AutomationMetrics:

@@ -1,9 +1,8 @@
 """Sentiment engine."""
 import uuid
 from datetime import datetime
-from typing import Dict, List, Optional
-from .models import SentimentResult, EmotionAnalysis, SatisfactionScore, SentimentType, EmotionType
 
+from .models import SatisfactionScore, SentimentResult, SentimentType
 
 POSITIVE_WORDS = {"great", "excellent", "good", "love", "amazing", "wonderful", "fantastic", "best", "happy", "perfect", "awesome", "brilliant", "outstanding"}
 NEGATIVE_WORDS = {"bad", "terrible", "hate", "awful", "worst", "poor", "horrible", "disappointing", "angry", "sad", "frustrated", "annoyed", "broken"}
@@ -11,9 +10,9 @@ NEGATIVE_WORDS = {"bad", "terrible", "hate", "awful", "worst", "poor", "horrible
 
 class SentimentEngine:
     def __init__(self):
-        self._results: List[SentimentResult] = []
-        self._customer_sentiments: Dict[str, List[SentimentResult]] = {}
-        self._satisfaction: Dict[str, SatisfactionScore] = {}
+        self._results: list[SentimentResult] = []
+        self._customer_sentiments: dict[str, list[SentimentResult]] = {}
+        self._satisfaction: dict[str, SatisfactionScore] = {}
 
     def analyze(self, text: str, customer_id: str = "") -> SentimentResult:
         words = set(text.lower().split())
@@ -54,7 +53,7 @@ class SentimentEngine:
             self._customer_sentiments.setdefault(customer_id, []).append(result)
         return result
 
-    def get_customer_sentiment(self, customer_id: str) -> Dict[str, Any]:
+    def get_customer_sentiment(self, customer_id: str) -> dict[str, Any]:
         results = self._customer_sentiments.get(customer_id, [])
         if not results:
             return {"sentiment": "unknown", "score": 0.0, "count": 0}
@@ -79,10 +78,10 @@ class SentimentEngine:
         self._satisfaction[customer_id] = sat
         return sat
 
-    def get_satisfaction(self, customer_id: str) -> Optional[SatisfactionScore]:
+    def get_satisfaction(self, customer_id: str) -> SatisfactionScore | None:
         return self._satisfaction.get(customer_id)
 
-    def get_results(self, limit: int = 100) -> List[SentimentResult]:
+    def get_results(self, limit: int = 100) -> list[SentimentResult]:
         return self._results[-limit:]
 
     def get_stats(self) -> dict:

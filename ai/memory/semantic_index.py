@@ -35,7 +35,7 @@ class SemanticIndex:
     def _cosine_similarity(self, a: list[float], b: list[float]) -> float:
         if not a or not b:
             return 0.0
-        dot = sum(ai * bi for ai, bi in zip(a, b))
+        dot = sum(ai * bi for ai, bi in zip(a, b, strict=False))
         norm_a = sum(ai * ai for ai in a) ** 0.5
         norm_b = sum(bi * bi for bi in b) ** 0.5
         if not norm_a or not norm_b:

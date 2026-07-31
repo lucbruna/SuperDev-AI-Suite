@@ -1,9 +1,10 @@
 """
 Form UI Component
 """
-from typing import Optional, Any, Callable, Dict, List
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any
 
 
 class FormLayout(Enum):
@@ -25,7 +26,7 @@ class FormField:
     type: str = "text"
     required: bool = False
     placeholder: str = ""
-    helpText: Optional[str] = None
+    helpText: str | None = None
     rules: list = field(default_factory=list)
     initialValue: Any = None
     disabled: bool = False
@@ -33,28 +34,28 @@ class FormField:
 
 @dataclass
 class FormProps:
-    fields: List[FormField] = field(default_factory=list)
+    fields: list[FormField] = field(default_factory=list)
     layout: FormLayout = FormLayout.VERTICAL
     size: FormSize = FormSize.MD
-    initialValues: Dict[str, Any] = field(default_factory=dict)
-    onSubmit: Optional[Callable] = None
+    initialValues: dict[str, Any] = field(default_factory=dict)
+    onSubmit: Callable | None = None
 
 
 class Form:
-    def __init__(self, props: Optional[FormProps] = None):
+    def __init__(self, props: FormProps | None = None):
         self.props = props or FormProps()
         self._values = self.props.initialValues.copy()
         self._errors = {}
         self._touched = set()
-        
+
     def set_value(self, name, value):
         self._values[name] = value
         self._touched.add(name)
         self._validate_field(name)
-        
+
     def get_value(self, name):
         return self._values.get(name)
-        
+
     def _validate_field(self, name):
         field = next((f for f in self.props.fields if f.name == name), None)
         if not field:
@@ -64,17 +65,17 @@ class Form:
             self._errors[name] = field.label + " is required"
         else:
             self._errors.pop(name, None)
-            
+
     def validate(self):
         self._errors = {}
         for field in self.props.fields:
             self._validate_field(field.name)
         return self.is_valid
-        
+
     @property
     def is_valid(self):
         return len(self._errors) == 0
-        
+
     @property
     def is_dirty(self):
         return self._values != self.props.initialValues

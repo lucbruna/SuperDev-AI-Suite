@@ -1,16 +1,17 @@
 """Reporter for test results and coverage."""
-from typing import List, Dict, Any
 from collections import Counter
-from .models import TestResult, TestStatus, CoverageReport
+from typing import Any
+
+from .models import CoverageReport, TestResult, TestStatus
 
 
 class TestReporter:
     """Generates reports from test results."""
 
     def __init__(self):
-        self._reports: List[Dict[str, Any]] = []
+        self._reports: list[dict[str, Any]] = []
 
-    def generate_report(self, results: List[TestResult]) -> Dict[str, Any]:
+    def generate_report(self, results: list[TestResult]) -> dict[str, Any]:
         total = len(results)
         status_counts = Counter(r.status.value for r in results)
         passed = status_counts.get("passed", 0)
@@ -37,7 +38,7 @@ class TestReporter:
         self._reports.append(report)
         return report
 
-    def generate_coverage_summary(self, coverage: CoverageReport) -> Dict[str, Any]:
+    def generate_coverage_summary(self, coverage: CoverageReport) -> dict[str, Any]:
         return {
             "line_coverage": coverage.line_coverage,
             "function_coverage": coverage.function_coverage,
@@ -46,10 +47,10 @@ class TestReporter:
             "files_covered": len(coverage.files),
         }
 
-    def get_all_reports(self) -> List[Dict[str, Any]]:
+    def get_all_reports(self) -> list[dict[str, Any]]:
         return list(self._reports)
 
-    def format_text(self, report: Dict[str, Any]) -> str:
+    def format_text(self, report: dict[str, Any]) -> str:
         lines = [
             "=== Test Report ===",
             f"Total: {report['total']}",

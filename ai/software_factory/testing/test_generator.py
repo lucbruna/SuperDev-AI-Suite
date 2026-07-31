@@ -1,5 +1,4 @@
 """Generator for test cases and test code."""
-from typing import List, Dict, Any, Optional
 from .models import TestCase, TestCategory
 
 
@@ -7,10 +6,10 @@ class TestGenerator:
     """Generates test cases from module specifications."""
 
     def __init__(self):
-        self._templates: Dict[str, str] = {}
+        self._templates: dict[str, str] = {}
 
     def generate_for_module(self, module_path: str,
-                            category: TestCategory = TestCategory.UNIT) -> List[TestCase]:
+                            category: TestCategory = TestCategory.UNIT) -> list[TestCase]:
         """Generate test cases for a module."""
         tests = []
         # Generate standard test patterns
@@ -59,8 +58,8 @@ class TestGenerator:
     def register_template(self, name: str, template: str) -> None:
         self._templates[name] = template
 
-    def get_template(self, name: str) -> Optional[str]:
+    def get_template(self, name: str) -> str | None:
         return self._templates.get(name)
 
-    def list_templates(self) -> List[str]:
+    def list_templates(self) -> list[str]:
         return list(self._templates.keys())

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List
+from typing import Any
 
 
 class ParallelExecutor:
@@ -10,12 +10,12 @@ class ParallelExecutor:
 
     def __init__(self, max_concurrent: int = 10) -> None:
         self._max_concurrent = max_concurrent
-        self._running: Dict[str, Dict[str, Any]] = {}
-        self._completed: List[Dict[str, Any]] = []
-        self._queue: List[Dict[str, Any]] = []
+        self._running: dict[str, dict[str, Any]] = {}
+        self._completed: list[dict[str, Any]] = []
+        self._queue: list[dict[str, Any]] = []
 
-    async def execute_batch(self, tasks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        results: List[Dict[str, Any]] = []
+    async def execute_batch(self, tasks: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        results: list[dict[str, Any]] = []
         for task in tasks:
             task_id = task.get("id", f"parallel_{len(self._completed)}")
             if self._active_count() >= self._max_concurrent:
@@ -51,7 +51,7 @@ class ParallelExecutor:
     def _active_count(self) -> int:
         return len(self._running)
 
-    def get_queue_status(self) -> Dict[str, Any]:
+    def get_queue_status(self) -> dict[str, Any]:
         return {
             "running": self._active_count(),
             "queued": len(self._queue),
@@ -59,5 +59,5 @@ class ParallelExecutor:
             "max_concurrent": self._max_concurrent,
         }
 
-    def get_completed(self) -> List[Dict[str, Any]]:
+    def get_completed(self) -> list[dict[str, Any]]:
         return list(self._completed)

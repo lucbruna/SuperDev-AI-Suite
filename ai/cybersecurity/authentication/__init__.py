@@ -1,10 +1,10 @@
 """Authentication subsystem"""
 from .auth_engine import AuthEngine, AuthSession
-from .login import LoginManager, LoginPolicy
-from .session import SessionManager, Session
-from .token_manager import TokenManager, Token
-from .mfa import MFAManager, MFAMethod, MFAConfig
 from .biometric import BiometricManager, BiometricType
+from .login import LoginManager, LoginPolicy
+from .mfa import MFAConfig, MFAManager, MFAMethod
+from .session import Session, SessionManager
+from .token_manager import Token, TokenManager
 
 __all__ = [
     "AuthEngine", "AuthSession",

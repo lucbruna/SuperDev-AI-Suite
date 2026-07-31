@@ -1,13 +1,14 @@
 """Validator for architecture designs."""
-from typing import List, Dict, Any
-from .models import ArchitectureComponent, Connector, ComponentType
+from typing import Any
+
+from .models import ArchitectureComponent, Connector
 
 
 class ArchitectureValidator:
     """Validates architecture designs for consistency and best practices."""
 
-    def validate(self, components: List[ArchitectureComponent],
-                 connectors: List[Connector]) -> Dict[str, Any]:
+    def validate(self, components: list[ArchitectureComponent],
+                 connectors: list[Connector]) -> dict[str, Any]:
         errors = []
         warnings = []
 
@@ -38,7 +39,7 @@ class ArchitectureValidator:
             "connectors_checked": len(connectors),
         }
 
-    def check_best_practices(self, components: List[ArchitectureComponent]) -> Dict[str, Any]:
+    def check_best_practices(self, components: list[ArchitectureComponent]) -> dict[str, Any]:
         practices = {
             "single_responsibility": [],
             "high_cohesion": [],

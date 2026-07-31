@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 from .concepts import Concept
 from .entities import Entity
@@ -13,12 +13,12 @@ class SemanticSearch:
     def search(
         self,
         query: str,
-        concepts: Dict[str, Concept],
-        entities: Dict[str, Entity],
-        links: List[SemanticLink],
-    ) -> List[Dict[str, Any]]:
+        concepts: dict[str, Concept],
+        entities: dict[str, Entity],
+        links: list[SemanticLink],
+    ) -> list[dict[str, Any]]:
         q = query.lower()
-        results: List[Dict[str, Any]] = []
+        results: list[dict[str, Any]] = []
         for name, concept in concepts.items():
             if q in name.lower() or q in concept.definition.lower():
                 results.append({"type": "concept", "name": name, "data": concept.to_dict()})

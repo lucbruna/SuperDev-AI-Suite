@@ -1,7 +1,7 @@
 """Cache Manager - Intelligent offline caching."""
-from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
 from datetime import datetime
+from typing import Any
 
 
 @dataclass
@@ -11,13 +11,13 @@ class CacheEntry:
     size_bytes: int = 0
     priority: int = 0
     created_at: datetime = field(default_factory=datetime.now)
-    expires_at: Optional[datetime] = None
+    expires_at: datetime | None = None
     access_count: int = 0
 
 
 class CacheManager:
     def __init__(self, max_size_bytes: int = 500 * 1024 * 1024):
-        self.entries: Dict[str, CacheEntry] = {}
+        self.entries: dict[str, CacheEntry] = {}
         self.max_size_bytes = max_size_bytes
         self.current_size: int = 0
 
@@ -29,7 +29,7 @@ class CacheManager:
         self.current_size += size_bytes
         return True
 
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         entry = self.entries.get(key)
         if entry:
             entry.access_count += 1
@@ -61,5 +61,5 @@ class CacheManager:
         min_key = min(self.entries, key=lambda k: (self.entries[k].priority, self.entries[k].access_count))
         self.remove(min_key)
 
-    def list_keys(self) -> List[str]:
+    def list_keys(self) -> list[str]:
         return list(self.entries.keys())

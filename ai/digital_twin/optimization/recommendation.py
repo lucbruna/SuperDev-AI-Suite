@@ -1,11 +1,13 @@
 """Recommendation engine."""
 from __future__ import annotations
-from typing import Any, Dict, List
+
+from typing import Any
+
 
 class RecommendationEngine:
     def __init__(self) -> None:
-        self._recommendations: List[Dict[str, Any]] = []
-    def generate(self, context: Dict[str, Any], rules: List[Dict[str, Any]] = None) -> Dict[str, Any]:
+        self._recommendations: list[dict[str, Any]] = []
+    def generate(self, context: dict[str, Any], rules: list[dict[str, Any]] = None) -> dict[str, Any]:
         rules = rules or [{"condition": "default", "action": "maintain", "priority": 1}]
         recs = []
         for rule in rules:
@@ -13,9 +15,9 @@ class RecommendationEngine:
         result = {"context": context, "recommendations": recs, "count": len(recs)}
         self._recommendations.append(result)
         return result
-    def prioritize(self, recommendations: List[Dict[str, Any]], metric: str = "priority") -> List[Dict[str, Any]]:
+    def prioritize(self, recommendations: list[dict[str, Any]], metric: str = "priority") -> list[dict[str, Any]]:
         return sorted(recommendations, key=lambda r: r.get(metric, 0), reverse=True)
-    def get_recommendations(self, limit: int = 20) -> List[Dict[str, Any]]:
+    def get_recommendations(self, limit: int = 20) -> list[dict[str, Any]]:
         return self._recommendations[-limit:]
     def count(self) -> int:
         return len(self._recommendations)

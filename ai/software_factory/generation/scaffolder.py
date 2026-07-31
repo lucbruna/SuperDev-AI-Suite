@@ -1,13 +1,14 @@
 """Scaffolder for creating project structures."""
-from typing import List, Dict, Any
-from .models import GeneratedFile, TemplateLanguage, ScaffoldConfig
+from typing import Any
+
+from .models import GeneratedFile, TemplateLanguage
 
 
 class Scaffolder:
     """Creates project scaffolding and boilerplate structures."""
 
     def __init__(self):
-        self._structures: Dict[str, Dict[str, str]] = {
+        self._structures: dict[str, dict[str, str]] = {
             "library": {
                 "src/__init__.py": '"""Package."""',
                 "tests/__init__.py": "",
@@ -27,7 +28,7 @@ class Scaffolder:
             },
         }
 
-    def scaffold(self, config: Dict[str, Any]) -> List[GeneratedFile]:
+    def scaffold(self, config: dict[str, Any]) -> list[GeneratedFile]:
         project_type = config.get("project_type", "library")
         project_name = config.get("project_name", "my_project")
         structure = self._structures.get(project_type, self._structures["library"])
@@ -42,11 +43,11 @@ class Scaffolder:
             ))
         return files
 
-    def register_structure(self, name: str, structure: Dict[str, str]) -> None:
+    def register_structure(self, name: str, structure: dict[str, str]) -> None:
         self._structures[name] = structure
 
-    def get_structure(self, name: str) -> Dict[str, str]:
+    def get_structure(self, name: str) -> dict[str, str]:
         return self._structures.get(name, {})
 
-    def list_structures(self) -> List[str]:
+    def list_structures(self) -> list[str]:
         return list(self._structures.keys())

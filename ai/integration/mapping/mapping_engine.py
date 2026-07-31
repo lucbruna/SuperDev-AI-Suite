@@ -1,10 +1,10 @@
 """
 Mapping Engine - Core data mapping
 """
-from typing import Dict, Any, Optional, List
+import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
-import hashlib
+from typing import Any
 
 
 @dataclass
@@ -22,14 +22,14 @@ class MappingConfig:
     name: str
     source_schema: str
     target_schema: str
-    rules: List[MappingRule] = field(default_factory=list)
+    rules: list[MappingRule] = field(default_factory=list)
     created_at: datetime = field(default_factory=datetime.now)
 
 
 class MappingEngine:
     def __init__(self):
-        self.mappings: Dict[str, MappingConfig] = {}
-        self.transform_log: List[Dict[str, Any]] = []
+        self.mappings: dict[str, MappingConfig] = {}
+        self.transform_log: list[dict[str, Any]] = []
 
     def create_mapping(self, name: str, source_schema: str, target_schema: str) -> MappingConfig:
         config = MappingConfig(name=name, source_schema=source_schema, target_schema=target_schema)
@@ -44,7 +44,7 @@ class MappingEngine:
             return rule
         return None
 
-    def map_data(self, mapping_name: str, source_data: Dict[str, Any]) -> Dict[str, Any]:
+    def map_data(self, mapping_name: str, source_data: dict[str, Any]) -> dict[str, Any]:
         config = self.mappings.get(mapping_name)
         if not config:
             return source_data
@@ -70,10 +70,10 @@ class MappingEngine:
             return float(value) if value else 0.0
         return value
 
-    def get_mapping(self, name: str) -> Optional[MappingConfig]:
+    def get_mapping(self, name: str) -> MappingConfig | None:
         return self.mappings.get(name)
 
-    def list_mappings(self) -> List[MappingConfig]:
+    def list_mappings(self) -> list[MappingConfig]:
         return list(self.mappings.values())
 
     def count(self) -> int:

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pytest
+
 from backend.middleware.auth_rate_limit import AuthRateLimiter
 
 

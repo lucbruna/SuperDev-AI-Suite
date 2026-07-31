@@ -1,5 +1,22 @@
 # SUPERDEV — SESSION STATE (2026-07-24)
 
+## 📋 ANÁLISE DE GAPS DO ECOSSISTEMA
+
+**Status:** ✅ **100%** — checagem completa da árvore realizada em 2026-07-31 (46 módulos, ~6.500 `.py`, 683 testes)
+
+**Documento completo: [`docs/ECOSYSTEM_GAP_ANALYSIS.md`](docs/ECOSYSTEM_GAP_ANALYSIS.md)** — inventário por módulo, stubs reais, módulos sem testes, módulos não exportados no `ai_platform`, volumes do spec e plano priorizado P0/P1/P2/P3.
+
+**Principais descobertas:**
+- 🔴 **~50 arquivos stub em `devops/`** — kubernetes (13), networking (7), rollback (5), scaling (6), registry (5), terraform (5), environments (5), docker/volume_manager, ansible, backup, artifact — o núcleo build/provision/deploy é real, mas os subsistemas são stubs
+- 🔴 **`code/documentation/` (5) e `code/templates/` (2)** — todos stubs
+- 🔴 **5 módulos com 0 testes:** `planner` (146 py!), `builders` (56), `sdk` (10), `enterprise` (16), `agents` (19)
+- ⚠️ **Faltam no `ai_platform`:** `knowledge` (Volume 14 completo!), `code`, `monitoring`, `planner`, `workflow`, `finance_intelligence`, `project`, `agent_orchestration`, `sdk`, `builders`, `agents` (11 módulos)
+- ⚠️ Stubs pontuais: `api/graphql/resolver.py`, `backend/security/sso.py` (SAML), `planner/tools/vector/document_loader.py` (PDF)
+
+**Próximo passo recomendado (P0):** implementar os subsistemas `devops/kubernetes/` (13 arquivos) com testes, seguindo o padrão do DockerEngine/CloudEngine.
+
+---
+
 ## ✅ CONCLUÍDO (25 itens)
 1. Testes unitários e de integração (pytest + vitest)
 2. CI/CD workflows (GitHub Actions) — lint, test, build, deploy
@@ -281,6 +298,40 @@
 - **Wiring:** `build_llm_context(path, ..., query=None)` — quando `query` é fornecido, a seleção BFS é reordenada antes de injetar no `PromptBuilder` (arquivos mais relevantes entram primeiro no prompt); `query` retornado no dict; `query=None` preserva a ordem BFS original (entradas com relevance 0); `ask_llm` propaga `query`
 - **Exemplo:** `examples/llm-navigation/main.py` passo 3 agora passa `query='Order'` e imprime a seleção rankeada com `rel=` e símbolos casados — smoke: `models/order.py` (rel 6, Order+OrderItem) vem antes de `services/order_service.py` (rel 4); README documenta o novo passo
 - **Testes:** `TestRankSelection` (5 unit tests: query vazio preserva ordem, pesos class>function>import, seeds primeiro, case-insensitive, não-casados = 0) + `test_query_ranking_prioritizes_relevant_files` (end-to-end no demo) — **76 verdes** nas suítes do módulo code
+
+---
+
+## ✅ API PÚBLICA DE RANKING NO SymbolIndex (rank(query) reutilizável)
+
+**Status:** ✅ **100%** — o ranking virou API pública e o `find_symbols` devolve matches já ordenados por relevância
+
+- **`SymbolIndex.rank(query)`** (`code/understanding/symbol_index.py`): retorna os símbolos que casam com o query como `[{name, locations, relevance}]` **ordenados por relevância decrescente** — cada símbolo pontua pela **soma** dos pesos por location (`RELEVANCE_WEIGHTS = {class: 3, function: 2, import: 1}` exportado no `code/understanding/__init__.py`; classe definida em 2 arquivos = 6); ordenação estável para empates; query vazio casa tudo; sem match → `[]`
+- **Reuso no `code/code_engine.py`:** `_rank_selection` agora consome `index.rank(query)` (acúmulo por arquivo inalterado — ordem de iteração não afeta o resultado, matemática idêntica) e **`find_symbols` retorna `index.rank(query)` diretamente** — matches já ordenados por relevância, cada um com `relevance` (superconjunto do formato antigo, sem quebra de consumidores); docstring atualizado
+- **Exemplo:** `examples/llm-navigation/main.py` passo 2 imprime os matches na ordem rankeada (classes primeiro, imports por último); README atualizado
+- **Testes:** `TestSymbolRank` (6 unit tests: pesos por kind, agregação de locations = 6, case-insensitive, query vazio, sem match, empates estáveis) + `test_find_symbols_matches_sorted_by_relevance` (contrato real: `relevance` não-crescente, top match é classe, últimos são imports puros — o proxy `max`-por-match era frágil pois `rank` ordena por soma) — **83 verdes** nas suítes do módulo code
+
+---
+
+## ✅ TRUNCAMENTO POR ARQUIVO NO PROMPT BUILDER (budgets apertados)
+
+**Status:** ✅ **100%** — o ranking sobrevive a budgets apertados via `max_file_tokens`
+
+- **`PromptBuilder(max_tokens=..., max_file_tokens=...)`** (`code/understanding/prompt_builder.py`): `max_file_tokens=None` desabilita (retrocompatível); `_truncate_content(path, content)` trunca arquivos grandes **no meio do bloco `### FILE`** — mantém as linhas da cabeça que cabem em `budget//2` tokens + as linhas da cauda que cabem no restante, com marcador `# ... [N linhas / ~M tokens truncados] ...`; fallback de slice por caracteres quando uma única linha estoura o budget (consistente com a heurística ~4 chars/token); paths truncados ficam em `last_truncated` (reset a cada `build`)
+- **Wiring:** `build_llm_context(path, ..., max_file_tokens=None)` repassa ao `PromptBuilder` e o resultado ganha `truncated_files` (contagem) e `max_file_tokens`; `ask_llm` repassa `max_file_tokens` — a **seleção rankeada sobrevive a budgets apertados** (arquivos relevantes entram truncados em vez de serem descartados)
+- **Exemplo:** `examples/llm-navigation/main.py` novo passo 5 "BUDGET APERTADO" (`max_tokens=600`, `max_file_tokens=30` → 5 arquivos truncados, `prompt_tokens=370`, `fits_budget=True`, marcador presente); passo do LLM renumerado para 6; README documenta
+- **Testes:** `TestPromptTruncation` (6 unit tests: desabilitado por default, arquivo curto intocado, longo truncado no meio mantendo fn_0/fn_99 sem fn_50, fallback de linha gigante, prompt truncado cabe no budget, via `build_from_selection`) + `test_tight_budget_truncates_files_in_middle` (end-to-end no demo) — **90 verdes** nas suítes do módulo code
+
+---
+
+## ✅ SEÇÃO FOCO NO ask_llm (ranking → instrução → medição da resposta)
+
+**Status:** ✅ **100%** — o ranking orienta a instrução (`Foco: ...`) e mede a melhora via cobertura de símbolos
+
+- **`build_llm_context`** agora retorna **`ranked_symbols`** (os matches do `SymbolIndex.rank(query)`), para o `ask_llm` reusar o ranking sem re-escaneamento
+- **`_focus_symbols(ranked, limit=4)`** (`code/code_engine.py`): mantém os símbolos mais relevantes que são **definidos** (pula imports puros — nomes de módulo são ruído numa linha de foco), na ordem de relevância
+- **`ask_llm(..., focus=True, focus_limit=4)`**: com `query` dado, os símbolos-foco são anexados à instrução como seção **`Foco: Order, OrderItem, ...`** (o contexto é reconstruído para a seção entrar no prompt) e o resultado ganha `focus = {symbols, section, overhead_tokens, coverage}` — `coverage` = fração dos símbolos-foco realmente citados na resposta (match substring; proxy barato e determinístico de melhora — comparar com baseline `focus=False`); substring faz `Order` cobrir também `OrderItem` (overcount documentado)
+- **Exemplo:** `examples/llm-navigation/main.py` passo 6 envia `query='Order'` e imprime seção/coverage; passo 7 registra `FocusEchoProvider` (MockProvider que ecoa a linha `Foco:` na resposta) — smoke: **baseline 0% → com foco 100%, overhead +13 tokens**
+- **Testes:** `TestFocusSymbols` (4 unit tests: ordem de relevância, pula imports puros, respeita limit, entrada vazia) + testes no `test_example_llm_navigation.py` (seção adicionada order-insensitive — o assert de posição era frágil pois a ordem segue o scan/parse do demo; foco desabilitado; coverage 100% com echo provider; medições no main entrypoint) — **97 verdes** nas suítes do módulo code
 
 ---
 

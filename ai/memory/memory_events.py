@@ -1,20 +1,20 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Callable, Dict, List, Optional
+from collections.abc import Callable
+from typing import Any
 
 from .memory_types import MemoryEventType
 
-
-EventHandler = Callable[[Dict[str, Any]], None]
+EventHandler = Callable[[dict[str, Any]], None]
 
 
 class MemoryEvents:
     """Event bus for publishing and subscribing to memory events."""
 
     def __init__(self):
-        self._handlers: Dict[str, List[EventHandler]] = {}
-        self._history: List[Dict[str, Any]] = []
+        self._handlers: dict[str, list[EventHandler]] = {}
+        self._history: list[dict[str, Any]] = []
         self._max_history: int = 1000
 
     def subscribe(self, event_type: str | MemoryEventType, handler: EventHandler) -> None:
@@ -30,7 +30,7 @@ class MemoryEvents:
             return True
         return False
 
-    async def publish(self, event_type: str | MemoryEventType, data: Dict[str, Any]) -> None:
+    async def publish(self, event_type: str | MemoryEventType, data: dict[str, Any]) -> None:
         key = event_type.name if isinstance(event_type, MemoryEventType) else event_type
         event = {
             "type": key,
@@ -44,7 +44,7 @@ class MemoryEvents:
         for handler in handlers:
             handler(event)
 
-    def get_history(self, event_type: str | None = None, limit: int = 100) -> List[Dict[str, Any]]:
+    def get_history(self, event_type: str | None = None, limit: int = 100) -> list[dict[str, Any]]:
         if event_type:
             key = event_type.name if isinstance(event_type, MemoryEventType) else event_type
             return [e for e in self._history if e["type"] == key][-limit:]

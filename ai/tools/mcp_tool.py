@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from backend.mcp.server import register_tool, register_handler, ToolDefinition
 from backend.mcp.client import MCPClient
+from backend.mcp.server import ToolDefinition, register_handler, register_tool
 
 
 class MCPTool:

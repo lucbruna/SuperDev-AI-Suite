@@ -1,8 +1,10 @@
 """Firewall engine."""
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
+
+import time
 from enum import Enum
-import time, uuid
+from typing import Any
+
 
 class FirewallAction(Enum):
     ALLOW = "allow"
@@ -24,10 +26,10 @@ class FirewallRule:
 
 class FirewallEngine:
     def __init__(self) -> None:
-        self._rules: Dict[str, FirewallRule] = {}
-        self._traffic_log: List[Dict[str, Any]] = []
+        self._rules: dict[str, FirewallRule] = {}
+        self._traffic_log: list[dict[str, Any]] = []
         self._blocked_ips: set[str] = set()
-        self._rate_limits: Dict[str, List[float]] = {}
+        self._rate_limits: dict[str, list[float]] = {}
     def add_rule(self, rule_id: str, name: str, source: str = "*", destination: str = "*", port: int = 0, action: FirewallAction = FirewallAction.ALLOW) -> FirewallRule:
         rule = FirewallRule(rule_id, name, source, destination, port, action)
         self._rules[rule_id] = rule
@@ -37,7 +39,7 @@ class FirewallEngine:
             del self._rules[rule_id]
             return True
         return False
-    def check_traffic(self, source_ip: str, dest_ip: str, dest_port: int) -> Dict[str, Any]:
+    def check_traffic(self, source_ip: str, dest_ip: str, dest_port: int) -> dict[str, Any]:
         if source_ip in self._blocked_ips:
             return {"allowed": False, "action": "blocked_ip", "reason": "IP is blocked"}
         for rule in sorted(self._rules.values(), key=lambda r: r.priority):
@@ -58,12 +60,12 @@ class FirewallEngine:
             self._blocked_ips.remove(ip)
             return True
         return False
-    def get_rules(self, enabled_only: bool = True) -> List[Dict[str, Any]]:
+    def get_rules(self, enabled_only: bool = True) -> list[dict[str, Any]]:
         rules = list(self._rules.values())
         if enabled_only:
             rules = [r for r in rules if r.enabled]
         return [{"id": r.rule_id, "name": r.name, "source": r.source, "dest": r.destination, "port": r.port, "action": r.action.value, "enabled": r.enabled} for r in rules]
-    def get_traffic_log(self, limit: int = 100) -> List[Dict[str, Any]]:
+    def get_traffic_log(self, limit: int = 100) -> list[dict[str, Any]]:
         return self._traffic_log[-limit:]
-    def stats(self) -> Dict[str, Any]:
+    def stats(self) -> dict[str, Any]:
         return {"rules": len(self._rules), "blocked_ips": len(self._blocked_ips), "log_entries": len(self._traffic_log)}

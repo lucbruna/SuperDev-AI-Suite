@@ -29,7 +29,7 @@ class ToolLoader:
         tools: list[ITool] = []
         try:
             package = importlib.import_module(package_path)
-            for importer, modname, ispkg in pkgutil.iter_modules(package.__path__):
+            for _importer, modname, ispkg in pkgutil.iter_modules(package.__path__):
                 if not ispkg:
                     full_path = f"{package_path}.{modname}"
                     tools.extend(self.load_module(full_path))

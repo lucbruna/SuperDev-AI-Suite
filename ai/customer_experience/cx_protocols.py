@@ -1,7 +1,7 @@
 """CX Protocols — Protocol definitions for customer experience."""
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, Any, List
+from typing import Any
 
 
 class CXProtocolType(Enum):
@@ -20,12 +20,12 @@ class CXProtocolConfig:
     base_url: str = ""
     auth_required: bool = True
     rate_limit: int = 1000
-    settings: Dict[str, Any] = field(default_factory=dict)
+    settings: dict[str, Any] = field(default_factory=dict)
 
 
 class CXProtocols:
     def __init__(self):
-        self.protocols: Dict[str, CXProtocolConfig] = {}
+        self.protocols: dict[str, CXProtocolConfig] = {}
 
     def register(self, name: str, protocol_type: CXProtocolType = CXProtocolType.REST, **kwargs) -> CXProtocolConfig:
         config = CXProtocolConfig(name=name, protocol_type=protocol_type, **kwargs)
@@ -35,7 +35,7 @@ class CXProtocols:
     def get(self, name: str) -> CXProtocolConfig | None:
         return self.protocols.get(name)
 
-    def list_protocols(self) -> List[CXProtocolConfig]:
+    def list_protocols(self) -> list[CXProtocolConfig]:
         return list(self.protocols.values())
 
     def deregister(self, name: str) -> bool:

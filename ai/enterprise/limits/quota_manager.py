@@ -1,11 +1,11 @@
 """Quota manager."""
 from __future__ import annotations
-from typing import Any, Dict
+
 
 class QuotaManager:
     def __init__(self) -> None:
-        self._quotas: Dict[str, Dict[str, float]] = {}
-        self._current: Dict[str, Dict[str, float]] = {}
+        self._quotas: dict[str, dict[str, float]] = {}
+        self._current: dict[str, dict[str, float]] = {}
     def set_quota(self, org_id: str, metric: str, limit: float) -> None:
         self._quotas.setdefault(org_id, {})[metric] = limit
     def get_quota(self, org_id: str, metric: str) -> float:
@@ -31,5 +31,5 @@ class QuotaManager:
             self._current.get(org_id, {}).pop(metric, None)
             return old
         return sum(self._current.pop(org_id, {}).values())
-    def list_quotas(self, org_id: str) -> Dict[str, Dict[str, float]]:
+    def list_quotas(self, org_id: str) -> dict[str, dict[str, float]]:
         return {"limits": dict(self._quotas.get(org_id, {})), "usage": dict(self._current.get(org_id, {}))}

@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from backend.schemas.base import BaseSchema
 from pydantic import BaseModel, Field
+
+from backend.schemas.base import BaseSchema
 
 # ── Knowledge Base Schemas ─────────────────────────────────────
 

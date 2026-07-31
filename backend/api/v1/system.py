@@ -10,9 +10,10 @@ from __future__ import annotations
 from datetime import UTC
 from typing import Any
 
-from backend.dependencies import get_current_active_user
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
+
+from backend.dependencies import get_current_active_user
 
 router = APIRouter(
     tags=["system"],

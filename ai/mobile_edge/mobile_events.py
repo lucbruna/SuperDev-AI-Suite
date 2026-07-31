@@ -1,9 +1,11 @@
 """Mobile Events - Event-driven messaging for mobile/edge platform."""
-from typing import Dict, Any, Optional, List, Callable
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
+import contextlib
 import hashlib
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class MobileEventType(Enum):
@@ -27,24 +29,22 @@ class MobileEvent:
     event_id: str
     event_type: MobileEventType
     device_id: str
-    data: Dict[str, Any] = field(default_factory=dict)
+    data: dict[str, Any] = field(default_factory=dict)
     timestamp: datetime = field(default_factory=datetime.now)
 
 
 class MobileEventBus:
     def __init__(self):
-        self.events: List[MobileEvent] = []
-        self.subscribers: Dict[MobileEventType, List[Callable]] = {}
+        self.events: list[MobileEvent] = []
+        self.subscribers: dict[MobileEventType, list[Callable]] = {}
 
-    def publish(self, event_type: MobileEventType, device_id: str, data: Dict[str, Any] = None) -> MobileEvent:
+    def publish(self, event_type: MobileEventType, device_id: str, data: dict[str, Any] = None) -> MobileEvent:
         event_id = hashlib.sha256(f"{event_type.value}{device_id}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
         event = MobileEvent(event_id=event_id, event_type=event_type, device_id=device_id, data=data or {})
         self.events.append(event)
         for handler in self.subscribers.get(event_type, []):
-            try:
+            with contextlib.suppress(Exception):
                 handler(event)
-            except Exception:
-                pass
         return event
 
     def subscribe(self, event_type: MobileEventType, handler: Callable) -> None:
@@ -59,7 +59,7 @@ class MobileEventBus:
                 pass
         return False
 
-    def get_events(self, event_type: MobileEventType = None, device_id: str = None, limit: int = 100) -> List[MobileEvent]:
+    def get_events(self, event_type: MobileEventType = None, device_id: str = None, limit: int = 100) -> list[MobileEvent]:
         events = self.events
         if event_type:
             events = [e for e in events if e.event_type == event_type]

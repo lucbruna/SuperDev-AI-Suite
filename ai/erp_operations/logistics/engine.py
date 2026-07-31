@@ -1,22 +1,21 @@
 """Logistics engine."""
-import uuid
 from datetime import datetime
-from typing import Dict, List, Optional
-from .models import Shipment, Route, Carrier, DeliveryProof, ShipmentStatus, CarrierType
+
+from .models import Carrier, CarrierType, DeliveryProof, Route, Shipment, ShipmentStatus
 
 
 class LogisticsEngine:
     def __init__(self):
-        self._shipments: Dict[str, Shipment] = {}
-        self._routes: Dict[str, Route] = {}
-        self._carriers: Dict[str, Carrier] = {}
-        self._proofs: List[DeliveryProof] = []
+        self._shipments: dict[str, Shipment] = {}
+        self._routes: dict[str, Route] = {}
+        self._carriers: dict[str, Carrier] = {}
+        self._proofs: list[DeliveryProof] = []
 
     def create_shipment(self, shipment: Shipment) -> Shipment:
         self._shipments[shipment.shipment_id] = shipment
         return shipment
 
-    def get_shipment(self, shipment_id: str) -> Optional[Shipment]:
+    def get_shipment(self, shipment_id: str) -> Shipment | None:
         return self._shipments.get(shipment_id)
 
     def update_shipment_status(self, shipment_id: str, status: ShipmentStatus) -> bool:
@@ -32,20 +31,20 @@ class LogisticsEngine:
         self._routes[route.route_id] = route
         return route
 
-    def get_route(self, route_id: str) -> Optional[Route]:
+    def get_route(self, route_id: str) -> Route | None:
         return self._routes.get(route_id)
 
-    def find_routes(self, origin: str, destination: str) -> List[Route]:
+    def find_routes(self, origin: str, destination: str) -> list[Route]:
         return [r for r in self._routes.values() if r.origin == origin and r.destination == destination]
 
     def add_carrier(self, carrier: Carrier) -> Carrier:
         self._carriers[carrier.carrier_id] = carrier
         return carrier
 
-    def get_carrier(self, carrier_id: str) -> Optional[Carrier]:
+    def get_carrier(self, carrier_id: str) -> Carrier | None:
         return self._carriers.get(carrier_id)
 
-    def get_best_carrier(self, weight: float, carrier_type: Optional[CarrierType] = None) -> Optional[Carrier]:
+    def get_best_carrier(self, weight: float, carrier_type: CarrierType | None = None) -> Carrier | None:
         candidates = [c for c in self._carriers.values() if c.active and c.max_weight >= weight]
         if carrier_type:
             candidates = [c for c in candidates if c.carrier_type == carrier_type]
@@ -57,7 +56,7 @@ class LogisticsEngine:
         self._proofs.append(proof)
         return proof
 
-    def get_proof(self, shipment_id: str) -> Optional[DeliveryProof]:
+    def get_proof(self, shipment_id: str) -> DeliveryProof | None:
         for p in self._proofs:
             if p.shipment_id == shipment_id:
                 return p

@@ -3,12 +3,13 @@ from __future__ import annotations
 from typing import Any
 from uuid import UUID
 
-from backend.database.session import get_db
-from backend.dependencies import get_current_active_user
-from backend.verification.verification_loop import VerificationLoop
 from fastapi import APIRouter, Depends, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from backend.database.session import get_db
+from backend.dependencies import get_current_active_user
+from backend.verification.verification_loop import VerificationLoop
 
 router = APIRouter(dependencies=[Depends(get_current_active_user)])
 
@@ -48,7 +49,7 @@ async def run_verification(
         provider_name=request.provider,
         max_iterations=request.max_iterations,
     )
-    
+
     result = await loop.run(
         task_description=request.task_description,
         language=request.language,
@@ -57,7 +58,7 @@ async def run_verification(
         existing_code=request.existing_code,
         test_files=request.test_files,
     )
-    
+
     return VerificationResponse(
         task_id=result.task_id,
         success=result.success,
@@ -99,7 +100,7 @@ async def generate_code(
         language=request.language,
         context=request.context,
     )
-    
+
     return CodeGenerationResponse(
         success=result.success,
         code=result.code,
@@ -127,10 +128,10 @@ async def execute_code(
     db: AsyncSession = Depends(get_db),
 ) -> CodeExecutionResponse:
     from backend.verification.executor import CodeExecutor
-    
+
     executor = CodeExecutor()
     result = await executor.execute(request.code, request.language)
-    
+
     return CodeExecutionResponse(
         success=result.success,
         output=result.stdout,
@@ -165,17 +166,17 @@ async def review_code(
 ) -> CodeReviewResponse:
     from backend.providers.provider_registry import ProviderRegistry
     from backend.verification.reviewer import CodeReviewer
-    
+
     registry = ProviderRegistry()
     provider = None
     if request.provider:
         provider_class = registry.get(request.provider)
         if provider_class:
             provider = provider_class()
-    
+
     reviewer = CodeReviewer(provider)
     result = await reviewer.review(request.code, request.language, request.context)
-    
+
     return CodeReviewResponse(
         success=result.success,
         score=result.score,

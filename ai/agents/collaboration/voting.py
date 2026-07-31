@@ -1,21 +1,21 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 
 class Voting:
     """Voting mechanism for group decisions."""
 
     def __init__(self) -> None:
-        self._ballots: Dict[str, Dict[str, Any]] = {}
+        self._ballots: dict[str, dict[str, Any]] = {}
 
     def cast(self, voter: str, topic: str, choice: Any) -> None:
         key = f"{topic}:{voter}"
         self._ballots[key] = {"voter": voter, "topic": topic, "choice": choice}
 
-    def tally(self, topic: str) -> Dict[Any, int]:
+    def tally(self, topic: str) -> dict[Any, int]:
         votes = [v for v in self._ballots.values() if v["topic"] == topic]
-        counts: Dict[Any, int] = {}
+        counts: dict[Any, int] = {}
         for v in votes:
             counts[v["choice"]] = counts.get(v["choice"], 0) + 1
         return counts

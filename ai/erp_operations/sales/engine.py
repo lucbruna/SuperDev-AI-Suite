@@ -1,22 +1,19 @@
 """Sales engine."""
-import uuid
-from datetime import datetime
-from typing import Dict, List, Optional
-from .models import SalesOrder, Quotation, SalesTarget, Commission, SalesOrderStatus, QuotationStatus
+from .models import Commission, Quotation, QuotationStatus, SalesOrder, SalesOrderStatus, SalesTarget
 
 
 class SalesEngine:
     def __init__(self):
-        self._orders: Dict[str, SalesOrder] = {}
-        self._quotations: Dict[str, Quotation] = {}
-        self._targets: Dict[str, SalesTarget] = {}
-        self._commissions: List[Commission] = []
+        self._orders: dict[str, SalesOrder] = {}
+        self._quotations: dict[str, Quotation] = {}
+        self._targets: dict[str, SalesTarget] = {}
+        self._commissions: list[Commission] = []
 
     def create_order(self, order: SalesOrder) -> SalesOrder:
         self._orders[order.order_id] = order
         return order
 
-    def get_order(self, order_id: str) -> Optional[SalesOrder]:
+    def get_order(self, order_id: str) -> SalesOrder | None:
         return self._orders.get(order_id)
 
     def update_order_status(self, order_id: str, status: SalesOrderStatus) -> bool:
@@ -30,7 +27,7 @@ class SalesEngine:
         self._quotations[quotation.quotation_id] = quotation
         return quotation
 
-    def get_quotation(self, quotation_id: str) -> Optional[Quotation]:
+    def get_quotation(self, quotation_id: str) -> Quotation | None:
         return self._quotations.get(quotation_id)
 
     def accept_quotation(self, quotation_id: str) -> bool:
@@ -44,17 +41,17 @@ class SalesEngine:
         self._targets[target.target_id] = target
         return target
 
-    def get_target(self, target_id: str) -> Optional[SalesTarget]:
+    def get_target(self, target_id: str) -> SalesTarget | None:
         return self._targets.get(target_id)
 
-    def get_rep_targets(self, sales_rep: str) -> List[SalesTarget]:
+    def get_rep_targets(self, sales_rep: str) -> list[SalesTarget]:
         return [t for t in self._targets.values() if t.sales_rep == sales_rep]
 
     def add_commission(self, commission: Commission) -> Commission:
         self._commissions.append(commission)
         return commission
 
-    def get_commissions(self, sales_rep: str, period: Optional[str] = None) -> List[Commission]:
+    def get_commissions(self, sales_rep: str, period: str | None = None) -> list[Commission]:
         comms = [c for c in self._commissions if c.sales_rep == sales_rep]
         if period:
             comms = [c for c in comms if c.period == period]

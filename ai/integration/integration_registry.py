@@ -1,10 +1,10 @@
 """
 Integration Registry - Central registry for all integrations
 """
-from typing import Dict, Any, Optional, List
+import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
-import hashlib
+from typing import Any
 
 
 @dataclass
@@ -14,20 +14,20 @@ class RegistryEntry:
     integration_type: str
     endpoint: str = ""
     status: str = "registered"
-    capabilities: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    capabilities: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
     registered_at: datetime = field(default_factory=datetime.now)
-    last_accessed: Optional[datetime] = None
+    last_accessed: datetime | None = None
     access_count: int = 0
 
 
 class IntegrationRegistry:
     def __init__(self):
-        self.entries: Dict[str, RegistryEntry] = {}
-        self.categories: Dict[str, List[str]] = {}
-        self.aliases: Dict[str, str] = {}
+        self.entries: dict[str, RegistryEntry] = {}
+        self.categories: dict[str, list[str]] = {}
+        self.aliases: dict[str, str] = {}
 
-    def register(self, name: str, integration_type: str, endpoint: str = "", capabilities: List[str] = None, **kwargs) -> RegistryEntry:
+    def register(self, name: str, integration_type: str, endpoint: str = "", capabilities: list[str] = None, **kwargs) -> RegistryEntry:
         entry_id = hashlib.sha256(f"{name}{integration_type}".encode()).hexdigest()[:16]
         entry = RegistryEntry(entry_id=entry_id, name=name, integration_type=integration_type, endpoint=endpoint, capabilities=capabilities or [], metadata=kwargs)
         self.entries[entry_id] = entry
@@ -39,7 +39,7 @@ class IntegrationRegistry:
             return True
         return False
 
-    def lookup(self, name: str) -> Optional[RegistryEntry]:
+    def lookup(self, name: str) -> RegistryEntry | None:
         aliased = self.aliases.get(name, name)
         for entry in self.entries.values():
             if entry.name == aliased:
@@ -48,7 +48,7 @@ class IntegrationRegistry:
                 return entry
         return None
 
-    def lookup_by_id(self, entry_id: str) -> Optional[RegistryEntry]:
+    def lookup_by_id(self, entry_id: str) -> RegistryEntry | None:
         entry = self.entries.get(entry_id)
         if entry:
             entry.last_accessed = datetime.now()
@@ -63,17 +63,17 @@ class IntegrationRegistry:
         if entry_id not in self.categories[category]:
             self.categories[category].append(entry_id)
 
-    def get_by_category(self, category: str) -> List[RegistryEntry]:
+    def get_by_category(self, category: str) -> list[RegistryEntry]:
         ids = self.categories.get(category, [])
         return [self.entries[i] for i in ids if i in self.entries]
 
-    def search(self, query: str) -> List[RegistryEntry]:
+    def search(self, query: str) -> list[RegistryEntry]:
         return [e for e in self.entries.values() if query.lower() in e.name.lower() or query.lower() in e.integration_type.lower()]
 
-    def list_all(self) -> List[RegistryEntry]:
+    def list_all(self) -> list[RegistryEntry]:
         return list(self.entries.values())
 
-    def get_by_type(self, integration_type: str) -> List[RegistryEntry]:
+    def get_by_type(self, integration_type: str) -> list[RegistryEntry]:
         return [e for e in self.entries.values() if e.integration_type == integration_type]
 
     def count(self) -> int:

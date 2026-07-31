@@ -1,11 +1,13 @@
 """Load balancer."""
 from __future__ import annotations
-from typing import Any, Dict, List
+
+from typing import Any
+
 
 class LoadBalancer:
     def __init__(self) -> None:
-        self._targets: Dict[str, List[Dict[str, Any]]] = {}
-        self._connections: Dict[str, int] = {}
+        self._targets: dict[str, list[dict[str, Any]]] = {}
+        self._connections: dict[str, int] = {}
     def add_target(self, pool: str, target: str, weight: int = 1) -> bool:
         self._targets.setdefault(pool, []).append({"target": target, "weight": weight, "healthy": True})
         return True
@@ -14,7 +16,7 @@ class LoadBalancer:
             self._targets[pool] = [t for t in self._targets[pool] if t["target"] != target]
             return True
         return False
-    def route(self, pool: str) -> Dict[str, Any]:
+    def route(self, pool: str) -> dict[str, Any]:
         targets = self._targets.get(pool, [])
         healthy = [t for t in targets if t["healthy"]]
         if not healthy:
@@ -29,9 +31,9 @@ class LoadBalancer:
                     t["healthy"] = healthy
                     return True
         return False
-    def list_pools(self) -> List[str]:
+    def list_pools(self) -> list[str]:
         return list(self._targets.keys())
-    def list_targets(self, pool: str) -> List[Dict[str, Any]]:
+    def list_targets(self, pool: str) -> list[dict[str, Any]]:
         return self._targets.get(pool, [])
     def count(self) -> int:
         return sum(len(v) for v in self._targets.values())

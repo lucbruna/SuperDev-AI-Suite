@@ -1,12 +1,12 @@
 """
 Webhook Engine - Core webhook management
 """
-from typing import Dict, Any, Optional, List, Callable
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
-import json
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class WebhookStatus(Enum):
@@ -20,13 +20,13 @@ class Webhook:
     webhook_id: str
     name: str
     url: str
-    events: List[str] = field(default_factory=list)
+    events: list[str] = field(default_factory=list)
     secret: str = ""
     status: WebhookStatus = WebhookStatus.ACTIVE
-    headers: Dict[str, str] = field(default_factory=dict)
+    headers: dict[str, str] = field(default_factory=dict)
     retry_count: int = 3
     created_at: datetime = field(default_factory=datetime.now)
-    last_triggered: Optional[datetime] = None
+    last_triggered: datetime | None = None
     failure_count: int = 0
 
 
@@ -35,21 +35,21 @@ class WebhookEvent:
     event_id: str
     webhook_id: str
     event_type: str
-    payload: Dict[str, Any] = field(default_factory=dict)
+    payload: dict[str, Any] = field(default_factory=dict)
     status: str = "pending"
     attempts: int = 0
     response_code: int = 0
     created_at: datetime = field(default_factory=datetime.now)
-    completed_at: Optional[datetime] = None
+    completed_at: datetime | None = None
 
 
 class WebhookEngine:
     def __init__(self):
-        self.webhooks: Dict[str, Webhook] = {}
-        self.events: List[WebhookEvent] = []
-        self.handlers: Dict[str, List[Callable]] = {}
+        self.webhooks: dict[str, Webhook] = {}
+        self.events: list[WebhookEvent] = []
+        self.handlers: dict[str, list[Callable]] = {}
 
-    def register_webhook(self, name: str, url: str, events: List[str] = None, **kwargs) -> Webhook:
+    def register_webhook(self, name: str, url: str, events: list[str] = None, **kwargs) -> Webhook:
         webhook_id = hashlib.sha256(f"{name}{url}".encode()).hexdigest()[:16]
         webhook = Webhook(webhook_id=webhook_id, name=name, url=url, events=events or ["*"], **kwargs)
         self.webhooks[webhook_id] = webhook
@@ -61,7 +61,7 @@ class WebhookEngine:
             return True
         return False
 
-    def trigger_event(self, event_type: str, payload: Dict[str, Any]) -> List[WebhookEvent]:
+    def trigger_event(self, event_type: str, payload: dict[str, Any]) -> list[WebhookEvent]:
         triggered = []
         for webhook in self.webhooks.values():
             if webhook.status == WebhookStatus.ACTIVE and (event_type in webhook.events or "*" in webhook.events):
@@ -80,13 +80,13 @@ class WebhookEngine:
                 return True
         return False
 
-    def get_webhook(self, webhook_id: str) -> Optional[Webhook]:
+    def get_webhook(self, webhook_id: str) -> Webhook | None:
         return self.webhooks.get(webhook_id)
 
-    def list_webhooks(self) -> List[Webhook]:
+    def list_webhooks(self) -> list[Webhook]:
         return list(self.webhooks.values())
 
-    def get_events(self, webhook_id: str = None) -> List[WebhookEvent]:
+    def get_events(self, webhook_id: str = None) -> list[WebhookEvent]:
         if webhook_id:
             return [e for e in self.events if e.webhook_id == webhook_id]
         return self.events

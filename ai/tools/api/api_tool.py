@@ -3,10 +3,10 @@ from __future__ import annotations
 from typing import Any
 
 from ...base.base_tool import BaseTool
+from .auth import ApiAuth
 from .client import ApiClient
 from .request import ApiRequest
 from .response import ApiResponse
-from .auth import ApiAuth
 from .webhook import ApiWebhook
 
 

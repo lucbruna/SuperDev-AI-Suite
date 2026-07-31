@@ -1,8 +1,8 @@
 """Knowledge Engine Protocols — Protocol definitions for the knowledge platform."""
-from typing import Dict, Any, List, Optional
-from enum import Enum
 from dataclasses import dataclass, field
 from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class ProtocolType(Enum):
@@ -21,20 +21,20 @@ class ProtocolMessage:
     protocol_type: ProtocolType = ProtocolType.QUERY
     sender: str = ""
     receiver: str = ""
-    payload: Dict[str, Any] = field(default_factory=dict)
+    payload: dict[str, Any] = field(default_factory=dict)
     timestamp: datetime = field(default_factory=datetime.now)
 
 
 class KnowledgeProtocol:
     def __init__(self):
-        self._handlers: Dict[ProtocolType, List[callable]] = {}
+        self._handlers: dict[ProtocolType, list[callable]] = {}
 
     def register_handler(self, protocol_type: ProtocolType, handler: callable) -> None:
         if protocol_type not in self._handlers:
             self._handlers[protocol_type] = []
         self._handlers[protocol_type].append(handler)
 
-    def send(self, message: ProtocolMessage) -> List[Any]:
+    def send(self, message: ProtocolMessage) -> list[Any]:
         handlers = self._handlers.get(message.protocol_type, [])
         results = []
         for handler in handlers:
@@ -42,7 +42,7 @@ class KnowledgeProtocol:
             results.append(result)
         return results
 
-    def broadcast(self, message: ProtocolMessage) -> List[Any]:
+    def broadcast(self, message: ProtocolMessage) -> list[Any]:
         all_results = []
         for protocol_type in self._handlers:
             msg = ProtocolMessage(

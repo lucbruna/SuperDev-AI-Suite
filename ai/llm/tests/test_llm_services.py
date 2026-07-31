@@ -2,15 +2,14 @@ from __future__ import annotations
 
 import pytest
 
+from ..llm_events import LLMEventBus, LLMEventType
 from ..llm_logger import LLMLogger
 from ..llm_metrics import LLMMetricsCollector
-from ..llm_events import LLMEventBus, LLMEventType
 from ..llm_permissions import LLMPermissions
-from ..llm_security import LLMSecurity
-from ..llm_repository import LLMRepository
 from ..llm_registry import LLMRegistry
-from ..llm_scheduler import LLMLogger as LoggerActual
+from ..llm_repository import LLMRepository
 from ..llm_scheduler import LLMScheduler
+from ..llm_security import LLMSecurity
 from ..providers.mock_provider import MockProvider
 
 

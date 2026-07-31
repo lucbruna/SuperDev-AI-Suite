@@ -38,7 +38,7 @@ class SoftDeleteMixin:
 
 class UUIDMixin:
     @declared_attr
-    def id(cls) -> Mapped[UUID]:
+    def id(self) -> Mapped[UUID]:
         return mapped_column(
             PG_UUID(as_uuid=True),
             primary_key=True,

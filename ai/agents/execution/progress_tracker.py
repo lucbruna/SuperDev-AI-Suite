@@ -2,14 +2,14 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 class ProgressTracker:
     """Tracks progress of running operations with step-level granularity."""
 
     def __init__(self) -> None:
-        self._operations: Dict[str, Dict[str, Any]] = {}
+        self._operations: dict[str, dict[str, Any]] = {}
 
     def start(self, operation_id: str, total_steps: int) -> None:
         self._operations[operation_id] = {
@@ -44,7 +44,7 @@ class ProgressTracker:
             op["error"] = error
             op["completed_at"] = time.time()
 
-    def get_progress(self, operation_id: str) -> Optional[Dict[str, Any]]:
+    def get_progress(self, operation_id: str) -> dict[str, Any] | None:
         op = self._operations.get(operation_id)
         if op:
             return {
@@ -56,7 +56,7 @@ class ProgressTracker:
             }
         return None
 
-    def get_all(self) -> Dict[str, Dict[str, Any]]:
+    def get_all(self) -> dict[str, dict[str, Any]]:
         return {
             oid: {"status": o["status"], "percent": o.get("percent", 0.0)}
             for oid, o in self._operations.items()

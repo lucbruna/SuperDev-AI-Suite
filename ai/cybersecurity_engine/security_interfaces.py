@@ -1,26 +1,27 @@
 """Cybersecurity Engine Interfaces — Protocol interfaces for security operations."""
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
-from .security_models import Threat, Vulnerability, Incident, SecurityUser
+from typing import Any
+
+from .security_models import Incident, SecurityUser, Threat, Vulnerability
 
 
 class ThreatDetectionInterface(ABC):
     @abstractmethod
-    def detect(self, data: Dict[str, Any]) -> Optional[Threat]:
+    def detect(self, data: dict[str, Any]) -> Threat | None:
         pass
 
     @abstractmethod
-    def get_threats(self, severity: Optional[str] = None) -> List[Threat]:
+    def get_threats(self, severity: str | None = None) -> list[Threat]:
         pass
 
 
 class VulnerabilityInterface(ABC):
     @abstractmethod
-    def scan(self, target: str) -> List[Vulnerability]:
+    def scan(self, target: str) -> list[Vulnerability]:
         pass
 
     @abstractmethod
-    def get_vulnerabilities(self, severity: Optional[str] = None) -> List[Vulnerability]:
+    def get_vulnerabilities(self, severity: str | None = None) -> list[Vulnerability]:
         pass
 
 
@@ -30,13 +31,13 @@ class IncidentResponseInterface(ABC):
         pass
 
     @abstractmethod
-    def get_incidents(self, status: Optional[str] = None) -> List[Incident]:
+    def get_incidents(self, status: str | None = None) -> list[Incident]:
         pass
 
 
 class IdentityInterface(ABC):
     @abstractmethod
-    def authenticate(self, username: str, password: str) -> Optional[SecurityUser]:
+    def authenticate(self, username: str, password: str) -> SecurityUser | None:
         pass
 
     @abstractmethod
@@ -56,9 +57,9 @@ class EncryptionInterface(ABC):
 
 class MonitoringInterface(ABC):
     @abstractmethod
-    def monitor(self, event: Dict[str, Any]) -> None:
+    def monitor(self, event: dict[str, Any]) -> None:
         pass
 
     @abstractmethod
-    def get_alerts(self, severity: Optional[str] = None) -> List[Dict[str, Any]]:
+    def get_alerts(self, severity: str | None = None) -> list[dict[str, Any]]:
         pass

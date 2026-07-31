@@ -1,9 +1,9 @@
 """BI Models — Core data models for business intelligence."""
-from dataclasses import dataclass, field
-from enum import Enum
-from typing import List, Optional, Dict, Any
-from datetime import datetime
 import uuid
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class DataSourceType(Enum):
@@ -54,9 +54,9 @@ class DataSource:
     name: str = ""
     source_type: DataSourceType = DataSourceType.DATABASE
     connection_string: str = ""
-    schema: Dict[str, str] = field(default_factory=dict)
+    schema: dict[str, str] = field(default_factory=dict)
     refresh_interval: int = 300
-    last_refreshed: Optional[datetime] = None
+    last_refreshed: datetime | None = None
     active: bool = True
 
 
@@ -66,7 +66,7 @@ class DataPoint:
     source_id: str = ""
     metric_name: str = ""
     value: float = 0.0
-    dimensions: Dict[str, str] = field(default_factory=dict)
+    dimensions: dict[str, str] = field(default_factory=dict)
     timestamp: datetime = field(default_factory=datetime.utcnow)
 
 
@@ -105,8 +105,8 @@ class Insight:
     analysis_type: AnalysisType = AnalysisType.DESCRIPTIVE
     confidence: float = 0.0
     impact: str = "medium"
-    data_points: List[str] = field(default_factory=list)
-    recommendations: List[str] = field(default_factory=list)
+    data_points: list[str] = field(default_factory=list)
+    recommendations: list[str] = field(default_factory=list)
     created_at: datetime = field(default_factory=datetime.utcnow)
 
 
@@ -128,7 +128,7 @@ class Decision:
     title: str = ""
     decision_type: DecisionType = DecisionType.STRATEGIC
     context: str = ""
-    options: List[Dict[str, Any]] = field(default_factory=list)
+    options: list[dict[str, Any]] = field(default_factory=list)
     recommendation: str = ""
     confidence: float = 0.0
     risk_level: RiskLevel = RiskLevel.MEDIUM
@@ -143,6 +143,6 @@ class Report:
     title: str = ""
     report_type: str = ""
     content: str = ""
-    sections: List[Dict[str, Any]] = field(default_factory=list)
+    sections: list[dict[str, Any]] = field(default_factory=list)
     generated_at: datetime = field(default_factory=datetime.utcnow)
     author: str = "BI Engine"

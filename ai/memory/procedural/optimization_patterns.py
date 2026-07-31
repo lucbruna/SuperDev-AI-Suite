@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class OptimizationPattern:
     """A pattern for optimizing execution."""
 
-    def __init__(self, pattern_id: str, name: str, target: str, technique: str, steps: List[str]):
+    def __init__(self, pattern_id: str, name: str, target: str, technique: str, steps: list[str]):
         self._pattern_id = pattern_id
         self._name = name
         self._target = target
@@ -30,10 +30,10 @@ class OptimizationPattern:
         return self._technique
 
     @property
-    def steps(self) -> List[str]:
+    def steps(self) -> list[str]:
         return list(self._steps)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "pattern_id": self._pattern_id,
             "name": self._name,
@@ -47,7 +47,7 @@ class OptimizationPatterns:
     """Registry of optimization patterns."""
 
     def __init__(self):
-        self._patterns: Dict[str, OptimizationPattern] = {}
+        self._patterns: dict[str, OptimizationPattern] = {}
 
     @property
     def count(self) -> int:
@@ -59,7 +59,7 @@ class OptimizationPatterns:
     def get(self, pattern_id: str) -> OptimizationPattern | None:
         return self._patterns.get(pattern_id)
 
-    def get_by_target(self, target: str) -> List[OptimizationPattern]:
+    def get_by_target(self, target: str) -> list[OptimizationPattern]:
         return [p for p in self._patterns.values() if p.target == target]
 
     def remove(self, pattern_id: str) -> bool:

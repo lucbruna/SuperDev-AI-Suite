@@ -5,7 +5,7 @@ import hmac
 import json
 import os
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .memory_exceptions import MemorySecurityError
 
@@ -16,17 +16,17 @@ class MemorySecurity:
     def __init__(self, secret_key: str | None = None, enable_audit: bool = False):
         self._secret_key = secret_key or os.urandom(32).hex()
         self._enable_audit = enable_audit
-        self._audit_log: List[Dict[str, Any]] = []
+        self._audit_log: list[dict[str, Any]] = []
 
     @property
     def enable_audit(self) -> bool:
         return self._enable_audit
 
-    def encrypt(self, data: Dict[str, Any]) -> bytes:
+    def encrypt(self, data: dict[str, Any]) -> bytes:
         raw = json.dumps(data, sort_keys=True).encode("utf-8")
         return self._sign(raw)
 
-    def decrypt(self, encrypted: bytes) -> Dict[str, Any]:
+    def decrypt(self, encrypted: bytes) -> dict[str, Any]:
         if not self._verify(encrypted):
             raise MemorySecurityError("Data integrity check failed")
         return json.loads(encrypted[:-64].decode("utf-8"))
@@ -54,7 +54,7 @@ class MemorySecurity:
     def hash_key(self, key: str) -> str:
         return hashlib.sha256((key + self._secret_key).encode("utf-8")).hexdigest()
 
-    def audit(self, action: str, resource: str, user: str = "", details: Dict[str, Any] | None = None) -> None:
+    def audit(self, action: str, resource: str, user: str = "", details: dict[str, Any] | None = None) -> None:
         if not self._enable_audit:
             return
         self._audit_log.append({
@@ -65,7 +65,7 @@ class MemorySecurity:
             "timestamp": time.time(),
         })
 
-    def get_audit_log(self, limit: int = 100) -> List[Dict[str, Any]]:
+    def get_audit_log(self, limit: int = 100) -> list[dict[str, Any]]:
         return list(self._audit_log[-limit:])
 
     def clear_audit_log(self) -> None:

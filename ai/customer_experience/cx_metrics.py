@@ -1,8 +1,7 @@
 """CX Metrics — Performance metrics for CX operations."""
-from typing import Dict, Any, Optional, List
+import statistics
 from dataclasses import dataclass, field
 from datetime import datetime
-import statistics
 
 
 @dataclass
@@ -12,7 +11,7 @@ class CXMetricPoint:
     unit: str = ""
     project_id: str = ""
     timestamp: datetime = field(default_factory=datetime.now)
-    tags: Dict[str, str] = field(default_factory=dict)
+    tags: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -27,9 +26,9 @@ class CXMetricSummary:
 
 class CXMetrics:
     def __init__(self):
-        self.metrics: Dict[str, List[CXMetricPoint]] = {}
+        self.metrics: dict[str, list[CXMetricPoint]] = {}
 
-    def record(self, name: str, value: float, unit: str = "", project_id: str = "", tags: Optional[Dict[str, str]] = None) -> CXMetricPoint:
+    def record(self, name: str, value: float, unit: str = "", project_id: str = "", tags: dict[str, str] | None = None) -> CXMetricPoint:
         point = CXMetricPoint(name=name, value=value, unit=unit, project_id=project_id, tags=tags or {})
         self.metrics.setdefault(name, []).append(point)
         return point
@@ -48,7 +47,7 @@ class CXMetrics:
             latest=values[-1],
         )
 
-    def get_all_metrics(self) -> List[CXMetricSummary]:
+    def get_all_metrics(self) -> list[CXMetricSummary]:
         return [self.get_summary(name) for name in self.metrics]
 
     def count(self) -> int:

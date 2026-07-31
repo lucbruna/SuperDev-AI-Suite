@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 class AgentContext:
@@ -8,19 +8,19 @@ class AgentContext:
 
     def __init__(self, agent_id: str) -> None:
         self._agent_id = agent_id
-        self._variables: Dict[str, Any] = {}
-        self._task_id: Optional[str] = None
+        self._variables: dict[str, Any] = {}
+        self._task_id: str | None = None
 
     @property
     def agent_id(self) -> str:
         return self._agent_id
 
     @property
-    def task_id(self) -> Optional[str]:
+    def task_id(self) -> str | None:
         return self._task_id
 
     @task_id.setter
-    def task_id(self, value: Optional[str]) -> None:
+    def task_id(self, value: str | None) -> None:
         self._task_id = value
 
     def set(self, key: str, value: Any) -> None:
@@ -33,7 +33,7 @@ class AgentContext:
         self._variables.clear()
         self._task_id = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "agent_id": self._agent_id,
             "task_id": self._task_id,

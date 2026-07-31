@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import time
 from enum import Enum, auto
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .memory_types import MemoryStatus
 
@@ -25,8 +25,8 @@ class MemoryState:
 
     def __init__(self):
         self._phase: MemoryPhase = MemoryPhase.UNINITIALIZED
-        self._statuses: Dict[str, MemoryStatus] = {}
-        self._errors: List[Dict[str, Any]] = []
+        self._statuses: dict[str, MemoryStatus] = {}
+        self._errors: list[dict[str, Any]] = []
         self._started_at: float | None = None
         self._last_maintenance: float | None = None
         self._last_backup: float | None = None
@@ -57,7 +57,7 @@ class MemoryState:
         return self._last_consolidation
 
     @property
-    def errors(self) -> List[Dict[str, Any]]:
+    def errors(self) -> list[dict[str, Any]]:
         return list(self._errors)
 
     def transition_to(self, phase: MemoryPhase) -> None:
@@ -80,7 +80,7 @@ class MemoryState:
     def record_consolidation(self) -> None:
         self._last_consolidation = time.time()
 
-    def record_error(self, error: str, details: Dict[str, Any] | None = None) -> None:
+    def record_error(self, error: str, details: dict[str, Any] | None = None) -> None:
         self._errors.append({
             "error": error,
             "details": details or {},
@@ -90,7 +90,7 @@ class MemoryState:
     def clear_errors(self) -> None:
         self._errors.clear()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "phase": self._phase.name,
             "is_ready": self.is_ready,

@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class Strategy:
     """A stored strategy definition."""
 
-    def __init__(self, strategy_id: str, name: str, approach: str, steps: List[str], conditions: Dict[str, Any] | None = None):
+    def __init__(self, strategy_id: str, name: str, approach: str, steps: list[str], conditions: dict[str, Any] | None = None):
         self._strategy_id = strategy_id
         self._name = name
         self._approach = approach
@@ -26,14 +26,14 @@ class Strategy:
         return self._approach
 
     @property
-    def steps(self) -> List[str]:
+    def steps(self) -> list[str]:
         return list(self._steps)
 
     @property
-    def conditions(self) -> Dict[str, Any]:
+    def conditions(self) -> dict[str, Any]:
         return dict(self._conditions)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "strategy_id": self._strategy_id,
             "name": self._name,
@@ -47,7 +47,7 @@ class StrategyRepository:
     """Repository of reusable strategies."""
 
     def __init__(self):
-        self._strategies: Dict[str, Strategy] = {}
+        self._strategies: dict[str, Strategy] = {}
 
     @property
     def count(self) -> int:
@@ -59,7 +59,7 @@ class StrategyRepository:
     def get(self, strategy_id: str) -> Strategy | None:
         return self._strategies.get(strategy_id)
 
-    def get_by_approach(self, approach: str) -> List[Strategy]:
+    def get_by_approach(self, approach: str) -> list[Strategy]:
         return [s for s in self._strategies.values() if s.approach == approach]
 
     def remove(self, strategy_id: str) -> bool:

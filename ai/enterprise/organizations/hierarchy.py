@@ -1,18 +1,20 @@
 """Organization hierarchy."""
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
+
+from typing import Any
+
 
 class OrganizationHierarchy:
     def __init__(self) -> None:
-        self._tree: Dict[str, Dict[str, Any]] = {}
+        self._tree: dict[str, dict[str, Any]] = {}
     def set_parent(self, org_id: str, parent_id: str) -> None:
         self._tree.setdefault(org_id, {})["parent"] = parent_id
         self._tree.setdefault(parent_id, {}).setdefault("children", []).append(org_id)
-    def get_parent(self, org_id: str) -> Optional[str]:
+    def get_parent(self, org_id: str) -> str | None:
         return self._tree.get(org_id, {}).get("parent")
-    def get_children(self, org_id: str) -> List[str]:
+    def get_children(self, org_id: str) -> list[str]:
         return list(self._tree.get(org_id, {}).get("children", []))
-    def get_all_descendants(self, org_id: str) -> List[str]:
+    def get_all_descendants(self, org_id: str) -> list[str]:
         descendants = []
         for child in self.get_children(org_id):
             descendants.append(child)
@@ -30,5 +32,5 @@ class OrganizationHierarchy:
         while self.get_parent(current):
             current = self.get_parent(current)
         return current
-    def list_all(self) -> Dict[str, Dict[str, Any]]:
+    def list_all(self) -> dict[str, dict[str, Any]]:
         return dict(self._tree)

@@ -1,9 +1,9 @@
 """CX Security — Security validation for CX operations."""
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class CXSecurityCheck(Enum):
@@ -38,10 +38,10 @@ class CXSecurityIssue:
 
 class CXSecurity:
     def __init__(self):
-        self.issues: List[CXSecurityIssue] = []
-        self.policies: Dict[str, Dict[str, Any]] = {}
+        self.issues: list[CXSecurityIssue] = []
+        self.policies: dict[str, dict[str, Any]] = {}
 
-    def create_policy(self, name: str, rules: Optional[Dict[str, Any]] = None) -> None:
+    def create_policy(self, name: str, rules: dict[str, Any] | None = None) -> None:
         self.policies[name] = rules or {}
 
     def report_issue(self, check: CXSecurityCheck, severity: CXSeverity, description: str = "", resource: str = "", **kwargs) -> CXSecurityIssue:
@@ -57,7 +57,7 @@ class CXSecurity:
                 return True
         return False
 
-    def get_issues(self, severity: Optional[CXSeverity] = None, resolved: Optional[bool] = None) -> List[CXSecurityIssue]:
+    def get_issues(self, severity: CXSeverity | None = None, resolved: bool | None = None) -> list[CXSecurityIssue]:
         issues = self.issues
         if severity:
             issues = [i for i in issues if i.severity == severity]

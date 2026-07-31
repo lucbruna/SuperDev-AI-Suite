@@ -1,7 +1,7 @@
 """Communication style management."""
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 
 class CommunicationStyle:
@@ -21,7 +21,7 @@ class CommunicationStyle:
         if verbosity in self._valid_verbs:
             self._verbosity = verbosity
 
-    def get_profile(self) -> Dict[str, Any]:
+    def get_profile(self) -> dict[str, Any]:
         return {
             "tone": self._tone,
             "verbosity": self._verbosity,

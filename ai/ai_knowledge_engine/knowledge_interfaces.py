@@ -1,30 +1,31 @@
 """Knowledge Engine Interfaces — Abstract interfaces for the knowledge platform."""
 from abc import ABC, abstractmethod
-from typing import List, Optional, Dict, Any
-from .knowledge_models import Knowledge, Document, ResearchQuery, ResearchResult, ConfidenceLevel
+from typing import Any
+
+from .knowledge_models import ConfidenceLevel, Document, Knowledge, ResearchQuery, ResearchResult
 
 
 class ResearchInterface(ABC):
     @abstractmethod
-    def search(self, query: ResearchQuery) -> List[ResearchResult]:
+    def search(self, query: ResearchQuery) -> list[ResearchResult]:
         pass
 
     @abstractmethod
-    def collect(self, source_url: str) -> Optional[ResearchResult]:
+    def collect(self, source_url: str) -> ResearchResult | None:
         pass
 
     @abstractmethod
-    def plan_research(self, topic: str) -> Dict[str, Any]:
+    def plan_research(self, topic: str) -> dict[str, Any]:
         pass
 
 
 class DocumentInterface(ABC):
     @abstractmethod
-    def parse(self, file_path: str) -> Optional[Document]:
+    def parse(self, file_path: str) -> Document | None:
         pass
 
     @abstractmethod
-    def extract_information(self, document: Document) -> Dict[str, Any]:
+    def extract_information(self, document: Document) -> dict[str, Any]:
         pass
 
     @abstractmethod
@@ -34,11 +35,11 @@ class DocumentInterface(ABC):
 
 class VectorMemoryInterface(ABC):
     @abstractmethod
-    def store(self, text: str, metadata: Optional[Dict[str, Any]] = None) -> str:
+    def store(self, text: str, metadata: dict[str, Any] | None = None) -> str:
         pass
 
     @abstractmethod
-    def search(self, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
+    def search(self, query: str, top_k: int = 5) -> list[dict[str, Any]]:
         pass
 
     @abstractmethod
@@ -48,43 +49,43 @@ class VectorMemoryInterface(ABC):
 
 class EmbeddingInterface(ABC):
     @abstractmethod
-    def embed(self, text: str) -> List[float]:
+    def embed(self, text: str) -> list[float]:
         pass
 
     @abstractmethod
-    def batch_embed(self, texts: List[str]) -> List[List[float]]:
+    def batch_embed(self, texts: list[str]) -> list[list[float]]:
         pass
 
     @abstractmethod
-    def similarity(self, vec_a: List[float], vec_b: List[float]) -> float:
+    def similarity(self, vec_a: list[float], vec_b: list[float]) -> float:
         pass
 
 
 class ReasoningInterface(ABC):
     @abstractmethod
-    def analyze(self, problem: str, context: Dict[str, Any]) -> Dict[str, Any]:
+    def analyze(self, problem: str, context: dict[str, Any]) -> dict[str, Any]:
         pass
 
     @abstractmethod
-    def hypothesize(self, observations: List[str]) -> List[str]:
+    def hypothesize(self, observations: list[str]) -> list[str]:
         pass
 
     @abstractmethod
-    def conclude(self, evidence: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def conclude(self, evidence: list[dict[str, Any]]) -> dict[str, Any]:
         pass
 
 
 class LearningInterface(ABC):
     @abstractmethod
-    def record_experience(self, experience: Dict[str, Any]) -> str:
+    def record_experience(self, experience: dict[str, Any]) -> str:
         pass
 
     @abstractmethod
-    def analyze_patterns(self) -> List[Dict[str, Any]]:
+    def analyze_patterns(self) -> list[dict[str, Any]]:
         pass
 
     @abstractmethod
-    def suggest_improvements(self) -> List[str]:
+    def suggest_improvements(self) -> list[str]:
         pass
 
 
@@ -98,7 +99,7 @@ class ValidationInterface(ABC):
         pass
 
     @abstractmethod
-    def fact_check(self, statement: str) -> Dict[str, Any]:
+    def fact_check(self, statement: str) -> dict[str, Any]:
         pass
 
 
@@ -112,5 +113,5 @@ class KnowledgeGraphInterface(ABC):
         pass
 
     @abstractmethod
-    def query_graph(self, entity: str) -> Dict[str, Any]:
+    def query_graph(self, entity: str) -> dict[str, Any]:
         pass

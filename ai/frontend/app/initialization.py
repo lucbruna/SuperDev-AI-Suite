@@ -1,10 +1,9 @@
 """
 Frontend Application Initialization
 """
-from typing import Optional, Dict, Any, List
 from dataclasses import dataclass, field
 from enum import Enum
-import json
+from typing import Any
 
 
 class InitPhase(Enum):
@@ -29,23 +28,23 @@ class InitStep:
     phase: InitPhase
     callback: Any
     required: bool = True
-    dependencies: List[str] = field(default_factory=list)
+    dependencies: list[str] = field(default_factory=list)
     completed: bool = False
-    error: Optional[str] = None
+    error: str | None = None
 
 
 class AppInitializer:
     """Application initialization manager."""
-    
+
     def __init__(self):
         self.phase = InitPhase.PENDING
-        self.steps: List[InitStep] = []
-        self.errors: List[str] = []
-        self.listeners: List[Any] = []
-        self.config: Dict[str, Any] = {}
-        
-    def add_step(self, name: str, phase: InitPhase, callback: Any, 
-                 required: bool = True, dependencies: Optional[List[str]] = None) -> None:
+        self.steps: list[InitStep] = []
+        self.errors: list[str] = []
+        self.listeners: list[Any] = []
+        self.config: dict[str, Any] = {}
+
+    def add_step(self, name: str, phase: InitPhase, callback: Any,
+                 required: bool = True, dependencies: list[str] | None = None) -> None:
         """Add an initialization step."""
         step = InitStep(
             name=name,
@@ -55,27 +54,27 @@ class AppInitializer:
             dependencies=dependencies or []
         )
         self.steps.append(step)
-        
+
     def remove_step(self, name: str) -> None:
         """Remove an initialization step."""
         self.steps = [s for s in self.steps if s.name != name]
-        
-    def get_step(self, name: str) -> Optional[InitStep]:
+
+    def get_step(self, name: str) -> InitStep | None:
         """Get a step by name."""
         for step in self.steps:
             if step.name == name:
                 return step
         return None
-    
-    def set_config(self, config: Dict[str, Any]) -> None:
+
+    def set_config(self, config: dict[str, Any]) -> None:
         """Set initialization configuration."""
         self.config = config
-        
+
     async def initialize(self) -> bool:
         """Run initialization sequence."""
         self.phase = InitPhase.CONFIG
         self._notify("start", {"phase": self.phase})
-        
+
         try:
             # Group steps by phase
             phases = [
@@ -88,28 +87,28 @@ class AppInitializer:
                 InitPhase.PLUGINS,
                 InitPhase.WEBSOCKET,
             ]
-            
+
             for phase in phases:
                 self.phase = phase
                 self._notify("phase", {"phase": phase})
-                
+
                 phase_steps = [s for s in self.steps if s.phase == phase]
-                
+
                 for step in phase_steps:
                     if step.completed:
                         continue
-                        
+
                     # Check dependencies
                     deps_met = all(
-                        self._is_step_completed(dep) 
+                        self._is_step_completed(dep)
                         for dep in step.dependencies
                     )
-                    
+
                     if not deps_met:
                         if step.required:
                             raise Exception(f"Dependencies not met for required step: {step.name}")
                         continue
-                    
+
                     try:
                         if step.callback:
                             result = step.callback(self.config)
@@ -121,36 +120,36 @@ class AppInitializer:
                         step.error = str(e)
                         self.errors.append(f"{step.name}: {str(e)}")
                         self._notify("step_error", {"step": step.name, "error": str(e)})
-                        
+
                         if step.required:
                             raise
-                            
+
             self.phase = InitPhase.READY
             self._notify("complete", {"phase": self.phase})
             return True
-            
+
         except Exception as e:
             self.phase = InitPhase.ERROR
             self.errors.append(str(e))
             self._notify("error", {"error": str(e)})
             return False
-            
+
     def _is_step_completed(self, step_name: str) -> bool:
         """Check if a step is completed."""
         step = self.get_step(step_name)
         return step is not None and step.completed
-        
+
     def on(self, event: str, callback: Any) -> None:
         """Register event listener."""
         self.listeners.append({"event": event, "callback": callback})
-        
-    def _notify(self, event: str, data: Dict[str, Any]) -> None:
+
+    def _notify(self, event: str, data: dict[str, Any]) -> None:
         """Notify listeners."""
         for listener in self.listeners:
             if listener["event"] == event:
                 listener["callback"](data)
-                
-    def get_status(self) -> Dict[str, Any]:
+
+    def get_status(self) -> dict[str, Any]:
         """Get initialization status."""
         return {
             "phase": self.phase.value,
@@ -166,7 +165,7 @@ class AppInitializer:
             "errors": self.errors,
             "is_ready": self.phase == InitPhase.READY
         }
-        
+
     def reset(self) -> None:
         """Reset initialization state."""
         self.phase = InitPhase.PENDING
@@ -176,46 +175,46 @@ class AppInitializer:
         self.errors.clear()
 
 
-def create_default_initializer(config: Optional[Dict[str, Any]] = None) -> AppInitializer:
+def create_default_initializer(config: dict[str, Any] | None = None) -> AppInitializer:
     """Create a default application initializer."""
     initializer = AppInitializer()
-    
+
     if config:
         initializer.set_config(config)
-        
+
     # Add default initialization steps
-    def init_config(cfg: Dict[str, Any]) -> None:
+    def init_config(cfg: dict[str, Any]) -> None:
         """Initialize configuration."""
         pass
-        
-    def init_services(cfg: Dict[str, Any]) -> None:
+
+    def init_services(cfg: dict[str, Any]) -> None:
         """Initialize core services."""
         pass
-        
-    def init_auth(cfg: Dict[str, Any]) -> None:
+
+    def init_auth(cfg: dict[str, Any]) -> None:
         """Initialize authentication."""
         pass
-        
-    def init_theme(cfg: Dict[str, Any]) -> None:
+
+    def init_theme(cfg: dict[str, Any]) -> None:
         """Initialize theme."""
         pass
-        
-    def init_i18n(cfg: Dict[str, Any]) -> None:
+
+    def init_i18n(cfg: dict[str, Any]) -> None:
         """Initialize internationalization."""
         pass
-        
-    def init_routes(cfg: Dict[str, Any]) -> None:
+
+    def init_routes(cfg: dict[str, Any]) -> None:
         """Initialize routes."""
         pass
-        
-    def init_plugins(cfg: Dict[str, Any]) -> None:
+
+    def init_plugins(cfg: dict[str, Any]) -> None:
         """Initialize plugins."""
         pass
-        
-    def init_websocket(cfg: Dict[str, Any]) -> None:
+
+    def init_websocket(cfg: dict[str, Any]) -> None:
         """Initialize WebSocket."""
         pass
-        
+
     initializer.add_step("config", InitPhase.CONFIG, init_config, required=True)
     initializer.add_step("services", InitPhase.SERVICES, init_services, required=True, dependencies=["config"])
     initializer.add_step("auth", InitPhase.AUTH, init_auth, required=False, dependencies=["services"])
@@ -224,5 +223,5 @@ def create_default_initializer(config: Optional[Dict[str, Any]] = None) -> AppIn
     initializer.add_step("routes", InitPhase.ROUTES, init_routes, required=True, dependencies=["auth"])
     initializer.add_step("plugins", InitPhase.PLUGINS, init_plugins, required=False, dependencies=["services"])
     initializer.add_step("websocket", InitPhase.WEBSOCKET, init_websocket, required=False, dependencies=["services"])
-    
+
     return initializer

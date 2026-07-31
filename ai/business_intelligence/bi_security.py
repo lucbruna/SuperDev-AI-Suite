@@ -1,9 +1,9 @@
 """BI Security — Security validation for BI operations."""
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class BISecurityCheck(Enum):
@@ -37,10 +37,10 @@ class BISecurityIssue:
 
 class BISecurity:
     def __init__(self):
-        self.issues: List[BISecurityIssue] = []
-        self.policies: Dict[str, Dict[str, Any]] = {}
+        self.issues: list[BISecurityIssue] = []
+        self.policies: dict[str, dict[str, Any]] = {}
 
-    def create_policy(self, name: str, rules: Dict[str, Any] = None) -> None:
+    def create_policy(self, name: str, rules: dict[str, Any] = None) -> None:
         self.policies[name] = rules or {}
 
     def report_issue(self, check: BISecurityCheck, severity: BISeverity, description: str = "", resource: str = "", **kwargs) -> BISecurityIssue:
@@ -56,7 +56,7 @@ class BISecurity:
                 return True
         return False
 
-    def get_issues(self, severity: BISeverity = None, resolved: bool = None) -> List[BISecurityIssue]:
+    def get_issues(self, severity: BISeverity = None, resolved: bool = None) -> list[BISecurityIssue]:
         issues = self.issues
         if severity:
             issues = [i for i in issues if i.severity == severity]

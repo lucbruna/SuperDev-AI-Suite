@@ -1,10 +1,10 @@
 """User status."""
 from __future__ import annotations
-from typing import Any, Dict
+
 
 class UserStatusManager:
     def __init__(self) -> None:
-        self._statuses: Dict[str, str] = {}
+        self._statuses: dict[str, str] = {}
     def activate(self, user_id: str) -> bool:
         self._statuses[user_id] = "active"
         return True

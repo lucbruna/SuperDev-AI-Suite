@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Any
 
-
 AUTH_CHECKS: list[tuple[str, str, str]] = [
     ("password_min_length", "high", "Password minimum length not set or < 8 characters"),
     ("mfa_disabled", "high", "Multi-factor authentication not configured"),

@@ -1,26 +1,27 @@
 """Machine Learning engine."""
-import uuid
 import math
+import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional
-from .models import MLModel, TrainingJob, Prediction, ModelVersion, ModelType, ModelStatus
+from typing import Any
+
+from .models import MLModel, ModelStatus, ModelType, ModelVersion, Prediction, TrainingJob
 
 
 class MLEngine:
     def __init__(self):
-        self._models: Dict[str, MLModel] = {}
-        self._training_jobs: Dict[str, TrainingJob] = {}
-        self._predictions: List[Prediction] = []
-        self._versions: Dict[str, ModelVersion] = {}
+        self._models: dict[str, MLModel] = {}
+        self._training_jobs: dict[str, TrainingJob] = {}
+        self._predictions: list[Prediction] = []
+        self._versions: dict[str, ModelVersion] = {}
 
     def create_model(self, model: MLModel) -> MLModel:
         self._models[model.model_id] = model
         return model
 
-    def get_model(self, model_id: str) -> Optional[MLModel]:
+    def get_model(self, model_id: str) -> MLModel | None:
         return self._models.get(model_id)
 
-    def train_model(self, model_id: str, records: List[Dict[str, Any]], features: List[str], target: str) -> TrainingJob:
+    def train_model(self, model_id: str, records: list[dict[str, Any]], features: list[str], target: str) -> TrainingJob:
         model = self._models.get(model_id)
         if not model:
             return TrainingJob(job_id=str(uuid.uuid4())[:8], status=ModelStatus.FAILED)
@@ -43,7 +44,7 @@ class MLEngine:
             train_y = [r.get(target, 0) for r in train_data]
             test_y = [r.get(target, 0) for r in test_data]
             pred_y = [sum(train_y) / len(train_y) if train_y else 0] * len(test_y)
-            mse = sum((a - b) ** 2 for a, b in zip(test_y, pred_y)) / len(test_y) if test_y else 0
+            mse = sum((a - b) ** 2 for a, b in zip(test_y, pred_y, strict=False)) / len(test_y) if test_y else 0
             rmse = math.sqrt(mse) if mse >= 0 else 0
             model.metrics = {"mse": mse, "rmse": rmse, "r2": 1.0 - mse / (sum((y - sum(test_y)/len(test_y))**2 for y in test_y) + 1e-10)}
         elif model.model_type == ModelType.CLASSIFICATION:
@@ -61,7 +62,7 @@ class MLEngine:
         model.trained_at = datetime.now()
         return job
 
-    def predict(self, model_id: str, input_data: Dict[str, Any]) -> Prediction:
+    def predict(self, model_id: str, input_data: dict[str, Any]) -> Prediction:
         model = self._models.get(model_id)
         prediction = Prediction(
             prediction_id=str(uuid.uuid4())[:8],
@@ -80,7 +81,7 @@ class MLEngine:
         model.status = ModelStatus.DEPLOYED
         return True
 
-    def save_version(self, model_id: str) -> Optional[ModelVersion]:
+    def save_version(self, model_id: str) -> ModelVersion | None:
         model = self._models.get(model_id)
         if not model:
             return None
@@ -94,10 +95,10 @@ class MLEngine:
         self._versions[version.version_id] = version
         return version
 
-    def get_model_versions(self, model_id: str) -> List[ModelVersion]:
+    def get_model_versions(self, model_id: str) -> list[ModelVersion]:
         return [v for v in self._versions.values() if v.model_id == model_id]
 
-    def get_predictions(self, model_id: Optional[str] = None) -> List[Prediction]:
+    def get_predictions(self, model_id: str | None = None) -> list[Prediction]:
         if model_id:
             return [p for p in self._predictions if p.model_id == model_id]
         return list(self._predictions)

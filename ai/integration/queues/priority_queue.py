@@ -1,11 +1,11 @@
 """
 Priority Queue - Priority-based processing
 """
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from datetime import datetime
 import hashlib
 import heapq
+from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Any
 
 
 @dataclass
@@ -21,9 +21,9 @@ class PriorityMessage:
 
 class PriorityQueue:
     def __init__(self):
-        self.heap: List[PriorityMessage] = []
-        self.messages: Dict[str, PriorityMessage] = {}
-        self.processed: List[PriorityMessage] = []
+        self.heap: list[PriorityMessage] = []
+        self.messages: dict[str, PriorityMessage] = {}
+        self.processed: list[PriorityMessage] = []
 
     def enqueue(self, payload: Any, priority: int = 0) -> PriorityMessage:
         message_id = hashlib.sha256(f"{str(payload)}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
@@ -32,14 +32,14 @@ class PriorityQueue:
         self.messages[message_id] = msg
         return msg
 
-    def dequeue(self) -> Optional[PriorityMessage]:
+    def dequeue(self) -> PriorityMessage | None:
         if self.heap:
             msg = heapq.heappop(self.heap)
             self.processed.append(msg)
             return msg
         return None
 
-    def peek(self) -> Optional[PriorityMessage]:
+    def peek(self) -> PriorityMessage | None:
         return self.heap[0] if self.heap else None
 
     def size(self) -> int:
@@ -48,7 +48,7 @@ class PriorityQueue:
     def is_empty(self) -> bool:
         return len(self.heap) == 0
 
-    def get_message(self, message_id: str) -> Optional[PriorityMessage]:
+    def get_message(self, message_id: str) -> PriorityMessage | None:
         return self.messages.get(message_id)
 
     def count(self) -> int:

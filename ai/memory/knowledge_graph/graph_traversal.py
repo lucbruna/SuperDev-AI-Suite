@@ -1,21 +1,19 @@
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Set
-
-from .graph_node import GraphNode
 from .graph_edge import GraphEdge
+from .graph_node import GraphNode
 
 
 class GraphTraversal:
     """Traversal strategies for the knowledge graph."""
 
     def __init__(self) -> None:
-        self._visited: Set[str] = set()
+        self._visited: set[str] = set()
 
-    def bfs(self, start_id: str, nodes: Dict[str, GraphNode], edges: List[GraphEdge]) -> List[GraphNode]:
+    def bfs(self, start_id: str, nodes: dict[str, GraphNode], edges: list[GraphEdge]) -> list[GraphNode]:
         self._visited.clear()
         queue = [start_id]
-        result: List[GraphNode] = []
+        result: list[GraphNode] = []
         adj = self._build_adjacency(edges)
         while queue:
             current = queue.pop(0)
@@ -30,17 +28,17 @@ class GraphTraversal:
                     queue.append(neighbor)
         return result
 
-    def dfs(self, start_id: str, nodes: Dict[str, GraphNode], edges: List[GraphEdge]) -> List[GraphNode]:
+    def dfs(self, start_id: str, nodes: dict[str, GraphNode], edges: list[GraphEdge]) -> list[GraphNode]:
         self._visited.clear()
-        result: List[GraphNode] = []
+        result: list[GraphNode] = []
         adj = self._build_adjacency(edges)
         self._dfs_recursive(start_id, nodes, adj, result)
         return result
 
-    def find_path(self, start: str, end: str, edges: List[GraphEdge]) -> List[str]:
+    def find_path(self, start: str, end: str, edges: list[GraphEdge]) -> list[str]:
         adj = self._build_adjacency(edges)
-        queue: List[List[str]] = [[start]]
-        visited: Set[str] = {start}
+        queue: list[list[str]] = [[start]]
+        visited: set[str] = {start}
         while queue:
             path = queue.pop(0)
             last = path[-1]
@@ -52,14 +50,14 @@ class GraphTraversal:
                     queue.append(list(path) + [neighbor])
         return []
 
-    def _build_adjacency(self, edges: List[GraphEdge]) -> Dict[str, List[str]]:
-        adj: Dict[str, List[str]] = {}
+    def _build_adjacency(self, edges: list[GraphEdge]) -> dict[str, list[str]]:
+        adj: dict[str, list[str]] = {}
         for e in edges:
             adj.setdefault(e.source, []).append(e.target)
             adj.setdefault(e.target, []).append(e.source)
         return adj
 
-    def _dfs_recursive(self, current: str, nodes: Dict[str, GraphNode], adj: Dict[str, List[str]], result: List[GraphNode]) -> None:
+    def _dfs_recursive(self, current: str, nodes: dict[str, GraphNode], adj: dict[str, list[str]], result: list[GraphNode]) -> None:
         if current in self._visited:
             return
         self._visited.add(current)

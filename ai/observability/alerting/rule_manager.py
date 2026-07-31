@@ -1,10 +1,13 @@
 """Alert rule management."""
 from __future__ import annotations
-from typing import Any, Callable, Dict, List
+
 import time
+from collections.abc import Callable
+from typing import Any
+
 
 class AlertRule:
-    def __init__(self, name: str, condition: Callable[[Dict[str, float]], bool], severity: str = "medium") -> None:
+    def __init__(self, name: str, condition: Callable[[dict[str, float]], bool], severity: str = "medium") -> None:
         self.name = name
         self.condition = condition
         self.severity = severity
@@ -14,8 +17,8 @@ class AlertRule:
 
 class RuleManager:
     def __init__(self) -> None:
-        self._rules: Dict[str, AlertRule] = {}
-    def add_rule(self, name: str, condition: Callable[[Dict[str, float]], bool], severity: str = "medium") -> AlertRule:
+        self._rules: dict[str, AlertRule] = {}
+    def add_rule(self, name: str, condition: Callable[[dict[str, float]], bool], severity: str = "medium") -> AlertRule:
         rule = AlertRule(name, condition, severity)
         self._rules[name] = rule
         return rule
@@ -34,7 +37,7 @@ class RuleManager:
             self._rules[name].enabled = False
             return True
         return False
-    def evaluate(self, metrics: Dict[str, float]) -> List[Dict[str, Any]]:
+    def evaluate(self, metrics: dict[str, float]) -> list[dict[str, Any]]:
         triggered = []
         for rule in self._rules.values():
             if rule.enabled:
@@ -46,5 +49,5 @@ class RuleManager:
                 except Exception:
                     pass
         return triggered
-    def list_rules(self) -> List[Dict[str, Any]]:
+    def list_rules(self) -> list[dict[str, Any]]:
         return [{"name": r.name, "severity": r.severity, "enabled": r.enabled, "trigger_count": r.trigger_count} for r in self._rules.values()]

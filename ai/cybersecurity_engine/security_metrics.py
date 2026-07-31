@@ -1,6 +1,6 @@
 """Cybersecurity Engine Metrics — Metrics tracking for security operations."""
-from typing import Dict, Any, List
 from datetime import datetime
+from typing import Any
 
 
 class SecurityMetrics:
@@ -13,7 +13,7 @@ class SecurityMetrics:
         self._failed_logins: int = 0
         self._blocked_ips: int = 0
         self._scans_performed: int = 0
-        self._events: List[Dict[str, Any]] = []
+        self._events: list[dict[str, Any]] = []
 
     def record_threat(self) -> None:
         self._threats_detected += 1
@@ -38,14 +38,14 @@ class SecurityMetrics:
     def record_scan(self) -> None:
         self._scans_performed += 1
 
-    def add_event(self, event_type: str, details: Dict[str, Any] = None) -> None:
+    def add_event(self, event_type: str, details: dict[str, Any] = None) -> None:
         self._events.append({
             "type": event_type,
             "timestamp": datetime.now().isoformat(),
             "details": details or {},
         })
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         return {
             "threats_detected": self._threats_detected,
             "vulnerabilities_found": self._vulnerabilities_found,

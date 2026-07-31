@@ -19,7 +19,7 @@ class ExtractFunctionRefactor:
             return {"success": False, "error": f"Line range {start_line}-{end_line} out of bounds (file has {len(lines)} lines)"}
         extracted_lines = lines[start_line - 1 : end_line]
         extracted_code = "".join(extracted_lines)
-        indent = len(extracted_lines[0]) - len(extracted_lines[0].lstrip()) if extracted_lines else 0
+        len(extracted_lines[0]) - len(extracted_lines[0].lstrip()) if extracted_lines else 0
         dedented = textwrap.dedent(extracted_code)
         new_function = f"def {new_function_name}():\n    \"\"\"Extracted function.\"\"\"\n"
         for line in dedented.split("\n"):
@@ -66,7 +66,7 @@ class ExtractFunctionRefactor:
         for node in ast.walk(tree):
             if isinstance(node, ast.FunctionDef) and node.name == function_name:
                 body = node.body
-                inlined = ast.get_source_segment(content, body[0]) if body else ""
+                ast.get_source_segment(content, body[0]) if body else ""
                 occurrences = content.count(f"{function_name}(")
                 if not self.dry_run:
                     func_start = node.lineno

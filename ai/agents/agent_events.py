@@ -1,15 +1,16 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Callable, Dict, List
+from collections.abc import Callable
+from typing import Any
 
 
 class AgentEvents:
     """Event system for agents."""
 
     def __init__(self) -> None:
-        self._listeners: Dict[str, List[Callable]] = {}
-        self._history: List[Dict[str, Any]] = []
+        self._listeners: dict[str, list[Callable]] = {}
+        self._history: list[dict[str, Any]] = []
 
     def on(self, event: str, callback: Callable) -> None:
         if event not in self._listeners:

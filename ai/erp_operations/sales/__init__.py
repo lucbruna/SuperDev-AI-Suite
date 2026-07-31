@@ -1,6 +1,6 @@
 """Sales subsystem."""
-from .models import SalesOrderStatus, QuotationStatus, SalesOrder, Quotation, SalesTarget, Commission
 from .engine import SalesEngine
+from .models import Commission, Quotation, QuotationStatus, SalesOrder, SalesOrderStatus, SalesTarget
 
 __all__ = [
     "SalesOrderStatus", "QuotationStatus", "SalesOrder", "Quotation", "SalesTarget", "Commission",

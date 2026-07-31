@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 
 class Broadcast:
@@ -13,7 +13,7 @@ class Broadcast:
     def broadcast_count(self) -> int:
         return self._broadcast_count
 
-    def send(self, sender: str, content: Dict[str, Any], recipients: List[str]) -> int:
+    def send(self, sender: str, content: dict[str, Any], recipients: list[str]) -> int:
         self._broadcast_count += 1
         return len(recipients)
 

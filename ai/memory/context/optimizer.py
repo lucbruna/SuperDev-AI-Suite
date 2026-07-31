@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class ContextOptimizer:
@@ -13,10 +13,10 @@ class ContextOptimizer:
     def optimization_count(self) -> int:
         return self._optimization_count
 
-    def trim_duplicates(self, context: Dict[str, Any]) -> Dict[str, Any]:
+    def trim_duplicates(self, context: dict[str, Any]) -> dict[str, Any]:
         content = context.get("content", {})
         seen: set = set()
-        deduped: Dict[str, Any] = {}
+        deduped: dict[str, Any] = {}
         for key, value in content.items():
             h = str(value)
             if h not in seen:
@@ -29,9 +29,9 @@ class ContextOptimizer:
         self._optimization_count += 1
         return result
 
-    def truncate_content(self, context: Dict[str, Any], max_chars: int = 10000) -> Dict[str, Any]:
+    def truncate_content(self, context: dict[str, Any], max_chars: int = 10000) -> dict[str, Any]:
         content = context.get("content", {})
-        truncated: Dict[str, Any] = {}
+        truncated: dict[str, Any] = {}
         total = 0
         for key, value in content.items():
             s = str(value)
@@ -48,7 +48,7 @@ class ContextOptimizer:
         self._optimization_count += 1
         return result
 
-    def optimize(self, context: Dict[str, Any]) -> Dict[str, Any]:
+    def optimize(self, context: dict[str, Any]) -> dict[str, Any]:
         result = self.trim_duplicates(context)
         result = self.truncate_content(result)
         result["metadata"]["optimized"] = True

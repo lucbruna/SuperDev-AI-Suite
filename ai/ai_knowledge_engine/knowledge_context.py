@@ -1,7 +1,7 @@
 """Knowledge Context — Context management for the knowledge platform."""
-from typing import Dict, Any, List, Optional
-from datetime import datetime
 from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Any
 
 
 @dataclass
@@ -10,9 +10,9 @@ class KnowledgeContext:
     session_id: str = ""
     user_id: str = ""
     current_topic: str = ""
-    conversation_history: List[Dict[str, Any]] = field(default_factory=list)
-    active_knowledge: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    conversation_history: list[dict[str, Any]] = field(default_factory=list)
+    active_knowledge: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
     created_at: datetime = field(default_factory=datetime.now)
 
     def add_to_history(self, role: str, content: str) -> None:

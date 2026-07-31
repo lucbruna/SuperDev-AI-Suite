@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 
 class ContextRouter:
     """Routes context data to appropriate handlers based on type or rules."""
 
     def __init__(self):
-        self._routes: Dict[str, Any] = {}
+        self._routes: dict[str, Any] = {}
         self._route_count: int = 0
 
     @property
@@ -20,7 +20,7 @@ class ContextRouter:
     def unregister_route(self, route_key: str) -> bool:
         return self._routes.pop(route_key, None) is not None
 
-    def route(self, context: Dict[str, Any], route_key: Optional[str] = None) -> Any:
+    def route(self, context: dict[str, Any], route_key: str | None = None) -> Any:
         key = route_key or context.get("type", context.get("metadata", {}).get("type", "default"))
         handler = self._routes.get(key)
         if handler is None:
@@ -28,7 +28,7 @@ class ContextRouter:
         self._route_count += 1
         return handler(context)
 
-    def route_by_source(self, context: Dict[str, Any]) -> Any:
+    def route_by_source(self, context: dict[str, Any]) -> Any:
         sources = context.get("sources", [])
         for src in sources:
             handler = self._routes.get(src)
@@ -41,7 +41,7 @@ class ContextRouter:
         self._route_count += 1
         return handler(context)
 
-    def list_routes(self) -> List[str]:
+    def list_routes(self) -> list[str]:
         return list(self._routes.keys())
 
     def clear_routes(self) -> None:

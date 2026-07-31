@@ -1,19 +1,17 @@
 """Sales pipeline manager."""
-from datetime import datetime
-from typing import Dict, List, Optional
-from .models import Deal, DealStage, Activity, SalesMetrics
+from .models import Activity, Deal, DealStage, SalesMetrics
 
 
 class SalesPipeline:
     def __init__(self):
-        self._deals: Dict[str, Deal] = {}
-        self._activities: Dict[str, List[Activity]] = {}
+        self._deals: dict[str, Deal] = {}
+        self._activities: dict[str, list[Activity]] = {}
 
     def add_deal(self, deal: Deal) -> Deal:
         self._deals[deal.deal_id] = deal
         return deal
 
-    def get_deal(self, deal_id: str) -> Optional[Deal]:
+    def get_deal(self, deal_id: str) -> Deal | None:
         return self._deals.get(deal_id)
 
     def update_stage(self, deal_id: str, new_stage: DealStage) -> bool:
@@ -31,7 +29,7 @@ class SalesPipeline:
         self._activities.setdefault(activity.deal_id, []).append(activity)
         return activity
 
-    def get_deals(self, stage: Optional[DealStage] = None, owner: Optional[str] = None) -> List[Deal]:
+    def get_deals(self, stage: DealStage | None = None, owner: str | None = None) -> list[Deal]:
         deals = list(self._deals.values())
         if stage:
             deals = [d for d in deals if d.stage == stage]
@@ -39,7 +37,7 @@ class SalesPipeline:
             deals = [d for d in deals if d.owner == owner]
         return deals
 
-    def get_activities(self, deal_id: str) -> List[Activity]:
+    def get_activities(self, deal_id: str) -> list[Activity]:
         return self._activities.get(deal_id, [])
 
     def get_metrics(self) -> SalesMetrics:
@@ -65,8 +63,8 @@ class SalesPipeline:
             forecast_value=forecast,
         )
 
-    def get_pipeline_by_stage(self) -> Dict[str, List[Deal]]:
-        result: Dict[str, List[Deal]] = {}
+    def get_pipeline_by_stage(self) -> dict[str, list[Deal]]:
+        result: dict[str, list[Deal]] = {}
         for deal in self._deals.values():
             stage_name = deal.stage.value
             result.setdefault(stage_name, []).append(deal)

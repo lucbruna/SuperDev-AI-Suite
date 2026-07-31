@@ -1,12 +1,14 @@
 """Charge management."""
 from __future__ import annotations
-from typing import Any, Dict, List
+
 import time
+from typing import Any
+
 
 class ChargeManager:
     def __init__(self) -> None:
-        self._charges: List[Dict[str, Any]] = []
-    def create_charge(self, org_id: str, amount: float, description: str, charge_type: str = "subscription") -> Dict[str, Any]:
+        self._charges: list[dict[str, Any]] = []
+    def create_charge(self, org_id: str, amount: float, description: str, charge_type: str = "subscription") -> dict[str, Any]:
         import uuid
         charge = {"id": str(uuid.uuid4())[:8], "org_id": org_id, "amount": amount, "description": description, "type": charge_type, "status": "pending", "created_at": time.time()}
         self._charges.append(charge)
@@ -24,7 +26,7 @@ class ChargeManager:
                 c["status"] = "failed"
                 return True
         return False
-    def get_charges(self, org_id: str = "", status: str = "", limit: int = 50) -> List[Dict[str, Any]]:
+    def get_charges(self, org_id: str = "", status: str = "", limit: int = 50) -> list[dict[str, Any]]:
         results = self._charges
         if org_id:
             results = [c for c in results if c["org_id"] == org_id]

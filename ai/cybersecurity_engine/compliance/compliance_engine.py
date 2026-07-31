@@ -1,9 +1,8 @@
 """Compliance engine."""
 import uuid
-from datetime import datetime
-from typing import Dict, Any, List, Optional
-from enum import Enum
 from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
 
 
 class ComplianceFramework(Enum):
@@ -29,9 +28,9 @@ class ComplianceControl:
     title: str = ""
     description: str = ""
     status: ComplianceStatus = ComplianceStatus.NOT_ASSESSED
-    evidence: List[str] = field(default_factory=list)
-    last_assessed: Optional[datetime] = None
-    next_review: Optional[datetime] = None
+    evidence: list[str] = field(default_factory=list)
+    last_assessed: datetime | None = None
+    next_review: datetime | None = None
     owner: str = ""
 
 
@@ -49,9 +48,9 @@ class ComplianceAssessment:
 
 class ComplianceEngine:
     def __init__(self):
-        self._controls: Dict[str, ComplianceControl] = {}
-        self._assessments: List[ComplianceAssessment] = []
-        self._frameworks: Dict[ComplianceFramework, List[str]] = {}
+        self._controls: dict[str, ComplianceControl] = {}
+        self._assessments: list[ComplianceAssessment] = []
+        self._frameworks: dict[ComplianceFramework, list[str]] = {}
 
     def add_control(self, control: ComplianceControl) -> None:
         self._controls[control.control_id] = control
@@ -59,10 +58,10 @@ class ComplianceEngine:
             self._frameworks[control.framework] = []
         self._frameworks[control.framework].append(control.control_id)
 
-    def get_control(self, control_id: str) -> Optional[ComplianceControl]:
+    def get_control(self, control_id: str) -> ComplianceControl | None:
         return self._controls.get(control_id)
 
-    def update_control_status(self, control_id: str, status: ComplianceStatus, evidence: Optional[List[str]] = None) -> bool:
+    def update_control_status(self, control_id: str, status: ComplianceStatus, evidence: list[str] | None = None) -> bool:
         control = self._controls.get(control_id)
         if not control:
             return False
@@ -91,17 +90,17 @@ class ComplianceEngine:
         self._assessments.append(assessment)
         return assessment
 
-    def get_framework_controls(self, framework: ComplianceFramework) -> List[ComplianceControl]:
+    def get_framework_controls(self, framework: ComplianceFramework) -> list[ComplianceControl]:
         control_ids = self._frameworks.get(framework, [])
         return [self._controls[cid] for cid in control_ids if cid in self._controls]
 
-    def get_assessments(self, framework: Optional[ComplianceFramework] = None) -> List[ComplianceAssessment]:
+    def get_assessments(self, framework: ComplianceFramework | None = None) -> list[ComplianceAssessment]:
         assessments = list(self._assessments)
         if framework:
             assessments = [a for a in assessments if a.framework == framework]
         return assessments
 
-    def get_gaps(self, framework: ComplianceFramework) -> List[ComplianceControl]:
+    def get_gaps(self, framework: ComplianceFramework) -> list[ComplianceControl]:
         return [c for c in self._controls.values() if c.framework == framework and c.status in (ComplianceStatus.NON_COMPLIANT, ComplianceStatus.PARTIAL)]
 
     def get_stats(self) -> dict:

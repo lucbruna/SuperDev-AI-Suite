@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
-from typing import Any
+from datetime import UTC, datetime, timedelta
 
 from .reasoning_models import ReasoningResult
 
@@ -18,13 +17,13 @@ class ReasoningCache:
         if entry is None:
             return None
         result, timestamp = entry
-        if datetime.now(timezone.utc) - timestamp > self._ttl:
+        if datetime.now(UTC) - timestamp > self._ttl:
             del self._cache[key]
             return None
         return result
 
     def set(self, key: str, result: ReasoningResult) -> None:
-        self._cache[key] = (result, datetime.now(timezone.utc))
+        self._cache[key] = (result, datetime.now(UTC))
 
     def invalidate(self, key: str) -> bool:
         return self._cache.pop(key, None) is not None

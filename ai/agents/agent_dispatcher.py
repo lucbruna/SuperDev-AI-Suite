@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict
+from typing import Any
 
 
 class AgentDispatcher:
@@ -14,7 +14,7 @@ class AgentDispatcher:
     def dispatch_count(self) -> int:
         return self._dispatch_count
 
-    def dispatch(self, agent_id: str, task: Dict[str, Any]) -> Dict[str, Any]:
+    def dispatch(self, agent_id: str, task: dict[str, Any]) -> dict[str, Any]:
         self._dispatch_count += 1
         return {
             "dispatch_id": f"d{self._dispatch_count}",

@@ -77,10 +77,7 @@ class ArchitectureEngine:
         patterns = self._pattern_identifier.identify_from_task(task)
         components = list(self._component_modeler.list_components())
 
-        if requirements:
-            tech_recommendations = self._technology_selector.recommend(requirements)
-        else:
-            tech_recommendations = []
+        tech_recommendations = self._technology_selector.recommend(requirements) if requirements else []
 
         architecture: dict[str, Any] = {
             "task": task,

@@ -3,10 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from uuid import UUID
 
-from backend.knowledge_base.embedding_service import embedding_service
-from backend.knowledge_base.models import KnowledgeBase, KnowledgeChunk, KnowledgeEntry
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from backend.knowledge_base.embedding_service import embedding_service
+from backend.knowledge_base.models import KnowledgeBase, KnowledgeChunk, KnowledgeEntry
 
 
 @dataclass
@@ -72,9 +73,9 @@ class VectorStore:
         for chunk_index, content, metadata in chunks:
             if not content.strip():
                 continue
-            
+
             embedding = embedding_service.embed_text(content)
-            
+
             chunk = KnowledgeChunk(
                 entry_id=entry_id,
                 chunk_index=chunk_index,
@@ -84,7 +85,7 @@ class VectorStore:
 extra_metadata=metadata or {},
             )
             knowledge_chunks.append(chunk)
-        
+
         self.session.add_all(knowledge_chunks)
         await self.session.flush()
         return knowledge_chunks
@@ -97,16 +98,16 @@ extra_metadata=metadata or {},
         similarity_threshold: float = 0.5,
     ) -> list[SearchResult]:
         query_embedding = embedding_service.embed_text(query)
-        
+
         where_clause = "1=1"
         params = {"query_embedding": query_embedding, "top_k": top_k, "threshold": similarity_threshold}
-        
+
         if knowledge_base_ids:
             kb_ids_str = ",".join(f"'{kb_id}'" for kb_id in knowledge_base_ids)
             where_clause = f"kb.id IN ({kb_ids_str})"
 
         sql = text(f"""
-            SELECT 
+            SELECT
                 c.id as chunk_id,
                 c.entry_id,
                 c.chunk_index,
@@ -142,10 +143,10 @@ extra_metadata=metadata or {},
             ORDER BY c.embedding <=> :query_embedding
             LIMIT :top_k
         """)
-        
+
         result = await self.session.execute(sql, params)
         rows = result.mappings().all()
-        
+
         search_results = []
         for row in rows:
             chunk = KnowledgeChunk(
@@ -157,7 +158,7 @@ extra_metadata=metadata or {},
                 metadata=row["chunk_metadata"],
                 created_at=row["chunk_created_at"],
             )
-            
+
             entry = KnowledgeEntry(
                 id=row["entry_id"],
                 knowledge_base_id=row["knowledge_base_id"],
@@ -171,7 +172,7 @@ extra_metadata=metadata or {},
                 created_at=row["entry_created_at"],
                 updated_at=row["entry_updated_at"],
             )
-            
+
             kb = KnowledgeBase(
                 id=row["kb_id"],
                 name=row["kb_name"],
@@ -181,14 +182,14 @@ extra_metadata=metadata or {},
                 created_at=row["kb_created_at"],
                 updated_at=row["kb_updated_at"],
             )
-            
+
             search_results.append(SearchResult(
                 chunk=chunk,
                 entry=entry,
                 knowledge_base=kb,
                 score=row["similarity"],
             ))
-        
+
         return search_results
 
     async def search_by_entry(
@@ -197,7 +198,7 @@ extra_metadata=metadata or {},
         top_k: int = 5,
     ) -> list[SearchResult]:
         sql = text("""
-            SELECT 
+            SELECT
                 c.id as chunk_id,
                 c.entry_id,
                 c.chunk_index,
@@ -233,10 +234,10 @@ extra_metadata=metadata or {},
             ORDER BY c.embedding <=> c2.embedding
             LIMIT :top_k
         """)
-        
+
         result = await self.session.execute(sql, {"entry_id": entry_id, "top_k": top_k})
         rows = result.mappings().all()
-        
+
         search_results = []
         for row in rows:
             chunk = KnowledgeChunk(
@@ -248,7 +249,7 @@ extra_metadata=metadata or {},
                 metadata=row["chunk_metadata"],
                 created_at=row["chunk_created_at"],
             )
-            
+
             entry = KnowledgeEntry(
                 id=row["entry_id"],
                 knowledge_base_id=row["knowledge_base_id"],
@@ -262,7 +263,7 @@ extra_metadata=metadata or {},
                 created_at=row["entry_created_at"],
                 updated_at=row["entry_updated_at"],
             )
-            
+
             kb = KnowledgeBase(
                 id=row["kb_id"],
                 name=row["kb_name"],
@@ -272,14 +273,14 @@ extra_metadata=metadata or {},
                 created_at=row["kb_created_at"],
                 updated_at=row["kb_updated_at"],
             )
-            
+
             search_results.append(SearchResult(
                 chunk=chunk,
                 entry=entry,
                 knowledge_base=kb,
                 score=row["similarity"],
             ))
-        
+
         return search_results
 
     async def delete_entry(self, entry_id: UUID) -> bool:
@@ -305,12 +306,12 @@ extra_metadata=metadata or {},
         kb_type: str | None = None,
     ) -> list[KnowledgeBase]:
         query = select(KnowledgeBase)
-        
+
         if is_public is not None:
             query = query.where(KnowledgeBase.is_public == is_public)
         if kb_type:
             query = query.where(KnowledgeBase.type == kb_type)
-        
+
         query = query.order_by(KnowledgeBase.created_at.desc())
         result = await self.session.execute(query)
         return list(result.scalars().all())
@@ -326,12 +327,12 @@ extra_metadata=metadata or {},
         offset: int = 0,
     ) -> list[KnowledgeEntry]:
         query = select(KnowledgeEntry)
-        
+
         if knowledge_base_id:
             query = query.where(KnowledgeEntry.knowledge_base_id == knowledge_base_id)
         if tags:
             query = query.where(KnowledgeEntry.tags.overlap(tags))
-        
+
         query = query.order_by(KnowledgeEntry.created_at.desc()).limit(limit).offset(offset)
         result = await self.session.execute(query)
         return list(result.scalars().all())

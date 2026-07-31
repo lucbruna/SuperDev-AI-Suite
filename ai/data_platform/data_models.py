@@ -1,9 +1,9 @@
 """Data Platform Models — Core data models for the autonomous data platform."""
-from dataclasses import dataclass, field
-from enum import Enum
-from typing import List, Optional, Dict, Any
-from datetime import datetime
 import uuid
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class DataSourceType(Enum):
@@ -55,7 +55,7 @@ class DataSource:
     connection_string: str = ""
     format: DataFormat = DataFormat.JSON
     status: str = "active"
-    last_sync: Optional[datetime] = None
+    last_sync: datetime | None = None
     created_at: datetime = field(default_factory=datetime.now)
 
 
@@ -64,10 +64,10 @@ class DataRecord:
     record_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     source_id: str = ""
     dataset: str = ""
-    payload: Dict[str, Any] = field(default_factory=dict)
+    payload: dict[str, Any] = field(default_factory=dict)
     timestamp: datetime = field(default_factory=datetime.now)
     quality_score: float = 1.0
-    tags: List[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -75,12 +75,12 @@ class DataPipeline:
     pipeline_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     name: str = ""
     source_id: str = ""
-    steps: List[Dict[str, Any]] = field(default_factory=list)
+    steps: list[dict[str, Any]] = field(default_factory=list)
     status: PipelineStatus = PipelineStatus.IDLE
     records_processed: int = 0
     error_count: int = 0
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
     created_at: datetime = field(default_factory=datetime.now)
 
 
@@ -89,7 +89,7 @@ class DataSchema:
     schema_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     name: str = ""
     version: str = "1.0"
-    fields: List[Dict[str, Any]] = field(default_factory=list)
+    fields: list[dict[str, Any]] = field(default_factory=list)
     dataset: str = ""
     created_at: datetime = field(default_factory=datetime.now)
 
@@ -104,7 +104,7 @@ class DataCatalogEntry:
     record_count: int = 0
     size_bytes: int = 0
     quality_level: DataQualityLevel = DataQualityLevel.GOOD
-    tags: List[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
     last_updated: datetime = field(default_factory=datetime.now)
 
 
@@ -117,13 +117,13 @@ class DataPartition:
     record_count: int = 0
     size_bytes: int = 0
     created_at: datetime = field(default_factory=datetime.now)
-    expires_at: Optional[datetime] = None
+    expires_at: datetime | None = None
 
 
 @dataclass
 class DataLineage:
     lineage_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     dataset: str = ""
-    source_datasets: List[str] = field(default_factory=list)
+    source_datasets: list[str] = field(default_factory=list)
     transformation: str = ""
     created_at: datetime = field(default_factory=datetime.now)

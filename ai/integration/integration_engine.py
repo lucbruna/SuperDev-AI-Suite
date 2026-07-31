@@ -1,12 +1,12 @@
 """
 Integration Engine - Core orchestration
 """
-from typing import Dict, Any, Optional, List, Callable
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
-import json
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class IntegrationType(Enum):
@@ -38,13 +38,13 @@ class IntegrationDefinition:
     status: IntegrationStatus = IntegrationStatus.INACTIVE
     source_system: str = ""
     target_system: str = ""
-    config: Dict[str, Any] = field(default_factory=dict)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    config: dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     created_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)
-    last_sync: Optional[datetime] = None
+    last_sync: datetime | None = None
     error_count: int = 0
-    tags: List[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -59,11 +59,11 @@ class IntegrationResult:
 
 class IntegrationEngine:
     def __init__(self):
-        self.integrations: Dict[str, IntegrationDefinition] = {}
-        self.handlers: Dict[str, Callable] = {}
-        self.middleware: List[Callable] = []
-        self.event_handlers: Dict[str, List[Callable]] = {}
-        self._hooks: Dict[str, List[Callable]] = {
+        self.integrations: dict[str, IntegrationDefinition] = {}
+        self.handlers: dict[str, Callable] = {}
+        self.middleware: list[Callable] = []
+        self.event_handlers: dict[str, list[Callable]] = {}
+        self._hooks: dict[str, list[Callable]] = {
             "before_connect": [], "after_connect": [],
             "before_sync": [], "after_sync": [],
             "on_error": [], "on_success": [],
@@ -75,7 +75,7 @@ class IntegrationEngine:
         self.integrations[integration_id] = definition
         return definition
 
-    def get_integration(self, integration_id: str) -> Optional[IntegrationDefinition]:
+    def get_integration(self, integration_id: str) -> IntegrationDefinition | None:
         return self.integrations.get(integration_id)
 
     def update_status(self, integration_id: str, status: IntegrationStatus) -> bool:
@@ -96,7 +96,7 @@ class IntegrationEngine:
         if hook_name in self._hooks:
             self._hooks[hook_name].append(callback)
 
-    def trigger_hooks(self, hook_name: str, context: Dict[str, Any]) -> None:
+    def trigger_hooks(self, hook_name: str, context: dict[str, Any]) -> None:
         for callback in self._hooks.get(hook_name, []):
             callback(context)
 
@@ -111,10 +111,7 @@ class IntegrationEngine:
             for mw in self.middleware:
                 data = mw(data)
             handler = self.handlers.get(integration_id)
-            if handler:
-                result_data = handler(data)
-            else:
-                result_data = data
+            result_data = handler(data) if handler else data
             duration = (datetime.now() - start).total_seconds() * 1000
             integration.last_sync = datetime.now()
             return IntegrationResult(success=True, integration_id=integration_id, data=result_data, duration_ms=duration)
@@ -122,7 +119,7 @@ class IntegrationEngine:
             integration.error_count += 1
             return IntegrationResult(success=False, integration_id=integration_id, error=str(e))
 
-    def list_integrations(self, status: IntegrationStatus = None) -> List[IntegrationDefinition]:
+    def list_integrations(self, status: IntegrationStatus = None) -> list[IntegrationDefinition]:
         if status:
             return [i for i in self.integrations.values() if i.status == status]
         return list(self.integrations.values())

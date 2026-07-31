@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class ReviewCycle:
     """Review cycle for collaborative work."""
 
     def __init__(self) -> None:
-        self._reviews: Dict[str, Dict[str, Any]] = {}
+        self._reviews: dict[str, dict[str, Any]] = {}
 
-    def start_review(self, review_id: str, item: str, reviewers: List[str]) -> None:
+    def start_review(self, review_id: str, item: str, reviewers: list[str]) -> None:
         self._reviews[review_id] = {"item": item, "reviewers": reviewers, "comments": [], "approved": False}
 
     def add_comment(self, review_id: str, reviewer: str, comment: str) -> bool:
@@ -26,7 +26,7 @@ class ReviewCycle:
             return True
         return False
 
-    def get_review(self, review_id: str) -> Optional[Dict[str, Any]]:
+    def get_review(self, review_id: str) -> dict[str, Any] | None:
         review = self._reviews.get(review_id)
         return dict(review) if review else None
 

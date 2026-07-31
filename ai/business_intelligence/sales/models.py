@@ -1,7 +1,6 @@
 """Sales models."""
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
 from enum import Enum
 
 
@@ -31,10 +30,10 @@ class Deal:
     stage: DealStage = DealStage.LEAD
     owner: str = ""
     company: str = ""
-    close_date: Optional[datetime] = None
+    close_date: datetime | None = None
     created_at: datetime = field(default_factory=datetime.now)
     probability: float = 0.0
-    contacts: List[str] = field(default_factory=list)
+    contacts: list[str] = field(default_factory=list)
     notes: str = ""
 
     @property

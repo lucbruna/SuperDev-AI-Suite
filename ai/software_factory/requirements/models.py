@@ -1,9 +1,9 @@
 """Data models for requirements management."""
-from dataclasses import dataclass, field
-from enum import Enum
-from typing import List, Optional, Dict, Any
-from datetime import datetime
 import uuid
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class RequirementType(Enum):
@@ -53,10 +53,10 @@ class Requirement:
     author: str = ""
     created_at: datetime = field(default_factory=datetime.utcnow)
     updated_at: datetime = field(default_factory=datetime.utcnow)
-    tags: List[str] = field(default_factory=list)
-    acceptance_criteria: List[str] = field(default_factory=list)
-    dependencies: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    tags: list[str] = field(default_factory=list)
+    acceptance_criteria: list[str] = field(default_factory=list)
+    dependencies: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def approve(self) -> None:
         self.status = RequirementStatus.APPROVED
@@ -76,17 +76,17 @@ class RequirementSet:
     set_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     name: str = ""
     description: str = ""
-    requirements: List[Requirement] = field(default_factory=list)
+    requirements: list[Requirement] = field(default_factory=list)
     version: str = "1.0.0"
     created_at: datetime = field(default_factory=datetime.utcnow)
 
     def add_requirement(self, req: Requirement) -> None:
         self.requirements.append(req)
 
-    def get_by_type(self, rtype: RequirementType) -> List[Requirement]:
+    def get_by_type(self, rtype: RequirementType) -> list[Requirement]:
         return [r for r in self.requirements if r.requirement_type == rtype]
 
-    def get_by_priority(self, priority: Priority) -> List[Requirement]:
+    def get_by_priority(self, priority: Priority) -> list[Requirement]:
         return [r for r in self.requirements if r.priority == priority]
 
     def approved_count(self) -> int:

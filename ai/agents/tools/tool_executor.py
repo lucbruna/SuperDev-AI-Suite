@@ -2,16 +2,16 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict
+from typing import Any
 
 
 class ToolExecutor:
     """Executes registered tools with given arguments."""
 
     def __init__(self) -> None:
-        self._history: list[Dict[str, Any]] = []
+        self._history: list[dict[str, Any]] = []
 
-    def execute(self, tool: Dict[str, Any], args: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, tool: dict[str, Any], args: dict[str, Any]) -> dict[str, Any]:
         start = time.time()
         result = {
             "tool_id": tool.get("id", "unknown"),
@@ -25,5 +25,5 @@ class ToolExecutor:
         self._history.append(result)
         return result
 
-    def get_history(self, limit: int = 20) -> list[Dict[str, Any]]:
+    def get_history(self, limit: int = 20) -> list[dict[str, Any]]:
         return self._history[-limit:]

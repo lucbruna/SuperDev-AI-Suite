@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 from .base_agent import BaseAgent
 
@@ -10,7 +10,7 @@ class ReactiveAgent(BaseAgent):
 
     def __init__(self, agent_id: str, name: str = "") -> None:
         super().__init__(agent_id, name)
-        self._stimuli: Dict[str, str] = {}
+        self._stimuli: dict[str, str] = {}
 
     def register_stimulus(self, trigger: str, response: str) -> None:
         self._stimuli[trigger] = response
@@ -18,7 +18,7 @@ class ReactiveAgent(BaseAgent):
     def react(self, stimulus: str) -> str:
         return self._stimuli.get(stimulus, "unknown")
 
-    def execute(self, task: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, task: dict[str, Any]) -> dict[str, Any]:
         stimulus = task.get("stimulus", "")
         response = self.react(stimulus)
         return {"agent_id": self._agent_id, "stimulus": stimulus, "response": response}

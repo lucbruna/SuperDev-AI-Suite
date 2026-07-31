@@ -1,6 +1,7 @@
 import pytest
-from backend.app import create_app
 from httpx import ASGITransport, AsyncClient
+
+from backend.app import create_app
 
 
 @pytest.fixture

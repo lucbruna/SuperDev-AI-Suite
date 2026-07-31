@@ -16,17 +16,17 @@ def truncate(value: str, max_length: int = 100, suffix: str = "...") -> str:
         return value
     if max_length <= len(suffix):
         return suffix[:max_length]
-    
+
     # Target length without suffix
     target_len = max_length - len(suffix)
     truncated = value[:target_len]
-    
+
     # Find last space to break at word boundary
     last_space = truncated.rfind(" ")
     if last_space > 0:
         # Keep the space before the suffix
         truncated = truncated[:last_space + 1]
-    
+
     return truncated + suffix
 
 

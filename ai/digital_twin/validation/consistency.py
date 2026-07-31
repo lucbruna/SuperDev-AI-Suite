@@ -1,16 +1,18 @@
 """Consistency validation."""
 from __future__ import annotations
-from typing import Any, Dict, List
+
+from typing import Any
+
 
 class ConsistencyValidator:
     def __init__(self) -> None:
-        self._rules: List[Dict[str, Any]] = []
-        self._violations: List[Dict[str, Any]] = []
-    def add_rule(self, name: str, rule_type: str, parameters: Dict[str, Any]) -> Dict[str, Any]:
+        self._rules: list[dict[str, Any]] = []
+        self._violations: list[dict[str, Any]] = []
+    def add_rule(self, name: str, rule_type: str, parameters: dict[str, Any]) -> dict[str, Any]:
         rule = {"name": name, "type": rule_type, "parameters": parameters}
         self._rules.append(rule)
         return rule
-    def validate(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def validate(self, data: dict[str, Any]) -> dict[str, Any]:
         violations = []
         for rule in self._rules:
             if rule["type"] == "field_exists":
@@ -30,14 +32,14 @@ class ConsistencyValidator:
                 max_val = rule["parameters"].get("max", 100)
                 if field in data and isinstance(data[field], (int, float)):
                     if data[field] < min_val or data[field] > max_val:
-                        violations.append({"rule": rule["name"], "error": f"out of range"})
+                        violations.append({"rule": rule["name"], "error": "out of range"})
         valid = len(violations) == 0
         if not valid:
             self._violations.extend(violations)
         return {"valid": valid, "violations": violations}
-    def get_violations(self, limit: int = 20) -> List[Dict[str, Any]]:
+    def get_violations(self, limit: int = 20) -> list[dict[str, Any]]:
         return self._violations[-limit:]
-    def list_rules(self) -> List[Dict[str, Any]]:
+    def list_rules(self) -> list[dict[str, Any]]:
         return self._rules
     def violation_count(self) -> int:
         return len(self._violations)

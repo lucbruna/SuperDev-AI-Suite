@@ -1,7 +1,7 @@
 """Inference engine for drawing conclusions from evidence."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class InferenceEngine:
@@ -10,9 +10,9 @@ class InferenceEngine:
     def __init__(self) -> None:
         self._inference_count: int = 0
 
-    def infer(self, problem: str, facts: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def infer(self, problem: str, facts: dict[str, Any]) -> list[dict[str, Any]]:
         self._inference_count += 1
-        inferences: List[Dict[str, Any]] = []
+        inferences: list[dict[str, Any]] = []
         for key, value in facts.items():
             inferences.append({
                 "type": "from_fact",
@@ -37,9 +37,9 @@ class InferenceEngine:
             })
         return inferences
 
-    def chain(self, initial_facts: Dict[str, Any],
-              rules: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        results: List[Dict[str, Any]] = []
+    def chain(self, initial_facts: dict[str, Any],
+              rules: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        results: list[dict[str, Any]] = []
         current = dict(initial_facts)
         for rule in rules:
             condition = rule.get("condition", "")
@@ -52,5 +52,5 @@ class InferenceEngine:
                 })
         return results
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         return {"total_inferences": self._inference_count}

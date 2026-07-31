@@ -1,16 +1,19 @@
 """OAuth provider integration."""
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
-import uuid, time
+
+import time
+import uuid
+from typing import Any
+
 
 class OAuthManager:
     def __init__(self) -> None:
-        self._providers: Dict[str, Dict[str, Any]] = {}
-        self._tokens: Dict[str, Dict[str, Any]] = {}
-    def register_provider(self, name: str, client_id: str, scopes: Optional[List[str]] = None) -> Dict[str, Any]:
+        self._providers: dict[str, dict[str, Any]] = {}
+        self._tokens: dict[str, dict[str, Any]] = {}
+    def register_provider(self, name: str, client_id: str, scopes: list[str] | None = None) -> dict[str, Any]:
         self._providers[name] = {"client_id": client_id, "scopes": scopes or [], "enabled": True}
         return {"provider": name, "status": "registered"}
-    def authorize(self, provider: str, user_id: str) -> Dict[str, Any]:
+    def authorize(self, provider: str, user_id: str) -> dict[str, Any]:
         if provider not in self._providers:
             return {"error": "provider_not_found"}
         token_id = str(uuid.uuid4())[:12]
@@ -23,5 +26,5 @@ class OAuthManager:
             del self._tokens[token_id]
             return True
         return False
-    def list_providers(self) -> List[str]:
+    def list_providers(self) -> list[str]:
         return list(self._providers.keys())

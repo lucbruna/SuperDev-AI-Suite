@@ -1,14 +1,21 @@
 """Business Intelligence Analytics subsystem."""
-from .models import (
-    AnalysisType, MetricType, InsightType,
-    DataPoint, Insight, AnalysisRequest, AnalysisResult,
-)
-from .interfaces import (
-    AnalyticsEngineInterface, DataWarehouseInterface,
-    DashboardInterface, ReportGeneratorInterface,
-)
 from .config import AnalyticsConfig, DashboardConfig, ReportConfig
 from .engine import AnalyticsEngine
+from .interfaces import (
+    AnalyticsEngineInterface,
+    DashboardInterface,
+    DataWarehouseInterface,
+    ReportGeneratorInterface,
+)
+from .models import (
+    AnalysisRequest,
+    AnalysisResult,
+    AnalysisType,
+    DataPoint,
+    Insight,
+    InsightType,
+    MetricType,
+)
 
 __all__ = [
     "AnalysisType", "MetricType", "InsightType",

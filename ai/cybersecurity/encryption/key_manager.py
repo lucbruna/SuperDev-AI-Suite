@@ -1,11 +1,11 @@
 """
 Key Management Service
 """
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime, timedelta
 import secrets
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from enum import Enum
+from typing import Any
 
 
 class KeyState(Enum):
@@ -28,17 +28,17 @@ class ManagedKey:
     key_type: KeyType
     state: KeyState = KeyState.ACTIVE
     created_at: datetime = field(default_factory=datetime.now)
-    expires_at: Optional[datetime] = None
+    expires_at: datetime | None = None
     rotation_interval_days: int = 90
     usage_count: int = 0
     max_usage: int = 0
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class KeyManager:
     def __init__(self):
-        self.keys: Dict[str, ManagedKey] = {}
-        self.key_material: Dict[str, bytes] = {}
+        self.keys: dict[str, ManagedKey] = {}
+        self.key_material: dict[str, bytes] = {}
 
     def create_key(self, key_id: str, key_type: KeyType = KeyType.SYMMETRIC, **kwargs) -> ManagedKey:
         key = ManagedKey(key_id=key_id, key_type=key_type, **kwargs)
@@ -46,7 +46,7 @@ class KeyManager:
         self.key_material[key_id] = secrets.token_bytes(32)
         return key
 
-    def get_key(self, key_id: str) -> Optional[ManagedKey]:
+    def get_key(self, key_id: str) -> ManagedKey | None:
         return self.keys.get(key_id)
 
     def disable_key(self, key_id: str) -> bool:
@@ -64,7 +64,7 @@ class KeyManager:
             return True
         return False
 
-    def rotate_key(self, key_id: str) -> Optional[ManagedKey]:
+    def rotate_key(self, key_id: str) -> ManagedKey | None:
         key = self.keys.get(key_id)
         if key:
             key.state = KeyState.ROTATING
@@ -75,10 +75,10 @@ class KeyManager:
             return key
         return None
 
-    def get_keys_by_type(self, key_type: KeyType) -> List[ManagedKey]:
+    def get_keys_by_type(self, key_type: KeyType) -> list[ManagedKey]:
         return [k for k in self.keys.values() if k.key_type == key_type]
 
-    def get_expiring_keys(self, days: int = 30) -> List[ManagedKey]:
+    def get_expiring_keys(self, days: int = 30) -> list[ManagedKey]:
         threshold = datetime.now() + timedelta(days=days)
         return [k for k in self.keys.values() if k.expires_at and k.expires_at <= threshold]
 
@@ -86,9 +86,7 @@ class KeyManager:
         key = self.keys.get(key_id)
         if not key or key.state != KeyState.ACTIVE:
             return False
-        if key.max_usage > 0 and key.usage_count >= key.max_usage:
-            return False
-        return True
+        return not (key.max_usage > 0 and key.usage_count >= key.max_usage)
 
     def record_usage(self, key_id: str) -> None:
         key = self.keys.get(key_id)

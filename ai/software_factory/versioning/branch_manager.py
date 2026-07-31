@@ -1,18 +1,18 @@
 """Manager for version control branches."""
-from typing import List, Optional
+
 from .models import Branch
 
 
 class BranchManager:
     def __init__(self):
-        self._branches: List[Branch] = []
+        self._branches: list[Branch] = []
 
     def create_branch(self, name: str, source: str = "main") -> Branch:
         branch = Branch(name=name, source_branch=source)
         self._branches.append(branch)
         return branch
 
-    def get_branch(self, name: str) -> Optional[Branch]:
+    def get_branch(self, name: str) -> Branch | None:
         for b in self._branches:
             if b.name == name:
                 return b
@@ -32,7 +32,7 @@ class BranchManager:
             return True
         return False
 
-    def list_branches(self) -> List[Branch]:
+    def list_branches(self) -> list[Branch]:
         return list(self._branches)
 
     def count(self) -> int:

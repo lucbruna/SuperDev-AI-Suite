@@ -1,9 +1,9 @@
 """Data models for code generation."""
-from dataclasses import dataclass, field
-from enum import Enum
-from typing import List, Optional, Dict, Any
-from datetime import datetime
 import uuid
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class TemplateLanguage(Enum):
@@ -24,7 +24,7 @@ class GeneratedFile:
     content: str = ""
     language: TemplateLanguage = TemplateLanguage.PYTHON
     template_used: str = ""
-    variables: Dict[str, Any] = field(default_factory=dict)
+    variables: dict[str, Any] = field(default_factory=dict)
     generated_at: datetime = field(default_factory=datetime.utcnow)
 
 
@@ -45,10 +45,10 @@ class Template:
     name: str = ""
     content: str = ""
     language: TemplateLanguage = TemplateLanguage.PYTHON
-    variables: List[TemplateVariable] = field(default_factory=list)
+    variables: list[TemplateVariable] = field(default_factory=list)
     description: str = ""
 
-    def render(self, variables: Dict[str, Any]) -> str:
+    def render(self, variables: dict[str, Any]) -> str:
         result = self.content
         for var in self.variables:
             placeholder = f"{{{{{var.name}}}}}"
@@ -66,8 +66,8 @@ class GenerationProject:
     project_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     name: str = ""
     output_dir: str = ""
-    templates: List[str] = field(default_factory=list)
-    global_variables: Dict[str, Any] = field(default_factory=dict)
+    templates: list[str] = field(default_factory=list)
+    global_variables: dict[str, Any] = field(default_factory=dict)
     language: TemplateLanguage = TemplateLanguage.PYTHON
 
 
@@ -77,8 +77,8 @@ class ScaffoldConfig:
     project_name: str = ""
     project_type: str = "library"
     language: TemplateLanguage = TemplateLanguage.PYTHON
-    features: List[str] = field(default_factory=list)
-    structure: Dict[str, Any] = field(default_factory=dict)
+    features: list[str] = field(default_factory=list)
+    structure: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass

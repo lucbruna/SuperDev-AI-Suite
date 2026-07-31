@@ -1,9 +1,9 @@
 """
 Field Mapper - Field-level transformations
 """
-from typing import Dict, Any, Optional, List, Callable
-from dataclasses import dataclass, field
-from datetime import datetime
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
@@ -16,8 +16,8 @@ class FieldTransform:
 
 class FieldMapper:
     def __init__(self):
-        self.transforms: Dict[str, List[FieldTransform]] = {}
-        self.functions: Dict[str, Callable] = {}
+        self.transforms: dict[str, list[FieldTransform]] = {}
+        self.functions: dict[str, Callable] = {}
 
     def register_function(self, name: str, fn: Callable) -> None:
         self.functions[name] = fn
@@ -27,7 +27,7 @@ class FieldMapper:
         self.transforms.setdefault(mapping_name, []).append(transform)
         return transform
 
-    def apply(self, mapping_name: str, data: Dict[str, Any]) -> Dict[str, Any]:
+    def apply(self, mapping_name: str, data: dict[str, Any]) -> dict[str, Any]:
         transforms = self.transforms.get(mapping_name, [])
         result = {}
         for t in transforms:
@@ -37,7 +37,7 @@ class FieldMapper:
             result[t.target_field] = value
         return result
 
-    def get_transforms(self, mapping_name: str) -> List[FieldTransform]:
+    def get_transforms(self, mapping_name: str) -> list[FieldTransform]:
         return self.transforms.get(mapping_name, [])
 
     def count(self) -> int:

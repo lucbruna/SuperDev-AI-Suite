@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class AgentModel:
@@ -11,7 +11,7 @@ class AgentModel:
         self._agent_type = agent_type
         self._name = name or agent_id
         self._status: str = "idle"
-        self._metadata: Dict[str, Any] = {}
+        self._metadata: dict[str, Any] = {}
 
     @property
     def agent_id(self) -> str:
@@ -36,10 +36,10 @@ class AgentModel:
     def set_metadata(self, key: str, value: Any) -> None:
         self._metadata[key] = value
 
-    def get_metadata(self, key: str) -> Optional[Any]:
+    def get_metadata(self, key: str) -> Any | None:
         return self._metadata.get(key)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "agent_id": self._agent_id,
             "agent_type": self._agent_type,
@@ -49,7 +49,7 @@ class AgentModel:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "AgentModel":
+    def from_dict(cls, data: dict[str, Any]) -> AgentModel:
         model = cls(data["agent_id"], data["agent_type"], data.get("name", ""))
         model._status = data.get("status", "idle")
         model._metadata = data.get("metadata", {})
@@ -59,7 +59,7 @@ class AgentModel:
 class TaskModel:
     """Data model for agent tasks."""
 
-    def __init__(self, task_id: str, task_type: str, payload: Dict[str, Any] | None = None) -> None:
+    def __init__(self, task_id: str, task_type: str, payload: dict[str, Any] | None = None) -> None:
         self._task_id = task_id
         self._task_type = task_type
         self._payload = payload or {}
@@ -73,10 +73,10 @@ class TaskModel:
         return self._task_type
 
     @property
-    def payload(self) -> Dict[str, Any]:
+    def payload(self) -> dict[str, Any]:
         return dict(self._payload)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "task_id": self._task_id,
             "task_type": self._task_type,

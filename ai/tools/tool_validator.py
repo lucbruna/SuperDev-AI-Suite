@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from .tool_interfaces import ITool
 from .tool_registry import ToolRegistry
 
 

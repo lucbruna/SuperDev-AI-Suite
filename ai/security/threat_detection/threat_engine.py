@@ -1,8 +1,11 @@
 """Threat detection engine."""
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
+
+import time
+import uuid
 from enum import Enum
-import time, uuid
+from typing import Any
+
 
 class ThreatLevel(Enum):
     INFO = "info"
@@ -35,8 +38,8 @@ class Threat:
 
 class ThreatDetectionEngine:
     def __init__(self) -> None:
-        self._threats: Dict[str, Threat] = {}
-        self._rules: List[Dict[str, Any]] = []
+        self._threats: dict[str, Threat] = {}
+        self._rules: list[dict[str, Any]] = []
         self._blocked_sources: set[str] = set()
     def detect(self, threat_type: ThreatType, level: ThreatLevel, source: str = "", description: str = "") -> Threat:
         threat = Threat(threat_type, level, source, description)
@@ -60,15 +63,15 @@ class ThreatDetectionEngine:
             self._blocked_sources.remove(source)
             return True
         return False
-    def get_threats(self, level: Optional[ThreatLevel] = None, status: str = "") -> List[Dict[str, Any]]:
+    def get_threats(self, level: ThreatLevel | None = None, status: str = "") -> list[dict[str, Any]]:
         threats = list(self._threats.values())
         if level:
             threats = [t for t in threats if t.level == level]
         if status:
             threats = [t for t in threats if t.status == status]
         return [{"id": t.threat_id, "type": t.type.value, "level": t.level.value, "source": t.source, "status": t.status, "mitigated": t.mitigated} for t in threats]
-    def stats(self) -> Dict[str, int]:
-        counts: Dict[str, int] = {}
+    def stats(self) -> dict[str, int]:
+        counts: dict[str, int] = {}
         for t in self._threats.values():
             counts[t.level.value] = counts.get(t.level.value, 0) + 1
         return counts

@@ -6,14 +6,14 @@ All other JWT implementations should be removed and replaced with this one.
 
 from __future__ import annotations
 
-import secrets
 from datetime import timedelta
 from typing import Any
 
-from backend.utils.datetime import utc_now
-from backend.utils.uuid_utils import generate_uuid
 from jose import JWTError, jwt
 from pydantic import SecretStr
+
+from backend.utils.datetime import utc_now
+from backend.utils.uuid_utils import generate_uuid
 
 
 class JWTManager:

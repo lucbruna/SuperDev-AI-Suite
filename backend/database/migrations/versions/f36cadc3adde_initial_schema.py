@@ -1,7 +1,7 @@
 """initial_schema
 
 Revision ID: f36cadc3adde
-Revises: 
+Revises:
 Create Date: 2026-07-29 10:07:20.263825
 
 """
@@ -10,8 +10,9 @@ from collections.abc import Sequence
 import pgvector
 import pgvector.sqlalchemy
 import sqlalchemy as sa
-from alembic import op
 from sqlalchemy.dialects import postgresql
+
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = 'f36cadc3adde'

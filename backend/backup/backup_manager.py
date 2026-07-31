@@ -86,7 +86,6 @@ class BackupManager:
             # For PostgreSQL, use pg_dump
             if "postgresql" in db_url:
                 import asyncio
-                import subprocess
 
                 cmd = [
                     "pg_dump",
@@ -307,7 +306,6 @@ class BackupManager:
 
     @staticmethod
     def _calculate_checksum(file_path: Path) -> str:
-        import hashlib
         if not file_path.exists():
             return ""
         h = hashlib.sha256()

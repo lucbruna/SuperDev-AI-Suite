@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class Concept:
@@ -11,7 +11,7 @@ class Concept:
         name: str,
         definition: str = "",
         concept_type: str = "general",
-        attributes: Dict[str, Any] | None = None,
+        attributes: dict[str, Any] | None = None,
     ):
         self._name = name
         self._definition = definition
@@ -31,10 +31,10 @@ class Concept:
         return self._type
 
     @property
-    def attributes(self) -> Dict[str, Any]:
+    def attributes(self) -> dict[str, Any]:
         return dict(self._attributes)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "name": self._name,
             "definition": self._definition,
@@ -43,7 +43,7 @@ class Concept:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> Concept:
+    def from_dict(cls, data: dict[str, Any]) -> Concept:
         return cls(
             name=data["name"],
             definition=data.get("definition", ""),

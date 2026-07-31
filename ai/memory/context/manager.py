@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .builder import ContextBuilder
 from .compressor import ContextCompressor
@@ -28,7 +28,7 @@ class ContextManager:
         self._ranker = ContextRanker()
         self._filter = ContextFilter()
         self._router = ContextRouter()
-        self._contexts: Dict[str, Any] = {}
+        self._contexts: dict[str, Any] = {}
 
     @property
     def builder(self) -> ContextBuilder:
@@ -70,15 +70,15 @@ class ContextManager:
     def router(self) -> ContextRouter:
         return self._router
 
-    def build_context(self, name: str, sources: List[str]) -> Dict[str, Any]:
+    def build_context(self, name: str, sources: list[str]) -> dict[str, Any]:
         ctx = self._builder.build(sources)
         self._contexts[name] = ctx
         return ctx
 
-    def get_context(self, name: str) -> Optional[Any]:
+    def get_context(self, name: str) -> Any | None:
         return self._contexts.get(name)
 
-    def list_contexts(self) -> List[str]:
+    def list_contexts(self) -> list[str]:
         return list(self._contexts.keys())
 
     def remove_context(self, name: str) -> bool:
@@ -87,7 +87,7 @@ class ContextManager:
     def clear(self) -> None:
         self._contexts.clear()
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         return {
             "context_count": len(self._contexts),
             "context_names": list(self._contexts.keys()),

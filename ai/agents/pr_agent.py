@@ -22,7 +22,7 @@ class PRAgent:
         }
 
     async def analyze_issue_complexity(self, issue: dict[str, Any]) -> dict[str, Any]:
-        title = issue.get("title", "")
+        issue.get("title", "")
         body = issue.get("body", "") or ""
         labels = [l.get("name", "") for l in issue.get("labels", [])]
 

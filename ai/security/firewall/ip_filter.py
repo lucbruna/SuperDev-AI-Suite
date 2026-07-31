@@ -1,8 +1,8 @@
 """IP filtering."""
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
+
 from enum import Enum
-import time, uuid
+
 
 class IPAction(Enum):
     ALLOW = "allow"
@@ -14,8 +14,8 @@ class IPFilter:
     def __init__(self) -> None:
         self._whitelist: set[str] = set()
         self._blacklist: set[str] = set()
-        self._rate_limits: Dict[str, List[float]] = {}
-        self._geo_blocks: Dict[str, str] = {}
+        self._rate_limits: dict[str, list[float]] = {}
+        self._geo_blocks: dict[str, str] = {}
     def allow(self, ip: str) -> None:
         self._whitelist.add(ip)
         self._blacklist.discard(ip)
@@ -44,9 +44,9 @@ class IPFilter:
         return False
     def check_geo(self, country_code: str) -> bool:
         return country_code not in self._geo_blocks
-    def list_whitelist(self) -> List[str]:
+    def list_whitelist(self) -> list[str]:
         return sorted(self._whitelist)
-    def list_blacklist(self) -> List[str]:
+    def list_blacklist(self) -> list[str]:
         return sorted(self._blacklist)
-    def list_blocked_countries(self) -> List[str]:
+    def list_blocked_countries(self) -> list[str]:
         return sorted(self._geo_blocks.keys())

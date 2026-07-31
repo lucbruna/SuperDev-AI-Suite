@@ -1,24 +1,24 @@
 """Quality engine."""
 import uuid
-from datetime import datetime
-from typing import Any, Dict, List, Optional
-from .models import QualityRule, QualityCheck, QualityReport, QualityCheckType, QualityStatus
+from typing import Any
+
+from .models import QualityCheck, QualityReport, QualityRule, QualityStatus
 
 
 class QualityEngine:
     def __init__(self):
-        self._rules: Dict[str, QualityRule] = {}
-        self._checks: List[QualityCheck] = []
-        self._reports: List[QualityReport] = []
+        self._rules: dict[str, QualityRule] = {}
+        self._checks: list[QualityCheck] = []
+        self._reports: list[QualityReport] = []
 
     def add_rule(self, rule: QualityRule) -> QualityRule:
         self._rules[rule.rule_id] = rule
         return rule
 
-    def get_rule(self, rule_id: str) -> Optional[QualityRule]:
+    def get_rule(self, rule_id: str) -> QualityRule | None:
         return self._rules.get(rule_id)
 
-    def check_completeness(self, dataset: str, records: List[Dict[str, Any]], required_fields: List[str]) -> QualityCheck:
+    def check_completeness(self, dataset: str, records: list[dict[str, Any]], required_fields: list[str]) -> QualityCheck:
         total = len(records)
         issues = []
         incomplete = 0
@@ -38,8 +38,8 @@ class QualityEngine:
         self._checks.append(check)
         return check
 
-    def check_uniqueness(self, dataset: str, records: List[Dict[str, Any]], key_field: str) -> QualityCheck:
-        seen: Dict[Any, int] = {}
+    def check_uniqueness(self, dataset: str, records: list[dict[str, Any]], key_field: str) -> QualityCheck:
+        seen: dict[Any, int] = {}
         issues = []
         for i, r in enumerate(records):
             key = r.get(key_field)
@@ -60,17 +60,14 @@ class QualityEngine:
         self._checks.append(check)
         return check
 
-    def check_validity(self, dataset: str, records: List[Dict[str, Any]], validations: Dict[str, Any]) -> QualityCheck:
+    def check_validity(self, dataset: str, records: list[dict[str, Any]], validations: dict[str, Any]) -> QualityCheck:
         issues = []
         invalid = 0
         for i, r in enumerate(records):
             for field_name, expected_type in validations.items():
                 value = r.get(field_name)
                 if value is not None:
-                    if expected_type == "string" and not isinstance(value, str):
-                        invalid += 1
-                        issues.append({"record_index": i, "field": field_name, "issue": "type_mismatch"})
-                    elif expected_type == "number" and not isinstance(value, (int, float)):
+                    if expected_type == "string" and not isinstance(value, str) or expected_type == "number" and not isinstance(value, (int, float)):
                         invalid += 1
                         issues.append({"record_index": i, "field": field_name, "issue": "type_mismatch"})
         total_fields = len(records) * len(validations) if records else 1
@@ -103,12 +100,12 @@ class QualityEngine:
         self._reports.append(report)
         return report
 
-    def get_checks(self, dataset: Optional[str] = None) -> List[QualityCheck]:
+    def get_checks(self, dataset: str | None = None) -> list[QualityCheck]:
         if dataset:
             return [c for c in self._checks if c.dataset == dataset]
         return list(self._checks)
 
-    def get_reports(self, dataset: Optional[str] = None) -> List[QualityReport]:
+    def get_reports(self, dataset: str | None = None) -> list[QualityReport]:
         if dataset:
             return [r for r in self._reports if r.dataset == dataset]
         return list(self._reports)

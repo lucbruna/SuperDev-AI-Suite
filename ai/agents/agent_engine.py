@@ -6,20 +6,17 @@ memory, planning, reasoning, execution, evaluation, learning, and optimization.
 """
 from __future__ import annotations
 
-import asyncio
 import time
-import uuid
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .agent_config import AgentConfig, OrchestrationConfig, TeamConfig
-from .agent_registry import AgentRegistry
-from .agent_router import AgentRouter
 from .agent_dispatcher import AgentDispatcher
 from .agent_events import AgentEvents
-from .agent_metrics import AgentMetrics
 from .agent_logger import AgentLogger
+from .agent_metrics import AgentMetrics
+from .agent_registry import AgentRegistry
+from .agent_router import AgentRouter
 from .agent_security import AgentSecurity
-from .agent_types import AgentType, TaskPriority, TaskStatus
 
 
 class AgentEngine:
@@ -36,9 +33,9 @@ class AgentEngine:
     memory, evaluation, learning, and evolution of all agents.
     """
 
-    _instance: Optional["AgentEngine"] = None
+    _instance: AgentEngine | None = None
 
-    def __new__(cls) -> "AgentEngine":
+    def __new__(cls) -> AgentEngine:
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
@@ -59,14 +56,14 @@ class AgentEngine:
 
         # Configuration
         self._orch_config = OrchestrationConfig()
-        self._agent_configs: Dict[str, AgentConfig] = {}
-        self._team_configs: Dict[str, TeamConfig] = {}
+        self._agent_configs: dict[str, AgentConfig] = {}
+        self._team_configs: dict[str, TeamConfig] = {}
 
         # Runtime state
         self._running: bool = False
-        self._teams: Dict[str, List[str]] = {}
-        self._task_history: List[Dict[str, Any]] = []
-        self._start_time: Optional[float] = None
+        self._teams: dict[str, list[str]] = {}
+        self._task_history: list[dict[str, Any]] = []
+        self._start_time: float | None = None
 
         # Subsystem references (populated during init)
         self._creation_engine = None
@@ -175,7 +172,7 @@ class AgentEngine:
         self._logger.info(agent_id, f"Agent created: {config.name} ({config.agent_type})")
         return agent_id
 
-    def create_agent_from_dict(self, data: Dict[str, Any]) -> str:
+    def create_agent_from_dict(self, data: dict[str, Any]) -> str:
         """Create agent from dictionary config."""
         config = AgentConfig.from_dict(data)
         return self.create_agent(config)
@@ -189,7 +186,7 @@ class AgentEngine:
             return True
         return False
 
-    def get_agent_config(self, agent_id: str) -> Optional[AgentConfig]:
+    def get_agent_config(self, agent_id: str) -> AgentConfig | None:
         """Get config for a specific agent."""
         return self._agent_configs.get(agent_id)
 
@@ -222,17 +219,17 @@ class AgentEngine:
             return True
         return False
 
-    def get_team_agents(self, team_id: str) -> List[str]:
+    def get_team_agents(self, team_id: str) -> list[str]:
         """Get all agents in a team."""
         return list(self._teams.get(team_id, []))
 
     # ── Task Routing & Dispatch ─────────────────────────────────
 
-    def route_task(self, task: Dict[str, Any]) -> Optional[str]:
+    def route_task(self, task: dict[str, Any]) -> str | None:
         """Route a task to the best agent."""
         return self._router.route(task, self._registry)
 
-    def dispatch(self, agent_id: str, task: Dict[str, Any]) -> Dict[str, Any]:
+    def dispatch(self, agent_id: str, task: dict[str, Any]) -> dict[str, Any]:
         """Dispatch a task to a specific agent."""
         result = self._dispatcher.dispatch(agent_id, task)
         self._task_history.append({
@@ -244,7 +241,7 @@ class AgentEngine:
         self._metrics.increment("tasks_dispatched")
         return result
 
-    def execute_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
+    def execute_task(self, task: dict[str, Any]) -> dict[str, Any]:
         """Route and dispatch a task automatically."""
         agent_id = self.route_task(task)
         if agent_id is None:
@@ -253,7 +250,7 @@ class AgentEngine:
 
     # ── Health & Monitoring ─────────────────────────────────────
 
-    def health(self) -> Dict[str, Any]:
+    def health(self) -> dict[str, Any]:
         """Get comprehensive engine health status."""
         return {
             "status": "healthy" if self._running else "stopped",
@@ -266,7 +263,7 @@ class AgentEngine:
             "metrics": self._metrics.snapshot(),
         }
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         """Capture full engine state."""
         return {
             "running": self._running,
@@ -280,10 +277,10 @@ class AgentEngine:
             "team_configs": list(self._team_configs.keys()),
         }
 
-    def get_task_history(self, limit: int = 50) -> List[Dict[str, Any]]:
+    def get_task_history(self, limit: int = 50) -> list[dict[str, Any]]:
         """Get recent task history."""
         return self._task_history[-limit:]
 
-    def get_metrics_summary(self) -> Dict[str, Any]:
+    def get_metrics_summary(self) -> dict[str, Any]:
         """Get a summary of engine metrics."""
         return self._metrics.snapshot()

@@ -1,6 +1,6 @@
 """Inventory subsystem."""
-from .models import StockStatus, MovementType, InventoryItem, StockMovement, ReplenishmentAlert
 from .engine import InventoryEngine
+from .models import InventoryItem, MovementType, ReplenishmentAlert, StockMovement, StockStatus
 
 __all__ = [
     "StockStatus", "MovementType", "InventoryItem", "StockMovement", "ReplenishmentAlert",

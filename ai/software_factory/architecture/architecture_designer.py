@@ -1,8 +1,12 @@
 """Designer for creating and modifying architectures."""
-from typing import List, Dict, Any, Optional
+from typing import Any
+
 from .models import (
-    ArchitectureComponent, Connector, ComponentType, ConnectorType,
-    ArchitecturePattern, PatternType,
+    ArchitectureComponent,
+    ComponentType,
+    Connector,
+    ConnectorType,
+    PatternType,
 )
 
 
@@ -10,7 +14,7 @@ class ArchitectureDesigner:
     """Creates and modifies architecture designs."""
 
     def __init__(self):
-        self._templates: Dict[str, Dict[str, Any]] = {}
+        self._templates: dict[str, dict[str, Any]] = {}
 
     def create_component(self, name: str, component_type: ComponentType,
                          technology: str = "", **kwargs) -> ArchitectureComponent:
@@ -31,7 +35,7 @@ class ArchitectureDesigner:
             **kwargs,
         )
 
-    def apply_pattern(self, pattern_type: PatternType) -> Dict[str, Any]:
+    def apply_pattern(self, pattern_type: PatternType) -> dict[str, Any]:
         """Apply a known architectural pattern."""
         patterns = {
             PatternType.MICROSERVICES: {
@@ -57,11 +61,11 @@ class ArchitectureDesigner:
         }
         return patterns.get(pattern_type, {"components": [], "connectors": [], "trade_offs": {}})
 
-    def register_template(self, name: str, template: Dict[str, Any]) -> None:
+    def register_template(self, name: str, template: dict[str, Any]) -> None:
         self._templates[name] = template
 
-    def get_template(self, name: str) -> Optional[Dict[str, Any]]:
+    def get_template(self, name: str) -> dict[str, Any] | None:
         return self._templates.get(name)
 
-    def list_templates(self) -> List[str]:
+    def list_templates(self) -> list[str]:
         return list(self._templates.keys())

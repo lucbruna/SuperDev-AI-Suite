@@ -7,8 +7,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from backend.database.models.role import Permission, Role, role_permissions
 from sqlalchemy import select
+
+from backend.database.models.role import Permission, Role, role_permissions
 
 # ── UUIDs determinísticos ─────────────────────────────────────────
 

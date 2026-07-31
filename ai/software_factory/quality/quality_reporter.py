@@ -1,6 +1,7 @@
 """Reporter for quality analysis results."""
-from typing import List, Dict, Any
-from .models import QualityIssue, QualityMetric, IssueSeverity
+from typing import Any
+
+from .models import IssueSeverity, QualityIssue, QualityMetric
 
 
 class QualityReporter:
@@ -14,8 +15,8 @@ class QualityReporter:
             IssueSeverity.CRITICAL: 10,
         }
 
-    def compute_score(self, issues: List[QualityIssue],
-                      metrics: List[QualityMetric]) -> float:
+    def compute_score(self, issues: list[QualityIssue],
+                      metrics: list[QualityMetric]) -> float:
         if not issues and not metrics:
             return 100.0
 
@@ -24,7 +25,7 @@ class QualityReporter:
         score = max(0.0, 100.0 - penalty)
         return score
 
-    def generate_summary(self, issues: List[QualityIssue]) -> Dict[str, Any]:
+    def generate_summary(self, issues: list[QualityIssue]) -> dict[str, Any]:
         by_severity = {}
         by_category = {}
         for issue in issues:
@@ -40,10 +41,10 @@ class QualityReporter:
             "has_critical": any(i.severity == IssueSeverity.CRITICAL for i in issues),
         }
 
-    def format_report(self, issues: List[QualityIssue], metrics: List[QualityMetric]) -> str:
+    def format_report(self, issues: list[QualityIssue], metrics: list[QualityMetric]) -> str:
         score = self.compute_score(issues, metrics)
         lines = [
-            f"=== Quality Report ===",
+            "=== Quality Report ===",
             f"Score: {score:.1f}/100",
             f"Issues: {len(issues)}",
             "",

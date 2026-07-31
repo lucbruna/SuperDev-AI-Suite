@@ -1,15 +1,23 @@
 """Cybersecurity Engine Manager — High-level manager for security operations."""
-from typing import Dict, Any, List, Optional
+from typing import Any
+
 from .cybersecurity_engine import CybersecurityEngine
-from .security_models import (
-    Threat, Vulnerability, Incident, SecurityUser, AuditEntry, EncryptionKey, SecurityPolicy,
-    ThreatSeverity, ThreatType, IncidentStatus, VulnerabilitySeverity, AccessControl,
-)
 from .security_config import CybersecurityConfig
+from .security_models import (
+    AccessControl,
+    AuditEntry,
+    Incident,
+    SecurityUser,
+    Threat,
+    ThreatSeverity,
+    ThreatType,
+    Vulnerability,
+    VulnerabilitySeverity,
+)
 
 
 class SecurityManager:
-    def __init__(self, config: Optional[CybersecurityConfig] = None):
+    def __init__(self, config: CybersecurityConfig | None = None):
         self._engine = CybersecurityEngine(config)
 
     def report_threat(self, threat_type: str, severity: str, source_ip: str, target: str, description: str) -> Threat:
@@ -23,7 +31,7 @@ class SecurityManager:
         vuln = Vulnerability(component=component, severity=vs, cvss_score=cvss, name=f"Vuln in {component}")
         return self._engine.add_vulnerability(vuln)
 
-    def create_incident(self, title: str, severity: str, affected_systems: List[str]) -> Incident:
+    def create_incident(self, title: str, severity: str, affected_systems: list[str]) -> Incident:
         ts = ThreatSeverity(severity) if severity in [e.value for e in ThreatSeverity] else ThreatSeverity.LOW
         incident = Incident(title=title, severity=ts, affected_systems=affected_systems)
         return self._engine.create_incident(incident)
@@ -39,7 +47,7 @@ class SecurityManager:
         user = SecurityUser(username=username, email=email, role=role)
         return self._engine.add_user(user)
 
-    def authenticate(self, username: str, password: str) -> Optional[SecurityUser]:
+    def authenticate(self, username: str, password: str) -> SecurityUser | None:
         user = self._engine.get_user_by_username(username)
         if user and user.is_active:
             user.last_login = __import__("datetime").datetime.now()
@@ -54,19 +62,17 @@ class SecurityManager:
             return True
         if action == "read" and AccessControl.READ in user.permissions:
             return True
-        if action == "write" and AccessControl.WRITE in user.permissions:
-            return True
-        return False
+        return bool(action == "write" and AccessControl.WRITE in user.permissions)
 
     def log_audit(self, user_id: str, action: str, resource: str, success: bool = True) -> AuditEntry:
         entry = AuditEntry(user_id=user_id, action=action, resource=resource, success=success)
         return self._engine.add_audit_entry(entry)
 
-    def get_threats(self, severity: Optional[str] = None) -> List[Threat]:
+    def get_threats(self, severity: str | None = None) -> list[Threat]:
         if severity:
             sev = ThreatSeverity(severity)
             return self._engine.get_threats(sev)
         return self._engine.get_threats()
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         return self._engine.get_stats()

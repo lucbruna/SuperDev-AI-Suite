@@ -1,19 +1,22 @@
 """Decision engine."""
 import time
-import uuid
 from datetime import datetime
-from typing import Dict, List, Optional
+
 from .models import (
-    DecisionRequest, DecisionResult, DecisionStatus, DecisionType,
-    DecisionPolicy, Rule, RiskLevel,
+    DecisionPolicy,
+    DecisionRequest,
+    DecisionResult,
+    DecisionStatus,
+    RiskLevel,
+    Rule,
 )
 
 
 class DecisionEngine:
     def __init__(self):
-        self._policies: Dict[str, DecisionPolicy] = {}
-        self._rules: Dict[str, Rule] = {}
-        self._history: List[DecisionResult] = []
+        self._policies: dict[str, DecisionPolicy] = {}
+        self._rules: dict[str, Rule] = {}
+        self._history: list[DecisionResult] = []
 
     def add_policy(self, policy: DecisionPolicy) -> DecisionPolicy:
         self._policies[policy.policy_id] = policy
@@ -25,10 +28,10 @@ class DecisionEngine:
         self._rules[rule.rule_id] = rule
         return rule
 
-    def get_policy(self, policy_id: str) -> Optional[DecisionPolicy]:
+    def get_policy(self, policy_id: str) -> DecisionPolicy | None:
         return self._policies.get(policy_id)
 
-    def get_rule(self, rule_id: str) -> Optional[Rule]:
+    def get_rule(self, rule_id: str) -> Rule | None:
         return self._rules.get(rule_id)
 
     def evaluate(self, request: DecisionRequest) -> DecisionResult:
@@ -71,13 +74,13 @@ class DecisionEngine:
         self._history.append(result)
         return result
 
-    def get_history(self, limit: int = 100) -> List[DecisionResult]:
+    def get_history(self, limit: int = 100) -> list[DecisionResult]:
         return self._history[-limit:]
 
-    def get_history_by_status(self, status: DecisionStatus) -> List[DecisionResult]:
+    def get_history_by_status(self, status: DecisionStatus) -> list[DecisionResult]:
         return [r for r in self._history if r.status == status]
 
-    def approve(self, request_id: str) -> Optional[DecisionResult]:
+    def approve(self, request_id: str) -> DecisionResult | None:
         for r in self._history:
             if r.request_id == request_id and r.status == DecisionStatus.PENDING:
                 r.status = DecisionStatus.APPROVED
@@ -85,14 +88,14 @@ class DecisionEngine:
                 return r
         return None
 
-    def reject(self, request_id: str) -> Optional[DecisionResult]:
+    def reject(self, request_id: str) -> DecisionResult | None:
         for r in self._history:
             if r.request_id == request_id and r.status == DecisionStatus.PENDING:
                 r.status = DecisionStatus.REJECTED
                 return r
         return None
 
-    def _check_condition(self, condition: str, context: Dict) -> bool:
+    def _check_condition(self, condition: str, context: dict) -> bool:
         parts = condition.split()
         if len(parts) == 3:
             key, op, val = parts

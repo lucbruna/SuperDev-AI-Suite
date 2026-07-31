@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class EmbeddingEntry:
     """A stored embedding entry."""
 
-    def __init__(self, vector_id: str, vector: List[float], metadata: Dict[str, Any]):
+    def __init__(self, vector_id: str, vector: list[float], metadata: dict[str, Any]):
         self._vector_id = vector_id
         self._vector = list(vector)
         self._metadata = dict(metadata)
@@ -16,14 +16,14 @@ class EmbeddingEntry:
         return self._vector_id
 
     @property
-    def vector(self) -> List[float]:
+    def vector(self) -> list[float]:
         return list(self._vector)
 
     @property
-    def metadata(self) -> Dict[str, Any]:
+    def metadata(self) -> dict[str, Any]:
         return dict(self._metadata)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "vector_id": self._vector_id,
             "vector": list(self._vector),
@@ -35,21 +35,21 @@ class EmbeddingRepository:
     """Persistent repository for embedding storage and retrieval."""
 
     def __init__(self):
-        self._entries: Dict[str, EmbeddingEntry] = {}
+        self._entries: dict[str, EmbeddingEntry] = {}
 
     @property
     def count(self) -> int:
         return len(self._entries)
 
-    def store(self, vector_id: str, vector: List[float], metadata: Dict[str, Any]) -> EmbeddingEntry:
+    def store(self, vector_id: str, vector: list[float], metadata: dict[str, Any]) -> EmbeddingEntry:
         entry = EmbeddingEntry(vector_id, vector, metadata)
         self._entries[vector_id] = entry
         return entry
 
-    def get(self, vector_id: str) -> Optional[EmbeddingEntry]:
+    def get(self, vector_id: str) -> EmbeddingEntry | None:
         return self._entries.get(vector_id)
 
-    def update(self, vector_id: str, vector: List[float], metadata: Dict[str, Any]) -> bool:
+    def update(self, vector_id: str, vector: list[float], metadata: dict[str, Any]) -> bool:
         if vector_id not in self._entries:
             return False
         self._entries[vector_id] = EmbeddingEntry(vector_id, vector, metadata)
@@ -58,14 +58,14 @@ class EmbeddingRepository:
     def remove(self, vector_id: str) -> bool:
         return self._entries.pop(vector_id, None) is not None
 
-    def list_ids(self) -> List[str]:
+    def list_ids(self) -> list[str]:
         return list(self._entries.keys())
 
-    def list_entries(self) -> List[EmbeddingEntry]:
+    def list_entries(self) -> list[EmbeddingEntry]:
         return list(self._entries.values())
 
     def clear(self) -> None:
         self._entries.clear()
 
-    def search_by_metadata(self, key: str, value: Any) -> List[EmbeddingEntry]:
+    def search_by_metadata(self, key: str, value: Any) -> list[EmbeddingEntry]:
         return [e for e in self._entries.values() if e.metadata.get(key) == value]

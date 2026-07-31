@@ -1,21 +1,20 @@
 """Dashboard builder."""
-import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional
-from .models import Dashboard, DashboardFilter, RefreshMode, Widget
+
 from .interfaces import DashboardBuilderInterface
+from .models import Dashboard, DashboardFilter, Widget
 
 
 class DashboardBuilder(DashboardBuilderInterface):
     def __init__(self):
-        self._dashboards: Dict[str, Dashboard] = {}
-        self._filters: Dict[str, List[DashboardFilter]] = {}
+        self._dashboards: dict[str, Dashboard] = {}
+        self._filters: dict[str, list[DashboardFilter]] = {}
 
     async def create_dashboard(self, dashboard: Dashboard) -> Dashboard:
         self._dashboards[dashboard.dashboard_id] = dashboard
         return dashboard
 
-    async def update_dashboard(self, dashboard_id: str, updates: Dict) -> Dashboard:
+    async def update_dashboard(self, dashboard_id: str, updates: dict) -> Dashboard:
         d = self._dashboards.get(dashboard_id)
         if not d:
             raise KeyError(f"Dashboard {dashboard_id} not found")
@@ -28,10 +27,10 @@ class DashboardBuilder(DashboardBuilderInterface):
     async def delete_dashboard(self, dashboard_id: str) -> bool:
         return self._dashboards.pop(dashboard_id, None) is not None
 
-    async def get_dashboard(self, dashboard_id: str) -> Optional[Dashboard]:
+    async def get_dashboard(self, dashboard_id: str) -> Dashboard | None:
         return self._dashboards.get(dashboard_id)
 
-    async def list_dashboards(self, tags: Optional[List[str]] = None) -> List[Dashboard]:
+    async def list_dashboards(self, tags: list[str] | None = None) -> list[Dashboard]:
         dashboards = list(self._dashboards.values())
         if tags:
             dashboards = [d for d in dashboards if any(t in d.tags for t in tags)]

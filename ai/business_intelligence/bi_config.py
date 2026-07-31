@@ -1,7 +1,7 @@
 """BI Config — Configuration management for BI operations."""
-from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
 from datetime import datetime
+from typing import Any
 
 
 @dataclass
@@ -15,8 +15,8 @@ class ConfigEntry:
 
 class BIConfig:
     def __init__(self):
-        self.entries: Dict[str, ConfigEntry] = {}
-        self.defaults: Dict[str, Any] = {
+        self.entries: dict[str, ConfigEntry] = {}
+        self.defaults: dict[str, Any] = {
             "refresh_interval": 300,
             "max_data_points": 100000,
             "prediction_horizon": 90,
@@ -36,10 +36,10 @@ class BIConfig:
             return entry.value
         return self.defaults.get(key, default)
 
-    def get_section(self, section: str) -> Dict[str, Any]:
+    def get_section(self, section: str) -> dict[str, Any]:
         return {k: v.value for k, v in self.entries.items() if v.section == section}
 
-    def get_all(self) -> Dict[str, Any]:
+    def get_all(self) -> dict[str, Any]:
         result = dict(self.defaults)
         result.update({k: v.value for k, v in self.entries.items()})
         return result

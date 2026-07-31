@@ -1,7 +1,7 @@
 """Collaboration style management."""
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 
 class CollaborationStyle:
@@ -19,7 +19,7 @@ class CollaborationStyle:
     def set_leadership(self, leadership: bool) -> None:
         self._leadership = bool(leadership)
 
-    def get_profile(self) -> Dict[str, Any]:
+    def get_profile(self) -> dict[str, Any]:
         return {
             "style": self._style,
             "leadership": self._leadership,
@@ -27,7 +27,7 @@ class CollaborationStyle:
             "delegates": self._leadership and self._style in ("cooperative", "supportive"),
         }
 
-    def assign_role(self, team_tasks: List[Dict[str, Any]]) -> str:
+    def assign_role(self, team_tasks: list[dict[str, Any]]) -> str:
         if self._leadership:
             return "lead"
         if self._style == "supportive":

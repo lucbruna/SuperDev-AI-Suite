@@ -1,8 +1,8 @@
 """Mobile Models - Data models for mobile/edge platform."""
-from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
-from enum import Enum
 from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class SyncStrategy(Enum):
@@ -45,7 +45,7 @@ class OfflineConfig:
     cache_size_mb: int = 500
     max_offline_days: int = 7
     auto_sync: bool = True
-    priority_data: List[str] = field(default_factory=list)
+    priority_data: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -60,8 +60,8 @@ class EdgeConfig:
 @dataclass
 class MobileProfile:
     user_id: str
-    devices: List[str] = field(default_factory=list)
-    preferences: Dict[str, Any] = field(default_factory=dict)
+    devices: list[str] = field(default_factory=list)
+    preferences: dict[str, Any] = field(default_factory=dict)
     sync_config: SyncConfig = field(default_factory=SyncConfig)
     offline_config: OfflineConfig = field(default_factory=OfflineConfig)
     edge_config: EdgeConfig = field(default_factory=EdgeConfig)

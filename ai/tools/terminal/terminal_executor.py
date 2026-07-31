@@ -51,7 +51,7 @@ class TerminalExecutor(BaseTool):
             }
             self._history.append({"command": command, "result": result})
             return result
-        except asyncio.TimeoutError:
+        except TimeoutError:
             return {"success": False, "stdout": "", "stderr": f"Timed out after {timeout}s", "exit_code": -1}
         except Exception as e:
             return {"success": False, "stdout": "", "stderr": str(e), "exit_code": -1}

@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class NodeSync:
     """Synchronizes data between individual nodes."""
 
     def __init__(self):
-        self._nodes: Dict[str, Dict[str, Any]] = {}
-        self._sync_log: List[Dict[str, Any]] = []
+        self._nodes: dict[str, dict[str, Any]] = {}
+        self._sync_log: list[dict[str, Any]] = []
 
     @property
     def node_count(self) -> int:
@@ -33,18 +33,18 @@ class NodeSync:
         if target in self._nodes:
             self._nodes[target]["last_sync"] = time.time()
 
-    def last_sync(self, node_id: str) -> Optional[float]:
+    def last_sync(self, node_id: str) -> float | None:
         node = self._nodes.get(node_id)
         return node["last_sync"] if node else None
 
-    def sync_status(self, node_id: str) -> Optional[str]:
+    def sync_status(self, node_id: str) -> str | None:
         node = self._nodes.get(node_id)
         return node["status"] if node else None
 
-    def list_nodes(self) -> List[str]:
+    def list_nodes(self) -> list[str]:
         return list(self._nodes.keys())
 
-    def get_sync_history(self, limit: int = 20) -> List[Dict[str, Any]]:
+    def get_sync_history(self, limit: int = 20) -> list[dict[str, Any]]:
         return list(self._sync_log[-limit:])
 
     def clear(self) -> None:

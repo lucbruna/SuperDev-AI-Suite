@@ -1,8 +1,7 @@
 """
 Web Application Security - OWASP Top 10 Mitigations
 """
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 
 
@@ -38,7 +37,7 @@ class ValidationResult:
 
 class WebSecurity:
     def __init__(self):
-        self.headers: List[SecurityHeader] = [
+        self.headers: list[SecurityHeader] = [
             SecurityHeader("X-Content-Type-Options", "nosniff"),
             SecurityHeader("X-Frame-Options", "DENY"),
             SecurityHeader("X-XSS-Protection", "1; mode=block"),
@@ -46,7 +45,7 @@ class WebSecurity:
             SecurityHeader("Content-Security-Policy", "default-src 'self'"),
             SecurityHeader("Referrer-Policy", "strict-origin-when-cross-origin"),
         ]
-        self.blocked_patterns: List[str] = ["<script>", "javascript:", "onerror=", "onload="]
+        self.blocked_patterns: list[str] = ["<script>", "javascript:", "onerror=", "onload="]
 
     def validate_input(self, input_str: str) -> ValidationResult:
         for pattern in self.blocked_patterns:
@@ -54,7 +53,7 @@ class WebSecurity:
                 return ValidationResult(passed=False, category="XSS", message=f"Blocked pattern: {pattern}", severity="high")
         return ValidationResult(passed=True, category="XSS", message="Input is safe")
 
-    def get_security_headers(self) -> List[SecurityHeader]:
+    def get_security_headers(self) -> list[SecurityHeader]:
         return self.headers
 
     def add_header(self, name: str, value: str, required: bool = True) -> SecurityHeader:
@@ -69,7 +68,7 @@ class WebSecurity:
                 return True
         return False
 
-    def validate_response_headers(self, headers: Dict[str, str]) -> List[ValidationResult]:
+    def validate_response_headers(self, headers: dict[str, str]) -> list[ValidationResult]:
         results = []
         for h in self.headers:
             if h.required and h.name not in headers:

@@ -1,10 +1,10 @@
 """Mobile Security - Device and data security for mobile/edge."""
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
 import secrets
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class SecurityLevel(Enum):
@@ -32,8 +32,8 @@ class SecurityPolicy:
     require_encryption: bool = True
     max_failed_attempts: int = 5
     lockout_minutes: int = 30
-    allowed_platforms: List[str] = field(default_factory=list)
-    settings: Dict[str, Any] = field(default_factory=dict)
+    allowed_platforms: list[str] = field(default_factory=list)
+    settings: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -42,18 +42,18 @@ class DeviceSecurity:
     is_encrypted: bool = False
     is_rooted: bool = False
     threat_level: ThreatType = ThreatType.NONE
-    last_scan: Optional[datetime] = None
+    last_scan: datetime | None = None
     failed_attempts: int = 0
-    locked_until: Optional[datetime] = None
-    certificates: List[str] = field(default_factory=list)
+    locked_until: datetime | None = None
+    certificates: list[str] = field(default_factory=list)
 
 
 class MobileSecurityManager:
     def __init__(self):
-        self.policies: Dict[str, SecurityPolicy] = {}
-        self.device_security: Dict[str, DeviceSecurity] = {}
-        self.audit_log: List[Dict[str, Any]] = []
-        self.tokens: Dict[str, Dict[str, Any]] = {}
+        self.policies: dict[str, SecurityPolicy] = {}
+        self.device_security: dict[str, DeviceSecurity] = {}
+        self.audit_log: list[dict[str, Any]] = []
+        self.tokens: dict[str, dict[str, Any]] = {}
 
     def create_policy(self, name: str, level: SecurityLevel = SecurityLevel.MEDIUM, **kwargs) -> SecurityPolicy:
         policy_id = hashlib.sha256(f"{name}{level.value}".encode()).hexdigest()[:16]
@@ -61,7 +61,7 @@ class MobileSecurityManager:
         self.policies[policy_id] = policy
         return policy
 
-    def get_policy(self, policy_id: str) -> Optional[SecurityPolicy]:
+    def get_policy(self, policy_id: str) -> SecurityPolicy | None:
         return self.policies.get(policy_id)
 
     def register_device_security(self, device_id: str) -> DeviceSecurity:
@@ -113,10 +113,10 @@ class MobileSecurityManager:
             return True
         return False
 
-    def get_audit_log(self, limit: int = 100) -> List[Dict[str, Any]]:
+    def get_audit_log(self, limit: int = 100) -> list[dict[str, Any]]:
         return self.audit_log[-limit:]
 
-    def _audit(self, action: str, device_id: str, data: Dict[str, Any] = None):
+    def _audit(self, action: str, device_id: str, data: dict[str, Any] = None):
         self.audit_log.append({"action": action, "device_id": device_id, "data": data or {}, "timestamp": datetime.now().isoformat()})
 
     def count_policies(self) -> int:

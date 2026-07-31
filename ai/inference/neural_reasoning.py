@@ -22,7 +22,7 @@ class NeuralReasoning:
             weights = layer.get("weights", [])
             bias = layer.get("bias", 0.0)
             current = [
-                max(0.0, sum(w * x for w, x in zip(weights_row, current)) + bias)
+                max(0.0, sum(w * x for w, x in zip(weights_row, current, strict=False)) + bias)
                 for weights_row in weights
             ]
         return current

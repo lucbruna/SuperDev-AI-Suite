@@ -1,7 +1,7 @@
 """CX Context — Shared context for CX operations."""
-from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
 from datetime import datetime
+from typing import Any
 
 
 @dataclass
@@ -16,8 +16,8 @@ class CXContextItem:
 
 class CXContext:
     def __init__(self):
-        self.items: Dict[str, CXContextItem] = {}
-        self.project_contexts: Dict[str, Dict[str, Any]] = {}
+        self.items: dict[str, CXContextItem] = {}
+        self.project_contexts: dict[str, dict[str, Any]] = {}
 
     def set(self, key: str, value: Any, scope: str = "global", project_id: str = "") -> CXContextItem:
         item = CXContextItem(key=key, value=value, scope=scope, project_id=project_id)
@@ -38,7 +38,7 @@ class CXContext:
             return True
         return False
 
-    def get_all(self) -> Dict[str, Any]:
+    def get_all(self) -> dict[str, Any]:
         return {k: v.value for k, v in self.items.items()}
 
     def count(self) -> int:

@@ -1,9 +1,11 @@
 """CX Events — Event-driven messaging for CX operations."""
-from typing import Dict, Any, Optional, List, Callable
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
+import contextlib
 import hashlib
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class CXEventType(Enum):
@@ -24,30 +26,28 @@ class CXEvent:
     event_id: str
     event_type: CXEventType
     source: str
-    data: Dict[str, Any] = field(default_factory=dict)
+    data: dict[str, Any] = field(default_factory=dict)
     timestamp: datetime = field(default_factory=datetime.now)
 
 
 class CXEventBus:
     def __init__(self):
-        self.events: List[CXEvent] = []
-        self.subscribers: Dict[CXEventType, List[Callable]] = {}
+        self.events: list[CXEvent] = []
+        self.subscribers: dict[CXEventType, list[Callable]] = {}
 
-    def publish(self, event_type: CXEventType, source: str, data: Optional[Dict[str, Any]] = None) -> CXEvent:
+    def publish(self, event_type: CXEventType, source: str, data: dict[str, Any] | None = None) -> CXEvent:
         event_id = hashlib.sha256(f"{event_type.value}{source}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
         event = CXEvent(event_id=event_id, event_type=event_type, source=source, data=data or {})
         self.events.append(event)
         for handler in self.subscribers.get(event_type, []):
-            try:
+            with contextlib.suppress(Exception):
                 handler(event)
-            except Exception:
-                pass
         return event
 
     def subscribe(self, event_type: CXEventType, handler: Callable) -> None:
         self.subscribers.setdefault(event_type, []).append(handler)
 
-    def get_events(self, event_type: Optional[CXEventType] = None, source: Optional[str] = None, limit: int = 100) -> List[CXEvent]:
+    def get_events(self, event_type: CXEventType | None = None, source: str | None = None, limit: int = 100) -> list[CXEvent]:
         events = self.events
         if event_type:
             events = [e for e in events if e.event_type == event_type]

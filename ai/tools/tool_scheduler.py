@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import asyncio
 import time
 import uuid
-from typing import Any, Callable
+from typing import Any
 
 
 class ScheduledTask:

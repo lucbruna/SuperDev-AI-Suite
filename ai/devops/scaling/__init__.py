@@ -1,9 +1,9 @@
 """Scaling subsystem."""
-from .scaling_engine import ScalingEngine
 from .auto_scaler import AutoScaler
-from .resource_prediction import ResourcePredictor
-from .load_balancer import LoadBalancer
 from .capacity_planner import CapacityPlanner
+from .load_balancer import LoadBalancer
+from .resource_prediction import ResourcePredictor
+from .scaling_engine import ScalingEngine
 
 __all__ = [
     "ScalingEngine", "AutoScaler", "ResourcePredictor",

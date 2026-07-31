@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class DecisionEngine:
@@ -10,9 +10,9 @@ class DecisionEngine:
 
     def __init__(self) -> None:
         self._decision_count: int = 0
-        self._history: List[Dict[str, Any]] = []
+        self._history: list[dict[str, Any]] = []
 
-    def decide(self, options: Dict[str, Any]) -> Dict[str, Any]:
+    def decide(self, options: dict[str, Any]) -> dict[str, Any]:
         self._decision_count += 1
         hypotheses = options.get("hypotheses", [])
         best = options.get("best")
@@ -26,8 +26,8 @@ class DecisionEngine:
         self._history.append(decision)
         return decision
 
-    def decide_from_list(self, choices: List[Dict[str, Any]],
-                         criteria: Optional[List[str]] = None) -> Dict[str, Any]:
+    def decide_from_list(self, choices: list[dict[str, Any]],
+                         criteria: list[str] | None = None) -> dict[str, Any]:
         self._decision_count += 1
         if not choices:
             return {"chosen": None, "error": "No choices provided"}
@@ -47,8 +47,8 @@ class DecisionEngine:
         self._history.append(decision)
         return decision
 
-    def get_history(self, limit: int = 20) -> List[Dict[str, Any]]:
+    def get_history(self, limit: int = 20) -> list[dict[str, Any]]:
         return self._history[-limit:]
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         return {"total_decisions": self._decision_count}

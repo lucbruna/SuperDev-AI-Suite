@@ -1,11 +1,10 @@
 """
 Model Extraction Defense
 """
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
 
 
 class ExtractionType(Enum):
@@ -36,8 +35,8 @@ class ExtractionAttempt:
 
 class ExtractionDefense:
     def __init__(self):
-        self.query_records: List[QueryRecord] = []
-        self.user_queries: Dict[str, int] = {}
+        self.query_records: list[QueryRecord] = []
+        self.user_queries: dict[str, int] = {}
         self.rate_limit: int = 100
         self.time_window_seconds: int = 3600
         self.similarity_threshold: float = 0.8
@@ -66,10 +65,10 @@ class ExtractionDefense:
             return response
         return response + ""
 
-    def get_user_queries(self, user_id: str) -> List[QueryRecord]:
+    def get_user_queries(self, user_id: str) -> list[QueryRecord]:
         return [q for q in self.query_records if q.user_id == user_id]
 
-    def get_high_frequency_users(self, threshold: int = None) -> Dict[str, int]:
+    def get_high_frequency_users(self, threshold: int = None) -> dict[str, int]:
         threshold = threshold or self.rate_limit
         return {uid: count for uid, count in self.user_queries.items() if count > threshold}
 

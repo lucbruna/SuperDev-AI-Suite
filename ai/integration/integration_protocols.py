@@ -1,9 +1,9 @@
 """
 Integration Protocols - Protocol definitions
 """
-from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any
 
 
 class ProtocolType(Enum):
@@ -28,32 +28,32 @@ class ProtocolConfig:
     compression: str = "none"
     timeout: int = 30
     retries: int = 3
-    settings: Dict[str, Any] = field(default_factory=dict)
+    settings: dict[str, Any] = field(default_factory=dict)
 
 
 class IntegrationProtocols:
     def __init__(self):
-        self.protocols: Dict[str, ProtocolConfig] = {}
-        self.protocol_handlers: Dict[str, Any] = {}
+        self.protocols: dict[str, ProtocolConfig] = {}
+        self.protocol_handlers: dict[str, Any] = {}
 
     def register_protocol(self, name: str, protocol_type: ProtocolType, **kwargs) -> ProtocolConfig:
         config = ProtocolConfig(protocol_type=protocol_type, **kwargs)
         self.protocols[name] = config
         return config
 
-    def get_protocol(self, name: str) -> Optional[ProtocolConfig]:
+    def get_protocol(self, name: str) -> ProtocolConfig | None:
         return self.protocols.get(name)
 
     def register_handler(self, protocol_name: str, handler: Any) -> None:
         self.protocol_handlers[protocol_name] = handler
 
-    def get_handler(self, protocol_name: str) -> Optional[Any]:
+    def get_handler(self, protocol_name: str) -> Any | None:
         return self.protocol_handlers.get(protocol_name)
 
-    def list_protocols(self) -> List[ProtocolConfig]:
+    def list_protocols(self) -> list[ProtocolConfig]:
         return list(self.protocols.values())
 
-    def get_by_type(self, protocol_type: ProtocolType) -> List[ProtocolConfig]:
+    def get_by_type(self, protocol_type: ProtocolType) -> list[ProtocolConfig]:
         return [p for p in self.protocols.values() if p.protocol_type == protocol_type]
 
     def count(self) -> int:

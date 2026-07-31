@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from backend.database.models.notification import Notification
-from backend.repositories.base_repository import BaseRepository
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from backend.database.models.notification import Notification
+from backend.repositories.base_repository import BaseRepository
 
 
 class NotificationRepository(BaseRepository[Notification]):
@@ -38,7 +39,7 @@ class NotificationRepository(BaseRepository[Notification]):
         """Count unread notifications for a user."""
         query = select(func.count()).select_from(self.model).where(
             self.model.user_id == user_id,
-            self.model.is_read == False,
+            not self.model.is_read,
         )
         result = await self.db.execute(query)
         return result.scalar() or 0
@@ -51,7 +52,7 @@ class NotificationRepository(BaseRepository[Notification]):
             update(self.model)
             .where(
                 self.model.id.in_(notification_ids),
-                self.model.is_read == False,
+                not self.model.is_read,
             )
             .values(is_read=True, read_at=datetime.now(UTC))
         )
@@ -67,7 +68,7 @@ class NotificationRepository(BaseRepository[Notification]):
             update(self.model)
             .where(
                 self.model.user_id == user_id,
-                self.model.is_read == False,
+                not self.model.is_read,
             )
             .values(is_read=True, read_at=datetime.now(UTC))
         )

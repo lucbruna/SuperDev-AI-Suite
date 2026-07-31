@@ -69,10 +69,10 @@ class EmbeddingService:
             valid = [(i, t) for i, t in enumerate(texts) if t and t.strip()]
             if not valid:
                 return [[0.0] * self._embedding_dim for _ in texts]
-            indices, clean = zip(*valid)
+            indices, clean = zip(*valid, strict=False)
             embeddings = self._local_model.encode(list(clean), normalize_embeddings=True)
             results = [[0.0] * self._embedding_dim for _ in texts]
-            for idx, emb in zip(indices, embeddings):
+            for idx, emb in zip(indices, embeddings, strict=False):
                 results[idx] = emb.tolist()
             return results
         return self._embed_via_api(texts)

@@ -1,9 +1,8 @@
 """Data models for version management."""
-from dataclasses import dataclass, field
-from enum import Enum
-from typing import List, Optional, Dict, Any, Tuple
-from datetime import datetime
 import uuid
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
 
 
 class VersionType(Enum):
@@ -39,7 +38,7 @@ class Version:
     def bump_patch(self) -> "Version":
         return Version(major=self.major, minor=self.minor, patch=self.patch + 1)
 
-    def to_tuple(self) -> Tuple[int, int, int]:
+    def to_tuple(self) -> tuple[int, int, int]:
         return (self.major, self.minor, self.patch)
 
     def __lt__(self, other: "Version") -> bool:
@@ -90,8 +89,8 @@ class Tag:
 @dataclass
 class DependencyGraph:
     graph_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
-    nodes: List[str] = field(default_factory=list)
-    edges: List[Dict[str, str]] = field(default_factory=list)
+    nodes: list[str] = field(default_factory=list)
+    edges: list[dict[str, str]] = field(default_factory=list)
 
     def add_node(self, name: str) -> None:
         if name not in self.nodes:
@@ -100,10 +99,10 @@ class DependencyGraph:
     def add_edge(self, source: str, target: str, constraint: str = "") -> None:
         self.edges.append({"source": source, "target": target, "constraint": constraint})
 
-    def get_dependencies(self, name: str) -> List[str]:
+    def get_dependencies(self, name: str) -> list[str]:
         return [e["target"] for e in self.edges if e["source"] == name]
 
-    def get_dependents(self, name: str) -> List[str]:
+    def get_dependents(self, name: str) -> list[str]:
         return [e["source"] for e in self.edges if e["target"] == name]
 
 
@@ -113,7 +112,7 @@ class VersionConstraint:
     min_version: str = ""
     max_version: str = ""
     exact_version: str = ""
-    allowed_versions: List[str] = field(default_factory=list)
+    allowed_versions: list[str] = field(default_factory=list)
 
     def satisfies(self, version_str: str) -> bool:
         if self.exact_version:
@@ -121,10 +120,6 @@ class VersionConstraint:
         if self.allowed_versions:
             return version_str in self.allowed_versions
         ver = Version.parse(version_str)
-        if self.min_version:
-            if ver < Version.parse(self.min_version):
-                return False
-        if self.max_version:
-            if ver > Version.parse(self.max_version):
-                return False
-        return True
+        if self.min_version and ver < Version.parse(self.min_version):
+            return False
+        return not (self.max_version and ver > Version.parse(self.max_version))

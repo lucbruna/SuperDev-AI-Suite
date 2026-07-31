@@ -1,17 +1,16 @@
 from __future__ import annotations
 
 import math
-from typing import List
 
 
 class SimilarityEngine:
     """Computes similarity between vectors using various metrics."""
 
     @staticmethod
-    def cosine_similarity(a: List[float], b: List[float]) -> float:
+    def cosine_similarity(a: list[float], b: list[float]) -> float:
         if len(a) != len(b):
             raise ValueError("Vector dimension mismatch")
-        dot = sum(x * y for x, y in zip(a, b))
+        dot = sum(x * y for x, y in zip(a, b, strict=False))
         norm_a = math.sqrt(sum(x * x for x in a))
         norm_b = math.sqrt(sum(y * y for y in b))
         if norm_a == 0 or norm_b == 0:
@@ -19,26 +18,26 @@ class SimilarityEngine:
         return dot / (norm_a * norm_b)
 
     @staticmethod
-    def euclidean_similarity(a: List[float], b: List[float]) -> float:
+    def euclidean_similarity(a: list[float], b: list[float]) -> float:
         if len(a) != len(b):
             raise ValueError("Vector dimension mismatch")
-        dist = math.sqrt(sum((x - y) ** 2 for x, y in zip(a, b)))
+        dist = math.sqrt(sum((x - y) ** 2 for x, y in zip(a, b, strict=False)))
         return 1.0 / (1.0 + dist)
 
     @staticmethod
-    def dot_product(a: List[float], b: List[float]) -> float:
+    def dot_product(a: list[float], b: list[float]) -> float:
         if len(a) != len(b):
             raise ValueError("Vector dimension mismatch")
-        return sum(x * y for x, y in zip(a, b))
+        return sum(x * y for x, y in zip(a, b, strict=False))
 
     @staticmethod
-    def manhattan_similarity(a: List[float], b: List[float]) -> float:
+    def manhattan_similarity(a: list[float], b: list[float]) -> float:
         if len(a) != len(b):
             raise ValueError("Vector dimension mismatch")
-        dist = sum(abs(x - y) for x, y in zip(a, b))
+        dist = sum(abs(x - y) for x, y in zip(a, b, strict=False))
         return 1.0 / (1.0 + dist)
 
-    def compare(self, a: List[float], b: List[float], metric: str = "cosine") -> float:
+    def compare(self, a: list[float], b: list[float], metric: str = "cosine") -> float:
         metric_map = {
             "cosine": self.cosine_similarity,
             "euclidean": self.euclidean_similarity,

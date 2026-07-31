@@ -1,8 +1,11 @@
 """Intrusion detection system."""
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
-from enum import Enum
-import time, uuid, re
+
+import re
+import time
+import uuid
+from typing import Any
+
 
 class IDSRule:
     def __init__(self, rule_id: str, name: str, pattern: str, severity: str = "medium") -> None:
@@ -14,15 +17,15 @@ class IDSRule:
 
 class IntrusionDetector:
     def __init__(self) -> None:
-        self._rules: Dict[str, IDSRule] = {}
-        self._alerts: List[Dict[str, Any]] = []
+        self._rules: dict[str, IDSRule] = {}
+        self._alerts: list[dict[str, Any]] = []
         self._blocked_ips: set[str] = set()
     def add_rule(self, rule_id: str, name: str, pattern: str, severity: str = "medium") -> IDSRule:
         rule = IDSRule(rule_id, name, pattern, severity)
         self._rules[rule_id] = rule
         return rule
-    def analyze(self, data: str, source_ip: str = "") -> List[Dict[str, Any]]:
-        findings: List[Dict[str, Any]] = []
+    def analyze(self, data: str, source_ip: str = "") -> list[dict[str, Any]]:
+        findings: list[dict[str, Any]] = []
         for rule in self._rules.values():
             if rule.enabled and rule.pattern.search(data):
                 alert = {"alert_id": str(uuid.uuid4())[:8], "rule": rule.name, "severity": rule.severity, "source_ip": source_ip, "timestamp": time.time(), "data_preview": data[:100]}
@@ -40,12 +43,12 @@ class IntrusionDetector:
         return False
     def is_blocked(self, ip: str) -> bool:
         return ip in self._blocked_ips
-    def get_alerts(self, severity: str = "", limit: int = 100) -> List[Dict[str, Any]]:
+    def get_alerts(self, severity: str = "", limit: int = 100) -> list[dict[str, Any]]:
         alerts = self._alerts
         if severity:
             alerts = [a for a in alerts if a["severity"] == severity]
         return alerts[-limit:]
-    def list_rules(self) -> List[str]:
+    def list_rules(self) -> list[str]:
         return list(self._rules.keys())
     def clear_alerts(self) -> int:
         n = len(self._alerts)

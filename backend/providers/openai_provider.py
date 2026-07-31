@@ -4,6 +4,7 @@ import uuid
 from collections.abc import AsyncIterator
 
 import httpx
+
 from backend.providers.base_provider import (
     BaseProvider,
     CompletionResponse,

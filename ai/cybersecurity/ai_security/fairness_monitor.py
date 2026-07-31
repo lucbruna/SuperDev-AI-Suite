@@ -1,11 +1,11 @@
 """
 AI Fairness & Bias Monitoring
 """
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import statistics
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class BiasType(Enum):
@@ -30,22 +30,22 @@ class FairnessMetric:
 class BiasAssessment:
     assessment_id: str
     model_id: str
-    metrics: List[FairnessMetric] = field(default_factory=list)
+    metrics: list[FairnessMetric] = field(default_factory=list)
     overall_score: float = 0.0
     is_fair: bool = True
     assessed_at: datetime = field(default_factory=datetime.now)
-    recommendations: List[str] = field(default_factory=list)
+    recommendations: list[str] = field(default_factory=list)
 
 
 class FairnessMonitor:
     def __init__(self):
-        self.assessments: List[BiasAssessment] = []
-        self.thresholds: Dict[BiasType, float] = {
+        self.assessments: list[BiasAssessment] = []
+        self.thresholds: dict[BiasType, float] = {
             BiasType.DEMOGRAPHIC_PARITY: 0.8,
             BiasType.EQUAL_OPPORTUNITY: 0.8,
             BiasType.EQUALIZED_ODDS: 0.8,
         }
-        self.prediction_logs: List[Dict[str, Any]] = []
+        self.prediction_logs: list[dict[str, Any]] = []
 
     def log_prediction(self, model_id: str, prediction: Any, protected_attribute: str, true_label: Any = None) -> None:
         self.prediction_logs.append({
@@ -68,7 +68,7 @@ class FairnessMonitor:
         tpr = sum(1 for l in logs if l["prediction"] == 1) / max(len(logs), 1)
         return FairnessMetric("equal_opportunity", tpr, self.thresholds[BiasType.EQUAL_OPPORTUNITY], passed=tpr >= 0.8)
 
-    def assess(self, model_id: str, protected_attrs: List[str]) -> BiasAssessment:
+    def assess(self, model_id: str, protected_attrs: list[str]) -> BiasAssessment:
         metrics = []
         for attr in protected_attrs:
             metrics.append(self.calculate_demographic_parity(model_id, attr))
@@ -80,7 +80,7 @@ class FairnessMonitor:
         self.assessments.append(assessment)
         return assessment
 
-    def get_assessments(self, model_id: str = None) -> List[BiasAssessment]:
+    def get_assessments(self, model_id: str = None) -> list[BiasAssessment]:
         if model_id:
             return [a for a in self.assessments if a.model_id == model_id]
         return self.assessments
@@ -88,7 +88,7 @@ class FairnessMonitor:
     def set_threshold(self, bias_type: BiasType, threshold: float) -> None:
         self.thresholds[bias_type] = threshold
 
-    def get_recommendations(self, assessment_id: str) -> List[str]:
+    def get_recommendations(self, assessment_id: str) -> list[str]:
         for a in self.assessments:
             if a.assessment_id == assessment_id:
                 return a.recommendations

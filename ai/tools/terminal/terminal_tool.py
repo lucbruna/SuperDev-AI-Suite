@@ -3,10 +3,10 @@ from __future__ import annotations
 from typing import Any
 
 from ...base.base_tool import BaseTool
-from .terminal_executor import TerminalExecutor
-from .terminal_session import TerminalSession
-from .terminal_history import TerminalHistory
 from .terminal_environment import TerminalEnvironment
+from .terminal_executor import TerminalExecutor
+from .terminal_history import TerminalHistory
+from .terminal_session import TerminalSession
 
 
 class TerminalTool(BaseTool):

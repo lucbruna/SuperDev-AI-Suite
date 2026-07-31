@@ -1,11 +1,12 @@
 """
 Connector Engine - Core connector logic
 """
-from typing import Dict, Any, Optional, List, Callable
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class ConnectorType(Enum):
@@ -33,8 +34,8 @@ class ConnectorConfig:
     name: str
     connector_type: ConnectorType
     endpoint: str = ""
-    credentials: Dict[str, str] = field(default_factory=dict)
-    settings: Dict[str, Any] = field(default_factory=dict)
+    credentials: dict[str, str] = field(default_factory=dict)
+    settings: dict[str, Any] = field(default_factory=dict)
     timeout: int = 30
     retries: int = 3
 
@@ -44,16 +45,16 @@ class ConnectorInstance:
     instance_id: str
     config: ConnectorConfig
     state: ConnectorState = ConnectorState.DISCONNECTED
-    last_connected: Optional[datetime] = None
+    last_connected: datetime | None = None
     error_count: int = 0
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class ConnectorEngine:
     def __init__(self):
-        self.connectors: Dict[str, ConnectorInstance] = {}
-        self.handlers: Dict[str, Callable] = {}
-        self.connection_pool: Dict[str, Any] = {}
+        self.connectors: dict[str, ConnectorInstance] = {}
+        self.handlers: dict[str, Callable] = {}
+        self.connection_pool: dict[str, Any] = {}
 
     def create_connector(self, config: ConnectorConfig) -> ConnectorInstance:
         instance_id = hashlib.sha256(f"{config.name}{config.connector_type.value}".encode()).hexdigest()[:16]
@@ -91,13 +92,13 @@ class ConnectorEngine:
     def register_handler(self, instance_id: str, handler: Callable) -> None:
         self.handlers[instance_id] = handler
 
-    def get_connector(self, instance_id: str) -> Optional[ConnectorInstance]:
+    def get_connector(self, instance_id: str) -> ConnectorInstance | None:
         return self.connectors.get(instance_id)
 
-    def list_connectors(self) -> List[ConnectorInstance]:
+    def list_connectors(self) -> list[ConnectorInstance]:
         return list(self.connectors.values())
 
-    def get_connected(self) -> List[ConnectorInstance]:
+    def get_connected(self) -> list[ConnectorInstance]:
         return [c for c in self.connectors.values() if c.state == ConnectorState.CONNECTED]
 
     def count(self) -> int:

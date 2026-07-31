@@ -1,10 +1,10 @@
 """
 Policy Management
 """
-from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
-from enum import Enum
 from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class PolicyStatus(Enum):
@@ -24,10 +24,10 @@ class Policy:
     owner: str = ""
     created_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)
-    effective_date: Optional[datetime] = None
-    review_date: Optional[datetime] = None
-    rules: List[Dict[str, Any]] = field(default_factory=list)
-    exceptions: List[Dict[str, str]] = field(default_factory=list)
+    effective_date: datetime | None = None
+    review_date: datetime | None = None
+    rules: list[dict[str, Any]] = field(default_factory=list)
+    exceptions: list[dict[str, str]] = field(default_factory=list)
 
 
 @dataclass
@@ -36,13 +36,13 @@ class PolicyException:
     policy_id: str
     reason: str = ""
     approved_by: str = ""
-    expires_at: Optional[datetime] = None
+    expires_at: datetime | None = None
 
 
 class PolicyManager:
     def __init__(self):
-        self.policies: Dict[str, Policy] = {}
-        self.exceptions: Dict[str, PolicyException] = {}
+        self.policies: dict[str, Policy] = {}
+        self.exceptions: dict[str, PolicyException] = {}
 
     def create_policy(self, policy_id: str, name: str, description: str = "", owner: str = "") -> Policy:
         policy = Policy(policy_id=policy_id, name=name, description=description, owner=owner)
@@ -80,13 +80,13 @@ class PolicyManager:
         self.exceptions[exc_id] = exc
         return exc
 
-    def get_active_policies(self) -> List[Policy]:
+    def get_active_policies(self) -> list[Policy]:
         return [p for p in self.policies.values() if p.status == PolicyStatus.ACTIVE]
 
-    def get_policy(self, policy_id: str) -> Optional[Policy]:
+    def get_policy(self, policy_id: str) -> Policy | None:
         return self.policies.get(policy_id)
 
-    def get_exceptions(self, policy_id: str) -> List[PolicyException]:
+    def get_exceptions(self, policy_id: str) -> list[PolicyException]:
         return [e for e in self.exceptions.values() if e.policy_id == policy_id]
 
     def count(self) -> int:

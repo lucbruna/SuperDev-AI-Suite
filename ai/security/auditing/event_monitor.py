@@ -1,7 +1,11 @@
 """Event monitoring."""
 from __future__ import annotations
-from typing import Any, Callable, Dict, List, Optional
-import time, uuid
+
+import time
+import uuid
+from collections.abc import Callable
+from typing import Any
+
 
 class EventRule:
     def __init__(self, rule_id: str, event_pattern: str, action: str, threshold: int = 1) -> None:
@@ -10,14 +14,14 @@ class EventRule:
         self.action = action
         self.threshold = threshold
         self.trigger_count = 0
-        self.last_triggered: Optional[float] = None
+        self.last_triggered: float | None = None
 
 class EventMonitor:
     def __init__(self) -> None:
-        self._events: List[Dict[str, Any]] = []
-        self._rules: Dict[str, EventRule] = {}
-        self._handlers: Dict[str, Callable[..., Any]] = {}
-    def record_event(self, event_type: str, source: str, details: str = "") -> Dict[str, Any]:
+        self._events: list[dict[str, Any]] = []
+        self._rules: dict[str, EventRule] = {}
+        self._handlers: dict[str, Callable[..., Any]] = {}
+    def record_event(self, event_type: str, source: str, details: str = "") -> dict[str, Any]:
         entry = {"event_id": str(uuid.uuid4())[:8], "type": event_type, "source": source, "details": details, "timestamp": time.time()}
         self._events.append(entry)
         self._check_rules(event_type)
@@ -38,7 +42,7 @@ class EventMonitor:
                         handler(event_type, rule)
                     rule.last_triggered = time.time()
                     rule.trigger_count = 0
-    def get_events(self, event_type: str = "", limit: int = 100) -> List[Dict[str, Any]]:
+    def get_events(self, event_type: str = "", limit: int = 100) -> list[dict[str, Any]]:
         events = self._events
         if event_type:
             events = [e for e in events if e["type"] == event_type]
@@ -47,5 +51,5 @@ class EventMonitor:
         n = len(self._events)
         self._events.clear()
         return n
-    def list_rules(self) -> List[str]:
+    def list_rules(self) -> list[str]:
         return list(self._rules.keys())

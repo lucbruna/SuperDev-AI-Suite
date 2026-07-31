@@ -1,8 +1,8 @@
 """Push Manager - Push notification management."""
-from typing import Dict, Any, Optional, List
+import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
-import hashlib
+from typing import Any
 
 
 @dataclass
@@ -20,17 +20,17 @@ class PushMessage:
     message_id: str
     title: str
     body: str
-    data: Dict[str, Any] = field(default_factory=dict)
-    token_ids: List[str] = field(default_factory=list)
-    sent_at: Optional[datetime] = None
+    data: dict[str, Any] = field(default_factory=dict)
+    token_ids: list[str] = field(default_factory=list)
+    sent_at: datetime | None = None
     success_count: int = 0
     failure_count: int = 0
 
 
 class PushManager:
     def __init__(self):
-        self.tokens: Dict[str, PushToken] = {}
-        self.messages: List[PushMessage] = []
+        self.tokens: dict[str, PushToken] = {}
+        self.messages: list[PushMessage] = []
 
     def register_token(self, device_id: str, platform: str, token: str) -> PushToken:
         token_id = hashlib.sha256(f"{device_id}{token}".encode()).hexdigest()[:16]
@@ -44,7 +44,7 @@ class PushManager:
             return True
         return False
 
-    def send_push(self, title: str, body: str, token_ids: List[str] = None, data: Dict[str, Any] = None) -> PushMessage:
+    def send_push(self, title: str, body: str, token_ids: list[str] = None, data: dict[str, Any] = None) -> PushMessage:
         msg_id = hashlib.sha256(f"{title}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
         if not token_ids:
             token_ids = [t.token_id for t in self.tokens.values() if t.active]
@@ -52,13 +52,13 @@ class PushManager:
         self.messages.append(msg)
         return msg
 
-    def get_tokens(self, device_id: str = None) -> List[PushToken]:
+    def get_tokens(self, device_id: str = None) -> list[PushToken]:
         tokens = list(self.tokens.values())
         if device_id:
             tokens = [t for t in tokens if t.device_id == device_id]
         return tokens
 
-    def get_messages(self, limit: int = 100) -> List[PushMessage]:
+    def get_messages(self, limit: int = 100) -> list[PushMessage]:
         return self.messages[-limit:]
 
     def count(self) -> int:

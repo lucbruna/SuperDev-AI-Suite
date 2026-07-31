@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class WorkingMemory:
@@ -10,9 +10,9 @@ class WorkingMemory:
 
     def __init__(self, capacity: int = 7) -> None:
         self._capacity = capacity
-        self._items: Dict[str, Dict[str, Any]] = {}
-        self._focus_stack: List[str] = []
-        self._context: Dict[str, Any] = {}
+        self._items: dict[str, dict[str, Any]] = {}
+        self._focus_stack: list[str] = []
+        self._context: dict[str, Any] = {}
 
     def store(self, key: str, value: Any) -> None:
         if key in self._items:
@@ -27,7 +27,7 @@ class WorkingMemory:
         }
         self._focus_stack.append(key)
 
-    def retrieve(self, key: str) -> Optional[Any]:
+    def retrieve(self, key: str) -> Any | None:
         entry = self._items.get(key)
         if entry is None:
             return None
@@ -45,7 +45,7 @@ class WorkingMemory:
     def clear_context(self) -> None:
         self._context.clear()
 
-    def get_focused_items(self) -> List[str]:
+    def get_focused_items(self) -> list[str]:
         return list(reversed(self._focus_stack))
 
     def remove(self, key: str) -> bool:
@@ -63,7 +63,7 @@ class WorkingMemory:
         self._focus_stack.clear()
         self._context.clear()
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         return {
             "items": len(self._items),
             "capacity": self._capacity,

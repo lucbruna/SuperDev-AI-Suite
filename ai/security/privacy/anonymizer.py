@@ -1,7 +1,10 @@
 """Data anonymization."""
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
-import hashlib, re, uuid
+
+import hashlib
+import uuid
+from typing import Any
+
 
 class AnonymizationMethod:
     HASH = "hash"
@@ -13,7 +16,7 @@ class AnonymizationMethod:
 
 class DataAnonymizer:
     def __init__(self) -> None:
-        self._transformations: List[Dict[str, Any]] = []
+        self._transformations: list[dict[str, Any]] = []
         self._salt = uuid.uuid4().hex[:16]
     def hash_value(self, value: str) -> str:
         return hashlib.sha256((value + self._salt).encode()).hexdigest()[:16]
@@ -36,7 +39,7 @@ class DataAnonymizer:
         import random
         delta = random.uniform(-max_delta, max_delta)
         return value + delta
-    def anonymize_record(self, record: Dict[str, Any], rules: Dict[str, str]) -> Dict[str, Any]:
+    def anonymize_record(self, record: dict[str, Any], rules: dict[str, str]) -> dict[str, Any]:
         result = {}
         for key, value in record.items():
             method = rules.get(key, "none")
@@ -54,5 +57,5 @@ class DataAnonymizer:
                 result[key] = value
         self._transformations.append({"record_keys": list(record.keys()), "methods": rules})
         return result
-    def get_transformations(self) -> List[Dict[str, Any]]:
+    def get_transformations(self) -> list[dict[str, Any]]:
         return list(self._transformations)

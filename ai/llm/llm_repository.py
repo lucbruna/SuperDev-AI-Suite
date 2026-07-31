@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from typing import Any
-
 from dataclasses import asdict
+from typing import Any
 
 from .llm_registry import LLMRegistry
 

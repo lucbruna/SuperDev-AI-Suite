@@ -1,32 +1,33 @@
 """Ingestion engine."""
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional
-from .models import Connector, IngestionBatch, DataSource, IngestionLog, ConnectorType, IngestionStatus
+from typing import Any
+
+from .models import Connector, DataSource, IngestionBatch, IngestionLog, IngestionStatus
 
 
 class IngestionEngine:
     def __init__(self):
-        self._connectors: Dict[str, Connector] = {}
-        self._batches: Dict[str, IngestionBatch] = {}
-        self._sources: Dict[str, DataSource] = {}
-        self._logs: List[IngestionLog] = []
+        self._connectors: dict[str, Connector] = {}
+        self._batches: dict[str, IngestionBatch] = {}
+        self._sources: dict[str, DataSource] = {}
+        self._logs: list[IngestionLog] = []
 
     def register_connector(self, connector: Connector) -> Connector:
         self._connectors[connector.connector_id] = connector
         return connector
 
-    def get_connector(self, connector_id: str) -> Optional[Connector]:
+    def get_connector(self, connector_id: str) -> Connector | None:
         return self._connectors.get(connector_id)
 
     def register_source(self, source: DataSource) -> DataSource:
         self._sources[source.source_id] = source
         return source
 
-    def get_source(self, source_id: str) -> Optional[DataSource]:
+    def get_source(self, source_id: str) -> DataSource | None:
         return self._sources.get(source_id)
 
-    def create_batch(self, connector_id: str, records: List[Dict[str, Any]]) -> IngestionBatch:
+    def create_batch(self, connector_id: str, records: list[dict[str, Any]]) -> IngestionBatch:
         batch = IngestionBatch(
             batch_id=str(uuid.uuid4())[:8],
             connector_id=connector_id,
@@ -58,17 +59,17 @@ class IngestionEngine:
         batch.error_count = error_count
         return True
 
-    def get_batch(self, batch_id: str) -> Optional[IngestionBatch]:
+    def get_batch(self, batch_id: str) -> IngestionBatch | None:
         return self._batches.get(batch_id)
 
-    def get_connector_batches(self, connector_id: str) -> List[IngestionBatch]:
+    def get_connector_batches(self, connector_id: str) -> list[IngestionBatch]:
         return [b for b in self._batches.values() if b.connector_id == connector_id]
 
     def add_log(self, log: IngestionLog) -> IngestionLog:
         self._logs.append(log)
         return log
 
-    def get_logs(self, connector_id: Optional[str] = None) -> List[IngestionLog]:
+    def get_logs(self, connector_id: str | None = None) -> list[IngestionLog]:
         if connector_id:
             return [l for l in self._logs if l.connector_id == connector_id]
         return list(self._logs)

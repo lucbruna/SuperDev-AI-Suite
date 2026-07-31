@@ -1,10 +1,11 @@
 import enum
 import secrets
 
-from backend.database.base import Base, SoftDeleteMixin, TimestampMixin
-from backend.utils.uuid_utils import generate_uuid
 from sqlalchemy import Boolean, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from backend.database.base import Base, SoftDeleteMixin, TimestampMixin
+from backend.utils.uuid_utils import generate_uuid
 
 
 def generate_invite_token() -> str:

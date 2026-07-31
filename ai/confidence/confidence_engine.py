@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
+from .calibration import Calibration
 from .confidence_score import ConfidenceScore
 from .confidence_threshold import ConfidenceThreshold
 from .uncertainty import Uncertainty
-from .calibration import Calibration
 
 
 class ConfidenceEngine:

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .memory_manager import MemoryManager
 from .memory_models import MemoryEntry, MemoryQuery, MemorySummary
-from .memory_types import MemoryCategory, MemoryData, MemoryID, MemoryScope, Tags
+from .memory_types import MemoryData, MemoryID, MemoryScope, Tags
 
 
 class MemoryService:
@@ -36,15 +36,15 @@ class MemoryService:
     async def update_memory(self, key: MemoryID, data: MemoryData, user: str = "") -> bool:
         return await self._manager.update(key, data, user=user)
 
-    async def find(self, query: str, user: str = "") -> List[MemoryEntry]:
+    async def find(self, query: str, user: str = "") -> list[MemoryEntry]:
         q = MemoryQuery(query=query)
         return await self._manager.search(q, user=user)
 
-    async def find_by_tags(self, tags: Tags, user: str = "") -> List[MemoryEntry]:
+    async def find_by_tags(self, tags: Tags, user: str = "") -> list[MemoryEntry]:
         q = MemoryQuery(tags=tags)
         return await self._manager.search(q, user=user)
 
-    async def get_context(self, context_id: str, limit: int = 50) -> List[MemoryEntry]:
+    async def get_context(self, context_id: str, limit: int = 50) -> list[MemoryEntry]:
         from .memory_context import MemoryContext
         ctx = MemoryContext(context_id, max_length=limit)
         q = MemoryQuery(scope=MemoryScope.SESSION, max_results=limit)
@@ -56,7 +56,7 @@ class MemoryService:
     async def get_summary(self) -> MemorySummary:
         return await self._manager.get_stats()
 
-    async def run_maintenance(self) -> Dict[str, Any]:
+    async def run_maintenance(self) -> dict[str, Any]:
         expired = await self._manager.evict_expired()
         consolidated = await self._manager.consolidate()
         stats = await self._manager.get_stats()
@@ -67,7 +67,7 @@ class MemoryService:
             "total_size_bytes": stats.total_size_bytes,
         }
 
-    async def health_check(self) -> Dict[str, Any]:
+    async def health_check(self) -> dict[str, Any]:
         stats = await self._manager.get_stats()
         return {
             "healthy": self._manager.state.is_ready,

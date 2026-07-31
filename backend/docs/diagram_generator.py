@@ -62,7 +62,7 @@ class DiagramGenerator:
     def generate_from_code(self, modules: dict[str, Any]) -> list[str]:
         diagrams = []
         classes_list = []
-        for mod_path, mod_data in modules.items():
+        for _mod_path, mod_data in modules.items():
             if isinstance(mod_data, dict) and "classes" in mod_data:
                 for cls in mod_data["classes"]:
                     classes_list.append(cls)

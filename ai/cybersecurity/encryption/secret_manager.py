@@ -1,12 +1,12 @@
 """
 Secret Storage and Management
 """
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
-import secrets
 import hashlib
+import secrets
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class SecretType(Enum):
@@ -34,16 +34,16 @@ class Secret:
     state: SecretState = SecretState.ACTIVE
     version: int = 1
     created_at: datetime = field(default_factory=datetime.now)
-    rotated_at: Optional[datetime] = None
-    expires_at: Optional[datetime] = None
+    rotated_at: datetime | None = None
+    expires_at: datetime | None = None
     access_count: int = 0
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class SecretManager:
     def __init__(self):
-        self.secrets: Dict[str, Secret] = {}
-        self.secret_values: Dict[str, str] = {}
+        self.secrets: dict[str, Secret] = {}
+        self.secret_values: dict[str, str] = {}
         self.access_log: list = []
 
     def create_secret(self, name: str, value: str, secret_type: SecretType = SecretType.API_KEY) -> Secret:
@@ -54,7 +54,7 @@ class SecretManager:
         self.secret_values[secret_id] = value
         return secret
 
-    def get_secret(self, secret_id: str, accessor: str = "system") -> Optional[str]:
+    def get_secret(self, secret_id: str, accessor: str = "system") -> str | None:
         secret = self.secrets.get(secret_id)
         if not secret or secret.state != SecretState.ACTIVE:
             return None
@@ -62,7 +62,7 @@ class SecretManager:
         self.access_log.append({"secret_id": secret_id, "accessor": accessor, "time": datetime.now().isoformat()})
         return self.secret_values.get(secret_id)
 
-    def rotate_secret(self, secret_id: str, new_value: str) -> Optional[Secret]:
+    def rotate_secret(self, secret_id: str, new_value: str) -> Secret | None:
         secret = self.secrets.get(secret_id)
         if secret:
             secret.version += 1
@@ -80,13 +80,13 @@ class SecretManager:
             return True
         return False
 
-    def find_by_name(self, name: str) -> List[Secret]:
+    def find_by_name(self, name: str) -> list[Secret]:
         return [s for s in self.secrets.values() if s.name == name]
 
-    def find_by_type(self, secret_type: SecretType) -> List[Secret]:
+    def find_by_type(self, secret_type: SecretType) -> list[Secret]:
         return [s for s in self.secrets.values() if s.secret_type == secret_type]
 
-    def list_active(self) -> List[Secret]:
+    def list_active(self) -> list[Secret]:
         return [s for s in self.secrets.values() if s.state == SecretState.ACTIVE]
 
     def count(self) -> int:

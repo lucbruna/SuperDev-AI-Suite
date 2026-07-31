@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 
 class CacheEntry:
@@ -50,7 +50,7 @@ class MemoryCache:
     def __init__(self, max_size: int = 10000, default_ttl: float = 60.0):
         self._max_size = max_size
         self._default_ttl = default_ttl
-        self._entries: Dict[str, CacheEntry] = {}
+        self._entries: dict[str, CacheEntry] = {}
 
     @property
     def max_size(self) -> int:
@@ -121,7 +121,7 @@ class MemoryCache:
             del self._entries[k]
         return len(keys)
 
-    def stats(self) -> Dict[str, Any]:
+    def stats(self) -> dict[str, Any]:
         return {
             "size": len(self._entries),
             "max_size": self._max_size,

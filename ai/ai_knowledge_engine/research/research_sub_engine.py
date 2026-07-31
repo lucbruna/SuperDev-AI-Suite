@@ -1,9 +1,9 @@
 """Research subsystem engine — Intelligent research and information collection."""
 import uuid
-from datetime import datetime
-from typing import Dict, Any, List, Optional
-from enum import Enum
 from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class SourceType(Enum):
@@ -29,8 +29,8 @@ class Source:
     url: str = ""
     source_type: SourceType = SourceType.WEB
     reliability: float = 0.5
-    last_checked: Optional[datetime] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    last_checked: datetime | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -41,7 +41,7 @@ class Information:
     source_id: str = ""
     relevance: float = 0.0
     confidence: float = 0.5
-    tags: List[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
     collected_at: datetime = field(default_factory=datetime.now)
 
 
@@ -50,43 +50,43 @@ class ResearchSession:
     session_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     topic: str = ""
     phase: ResearchPhase = ResearchPhase.PLANNING
-    sources: List[Source] = field(default_factory=list)
-    findings: List[Information] = field(default_factory=list)
+    sources: list[Source] = field(default_factory=list)
+    findings: list[Information] = field(default_factory=list)
     report: str = ""
     started_at: datetime = field(default_factory=datetime.now)
-    completed_at: Optional[datetime] = None
+    completed_at: datetime | None = None
 
 
 class ResearchSubEngine:
     def __init__(self):
-        self._sessions: Dict[str, ResearchSession] = {}
-        self._sources: Dict[str, Source] = {}
-        self._information: Dict[str, Information] = {}
-        self._queries: List[Dict[str, Any]] = []
+        self._sessions: dict[str, ResearchSession] = {}
+        self._sources: dict[str, Source] = {}
+        self._information: dict[str, Information] = {}
+        self._queries: list[dict[str, Any]] = []
 
     def start_session(self, topic: str) -> ResearchSession:
         session = ResearchSession(topic=topic)
         self._sessions[session.session_id] = session
         return session
 
-    def get_session(self, session_id: str) -> Optional[ResearchSession]:
+    def get_session(self, session_id: str) -> ResearchSession | None:
         return self._sessions.get(session_id)
 
     def add_source(self, source: Source) -> Source:
         self._sources[source.source_id] = source
         return source
 
-    def get_source(self, source_id: str) -> Optional[Source]:
+    def get_source(self, source_id: str) -> Source | None:
         return self._sources.get(source_id)
 
     def add_information(self, info: Information) -> Information:
         self._information[info.info_id] = info
         return info
 
-    def get_information(self, info_id: str) -> Optional[Information]:
+    def get_information(self, info_id: str) -> Information | None:
         return self._information.get(info_id)
 
-    def collect_information(self, session_id: str, title: str, content: str, source_id: str = "", relevance: float = 0.5) -> Optional[Information]:
+    def collect_information(self, session_id: str, title: str, content: str, source_id: str = "", relevance: float = 0.5) -> Information | None:
         session = self._sessions.get(session_id)
         if not session:
             return None
@@ -109,11 +109,11 @@ class ResearchSubEngine:
         session.completed_at = datetime.now()
         return True
 
-    def search_information(self, query: str) -> List[Information]:
+    def search_information(self, query: str) -> list[Information]:
         query_lower = query.lower()
         return [i for i in self._information.values() if query_lower in i.title.lower() or query_lower in i.content.lower()]
 
-    def get_top_findings(self, session_id: str, limit: int = 5) -> List[Information]:
+    def get_top_findings(self, session_id: str, limit: int = 5) -> list[Information]:
         session = self._sessions.get(session_id)
         if not session:
             return []

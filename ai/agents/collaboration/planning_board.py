@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class PlanningBoard:
     """Shared planning board for collaborative work."""
 
     def __init__(self) -> None:
-        self._items: Dict[str, Dict[str, Any]] = {}
+        self._items: dict[str, dict[str, Any]] = {}
 
     @property
     def item_count(self) -> int:
@@ -23,11 +23,11 @@ class PlanningBoard:
             return True
         return False
 
-    def get_item(self, item_id: str) -> Optional[Dict[str, Any]]:
+    def get_item(self, item_id: str) -> dict[str, Any] | None:
         item = self._items.get(item_id)
         return dict(item) if item else None
 
-    def list_items(self, status: str = "") -> List[Dict[str, Any]]:
+    def list_items(self, status: str = "") -> list[dict[str, Any]]:
         items = [dict(v) for v in self._items.values()]
         if status:
             items = [i for i in items if i["status"] == status]

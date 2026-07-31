@@ -6,18 +6,19 @@ from enum import StrEnum
 from typing import Any
 
 import httpx
-from backend.config import config
-from backend.database.models.organization import Organization, OrganizationMember
-from backend.database.models.project import Project, ProjectMember
-from backend.database.models.role import Permission, Role, UserRole
-from backend.database.models.user import User
-from backend.database.session import get_db
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2AuthorizationCodeBearer, OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from backend.config import config
+from backend.database.models.organization import Organization, OrganizationMember
+from backend.database.models.project import Project, ProjectMember
+from backend.database.models.role import Permission, Role, UserRole
+from backend.database.models.user import User
+from backend.database.session import get_db
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

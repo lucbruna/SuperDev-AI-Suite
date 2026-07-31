@@ -1,14 +1,15 @@
 """Data Platform Runtime — Runtime context for data platform operations."""
-from typing import Dict, Any, Optional
 from datetime import datetime
+from typing import Any
+
 from .data_config import DataPlatformConfig
 
 
 class DataPlatformRuntime:
-    def __init__(self, config: Optional[DataPlatformConfig] = None):
+    def __init__(self, config: DataPlatformConfig | None = None):
         self._config = config or DataPlatformConfig()
-        self._start_time: Optional[datetime] = None
-        self._metrics: Dict[str, Any] = {}
+        self._start_time: datetime | None = None
+        self._metrics: dict[str, Any] = {}
 
     def start(self) -> None:
         self._start_time = datetime.now()
@@ -20,10 +21,10 @@ class DataPlatformRuntime:
     def record_metric(self, key: str, value: Any) -> None:
         self._metrics[key] = value
 
-    def get_metric(self, key: str) -> Optional[Any]:
+    def get_metric(self, key: str) -> Any | None:
         return self._metrics.get(key)
 
-    def get_all_metrics(self) -> Dict[str, Any]:
+    def get_all_metrics(self) -> dict[str, Any]:
         return dict(self._metrics)
 
     @property

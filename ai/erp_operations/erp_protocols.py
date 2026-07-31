@@ -1,7 +1,7 @@
 """ERP Protocols — Protocol definitions for ERP operations."""
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, Any, List
+from typing import Any
 
 
 class ERPProtocolType(Enum):
@@ -20,12 +20,12 @@ class ERPProtocolConfig:
     base_url: str = ""
     auth_required: bool = True
     rate_limit: int = 1000
-    settings: Dict[str, Any] = field(default_factory=dict)
+    settings: dict[str, Any] = field(default_factory=dict)
 
 
 class ERPProtocols:
     def __init__(self):
-        self.protocols: Dict[str, ERPProtocolConfig] = {}
+        self.protocols: dict[str, ERPProtocolConfig] = {}
 
     def register(self, name: str, protocol_type: ERPProtocolType = ERPProtocolType.REST, **kwargs) -> ERPProtocolConfig:
         config = ERPProtocolConfig(name=name, protocol_type=protocol_type, **kwargs)
@@ -35,7 +35,7 @@ class ERPProtocols:
     def get(self, name: str) -> ERPProtocolConfig | None:
         return self.protocols.get(name)
 
-    def list_protocols(self) -> List[ERPProtocolConfig]:
+    def list_protocols(self) -> list[ERPProtocolConfig]:
         return list(self.protocols.values())
 
     def deregister(self, name: str) -> bool:

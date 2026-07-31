@@ -1,9 +1,9 @@
 """Offline Engine - Core offline mode management."""
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class OfflineMode(Enum):
@@ -19,15 +19,15 @@ class OfflineSession:
     device_id: str
     mode: OfflineMode = OfflineMode.ACTIVE
     started_at: datetime = field(default_factory=datetime.now)
-    ended_at: Optional[datetime] = None
+    ended_at: datetime | None = None
     actions_queued: int = 0
     data_cached: float = 0.0
 
 
 class OfflineEngine:
     def __init__(self):
-        self.sessions: Dict[str, OfflineSession] = {}
-        self.queue: List[Dict[str, Any]] = []
+        self.sessions: dict[str, OfflineSession] = {}
+        self.queue: list[dict[str, Any]] = []
         self.cache_size_mb: float = 0.0
         self.max_cache_mb: float = 500.0
 
@@ -45,13 +45,13 @@ class OfflineEngine:
             return True
         return False
 
-    def queue_action(self, action: Dict[str, Any]) -> None:
+    def queue_action(self, action: dict[str, Any]) -> None:
         self.queue.append({**action, "queued_at": datetime.now().isoformat()})
 
-    def get_queue(self) -> List[Dict[str, Any]]:
+    def get_queue(self) -> list[dict[str, Any]]:
         return list(self.queue)
 
-    def process_queue(self) -> List[Dict[str, Any]]:
+    def process_queue(self) -> list[dict[str, Any]]:
         processed = list(self.queue)
         self.queue.clear()
         return processed
@@ -62,10 +62,10 @@ class OfflineEngine:
         self.cache_size_mb += size_mb
         return True
 
-    def get_session(self, session_id: str) -> Optional[OfflineSession]:
+    def get_session(self, session_id: str) -> OfflineSession | None:
         return self.sessions.get(session_id)
 
-    def get_active_sessions(self) -> List[OfflineSession]:
+    def get_active_sessions(self) -> list[OfflineSession]:
         return [s for s in self.sessions.values() if s.mode == OfflineMode.ACTIVE]
 
     def count(self) -> int:

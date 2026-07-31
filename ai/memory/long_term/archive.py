@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .storage import Storage
 
@@ -33,7 +33,7 @@ class ArchiveEntry:
     def archived_at(self) -> float:
         return self._archived_at
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "key": self._key,
             "path": self._path,
@@ -48,7 +48,7 @@ class Archive:
     def __init__(self, storage: Storage, archive_dir: str | Path | None = None):
         self._storage = storage
         self._archive_dir = Path(archive_dir) if archive_dir else Path.cwd() / ".archive"
-        self._entries: Dict[str, ArchiveEntry] = {}
+        self._entries: dict[str, ArchiveEntry] = {}
 
     @property
     def count(self) -> int:
@@ -81,7 +81,7 @@ class Archive:
         del self._entries[key]
         return True
 
-    def list_archived(self) -> List[Dict[str, Any]]:
+    def list_archived(self) -> list[dict[str, Any]]:
         return [e.to_dict() for e in self._entries.values()]
 
     def delete_archive(self, key: str) -> bool:

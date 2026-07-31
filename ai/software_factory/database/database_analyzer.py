@@ -1,12 +1,13 @@
 """Analyzer for database schemas and performance."""
-from typing import List, Dict, Any
-from .models import DatabaseSchema, Table, Column
+from typing import Any
+
+from .models import DatabaseSchema, Table
 
 
 class DatabaseAnalyzer:
     """Analyzes database schemas for metrics and optimization."""
 
-    def analyze_schema(self, schema: DatabaseSchema) -> Dict[str, Any]:
+    def analyze_schema(self, schema: DatabaseSchema) -> dict[str, Any]:
         tables = schema.tables
         total_columns = sum(len(t.columns) for t in tables)
         total_indexes = sum(len(t.indexes) for t in tables)
@@ -26,7 +27,7 @@ class DatabaseAnalyzer:
             "avg_columns_per_table": total_columns / len(tables) if tables else 0,
         }
 
-    def analyze_table(self, table: Table) -> Dict[str, Any]:
+    def analyze_table(self, table: Table) -> dict[str, Any]:
         return {
             "table_name": table.name,
             "columns": len(table.columns),
@@ -35,7 +36,7 @@ class DatabaseAnalyzer:
             "nullable_ratio": sum(1 for c in table.columns if c.nullable) / len(table.columns) if table.columns else 0,
         }
 
-    def find_unused_indexes(self, schema: DatabaseSchema) -> List[str]:
+    def find_unused_indexes(self, schema: DatabaseSchema) -> list[str]:
         """Find tables with many indexes but few foreign keys."""
         unused = []
         for table in schema.tables:
@@ -43,7 +44,7 @@ class DatabaseAnalyzer:
                 unused.append(table.name)
         return unused
 
-    def suggest_optimizations(self, schema: DatabaseSchema) -> List[Dict[str, str]]:
+    def suggest_optimizations(self, schema: DatabaseSchema) -> list[dict[str, str]]:
         suggestions = []
         for table in schema.tables:
             if len(table.columns) > 20:

@@ -1,17 +1,18 @@
 """Manager for database migrations."""
-from typing import List, Dict, Any, Optional
 from datetime import datetime
-from .models import Migration, MigrationStep, MigrationStatus
+from typing import Any
+
+from .models import Migration, MigrationStatus, MigrationStep
 
 
 class MigrationManager:
     """Manages database migration lifecycle."""
 
     def __init__(self):
-        self._migrations: List[Migration] = []
-        self._executed: List[Dict[str, Any]] = []
+        self._migrations: list[Migration] = []
+        self._executed: list[dict[str, Any]] = []
 
-    def create_migration(self, name: str, steps: List[Dict[str, Any]]) -> Migration:
+    def create_migration(self, name: str, steps: list[dict[str, Any]]) -> Migration:
         migration_steps = [
             MigrationStep(
                 operation=s.get("operation", ""),
@@ -49,14 +50,14 @@ class MigrationManager:
         migration.status = MigrationStatus.ROLLED_BACK
         return True
 
-    def get_pending(self) -> List[Migration]:
+    def get_pending(self) -> list[Migration]:
         return [m for m in self._migrations if m.status == MigrationStatus.PENDING]
 
-    def get_executed(self) -> List[Migration]:
+    def get_executed(self) -> list[Migration]:
         return [m for m in self._migrations if m.status == MigrationStatus.COMPLETED]
 
-    def get_all(self) -> List[Migration]:
+    def get_all(self) -> list[Migration]:
         return list(self._migrations)
 
-    def get_history(self) -> List[Dict[str, Any]]:
+    def get_history(self) -> list[dict[str, Any]]:
         return list(self._executed)

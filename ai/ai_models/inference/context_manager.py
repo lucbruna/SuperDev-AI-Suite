@@ -1,14 +1,14 @@
 """Context manager for conversations."""
 from __future__ import annotations
-from typing import Any, Dict, List
+
 
 class ContextManager:
     def __init__(self, max_context: int = 128000) -> None:
         self._max = max_context
-        self._conversations: Dict[str, List[Dict[str, str]]] = {}
+        self._conversations: dict[str, list[dict[str, str]]] = {}
     def add_message(self, conversation_id: str, role: str, content: str) -> None:
         self._conversations.setdefault(conversation_id, []).append({"role": role, "content": content})
-    def get_context(self, conversation_id: str, max_messages: int = 0) -> List[Dict[str, str]]:
+    def get_context(self, conversation_id: str, max_messages: int = 0) -> list[dict[str, str]]:
         messages = self._conversations.get(conversation_id, [])
         if max_messages:
             return messages[-max_messages:]
@@ -27,7 +27,7 @@ class ContextManager:
             self._conversations[conversation_id] = messages[-keep_last:]
             return removed
         return 0
-    def list_conversations(self) -> List[str]:
+    def list_conversations(self) -> list[str]:
         return list(self._conversations.keys())
     def message_count(self, conversation_id: str) -> int:
         return len(self._conversations.get(conversation_id, []))

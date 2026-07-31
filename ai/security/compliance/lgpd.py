@@ -1,8 +1,11 @@
 """LGPD compliance (Lei Geral de Proteção de Dados)."""
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
+
+import time
+import uuid
 from enum import Enum
-import time, uuid
+from typing import Any
+
 
 class LGPDBasis(Enum):
     CONSENT = "consent"
@@ -14,10 +17,10 @@ class LGPDBasis(Enum):
 
 class LGPDCompliance:
     def __init__(self) -> None:
-        self._consent_records: Dict[str, Dict[str, Any]] = {}
-        self._data_processing: List[Dict[str, Any]] = []
-        self._dpo_activities: List[Dict[str, Any]] = []
-    def record_consent(self, user_id: str, purpose: str, granted: bool) -> Dict[str, Any]:
+        self._consent_records: dict[str, dict[str, Any]] = {}
+        self._data_processing: list[dict[str, Any]] = []
+        self._dpo_activities: list[dict[str, Any]] = []
+    def record_consent(self, user_id: str, purpose: str, granted: bool) -> dict[str, Any]:
         record = {"consent_id": str(uuid.uuid4())[:8], "user_id": user_id, "purpose": purpose, "granted": granted, "timestamp": time.time()}
         self._consent_records[record["consent_id"]] = record
         return record
@@ -26,17 +29,17 @@ class LGPDCompliance:
             if r["user_id"] == user_id and r["purpose"] == purpose and r["granted"]:
                 return True
         return False
-    def register_processing(self, purpose: str, basis: LGPDBasis, data_categories: List[str]) -> Dict[str, Any]:
+    def register_processing(self, purpose: str, basis: LGPDBasis, data_categories: list[str]) -> dict[str, Any]:
         proc = {"processing_id": str(uuid.uuid4())[:8], "purpose": purpose, "basis": basis.value, "categories": data_categories, "timestamp": time.time()}
         self._data_processing.append(proc)
         return proc
-    def dpo_activity(self, activity_type: str, details: str, dpo: str = "") -> Dict[str, Any]:
+    def dpo_activity(self, activity_type: str, details: str, dpo: str = "") -> dict[str, Any]:
         entry = {"activity_id": str(uuid.uuid4())[:8], "type": activity_type, "details": details, "dpo": dpo, "timestamp": time.time()}
         self._dpo_activities.append(entry)
         return entry
-    def get_user_consent(self, user_id: str) -> List[Dict[str, Any]]:
+    def get_user_consent(self, user_id: str) -> list[dict[str, Any]]:
         return [r for r in self._consent_records.values() if r["user_id"] == user_id]
-    def list_processing_activities(self) -> List[Dict[str, Any]]:
+    def list_processing_activities(self) -> list[dict[str, Any]]:
         return list(self._data_processing)
-    def list_dpo_activities(self) -> List[Dict[str, Any]]:
+    def list_dpo_activities(self) -> list[dict[str, Any]]:
         return list(self._dpo_activities)

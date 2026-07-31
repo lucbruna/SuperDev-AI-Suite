@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from typing import Any
 
+from fastapi import APIRouter, Depends
+from pydantic import BaseModel
+
 from backend.dependencies import get_current_active_user
 from backend.i18n.translations import i18n
-from fastapi import APIRouter, Depends, Query
-from pydantic import BaseModel
 
 router = APIRouter(dependencies=[Depends(get_current_active_user)])
 

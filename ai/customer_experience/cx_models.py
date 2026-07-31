@@ -1,9 +1,9 @@
 """CX Models — Core data models for customer experience and CRM."""
-from dataclasses import dataclass, field
-from enum import Enum
-from typing import List, Optional, Dict, Any
-from datetime import datetime
 import uuid
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class CustomerStatus(Enum):
@@ -83,22 +83,22 @@ class Customer:
     tier: CustomerTier = CustomerTier.BRONZE
     created_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)
-    tags: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    tags: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
 class CustomerProfile:
     customer_id: str = ""
     segment: str = ""
-    preferences: Dict[str, Any] = field(default_factory=dict)
+    preferences: dict[str, Any] = field(default_factory=dict)
     behavior_score: float = 0.0
     purchase_frequency: float = 0.0
     avg_order_value: float = 0.0
     lifetime_value: float = 0.0
     churn_risk: float = 0.0
     preferred_channel: InteractionType = InteractionType.EMAIL
-    last_analysis: Optional[datetime] = None
+    last_analysis: datetime | None = None
 
 
 @dataclass
@@ -112,7 +112,7 @@ class Interaction:
     agent_id: str = ""
     timestamp: datetime = field(default_factory=datetime.now)
     resolved: bool = False
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -128,7 +128,7 @@ class Ticket:
     updated_at: datetime = field(default_factory=datetime.now)
     resolution: str = ""
     satisfaction_score: float = 0.0
-    tags: List[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -144,7 +144,7 @@ class Lead:
     probability: float = 0.0
     assigned_to: str = ""
     created_at: datetime = field(default_factory=datetime.now)
-    expected_close: Optional[datetime] = None
+    expected_close: datetime | None = None
 
 
 @dataclass
@@ -169,7 +169,7 @@ class LoyaltyTransaction:
     balance: int = 0
     description: str = ""
     timestamp: datetime = field(default_factory=datetime.now)
-    expiry_date: Optional[datetime] = None
+    expiry_date: datetime | None = None
 
 
 @dataclass
@@ -178,7 +178,7 @@ class JourneyStage:
     name: str = ""
     description: str = ""
     order: int = 0
-    touchpoints: List[str] = field(default_factory=list)
+    touchpoints: list[str] = field(default_factory=list)
     conversion_rate: float = 0.0
     avg_duration_days: float = 0.0
 
@@ -188,8 +188,8 @@ class CustomerJourney:
     journey_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     customer_id: str = ""
     current_stage: str = ""
-    stages_completed: List[str] = field(default_factory=list)
+    stages_completed: list[str] = field(default_factory=list)
     started_at: datetime = field(default_factory=datetime.now)
     last_activity: datetime = field(default_factory=datetime.now)
     conversion_score: float = 0.0
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)

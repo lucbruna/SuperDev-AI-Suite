@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any
 
-from .memory_types import ConsolidationStrategy, RetentionPolicy, MemoryScope
+from .memory_types import ConsolidationStrategy, MemoryScope, RetentionPolicy
 
 
 class MemoryConfig:
@@ -58,7 +58,7 @@ class MemoryConfig:
         self._embedding_dimension = embedding_dimension
         self._storage_backend = storage_backend
         self._serializer = serializer
-        self._extra: Dict[str, Any] = kwargs
+        self._extra: dict[str, Any] = kwargs
 
     @property
     def max_entries(self) -> int:
@@ -155,7 +155,7 @@ class MemoryConfig:
     def get_extra(self, key: str, default: Any = None) -> Any:
         return self._extra.get(key, default)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "max_entries": self._max_entries,
             "max_size_bytes": self._max_size_bytes,
@@ -183,7 +183,7 @@ class MemoryConfig:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> MemoryConfig:
+    def from_dict(cls, data: dict[str, Any]) -> MemoryConfig:
         return cls(
             max_entries=data.get("max_entries", 100000),
             max_size_bytes=data.get("max_size_bytes", 1073741824),

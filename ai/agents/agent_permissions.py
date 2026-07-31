@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class AgentPermissions:
     """Manages permissions for agent actions."""
 
     def __init__(self) -> None:
-        self._permissions: Dict[str, List[str]] = {}
+        self._permissions: dict[str, list[str]] = {}
 
     def grant(self, agent_id: str, action: str) -> None:
         if agent_id not in self._permissions:
@@ -31,5 +31,5 @@ class AgentPermissions:
     def clear(self) -> None:
         self._permissions.clear()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return dict(self._permissions)

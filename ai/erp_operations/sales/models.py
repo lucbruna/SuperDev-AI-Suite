@@ -1,8 +1,8 @@
 """Sales models."""
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
 from enum import Enum
+from typing import Any
 
 
 class SalesOrderStatus(Enum):
@@ -26,7 +26,7 @@ class QuotationStatus(Enum):
 class SalesOrder:
     order_id: str
     customer_id: str = ""
-    items: List[Dict[str, Any]] = field(default_factory=list)
+    items: list[dict[str, Any]] = field(default_factory=list)
     subtotal: float = 0.0
     tax: float = 0.0
     total: float = 0.0
@@ -40,10 +40,10 @@ class SalesOrder:
 class Quotation:
     quotation_id: str
     customer_id: str = ""
-    items: List[Dict[str, Any]] = field(default_factory=list)
+    items: list[dict[str, Any]] = field(default_factory=list)
     total: float = 0.0
     status: QuotationStatus = QuotationStatus.DRAFT
-    valid_until: Optional[datetime] = None
+    valid_until: datetime | None = None
     created_at: datetime = field(default_factory=datetime.now)
     notes: str = ""
 
@@ -55,8 +55,8 @@ class SalesTarget:
     period: str = ""
     target_amount: float = 0.0
     achieved: float = 0.0
-    start_date: Optional[datetime] = None
-    end_date: Optional[datetime] = None
+    start_date: datetime | None = None
+    end_date: datetime | None = None
 
     @property
     def achievement_pct(self) -> float:

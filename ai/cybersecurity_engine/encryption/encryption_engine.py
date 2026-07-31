@@ -1,10 +1,9 @@
 """Encryption and key management engine."""
-import uuid
 import hashlib
-from datetime import datetime
-from typing import Dict, Any, List, Optional
-from enum import Enum
+import uuid
 from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
 
 
 class Algorithm(Enum):
@@ -25,7 +24,7 @@ class EncryptionKey:
     algorithm: Algorithm = Algorithm.AES256
     key_size: int = 256
     created_at: datetime = field(default_factory=datetime.now)
-    expires_at: Optional[datetime] = None
+    expires_at: datetime | None = None
     status: KeyStatus = KeyStatus.ACTIVE
     fingerprint: str = ""
 
@@ -43,8 +42,8 @@ class EncryptedPayload:
 
 class EncryptionEngine:
     def __init__(self):
-        self._keys: Dict[str, EncryptionKey] = {}
-        self._encrypted: Dict[str, EncryptedPayload] = {}
+        self._keys: dict[str, EncryptionKey] = {}
+        self._encrypted: dict[str, EncryptedPayload] = {}
         self._rotation_days: int = 90
 
     def generate_key(self, algorithm: Algorithm = Algorithm.AES256, key_size: int = 256) -> EncryptionKey:
@@ -91,10 +90,10 @@ class EncryptionEngine:
         key.status = KeyStatus.REVOKED
         return True
 
-    def get_key(self, key_id: str) -> Optional[EncryptionKey]:
+    def get_key(self, key_id: str) -> EncryptionKey | None:
         return self._keys.get(key_id)
 
-    def get_keys(self, status: Optional[KeyStatus] = None) -> List[EncryptionKey]:
+    def get_keys(self, status: KeyStatus | None = None) -> list[EncryptionKey]:
         keys = list(self._keys.values())
         if status:
             keys = [k for k in keys if k.status == status]

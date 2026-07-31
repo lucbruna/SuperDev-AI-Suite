@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .automation_library import AutomationLibrary
 from .decision_patterns import DecisionPatterns
@@ -51,7 +51,7 @@ class ProceduralMemory:
     def decisions(self) -> DecisionPatterns:
         return self._decisions
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         return {
             "workflows": self._workflows.count,
             "patterns": self._patterns.count,

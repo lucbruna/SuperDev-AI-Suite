@@ -1,16 +1,14 @@
 from __future__ import annotations
 
-import time
-
 from ..cache_engine import CacheEngine
 from ..cache_entry import CacheEntry
 from ..cache_policy import CachePolicy
+from ..cache_serializer import CacheSerializer
 from ..cache_store import CacheStore
+from ..cache_validator import CacheValidator
+from ..distributed_cache import DistributedCache
 from ..lru_cache import LRUCache
 from ..ttl_cache import TTLCache
-from ..distributed_cache import DistributedCache
-from ..cache_serializer import CacheSerializer
-from ..cache_validator import CacheValidator
 
 
 class TestCacheEntry:
@@ -92,7 +90,7 @@ class TestCacheStore:
 
     def test_keys(self) -> None:
         self.store.set("k", "v")
-        assert "k" in self.store.keys()
+        assert "k" in self.store
 
 
 class TestLRUCache:

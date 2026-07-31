@@ -1,15 +1,23 @@
 """CX Factory — Factory for creating CX components."""
-from typing import Dict, Any, Optional, List
+from typing import Any
+
 from .cx_models import (
-    Customer, CustomerProfile, Interaction, Ticket,
-    Lead, Recommendation, CustomerStatus, CustomerTier,
-    InteractionType, TicketPriority, TicketStatus, LeadStatus, SentimentType,
+    Customer,
+    CustomerProfile,
+    CustomerStatus,
+    CustomerTier,
+    Interaction,
+    InteractionType,
+    Lead,
+    Recommendation,
+    Ticket,
+    TicketPriority,
 )
 
 
 class CXFactory:
     def __init__(self):
-        self._templates: Dict[str, Dict[str, Any]] = {
+        self._templates: dict[str, dict[str, Any]] = {
             "vip_customer": {"tier": CustomerTier.PLATINUM, "status": CustomerStatus.ACTIVE},
             "enterprise_customer": {"tier": CustomerTier.DIAMOND, "status": CustomerStatus.ACTIVE, "tags": ["enterprise"]},
             "trial_customer": {"tier": CustomerTier.BRONZE, "status": CustomerStatus.PROSPECT, "tags": ["trial"]},
@@ -39,11 +47,11 @@ class CXFactory:
     def create_profile(self, customer_id: str, **kwargs) -> CustomerProfile:
         return CustomerProfile(customer_id=customer_id, **kwargs)
 
-    def register_template(self, name: str, template: Dict[str, Any]) -> None:
+    def register_template(self, name: str, template: dict[str, Any]) -> None:
         self._templates[name] = template
 
-    def get_template(self, name: str) -> Optional[Dict[str, Any]]:
+    def get_template(self, name: str) -> dict[str, Any] | None:
         return self._templates.get(name)
 
-    def list_templates(self) -> List[str]:
+    def list_templates(self) -> list[str]:
         return list(self._templates.keys())

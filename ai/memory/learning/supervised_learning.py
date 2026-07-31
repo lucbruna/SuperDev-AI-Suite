@@ -1,17 +1,17 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 
 class SupervisedLearning:
     """Supervised learning using labeled training data."""
 
     def __init__(self):
-        self._training_data: List[Tuple[Any, Any]] = []
+        self._training_data: list[tuple[Any, Any]] = []
         self._train_count: int = 0
 
     @property
-    def training_data(self) -> List[Tuple[Any, Any]]:
+    def training_data(self) -> list[tuple[Any, Any]]:
         return list(self._training_data)
 
     @property
@@ -21,7 +21,7 @@ class SupervisedLearning:
     def add_example(self, features: Any, label: Any) -> None:
         self._training_data.append((features, label))
 
-    def add_batch(self, examples: List[Tuple[Any, Any]]) -> None:
+    def add_batch(self, examples: list[tuple[Any, Any]]) -> None:
         self._training_data.extend(examples)
 
     def predict(self, features: Any) -> Any:

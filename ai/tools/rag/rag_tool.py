@@ -3,11 +3,11 @@ from __future__ import annotations
 from typing import Any
 
 from ...base.base_tool import BaseTool
-from .document import RagDocument
 from .chunk import RagChunk
-from .vector_store import RagVectorStore
-from .retriever import RagRetriever
+from .document import RagDocument
 from .index import RagIndex
+from .retriever import RagRetriever
+from .vector_store import RagVectorStore
 
 
 class RagTool(BaseTool):

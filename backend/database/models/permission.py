@@ -1,6 +1,7 @@
-from backend.database.base import BaseModel
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from backend.database.base import BaseModel
 
 
 class Permission(BaseModel):

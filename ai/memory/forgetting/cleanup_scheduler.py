@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Callable, Dict, List
+from collections.abc import Callable
 
 
 class CleanupTask:
@@ -43,7 +43,7 @@ class CleanupScheduler:
     """Schedules and runs periodic cleanup tasks."""
 
     def __init__(self):
-        self._tasks: Dict[str, CleanupTask] = {}
+        self._tasks: dict[str, CleanupTask] = {}
 
     @property
     def task_count(self) -> int:
@@ -75,7 +75,7 @@ class CleanupScheduler:
     def get_task(self, task_id: str) -> CleanupTask | None:
         return self._tasks.get(task_id)
 
-    def list_tasks(self) -> List[str]:
+    def list_tasks(self) -> list[str]:
         return list(self._tasks.keys())
 
     def clear(self) -> None:

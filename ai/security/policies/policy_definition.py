@@ -1,8 +1,11 @@
 """Policy definition."""
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
+
+import time
+import uuid
 from enum import Enum
-import time, uuid
+from typing import Any
+
 
 class PolicyType(Enum):
     SECURITY = "security"
@@ -13,11 +16,11 @@ class PolicyType(Enum):
     OPERATIONAL = "operational"
 
 class PolicyDefinition:
-    def __init__(self, name: str, policy_type: PolicyType, rules: Optional[List[Dict[str, Any]]] = None) -> None:
+    def __init__(self, name: str, policy_type: PolicyType, rules: list[dict[str, Any]] | None = None) -> None:
         self.policy_id = str(uuid.uuid4())[:8]
         self.name = name
         self.type = policy_type
-        self.rules: List[Dict[str, Any]] = rules if rules is not None else []
+        self.rules: list[dict[str, Any]] = rules if rules is not None else []
         self.version = 1
         self.created_at = time.time()
         self.updated_at = time.time()
@@ -25,14 +28,14 @@ class PolicyDefinition:
 
 class PolicyDefinitionManager:
     def __init__(self) -> None:
-        self._policies: Dict[str, PolicyDefinition] = {}
-        self._versions: Dict[str, List[Dict[str, Any]]] = {}
-    def create(self, name: str, policy_type: PolicyType, rules: Optional[List[Dict[str, Any]]] = None) -> PolicyDefinition:
+        self._policies: dict[str, PolicyDefinition] = {}
+        self._versions: dict[str, list[dict[str, Any]]] = {}
+    def create(self, name: str, policy_type: PolicyType, rules: list[dict[str, Any]] | None = None) -> PolicyDefinition:
         policy = PolicyDefinition(name, policy_type, rules)
         self._policies[policy.policy_id] = policy
         self._versions[policy.policy_id] = [{"version": 1, "rules": policy.rules, "timestamp": time.time()}]
         return policy
-    def add_rule(self, policy_id: str, rule: Dict[str, Any]) -> bool:
+    def add_rule(self, policy_id: str, rule: dict[str, Any]) -> bool:
         policy = self._policies.get(policy_id)
         if policy:
             policy.rules.append(rule)
@@ -41,16 +44,16 @@ class PolicyDefinitionManager:
             self._versions.setdefault(policy_id, []).append({"version": policy.version, "rules": list(policy.rules), "timestamp": time.time()})
             return True
         return False
-    def get_policy(self, policy_id: str) -> Optional[Dict[str, Any]]:
+    def get_policy(self, policy_id: str) -> dict[str, Any] | None:
         policy = self._policies.get(policy_id)
         if policy:
             return {"id": policy.policy_id, "name": policy.name, "type": policy.type.value, "version": policy.version, "status": policy.status, "rules_count": len(policy.rules)}
         return None
-    def list_policies(self, policy_type: Optional[PolicyType] = None) -> List[str]:
+    def list_policies(self, policy_type: PolicyType | None = None) -> list[str]:
         if policy_type:
             return [p.policy_id for p in self._policies.values() if p.type == policy_type]
         return list(self._policies.keys())
-    def get_versions(self, policy_id: str) -> List[Dict[str, Any]]:
+    def get_versions(self, policy_id: str) -> list[dict[str, Any]]:
         return self._versions.get(policy_id, [])
     def approve(self, policy_id: str) -> bool:
         policy = self._policies.get(policy_id)

@@ -1,23 +1,24 @@
 """Monitoring component factory."""
 from __future__ import annotations
-from typing import Any, Dict, Optional
+
 from .monitoring_config import ObservabilityConfig
+from .monitoring_context import MonitoringContext
+from .monitoring_events import MonitoringEvents
 from .monitoring_logger import MonitoringLogger
 from .monitoring_metrics import MetricsCollector
-from .monitoring_events import MonitoringEvents
-from .monitoring_context import MonitoringContext
 from .monitoring_registry import MonitoringRegistry
 from .monitoring_runtime import MonitoringRuntime
 
+
 class MonitoringFactory:
-    def __init__(self, config: Optional[ObservabilityConfig] = None) -> None:
+    def __init__(self, config: ObservabilityConfig | None = None) -> None:
         self._config = config or ObservabilityConfig()
-        self._logger: Optional[MonitoringLogger] = None
-        self._metrics: Optional[MetricsCollector] = None
-        self._events: Optional[MonitoringEvents] = None
-        self._context: Optional[MonitoringContext] = None
-        self._registry: Optional[MonitoringRegistry] = None
-        self._runtime: Optional[MonitoringRuntime] = None
+        self._logger: MonitoringLogger | None = None
+        self._metrics: MetricsCollector | None = None
+        self._events: MonitoringEvents | None = None
+        self._context: MonitoringContext | None = None
+        self._registry: MonitoringRegistry | None = None
+        self._runtime: MonitoringRuntime | None = None
     def create_logger(self) -> MonitoringLogger:
         if not self._logger:
             self._logger = MonitoringLogger(self._config.logging.max_entries)

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from .reasoning_state import ReasoningState
@@ -13,7 +13,7 @@ class ReasoningCheckpoint:
         self._checkpoints: dict[str, dict[str, Any]] = {}
 
     def save(self, state: ReasoningState) -> str:
-        checkpoint_id = f"cp_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}_{state.session_id}"
+        checkpoint_id = f"cp_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}_{state.session_id}"
         self._checkpoints[checkpoint_id] = state.snapshot()
         return checkpoint_id
 

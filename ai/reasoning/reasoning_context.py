@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 
@@ -13,7 +13,7 @@ class ReasoningContext:
     context_id: str = ""
     metadata: dict[str, Any] = field(default_factory=dict)
     constraints: list[str] = field(default_factory=list)
-    created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    created_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
 
     def add_constraint(self, constraint: str) -> None:
         self.constraints.append(constraint)

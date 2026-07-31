@@ -73,7 +73,7 @@ async def get_file_diff(filepath: str) -> dict[str, Any]:
 
 
 def _apply_patch(original: str, diff_text: str) -> str:
-    lines = original.splitlines(keepends=True)
+    original.splitlines(keepends=True)
     patch_lines = diff_text.splitlines(keepends=True)
     result = list(difflib.restore(patch_lines, 2))
     return "".join(result) if result else original

@@ -29,7 +29,7 @@ class KBTimestampMixin:
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
 
-class KnowledgeBaseType(str, enum.Enum):
+class KnowledgeBaseType(enum.StrEnum):
     DOCUMENTATION = "documentation"
     FAQ = "faq"
     CODE = "code"

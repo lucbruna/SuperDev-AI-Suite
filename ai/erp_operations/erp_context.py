@@ -1,7 +1,7 @@
 """ERP Context — Shared context for ERP operations."""
-from typing import Dict, Any, Optional
 from dataclasses import dataclass, field
 from datetime import datetime
+from typing import Any
 
 
 @dataclass
@@ -16,8 +16,8 @@ class ERPContextItem:
 
 class ERPContext:
     def __init__(self):
-        self.items: Dict[str, ERPContextItem] = {}
-        self.project_contexts: Dict[str, Dict[str, Any]] = {}
+        self.items: dict[str, ERPContextItem] = {}
+        self.project_contexts: dict[str, dict[str, Any]] = {}
 
     def set(self, key: str, value: Any, scope: str = "global", project_id: str = "") -> ERPContextItem:
         item = ERPContextItem(key=key, value=value, scope=scope, project_id=project_id)
@@ -38,7 +38,7 @@ class ERPContext:
             return True
         return False
 
-    def get_all(self) -> Dict[str, Any]:
+    def get_all(self) -> dict[str, Any]:
         return {k: v.value for k, v in self.items.items()}
 
     def count(self) -> int:

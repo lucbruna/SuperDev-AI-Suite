@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 class SemanticLink:
@@ -12,7 +12,7 @@ class SemanticLink:
         target_id: str,
         link_type: str,
         weight: float = 1.0,
-        metadata: Dict[str, Any] | None = None,
+        metadata: dict[str, Any] | None = None,
     ):
         self._source_id = source_id
         self._target_id = target_id
@@ -37,10 +37,10 @@ class SemanticLink:
         return self._weight
 
     @property
-    def metadata(self) -> Dict[str, Any]:
+    def metadata(self) -> dict[str, Any]:
         return dict(self._metadata)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "source": self._source_id,
             "target": self._target_id,

@@ -1,8 +1,8 @@
 """
 Register Page
 """
-from typing import Optional, Dict, Any
 from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
@@ -19,25 +19,25 @@ class RegisterPage:
     def __init__(self):
         self.form = RegisterForm()
         self.loading = False
-        self.error: Optional[str] = None
+        self.error: str | None = None
         self.step: int = 1
-        
+
     def set_field(self, field: str, value: Any) -> None:
         if hasattr(self.form, field):
             setattr(self.form, field, value)
-            
+
     def next_step(self) -> bool:
         if self.step < 3:
             self.step += 1
             return True
         return False
-        
+
     def prev_step(self) -> bool:
         if self.step > 1:
             self.step -= 1
             return True
         return False
-        
+
     def validate(self) -> bool:
         if not self.form.name or not self.form.email:
             self.error = "Name and email are required"
@@ -46,6 +46,6 @@ class RegisterPage:
             self.error = "Passwords do not match"
             return False
         return True
-        
-    def render(self) -> Dict[str, Any]:
+
+    def render(self) -> dict[str, Any]:
         return {"step": self.step, "loading": self.loading, "error": self.error}

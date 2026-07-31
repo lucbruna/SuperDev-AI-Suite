@@ -1,22 +1,21 @@
 """Manager for version operations."""
-from typing import List, Dict, Any, Optional
 from .models import Version
 
 
 class VersionManager:
     def __init__(self):
-        self._versions: List[Version] = []
+        self._versions: list[Version] = []
 
     def register(self, version: Version) -> None:
         self._versions.append(version)
 
-    def get_all(self) -> List[Version]:
+    def get_all(self) -> list[Version]:
         return list(self._versions)
 
-    def get_latest(self) -> Optional[Version]:
+    def get_latest(self) -> Version | None:
         return max(self._versions, key=lambda v: v.to_tuple()) if self._versions else None
 
-    def get_by_major(self, major: int) -> List[Version]:
+    def get_by_major(self, major: int) -> list[Version]:
         return [v for v in self._versions if v.major == major]
 
     def compare(self, v1: Version, v2: Version) -> int:

@@ -1,20 +1,20 @@
 """Resource optimizer for memory, CPU, and network."""
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 
 class ResourceOptimizer:
     """Optimizes resource allocation across agent systems."""
 
     def __init__(self) -> None:
-        self._resource_limits: Dict[str, float] = {
+        self._resource_limits: dict[str, float] = {
             "memory_mb": 512.0,
             "cpu_percent": 80.0,
             "network_mbps": 100.0,
         }
 
-    def optimize(self, context: Dict[str, Any]) -> Dict[str, Any]:
+    def optimize(self, context: dict[str, Any]) -> dict[str, Any]:
         current = context.get("current_usage", {})
         actions: list[str] = []
         for resource, limit in self._resource_limits.items():
@@ -32,5 +32,5 @@ class ResourceOptimizer:
     def set_limit(self, resource: str, limit: float) -> None:
         self._resource_limits[resource] = limit
 
-    def get_limits(self) -> Dict[str, float]:
+    def get_limits(self) -> dict[str, float]:
         return dict(self._resource_limits)

@@ -1,18 +1,15 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from .memory_cache import MemoryCache
 from .memory_config import MemoryConfig
 from .memory_events import MemoryEvents
 from .memory_factory import MemoryFactory
-from .memory_logger import MemoryLogger
 from .memory_manager import MemoryManager
 from .memory_metrics import MemoryMetrics
 from .memory_models import MemoryEntry, MemorySummary
 from .memory_repository import MemoryRepository
 from .memory_runtime import MemoryRuntime
-from .memory_scheduler import MemoryScheduler
 from .memory_service import MemoryService
 from .memory_state import MemoryState
 from .memory_types import MemoryCategory, MemoryData, MemoryID, MemoryScope, Tags
@@ -116,7 +113,7 @@ class MemoryEngine:
     async def delete(self, key: MemoryID, user: str = "") -> bool:
         return await self._manager.delete(key, user)
 
-    async def search(self, query: str, user: str = "") -> List[MemoryEntry]:
+    async def search(self, query: str, user: str = "") -> list[MemoryEntry]:
         return await self._service.find(query, user)
 
     async def remember(self, key: MemoryID, data: MemoryData, user: str = "") -> bool:
@@ -131,8 +128,8 @@ class MemoryEngine:
     async def get_stats(self) -> MemorySummary:
         return await self._manager.get_stats()
 
-    async def get_metrics_snapshot(self) -> Dict[str, Any]:
+    async def get_metrics_snapshot(self) -> dict[str, Any]:
         return self._metrics.snapshot()
 
-    async def run_maintenance(self) -> Dict[str, Any]:
+    async def run_maintenance(self) -> dict[str, Any]:
         return await self._service.run_maintenance()

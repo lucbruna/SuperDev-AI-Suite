@@ -43,9 +43,9 @@ class DockerNetwork(BaseTool):
                 self._networks = [n for n in self._networks if n.get("name") != name]
                 return {"success": True, "message": f"Removed network {name}"}
             elif action == "connect":
-                return {"success": True, "message": f"Connected container to network"}
+                return {"success": True, "message": "Connected container to network"}
             elif action == "disconnect":
-                return {"success": True, "message": f"Disconnected container from network"}
+                return {"success": True, "message": "Disconnected container from network"}
             elif action == "inspect":
                 name = params.get("name", "")
                 network = next((n for n in self._networks if n.get("name") == name), None)

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 
 class Protocol:
@@ -9,7 +9,7 @@ class Protocol:
     def __init__(self, name: str, version: str = "1.0") -> None:
         self._name = name
         self._version = version
-        self._rules: Dict[str, Any] = {}
+        self._rules: dict[str, Any] = {}
 
     @property
     def name(self) -> str:
@@ -25,8 +25,8 @@ class Protocol:
     def get_rule(self, key: str) -> Any:
         return self._rules.get(key)
 
-    def validate(self, message: Dict[str, Any]) -> bool:
+    def validate(self, message: dict[str, Any]) -> bool:
         return "sender" in message and "content" in message
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {"name": self._name, "version": self._version, "rules": dict(self._rules)}

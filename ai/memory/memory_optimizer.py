@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import time
 import zlib
-from typing import Any, Dict, List, Optional, Set
 
 from .memory_models import MemoryEntry
 from .memory_types import ConsolidationStrategy, MemoryData
@@ -14,7 +13,7 @@ class MemoryOptimizer:
 
     def __init__(self, strategy: ConsolidationStrategy = ConsolidationStrategy.MERGE):
         self._strategy = strategy
-        self._stats: Dict[str, int] = {"dedup": 0, "compressed": 0, "pruned": 0, "merged": 0}
+        self._stats: dict[str, int] = {"dedup": 0, "compressed": 0, "pruned": 0, "merged": 0}
 
     @property
     def strategy(self) -> ConsolidationStrategy:
@@ -25,12 +24,12 @@ class MemoryOptimizer:
         self._strategy = value
 
     @property
-    def stats(self) -> Dict[str, int]:
+    def stats(self) -> dict[str, int]:
         return dict(self._stats)
 
-    def deduplicate(self, entries: List[MemoryEntry]) -> List[MemoryEntry]:
-        seen: Set[int] = set()
-        unique: List[MemoryEntry] = []
+    def deduplicate(self, entries: list[MemoryEntry]) -> list[MemoryEntry]:
+        seen: set[int] = set()
+        unique: list[MemoryEntry] = []
         for entry in entries:
             data_hash = self._hash_data(entry.data)
             if data_hash not in seen:
@@ -50,23 +49,23 @@ class MemoryOptimizer:
         raw = zlib.decompress(compressed)
         return json.loads(raw.decode("utf-8"))
 
-    def prune_expired(self, entries: List[MemoryEntry]) -> List[MemoryEntry]:
+    def prune_expired(self, entries: list[MemoryEntry]) -> list[MemoryEntry]:
         active = [e for e in entries if not e.is_expired]
         self._stats["pruned"] += len(entries) - len(active)
         return active
 
-    def prune_by_age(self, entries: List[MemoryEntry], max_age: float) -> List[MemoryEntry]:
+    def prune_by_age(self, entries: list[MemoryEntry], max_age: float) -> list[MemoryEntry]:
         now = time.time()
         kept = [e for e in entries if now - e.created_at <= max_age]
         self._stats["pruned"] += len(entries) - len(kept)
         return kept
 
-    def prune_by_priority(self, entries: List[MemoryEntry], min_priority: int) -> List[MemoryEntry]:
+    def prune_by_priority(self, entries: list[MemoryEntry], min_priority: int) -> list[MemoryEntry]:
         kept = [e for e in entries if e.priority >= min_priority]
         self._stats["pruned"] += len(entries) - len(kept)
         return kept
 
-    def merge(self, entries: List[MemoryEntry]) -> MemoryEntry | None:
+    def merge(self, entries: list[MemoryEntry]) -> MemoryEntry | None:
         if not entries:
             return None
         base = entries[0]
@@ -84,14 +83,14 @@ class MemoryOptimizer:
         self._stats["merged"] += 1
         return merged_entry
 
-    def consolidate(self, entries: List[MemoryEntry]) -> List[MemoryEntry]:
+    def consolidate(self, entries: list[MemoryEntry]) -> list[MemoryEntry]:
         if self._strategy == ConsolidationStrategy.DEDUP:
             return self.deduplicate(entries)
         elif self._strategy == ConsolidationStrategy.MERGE:
-            grouped: Dict[str, List[MemoryEntry]] = {}
+            grouped: dict[str, list[MemoryEntry]] = {}
             for e in entries:
                 grouped.setdefault(e.key, []).append(e)
-            result: List[MemoryEntry] = []
+            result: list[MemoryEntry] = []
             for group in grouped.values():
                 merged = self.merge(group)
                 if merged:

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List
+from typing import Any
 
 
 class MemoryMetrics:
@@ -18,7 +18,7 @@ class MemoryMetrics:
         self._error_count: int = 0
         self._total_latency: float = 0.0
         self._operation_count: int = 0
-        self._latency_buckets: Dict[str, List[float]] = {}
+        self._latency_buckets: dict[str, list[float]] = {}
         self._start_time: float = time.time()
 
     @property
@@ -101,7 +101,7 @@ class MemoryMetrics:
         if len(self._latency_buckets[operation]) > 1000:
             self._latency_buckets[operation] = self._latency_buckets[operation][-500:]
 
-    def get_latency_stats(self, operation: str) -> Dict[str, float]:
+    def get_latency_stats(self, operation: str) -> dict[str, float]:
         buckets = self._latency_buckets.get(operation, [])
         if not buckets:
             return {"avg": 0.0, "min": 0.0, "max": 0.0, "count": 0}
@@ -112,7 +112,7 @@ class MemoryMetrics:
             "count": len(buckets),
         }
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         return {
             "store_count": self._store_count,
             "retrieve_count": self._retrieve_count,

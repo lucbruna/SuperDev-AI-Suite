@@ -1,20 +1,20 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 class Negotiation:
     """Negotiation between agents."""
 
     def __init__(self) -> None:
-        self._proposals: Dict[str, Dict[str, Any]] = {}
+        self._proposals: dict[str, dict[str, Any]] = {}
         self._negotiation_count: int = 0
 
     @property
     def negotiation_count(self) -> int:
         return self._negotiation_count
 
-    def propose(self, proposal_id: str, agent_id: str, terms: Dict[str, Any]) -> None:
+    def propose(self, proposal_id: str, agent_id: str, terms: dict[str, Any]) -> None:
         self._proposals[proposal_id] = {"agent": agent_id, "terms": terms, "status": "proposed"}
         self._negotiation_count += 1
 
@@ -32,7 +32,7 @@ class Negotiation:
             return True
         return False
 
-    def get_proposal(self, proposal_id: str) -> Optional[Dict[str, Any]]:
+    def get_proposal(self, proposal_id: str) -> dict[str, Any] | None:
         prop = self._proposals.get(proposal_id)
         return dict(prop) if prop else None
 

@@ -1,12 +1,12 @@
 """
 Symmetric & Asymmetric Encryption Engine
 """
-from typing import Dict, Any, Optional, Tuple
-from dataclasses import dataclass, field
-from enum import Enum
+import base64
 import hashlib
 import secrets
-import base64
+from dataclasses import dataclass, field
+from enum import Enum
+from typing import Any
 
 
 class CipherType(Enum):
@@ -25,7 +25,7 @@ class EncryptionResult:
     tag: str = ""
     algorithm: str = ""
     key_id: str = ""
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -40,8 +40,8 @@ class KeyPair:
 
 class EncryptionEngine:
     def __init__(self):
-        self.keys: Dict[str, bytes] = {}
-        self.key_pairs: Dict[str, KeyPair] = {}
+        self.keys: dict[str, bytes] = {}
+        self.key_pairs: dict[str, KeyPair] = {}
         self.audit_log: list = []
 
     def generate_symmetric_key(self, key_id: str, size: int = 256) -> str:

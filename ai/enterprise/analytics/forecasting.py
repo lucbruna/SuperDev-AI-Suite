@@ -1,15 +1,15 @@
 """Business forecasting."""
 from __future__ import annotations
-from typing import Any, Dict, List
+
 
 class BusinessForecasting:
     def __init__(self) -> None:
-        self._data: Dict[str, List[float]] = {}
+        self._data: dict[str, list[float]] = {}
     def record(self, metric: str, value: float) -> None:
         self._data.setdefault(metric, []).append(value)
         if len(self._data[metric]) > 100:
             self._data[metric] = self._data[metric][-100:]
-    def forecast(self, metric: str, periods: int = 5) -> List[float]:
+    def forecast(self, metric: str, periods: int = 5) -> list[float]:
         values = self._data.get(metric, [])
         if len(values) < 3:
             return [0.0] * periods
@@ -24,9 +24,9 @@ class BusinessForecasting:
         if len(values) < 2:
             return 0.0
         return (values[-1] - values[0]) / max(abs(values[0]), 1) * 100
-    def list_metrics(self) -> List[str]:
+    def list_metrics(self) -> list[str]:
         return list(self._data.keys())
-    def get_values(self, metric: str) -> List[float]:
+    def get_values(self, metric: str) -> list[float]:
         return list(self._data.get(metric, []))
     def clear(self, metric: str = "") -> int:
         if metric:

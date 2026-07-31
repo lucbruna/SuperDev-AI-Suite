@@ -1,6 +1,7 @@
 """Mapper for linking requirements to implementation artifacts."""
-from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, field
+from typing import Any
+
 from .models import Requirement
 
 
@@ -8,7 +9,7 @@ from .models import Requirement
 class RequirementMapping:
     """Maps a requirement to implementation artifacts."""
     requirement_id: str = ""
-    mapped_artifacts: List[str] = field(default_factory=list)
+    mapped_artifacts: list[str] = field(default_factory=list)
     coverage: float = 0.0
     notes: str = ""
 
@@ -17,14 +18,14 @@ class RequirementsMapper:
     """Maps requirements to code, tests, and other artifacts."""
 
     def __init__(self):
-        self._mappings: Dict[str, RequirementMapping] = {}
+        self._mappings: dict[str, RequirementMapping] = {}
 
     def create_mapping(self, req_id: str) -> RequirementMapping:
         mapping = RequirementMapping(requirement_id=req_id)
         self._mappings[req_id] = mapping
         return mapping
 
-    def get_mapping(self, req_id: str) -> Optional[RequirementMapping]:
+    def get_mapping(self, req_id: str) -> RequirementMapping | None:
         return self._mappings.get(req_id)
 
     def add_artifact(self, req_id: str, artifact_path: str) -> bool:
@@ -35,7 +36,7 @@ class RequirementsMapper:
             mapping.mapped_artifacts.append(artifact_path)
         return True
 
-    def compute_coverage(self, requirements: List[Requirement]) -> Dict[str, Any]:
+    def compute_coverage(self, requirements: list[Requirement]) -> dict[str, Any]:
         """Compute requirement coverage across mapped artifacts."""
         total = len(requirements)
         covered = sum(1 for r in requirements if r.requirement_id in self._mappings)
@@ -49,8 +50,8 @@ class RequirementsMapper:
             "unique_artifacts": len(all_artifacts),
         }
 
-    def get_unmapped(self, requirements: List[Requirement]) -> List[Requirement]:
+    def get_unmapped(self, requirements: list[Requirement]) -> list[Requirement]:
         return [r for r in requirements if r.requirement_id not in self._mappings]
 
-    def get_all_mappings(self) -> List[RequirementMapping]:
+    def get_all_mappings(self) -> list[RequirementMapping]:
         return list(self._mappings.values())

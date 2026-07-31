@@ -1,12 +1,14 @@
 """Payment authorization."""
 from __future__ import annotations
-from typing import Any, Dict, List
+
 import time
+from typing import Any
+
 
 class PaymentAuthorization:
     def __init__(self) -> None:
-        self._authorizations: Dict[str, Dict[str, Any]] = {}
-    def authorize(self, payment_id: str, amount: float) -> Dict[str, Any]:
+        self._authorizations: dict[str, dict[str, Any]] = {}
+    def authorize(self, payment_id: str, amount: float) -> dict[str, Any]:
         auth = {"payment_id": payment_id, "amount": amount, "status": "authorized", "authorized_at": time.time(), "expires_at": time.time() + 900}
         self._authorizations[payment_id] = auth
         return auth
@@ -31,7 +33,7 @@ class PaymentAuthorization:
         if not auth:
             return True
         return time.time() > auth.get("expires_at", 0)
-    def get(self, payment_id: str) -> Dict[str, Any]:
+    def get(self, payment_id: str) -> dict[str, Any]:
         return self._authorizations.get(payment_id, {})
-    def list_all(self) -> List[Dict[str, Any]]:
+    def list_all(self) -> list[dict[str, Any]]:
         return list(self._authorizations.values())

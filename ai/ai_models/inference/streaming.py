@@ -1,16 +1,19 @@
 """Streaming support."""
 from __future__ import annotations
-from typing import Any, Callable, Dict, Generator, List
+
+from collections.abc import Callable
+from typing import Any
+
 
 class StreamingManager:
     def __init__(self) -> None:
-        self._streams: Dict[str, List[Dict[str, Any]]] = {}
-        self._handlers: Dict[str, Callable] = {}
+        self._streams: dict[str, list[dict[str, Any]]] = {}
+        self._handlers: dict[str, Callable] = {}
     def create_stream(self, stream_id: str) -> None:
         self._streams[stream_id] = []
-    def add_chunk(self, stream_id: str, chunk: Dict[str, Any]) -> None:
+    def add_chunk(self, stream_id: str, chunk: dict[str, Any]) -> None:
         self._streams.setdefault(stream_id, []).append(chunk)
-    def get_chunks(self, stream_id: str) -> List[Dict[str, Any]]:
+    def get_chunks(self, stream_id: str) -> list[dict[str, Any]]:
         return list(self._streams.get(stream_id, []))
     def complete_stream(self, stream_id: str) -> str:
         chunks = self._streams.get(stream_id, [])
@@ -22,7 +25,7 @@ class StreamingManager:
         if handler:
             return handler(data)
         return data
-    def list_streams(self) -> List[str]:
+    def list_streams(self) -> list[str]:
         return list(self._streams.keys())
     def delete_stream(self, stream_id: str) -> bool:
         if stream_id in self._streams:

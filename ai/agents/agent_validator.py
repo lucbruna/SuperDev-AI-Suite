@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 
 class AgentValidator:
@@ -11,9 +11,9 @@ class AgentValidator:
         return isinstance(agent_id, str) and len(agent_id) > 0
 
     @staticmethod
-    def validate_task(task: Dict[str, Any]) -> bool:
+    def validate_task(task: dict[str, Any]) -> bool:
         return isinstance(task, dict) and "type" in task
 
     @staticmethod
-    def validate_config(config: Dict[str, Any]) -> bool:
+    def validate_config(config: dict[str, Any]) -> bool:
         return isinstance(config, dict)

@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class CacheEntry:
     """A cached embedding with optional TTL."""
 
-    def __init__(self, key: str, value: List[float], ttl: Optional[float] = None):
+    def __init__(self, key: str, value: list[float], ttl: float | None = None):
         self._key = key
         self._value = list(value)
         self._created = time.time()
@@ -18,7 +18,7 @@ class CacheEntry:
         return self._key
 
     @property
-    def value(self) -> List[float]:
+    def value(self) -> list[float]:
         return list(self._value)
 
     @property
@@ -31,8 +31,8 @@ class CacheEntry:
 class Cache:
     """Cache layer for vector embeddings with TTL and eviction."""
 
-    def __init__(self, max_size: int = 1000, default_ttl: Optional[float] = None):
-        self._entries: Dict[str, CacheEntry] = {}
+    def __init__(self, max_size: int = 1000, default_ttl: float | None = None):
+        self._entries: dict[str, CacheEntry] = {}
         self._max_size = max_size
         self._default_ttl = default_ttl
         self._hits: int = 0
@@ -57,7 +57,7 @@ class Cache:
             return 0.0
         return self._hits / total
 
-    def get(self, key: str) -> Optional[List[float]]:
+    def get(self, key: str) -> list[float] | None:
         entry = self._entries.get(key)
         if entry is None:
             self._misses += 1
@@ -69,7 +69,7 @@ class Cache:
         self._hits += 1
         return entry.value
 
-    def set(self, key: str, value: List[float], ttl: Optional[float] = None) -> None:
+    def set(self, key: str, value: list[float], ttl: float | None = None) -> None:
         if len(self._entries) >= self._max_size:
             self._evict()
         self._entries[key] = CacheEntry(key, value, ttl or self._default_ttl)
@@ -86,7 +86,7 @@ class Cache:
         oldest = min(self._entries.keys(), key=lambda k: self._entries[k]._created)
         del self._entries[oldest]
 
-    def stats(self) -> Dict[str, Any]:
+    def stats(self) -> dict[str, Any]:
         return {
             "size": self.size,
             "max_size": self._max_size,

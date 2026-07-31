@@ -1,8 +1,8 @@
 """ERP Logger — Structured logging for ERP operations."""
-from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
-from enum import Enum
 from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class ERPLogLevel(Enum):
@@ -19,15 +19,15 @@ class ERPLogEntry:
     message: str
     source: str = ""
     project_id: str = ""
-    data: Dict[str, Any] = field(default_factory=dict)
+    data: dict[str, Any] = field(default_factory=dict)
     timestamp: datetime = field(default_factory=datetime.now)
 
 
 class ERPLogger:
     def __init__(self):
-        self.entries: List[ERPLogEntry] = []
+        self.entries: list[ERPLogEntry] = []
 
-    def log(self, level: ERPLogLevel, message: str, source: str = "", project_id: str = "", data: Optional[Dict[str, Any]] = None) -> ERPLogEntry:
+    def log(self, level: ERPLogLevel, message: str, source: str = "", project_id: str = "", data: dict[str, Any] | None = None) -> ERPLogEntry:
         entry = ERPLogEntry(level=level, message=message, source=source, project_id=project_id, data=data or {})
         self.entries.append(entry)
         return entry
@@ -47,7 +47,7 @@ class ERPLogger:
     def critical(self, message: str, **kwargs) -> ERPLogEntry:
         return self.log(ERPLogLevel.CRITICAL, message, **kwargs)
 
-    def get_entries(self, level: Optional[ERPLogLevel] = None, source: str = "", limit: int = 100) -> List[ERPLogEntry]:
+    def get_entries(self, level: ERPLogLevel | None = None, source: str = "", limit: int = 100) -> list[ERPLogEntry]:
         entries = self.entries
         if level:
             entries = [e for e in entries if e.level == level]

@@ -1,25 +1,26 @@
 """AI Model factory."""
 from __future__ import annotations
-from typing import Any, Dict, Optional
+
 from .model_config import ModelConfig
+from .model_context import ModelContext
+from .model_events import ModelEvents
 from .model_logger import ModelLogger
 from .model_metrics import ModelMetrics
-from .model_events import ModelEvents
-from .model_context import ModelContext
 from .model_registry import ModelRegistry
 from .model_runtime import ModelRuntime
 from .model_security import ModelSecurity
 
+
 class ModelFactory:
-    def __init__(self, config: Optional[ModelConfig] = None) -> None:
+    def __init__(self, config: ModelConfig | None = None) -> None:
         self._config = config or ModelConfig()
-        self._logger: Optional[ModelLogger] = None
-        self._metrics: Optional[ModelMetrics] = None
-        self._events: Optional[ModelEvents] = None
-        self._context: Optional[ModelContext] = None
-        self._registry: Optional[ModelRegistry] = None
-        self._runtime: Optional[ModelRuntime] = None
-        self._security: Optional[ModelSecurity] = None
+        self._logger: ModelLogger | None = None
+        self._metrics: ModelMetrics | None = None
+        self._events: ModelEvents | None = None
+        self._context: ModelContext | None = None
+        self._registry: ModelRegistry | None = None
+        self._runtime: ModelRuntime | None = None
+        self._security: ModelSecurity | None = None
     def create_logger(self) -> ModelLogger:
         if not self._logger:
             self._logger = ModelLogger()

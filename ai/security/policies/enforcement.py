@@ -1,8 +1,10 @@
 """Policy enforcement."""
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
+
+import time
 from enum import Enum
-import time, uuid
+from typing import Any
+
 
 class EnforcementMode(Enum):
     ENFORCING = "enforcing"
@@ -17,13 +19,13 @@ class EnforcementAction(Enum):
 
 class PolicyEnforcer:
     def __init__(self) -> None:
-        self._policies: Dict[str, Dict[str, Any]] = {}
-        self._enforcement_log: List[Dict[str, Any]] = []
+        self._policies: dict[str, dict[str, Any]] = {}
+        self._enforcement_log: list[dict[str, Any]] = []
         self._mode = EnforcementMode.ENFORCING
         self._exceptions: set[str] = set()
-    def register_policy(self, policy_id: str, name: str, rules: List[Dict[str, Any]], action: EnforcementAction = EnforcementAction.BLOCK) -> None:
+    def register_policy(self, policy_id: str, name: str, rules: list[dict[str, Any]], action: EnforcementAction = EnforcementAction.BLOCK) -> None:
         self._policies[policy_id] = {"name": name, "rules": rules, "action": action.value, "enabled": True}
-    def enforce(self, policy_id: str, context: Dict[str, Any]) -> Dict[str, Any]:
+    def enforce(self, policy_id: str, context: dict[str, Any]) -> dict[str, Any]:
         if self._mode == EnforcementMode.DISABLED:
             return {"enforced": False, "reason": "mode_disabled"}
         if policy_id in self._exceptions:
@@ -37,7 +39,7 @@ class PolicyEnforcer:
         if violation:
             return {"enforced": True, "violation": violation, "action": policy["action"]}
         return {"enforced": True, "violation": None, "action": "none"}
-    def _check_rules(self, rules: List[Dict[str, Any]], context: Dict[str, Any]) -> Optional[str]:
+    def _check_rules(self, rules: list[dict[str, Any]], context: dict[str, Any]) -> str | None:
         for rule in rules:
             key = rule.get("key", "")
             expected = rule.get("expected")
@@ -53,7 +55,7 @@ class PolicyEnforcer:
             self._exceptions.remove(policy_id)
             return True
         return False
-    def get_log(self, limit: int = 100) -> List[Dict[str, Any]]:
+    def get_log(self, limit: int = 100) -> list[dict[str, Any]]:
         return self._enforcement_log[-limit:]
-    def list_policies(self) -> List[Dict[str, Any]]:
+    def list_policies(self) -> list[dict[str, Any]]:
         return [{"id": k, "name": v["name"], "action": v["action"], "enabled": v["enabled"]} for k, v in self._policies.items()]

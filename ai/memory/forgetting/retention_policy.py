@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List
+from typing import Any
 
 
 class RetentionPolicy:
     """Defines and enforces retention rules for memory entries."""
 
     def __init__(self):
-        self._max_entries_per_type: Dict[str, int] = {}
-        self._max_age_per_type: Dict[str, float] = {}
+        self._max_entries_per_type: dict[str, int] = {}
+        self._max_age_per_type: dict[str, float] = {}
 
     def set_max_entries(self, entry_type: str, max_count: int) -> None:
         self._max_entries_per_type[entry_type] = max_count
@@ -23,9 +23,9 @@ class RetentionPolicy:
     def get_max_age(self, entry_type: str) -> float | None:
         return self._max_age_per_type.get(entry_type)
 
-    def enforce(self, entries: Dict[str, Any]) -> Dict[str, Any]:
-        kept: Dict[str, Any] = {}
-        type_groups: Dict[str, list] = {}
+    def enforce(self, entries: dict[str, Any]) -> dict[str, Any]:
+        kept: dict[str, Any] = {}
+        type_groups: dict[str, list] = {}
         for k, v in entries.items():
             t = v.get("type", "unknown") if isinstance(v, dict) else "unknown"
             type_groups.setdefault(t, []).append((k, v))

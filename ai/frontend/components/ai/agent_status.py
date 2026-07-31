@@ -1,9 +1,9 @@
 """
 Agent Status Component
 """
-from typing import Optional, Dict, Any
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any
 
 
 class StatusLevel(Enum):
@@ -24,8 +24,8 @@ class AgentStatusInfo:
     tasks_failed: int = 0
     current_task: str = ""
     last_error: str = ""
-    metrics: Dict[str, Any] = None
-    
+    metrics: dict[str, Any] = None
+
     def __post_init__(self):
         if self.metrics is None:
             self.metrics = {}
@@ -33,18 +33,18 @@ class AgentStatusInfo:
 
 class AgentStatus:
     def __init__(self):
-        self.statuses: Dict[str, AgentStatusInfo] = {}
-        
+        self.statuses: dict[str, AgentStatusInfo] = {}
+
     def update(self, agent_id: str, **kwargs) -> None:
         if agent_id not in self.statuses:
             self.statuses[agent_id] = AgentStatusInfo(agent_id=agent_id, name=kwargs.get("name", agent_id))
         for k, v in kwargs.items():
             if hasattr(self.statuses[agent_id], k):
                 setattr(self.statuses[agent_id], k, v)
-                
-    def get(self, agent_id: str) -> Optional[AgentStatusInfo]:
+
+    def get(self, agent_id: str) -> AgentStatusInfo | None:
         return self.statuses.get(agent_id)
-        
+
     def get_overall_health(self) -> StatusLevel:
         if not self.statuses:
             return StatusLevel.UNKNOWN
@@ -54,8 +54,8 @@ class AgentStatus:
         if StatusLevel.WARNING in levels:
             return StatusLevel.WARNING
         return StatusLevel.HEALTHY
-        
-    def render(self) -> Dict[str, Any]:
+
+    def render(self) -> dict[str, Any]:
         return {
             "statuses": {k: {"status": v.status, "health": v.health.value} for k, v in self.statuses.items()},
             "overallHealth": self.get_overall_health().value,

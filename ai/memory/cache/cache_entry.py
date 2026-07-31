@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict
+from typing import Any
 
 
 class CacheEntry:
@@ -54,7 +54,7 @@ class CacheEntry:
     def age(self) -> float:
         return time.time() - self._created_at
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "key": self._key,
             "value": self._value,
@@ -66,7 +66,7 @@ class CacheEntry:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "CacheEntry":
+    def from_dict(cls, data: dict[str, Any]) -> CacheEntry:
         entry = cls(data["key"], data["value"], data["ttl"])
         entry._created_at = data.get("created_at", entry._created_at)
         entry._accessed_at = data.get("accessed_at", entry._accessed_at)

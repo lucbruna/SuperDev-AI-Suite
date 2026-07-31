@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from backend.database.models.provider import Provider
-from backend.repositories.base_repository import BaseRepository
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from backend.database.models.provider import Provider
+from backend.repositories.base_repository import BaseRepository
 
 
 class ProviderRepository(BaseRepository[Provider]):
@@ -34,7 +35,7 @@ class ProviderRepository(BaseRepository[Provider]):
         """Get all default providers for a project."""
         query = select(self.model).where(
             self.model.project_id == project_id,
-            self.model.is_default == True,
+            self.model.is_default,
         )
         result = await self.db.execute(query)
         return list(result.scalars().all())
@@ -45,7 +46,7 @@ class ProviderRepository(BaseRepository[Provider]):
             select(self.model)
             .where(
                 self.model.project_id == project_id,
-                self.model.is_active == True,
+                self.model.is_active,
             )
             .order_by(self.model.priority.desc())
         )
@@ -57,7 +58,7 @@ class ProviderRepository(BaseRepository[Provider]):
         query = select(self.model).where(
             self.model.project_id == project_id,
             self.model.type == provider_type,
-            self.model.is_active == True,
+            self.model.is_active,
         )
         result = await self.db.execute(query)
         return result.scalar_one_or_none()

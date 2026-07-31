@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from ..learning_engine import LearningEngine
+from ..adaptive_learning import AdaptiveLearning
+from ..evaluation import Evaluation
 from ..feedback_learning import FeedbackLearning
+from ..incremental_learning import IncrementalLearning
+from ..learning_engine import LearningEngine
+from ..model_updater import ModelUpdater
+from ..pattern_learning import PatternLearning
 from ..reinforcement_learning import ReinforcementLearning
 from ..supervised_learning import SupervisedLearning
 from ..unsupervised_learning import UnsupervisedLearning
-from ..pattern_learning import PatternLearning
-from ..adaptive_learning import AdaptiveLearning
-from ..incremental_learning import IncrementalLearning
-from ..model_updater import ModelUpdater
-from ..evaluation import Evaluation
 
 
 class TestLearningEngine:

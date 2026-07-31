@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class TaxonomyNode:
     """A node in the taxonomy tree."""
 
-    def __init__(self, name: str, parent: str | None = None, data: Dict[str, Any] | None = None):
+    def __init__(self, name: str, parent: str | None = None, data: dict[str, Any] | None = None):
         self._name = name
         self._parent = parent
-        self._children: List[TaxonomyNode] = []
+        self._children: list[TaxonomyNode] = []
         self._data = data or {}
 
     @property
@@ -21,7 +21,7 @@ class TaxonomyNode:
         return self._parent
 
     @property
-    def children(self) -> List[TaxonomyNode]:
+    def children(self) -> list[TaxonomyNode]:
         return list(self._children)
 
     def add_child(self, node: TaxonomyNode) -> None:
@@ -33,13 +33,13 @@ class Taxonomy:
 
     def __init__(self, root_name: str = "root"):
         self._root = TaxonomyNode(root_name)
-        self._nodes: Dict[str, TaxonomyNode] = {root_name: self._root}
+        self._nodes: dict[str, TaxonomyNode] = {root_name: self._root}
 
     @property
     def root(self) -> TaxonomyNode:
         return self._root
 
-    def add_node(self, name: str, parent: str | None = None, data: Dict[str, Any] | None = None) -> TaxonomyNode:
+    def add_node(self, name: str, parent: str | None = None, data: dict[str, Any] | None = None) -> TaxonomyNode:
         node = TaxonomyNode(name, parent=parent, data=data)
         self._nodes[name] = node
         if parent and parent in self._nodes:
@@ -51,22 +51,22 @@ class Taxonomy:
     def get_node(self, name: str) -> TaxonomyNode | None:
         return self._nodes.get(name)
 
-    def get_ancestors(self, name: str) -> List[str]:
-        ancestors: List[str] = []
+    def get_ancestors(self, name: str) -> list[str]:
+        ancestors: list[str] = []
         node = self._nodes.get(name)
         while node and node.parent:
             ancestors.append(node.parent)
             node = self._nodes.get(node.parent)
         return ancestors
 
-    def get_descendants(self, name: str) -> List[str]:
-        descendants: List[str] = []
+    def get_descendants(self, name: str) -> list[str]:
+        descendants: list[str] = []
         node = self._nodes.get(name)
         if node:
             self._collect_descendants(node, descendants)
         return descendants
 
-    def _collect_descendants(self, node: TaxonomyNode, result: List[str]) -> None:
+    def _collect_descendants(self, node: TaxonomyNode, result: list[str]) -> None:
         for child in node.children:
             result.append(child.name)
             self._collect_descendants(child, result)

@@ -1,8 +1,8 @@
 """ETL models."""
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
 from enum import Enum
+from typing import Any
 
 
 class ETLStatus(Enum):
@@ -26,7 +26,7 @@ class ETLStep:
     step_id: str
     name: str = ""
     step_type: StepType = StepType.EXTRACT
-    config: Dict[str, Any] = field(default_factory=dict)
+    config: dict[str, Any] = field(default_factory=dict)
     order: int = 0
     status: ETLStatus = ETLStatus.IDLE
 
@@ -35,14 +35,14 @@ class ETLStep:
 class ETLPipeline:
     pipeline_id: str
     name: str = ""
-    steps: List[ETLStep] = field(default_factory=list)
+    steps: list[ETLStep] = field(default_factory=list)
     status: ETLStatus = ETLStatus.IDLE
     records_extracted: int = 0
     records_transformed: int = 0
     records_loaded: int = 0
     error_count: int = 0
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
     created_at: datetime = field(default_factory=datetime.now)
 
 

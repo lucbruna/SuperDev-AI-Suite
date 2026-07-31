@@ -1,12 +1,10 @@
 """
 AI Model Security
 """
-from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
-from enum import Enum
 from datetime import datetime
-import hashlib
-import secrets
+from enum import Enum
+from typing import Any
 
 
 class ThreatType(Enum):
@@ -23,7 +21,7 @@ class ModelIntegrityCheck:
     expected_hash: str
     actual_hash: str = ""
     verified: bool = False
-    verified_at: Optional[datetime] = None
+    verified_at: datetime | None = None
 
 
 @dataclass
@@ -45,9 +43,9 @@ class ModelWatermark:
 
 class ModelSecurity:
     def __init__(self):
-        self.integrity_checks: Dict[str, ModelIntegrityCheck] = {}
-        self.watermarks: Dict[str, ModelWatermark] = {}
-        self.threat_log: List[Dict[str, Any]] = []
+        self.integrity_checks: dict[str, ModelIntegrityCheck] = {}
+        self.watermarks: dict[str, ModelWatermark] = {}
+        self.threat_log: list[dict[str, Any]] = []
 
     def register_model(self, model_id: str, model_hash: str) -> ModelIntegrityCheck:
         check = ModelIntegrityCheck(model_id=model_id, expected_hash=model_hash)
@@ -76,15 +74,15 @@ class ModelSecurity:
             self.threat_log.append({"type": ThreatType.ADVERSARIAL_INPUT.value, "input_id": input_id, "time": datetime.now().isoformat()})
         return detection
 
-    def log_threat(self, threat_type: ThreatType, details: Dict[str, Any]) -> None:
+    def log_threat(self, threat_type: ThreatType, details: dict[str, Any]) -> None:
         self.threat_log.append({"type": threat_type.value, "details": details, "time": datetime.now().isoformat()})
 
-    def get_threats(self, threat_type: ThreatType = None) -> List[Dict[str, Any]]:
+    def get_threats(self, threat_type: ThreatType = None) -> list[dict[str, Any]]:
         if threat_type:
             return [t for t in self.threat_log if t["type"] == threat_type.value]
         return self.threat_log
 
-    def get_integrity_status(self, model_id: str) -> Optional[ModelIntegrityCheck]:
+    def get_integrity_status(self, model_id: str) -> ModelIntegrityCheck | None:
         return self.integrity_checks.get(model_id)
 
     def count(self) -> int:

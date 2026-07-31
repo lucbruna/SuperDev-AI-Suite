@@ -1,12 +1,11 @@
 """
 Training Data Poisoning Defense
 """
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
 import statistics
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
 
 
 class PoisoningType(Enum):
@@ -33,24 +32,24 @@ class AnomalyResult:
     is_anomalous: bool
     anomaly_score: float = 0.0
     reason: str = ""
-    poisoning_type: Optional[PoisoningType] = None
+    poisoning_type: PoisoningType | None = None
 
 
 @dataclass
 class DataLineage:
     data_id: str
     source: str
-    transforms: List[str] = field(default_factory=list)
-    parent_ids: List[str] = field(default_factory=list)
+    transforms: list[str] = field(default_factory=list)
+    parent_ids: list[str] = field(default_factory=list)
     verified: bool = False
 
 
 class DataPoisoningDefense:
     def __init__(self):
-        self.data_points: Dict[str, DataPoint] = {}
-        self.lineage: Dict[str, DataLineage] = {}
-        self.anomaly_log: List[AnomalyResult] = []
-        self.baseline_stats: Dict[str, float] = {}
+        self.data_points: dict[str, DataPoint] = {}
+        self.lineage: dict[str, DataLineage] = {}
+        self.anomaly_log: list[AnomalyResult] = []
+        self.baseline_stats: dict[str, float] = {}
 
     def register_data(self, data_id: str, content: str, label: str = "", source: str = "") -> DataPoint:
         content_hash = hashlib.sha256(content.encode()).hexdigest()
@@ -58,7 +57,7 @@ class DataPoisoningDefense:
         self.data_points[data_id] = dp
         return dp
 
-    def detect_anomaly(self, data_id: str, features: Dict[str, float]) -> AnomalyResult:
+    def detect_anomaly(self, data_id: str, features: dict[str, float]) -> AnomalyResult:
         is_anomalous = False
         reasons = []
         anomaly_score = 0.0
@@ -75,12 +74,12 @@ class DataPoisoningDefense:
         self.anomaly_log.append(result)
         return result
 
-    def update_baseline(self, feature_name: str, values: List[float]) -> None:
+    def update_baseline(self, feature_name: str, values: list[float]) -> None:
         if values:
             self.baseline_stats[f"{feature_name}_mean"] = statistics.mean(values)
             self.baseline_stats[f"{feature_name}_std"] = statistics.stdev(values) if len(values) > 1 else 1.0
 
-    def add_lineage(self, data_id: str, source: str, transforms: List[str] = None, parent_ids: List[str] = None) -> DataLineage:
+    def add_lineage(self, data_id: str, source: str, transforms: list[str] = None, parent_ids: list[str] = None) -> DataLineage:
         lineage = DataLineage(data_id=data_id, source=source, transforms=transforms or [], parent_ids=parent_ids or [])
         self.lineage[data_id] = lineage
         return lineage
@@ -92,10 +91,10 @@ class DataPoisoningDefense:
             return True
         return False
 
-    def get_anomalies(self) -> List[AnomalyResult]:
+    def get_anomalies(self) -> list[AnomalyResult]:
         return [a for a in self.anomaly_log if a.is_anomalous]
 
-    def get_lineage(self, data_id: str) -> Optional[DataLineage]:
+    def get_lineage(self, data_id: str) -> DataLineage | None:
         return self.lineage.get(data_id)
 
     def count(self) -> int:

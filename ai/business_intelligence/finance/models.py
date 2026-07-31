@@ -1,8 +1,8 @@
 """Finance models."""
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
 from enum import Enum
+from typing import Any
 
 
 class TransactionType(Enum):
@@ -34,7 +34,7 @@ class Transaction:
     category: str = ""
     description: str = ""
     date: datetime = field(default_factory=datetime.now)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -44,7 +44,7 @@ class Account:
     account_type: AccountType
     balance: float = 0.0
     currency: str = "USD"
-    parent_id: Optional[str] = None
+    parent_id: str | None = None
 
 
 @dataclass
@@ -53,8 +53,8 @@ class Budget:
     name: str
     amount: float
     spent: float = 0.0
-    period_start: Optional[datetime] = None
-    period_end: Optional[datetime] = None
+    period_start: datetime | None = None
+    period_end: datetime | None = None
     category: str = ""
 
     @property
@@ -81,7 +81,7 @@ class PnLReport:
     revenue: float = 0.0
     expenses: float = 0.0
     net_income: float = 0.0
-    categories: Dict[str, float] = field(default_factory=dict)
+    categories: dict[str, float] = field(default_factory=dict)
     created_at: datetime = field(default_factory=datetime.now)
 
 
@@ -97,7 +97,7 @@ class CashFlowEntry:
 @dataclass
 class CashFlowReport:
     period: str
-    entries: List[CashFlowEntry] = field(default_factory=list)
+    entries: list[CashFlowEntry] = field(default_factory=list)
     total_inflow: float = 0.0
     total_outflow: float = 0.0
     net_cash_flow: float = 0.0

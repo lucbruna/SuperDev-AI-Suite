@@ -1,34 +1,31 @@
 """Security event bus for cross-cutting security concerns."""
 from __future__ import annotations
 
+import contextlib
 import time
-from typing import Any, Callable, Dict, List, Optional
+from collections.abc import Callable
+from typing import Any
 
 
 class SecurityEvents:
     """Event bus for security-related events across the platform."""
 
     def __init__(self) -> None:
-        self._handlers: Dict[str, List[Callable[..., Any]]] = {}
-        self._event_log: List[Dict[str, Any]] = []
+        self._handlers: dict[str, list[Callable[..., Any]]] = {}
+        self._event_log: list[dict[str, Any]] = []
 
     def on(self, event_type: str, handler: Callable[..., Any]) -> None:
         self._handlers.setdefault(event_type, []).append(handler)
 
-    def emit(self, event_type: str, data: Dict[str, Any]) -> None:
+    def emit(self, event_type: str, data: dict[str, Any]) -> None:
         entry = {"type": event_type, "data": data, "timestamp": time.time()}
         self._event_log.append(entry)
         for handler in self._handlers.get(event_type, []):
-            try:
+            with contextlib.suppress(Exception):
                 handler(data)
-            except Exception:
-                pass
 
-    def get_log(self, event_type: Optional[str] = None, limit: int = 50) -> List[Dict[str, Any]]:
-        if event_type:
-            entries = [e for e in self._event_log if e["type"] == event_type]
-        else:
-            entries = self._event_log
+    def get_log(self, event_type: str | None = None, limit: int = 50) -> list[dict[str, Any]]:
+        entries = [e for e in self._event_log if e["type"] == event_type] if event_type else self._event_log
         return entries[-limit:]
 
     def clear_log(self) -> None:

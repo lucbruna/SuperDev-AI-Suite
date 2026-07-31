@@ -1,5 +1,4 @@
 """Resource Manager - Edge device resource management."""
-from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
 from datetime import datetime
 
@@ -20,8 +19,8 @@ class ResourceSnapshot:
 
 class EdgeResourceManager:
     def __init__(self):
-        self.snapshots: Dict[str, List[ResourceSnapshot]] = {}
-        self.limits: Dict[str, Dict[str, float]] = {}
+        self.snapshots: dict[str, list[ResourceSnapshot]] = {}
+        self.limits: dict[str, dict[str, float]] = {}
 
     def report(self, device_id: str, **kwargs) -> ResourceSnapshot:
         snapshot = ResourceSnapshot(device_id=device_id, **kwargs)
@@ -31,7 +30,7 @@ class EdgeResourceManager:
     def set_limits(self, device_id: str, **limits) -> None:
         self.limits[device_id] = limits
 
-    def get_latest(self, device_id: str) -> Optional[ResourceSnapshot]:
+    def get_latest(self, device_id: str) -> ResourceSnapshot | None:
         snaps = self.snapshots.get(device_id, [])
         return snaps[-1] if snaps else None
 
@@ -48,8 +47,8 @@ class EdgeResourceManager:
                 return True
         return False
 
-    def get_history(self, device_id: str, limit: int = 100) -> List[ResourceSnapshot]:
+    def get_history(self, device_id: str, limit: int = 100) -> list[ResourceSnapshot]:
         return self.snapshots.get(device_id, [])[-limit:]
 
-    def list_devices(self) -> List[str]:
+    def list_devices(self) -> list[str]:
         return list(self.snapshots.keys())

@@ -1,21 +1,18 @@
 """Supplier engine."""
-import uuid
-from datetime import datetime
-from typing import Dict, List, Optional
-from .models import Supplier, SupplierContract, SupplierPerformance, SupplierStatus, SupplierCategory
+from .models import Supplier, SupplierContract, SupplierPerformance, SupplierStatus
 
 
 class SuppliersEngine:
     def __init__(self):
-        self._suppliers: Dict[str, Supplier] = {}
-        self._contracts: Dict[str, SupplierContract] = {}
-        self._performance: List[SupplierPerformance] = []
+        self._suppliers: dict[str, Supplier] = {}
+        self._contracts: dict[str, SupplierContract] = {}
+        self._performance: list[SupplierPerformance] = []
 
     def add_supplier(self, supplier: Supplier) -> Supplier:
         self._suppliers[supplier.supplier_id] = supplier
         return supplier
 
-    def get_supplier(self, supplier_id: str) -> Optional[Supplier]:
+    def get_supplier(self, supplier_id: str) -> Supplier | None:
         return self._suppliers.get(supplier_id)
 
     def update_status(self, supplier_id: str, status: SupplierStatus) -> bool:
@@ -29,7 +26,7 @@ class SuppliersEngine:
         self._contracts[contract.contract_id] = contract
         return contract
 
-    def get_supplier_contracts(self, supplier_id: str) -> List[SupplierContract]:
+    def get_supplier_contracts(self, supplier_id: str) -> list[SupplierContract]:
         return [c for c in self._contracts.values() if c.supplier_id == supplier_id]
 
     def add_performance(self, perf: SupplierPerformance) -> SupplierPerformance:
@@ -37,7 +34,7 @@ class SuppliersEngine:
         self._performance.append(perf)
         return perf
 
-    def get_supplier_performance(self, supplier_id: str) -> List[SupplierPerformance]:
+    def get_supplier_performance(self, supplier_id: str) -> list[SupplierPerformance]:
         return [p for p in self._performance if p.supplier_id == supplier_id]
 
     def rate_supplier(self, supplier_id: str, rating: float) -> bool:
@@ -47,7 +44,7 @@ class SuppliersEngine:
         supplier.rating = max(0.0, min(5.0, rating))
         return True
 
-    def get_top_suppliers(self, limit: int = 5) -> List[Supplier]:
+    def get_top_suppliers(self, limit: int = 5) -> list[Supplier]:
         active = [s for s in self._suppliers.values() if s.status == SupplierStatus.ACTIVE]
         return sorted(active, key=lambda s: s.rating, reverse=True)[:limit]
 

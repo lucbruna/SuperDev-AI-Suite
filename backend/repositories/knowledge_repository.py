@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from backend.database.models.knowledge import KnowledgeBase, KnowledgeChunk, KnowledgeEntry
-from backend.repositories.base_repository import BaseRepository
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from backend.database.models.knowledge import KnowledgeBase, KnowledgeChunk, KnowledgeEntry
+from backend.repositories.base_repository import BaseRepository
 
 
 class KnowledgeBaseRepository(BaseRepository[KnowledgeBase]):
@@ -48,7 +49,7 @@ class KnowledgeBaseRepository(BaseRepository[KnowledgeBase]):
         """Get all public knowledge bases for a project."""
         query = select(self.model).where(
             self.model.project_id == project_id,
-            self.model.is_public == True,
+            self.model.is_public,
         )
         result = await self.db.execute(query)
         return list(result.scalars().all())

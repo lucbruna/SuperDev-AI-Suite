@@ -1,22 +1,24 @@
 """Training metrics."""
 from __future__ import annotations
-from typing import Any, Dict, List
+
 import time
+from typing import Any
+
 
 class TrainingMetrics:
     def __init__(self) -> None:
-        self._history: List[Dict[str, Any]] = []
-    def log(self, epoch: int, metrics: Dict[str, float], phase: str = "train") -> Dict[str, Any]:
+        self._history: list[dict[str, Any]] = []
+    def log(self, epoch: int, metrics: dict[str, float], phase: str = "train") -> dict[str, Any]:
         entry = {"epoch": epoch, "metrics": metrics, "phase": phase, "timestamp": time.time()}
         self._history.append(entry)
         return entry
-    def get_epoch(self, epoch: int) -> List[Dict[str, Any]]:
+    def get_epoch(self, epoch: int) -> list[dict[str, Any]]:
         return [h for h in self._history if h["epoch"] == epoch]
-    def get_phase(self, phase: str) -> List[Dict[str, Any]]:
+    def get_phase(self, phase: str) -> list[dict[str, Any]]:
         return [h for h in self._history if h["phase"] == phase]
-    def latest(self, count: int = 5) -> List[Dict[str, Any]]:
+    def latest(self, count: int = 5) -> list[dict[str, Any]]:
         return self._history[-count:]
-    def summary(self) -> Dict[str, Any]:
+    def summary(self) -> dict[str, Any]:
         if not self._history:
             return {}
         all_metrics = {}

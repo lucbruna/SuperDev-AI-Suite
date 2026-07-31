@@ -1,7 +1,7 @@
 """Inventory - Device inventory management."""
-from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
 from datetime import datetime
+from typing import Any
 
 
 @dataclass
@@ -12,24 +12,24 @@ class InventoryItem:
     serial_number: str = ""
     model: str = ""
     manufacturer: str = ""
-    purchase_date: Optional[datetime] = None
-    warranty_expires: Optional[datetime] = None
+    purchase_date: datetime | None = None
+    warranty_expires: datetime | None = None
     assigned_to: str = ""
     location: str = ""
     status: str = "available"
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class DeviceInventory:
     def __init__(self):
-        self.items: Dict[str, InventoryItem] = {}
+        self.items: dict[str, InventoryItem] = {}
 
     def add(self, item_id: str, name: str, **kwargs) -> InventoryItem:
         item = InventoryItem(item_id=item_id, name=name, **kwargs)
         self.items[item_id] = item
         return item
 
-    def get(self, item_id: str) -> Optional[InventoryItem]:
+    def get(self, item_id: str) -> InventoryItem | None:
         return self.items.get(item_id)
 
     def update(self, item_id: str, **kwargs) -> bool:
@@ -57,10 +57,10 @@ class DeviceInventory:
             return True
         return False
 
-    def search(self, query: str) -> List[InventoryItem]:
+    def search(self, query: str) -> list[InventoryItem]:
         return [i for i in self.items.values() if query.lower() in i.name.lower() or query.lower() in i.model.lower()]
 
-    def list_items(self, category: str = None, status: str = None) -> List[InventoryItem]:
+    def list_items(self, category: str = None, status: str = None) -> list[InventoryItem]:
         items = list(self.items.values())
         if category:
             items = [i for i in items if i.category == category]

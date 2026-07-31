@@ -1,10 +1,10 @@
 """Security data models."""
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional
-import time
+from typing import Any
 
 
 class UserRole(Enum):
@@ -54,7 +54,7 @@ class UserIdentity:
     last_login: float = 0.0
     is_active: bool = True
     mfa_enabled: bool = False
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -62,7 +62,7 @@ class AccessRequest:
     user_id: str
     resource: str
     permission: Permission
-    context: Dict[str, Any] = field(default_factory=dict)
+    context: dict[str, Any] = field(default_factory=dict)
     timestamp: float = field(default_factory=time.time)
 
 
@@ -83,7 +83,7 @@ class AuditEntry:
     user_id: str
     action: AuditAction
     resource: str
-    details: Dict[str, Any] = field(default_factory=dict)
+    details: dict[str, Any] = field(default_factory=dict)
     ip_address: str = ""
     success: bool = True
     timestamp: float = field(default_factory=time.time)
@@ -95,7 +95,7 @@ class ThreatEvent:
     threat_level: ThreatLevel
     source: str
     description: str
-    indicators: List[str] = field(default_factory=list)
+    indicators: list[str] = field(default_factory=list)
     blocked: bool = False
     timestamp: float = field(default_factory=time.time)
 
@@ -104,7 +104,7 @@ class ThreatEvent:
 class SecurityPolicy:
     policy_id: str
     name: str
-    rules: List[Dict[str, Any]] = field(default_factory=list)
+    rules: list[dict[str, Any]] = field(default_factory=list)
     enabled: bool = True
     priority: int = 0
     created_at: float = field(default_factory=time.time)

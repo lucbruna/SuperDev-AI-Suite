@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 
 class ConsistencyChecker:
@@ -13,18 +13,16 @@ class ConsistencyChecker:
     def check_count(self) -> int:
         return self._checks
 
-    def check(self, data: Dict[str, Any]) -> bool:
+    def check(self, data: dict[str, Any]) -> bool:
         self._checks += 1
-        if not isinstance(data, dict):
-            return False
-        return True
+        return isinstance(data, dict)
 
-    def compare(self, local: Dict[str, Any], remote: Dict[str, Any]) -> Dict[str, Any]:
+    def compare(self, local: dict[str, Any], remote: dict[str, Any]) -> dict[str, Any]:
         self._checks += 1
-        matching: List[str] = []
-        diverging: List[str] = []
-        missing_local: List[str] = []
-        missing_remote: List[str] = []
+        matching: list[str] = []
+        diverging: list[str] = []
+        missing_local: list[str] = []
+        missing_remote: list[str] = []
         all_keys = set(local.keys()) | set(remote.keys())
         for key in all_keys:
             if key in local and key in remote:
@@ -45,7 +43,7 @@ class ConsistencyChecker:
             "total_keys": len(all_keys),
         }
 
-    def check_consistency(self, replicas: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
+    def check_consistency(self, replicas: dict[str, dict[str, Any]]) -> dict[str, Any]:
         self._checks += 1
         if len(replicas) < 2:
             return {"consistent": True, "checked": False}

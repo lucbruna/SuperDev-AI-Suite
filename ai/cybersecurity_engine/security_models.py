@@ -1,9 +1,9 @@
 """Cybersecurity Engine Models — Core data models for the cybersecurity platform."""
-from dataclasses import dataclass, field
-from enum import Enum
-from typing import List, Optional, Dict, Any
-from datetime import datetime
 import uuid
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class ThreatSeverity(Enum):
@@ -68,7 +68,7 @@ class Threat:
     source_ip: str = ""
     target: str = ""
     description: str = ""
-    indicators: List[str] = field(default_factory=list)
+    indicators: list[str] = field(default_factory=list)
     detected_at: datetime = field(default_factory=datetime.now)
     status: str = "active"
 
@@ -92,12 +92,12 @@ class Incident:
     title: str = ""
     severity: ThreatSeverity = ThreatSeverity.LOW
     status: IncidentStatus = IncidentStatus.DETECTED
-    threats: List[str] = field(default_factory=list)
-    affected_systems: List[str] = field(default_factory=list)
-    response_actions: List[str] = field(default_factory=list)
+    threats: list[str] = field(default_factory=list)
+    affected_systems: list[str] = field(default_factory=list)
+    response_actions: list[str] = field(default_factory=list)
     assigned_to: str = ""
     detected_at: datetime = field(default_factory=datetime.now)
-    resolved_at: Optional[datetime] = None
+    resolved_at: datetime | None = None
 
 
 @dataclass
@@ -106,11 +106,11 @@ class SecurityUser:
     username: str = ""
     email: str = ""
     role: str = "viewer"
-    permissions: List[AccessControl] = field(default_factory=list)
+    permissions: list[AccessControl] = field(default_factory=list)
     is_active: bool = True
-    last_login: Optional[datetime] = None
+    last_login: datetime | None = None
     failed_attempts: int = 0
-    locked_until: Optional[datetime] = None
+    locked_until: datetime | None = None
 
 
 @dataclass
@@ -119,7 +119,7 @@ class AuditEntry:
     user_id: str = ""
     action: str = ""
     resource: str = ""
-    details: Dict[str, Any] = field(default_factory=dict)
+    details: dict[str, Any] = field(default_factory=dict)
     success: bool = True
     ip_address: str = ""
     timestamp: datetime = field(default_factory=datetime.now)
@@ -132,7 +132,7 @@ class EncryptionKey:
     algorithm: str = "AES-256"
     purpose: str = ""
     created_at: datetime = field(default_factory=datetime.now)
-    expires_at: Optional[datetime] = None
+    expires_at: datetime | None = None
     is_active: bool = True
 
 
@@ -141,7 +141,7 @@ class SecurityPolicy:
     policy_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     name: str = ""
     description: str = ""
-    rules: List[Dict[str, Any]] = field(default_factory=list)
+    rules: list[dict[str, Any]] = field(default_factory=list)
     standard: ComplianceStandard = ComplianceStandard.LGPD
     is_active: bool = True
     created_at: datetime = field(default_factory=datetime.now)

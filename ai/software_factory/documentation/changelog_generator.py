@@ -1,6 +1,5 @@
 """Generator for changelog files."""
-from typing import List
-from datetime import datetime
+
 from .models import ChangelogEntry
 
 
@@ -8,12 +7,12 @@ class ChangelogGenerator:
     """Generates changelog documents."""
 
     def __init__(self):
-        self._entries: List[ChangelogEntry] = []
+        self._entries: list[ChangelogEntry] = []
 
     def add_entry(self, entry: ChangelogEntry) -> None:
         self._entries.append(entry)
 
-    def generate(self, entries: List[ChangelogEntry] = None) -> str:
+    def generate(self, entries: list[ChangelogEntry] = None) -> str:
         if entries:
             self._entries = entries
 
@@ -38,5 +37,5 @@ class ChangelogGenerator:
                 lines.append("")
         return "\n".join(lines)
 
-    def get_entries(self) -> List[ChangelogEntry]:
+    def get_entries(self) -> list[ChangelogEntry]:
         return list(self._entries)

@@ -1,8 +1,9 @@
 """Digital Twin configuration."""
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
-from enum import Enum
+
 from dataclasses import dataclass, field
+from enum import Enum
+
 
 class TwinType(Enum):
     ENTERPRISE = "enterprise"

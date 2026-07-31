@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from typing import Any
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from backend.database.models.project import Project
 from backend.exceptions import ProjectAlreadyExistsException, ProjectNotFoundException
 from backend.repositories.project_repository import ProjectRepository
-from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class ProjectService:

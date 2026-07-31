@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 
 class Unicast:
@@ -13,7 +13,7 @@ class Unicast:
     def sent_count(self) -> int:
         return self._sent_count
 
-    def send(self, sender: str, recipient: str, content: Dict[str, Any]) -> bool:
+    def send(self, sender: str, recipient: str, content: dict[str, Any]) -> bool:
         self._sent_count += 1
         return True
 

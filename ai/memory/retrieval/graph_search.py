@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 
 class GraphSearch:
@@ -13,9 +13,9 @@ class GraphSearch:
     def search_count(self) -> int:
         return self._search_count
 
-    def search(self, query: str, entries: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def search(self, query: str, entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
         q = query.lower()
-        results: List[Dict[str, Any]] = []
+        results: list[dict[str, Any]] = []
         for entry in entries:
             content = str(entry.get("content", "")).lower()
             if q in content:
@@ -29,10 +29,10 @@ class GraphSearch:
         self._search_count += 1
         return results
 
-    def bfs(self, start_id: str, graph: Dict[str, List[str]], max_depth: int = 3) -> List[str]:
+    def bfs(self, start_id: str, graph: dict[str, list[str]], max_depth: int = 3) -> list[str]:
         visited: set = {start_id}
-        queue: List[tuple] = [(start_id, 0)]
-        order: List[str] = []
+        queue: list[tuple] = [(start_id, 0)]
+        order: list[str] = []
         while queue:
             node, depth = queue.pop(0)
             order.append(node)
@@ -45,9 +45,9 @@ class GraphSearch:
         self._search_count += 1
         return order
 
-    def dfs(self, start_id: str, graph: Dict[str, List[str]], max_depth: int = 3) -> List[str]:
+    def dfs(self, start_id: str, graph: dict[str, list[str]], max_depth: int = 3) -> list[str]:
         visited: set = set()
-        order: List[str] = []
+        order: list[str] = []
 
         def _dfs(node: str, depth: int) -> None:
             if node in visited or depth > max_depth:

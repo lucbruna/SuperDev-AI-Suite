@@ -1,25 +1,25 @@
 """Inventory engine."""
 import uuid
 from datetime import datetime
-from typing import Dict, List, Optional
-from .models import InventoryItem, StockMovement, ReplenishmentAlert, StockStatus, MovementType
+
+from .models import InventoryItem, MovementType, ReplenishmentAlert, StockMovement, StockStatus
 
 
 class InventoryEngine:
     def __init__(self):
-        self._items: Dict[str, InventoryItem] = {}
-        self._movements: List[StockMovement] = []
-        self._alerts: List[ReplenishmentAlert] = []
+        self._items: dict[str, InventoryItem] = {}
+        self._movements: list[StockMovement] = []
+        self._alerts: list[ReplenishmentAlert] = []
 
     def add_item(self, item: InventoryItem) -> InventoryItem:
         self._items[item.item_id] = item
         self._update_status(item)
         return item
 
-    def get_item(self, item_id: str) -> Optional[InventoryItem]:
+    def get_item(self, item_id: str) -> InventoryItem | None:
         return self._items.get(item_id)
 
-    def list_items(self, status: Optional[StockStatus] = None) -> List[InventoryItem]:
+    def list_items(self, status: StockStatus | None = None) -> list[InventoryItem]:
         items = list(self._items.values())
         if status:
             items = [i for i in items if i.status == status]
@@ -30,24 +30,22 @@ class InventoryEngine:
         if item:
             if movement.movement_type == MovementType.IN:
                 item.quantity += movement.quantity
-            elif movement.movement_type == MovementType.OUT:
-                item.quantity = max(0, item.quantity - movement.quantity)
-            elif movement.movement_type == MovementType.TRANSFER:
+            elif movement.movement_type == MovementType.OUT or movement.movement_type == MovementType.TRANSFER:
                 item.quantity = max(0, item.quantity - movement.quantity)
             item.last_updated = datetime.now()
             self._update_status(item)
         self._movements.append(movement)
         return movement
 
-    def get_movements(self, item_id: Optional[str] = None) -> List[StockMovement]:
+    def get_movements(self, item_id: str | None = None) -> list[StockMovement]:
         if item_id:
             return [m for m in self._movements if m.item_id == item_id]
         return list(self._movements)
 
-    def get_low_stock_items(self) -> List[InventoryItem]:
+    def get_low_stock_items(self) -> list[InventoryItem]:
         return [i for i in self._items.values() if i.quantity <= i.min_quantity]
 
-    def check_replenishment(self) -> List[ReplenishmentAlert]:
+    def check_replenishment(self) -> list[ReplenishmentAlert]:
         alerts = []
         for item in self._items.values():
             if item.quantity <= item.min_quantity:

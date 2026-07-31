@@ -1,10 +1,10 @@
 """Tenant storage."""
 from __future__ import annotations
-from typing import Any, Dict
+
 
 class TenantStorage:
     def __init__(self, max_gb: int = 100) -> None:
-        self._usage: Dict[str, float] = {}
+        self._usage: dict[str, float] = {}
         self._max = max_gb
     def record_usage(self, org_id: str, size_gb: float) -> float:
         self._usage[org_id] = self._usage.get(org_id, 0) + size_gb
@@ -22,5 +22,5 @@ class TenantStorage:
         old = self._usage.get(org_id, 0)
         self._usage[org_id] = 0
         return old
-    def list_usage(self) -> Dict[str, float]:
+    def list_usage(self) -> dict[str, float]:
         return dict(self._usage)

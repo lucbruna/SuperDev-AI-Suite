@@ -1,25 +1,26 @@
 """Enterprise factory."""
 from __future__ import annotations
-from typing import Any, Dict, Optional
+
 from .enterprise_config import EnterpriseConfig
+from .enterprise_context import EnterpriseContext
+from .enterprise_events import EnterpriseEvents
 from .enterprise_logger import EnterpriseLogger
 from .enterprise_metrics import EnterpriseMetrics
-from .enterprise_events import EnterpriseEvents
-from .enterprise_context import EnterpriseContext
 from .enterprise_registry import EnterpriseRegistry
 from .enterprise_runtime import EnterpriseRuntime
 from .enterprise_security import EnterpriseSecurity
 
+
 class EnterpriseFactory:
-    def __init__(self, config: Optional[EnterpriseConfig] = None) -> None:
+    def __init__(self, config: EnterpriseConfig | None = None) -> None:
         self._config = config or EnterpriseConfig()
-        self._logger: Optional[EnterpriseLogger] = None
-        self._metrics: Optional[EnterpriseMetrics] = None
-        self._events: Optional[EnterpriseEvents] = None
-        self._context: Optional[EnterpriseContext] = None
-        self._registry: Optional[EnterpriseRegistry] = None
-        self._runtime: Optional[EnterpriseRuntime] = None
-        self._security: Optional[EnterpriseSecurity] = None
+        self._logger: EnterpriseLogger | None = None
+        self._metrics: EnterpriseMetrics | None = None
+        self._events: EnterpriseEvents | None = None
+        self._context: EnterpriseContext | None = None
+        self._registry: EnterpriseRegistry | None = None
+        self._runtime: EnterpriseRuntime | None = None
+        self._security: EnterpriseSecurity | None = None
     def create_logger(self) -> EnterpriseLogger:
         if not self._logger:
             self._logger = EnterpriseLogger()

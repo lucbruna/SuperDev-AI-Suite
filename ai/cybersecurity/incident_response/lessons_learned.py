@@ -1,11 +1,11 @@
 """
 Post-Incident Review and Lessons Learned
 """
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class RootCauseCategory(Enum):
@@ -32,35 +32,35 @@ class Improvement:
     owner: str = ""
     status: str = "open"
     priority: str = "medium"
-    due_date: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
+    due_date: datetime | None = None
+    completed_at: datetime | None = None
 
 
 @dataclass
 class LessonsLearned:
     review_id: str
     incident_id: str
-    root_causes: List[RootCause] = field(default_factory=list)
-    improvements: List[Improvement] = field(default_factory=list)
-    what_went_well: List[str] = field(default_factory=list)
-    what_went_wrong: List[str] = field(default_factory=list)
+    root_causes: list[RootCause] = field(default_factory=list)
+    improvements: list[Improvement] = field(default_factory=list)
+    what_went_well: list[str] = field(default_factory=list)
+    what_went_wrong: list[str] = field(default_factory=list)
     review_date: datetime = field(default_factory=datetime.now)
-    participants: List[str] = field(default_factory=list)
+    participants: list[str] = field(default_factory=list)
 
 
 class LessonsLearnedManager:
     def __init__(self):
-        self.reviews: Dict[str, LessonsLearned] = {}
-        self.improvements: Dict[str, Improvement] = {}
-        self.knowledge_base: List[Dict[str, Any]] = []
+        self.reviews: dict[str, LessonsLearned] = {}
+        self.improvements: dict[str, Improvement] = {}
+        self.knowledge_base: list[dict[str, Any]] = []
 
-    def create_review(self, incident_id: str, participants: List[str] = None) -> LessonsLearned:
+    def create_review(self, incident_id: str, participants: list[str] = None) -> LessonsLearned:
         review_id = hashlib.sha256(f"{incident_id}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
         review = LessonsLearned(review_id=review_id, incident_id=incident_id, participants=participants or [])
         self.reviews[review_id] = review
         return review
 
-    def add_root_cause(self, review_id: str, category: RootCauseCategory, description: str = "") -> Optional[RootCause]:
+    def add_root_cause(self, review_id: str, category: RootCauseCategory, description: str = "") -> RootCause | None:
         review = self.reviews.get(review_id)
         if review:
             cause = RootCause(cause_id=f"rc_{len(review.root_causes)}", category=category, description=description)
@@ -68,7 +68,7 @@ class LessonsLearnedManager:
             return cause
         return None
 
-    def add_improvement(self, review_id: str, title: str, description: str = "", owner: str = "") -> Optional[Improvement]:
+    def add_improvement(self, review_id: str, title: str, description: str = "", owner: str = "") -> Improvement | None:
         review = self.reviews.get(review_id)
         if review:
             improvement = Improvement(improvement_id=f"imp_{len(self.improvements)}", title=title, description=description, owner=owner)
@@ -99,10 +99,10 @@ class LessonsLearnedManager:
             return True
         return False
 
-    def get_review(self, review_id: str) -> Optional[LessonsLearned]:
+    def get_review(self, review_id: str) -> LessonsLearned | None:
         return self.reviews.get(review_id)
 
-    def get_open_improvements(self) -> List[Improvement]:
+    def get_open_improvements(self) -> list[Improvement]:
         return [i for i in self.improvements.values() if i.status == "open"]
 
     def count(self) -> int:

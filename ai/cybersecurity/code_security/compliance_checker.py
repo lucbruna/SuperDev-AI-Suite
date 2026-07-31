@@ -1,7 +1,6 @@
 """
 Compliance Framework Checker
 """
-from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
 from enum import Enum
 
@@ -39,13 +38,13 @@ class ComplianceReport:
     non_compliant: int
     partial: int
     score: float = 0.0
-    controls: List[Control] = field(default_factory=list)
+    controls: list[Control] = field(default_factory=list)
 
 
 class ComplianceChecker:
     def __init__(self):
-        self.controls: Dict[str, Control] = {}
-        self.reports: List[ComplianceReport] = []
+        self.controls: dict[str, Control] = {}
+        self.reports: list[ComplianceReport] = []
 
     def add_control(self, control: Control) -> None:
         self.controls[control.control_id] = control
@@ -69,16 +68,16 @@ class ComplianceChecker:
         self.reports.append(report)
         return report
 
-    def get_non_compliant(self, framework: Framework = None) -> List[Control]:
+    def get_non_compliant(self, framework: Framework = None) -> list[Control]:
         results = [c for c in self.controls.values() if c.status == ComplianceStatus.NON_COMPLIANT]
         if framework:
             results = [c for c in results if c.framework == framework]
         return results
 
-    def get_by_framework(self, framework: Framework) -> List[Control]:
+    def get_by_framework(self, framework: Framework) -> list[Control]:
         return [c for c in self.controls.values() if c.framework == framework]
 
-    def get_last_report(self, framework: Framework = None) -> Optional[ComplianceReport]:
+    def get_last_report(self, framework: Framework = None) -> ComplianceReport | None:
         reports = self.reports
         if framework:
             reports = [r for r in reports if r.framework == framework]

@@ -1,8 +1,8 @@
 """Inference - Local inference engine."""
-from typing import Dict, Any, Optional, List
+import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
-import hashlib
+from typing import Any
 
 
 @dataclass
@@ -10,7 +10,7 @@ class InferenceRequest:
     request_id: str
     model_id: str
     input_data: Any = None
-    parameters: Dict[str, Any] = field(default_factory=dict)
+    parameters: dict[str, Any] = field(default_factory=dict)
     timestamp: datetime = field(default_factory=datetime.now)
 
 
@@ -27,11 +27,11 @@ class InferenceResponse:
 
 class InferenceEngine:
     def __init__(self):
-        self.requests: List[InferenceRequest] = []
-        self.responses: List[InferenceResponse] = []
-        self.handlers: Dict[str, Any] = {}
+        self.requests: list[InferenceRequest] = []
+        self.responses: list[InferenceResponse] = []
+        self.handlers: dict[str, Any] = {}
 
-    def submit(self, model_id: str, input_data: Any, parameters: Dict[str, Any] = None) -> InferenceRequest:
+    def submit(self, model_id: str, input_data: Any, parameters: dict[str, Any] = None) -> InferenceRequest:
         request_id = hashlib.sha256(f"{model_id}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
         request = InferenceRequest(request_id=request_id, model_id=model_id, input_data=input_data, parameters=parameters or {})
         self.requests.append(request)
@@ -53,13 +53,13 @@ class InferenceEngine:
     def register_handler(self, model_id: str, handler) -> None:
         self.handlers[model_id] = handler
 
-    def get_response(self, request_id: str) -> Optional[InferenceResponse]:
+    def get_response(self, request_id: str) -> InferenceResponse | None:
         for r in self.responses:
             if r.request_id == request_id:
                 return r
         return None
 
-    def get_history(self, limit: int = 100) -> List[InferenceResponse]:
+    def get_history(self, limit: int = 100) -> list[InferenceResponse]:
         return self.responses[-limit:]
 
     def count(self) -> int:

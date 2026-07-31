@@ -1,5 +1,6 @@
-from backend.config import config
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+
+from backend.config import config
 
 _engine: AsyncEngine | None = None
 

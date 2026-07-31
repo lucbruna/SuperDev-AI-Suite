@@ -1,22 +1,21 @@
 """HR engine."""
-import uuid
 from datetime import datetime
-from typing import Dict, List, Optional
-from .models import Employee, LeaveRequest, PayrollRecord, Department, EmployeeStatus, LeaveType, LeaveStatus
+
+from .models import Department, Employee, EmployeeStatus, LeaveRequest, LeaveStatus, LeaveType, PayrollRecord
 
 
 class HREngine:
     def __init__(self):
-        self._employees: Dict[str, Employee] = {}
-        self._leave_requests: List[LeaveRequest] = []
-        self._payroll: List[PayrollRecord] = []
-        self._departments: Dict[str, Department] = {}
+        self._employees: dict[str, Employee] = {}
+        self._leave_requests: list[LeaveRequest] = []
+        self._payroll: list[PayrollRecord] = []
+        self._departments: dict[str, Department] = {}
 
     def add_employee(self, employee: Employee) -> Employee:
         self._employees[employee.employee_id] = employee
         return employee
 
-    def get_employee(self, employee_id: str) -> Optional[Employee]:
+    def get_employee(self, employee_id: str) -> Employee | None:
         return self._employees.get(employee_id)
 
     def update_employee_status(self, employee_id: str, status: EmployeeStatus) -> bool:
@@ -26,7 +25,7 @@ class HREngine:
         emp.status = status
         return True
 
-    def get_employees_by_department(self, department: str) -> List[Employee]:
+    def get_employees_by_department(self, department: str) -> list[Employee]:
         return [e for e in self._employees.values() if e.department == department]
 
     def submit_leave_request(self, request: LeaveRequest) -> LeaveRequest:
@@ -60,7 +59,7 @@ class HREngine:
         self._departments[dept.department_id] = dept
         return dept
 
-    def get_department(self, dept_id: str) -> Optional[Department]:
+    def get_department(self, dept_id: str) -> Department | None:
         return self._departments.get(dept_id)
 
     def get_stats(self) -> dict:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 from .indexing import Indexing
 from .storage import Storage
@@ -10,13 +10,13 @@ class Optimizer:
     """Optimizer for long-term memory storage patterns."""
 
     def __init__(self):
-        self._stats: Dict[str, int] = {"dedup": 0, "pruned": 0, "reindexed": 0}
+        self._stats: dict[str, int] = {"dedup": 0, "pruned": 0, "reindexed": 0}
 
     @property
-    def stats(self) -> Dict[str, int]:
+    def stats(self) -> dict[str, int]:
         return dict(self._stats)
 
-    def run(self, storage: Storage, indexing: Indexing) -> Dict[str, Any]:
+    def run(self, storage: Storage, indexing: Indexing) -> dict[str, Any]:
         self._stats = {"dedup": 0, "pruned": 0, "reindexed": 0}
         dedup = self._deduplicate(storage)
         pruned = self._prune_empty(storage, indexing)
@@ -31,7 +31,7 @@ class Optimizer:
     def _deduplicate(self, storage: Storage) -> int:
         seen: set[int] = set()
         removed = 0
-        for key in storage.keys():
+        for key in storage:
             data = storage.get(key)
             if data is None:
                 continue
@@ -46,7 +46,7 @@ class Optimizer:
 
     def _prune_empty(self, storage: Storage, indexing: Indexing) -> int:
         pruned = 0
-        for key in storage.keys():
+        for key in storage:
             data = storage.get(key)
             if data is None or (isinstance(data, dict) and not data):
                 storage.delete(key)
@@ -57,7 +57,7 @@ class Optimizer:
 
     def _reindex(self, storage: Storage, indexing: Indexing) -> int:
         count = 0
-        for key in storage.keys():
+        for key in storage:
             data = storage.get(key)
             if data and isinstance(data, dict):
                 indexing.remove(key)

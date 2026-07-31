@@ -3,9 +3,7 @@ from __future__ import annotations
 import json
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
-
-from .memory_exceptions import MemoryBackupError
+from typing import Any
 
 
 class BackupEntry:
@@ -50,7 +48,7 @@ class BackupEntry:
     def created_at(self) -> float:
         return self._created_at
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "backup_id": self._backup_id,
             "path": self._path,
@@ -66,13 +64,13 @@ class MemoryBackup:
 
     def __init__(self, backup_dir: str | Path):
         self._backup_dir = Path(backup_dir)
-        self._backups: Dict[str, BackupEntry] = {}
+        self._backups: dict[str, BackupEntry] = {}
 
     @property
     def backup_dir(self) -> Path:
         return self._backup_dir
 
-    def create(self, backup_id: str, data: Dict[str, Any], compress: bool = True) -> BackupEntry:
+    def create(self, backup_id: str, data: dict[str, Any], compress: bool = True) -> BackupEntry:
         self._backup_dir.mkdir(parents=True, exist_ok=True)
         path = self._backup_dir / f"{backup_id}_{int(time.time())}.backup"
         raw = json.dumps(data, indent=2)
@@ -88,7 +86,7 @@ class MemoryBackup:
         self._backups[backup_id] = entry
         return entry
 
-    def load(self, backup_id: str) -> Dict[str, Any] | None:
+    def load(self, backup_id: str) -> dict[str, Any] | None:
         entry = self._backups.get(backup_id)
         if not entry:
             return None
@@ -98,7 +96,7 @@ class MemoryBackup:
             return None
         return json.loads(path.read_text())
 
-    def list_backups(self) -> List[Dict[str, Any]]:
+    def list_backups(self) -> list[dict[str, Any]]:
         backups = sorted(
             [b.to_dict() for b in self._backups.values()],
             key=lambda x: x["created_at"],

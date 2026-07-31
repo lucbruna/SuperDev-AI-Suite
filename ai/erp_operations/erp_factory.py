@@ -1,14 +1,23 @@
 """ERP Factory — Factory for creating ERP components."""
-from typing import Dict, Any, Optional, List
+from typing import Any
+
 from .erp_models import (
-    Product, Order, PurchaseOrder, Supplier, Employee, Delivery, WorkOrder,
-    ProductStatus, OrderStatus, OrderPriority, PaymentStatus, EmployeeStatus,
+    Delivery,
+    Employee,
+    Order,
+    OrderPriority,
+    OrderStatus,
+    Product,
+    ProductStatus,
+    PurchaseOrder,
+    Supplier,
+    WorkOrder,
 )
 
 
 class ERPFactory:
     def __init__(self):
-        self._templates: Dict[str, Dict[str, Any]] = {
+        self._templates: dict[str, dict[str, Any]] = {
             "standard_product": {"status": ProductStatus.ACTIVE, "unit": "unit"},
             "bulk_order": {"priority": OrderPriority.HIGH, "status": OrderStatus.DRAFT},
             "urgent_purchase": {"priority": OrderPriority.URGENT, "status": OrderStatus.DRAFT},
@@ -17,10 +26,10 @@ class ERPFactory:
     def create_product(self, name: str, sku: str = "", price: float = 0.0, **kwargs) -> Product:
         return Product(name=name, sku=sku, price=price, **kwargs)
 
-    def create_order(self, customer_id: str, items: Optional[List] = None, total: float = 0.0, **kwargs) -> Order:
+    def create_order(self, customer_id: str, items: list | None = None, total: float = 0.0, **kwargs) -> Order:
         return Order(customer_id=customer_id, items=items or [], total=total, **kwargs)
 
-    def create_purchase_order(self, supplier_id: str, items: Optional[List] = None, total: float = 0.0, **kwargs) -> PurchaseOrder:
+    def create_purchase_order(self, supplier_id: str, items: list | None = None, total: float = 0.0, **kwargs) -> PurchaseOrder:
         return PurchaseOrder(supplier_id=supplier_id, items=items or [], total=total, **kwargs)
 
     def create_supplier(self, name: str, contact: str = "", **kwargs) -> Supplier:
@@ -35,11 +44,11 @@ class ERPFactory:
     def create_work_order(self, product_id: str, quantity: int = 0, **kwargs) -> WorkOrder:
         return WorkOrder(product_id=product_id, quantity=quantity, **kwargs)
 
-    def register_template(self, name: str, template: Dict[str, Any]) -> None:
+    def register_template(self, name: str, template: dict[str, Any]) -> None:
         self._templates[name] = template
 
-    def get_template(self, name: str) -> Optional[Dict[str, Any]]:
+    def get_template(self, name: str) -> dict[str, Any] | None:
         return self._templates.get(name)
 
-    def list_templates(self) -> List[str]:
+    def list_templates(self) -> list[str]:
         return list(self._templates.keys())

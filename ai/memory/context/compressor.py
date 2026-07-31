@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class ContextCompressor:
@@ -13,9 +13,9 @@ class ContextCompressor:
     def compression_count(self) -> int:
         return self._compression_count
 
-    def compress(self, context: Dict[str, Any]) -> Dict[str, Any]:
+    def compress(self, context: dict[str, Any]) -> dict[str, Any]:
         content = context.get("content", {})
-        compressed: Dict[str, Any] = {}
+        compressed: dict[str, Any] = {}
         for key, value in content.items():
             s = str(value)
             if len(s) > 200:
@@ -37,8 +37,8 @@ class ContextCompressor:
             return text
         return " ".join(words[: max_length // 10]) + "..."
 
-    def compress_values(self, d: Dict[str, Any], max_value_length: int = 100) -> Dict[str, Any]:
-        result: Dict[str, Any] = {}
+    def compress_values(self, d: dict[str, Any], max_value_length: int = 100) -> dict[str, Any]:
+        result: dict[str, Any] = {}
         for key, value in d.items():
             s = str(value)
             result[key] = s[:max_value_length] + "..." if len(s) > max_value_length else s

@@ -1,9 +1,13 @@
 """Loyalty subsystem."""
-from .models import (
-    LoyaltyAction, RewardType,
-    LoyaltyAccount, LoyaltyTransaction, Reward, CustomerValue,
-)
 from .engine import LoyaltyEngine
+from .models import (
+    CustomerValue,
+    LoyaltyAccount,
+    LoyaltyAction,
+    LoyaltyTransaction,
+    Reward,
+    RewardType,
+)
 
 __all__ = [
     "LoyaltyAction", "RewardType",

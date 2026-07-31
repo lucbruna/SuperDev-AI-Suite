@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from typing import Any, Generic, TypeVar
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from backend.database.base import Base
 from backend.repositories.base_repository import BaseRepository
-from sqlalchemy.ext.asyncio import AsyncSession
 
 T = TypeVar("T", bound=Base)
 

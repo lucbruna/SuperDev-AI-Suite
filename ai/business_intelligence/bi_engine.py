@@ -1,23 +1,23 @@
 """BI Engine — Core engine for business intelligence operations."""
-from typing import Dict, Any, Optional, List
-from datetime import datetime
-from .bi_models import DataSource, DataPoint, KPI, Insight, Prediction, Decision
+from typing import Any
+
+from .bi_models import KPI, DataPoint, DataSource, Decision, Insight, Prediction
 
 
 class BIEngine:
     def __init__(self):
-        self._sources: Dict[str, DataSource] = {}
-        self._data_points: List[DataPoint] = []
-        self._kpis: Dict[str, KPI] = {}
-        self._insights: List[Insight] = []
-        self._predictions: List[Prediction] = []
-        self._decisions: List[Decision] = []
+        self._sources: dict[str, DataSource] = {}
+        self._data_points: list[DataPoint] = []
+        self._kpis: dict[str, KPI] = {}
+        self._insights: list[Insight] = []
+        self._predictions: list[Prediction] = []
+        self._decisions: list[Decision] = []
 
     def register_source(self, source: DataSource) -> str:
         self._sources[source.source_id] = source
         return source.source_id
 
-    def ingest_data(self, points: List[DataPoint]) -> int:
+    def ingest_data(self, points: list[DataPoint]) -> int:
         self._data_points.extend(points)
         return len(points)
 
@@ -37,22 +37,22 @@ class BIEngine:
         self._decisions.append(decision)
         return decision.decision_id
 
-    def get_kpi(self, kpi_id: str) -> Optional[KPI]:
+    def get_kpi(self, kpi_id: str) -> KPI | None:
         return self._kpis.get(kpi_id)
 
-    def get_all_kpis(self) -> List[KPI]:
+    def get_all_kpis(self) -> list[KPI]:
         return list(self._kpis.values())
 
-    def get_insights(self) -> List[Insight]:
+    def get_insights(self) -> list[Insight]:
         return list(self._insights)
 
-    def get_predictions(self) -> List[Prediction]:
+    def get_predictions(self) -> list[Prediction]:
         return list(self._predictions)
 
-    def get_decisions(self) -> List[Decision]:
+    def get_decisions(self) -> list[Decision]:
         return list(self._decisions)
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         return {
             "sources": len(self._sources),
             "data_points": len(self._data_points),

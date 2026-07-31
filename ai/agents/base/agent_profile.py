@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 
 class AgentProfile:
@@ -9,7 +9,7 @@ class AgentProfile:
     def __init__(self, agent_id: str, specialty: str = "") -> None:
         self._agent_id = agent_id
         self._specialty = specialty
-        self._skills: List[str] = []
+        self._skills: list[str] = []
 
     @property
     def agent_id(self) -> str:
@@ -22,13 +22,13 @@ class AgentProfile:
     def add_skill(self, skill: str) -> None:
         self._skills.append(skill)
 
-    def get_skills(self) -> List[str]:
+    def get_skills(self) -> list[str]:
         return list(self._skills)
 
     def has_skill(self, skill: str) -> bool:
         return skill in self._skills
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "agent_id": self._agent_id,
             "specialty": self._specialty,

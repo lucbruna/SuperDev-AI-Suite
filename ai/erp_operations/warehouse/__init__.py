@@ -1,6 +1,6 @@
 """Warehouse subsystem."""
-from .models import WarehouseZone, BinStatus, WarehouseZoneModel, Bin, PutAwayTask, PickTask
 from .engine import WarehouseEngine
+from .models import Bin, BinStatus, PickTask, PutAwayTask, WarehouseZone, WarehouseZoneModel
 
 __all__ = [
     "WarehouseZone", "BinStatus", "WarehouseZoneModel", "Bin", "PutAwayTask", "PickTask",

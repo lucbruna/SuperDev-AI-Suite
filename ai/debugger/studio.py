@@ -3,8 +3,6 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any
 
-from ..base.base_agent import BaseAgent
-
 
 class DebuggerEventType(Enum):
     NODE_START = "node_start"
@@ -81,9 +79,7 @@ class AgentStudioBackend:
             return False
         if node_id in self._breakpoints[session_id]:
             return True
-        if self._step_mode.get(session_id, False):
-            return True
-        return False
+        return bool(self._step_mode.get(session_id, False))
 
     async def record_event(self, session_id: str, event: DebuggerEvent) -> None:
         import time

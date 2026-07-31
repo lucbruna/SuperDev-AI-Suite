@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class Scheduler:
@@ -11,7 +11,7 @@ class Scheduler:
     def __init__(self) -> None:
         self._scheduled_count: int = 0
 
-    def schedule(self, tasks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def schedule(self, tasks: list[dict[str, Any]]) -> list[dict[str, Any]]:
         ordered = self._topological_sort(tasks)
         for i, task in enumerate(ordered):
             task["schedule_order"] = i
@@ -19,10 +19,10 @@ class Scheduler:
         self._scheduled_count += len(ordered)
         return ordered
 
-    def _topological_sort(self, tasks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _topological_sort(self, tasks: list[dict[str, Any]]) -> list[dict[str, Any]]:
         task_map = {t.get("title", t.get("task_id", "")): t for t in tasks}
         visited: set[str] = set()
-        result: List[Dict[str, Any]] = []
+        result: list[dict[str, Any]] = []
 
         def _visit(title: str) -> None:
             if title in visited:
@@ -42,8 +42,8 @@ class Scheduler:
         result.extend(remaining)
         return result
 
-    def get_next(self, tasks: List[Dict[str, Any]],
-                 completed: List[str]) -> Optional[Dict[str, Any]]:
+    def get_next(self, tasks: list[dict[str, Any]],
+                 completed: list[str]) -> dict[str, Any] | None:
         for task in tasks:
             if task.get("status") != "pending":
                 continue
@@ -52,5 +52,5 @@ class Scheduler:
                 return task
         return None
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         return {"total_scheduled": self._scheduled_count}

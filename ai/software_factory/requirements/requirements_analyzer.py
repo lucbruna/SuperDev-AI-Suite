@@ -1,13 +1,14 @@
 """Analyzer for requirements quality metrics and insights."""
-from typing import List, Dict, Any
 from collections import Counter
-from .models import Requirement, RequirementSet, RequirementType, Priority, RequirementStatus
+from typing import Any
+
+from .models import RequirementSet, RequirementStatus
 
 
 class RequirementsAnalyzer:
     """Analyzes requirement sets for metrics, coverage, and quality."""
 
-    def analyze_set(self, req_set: RequirementSet) -> Dict[str, Any]:
+    def analyze_set(self, req_set: RequirementSet) -> dict[str, Any]:
         """Full analysis of a requirement set."""
         requirements = req_set.requirements
         if not requirements:
@@ -35,7 +36,7 @@ class RequirementsAnalyzer:
             "approved_ratio": status_dist.get("approved", 0) / len(requirements),
         }
 
-    def find_gaps(self, req_set: RequirementSet) -> List[Dict[str, Any]]:
+    def find_gaps(self, req_set: RequirementSet) -> list[dict[str, Any]]:
         """Find requirements with missing information."""
         gaps = []
         for req in req_set.requirements:
@@ -76,7 +77,7 @@ class RequirementsAnalyzer:
             total += score
         return total / len(req_set.requirements)
 
-    def summarize(self, req_set: RequirementSet) -> Dict[str, Any]:
+    def summarize(self, req_set: RequirementSet) -> dict[str, Any]:
         """Generate a summary of the requirement set."""
         analysis = self.analyze_set(req_set)
         gaps = self.find_gaps(req_set)

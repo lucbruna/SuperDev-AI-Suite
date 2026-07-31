@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any
 
-from .ai_constants import DEFAULT_MODELS, PROVIDER_NAMES
+from .ai_constants import DEFAULT_MODELS
 from .ai_exceptions import RegistryError
 
 

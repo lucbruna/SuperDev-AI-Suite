@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 class Heartbeat:
@@ -10,7 +10,7 @@ class Heartbeat:
     def __init__(self, agent_id: str, interval: float = 10.0) -> None:
         self._agent_id = agent_id
         self._interval = interval
-        self._last_beat: Optional[float] = None
+        self._last_beat: float | None = None
         self._beat_count: int = 0
 
     @property
@@ -22,7 +22,7 @@ class Heartbeat:
         return self._interval
 
     @property
-    def last_beat(self) -> Optional[float]:
+    def last_beat(self) -> float | None:
         return self._last_beat
 
     @property
@@ -33,13 +33,13 @@ class Heartbeat:
         self._last_beat = time.time()
         self._beat_count += 1
 
-    def is_alive(self, timeout: Optional[float] = None) -> bool:
+    def is_alive(self, timeout: float | None = None) -> bool:
         if self._last_beat is None:
             return False
         t = timeout or self._interval * 3
         return (time.time() - self._last_beat) < t
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "agent_id": self._agent_id,
             "alive": self.is_alive(),

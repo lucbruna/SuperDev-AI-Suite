@@ -1,9 +1,9 @@
 """Mobile Platform & Edge AI Engine - Core engine for mobile and edge computing."""
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class PlatformType(Enum):
@@ -29,18 +29,18 @@ class MobileDevice:
     platform: PlatformType
     os_version: str = ""
     state: MobileState = MobileState.ONLINE
-    last_sync: Optional[datetime] = None
+    last_sync: datetime | None = None
     battery_level: float = 100.0
     storage_used_mb: float = 0.0
-    ai_models_loaded: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    ai_models_loaded: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class MobileEngine:
     def __init__(self):
-        self.devices: Dict[str, MobileDevice] = {}
-        self.active_sessions: Dict[str, Dict[str, Any]] = {}
-        self.event_log: List[Dict[str, Any]] = []
+        self.devices: dict[str, MobileDevice] = {}
+        self.active_sessions: dict[str, dict[str, Any]] = {}
+        self.event_log: list[dict[str, Any]] = []
 
     def register_device(self, name: str, platform: PlatformType, os_version: str = "") -> MobileDevice:
         device_id = hashlib.sha256(f"{name}{platform.value}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
@@ -49,7 +49,7 @@ class MobileEngine:
         self._log_event("device_registered", device_id)
         return device
 
-    def get_device(self, device_id: str) -> Optional[MobileDevice]:
+    def get_device(self, device_id: str) -> MobileDevice | None:
         return self.devices.get(device_id)
 
     def update_state(self, device_id: str, state: MobileState) -> bool:
@@ -60,15 +60,15 @@ class MobileEngine:
             return True
         return False
 
-    def list_devices(self, platform: PlatformType = None) -> List[MobileDevice]:
+    def list_devices(self, platform: PlatformType = None) -> list[MobileDevice]:
         if platform:
             return [d for d in self.devices.values() if d.platform == platform]
         return list(self.devices.values())
 
-    def get_online_devices(self) -> List[MobileDevice]:
+    def get_online_devices(self) -> list[MobileDevice]:
         return [d for d in self.devices.values() if d.state == MobileState.ONLINE]
 
-    def start_session(self, device_id: str, session_data: Dict[str, Any] = None) -> Optional[str]:
+    def start_session(self, device_id: str, session_data: dict[str, Any] = None) -> str | None:
         device = self.devices.get(device_id)
         if not device:
             return None
@@ -86,5 +86,5 @@ class MobileEngine:
     def count(self) -> int:
         return len(self.devices)
 
-    def _log_event(self, event_type: str, device_id: str, data: Dict[str, Any] = None):
+    def _log_event(self, event_type: str, device_id: str, data: dict[str, Any] = None):
         self.event_log.append({"event_type": event_type, "device_id": device_id, "data": data or {}, "timestamp": datetime.now().isoformat()})

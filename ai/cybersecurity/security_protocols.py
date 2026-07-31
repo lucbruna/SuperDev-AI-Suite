@@ -1,7 +1,6 @@
 """
 Security Protocols
 """
-from typing import Protocol, Optional, Dict, Any, List
 from enum import Enum
 
 
@@ -39,8 +38,8 @@ class SecurityProtocolConfig:
     auth_method: AuthenticationMethod = AuthenticationMethod.MFA
     auth_model: AuthorizationModel = AuthorizationModel.RBAC
     encryption: EncryptionStandard = EncryptionStandard.AES_256_GCM
-    
-    def to_dict(self) -> Dict[str, str]:
+
+    def to_dict(self) -> dict[str, str]:
         return {
             "protocol": self.protocol.value,
             "auth_method": self.auth_method.value,
@@ -49,4 +48,3 @@ class SecurityProtocolConfig:
         }
 
 
-from dataclasses import dataclass

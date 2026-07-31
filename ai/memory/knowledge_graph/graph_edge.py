@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 
 class GraphEdge:
     """A directed edge in the knowledge graph."""
 
-    def __init__(self, edge_id: str, source: str, target: str, relation: str, properties: Dict[str, Any] | None = None) -> None:
+    def __init__(self, edge_id: str, source: str, target: str, relation: str, properties: dict[str, Any] | None = None) -> None:
         self._edge_id = edge_id
         self._source = source
         self._target = target
@@ -30,10 +30,10 @@ class GraphEdge:
         return self._relation
 
     @property
-    def properties(self) -> Dict[str, Any]:
+    def properties(self) -> dict[str, Any]:
         return dict(self._properties)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "edge_id": self._edge_id,
             "source": self._source,
@@ -43,7 +43,7 @@ class GraphEdge:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "GraphEdge":
+    def from_dict(cls, data: dict[str, Any]) -> GraphEdge:
         return cls(
             data["edge_id"],
             data["source"],

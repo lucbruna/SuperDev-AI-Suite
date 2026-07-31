@@ -1,8 +1,8 @@
 """Cybersecurity Engine Events — Event definitions for security operations."""
 from dataclasses import dataclass, field
-from enum import Enum
 from datetime import datetime
-from typing import Dict, Any
+from enum import Enum
+from typing import Any
 
 
 class SecurityEventType(Enum):
@@ -24,6 +24,6 @@ class SecurityEvent:
     event_type: SecurityEventType = SecurityEventType.THREAT_DETECTED
     source: str = ""
     target: str = ""
-    details: Dict[str, Any] = field(default_factory=dict)
+    details: dict[str, Any] = field(default_factory=dict)
     severity: str = "info"
     timestamp: datetime = field(default_factory=datetime.now)

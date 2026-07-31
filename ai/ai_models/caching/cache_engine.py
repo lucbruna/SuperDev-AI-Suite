@@ -1,16 +1,18 @@
 """Cache engine."""
 from __future__ import annotations
-from typing import Any, Dict, Optional
+
 import time
+from typing import Any
+
 
 class CacheEngine:
     def __init__(self, max_size: int = 1000, ttl: int = 300) -> None:
-        self._cache: Dict[str, Dict[str, Any]] = {}
+        self._cache: dict[str, dict[str, Any]] = {}
         self._max_size = max_size
         self._ttl = ttl
         self._hits = 0
         self._misses = 0
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         entry = self._cache.get(key)
         if not entry:
             self._misses += 1
@@ -23,7 +25,7 @@ class CacheEngine:
         entry["access_count"] += 1
         entry["last_accessed"] = time.time()
         return entry["value"]
-    def set(self, key: str, value: Any, ttl: int = None) -> Dict[str, Any]:
+    def set(self, key: str, value: Any, ttl: int = None) -> dict[str, Any]:
         if len(self._cache) >= self._max_size:
             oldest = min(self._cache, key=lambda k: self._cache[k].get("last_accessed", 0))
             del self._cache[oldest]
@@ -39,7 +41,7 @@ class CacheEngine:
         n = len(self._cache)
         self._cache.clear()
         return n
-    def stats(self) -> Dict[str, Any]:
+    def stats(self) -> dict[str, Any]:
         total = self._hits + self._misses
         return {"hits": self._hits, "misses": self._misses, "hit_rate": (self._hits / total * 100) if total > 0 else 0, "size": len(self._cache), "max_size": self._max_size}
     def exists(self, key: str) -> bool:

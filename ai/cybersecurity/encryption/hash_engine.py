@@ -1,12 +1,12 @@
 """
 Cryptographic Hashing Engine
 """
-from typing import Dict, Any, Optional
-from dataclasses import dataclass, field
-from enum import Enum
 import hashlib
 import hmac
 import secrets
+from dataclasses import dataclass, field
+from enum import Enum
+from typing import Any
 
 
 class HashAlgorithm(Enum):
@@ -22,12 +22,12 @@ class HashResult:
     digest: str
     algorithm: str
     hex_digest: str = ""
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class HashEngine:
     def __init__(self):
-        self.salt_store: Dict[str, bytes] = {}
+        self.salt_store: dict[str, bytes] = {}
 
     def hash_data(self, data: str, algorithm: str = "sha256") -> HashResult:
         if algorithm == "sha256":

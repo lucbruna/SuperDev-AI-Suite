@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from .decision_models import DecisionResult
@@ -14,7 +14,7 @@ class DecisionHistory:
 
     def record(self, result: DecisionResult) -> None:
         self._entries.append({
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "context_id": result.context_id,
             "decision": result.decision,
             "confidence": result.confidence,

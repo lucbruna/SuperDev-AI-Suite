@@ -1,8 +1,9 @@
 """Enterprise configuration."""
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
-from enum import Enum
+
 from dataclasses import dataclass, field
+from enum import Enum
+
 
 class PlanType(Enum):
     STARTER = "starter"
@@ -38,7 +39,7 @@ class BillingConfig:
     grace_period_days: int = 7
     auto_charge: bool = True
     invoice_prefix: str = "INV"
-    payment_methods: List[str] = field(default_factory=lambda: ["credit_card", "pix", "boleto"])
+    payment_methods: list[str] = field(default_factory=lambda: ["credit_card", "pix", "boleto"])
 
 @dataclass
 class LicenseConfig:

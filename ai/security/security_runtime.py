@@ -2,18 +2,18 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class SecurityRuntime:
     """Manages active security sessions and runtime state."""
 
     def __init__(self) -> None:
-        self._sessions: Dict[str, Dict[str, Any]] = {}
-        self._active_tokens: Dict[str, str] = {}
+        self._sessions: dict[str, dict[str, Any]] = {}
+        self._active_tokens: dict[str, str] = {}
 
     def create_session(self, user_id: str, ip_address: str = "",
-                       extra: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+                       extra: dict[str, Any] | None = None) -> dict[str, Any]:
         import uuid
         session_id = str(uuid.uuid4())[:12]
         session = {
@@ -28,7 +28,7 @@ class SecurityRuntime:
         self._sessions[session_id] = session
         return session
 
-    def get_session(self, session_id: str) -> Optional[Dict[str, Any]]:
+    def get_session(self, session_id: str) -> dict[str, Any] | None:
         return self._sessions.get(session_id)
 
     def invalidate_session(self, session_id: str) -> bool:
@@ -40,7 +40,7 @@ class SecurityRuntime:
     def register_token(self, token: str, user_id: str) -> None:
         self._active_tokens[token] = user_id
 
-    def validate_token(self, token: str) -> Optional[str]:
+    def validate_token(self, token: str) -> str | None:
         return self._active_tokens.get(token)
 
     def revoke_token(self, token: str) -> bool:
@@ -49,19 +49,19 @@ class SecurityRuntime:
             return True
         return False
 
-    def get_active_sessions(self) -> List[Dict[str, Any]]:
+    def get_active_sessions(self) -> list[dict[str, Any]]:
         return [s for s in self._sessions.values() if s.get("active")]
 
     def cleanup_expired(self, timeout_seconds: int = 1800) -> int:
         now = time.time()
         expired = 0
-        for sid, session in self._sessions.items():
+        for _sid, session in self._sessions.items():
             if session.get("active") and (now - session["last_activity"]) > timeout_seconds:
                 session["active"] = False
                 expired += 1
         return expired
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         return {
             "total_sessions": len(self._sessions),
             "active_sessions": len(self.get_active_sessions()),

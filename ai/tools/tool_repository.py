@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from .tool_interfaces import ITool
-
 
 class ToolRepository:
     """Persistent storage and retrieval of tool configurations."""

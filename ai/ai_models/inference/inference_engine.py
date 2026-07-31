@@ -1,18 +1,21 @@
 """Inference engine."""
 from __future__ import annotations
-from typing import Any, Callable, Dict, List, Optional
+
 import time
+from collections.abc import Callable
+from typing import Any
+
 
 class InferenceEngine:
     def __init__(self) -> None:
-        self._handlers: Dict[str, Callable] = {}
-        self._history: List[Dict[str, Any]] = []
+        self._handlers: dict[str, Callable] = {}
+        self._history: list[dict[str, Any]] = []
         self._started = False
     def start(self) -> None:
         self._started = True
     def register_handler(self, model_id: str, handler: Callable) -> None:
         self._handlers[model_id] = handler
-    def infer(self, model_id: str, prompt: str, **kwargs: Any) -> Dict[str, Any]:
+    def infer(self, model_id: str, prompt: str, **kwargs: Any) -> dict[str, Any]:
         handler = self._handlers.get(model_id)
         if not handler:
             return {"error": "handler_not_found", "status": "failed"}
@@ -25,9 +28,9 @@ class InferenceEngine:
             return {"content": result, "model_id": model_id, "latency_ms": latency, "status": "completed"}
         except Exception as e:
             return {"error": str(e), "status": "failed"}
-    def batch_infer(self, model_id: str, prompts: List[str], **kwargs: Any) -> List[Dict[str, Any]]:
+    def batch_infer(self, model_id: str, prompts: list[str], **kwargs: Any) -> list[dict[str, Any]]:
         return [self.infer(model_id, p, **kwargs) for p in prompts]
-    def get_history(self, model_id: str = "", limit: int = 50) -> List[Dict[str, Any]]:
+    def get_history(self, model_id: str = "", limit: int = 50) -> list[dict[str, Any]]:
         results = self._history
         if model_id:
             results = [h for h in results if h["model_id"] == model_id]

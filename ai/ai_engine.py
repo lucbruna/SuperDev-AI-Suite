@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import time
-from datetime import UTC, datetime
-from typing import Any, AsyncIterator
+from collections.abc import AsyncIterator
+from typing import Any
 
 from .ai_config import AIConfig, get_ai_config
 from .ai_context import AIContext

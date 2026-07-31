@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import json
-import time
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -66,7 +65,7 @@ class OrchestrationState:
         name: str = "",
         strategy: str = "pipeline",
     ) -> SessionState:
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         session = SessionState(
             session_id=str(uuid.uuid4()),
             project_id=project_id,
@@ -90,7 +89,7 @@ class OrchestrationState:
         for key, value in updates.items():
             if hasattr(session, key):
                 setattr(session, key, value)
-        session.updated_at = datetime.now(timezone.utc).isoformat()
+        session.updated_at = datetime.now(UTC).isoformat()
         await self._persist()
         return session
 
@@ -117,7 +116,7 @@ class OrchestrationState:
             max_retries=max_retries,
         )
         session.tasks.append(task)
-        session.updated_at = datetime.now(timezone.utc).isoformat()
+        session.updated_at = datetime.now(UTC).isoformat()
         await self._persist()
         return task
 
@@ -131,10 +130,10 @@ class OrchestrationState:
                     if hasattr(task, key):
                         setattr(task, key, value)
                 if updates.get("status") == "running" and not task.started_at:
-                    task.started_at = datetime.now(timezone.utc).isoformat()
+                    task.started_at = datetime.now(UTC).isoformat()
                 if updates.get("status") in ("completed", "failed", "cancelled"):
-                    task.completed_at = datetime.now(timezone.utc).isoformat()
-                session.updated_at = datetime.now(timezone.utc).isoformat()
+                    task.completed_at = datetime.now(UTC).isoformat()
+                session.updated_at = datetime.now(UTC).isoformat()
                 await self._persist()
                 return task
         return None
@@ -153,10 +152,10 @@ class OrchestrationState:
             agent_id=agent_id,
             agent_name=agent_name,
             role=role,
-            assigned_at=datetime.now(timezone.utc).isoformat(),
+            assigned_at=datetime.now(UTC).isoformat(),
         )
         session.agents[agent_id] = assignment
-        session.updated_at = datetime.now(timezone.utc).isoformat()
+        session.updated_at = datetime.now(UTC).isoformat()
         await self._persist()
         return assignment
 
@@ -165,7 +164,7 @@ class OrchestrationState:
         if not session:
             return None
         session.status = "completed"
-        session.completed_at = datetime.now(timezone.utc).isoformat()
+        session.completed_at = datetime.now(UTC).isoformat()
         session.updated_at = session.completed_at
         await self._persist()
         return session
@@ -176,7 +175,7 @@ class OrchestrationState:
             return None
         session.status = "failed"
         session.error = error
-        session.completed_at = datetime.now(timezone.utc).isoformat()
+        session.completed_at = datetime.now(UTC).isoformat()
         session.updated_at = session.completed_at
         await self._persist()
         return session

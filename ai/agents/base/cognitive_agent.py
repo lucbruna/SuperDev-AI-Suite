@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 from .base_agent import BaseAgent
 
@@ -10,7 +10,7 @@ class CognitiveAgent(BaseAgent):
 
     def __init__(self, agent_id: str, name: str = "") -> None:
         super().__init__(agent_id, name)
-        self._knowledge: Dict[str, Any] = {}
+        self._knowledge: dict[str, Any] = {}
 
     def learn(self, key: str, value: Any) -> None:
         self._knowledge[key] = value
@@ -18,12 +18,12 @@ class CognitiveAgent(BaseAgent):
     def recall(self, key: str) -> Any:
         return self._knowledge.get(key)
 
-    def reason(self, inputs: Dict[str, Any]) -> str:
+    def reason(self, inputs: dict[str, Any]) -> str:
         if "problem" in inputs:
             return "analyzing"
         return "observing"
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         d = super().to_dict()
         d["knowledge_size"] = len(self._knowledge)
         return d

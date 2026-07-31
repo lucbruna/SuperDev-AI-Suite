@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 from .cluster_sync import ClusterSync
 from .conflict_resolution import ConflictResolution
@@ -52,7 +52,7 @@ class SynchronizationEngine:
     def consistency(self) -> ConsistencyChecker:
         return self._consistency
 
-    def synchronize(self, local: Dict[str, Any], remote: Dict[str, Any]) -> Dict[str, Any]:
+    def synchronize(self, local: dict[str, Any], remote: dict[str, Any]) -> dict[str, Any]:
         merged = self._replication.merge(local, remote)
         conflicts = self._conflicts.detect(local, remote)
         if conflicts:
@@ -65,7 +65,7 @@ class SynchronizationEngine:
             "consistent": self._consistency.check(merged),
         }
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         return {
             "sync_count": self._sync_count,
             "replication_count": self._replication.replication_count,

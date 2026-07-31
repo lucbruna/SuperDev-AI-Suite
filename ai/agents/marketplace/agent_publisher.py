@@ -3,16 +3,16 @@ from __future__ import annotations
 
 import time
 import uuid
-from typing import Any, Dict
+from typing import Any
 
 
 class AgentPublisher:
     """Handles the publishing of agents to the marketplace."""
 
     def __init__(self) -> None:
-        self._published: list[Dict[str, Any]] = []
+        self._published: list[dict[str, Any]] = []
 
-    def publish(self, agent_spec: Dict[str, Any]) -> Dict[str, Any]:
+    def publish(self, agent_spec: dict[str, Any]) -> dict[str, Any]:
         agent_id = agent_spec.get("id", str(uuid.uuid4()))
         listing = {
             "agent_id": agent_id,
@@ -32,5 +32,5 @@ class AgentPublisher:
         self._published = [p for p in self._published if p["agent_id"] != agent_id]
         return len(self._published) < before
 
-    def get_published(self) -> list[Dict[str, Any]]:
+    def get_published(self) -> list[dict[str, Any]]:
         return list(self._published)

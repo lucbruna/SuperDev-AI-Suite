@@ -1,16 +1,19 @@
 """Log processor."""
 from __future__ import annotations
-from typing import Any, Callable, Dict, List, Optional
+
+from collections.abc import Callable
+from typing import Any
+
 
 class LogProcessor:
     def __init__(self) -> None:
-        self._filters: List[Callable[[Dict[str, Any]], bool]] = []
-        self._transformers: List[Callable[[Dict[str, Any]], Dict[str, Any]]] = []
-    def add_filter(self, func: Callable[[Dict[str, Any]], bool]) -> None:
+        self._filters: list[Callable[[dict[str, Any]], bool]] = []
+        self._transformers: list[Callable[[dict[str, Any]], dict[str, Any]]] = []
+    def add_filter(self, func: Callable[[dict[str, Any]], bool]) -> None:
         self._filters.append(func)
-    def add_transformer(self, func: Callable[[Dict[str, Any]], Dict[str, Any]]) -> None:
+    def add_transformer(self, func: Callable[[dict[str, Any]], dict[str, Any]]) -> None:
         self._transformers.append(func)
-    def process(self, entry: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def process(self, entry: dict[str, Any]) -> dict[str, Any] | None:
         for f in self._filters:
             if not f(entry):
                 return None
@@ -18,7 +21,7 @@ class LogProcessor:
         for t in self._transformers:
             result = t(result)
         return result
-    def process_batch(self, entries: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def process_batch(self, entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
         results = []
         for e in entries:
             processed = self.process(e)

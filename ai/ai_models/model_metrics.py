@@ -1,14 +1,13 @@
 """AI Model metrics."""
 from __future__ import annotations
-from typing import Any, Dict, List
-import time
+
 
 class ModelMetrics:
     def __init__(self) -> None:
-        self._counters: Dict[str, float] = {}
-        self._gauges: Dict[str, float] = {}
-        self._timers: Dict[str, List[float]] = {}
-        self._costs: Dict[str, float] = {}
+        self._counters: dict[str, float] = {}
+        self._gauges: dict[str, float] = {}
+        self._timers: dict[str, list[float]] = {}
+        self._costs: dict[str, float] = {}
     def increment(self, name: str, amount: float = 1.0) -> None:
         self._counters[name] = self._counters.get(name, 0) + amount
     def set_gauge(self, name: str, value: float) -> None:
@@ -23,7 +22,7 @@ class ModelMetrics:
         return self._counters.get(name, 0.0)
     def get_gauge(self, name: str) -> float:
         return self._gauges.get(name, 0.0)
-    def get_timer_stats(self, name: str) -> Dict[str, float]:
+    def get_timer_stats(self, name: str) -> dict[str, float]:
         values = self._timers.get(name, [])
         if not values:
             return {"min": 0, "max": 0, "avg": 0, "count": 0}

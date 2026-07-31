@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import uuid
 from typing import Any
 
@@ -69,17 +70,13 @@ async def collab_ws(ws: WebSocket, session_id: str, user_id: str = "anonymous"):
                 _operations[session_id].append(op)
                 for conn in _connections[session_id]:
                     if conn != ws:
-                        try:
+                        with contextlib.suppress(Exception):
                             await conn.send_json({"type": "op", "op": op, "revision": doc.revision})
-                        except Exception:
-                            pass
             elif data.get("type") == "cursor":
                 for conn in _connections[session_id]:
                     if conn != ws:
-                        try:
+                        with contextlib.suppress(Exception):
                             await conn.send_json({"type": "cursor", "user_id": user_id, "position": data.get("position", 0)})
-                        except Exception:
-                            pass
     except WebSocketDisconnect:
         _connections[session_id].remove(ws)
         if not _connections[session_id]:

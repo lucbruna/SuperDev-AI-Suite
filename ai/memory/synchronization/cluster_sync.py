@@ -1,21 +1,21 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class ClusterSync:
     """Synchronizes memory across entire clusters."""
 
     def __init__(self):
-        self._clusters: Dict[str, Dict[str, Any]] = {}
-        self._cluster_log: List[Dict[str, Any]] = []
+        self._clusters: dict[str, dict[str, Any]] = {}
+        self._cluster_log: list[dict[str, Any]] = []
 
     @property
     def cluster_count(self) -> int:
         return len(self._clusters)
 
-    def register_cluster(self, cluster_id: str, node_ids: List[str] | None = None) -> None:
+    def register_cluster(self, cluster_id: str, node_ids: list[str] | None = None) -> None:
         self._clusters[cluster_id] = {
             "nodes": node_ids or [],
             "created_at": time.time(),
@@ -40,7 +40,7 @@ class ClusterSync:
         cluster["nodes"].remove(node_id)
         return True
 
-    def sync_cluster(self, cluster_id: str) -> Dict[str, Any]:
+    def sync_cluster(self, cluster_id: str) -> dict[str, Any]:
         cluster = self._clusters.get(cluster_id)
         if cluster is None:
             return {"error": "cluster not found"}
@@ -49,10 +49,10 @@ class ClusterSync:
         self._cluster_log.append(entry)
         return entry
 
-    def list_clusters(self) -> List[str]:
+    def list_clusters(self) -> list[str]:
         return list(self._clusters.keys())
 
-    def cluster_info(self, cluster_id: str) -> Optional[Dict[str, Any]]:
+    def cluster_info(self, cluster_id: str) -> dict[str, Any] | None:
         return self._clusters.get(cluster_id)
 
     def clear(self) -> None:

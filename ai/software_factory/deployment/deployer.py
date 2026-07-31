@@ -1,6 +1,7 @@
 """Deployer for executing deployments."""
-from typing import List, Dict, Any, Optional
 from datetime import datetime
+from typing import Any
+
 from .models import Deployment, DeploymentStatus
 
 
@@ -8,7 +9,7 @@ class Deployer:
     """Executes deployment operations."""
 
     def __init__(self):
-        self._history: List[Dict[str, Any]] = []
+        self._history: list[dict[str, Any]] = []
 
     def deploy(self, deployment: Deployment) -> bool:
         """Execute a deployment."""
@@ -32,7 +33,7 @@ class Deployer:
         """Execute a single deployment step."""
         pass  # Simulated step execution
 
-    def dry_run(self, deployment: Deployment) -> Dict[str, Any]:
+    def dry_run(self, deployment: Deployment) -> dict[str, Any]:
         """Perform a dry run of the deployment."""
         return {
             "deployment_id": deployment.deployment_id,
@@ -45,7 +46,7 @@ class Deployer:
         deployment.status = DeploymentStatus.CANCELLED
         return True
 
-    def get_history(self) -> List[Dict[str, Any]]:
+    def get_history(self) -> list[dict[str, Any]]:
         return list(self._history)
 
     def _record(self, deployment: Deployment, success: bool, error: str = "") -> None:

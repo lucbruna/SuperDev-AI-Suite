@@ -1,32 +1,29 @@
 """Warehouse engine."""
-import uuid
-from datetime import datetime
-from typing import Dict, List, Optional
-from .models import WarehouseZoneModel, Bin, PutAwayTask, PickTask, WarehouseZone, BinStatus
+from .models import Bin, BinStatus, PickTask, PutAwayTask, WarehouseZoneModel
 
 
 class WarehouseEngine:
     def __init__(self):
-        self._zones: Dict[str, WarehouseZoneModel] = {}
-        self._bins: Dict[str, Bin] = {}
-        self._putaway_tasks: List[PutAwayTask] = []
-        self._pick_tasks: List[PickTask] = []
+        self._zones: dict[str, WarehouseZoneModel] = {}
+        self._bins: dict[str, Bin] = {}
+        self._putaway_tasks: list[PutAwayTask] = []
+        self._pick_tasks: list[PickTask] = []
 
     def add_zone(self, zone: WarehouseZoneModel) -> WarehouseZoneModel:
         self._zones[zone.zone_id] = zone
         return zone
 
-    def get_zone(self, zone_id: str) -> Optional[WarehouseZoneModel]:
+    def get_zone(self, zone_id: str) -> WarehouseZoneModel | None:
         return self._zones.get(zone_id)
 
     def add_bin(self, bin_obj: Bin) -> Bin:
         self._bins[bin_obj.bin_id] = bin_obj
         return bin_obj
 
-    def get_bin(self, bin_id: str) -> Optional[Bin]:
+    def get_bin(self, bin_id: str) -> Bin | None:
         return self._bins.get(bin_id)
 
-    def find_empty_bins(self, zone_id: Optional[str] = None) -> List[Bin]:
+    def find_empty_bins(self, zone_id: str | None = None) -> list[Bin]:
         bins = [b for b in self._bins.values() if b.status == BinStatus.EMPTY]
         if zone_id:
             bins = [b for b in bins if b.zone_id == zone_id]
@@ -49,7 +46,7 @@ class WarehouseEngine:
         self._pick_tasks.append(task)
         return task
 
-    def get_pending_picks(self) -> List[PickTask]:
+    def get_pending_picks(self) -> list[PickTask]:
         return [t for t in self._pick_tasks if t.status == "pending"]
 
     def get_zone_utilization(self, zone_id: str) -> float:

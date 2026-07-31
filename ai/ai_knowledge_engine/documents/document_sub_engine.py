@@ -1,9 +1,9 @@
 """Document subsystem engine — Intelligent document processing and analysis."""
 import uuid
-from datetime import datetime
-from typing import Dict, Any, List, Optional
-from enum import Enum
 from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class DocumentType(Enum):
@@ -28,13 +28,13 @@ class ProcessedDocument:
     title: str = ""
     content: str = ""
     doc_type: DocumentType = DocumentType.TEXT
-    chunks: List[str] = field(default_factory=list)
+    chunks: list[str] = field(default_factory=list)
     summary: str = ""
-    keywords: List[str] = field(default_factory=list)
-    entities: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    keywords: list[str] = field(default_factory=list)
+    entities: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
     status: ProcessingStatus = ProcessingStatus.PENDING
-    processed_at: Optional[datetime] = None
+    processed_at: datetime | None = None
 
 
 @dataclass
@@ -49,11 +49,11 @@ class ExtractionResult:
 
 class DocumentSubEngine:
     def __init__(self, chunk_size: int = 512, chunk_overlap: int = 50):
-        self._documents: Dict[str, ProcessedDocument] = {}
-        self._extractions: List[ExtractionResult] = []
+        self._documents: dict[str, ProcessedDocument] = {}
+        self._extractions: list[ExtractionResult] = []
         self._chunk_size = chunk_size
         self._chunk_overlap = chunk_overlap
-        self._templates: Dict[str, List[str]] = {}
+        self._templates: dict[str, list[str]] = {}
 
     def process_document(self, title: str, content: str, doc_type: str = "text") -> ProcessedDocument:
         dt = DocumentType(doc_type) if doc_type in [e.value for e in DocumentType] else DocumentType.TEXT
@@ -70,7 +70,7 @@ class DocumentSubEngine:
         self._documents[doc.doc_id] = doc
         return doc
 
-    def get_document(self, doc_id: str) -> Optional[ProcessedDocument]:
+    def get_document(self, doc_id: str) -> ProcessedDocument | None:
         return self._documents.get(doc_id)
 
     def summarize(self, doc_id: str) -> str:
@@ -81,7 +81,7 @@ class DocumentSubEngine:
         doc.summary = ". ".join(sentences[:3]) + "." if len(sentences) > 3 else doc.content
         return doc.summary
 
-    def extract_information(self, doc_id: str, fields: List[str]) -> List[ExtractionResult]:
+    def extract_information(self, doc_id: str, fields: list[str]) -> list[ExtractionResult]:
         doc = self._documents.get(doc_id)
         if not doc:
             return []
@@ -101,17 +101,17 @@ class DocumentSubEngine:
             self._extractions.append(result)
         return results
 
-    def search_documents(self, query: str) -> List[ProcessedDocument]:
+    def search_documents(self, query: str) -> list[ProcessedDocument]:
         query_lower = query.lower()
         return [d for d in self._documents.values() if query_lower in d.title.lower() or query_lower in d.content.lower()]
 
-    def add_template(self, name: str, fields: List[str]) -> None:
+    def add_template(self, name: str, fields: list[str]) -> None:
         self._templates[name] = fields
 
-    def get_template(self, name: str) -> Optional[List[str]]:
+    def get_template(self, name: str) -> list[str] | None:
         return self._templates.get(name)
 
-    def _chunk_text(self, text: str) -> List[str]:
+    def _chunk_text(self, text: str) -> list[str]:
         chunks = []
         for i in range(0, len(text), self._chunk_size - self._chunk_overlap):
             chunk = text[i:i + self._chunk_size]
@@ -119,7 +119,7 @@ class DocumentSubEngine:
                 chunks.append(chunk)
         return chunks
 
-    def _extract_keywords(self, text: str) -> List[str]:
+    def _extract_keywords(self, text: str) -> list[str]:
         words = text.lower().split()
         word_freq = {}
         for w in words:

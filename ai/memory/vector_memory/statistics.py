@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List
+from typing import Any
 
 
 class Statistics:
@@ -12,8 +12,8 @@ class Statistics:
         self._total_inserts: int = 0
         self._total_deletes: int = 0
         self._total_updates: int = 0
-        self._query_times: List[float] = []
-        self._insert_times: List[float] = []
+        self._query_times: list[float] = []
+        self._insert_times: list[float] = []
         self._cache_hits: int = 0
         self._cache_misses: int = 0
         self._start_time: float = time.time()
@@ -85,7 +85,7 @@ class Statistics:
             return 0.0
         return self._cache_hits / total
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         return {
             "total_queries": self._total_queries,
             "total_inserts": self._total_inserts,

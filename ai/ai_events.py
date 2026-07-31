@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
+from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import Any, Callable
+from typing import Any
 
 from .ai_types import EventType
 
@@ -48,18 +50,14 @@ class AIEvents:
         # Call regular listeners
         listeners = self._listeners.get(event_type, [])
         for listener in listeners:
-            try:
+            with contextlib.suppress(Exception):
                 listener(event_data)
-            except Exception:
-                pass
 
         # Call once listeners
         once_listeners = self._once_listeners.pop(event_type, [])
         for listener in once_listeners:
-            try:
+            with contextlib.suppress(Exception):
                 listener(event_data)
-            except Exception:
-                pass
 
         # Record history
         self._history.append(event_data)

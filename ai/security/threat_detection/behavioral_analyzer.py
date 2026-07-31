@@ -1,20 +1,23 @@
 """Behavioral analysis."""
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
-import time, uuid, statistics
+
+import statistics
+import time
+from typing import Any
+
 
 class UserBehaviorProfile:
     def __init__(self, user_id: str) -> None:
         self.user_id = user_id
-        self.login_times: List[float] = []
-        self.access_patterns: List[Dict[str, Any]] = []
-        self.resource_usage: List[Dict[str, Any]] = []
+        self.login_times: list[float] = []
+        self.access_patterns: list[dict[str, Any]] = []
+        self.resource_usage: list[dict[str, Any]] = []
         self.anomaly_score: float = 0.0
 
 class BehavioralAnalyzer:
     def __init__(self) -> None:
-        self._profiles: Dict[str, UserBehaviorProfile] = {}
-        self._alerts: List[Dict[str, Any]] = []
+        self._profiles: dict[str, UserBehaviorProfile] = {}
+        self._alerts: list[dict[str, Any]] = []
         self._baseline_window = 30 * 86400  # 30 days
     def record_login(self, user_id: str, timestamp: float = 0.0) -> None:
         ts = timestamp or time.time()
@@ -36,15 +39,15 @@ class BehavioralAnalyzer:
                 stdev_interval = statistics.stdev(intervals) if len(intervals) > 1 else 0
                 if stdev_interval > 0 and mean_interval / stdev_interval < 2:
                     profile.anomaly_score += 0.1
-    def get_profile(self, user_id: str) -> Optional[Dict[str, Any]]:
+    def get_profile(self, user_id: str) -> dict[str, Any] | None:
         profile = self._profiles.get(user_id)
         if profile:
             return {"user_id": profile.user_id, "logins": len(profile.login_times), "access_count": len(profile.access_patterns), "anomaly_score": profile.anomaly_score}
         return None
-    def get_alerts(self, user_id: str = "", limit: int = 100) -> List[Dict[str, Any]]:
+    def get_alerts(self, user_id: str = "", limit: int = 100) -> list[dict[str, Any]]:
         alerts = self._alerts
         if user_id:
             alerts = [a for a in alerts if a.get("user_id") == user_id]
         return alerts[-limit:]
-    def get_high_risk_users(self, threshold: float = 0.5) -> List[Dict[str, Any]]:
+    def get_high_risk_users(self, threshold: float = 0.5) -> list[dict[str, Any]]:
         return [{"user_id": p.user_id, "anomaly_score": p.anomaly_score} for p in self._profiles.values() if p.anomaly_score > threshold]

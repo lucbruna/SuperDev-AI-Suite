@@ -1,16 +1,14 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List, Optional
-
-from .agent_state import AgentState
+from typing import Any
 
 
 class AgentMonitor:
     """Monitors agent health and status."""
 
     def __init__(self) -> None:
-        self._heartbeats: Dict[str, float] = {}
+        self._heartbeats: dict[str, float] = {}
         self._timeout: float = 30.0
 
     def heartbeat(self, agent_id: str) -> None:
@@ -22,16 +20,16 @@ class AgentMonitor:
             return False
         return (time.time() - last) < self._timeout
 
-    def alive_agents(self) -> List[str]:
+    def alive_agents(self) -> list[str]:
         return [aid for aid in self._heartbeats if self.is_alive(aid)]
 
-    def dead_agents(self) -> List[str]:
+    def dead_agents(self) -> list[str]:
         return [aid for aid in self._heartbeats if not self.is_alive(aid)]
 
     def clear(self) -> None:
         self._heartbeats.clear()
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         return {
             "alive": len(self.alive_agents()),
             "dead": len(self.dead_agents()),

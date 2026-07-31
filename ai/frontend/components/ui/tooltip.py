@@ -1,9 +1,10 @@
 """
 Tooltip UI Component
 """
-from typing import Optional, Any, Callable
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any
 
 
 class TooltipPlacement(Enum):
@@ -28,27 +29,27 @@ class TooltipProps:
     arrow: bool = True
     disabled: bool = False
     maxWidth: int = 300
-    children: Optional[Any] = None
-    onShow: Optional[Callable] = None
-    onHide: Optional[Callable] = None
+    children: Any | None = None
+    onShow: Callable | None = None
+    onHide: Callable | None = None
 
 
 class Tooltip:
-    def __init__(self, props: Optional[TooltipProps] = None):
+    def __init__(self, props: TooltipProps | None = None):
         self.props = props or TooltipProps()
         self._visible = False
-        
+
     def show(self):
         if not self.props.disabled:
             self._visible = True
             if self.props.onShow:
                 self.props.onShow()
-                
+
     def hide(self):
         self._visible = False
         if self.props.onHide:
             self.props.onHide()
-            
+
     def toggle(self):
         if self._visible:
             self.hide()

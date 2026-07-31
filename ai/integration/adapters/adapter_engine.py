@@ -1,11 +1,11 @@
 """
 Adapter Engine - Core adaptation logic
 """
-from typing import Dict, Any, Optional, List, Callable
+import hashlib
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
-from datetime import datetime
-import hashlib
+from typing import Any
 
 
 class AdapterType(Enum):
@@ -23,8 +23,8 @@ class AdapterConfig:
     adapter_type: AdapterType
     source_format: str = ""
     target_format: str = ""
-    rules: Dict[str, str] = field(default_factory=dict)
-    settings: Dict[str, Any] = field(default_factory=dict)
+    rules: dict[str, str] = field(default_factory=dict)
+    settings: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -37,9 +37,9 @@ class TranslationResult:
 
 class AdapterEngine:
     def __init__(self):
-        self.adapters: Dict[str, AdapterConfig] = {}
-        self.handlers: Dict[str, Callable] = {}
-        self.translation_log: List[TranslationResult] = []
+        self.adapters: dict[str, AdapterConfig] = {}
+        self.handlers: dict[str, Callable] = {}
+        self.translation_log: list[TranslationResult] = []
 
     def register_adapter(self, config: AdapterConfig) -> str:
         adapter_id = hashlib.sha256(f"{config.name}{config.adapter_type.value}".encode()).hexdigest()[:16]
@@ -67,13 +67,13 @@ class AdapterEngine:
         self.translation_log.append(result)
         return result
 
-    def get_adapter(self, adapter_id: str) -> Optional[AdapterConfig]:
+    def get_adapter(self, adapter_id: str) -> AdapterConfig | None:
         return self.adapters.get(adapter_id)
 
-    def list_adapters(self) -> List[AdapterConfig]:
+    def list_adapters(self) -> list[AdapterConfig]:
         return list(self.adapters.values())
 
-    def get_log(self, limit: int = 100) -> List[TranslationResult]:
+    def get_log(self, limit: int = 100) -> list[TranslationResult]:
         return self.translation_log[-limit:]
 
     def count(self) -> int:

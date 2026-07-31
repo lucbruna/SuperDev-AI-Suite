@@ -38,18 +38,18 @@ class CodeTester:
         working_dir: str | None,
     ) -> TestResult:
         start = time.time()
-        
+
         with tempfile.TemporaryDirectory() as tmpdir:
             tmpdir_path = Path(tmpdir)
-            
+
             src_dir = tmpdir_path / "src"
             src_dir.mkdir()
-            
+
             (src_dir / "main.py").write_text(code)
-            
+
             test_dir = tmpdir_path / "tests"
             test_dir.mkdir()
-            
+
             if test_files:
                 for name, content in test_files.items():
                     (test_dir / name).write_text(content)
@@ -85,13 +85,13 @@ class CodeTester:
 
             output = stdout.decode(errors="replace") if stdout else ""
             error_output = stderr.decode(errors="replace") if stderr else ""
-            
+
             result_file = test_dir / ".report.json"
             coverage = 0.0
             passed = 0
             failed = 0
             skipped = 0
-            
+
             if result_file.exists():
                 try:
                     report = json.loads(result_file.read_text())
@@ -99,14 +99,14 @@ class CodeTester:
                     passed = summary.get("passed", 0)
                     failed = summary.get("failed", 0)
                     skipped = summary.get("skipped", 0)
-                    
+
                     if "coverage" in report:
                         coverage = report["coverage"].get("total", {}).get("percent_covered", 0.0)
                 except Exception:
                     pass
 
             total = passed + failed + skipped
-            
+
             failures = []
             if failed > 0:
                 for line in output.split("\n"):
@@ -134,24 +134,24 @@ class CodeTester:
         working_dir: str | None,
     ) -> TestResult:
         start = time.time()
-        
+
         with tempfile.TemporaryDirectory() as tmpdir:
             tmpdir_path = Path(tmpdir)
-            
+
             (tmpdir_path / "package.json").write_text(json.dumps({
                 "name": "test-project",
                 "version": "1.0.0",
                 "scripts": {"test": "jest --json --outputFile=.report.json"},
                 "devDependencies": {"jest": "^29.0.0", "ts-jest": "^29.0.0"},
             }))
-            
+
             src_dir = tmpdir_path / "src"
             src_dir.mkdir()
             (src_dir / "index.js").write_text(code)
-            
+
             test_dir = tmpdir_path / "tests"
             test_dir.mkdir()
-            
+
             if test_files:
                 for name, content in test_files.items():
                     (test_dir / name).write_text(content)
@@ -190,12 +190,12 @@ class CodeTester:
 
             output = stdout.decode() if stdout else ""
             error_output = stderr.decode() if stderr else ""
-            
+
             report_file = tmpdir_path / ".report.json"
             passed = 0
             failed = 0
             skipped = 0
-            
+
             if report_file.exists():
                 try:
                     report = json.loads(report_file.read_text())
@@ -211,7 +211,7 @@ class CodeTester:
                     pass
 
             total = passed + failed + skipped
-            
+
             failures = []
             if failed > 0:
                 for line in output.split("\n"):

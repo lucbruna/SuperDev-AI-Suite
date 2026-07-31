@@ -1,11 +1,11 @@
 """Data Platform Context — Context management for data platform operations."""
-from typing import Dict, Any, Optional
 from datetime import datetime
+from typing import Any
 
 
 class DataPlatformContext:
     def __init__(self):
-        self._context: Dict[str, Any] = {}
+        self._context: dict[str, Any] = {}
         self._created_at = datetime.now()
 
     def set(self, key: str, value: Any) -> None:
@@ -35,7 +35,7 @@ class DataPlatformContext:
     def items(self):
         return self._context.items()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return dict(self._context)
 
     @property

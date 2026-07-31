@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .agent_engine import AgentEngine
 
@@ -21,18 +21,18 @@ class AgentManager:
     def stop_all(self) -> None:
         self._engine.stop()
 
-    def get_agent_ids(self) -> List[str]:
+    def get_agent_ids(self) -> list[str]:
         return self._engine.registry.agent_ids
 
-    def get_agent_info(self, agent_id: str) -> Optional[Dict[str, Any]]:
+    def get_agent_info(self, agent_id: str) -> dict[str, Any] | None:
         agent = self._engine.registry.get_agent(agent_id)
         return agent.to_dict() if agent else None
 
-    def execute_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
+    def execute_task(self, task: dict[str, Any]) -> dict[str, Any]:
         agent_id = self._engine.route_task(task)
         if agent_id is None:
             return {"status": "error", "message": "No agent found for task"}
         return self._engine.dispatch(agent_id, task)
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         return self._engine.snapshot()

@@ -1,8 +1,8 @@
 """Knowledge Security — Security controls for the knowledge platform."""
-from typing import Dict, Any, List, Optional
-from enum import Enum
 from dataclasses import dataclass, field
 from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class AccessPermission(Enum):
@@ -17,15 +17,15 @@ class AccessPolicy:
     policy_id: str = ""
     user_role: str = ""
     resource_type: str = ""
-    permissions: List[AccessPermission] = field(default_factory=list)
-    conditions: Dict[str, Any] = field(default_factory=dict)
+    permissions: list[AccessPermission] = field(default_factory=list)
+    conditions: dict[str, Any] = field(default_factory=dict)
 
 
 class KnowledgeSecurity:
     def __init__(self):
-        self._policies: Dict[str, AccessPolicy] = {}
-        self._access_log: List[Dict[str, Any]] = []
-        self._encryption_keys: Dict[str, str] = {}
+        self._policies: dict[str, AccessPolicy] = {}
+        self._access_log: list[dict[str, Any]] = []
+        self._encryption_keys: dict[str, str] = {}
 
     def add_policy(self, policy: AccessPolicy) -> None:
         self._policies[policy.policy_id] = policy
@@ -54,13 +54,13 @@ class KnowledgeSecurity:
             return "decrypted_content"
         return encrypted
 
-    def get_access_log(self, user_id: Optional[str] = None) -> List[Dict[str, Any]]:
+    def get_access_log(self, user_id: str | None = None) -> list[dict[str, Any]]:
         log = list(self._access_log)
         if user_id:
             log = [e for e in log if e["user_id"] == user_id]
         return log
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         return {
             "total_policies": len(self._policies),
             "total_access_logs": len(self._access_log),

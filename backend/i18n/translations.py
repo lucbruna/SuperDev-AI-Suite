@@ -230,10 +230,7 @@ class I18nService:
             result = translations.translations[key]
         else:
             fallback = self._translations.get(self._fallback_locale)
-            if fallback and key in fallback.translations:
-                result = fallback.translations[key]
-            else:
-                result = key
+            result = fallback.translations[key] if fallback and key in fallback.translations else key
 
         for k, v in kwargs.items():
             result = result.replace(f"{{{{{k}}}}}", str(v))

@@ -1,7 +1,6 @@
 """Purchases models."""
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
 from enum import Enum
 
 
@@ -27,12 +26,12 @@ class PurchaseOrderItem:
 class PurchaseOrder:
     po_id: str
     supplier_id: str = ""
-    items: List[PurchaseOrderItem] = field(default_factory=list)
+    items: list[PurchaseOrderItem] = field(default_factory=list)
     total: float = 0.0
     status: PurchaseOrderStatus = PurchaseOrderStatus.DRAFT
     requested_by: str = ""
     approved_by: str = ""
-    expected_date: Optional[datetime] = None
+    expected_date: datetime | None = None
     created_at: datetime = field(default_factory=datetime.now)
     notes: str = ""
 
@@ -41,7 +40,7 @@ class PurchaseOrder:
 class PriceComparison:
     comparison_id: str = ""
     product_id: str = ""
-    prices: Dict[str, float] = field(default_factory=dict)
+    prices: dict[str, float] = field(default_factory=dict)
     best_supplier: str = ""
     best_price: float = 0.0
     savings: float = 0.0

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from .graph_node import GraphNode
 from .graph_edge import GraphEdge
+from .graph_node import GraphNode
 
 
 class GraphValidator:

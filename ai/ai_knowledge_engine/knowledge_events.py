@@ -1,8 +1,8 @@
 """Knowledge Engine Events — Event definitions for knowledge operations."""
 from dataclasses import dataclass, field
-from enum import Enum
 from datetime import datetime
-from typing import Dict, Any
+from enum import Enum
+from typing import Any
 
 
 class KnowledgeEventType(Enum):
@@ -26,5 +26,5 @@ class KnowledgeEvent:
     event_type: KnowledgeEventType = KnowledgeEventType.KNOWLEDGE_STORED
     source: str = ""
     target: str = ""
-    details: Dict[str, Any] = field(default_factory=dict)
+    details: dict[str, Any] = field(default_factory=dict)
     timestamp: datetime = field(default_factory=datetime.now)

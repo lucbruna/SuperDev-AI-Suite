@@ -1,9 +1,9 @@
 """Sync Queue - Data synchronization queue for offline-to-online."""
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class SyncItemStatus(Enum):
@@ -20,25 +20,25 @@ class SyncItem:
     table: str
     record_id: str
     operation: str = "upsert"
-    data: Dict[str, Any] = field(default_factory=dict)
+    data: dict[str, Any] = field(default_factory=dict)
     status: SyncItemStatus = SyncItemStatus.PENDING
     created_at: datetime = field(default_factory=datetime.now)
-    synced_at: Optional[datetime] = None
+    synced_at: datetime | None = None
     attempts: int = 0
     error: str = ""
 
 
 class SyncQueue:
     def __init__(self):
-        self.items: List[SyncItem] = []
+        self.items: list[SyncItem] = []
 
-    def add(self, table: str, record_id: str, operation: str = "upsert", data: Dict[str, Any] = None) -> SyncItem:
+    def add(self, table: str, record_id: str, operation: str = "upsert", data: dict[str, Any] = None) -> SyncItem:
         item_id = hashlib.sha256(f"{table}{record_id}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
         item = SyncItem(item_id=item_id, table=table, record_id=record_id, operation=operation, data=data or {})
         self.items.append(item)
         return item
 
-    def get_pending(self) -> List[SyncItem]:
+    def get_pending(self) -> list[SyncItem]:
         return [i for i in self.items if i.status == SyncItemStatus.PENDING]
 
     def mark_syncing(self, item_id: str) -> bool:
@@ -64,7 +64,7 @@ class SyncQueue:
                 return True
         return False
 
-    def get_by_table(self, table: str) -> List[SyncItem]:
+    def get_by_table(self, table: str) -> list[SyncItem]:
         return [i for i in self.items if i.table == table]
 
     def count(self) -> int:

@@ -1,11 +1,10 @@
 """
 Token Manager for Integration Auth
 """
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta
 import hashlib
 import secrets
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
 
 
 @dataclass
@@ -14,19 +13,19 @@ class IntegrationToken:
     integration_id: str
     token_type: str = "access"
     token_hash: str = ""
-    scopes: List[str] = field(default_factory=list)
-    expires_at: Optional[datetime] = None
+    scopes: list[str] = field(default_factory=list)
+    expires_at: datetime | None = None
     is_revoked: bool = False
     created_at: datetime = field(default_factory=datetime.now)
 
 
 class IntegrationTokenManager:
     def __init__(self):
-        self.tokens: Dict[str, IntegrationToken] = {}
+        self.tokens: dict[str, IntegrationToken] = {}
         self.access_ttl: int = 3600
         self.refresh_ttl: int = 86400
 
-    def generate_token(self, integration_id: str, token_type: str = "access", scopes: List[str] = None) -> tuple:
+    def generate_token(self, integration_id: str, token_type: str = "access", scopes: list[str] = None) -> tuple:
         raw_token = secrets.token_urlsafe(32)
         token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
         token_id = hashlib.sha256(f"{integration_id}{token_hash}".encode()).hexdigest()[:16]
@@ -39,9 +38,7 @@ class IntegrationTokenManager:
         token = self.tokens.get(token_id)
         if not token or token.is_revoked:
             return False
-        if token.expires_at and datetime.now() > token.expires_at:
-            return False
-        return True
+        return not (token.expires_at and datetime.now() > token.expires_at)
 
     def revoke_token(self, token_id: str) -> bool:
         token = self.tokens.get(token_id)
@@ -58,7 +55,7 @@ class IntegrationTokenManager:
                 count += 1
         return count
 
-    def get_tokens(self, integration_id: str) -> List[IntegrationToken]:
+    def get_tokens(self, integration_id: str) -> list[IntegrationToken]:
         return [t for t in self.tokens.values() if t.integration_id == integration_id]
 
     def count(self) -> int:

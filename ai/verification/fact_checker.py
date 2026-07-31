@@ -15,9 +15,8 @@ class FactChecker:
     async def check(self, response: str, context: dict[str, Any]) -> dict[str, Any]:
         errors: list[dict[str, str]] = []
         for claim, truth in self._knowledge_base.items():
-            if claim in response.lower():
-                if truth not in response.lower():
-                    errors.append({"claim": claim, "expected": truth})
+            if claim in response.lower() and truth not in response.lower():
+                errors.append({"claim": claim, "expected": truth})
         return {
             "verified": len(errors) == 0,
             "errors": errors,

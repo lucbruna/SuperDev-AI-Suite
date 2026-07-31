@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 
 class Replication:
@@ -8,20 +8,20 @@ class Replication:
 
     def __init__(self):
         self._replication_count: int = 0
-        self._replicas: Dict[str, Dict[str, Any]] = {}
+        self._replicas: dict[str, dict[str, Any]] = {}
 
     @property
     def replication_count(self) -> int:
         return self._replication_count
 
-    def replicate(self, data: Dict[str, Any], target: str) -> None:
+    def replicate(self, data: dict[str, Any], target: str) -> None:
         self._replicas[target] = dict(data)
         self._replication_count += 1
 
-    def get_replica(self, target: str) -> Dict[str, Any] | None:
+    def get_replica(self, target: str) -> dict[str, Any] | None:
         return self._replicas.get(target)
 
-    def merge(self, local: Dict[str, Any], remote: Dict[str, Any]) -> Dict[str, Any]:
+    def merge(self, local: dict[str, Any], remote: dict[str, Any]) -> dict[str, Any]:
         merged = dict(local)
         for k, v in remote.items():
             if k not in merged:
@@ -31,7 +31,7 @@ class Replication:
         self._replication_count += 1
         return merged
 
-    def list_targets(self) -> List[str]:
+    def list_targets(self) -> list[str]:
         return list(self._replicas.keys())
 
     def remove_replica(self, target: str) -> bool:

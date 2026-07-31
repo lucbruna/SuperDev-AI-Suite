@@ -1,9 +1,9 @@
 """Data models for test management."""
-from dataclasses import dataclass, field
-from enum import Enum
-from typing import List, Optional, Dict, Any
-from datetime import datetime
 import uuid
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class TestStatus(Enum):
@@ -34,12 +34,12 @@ class TestCase:
     category: TestCategory = TestCategory.UNIT
     module: str = ""
     method_name: str = ""
-    assertions: List[str] = field(default_factory=list)
-    tags: List[str] = field(default_factory=list)
+    assertions: list[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
     timeout: float = 30.0
     enabled: bool = True
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "test_id": self.test_id,
             "name": self.name,
@@ -54,14 +54,14 @@ class TestSuite:
     suite_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     name: str = ""
     description: str = ""
-    tests: List[TestCase] = field(default_factory=list)
+    tests: list[TestCase] = field(default_factory=list)
     setup_code: str = ""
     teardown_code: str = ""
 
     def add_test(self, test: TestCase) -> None:
         self.tests.append(test)
 
-    def get_by_category(self, category: TestCategory) -> List[TestCase]:
+    def get_by_category(self, category: TestCategory) -> list[TestCase]:
         return [t for t in self.tests if t.category == category]
 
     def enabled_count(self) -> int:
@@ -94,7 +94,7 @@ class CoverageReport:
     covered_lines: int = 0
     total_functions: int = 0
     covered_functions: int = 0
-    files: Dict[str, Dict[str, int]] = field(default_factory=dict)
+    files: dict[str, dict[str, int]] = field(default_factory=dict)
 
     @property
     def line_coverage(self) -> float:
@@ -115,4 +115,4 @@ class TestConfiguration:
     max_workers: int = 4
     timeout: float = 60.0
     verbose: bool = True
-    categories: List[TestCategory] = field(default_factory=lambda: list(TestCategory))
+    categories: list[TestCategory] = field(default_factory=lambda: list(TestCategory))

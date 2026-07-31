@@ -1,7 +1,7 @@
 """Quality scoring for agent outputs."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class QualityScorer:
@@ -10,17 +10,17 @@ class QualityScorer:
     def __init__(self) -> None:
         self._default_criteria = ["completeness", "clarity", "correctness", "efficiency"]
 
-    def score(self, metrics: Dict[str, Any]) -> Dict[str, Any]:
-        criteria_scores: Dict[str, float] = {}
+    def score(self, metrics: dict[str, Any]) -> dict[str, Any]:
+        criteria_scores: dict[str, float] = {}
         for c in self._default_criteria:
             criteria_scores[c] = min(max(float(metrics.get(c, 0.5)), 0.0), 1.0)
         avg = sum(criteria_scores.values()) / max(len(criteria_scores), 1)
         return {"score": round(avg, 2), "criteria": criteria_scores}
 
-    def score_output(self, output: Dict[str, Any],
-                     criteria: Optional[List[str]] = None) -> Dict[str, Any]:
+    def score_output(self, output: dict[str, Any],
+                     criteria: list[str] | None = None) -> dict[str, Any]:
         check_criteria = criteria or self._default_criteria
-        scores: Dict[str, float] = {}
+        scores: dict[str, float] = {}
         for c in check_criteria:
             if c in output:
                 scores[c] = min(max(float(output[c]), 0.0), 1.0)

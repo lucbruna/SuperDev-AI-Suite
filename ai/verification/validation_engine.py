@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import Any
 
 from .logical_validator import LogicalValidator
-from .semantic_validator import SemanticValidator
 from .output_validator import OutputValidator
+from .semantic_validator import SemanticValidator
 
 
 class ValidationEngine:

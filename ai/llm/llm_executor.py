@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import time
 import uuid
-from typing import Any, AsyncIterator
+from collections.abc import AsyncIterator
+from typing import Any
 
-from .llm_interfaces import ILLMExecutor, ILLMProvider
+from .llm_interfaces import ILLMExecutor
 from .llm_logger import LLMLogger
 from .llm_metrics import LLMMetricsCollector
 from .llm_registry import LLMRegistry

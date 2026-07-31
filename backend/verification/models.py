@@ -87,13 +87,13 @@ class VerificationResult:
     max_iterations: int = 3
     iterations: int = 0
     final_code: str | None = None
-    
+
     generation: GenerationResult | None = None
     execution: ExecutionResult | None = None
     testing: TestResult | None = None
     review: ReviewResult | None = None
     correction: CorrectionResult | None = None
-    
+
     created_at: datetime = field(default_factory=datetime.utcnow)
     completed_at: datetime | None = None
 

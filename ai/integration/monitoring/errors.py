@@ -1,10 +1,9 @@
 """
 Error Monitor - Error tracking
 """
-from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
-from enum import Enum
 from datetime import datetime
+from enum import Enum
 
 
 class ErrorSeverity(Enum):
@@ -28,8 +27,8 @@ class ErrorRecord:
 
 class ErrorMonitor:
     def __init__(self):
-        self.errors: Dict[str, List[ErrorRecord]] = {}
-        self.error_counts: Dict[str, int] = {}
+        self.errors: dict[str, list[ErrorRecord]] = {}
+        self.error_counts: dict[str, int] = {}
 
     def record_error(self, integration_id: str, error_type: str, message: str, severity: ErrorSeverity = ErrorSeverity.MEDIUM, stack_trace: str = "") -> ErrorRecord:
         error_id = f"err_{integration_id}_{len(self.errors.get(integration_id, []))}"
@@ -46,7 +45,7 @@ class ErrorMonitor:
                     return True
         return False
 
-    def get_errors(self, integration_id: str, severity: ErrorSeverity = None) -> List[ErrorRecord]:
+    def get_errors(self, integration_id: str, severity: ErrorSeverity = None) -> list[ErrorRecord]:
         errors = self.errors.get(integration_id, [])
         if severity:
             errors = [e for e in errors if e.severity == severity]
@@ -55,7 +54,7 @@ class ErrorMonitor:
     def get_error_count(self, integration_id: str) -> int:
         return self.error_counts.get(integration_id, 0)
 
-    def get_unresolved(self, integration_id: str = None) -> List[ErrorRecord]:
+    def get_unresolved(self, integration_id: str = None) -> list[ErrorRecord]:
         if integration_id:
             return [e for e in self.errors.get(integration_id, []) if not e.resolved]
         all_errors = []

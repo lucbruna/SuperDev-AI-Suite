@@ -1,9 +1,9 @@
 """Queue Manager - Offline action queue management."""
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class QueuePriority(Enum):
@@ -24,21 +24,21 @@ class QueueItemStatus(Enum):
 class QueueItem:
     item_id: str
     action: str
-    payload: Dict[str, Any] = field(default_factory=dict)
+    payload: dict[str, Any] = field(default_factory=dict)
     priority: QueuePriority = QueuePriority.NORMAL
     status: QueueItemStatus = QueueItemStatus.PENDING
     attempts: int = 0
     max_retries: int = 3
     created_at: datetime = field(default_factory=datetime.now)
-    processed_at: Optional[datetime] = None
+    processed_at: datetime | None = None
 
 
 class OfflineQueueManager:
     def __init__(self):
-        self.items: Dict[str, QueueItem] = {}
-        self.order: List[str] = []
+        self.items: dict[str, QueueItem] = {}
+        self.order: list[str] = []
 
-    def enqueue(self, action: str, payload: Dict[str, Any] = None, priority: QueuePriority = QueuePriority.NORMAL) -> QueueItem:
+    def enqueue(self, action: str, payload: dict[str, Any] = None, priority: QueuePriority = QueuePriority.NORMAL) -> QueueItem:
         item_id = hashlib.sha256(f"{action}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
         item = QueueItem(item_id=item_id, action=action, payload=payload or {}, priority=priority)
         self.items[item_id] = item
@@ -46,7 +46,7 @@ class OfflineQueueManager:
         self.order.sort(key=lambda x: self.items[x].priority.value, reverse=True)
         return item
 
-    def dequeue(self) -> Optional[QueueItem]:
+    def dequeue(self) -> QueueItem | None:
         for item_id in self.order:
             item = self.items.get(item_id)
             if item and item.status == QueueItemStatus.PENDING:
@@ -73,7 +73,7 @@ class OfflineQueueManager:
             return True
         return False
 
-    def get_pending(self) -> List[QueueItem]:
+    def get_pending(self) -> list[QueueItem]:
         return [self.items[iid] for iid in self.order if self.items.get(iid) and self.items[iid].status == QueueItemStatus.PENDING]
 
     def count(self) -> int:

@@ -242,6 +242,7 @@ class AnthropicProvider(BaseLLMProvider):
             return image_url.split(",")[-1]
         if image_url.startswith("http"):
             import base64
+
             import httpx
             resp = httpx.get(image_url)
             resp.raise_for_status()

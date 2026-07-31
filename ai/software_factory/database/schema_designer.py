@@ -1,13 +1,14 @@
 """Schema designer for creating database schemas."""
-from typing import List, Dict, Any, Optional
-from .models import DatabaseSchema, Table, Column, Index, ForeignKey, ColumnType
+from typing import Any
+
+from .models import Column, ColumnType, DatabaseSchema, ForeignKey, Index, Table
 
 
 class SchemaDesigner:
     """Designs and creates database schemas."""
 
     def __init__(self):
-        self._schemas: Dict[str, DatabaseSchema] = {}
+        self._schemas: dict[str, DatabaseSchema] = {}
 
     def create_schema(self, name: str, description: str = "") -> DatabaseSchema:
         schema = DatabaseSchema(name=name, description=description)
@@ -15,7 +16,7 @@ class SchemaDesigner:
         return schema
 
     def create_table(self, schema: DatabaseSchema, name: str,
-                     columns: List[Dict[str, Any]]) -> Table:
+                     columns: list[dict[str, Any]]) -> Table:
         table = Table(name=name)
         for col_def in columns:
             col_type_str = col_def.get("type", "varchar")
@@ -35,13 +36,13 @@ class SchemaDesigner:
         schema.add_table(table)
         return table
 
-    def add_index(self, table: Table, name: str, columns: List[str], unique: bool = False) -> Index:
+    def add_index(self, table: Table, name: str, columns: list[str], unique: bool = False) -> Index:
         idx = Index(name=name, columns=columns, unique=unique, table_name=table.name)
         table.indexes.append(idx)
         return idx
 
-    def add_foreign_key(self, table: Table, name: str, columns: List[str],
-                        ref_table: str, ref_columns: List[str]) -> ForeignKey:
+    def add_foreign_key(self, table: Table, name: str, columns: list[str],
+                        ref_table: str, ref_columns: list[str]) -> ForeignKey:
         fk = ForeignKey(
             name=name, columns=columns,
             reference_table=ref_table, reference_columns=ref_columns,
@@ -49,10 +50,10 @@ class SchemaDesigner:
         table.foreign_keys.append(fk)
         return fk
 
-    def get_schema(self, schema_id: str) -> Optional[DatabaseSchema]:
+    def get_schema(self, schema_id: str) -> DatabaseSchema | None:
         return self._schemas.get(schema_id)
 
-    def list_schemas(self) -> List[DatabaseSchema]:
+    def list_schemas(self) -> list[DatabaseSchema]:
         return list(self._schemas.values())
 
     def generate_ddl(self, schema: DatabaseSchema) -> str:

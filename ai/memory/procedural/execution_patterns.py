@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class ExecutionPattern:
     """A reusable execution pattern."""
 
-    def __init__(self, pattern_id: str, name: str, pattern_type: str, steps: List[str], description: str = ""):
+    def __init__(self, pattern_id: str, name: str, pattern_type: str, steps: list[str], description: str = ""):
         self._pattern_id = pattern_id
         self._name = name
         self._type = pattern_type
@@ -26,14 +26,14 @@ class ExecutionPattern:
         return self._type
 
     @property
-    def steps(self) -> List[str]:
+    def steps(self) -> list[str]:
         return list(self._steps)
 
     @property
     def description(self) -> str:
         return self._description
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "pattern_id": self._pattern_id,
             "name": self._name,
@@ -47,7 +47,7 @@ class ExecutionPatterns:
     """Registry of execution patterns."""
 
     def __init__(self):
-        self._patterns: Dict[str, ExecutionPattern] = {}
+        self._patterns: dict[str, ExecutionPattern] = {}
 
     @property
     def count(self) -> int:
@@ -59,7 +59,7 @@ class ExecutionPatterns:
     def get(self, pattern_id: str) -> ExecutionPattern | None:
         return self._patterns.get(pattern_id)
 
-    def get_by_type(self, pattern_type: str) -> List[ExecutionPattern]:
+    def get_by_type(self, pattern_type: str) -> list[ExecutionPattern]:
         return [p for p in self._patterns.values() if p.pattern_type == pattern_type]
 
     def remove(self, pattern_id: str) -> bool:

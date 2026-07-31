@@ -1,10 +1,10 @@
 """
 AI Chat Interface
 """
-from typing import Optional, List, Dict, Any, Callable
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
-import json
+from typing import Any
 
 
 class ChatRole(Enum):
@@ -26,9 +26,9 @@ class ChatMessage:
     content: str
     id: str = ""
     timestamp: float = 0
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     is_streaming: bool = False
-    error: Optional[str] = None
+    error: str | None = None
 
 
 @dataclass
@@ -43,40 +43,40 @@ class ChatConfig:
 
 
 class AIChat:
-    def __init__(self, config: Optional[ChatConfig] = None):
+    def __init__(self, config: ChatConfig | None = None):
         self.config = config or ChatConfig()
-        self.messages: List[ChatMessage] = []
+        self.messages: list[ChatMessage] = []
         self.status = ChatStatus.IDLE
-        self.listeners: List[Callable] = []
-        
+        self.listeners: list[Callable] = []
+
     def send(self, content: str) -> ChatMessage:
         msg = ChatMessage(role=ChatRole.USER, content=content)
         self.messages.append(msg)
         self.status = ChatStatus.THINKING
         self._emit("message_sent", {"message": msg})
         return msg
-        
+
     def receive(self, content: str) -> ChatMessage:
         msg = ChatMessage(role=ChatRole.ASSISTANT, content=content)
         self.messages.append(msg)
         self.status = ChatStatus.IDLE
         self._emit("message_received", {"message": msg})
         return msg
-        
+
     def clear(self) -> None:
         self.messages.clear()
         self.status = ChatStatus.IDLE
         self._emit("conversation_cleared", {})
-        
+
     def on(self, event: str, callback: Callable) -> None:
         self.listeners.append({"event": event, "callback": callback})
-        
-    def _emit(self, event: str, data: Dict[str, Any]) -> None:
+
+    def _emit(self, event: str, data: dict[str, Any]) -> None:
         for l in self.listeners:
             if l["event"] == event:
                 l["callback"](data)
-                
-    def render(self) -> Dict[str, Any]:
+
+    def render(self) -> dict[str, Any]:
         return {
             "messages": [{"role": m.role.value, "content": m.content} for m in self.messages],
             "status": self.status.value,

@@ -2,14 +2,14 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 class SecurityContext:
     """Holds security state for the current request/operation."""
 
     def __init__(self) -> None:
-        self._context: Dict[str, Any] = {
+        self._context: dict[str, Any] = {
             "user_id": "",
             "session_id": "",
             "ip_address": "",
@@ -48,7 +48,7 @@ class SecurityContext:
     def get_user_id(self) -> str:
         return self._context.get("user_id", "")
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return dict(self._context)
 
     def clear(self) -> None:

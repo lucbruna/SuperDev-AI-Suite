@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 
 class KeywordSearch:
@@ -13,9 +13,9 @@ class KeywordSearch:
     def search_count(self) -> int:
         return self._search_count
 
-    def search(self, query: str, entries: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def search(self, query: str, entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
         keywords = query.lower().split()
-        results: List[tuple] = []
+        results: list[tuple] = []
         for entry in entries:
             content = str(entry.get("content", "")).lower()
             score = sum(1 for kw in keywords if kw in content)
@@ -25,9 +25,9 @@ class KeywordSearch:
         self._search_count += 1
         return [entry for _, entry in results]
 
-    def search_exact(self, query: str, entries: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def search_exact(self, query: str, entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
         q = query.lower()
-        results: List[Dict[str, Any]] = []
+        results: list[dict[str, Any]] = []
         for entry in entries:
             content = str(entry.get("content", "")).lower()
             if q in content:
@@ -35,9 +35,9 @@ class KeywordSearch:
         self._search_count += 1
         return results
 
-    def search_tags(self, tags: List[str], entries: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def search_tags(self, tags: list[str], entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
         tag_set = set(t.lower() for t in tags)
-        results: List[Dict[str, Any]] = []
+        results: list[dict[str, Any]] = []
         for entry in entries:
             entry_tags = set(str(t).lower() for t in entry.get("tags", []))
             if tag_set & entry_tags:

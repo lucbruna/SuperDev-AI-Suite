@@ -1,7 +1,6 @@
 """Support models."""
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
 from enum import Enum
 
 
@@ -59,7 +58,7 @@ class KnowledgeArticle:
     title: str = ""
     content: str = ""
     category: str = ""
-    tags: List[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
     helpful_count: int = 0
     created_at: datetime = field(default_factory=datetime.now)
 

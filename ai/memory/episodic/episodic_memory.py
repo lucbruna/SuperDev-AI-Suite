@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .episodes import Episodes
 from .event_store import EventStore
@@ -20,7 +20,7 @@ class EpisodicMemory:
         self._event_store = EventStore()
         self._timeline = Timeline()
         self._episodes = Episodes()
-        self._experiences: List[Experience] = []
+        self._experiences: list[Experience] = []
         self._execution = ExecutionHistory()
         self._workflows = WorkflowHistory()
         self._plans = PlannerHistory()
@@ -59,7 +59,7 @@ class EpisodicMemory:
     def recovery(self) -> RecoveryHistory:
         return self._recovery
 
-    def record_event(self, event_type: str, data: Dict[str, Any]) -> None:
+    def record_event(self, event_type: str, data: dict[str, Any]) -> None:
         self._event_store.store(event_type, data)
         self._timeline.add(event_type, data)
 
@@ -67,14 +67,14 @@ class EpisodicMemory:
         self._experiences.append(experience)
         self._timeline.add("experience", {"id": experience.experience_id, "summary": experience.summary})
 
-    def get_recent_experiences(self, count: int = 10) -> List[Experience]:
+    def get_recent_experiences(self, count: int = 10) -> list[Experience]:
         return list(self._experiences[-count:])
 
-    def search_experiences(self, query: str) -> List[Experience]:
+    def search_experiences(self, query: str) -> list[Experience]:
         q = query.lower()
         return [e for e in self._experiences if q in e.summary.lower()]
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         return {
             "events": self._event_store.count,
             "timeline_entries": self._timeline.count,

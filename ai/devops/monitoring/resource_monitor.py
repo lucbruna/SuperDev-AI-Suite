@@ -1,11 +1,13 @@
 """Resource monitor."""
 from __future__ import annotations
-from typing import Any, Dict, List
+
+from typing import Any
+
 
 class ResourceMonitor:
     def __init__(self) -> None:
-        self._resources: Dict[str, Dict[str, Any]] = {}
-    def register(self, name: str, resource_type: str) -> Dict[str, Any]:
+        self._resources: dict[str, dict[str, Any]] = {}
+    def register(self, name: str, resource_type: str) -> dict[str, Any]:
         resource = {"name": name, "type": resource_type, "cpu": 0, "memory": 0, "disk": 0, "status": "healthy"}
         self._resources[name] = resource
         return resource
@@ -22,11 +24,11 @@ class ResourceMonitor:
         else:
             self._resources[name]["status"] = "healthy"
         return True
-    def get_status(self, name: str) -> Dict[str, Any]:
+    def get_status(self, name: str) -> dict[str, Any]:
         return self._resources.get(name, {"error": "not_found"})
-    def list_all(self) -> List[Dict[str, Any]]:
+    def list_all(self) -> list[dict[str, Any]]:
         return list(self._resources.values())
-    def list_unhealthy(self) -> List[Dict[str, Any]]:
+    def list_unhealthy(self) -> list[dict[str, Any]]:
         return [r for r in self._resources.values() if r["status"] != "healthy"]
     def count(self) -> int:
         return len(self._resources)

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 
 class Evaluation:
@@ -9,7 +9,7 @@ class Evaluation:
     def __init__(self):
         self._eval_count: int = 0
         self._last_accuracy: float = 0.0
-        self._history: List[Dict[str, Any]] = []
+        self._history: list[dict[str, Any]] = []
 
     @property
     def eval_count(self) -> int:
@@ -20,23 +20,23 @@ class Evaluation:
         return self._last_accuracy
 
     @property
-    def history(self) -> List[Dict[str, Any]]:
+    def history(self) -> list[dict[str, Any]]:
         return list(self._history)
 
-    def evaluate(self, predictions: List[Any], targets: List[Any]) -> float:
+    def evaluate(self, predictions: list[Any], targets: list[Any]) -> float:
         if not predictions or not targets:
             return 0.0
-        correct = sum(1 for p, t in zip(predictions, targets) if p == t)
+        correct = sum(1 for p, t in zip(predictions, targets, strict=False) if p == t)
         accuracy = correct / max(len(targets), 1)
         self._last_accuracy = accuracy
         self._eval_count += 1
         self._history.append({"accuracy": accuracy, "samples": len(targets)})
         return accuracy
 
-    def precision_recall(self, predictions: List[Any], targets: List[Any], positive: Any = True) -> Dict[str, float]:
-        tp = sum(1 for p, t in zip(predictions, targets) if p == positive and t == positive)
-        fp = sum(1 for p, t in zip(predictions, targets) if p == positive and t != positive)
-        fn = sum(1 for p, t in zip(predictions, targets) if p != positive and t == positive)
+    def precision_recall(self, predictions: list[Any], targets: list[Any], positive: Any = True) -> dict[str, float]:
+        tp = sum(1 for p, t in zip(predictions, targets, strict=False) if p == positive and t == positive)
+        fp = sum(1 for p, t in zip(predictions, targets, strict=False) if p == positive and t != positive)
+        fn = sum(1 for p, t in zip(predictions, targets, strict=False) if p != positive and t == positive)
         precision = tp / max(tp + fp, 1)
         recall = tp / max(tp + fn, 1)
         f1 = 2 * precision * recall / max(precision + recall, 1e-9)

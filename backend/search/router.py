@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from backend.dependencies import get_current_active_user
-from backend.search.full_text_search import SearchableType, SearchDocument, full_text_search
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
+
+from backend.dependencies import get_current_active_user
+from backend.search.full_text_search import SearchableType, SearchDocument, full_text_search
 
 router = APIRouter(dependencies=[Depends(get_current_active_user)])
 

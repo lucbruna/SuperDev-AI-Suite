@@ -1,16 +1,17 @@
 """Usage analytics."""
 from __future__ import annotations
-from typing import Any, Dict, List
+
 import statistics
+
 
 class UsageAnalytics:
     def __init__(self) -> None:
-        self._data: Dict[str, Dict[str, List[float]]] = {}
+        self._data: dict[str, dict[str, list[float]]] = {}
     def record(self, org_id: str, metric: str, value: float) -> None:
         self._data.setdefault(org_id, {}).setdefault(metric, []).append(value)
         if len(self._data[org_id][metric]) > 1000:
             self._data[org_id][metric] = self._data[org_id][metric][-1000:]
-    def analyze(self, org_id: str, metric: str) -> Dict[str, float]:
+    def analyze(self, org_id: str, metric: str) -> dict[str, float]:
         values = self._data.get(org_id, {}).get(metric, [])
         if not values:
             return {"min": 0, "max": 0, "avg": 0, "total": 0, "count": 0}
@@ -25,9 +26,9 @@ class UsageAnalytics:
         if all(recent[i] >= recent[i+1] for i in range(len(recent)-1)):
             return "decreasing"
         return "stable"
-    def list_metrics(self, org_id: str) -> List[str]:
+    def list_metrics(self, org_id: str) -> list[str]:
         return list(self._data.get(org_id, {}).keys())
-    def get_values(self, org_id: str, metric: str) -> List[float]:
+    def get_values(self, org_id: str, metric: str) -> list[float]:
         return list(self._data.get(org_id, {}).get(metric, []))
-    def compare_orgs(self, metric: str) -> Dict[str, float]:
+    def compare_orgs(self, metric: str) -> dict[str, float]:
         return {org: sum(data.get(metric, [0])) for org, data in self._data.items()}

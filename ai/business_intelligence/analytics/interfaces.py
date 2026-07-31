@@ -1,7 +1,7 @@
 """Analytics engine interfaces."""
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
-from datetime import datetime
+from typing import Any
+
 from .models import AnalysisRequest, AnalysisResult, DataPoint, Insight
 
 
@@ -11,31 +11,31 @@ class AnalyticsEngineInterface(ABC):
         pass
 
     @abstractmethod
-    async def ingest_data(self, data_points: List[DataPoint]) -> bool:
+    async def ingest_data(self, data_points: list[DataPoint]) -> bool:
         pass
 
     @abstractmethod
-    async def get_insights(self, time_range: Optional[tuple] = None) -> List[Insight]:
+    async def get_insights(self, time_range: tuple | None = None) -> list[Insight]:
         pass
 
 
 class DataWarehouseInterface(ABC):
     @abstractmethod
-    async def query(self, sql: str, params: Optional[Dict] = None) -> List[Dict]:
+    async def query(self, sql: str, params: dict | None = None) -> list[dict]:
         pass
 
     @abstractmethod
-    async def store(self, table: str, records: List[Dict]) -> bool:
+    async def store(self, table: str, records: list[dict]) -> bool:
         pass
 
     @abstractmethod
-    async def create_table(self, table: str, schema: Dict[str, str]) -> bool:
+    async def create_table(self, table: str, schema: dict[str, str]) -> bool:
         pass
 
 
 class DashboardInterface(ABC):
     @abstractmethod
-    async def render(self, widgets: List[Dict]) -> Dict:
+    async def render(self, widgets: list[dict]) -> dict:
         pass
 
     @abstractmethod
@@ -45,9 +45,9 @@ class DashboardInterface(ABC):
 
 class ReportGeneratorInterface(ABC):
     @abstractmethod
-    async def generate(self, template: str, data: Dict) -> bytes:
+    async def generate(self, template: str, data: dict) -> bytes:
         pass
 
     @abstractmethod
-    async def list_templates(self) -> List[str]:
+    async def list_templates(self) -> list[str]:
         pass

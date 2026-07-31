@@ -1,6 +1,6 @@
 """Data Platform Metrics — Metrics tracking for data platform operations."""
-from typing import Dict, Any, List
 from datetime import datetime
+from typing import Any
 
 
 class DataPlatformMetrics:
@@ -13,7 +13,7 @@ class DataPlatformMetrics:
         self._quality_failures: int = 0
         self._queries_executed: int = 0
         self._bytes_stored: int = 0
-        self._events: List[Dict[str, Any]] = []
+        self._events: list[dict[str, Any]] = []
 
     def record_ingestion(self, count: int = 1) -> None:
         self._records_ingested += count
@@ -38,14 +38,14 @@ class DataPlatformMetrics:
     def record_bytes(self, count: int) -> None:
         self._bytes_stored += count
 
-    def add_event(self, event_type: str, details: Dict[str, Any] = None) -> None:
+    def add_event(self, event_type: str, details: dict[str, Any] = None) -> None:
         self._events.append({
             "type": event_type,
             "timestamp": datetime.now().isoformat(),
             "details": details or {},
         })
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         return {
             "records_ingested": self._records_ingested,
             "records_processed": self._records_processed,

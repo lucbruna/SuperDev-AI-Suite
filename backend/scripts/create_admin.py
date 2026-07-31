@@ -2,10 +2,11 @@
 import argparse
 import asyncio
 
-from backend.auth.passwords import hash_password
-from backend.database.session import get_db
 from backend.users.model import User
 from sqlalchemy import select
+
+from backend.auth.passwords import hash_password
+from backend.database.session import get_db
 
 
 async def create_admin(email: str, password: str, username: str):

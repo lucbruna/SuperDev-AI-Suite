@@ -1,17 +1,17 @@
 """Embedding subsystem engine — Text embedding and similarity computation."""
-import uuid
-import math
 import hashlib
-from datetime import datetime
-from typing import Dict, Any, List, Optional
+import math
+import uuid
 from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Any
 
 
 @dataclass
 class Embedding:
     embedding_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     text: str = ""
-    vector: List[float] = field(default_factory=list)
+    vector: list[float] = field(default_factory=list)
     model: str = "hash"
     dimensions: int = 0
     created_at: datetime = field(default_factory=datetime.now)
@@ -19,7 +19,7 @@ class Embedding:
 
 class EmbeddingSubEngine:
     def __init__(self, dimensions: int = 128, model: str = "hash"):
-        self._embeddings: Dict[str, Embedding] = {}
+        self._embeddings: dict[str, Embedding] = {}
         self._dimensions = dimensions
         self._model = model
 
@@ -29,10 +29,10 @@ class EmbeddingSubEngine:
         self._embeddings[emb.embedding_id] = emb
         return emb
 
-    def batch_embed(self, texts: List[str]) -> List[Embedding]:
+    def batch_embed(self, texts: list[str]) -> list[Embedding]:
         return [self.embed(text) for text in texts]
 
-    def get_embedding(self, embedding_id: str) -> Optional[Embedding]:
+    def get_embedding(self, embedding_id: str) -> Embedding | None:
         return self._embeddings.get(embedding_id)
 
     def similarity(self, text_a: str, text_b: str) -> float:
@@ -47,7 +47,7 @@ class EmbeddingSubEngine:
             return 0.0
         return self._cosine_similarity(emb_a.vector, emb_b.vector)
 
-    def find_similar(self, text: str, top_k: int = 5) -> List[Dict[str, Any]]:
+    def find_similar(self, text: str, top_k: int = 5) -> list[dict[str, Any]]:
         query_vec = self._compute_embedding(text)
         scored = []
         for emb in self._embeddings.values():
@@ -59,7 +59,7 @@ class EmbeddingSubEngine:
     def delete(self, embedding_id: str) -> bool:
         return self._embeddings.pop(embedding_id, None) is not None
 
-    def _compute_embedding(self, text: str) -> List[float]:
+    def _compute_embedding(self, text: str) -> list[float]:
         h = hashlib.sha256(text.encode()).hexdigest()
         vector = []
         for i in range(0, min(len(h), self._dimensions * 2), 2):
@@ -69,10 +69,10 @@ class EmbeddingSubEngine:
             vector.append(0.0)
         return vector[:self._dimensions]
 
-    def _cosine_similarity(self, a: List[float], b: List[float]) -> float:
+    def _cosine_similarity(self, a: list[float], b: list[float]) -> float:
         if len(a) != len(b) or not a:
             return 0.0
-        dot = sum(x * y for x, y in zip(a, b))
+        dot = sum(x * y for x, y in zip(a, b, strict=False))
         norm_a = math.sqrt(sum(x * x for x in a))
         norm_b = math.sqrt(sum(x * x for x in b))
         if norm_a == 0 or norm_b == 0:

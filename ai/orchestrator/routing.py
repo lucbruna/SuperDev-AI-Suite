@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import asyncio
 import random
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import Any
 
 from ..base.base_agent import BaseAgent
@@ -139,7 +139,7 @@ class RoutingEngine:
                 "routed_to": result.agent_id,
                 "confidence": result.confidence,
                 "fallback": result.fallback_used,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             })
             if len(self._route_history) > 1000:
                 self._route_history = self._route_history[-500:]

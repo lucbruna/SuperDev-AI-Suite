@@ -2,16 +2,16 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List
+from typing import Any
 
 
 class ReportGenerator:
     """Generates structured evaluation reports."""
 
     def __init__(self) -> None:
-        self._reports: List[Dict[str, Any]] = []
+        self._reports: list[dict[str, Any]] = []
 
-    def generate(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def generate(self, data: dict[str, Any]) -> dict[str, Any]:
         report = {
             "report_id": f"report_{len(self._reports) + 1}",
             "timestamp": time.time(),
@@ -22,7 +22,7 @@ class ReportGenerator:
         self._reports.append(report)
         return report
 
-    def _summarize(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _summarize(self, data: dict[str, Any]) -> dict[str, Any]:
         overall = data.get("overall", data.get("score", 0.5))
         return {
             "overall_score": overall,
@@ -30,8 +30,8 @@ class ReportGenerator:
             "key_findings": self._extract_findings(data),
         }
 
-    def _extract_findings(self, data: Dict[str, Any]) -> List[str]:
-        findings: List[str] = []
+    def _extract_findings(self, data: dict[str, Any]) -> list[str]:
+        findings: list[str] = []
         if "performance" in data:
             perf = data["performance"]
             if isinstance(perf, dict):
@@ -45,8 +45,8 @@ class ReportGenerator:
             findings.append("Report generated with available data")
         return findings
 
-    def _recommend(self, data: Dict[str, Any]) -> List[str]:
-        recs: List[str] = []
+    def _recommend(self, data: dict[str, Any]) -> list[str]:
+        recs: list[str] = []
         overall = float(data.get("overall", data.get("score", 0.5)))
         if overall < 0.5:
             recs.append("Consider additional training or configuration changes")
@@ -56,5 +56,5 @@ class ReportGenerator:
             recs.append("Agent performing well - maintain current configuration")
         return recs
 
-    def get_reports(self, limit: int = 20) -> List[Dict[str, Any]]:
+    def get_reports(self, limit: int = 20) -> list[dict[str, Any]]:
         return self._reports[-limit:]

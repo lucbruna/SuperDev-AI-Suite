@@ -1,8 +1,8 @@
 """BI Logger — Structured logging for BI operations."""
-from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
-from enum import Enum
 from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class BILogLevel(Enum):
@@ -19,15 +19,15 @@ class BILogEntry:
     message: str
     source: str = ""
     project_id: str = ""
-    data: Dict[str, Any] = field(default_factory=dict)
+    data: dict[str, Any] = field(default_factory=dict)
     timestamp: datetime = field(default_factory=datetime.now)
 
 
 class BILogger:
     def __init__(self):
-        self.entries: List[BILogEntry] = []
+        self.entries: list[BILogEntry] = []
 
-    def log(self, level: BILogLevel, message: str, source: str = "", project_id: str = "", data: Dict[str, Any] = None) -> BILogEntry:
+    def log(self, level: BILogLevel, message: str, source: str = "", project_id: str = "", data: dict[str, Any] = None) -> BILogEntry:
         entry = BILogEntry(level=level, message=message, source=source, project_id=project_id, data=data or {})
         self.entries.append(entry)
         return entry
@@ -47,7 +47,7 @@ class BILogger:
     def critical(self, message: str, **kwargs) -> BILogEntry:
         return self.log(BILogLevel.CRITICAL, message, **kwargs)
 
-    def get_entries(self, level: BILogLevel = None, source: str = "", limit: int = 100) -> List[BILogEntry]:
+    def get_entries(self, level: BILogLevel = None, source: str = "", limit: int = 100) -> list[BILogEntry]:
         entries = self.entries
         if level:
             entries = [e for e in entries if e.level == level]

@@ -718,10 +718,10 @@ class {class_name}:
     async def execute(self, params: dict) -> dict:
         """Main execution method"""
         action = params.get("action", "default")
-        
+
         if action == "default":
             return {{"status": "ok", "message": f"Executed {{self.name}}", "result": params}}
-        
+
         return {{"status": "error", "message": f"Unknown action: {{action}}"}}
 
     async def cleanup(self):
@@ -743,7 +743,7 @@ class {class_name}(BaseAgent):
     async def execute(self, task: str, context: dict = None) -> AgentResult:
         """Execute agent task"""
         context = context or {{}}
-        
+
         try:
             result = await self._process_task(task, context)
             return AgentResult(success=True, output=result)
@@ -793,10 +793,10 @@ class {class_name}:
 
     async def execute(self, params: dict) -> dict:
         action = params.get("action", "test")
-        
+
         if action == "test":
             return await self.test_connection()
-        
+
         return {{"status": "error", "message": f"Unknown action: {{action}}"}}
 
     async def test_connection(self) -> dict:
@@ -869,7 +869,7 @@ class {class_name}:
 
     async def execute(self, params: dict) -> dict:
         subcommand = params.get("subcommand", "help")
-        
+
         if subcommand == "help":
             return {{
                 "status": "ok",
@@ -877,13 +877,13 @@ class {class_name}:
                 "usage": f"superdev {{self.name}} <subcommand> [options]",
                 "subcommands": ["help", "run", "config"]
             }}
-        
+
         elif subcommand == "run":
             return {{"status": "ok", "message": f"Running {{self.name}}", "params": params}}
-        
+
         elif subcommand == "config":
             return {{"status": "ok", "config": self.config}}
-        
+
         return {{"status": "error", "message": f"Unknown subcommand: {{subcommand}}"}}
 '''
 

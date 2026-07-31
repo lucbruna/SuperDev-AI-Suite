@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Callable, Dict, List, Optional
+from collections.abc import Callable
+from typing import Any
 
 
 class ProfileSample:
@@ -30,7 +31,7 @@ class ProfileSample:
     def timestamp(self) -> float:
         return self._timestamp
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "operation": self._operation,
             "duration": self._duration,
@@ -46,9 +47,9 @@ class MemoryProfiler:
 
     def __init__(self, enabled: bool = True):
         self._enabled = enabled
-        self._samples: List[ProfileSample] = []
-        self._operation_totals: Dict[str, float] = {}
-        self._operation_counts: Dict[str, int] = {}
+        self._samples: list[ProfileSample] = []
+        self._operation_totals: dict[str, float] = {}
+        self._operation_counts: dict[str, int] = {}
 
     @property
     def enabled(self) -> bool:
@@ -85,7 +86,7 @@ class MemoryProfiler:
         import sys
         return sys.getsizeof(self._samples)
 
-    def get_operation_stats(self, operation: str) -> Dict[str, Any]:
+    def get_operation_stats(self, operation: str) -> dict[str, Any]:
         count = self._operation_counts.get(operation, 0)
         total = self._operation_totals.get(operation, 0.0)
         return {
@@ -95,7 +96,7 @@ class MemoryProfiler:
             "avg_time": total / count if count > 0 else 0.0,
         }
 
-    def summary(self) -> Dict[str, Any]:
+    def summary(self) -> dict[str, Any]:
         return {
             "enabled": self._enabled,
             "total_samples": len(self._samples),

@@ -3,10 +3,9 @@ from __future__ import annotations
 
 import copy
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-
-BUILTIN_TEMPLATES: Dict[str, Dict[str, Any]] = {
+BUILTIN_TEMPLATES: dict[str, dict[str, Any]] = {
     "supervisor": {
         "name": "Supervisor Agent",
         "agent_type": "supervisor",
@@ -105,28 +104,28 @@ class TemplateManager:
     """Manages agent templates for rapid creation."""
 
     def __init__(self) -> None:
-        self._templates: Dict[str, Dict[str, Any]] = {}
+        self._templates: dict[str, dict[str, Any]] = {}
         self._load_builtins()
 
     def _load_builtins(self) -> None:
         for name, template in BUILTIN_TEMPLATES.items():
             self._templates[name] = copy.deepcopy(template)
 
-    def register_template(self, name: str, template: Dict[str, Any]) -> None:
+    def register_template(self, name: str, template: dict[str, Any]) -> None:
         self._templates[name] = copy.deepcopy(template)
 
-    def get_template(self, name: str) -> Optional[Dict[str, Any]]:
+    def get_template(self, name: str) -> dict[str, Any] | None:
         tpl = self._templates.get(name)
         return copy.deepcopy(tpl) if tpl else None
 
-    def list_templates(self) -> List[str]:
+    def list_templates(self) -> list[str]:
         return list(self._templates.keys())
 
     def create_from_template(
         self,
         name: str,
-        overrides: Optional[Dict[str, Any]] = None,
-    ) -> Optional[Dict[str, Any]]:
+        overrides: dict[str, Any] | None = None,
+    ) -> dict[str, Any] | None:
         tpl = self.get_template(name)
         if tpl is None:
             return None
@@ -144,7 +143,7 @@ class TemplateManager:
     def count(self) -> int:
         return len(self._templates)
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         return {
             "templates": list(self._templates.keys()),
             "count": len(self._templates),

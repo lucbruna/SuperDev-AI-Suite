@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
 from enum import Enum
+from typing import Any
 
 
 class AgentTier(Enum):
@@ -39,7 +39,7 @@ class ModelConfig:
     top_p: float = 1.0
     frequency_penalty: float = 0.0
     presence_penalty: float = 0.0
-    stop_sequences: List[str] = field(default_factory=list)
+    stop_sequences: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -47,8 +47,8 @@ class ToolConfig:
     """Tool configuration for an agent."""
     name: str
     enabled: bool = True
-    config: Dict[str, Any] = field(default_factory=dict)
-    permissions: List[str] = field(default_factory=list)
+    config: dict[str, Any] = field(default_factory=dict)
+    permissions: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -80,49 +80,49 @@ class AgentConfig:
     agent_type: str
     tier: AgentTier = AgentTier.SPECIALIST
     description: str = ""
-    
+
     # Model
     model: ModelConfig = field(default_factory=ModelConfig)
-    
+
     # Capabilities
-    capabilities: List[AgentCapability] = field(default_factory=list)
-    tools: List[ToolConfig] = field(default_factory=list)
-    
+    capabilities: list[AgentCapability] = field(default_factory=list)
+    tools: list[ToolConfig] = field(default_factory=list)
+
     # Memory
     memory: MemoryConfig = field(default_factory=MemoryConfig)
-    
+
     # Learning
     learning: LearningConfig = field(default_factory=LearningConfig)
-    
+
     # Behavior
     instructions: str = ""
     system_prompt: str = ""
-    personality_traits: Dict[str, float] = field(default_factory=dict)
-    constraints: List[str] = field(default_factory=list)
-    
+    personality_traits: dict[str, float] = field(default_factory=dict)
+    constraints: list[str] = field(default_factory=list)
+
     # Execution
     max_iterations: int = 10
     max_execution_time: int = 300
     parallel_execution: bool = False
-    
+
     # Monitoring
     enable_metrics: bool = True
     enable_logging: bool = True
     log_level: str = "INFO"
-    
+
     # Security
-    permissions: List[str] = field(default_factory=list)
-    allowed_domains: List[str] = field(default_factory=list)
-    blocked_domains: List[str] = field(default_factory=list)
-    
+    permissions: list[str] = field(default_factory=list)
+    allowed_domains: list[str] = field(default_factory=list)
+    blocked_domains: list[str] = field(default_factory=list)
+
     # Metadata
-    tags: List[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
     version: str = "1.0.0"
     created_at: str = ""
     updated_at: str = ""
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    
-    def to_dict(self) -> Dict[str, Any]:
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "agent_id": self.agent_id,
@@ -184,9 +184,9 @@ class AgentConfig:
             "updated_at": self.updated_at,
             "metadata": self.metadata,
         }
-    
+
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "AgentConfig":
+    def from_dict(cls, data: dict[str, Any]) -> AgentConfig:
         """Create from dictionary."""
         config = cls(
             agent_id=data.get("agent_id", ""),
@@ -195,7 +195,7 @@ class AgentConfig:
             tier=AgentTier(data.get("tier", 2)),
             description=data.get("description", ""),
         )
-        
+
         # Model
         model_data = data.get("model", {})
         config.model = ModelConfig(
@@ -209,12 +209,12 @@ class AgentConfig:
             presence_penalty=model_data.get("presence_penalty", 0.0),
             stop_sequences=model_data.get("stop_sequences", []),
         )
-        
+
         # Capabilities
         config.capabilities = [
             AgentCapability(c) for c in data.get("capabilities", [])
         ]
-        
+
         # Tools
         config.tools = [
             ToolConfig(
@@ -225,7 +225,7 @@ class AgentConfig:
             )
             for t in data.get("tools", [])
         ]
-        
+
         # Memory
         mem_data = data.get("memory", {})
         config.memory = MemoryConfig(
@@ -235,7 +235,7 @@ class AgentConfig:
             embedding_model=mem_data.get("embedding_model", "text-embedding-3-small"),
             memory_ttl_hours=mem_data.get("memory_ttl_hours", 168),
         )
-        
+
         # Learning
         learn_data = data.get("learning", {})
         config.learning = LearningConfig(
@@ -245,35 +245,35 @@ class AgentConfig:
             adaptation_rate=learn_data.get("adaptation_rate", 0.1),
             experience_retention_days=learn_data.get("experience_retention_days", 30),
         )
-        
+
         # Behavior
         config.instructions = data.get("instructions", "")
         config.system_prompt = data.get("system_prompt", "")
         config.personality_traits = data.get("personality_traits", {})
         config.constraints = data.get("constraints", [])
-        
+
         # Execution
         config.max_iterations = data.get("max_iterations", 10)
         config.max_execution_time = data.get("max_execution_time", 300)
         config.parallel_execution = data.get("parallel_execution", False)
-        
+
         # Monitoring
         config.enable_metrics = data.get("enable_metrics", True)
         config.enable_logging = data.get("enable_logging", True)
         config.log_level = data.get("log_level", "INFO")
-        
+
         # Security
         config.permissions = data.get("permissions", [])
         config.allowed_domains = data.get("allowed_domains", [])
         config.blocked_domains = data.get("blocked_domains", [])
-        
+
         # Metadata
         config.tags = data.get("tags", [])
         config.version = data.get("version", "1.0.0")
         config.created_at = data.get("created_at", "")
         config.updated_at = data.get("updated_at", "")
         config.metadata = data.get("metadata", {})
-        
+
         return config
 
 
@@ -283,12 +283,12 @@ class TeamConfig:
     team_id: str
     name: str
     description: str = ""
-    agent_ids: List[str] = field(default_factory=list)
+    agent_ids: list[str] = field(default_factory=list)
     coordination_strategy: str = "hierarchical"
     shared_memory_enabled: bool = True
     communication_protocol: str = "message_bus"
     max_concurrent_tasks: int = 10
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass

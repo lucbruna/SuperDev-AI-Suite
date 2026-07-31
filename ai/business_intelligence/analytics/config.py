@@ -1,6 +1,5 @@
 """Analytics configuration."""
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
 
 
 @dataclass
@@ -13,8 +12,8 @@ class AnalyticsConfig:
     max_concurrent_queries: int = 10
     insight_confidence_threshold: float = 0.7
     retention_days: int = 90
-    export_formats: List[str] = field(default_factory=lambda: ["json", "csv"])
-    custom_dimensions: Dict[str, str] = field(default_factory=dict)
+    export_formats: list[str] = field(default_factory=lambda: ["json", "csv"])
+    custom_dimensions: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass

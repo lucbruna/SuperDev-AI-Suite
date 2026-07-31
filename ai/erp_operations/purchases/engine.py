@@ -1,20 +1,19 @@
 """Purchases engine."""
 import uuid
-from datetime import datetime
-from typing import Dict, List, Optional
-from .models import PurchaseOrder, PurchaseOrderItem, PurchaseOrderStatus, PriceComparison
+
+from .models import PriceComparison, PurchaseOrder, PurchaseOrderStatus
 
 
 class PurchasesEngine:
     def __init__(self):
-        self._orders: Dict[str, PurchaseOrder] = {}
-        self._comparisons: List[PriceComparison] = []
+        self._orders: dict[str, PurchaseOrder] = {}
+        self._comparisons: list[PriceComparison] = []
 
     def create_order(self, order: PurchaseOrder) -> PurchaseOrder:
         self._orders[order.po_id] = order
         return order
 
-    def get_order(self, po_id: str) -> Optional[PurchaseOrder]:
+    def get_order(self, po_id: str) -> PurchaseOrder | None:
         return self._orders.get(po_id)
 
     def approve_order(self, po_id: str, approved_by: str) -> bool:
@@ -32,10 +31,10 @@ class PurchasesEngine:
         order.status = status
         return True
 
-    def get_orders_by_supplier(self, supplier_id: str) -> List[PurchaseOrder]:
+    def get_orders_by_supplier(self, supplier_id: str) -> list[PurchaseOrder]:
         return [o for o in self._orders.values() if o.supplier_id == supplier_id]
 
-    def compare_prices(self, product_id: str, supplier_prices: Dict[str, float]) -> PriceComparison:
+    def compare_prices(self, product_id: str, supplier_prices: dict[str, float]) -> PriceComparison:
         if not supplier_prices:
             return PriceComparison(comparison_id=str(uuid.uuid4())[:8], product_id=product_id)
         best_supplier = min(supplier_prices, key=supplier_prices.get)

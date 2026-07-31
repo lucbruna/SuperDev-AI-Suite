@@ -1,8 +1,8 @@
 """
 Infrastructure Dashboard
 """
-from typing import Optional, List, Dict, Any
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
@@ -18,11 +18,11 @@ class ServerInfo:
 
 class InfrastructureDashboard:
     def __init__(self):
-        self.servers: List[ServerInfo] = []
-        
+        self.servers: list[ServerInfo] = []
+
     def add_server(self, server: ServerInfo) -> None:
         self.servers.append(server)
-        
+
     def update_server(self, name: str, **kwargs) -> None:
         for s in self.servers:
             if s.name == name:
@@ -30,7 +30,7 @@ class InfrastructureDashboard:
                     if hasattr(s, k):
                         setattr(s, k, v)
                 return
-                
+
     def get_overall_health(self) -> str:
         if not self.servers:
             return "unknown"
@@ -40,8 +40,8 @@ class InfrastructureDashboard:
         if unhealthy:
             return "warning"
         return "healthy"
-        
-    def render(self) -> Dict[str, Any]:
+
+    def render(self) -> dict[str, Any]:
         return {
             "servers": [{"name": s.name, "status": s.status, "cpu": s.cpu, "memory": s.memory} for s in self.servers],
             "health": self.get_overall_health(),

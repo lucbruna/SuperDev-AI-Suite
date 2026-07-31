@@ -1,11 +1,11 @@
 """Threat detection subsystem"""
-from .threat_intel import ThreatIntel, IOCType, ThreatLevel
-from .intrusion_detector import IntrusionDetector, AlertSeverity
-from .siem_engine import SIEMEngine, EventType, Severity
-from .network_monitor import NetworkMonitor, Protocol
 from .endpoint_defense import EndpointDefense, ThreatCategory
-from .vulnerability_manager import VulnerabilityManager, VulnStatus, RiskLevel
-from .risk_scorer import RiskScorer, RiskCategory
+from .intrusion_detector import AlertSeverity, IntrusionDetector
+from .network_monitor import NetworkMonitor, Protocol
+from .risk_scorer import RiskCategory, RiskScorer
+from .siem_engine import EventType, Severity, SIEMEngine
+from .threat_intel import IOCType, ThreatIntel, ThreatLevel
+from .vulnerability_manager import RiskLevel, VulnerabilityManager, VulnStatus
 
 __all__ = [
     "ThreatIntel", "IOCType", "ThreatLevel",

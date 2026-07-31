@@ -1,20 +1,26 @@
 """Token service for JWT-like tokens."""
 from __future__ import annotations
-from typing import Any, Dict, Optional
-import uuid, time, hashlib, base64, json
+
+import base64
+import hashlib
+import json
+import time
+import uuid
+from typing import Any
+
 
 class TokenService:
     def __init__(self, secret: str = "default_secret", expiry: int = 3600) -> None:
         self._secret = secret
         self._expiry = expiry
         self._revoked: set[str] = set()
-    def create_token(self, payload: Dict[str, Any]) -> str:
+    def create_token(self, payload: dict[str, Any]) -> str:
         header = base64.urlsafe_b64encode(json.dumps({"alg": "HS256", "typ": "JWT"}).encode()).decode()
         data = {**payload, "iat": time.time(), "exp": time.time() + self._expiry, "jti": str(uuid.uuid4())[:8]}
         body = base64.urlsafe_b64encode(json.dumps(data).encode()).decode()
         sig = hashlib.sha256((header + "." + body + "." + self._secret).encode()).hexdigest()[:32]
         return f"{header}.{body}.{sig}"
-    def verify_token(self, token: str) -> Dict[str, Any]:
+    def verify_token(self, token: str) -> dict[str, Any]:
         parts = token.split(".")
         if len(parts) != 3:
             return {"valid": False, "error": "malformed"}
@@ -34,7 +40,7 @@ class TokenService:
     def revoke_token(self, token: str) -> bool:
         self._revoked.add(token)
         return True
-    def refresh_token(self, token: str) -> Optional[str]:
+    def refresh_token(self, token: str) -> str | None:
         result = self.verify_token(token)
         if result["valid"]:
             payload = result["payload"]

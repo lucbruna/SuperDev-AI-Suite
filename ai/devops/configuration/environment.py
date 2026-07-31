@@ -1,11 +1,13 @@
 """Environment manager."""
 from __future__ import annotations
-from typing import Any, Dict, List
+
+from typing import Any
+
 
 class EnvironmentManager:
     def __init__(self) -> None:
-        self._environments: Dict[str, Dict[str, Any]] = {}
-    def create(self, name: str, variables: Dict[str, str] = None) -> Dict[str, Any]:
+        self._environments: dict[str, dict[str, Any]] = {}
+    def create(self, name: str, variables: dict[str, str] = None) -> dict[str, Any]:
         env = {"name": name, "variables": variables or {}, "status": "active"}
         self._environments[name] = env
         return env
@@ -16,9 +18,9 @@ class EnvironmentManager:
         return True
     def get_variable(self, env_name: str, key: str) -> str:
         return self._environments.get(env_name, {}).get("variables", {}).get(key, "")
-    def get_all(self, env_name: str) -> Dict[str, str]:
+    def get_all(self, env_name: str) -> dict[str, str]:
         return self._environments.get(env_name, {}).get("variables", {})
-    def list_environments(self) -> List[str]:
+    def list_environments(self) -> list[str]:
         return list(self._environments.keys())
     def delete(self, name: str) -> bool:
         if name in self._environments:

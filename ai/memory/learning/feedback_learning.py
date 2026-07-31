@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 
 class FeedbackSample:
@@ -23,7 +23,7 @@ class FeedbackSample:
     def feedback(self) -> float:
         return self._feedback
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {"query": self._query, "response": self._response, "feedback": self._feedback}
 
 
@@ -31,7 +31,7 @@ class FeedbackLearning:
     """Learns from user feedback signals."""
 
     def __init__(self):
-        self._samples: List[FeedbackSample] = []
+        self._samples: list[FeedbackSample] = []
 
     @property
     def sample_count(self) -> int:
@@ -42,10 +42,10 @@ class FeedbackLearning:
         self._samples.append(sample)
         return sample
 
-    def positive_samples(self, threshold: float = 0.5) -> List[FeedbackSample]:
+    def positive_samples(self, threshold: float = 0.5) -> list[FeedbackSample]:
         return [s for s in self._samples if s.feedback >= threshold]
 
-    def negative_samples(self, threshold: float = 0.5) -> List[FeedbackSample]:
+    def negative_samples(self, threshold: float = 0.5) -> list[FeedbackSample]:
         return [s for s in self._samples if s.feedback < threshold]
 
     def average_feedback(self) -> float:

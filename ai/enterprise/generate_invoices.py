@@ -1,5 +1,6 @@
 """Invoices subsystem generator."""
 import os
+
 BASE = r'C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\enterprise\invoices'
 
 def w(path, content):

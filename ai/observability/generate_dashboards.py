@@ -1,5 +1,6 @@
 """Dashboards subsystem generator."""
 import os
+
 BASE = r'C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\observability\dashboards'
 
 def w(path, content):

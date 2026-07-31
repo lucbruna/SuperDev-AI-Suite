@@ -3,11 +3,11 @@ from __future__ import annotations
 from typing import Any
 
 from ...base.base_tool import BaseTool
-from .repository import GitHubRepository
+from .actions import GitHubActions
 from .issues import GitHubIssues
 from .pull_requests import GitHubPullRequests
-from .actions import GitHubActions
 from .releases import GitHubReleases
+from .repository import GitHubRepository
 
 
 class GitHubTool(BaseTool):

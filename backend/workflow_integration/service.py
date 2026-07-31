@@ -174,7 +174,7 @@ language = {language!r}
 
         run_id = uuid4()
         merged_variables = {**(definition.variables or {}), **(variables or {})}
-        
+
         result = await workflow_executor.execute(
             definition=definition,
             run_id=run_id,
@@ -202,11 +202,11 @@ language = {language!r}
 
         system = agent_manager
         await system.initialize()
-        
+
         result = await system.execute_task(agent_name, task, context)
-        
+
         await system.shutdown()
-        
+
         return {
             "success": result.success,
             "output": result.output,

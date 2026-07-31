@@ -1,7 +1,6 @@
 """
 Dependency Vulnerability Scanner
 """
-from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
 from enum import Enum
 
@@ -22,7 +21,7 @@ class Vulnerability:
     fixed_version: str = ""
     severity: Severity = Severity.MEDIUM
     description: str = ""
-    cve_ids: List[str] = field(default_factory=list)
+    cve_ids: list[str] = field(default_factory=list)
     cvss_score: float = 0.0
 
 
@@ -31,22 +30,22 @@ class Dependency:
     name: str
     version: str
     ecosystem: str = "pypi"
-    dependencies: List[str] = field(default_factory=list)
+    dependencies: list[str] = field(default_factory=list)
 
 
 @dataclass
 class ScanResult:
     total_dependencies: int
     vulnerable_count: int
-    vulnerabilities: List[Vulnerability] = field(default_factory=list)
+    vulnerabilities: list[Vulnerability] = field(default_factory=list)
     risk_score: float = 0.0
 
 
 class DependencyScanner:
     def __init__(self):
-        self.dependencies: Dict[str, Dependency] = {}
-        self.vulnerabilities: Dict[str, Vulnerability] = {}
-        self.known_vulns: List[Vulnerability] = []
+        self.dependencies: dict[str, Dependency] = {}
+        self.vulnerabilities: dict[str, Vulnerability] = {}
+        self.known_vulns: list[Vulnerability] = []
 
     def add_dependency(self, name: str, version: str, ecosystem: str = "pypi") -> Dependency:
         dep = Dependency(name=name, version=version, ecosystem=ecosystem)
@@ -66,7 +65,7 @@ class DependencyScanner:
         risk = sum(v.cvss_score for v in found) / max(len(found), 1)
         return ScanResult(total_dependencies=len(self.dependencies), vulnerable_count=len(found), vulnerabilities=found, risk_score=risk)
 
-    def get_vulnerable(self) -> List[Vulnerability]:
+    def get_vulnerable(self) -> list[Vulnerability]:
         found = []
         for dep in self.dependencies.values():
             for vuln in self.known_vulns:
@@ -80,7 +79,7 @@ class DependencyScanner:
             return True
         return False
 
-    def get_dependency(self, name: str) -> Optional[Dependency]:
+    def get_dependency(self, name: str) -> Dependency | None:
         return self.dependencies.get(name)
 
     def count(self) -> int:

@@ -1,7 +1,7 @@
 """Tool argument validation."""
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 
 class ToolValidator:
@@ -11,7 +11,7 @@ class ToolValidator:
         self._validation_count: int = 0
         self._error_count: int = 0
 
-    def validate(self, tool: Dict[str, Any], args: Dict[str, Any]) -> bool:
+    def validate(self, tool: dict[str, Any], args: dict[str, Any]) -> bool:
         self._validation_count += 1
         params = tool.get("parameters", {})
         for required_key in params:
@@ -20,7 +20,7 @@ class ToolValidator:
                 return False
         return True
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         return {
             "total_validations": self._validation_count,
             "errors": self._error_count,

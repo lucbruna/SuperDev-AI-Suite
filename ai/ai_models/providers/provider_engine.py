@@ -1,16 +1,18 @@
 """Provider engine."""
 from __future__ import annotations
-from typing import Any, Callable, Dict, List, Optional
-import time
+
+from collections.abc import Callable
+from typing import Any
+
 
 class ProviderEngine:
     def __init__(self) -> None:
-        self._providers: Dict[str, Callable] = {}
-        self._configs: Dict[str, Dict[str, Any]] = {}
+        self._providers: dict[str, Callable] = {}
+        self._configs: dict[str, dict[str, Any]] = {}
         self._started = False
     def start(self) -> None:
         self._started = True
-    def register(self, name: str, handler: Callable, config: Dict[str, Any] = None) -> None:
+    def register(self, name: str, handler: Callable, config: dict[str, Any] = None) -> None:
         self._providers[name] = handler
         self._configs[name] = config or {}
     def unregister(self, name: str) -> bool:
@@ -19,7 +21,7 @@ class ProviderEngine:
             self._configs.pop(name, None)
             return True
         return False
-    def complete(self, provider_name: str, prompt: str, **kwargs: Any) -> Dict[str, Any]:
+    def complete(self, provider_name: str, prompt: str, **kwargs: Any) -> dict[str, Any]:
         handler = self._providers.get(provider_name)
         if not handler:
             return {"error": "provider_not_found", "status": "failed"}
@@ -27,11 +29,11 @@ class ProviderEngine:
             return handler(prompt, **kwargs)
         except Exception as e:
             return {"error": str(e), "status": "failed"}
-    def list_providers(self) -> List[str]:
+    def list_providers(self) -> list[str]:
         return list(self._providers.keys())
     def is_registered(self, name: str) -> bool:
         return name in self._providers
-    def get_config(self, name: str) -> Dict[str, Any]:
+    def get_config(self, name: str) -> dict[str, Any]:
         return self._configs.get(name, {})
     def count(self) -> int:
         return len(self._providers)

@@ -3,11 +3,11 @@ from __future__ import annotations
 from typing import Any
 
 from ...base.base_tool import BaseTool
-from .page import BrowserPage
-from .navigation import BrowserNavigation
-from .form import BrowserForm
-from .screenshot import BrowserScreenshot
 from .cookies import BrowserCookies
+from .form import BrowserForm
+from .navigation import BrowserNavigation
+from .page import BrowserPage
+from .screenshot import BrowserScreenshot
 
 
 class BrowserTool(BaseTool):

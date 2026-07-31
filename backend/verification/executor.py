@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import os
 import tempfile
 import time
@@ -40,7 +41,7 @@ class CodeExecutor:
         env_vars: dict[str, str] | None,
     ) -> ExecutionResult:
         start = time.time()
-        
+
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False, encoding="utf-8") as f:
             f.write(code)
             temp_file = f.name
@@ -84,10 +85,8 @@ class CodeExecutor:
                 stage=VerificationStage.EXECUTE,
             )
         finally:
-            try:
+            with contextlib.suppress(OSError):
                 os.unlink(temp_file)
-            except OSError:
-                pass
 
     async def _execute_node(
         self,
@@ -98,7 +97,7 @@ class CodeExecutor:
     ) -> ExecutionResult:
         start = time.time()
         ext = ".js" if language == "javascript" else ".ts"
-        
+
         with tempfile.NamedTemporaryFile(mode="w", suffix=ext, delete=False) as f:
             if language == "typescript":
                 f.write("// @ts-check\n")
@@ -145,10 +144,8 @@ class CodeExecutor:
                 stage=VerificationStage.EXECUTE,
             )
         finally:
-            try:
+            with contextlib.suppress(OSError):
                 os.unlink(temp_file)
-            except OSError:
-                pass
 
     async def _execute_bash(
         self,
@@ -157,7 +154,7 @@ class CodeExecutor:
         env_vars: dict[str, str] | None,
     ) -> ExecutionResult:
         start = time.time()
-        
+
         with tempfile.NamedTemporaryFile(mode="w", suffix=".sh", delete=False) as f:
             f.write("#!/bin/bash\n")
             f.write(code)
@@ -165,7 +162,7 @@ class CodeExecutor:
 
         try:
             os.chmod(temp_file, 0o755)
-            
+
             env = os.environ.copy()
             if env_vars:
                 env.update(env_vars)
@@ -204,10 +201,8 @@ class CodeExecutor:
                 stage=VerificationStage.EXECUTE,
             )
         finally:
-            try:
+            with contextlib.suppress(OSError):
                 os.unlink(temp_file)
-            except OSError:
-                pass
 
     async def execute_in_project(
         self,
@@ -218,14 +213,14 @@ class CodeExecutor:
     ) -> ExecutionResult:
         if working_dir is None:
             working_dir = tempfile.mkdtemp()
-        
+
         Path(working_dir).mkdir(parents=True, exist_ok=True)
-        
+
         for filepath, content in files.items():
             full_path = Path(working_dir) / filepath
             full_path.parent.mkdir(parents=True, exist_ok=True)
             full_path.write_text(content)
-        
+
         return await self.execute(
             code=f"# Running project\nimport sys\nsys.path.insert(0, '.')\nexec(open('{entry_point}').read())",
             language=language,

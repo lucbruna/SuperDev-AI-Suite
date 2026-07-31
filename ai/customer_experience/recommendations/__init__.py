@@ -1,9 +1,12 @@
 """Recommendations subsystem."""
-from .models import (
-    RecommendationType, RecommendationStatus,
-    ProductRecommendation, ContentRecommendation, Offer,
-)
 from .engine import RecommendationEngine
+from .models import (
+    ContentRecommendation,
+    Offer,
+    ProductRecommendation,
+    RecommendationStatus,
+    RecommendationType,
+)
 
 __all__ = [
     "RecommendationType", "RecommendationStatus",

@@ -10,8 +10,14 @@ from .code_models import CodeFile, CodeIssue
 from .code_registry import CodeRegistry
 from .code_scanner import CodeScanner
 from .parsing.ast_manager import ASTManager
-from .understanding import CodeUnderstanding, ContextBuilder, DependencyGraph, PromptBuilder, SymbolIndex
-from .understanding.symbol_index import RELEVANCE_WEIGHTS
+from .understanding import (
+    RELEVANCE_WEIGHTS,
+    CodeUnderstanding,
+    ContextBuilder,
+    DependencyGraph,
+    PromptBuilder,
+    SymbolIndex,
+)
 
 if TYPE_CHECKING:
     from ai.llm import LLMEngine
@@ -83,6 +89,24 @@ def _resolve_import_to_path(
     if module == (names[0] if names else None) and base_pkg:
         return module_map.get(base_pkg)
     return None
+
+
+def _focus_symbols(ranked: list[dict[str, Any]], limit: int = 4) -> list[str]:
+    """Top relevant symbol names for an instruction focus line.
+
+    Walks *ranked* matches (from :meth:`SymbolIndex.rank`, i.e. descending
+    relevance) and keeps symbols that are **defined** somewhere — pure
+    imports (a module name) are noise in a ``Foco:`` line — up to *limit*
+    names, preserving relevance order.
+    """
+    symbols: list[str] = []
+    for match in ranked:
+        if any(loc.get("kind") != "import"
+               for loc in match.get("locations", [])):
+            symbols.append(match["name"])
+            if len(symbols) >= limit:
+                break
+    return symbols
 
 
 def _rank_selection(
@@ -195,6 +219,7 @@ class CodeEngine:
         max_depth: int = 3,
         max_files: int = 8,
         max_tokens: int = 8000,
+        max_file_tokens: int | None = None,
     ) -> dict[str, Any]:
         """Scan *path*, navigate the dependency graph and compose an
         LLM-ready prompt.
@@ -212,9 +237,18 @@ class CodeEngine:
         selection is **re-ranked by symbol relevance** (see
         :func:`_rank_selection`): files defining the symbols matched by
         *query* come first in the injected prompt, seeds staying at the
-        top. Returns the selection (with depths/tokens and per-file
-        ``relevance``/``matched_symbols`` when ranked), the final prompt
-        and its estimated token count.
+        top. When *max_file_tokens* is set, files exceeding that limit are
+        truncated **in the middle** of their ``### FILE`` block (head and
+        tail kept, marker line in between) so the ranked selection survives
+        tight budgets. Independently of that per-file cap, the **global
+        budget** (``max_tokens``) is always enforced: trailing files (the
+        least relevant, since the selection is ranked) are truncated further
+        down to the remaining budget and, when even a minimal slice cannot
+        fit, dropped entirely. The number of truncated files is returned as
+        ``truncated_files`` and dropped files as ``dropped_files``. Returns
+        the selection (with depths/tokens and per-file
+        ``relevance``/``matched_symbols`` when ranked), the final prompt and
+        its estimated token count.
         """
         files = await self.scan_project(path)
         files_by_path = {file.path: file.content for file in files}
@@ -254,7 +288,8 @@ class CodeEngine:
         ranked = _rank_selection(selection["selected"], index, query)
         selection["selected"] = ranked
         selection["files"] = [entry["path"] for entry in ranked]
-        prompt_builder = PromptBuilder(max_tokens=max_tokens)
+        prompt_builder = PromptBuilder(max_tokens=max_tokens,
+                                       max_file_tokens=max_file_tokens)
         prompt = prompt_builder.build_from_selection(
             instruction, ranked, files_by_path
         )
@@ -271,6 +306,13 @@ class CodeEngine:
             "prompt": prompt,
             "prompt_tokens": prompt_tokens,
             "fits_budget": prompt_tokens <= max_tokens,
+            "truncated_files": len(prompt_builder.last_truncated),
+            "dropped_files": len(prompt_builder.last_dropped),
+            "max_file_tokens": max_file_tokens,
+            # Matches of the query already ranked by relevance
+            # (:meth:`SymbolIndex.rank`) — consumed by :meth:`ask_llm` to
+            # compose a ``Foco: ...`` instruction section.
+            "ranked_symbols": index.rank(query) if (query or "").strip() else [],
         }
 
     # -- LLM execution (build_llm_context -> LLMEngine) ---------------------
@@ -298,6 +340,9 @@ class CodeEngine:
         model: str | None = None,
         max_tokens: int = 1024,
         temperature: float = 0.7,
+        max_file_tokens: int | None = None,
+        focus: bool = True,
+        focus_limit: int = 4,
         llm: LLMEngine | None = None,
         **kwargs: Any,
     ) -> dict[str, Any]:
@@ -307,7 +352,19 @@ class CodeEngine:
         DependencyGraph -> BFS selection -> relevance-ranked prompt) with
         :class:`ai.llm.LLMEngine`: the assembled prompt is executed against
         the chosen *provider* (or auto-routed) and the response is returned
-        together with the anchored file selection.
+        together with the anchored file selection. *max_file_tokens* is
+        forwarded to :meth:`build_llm_context` so oversized files are
+        truncated in the middle of their block.
+
+        When *query* is given and *focus* is enabled, the most relevant
+        **defined** symbols (from :func:`_focus_symbols`, pure imports
+        skipped) are appended to the instruction as a ``Foco: ...`` section
+        so the model is steered toward the entities that matter. The result
+        then carries ``focus`` with the chosen ``symbols``, the ``section``
+        text, the ``overhead_tokens`` added, and the measured
+        ``coverage`` — the fraction of focus symbols actually mentioned in
+        the reply (a cheap, deterministic proxy for response improvement;
+        compare it against a ``focus=False`` baseline call).
 
         When *llm* is ``None`` an engine is created lazily and providers are
         auto-registered from environment variables; if no provider is
@@ -318,7 +375,28 @@ class CodeEngine:
         """
         context = await self.build_llm_context(
             path, seed_files=seed_files, instruction=instruction, query=query,
+            max_file_tokens=max_file_tokens,
         )
+        focus_info = None
+        if query and focus:
+            symbols = _focus_symbols(context.get("ranked_symbols") or [],
+                                     max(1, focus_limit))
+            if symbols:
+                baseline_tokens = context["prompt_tokens"]
+                focus_section = f"Foco: {', '.join(symbols)}"
+                augmented = (f"{instruction}\n\n{focus_section}"
+                             if instruction.strip() else focus_section)
+                context = await self.build_llm_context(
+                    path, seed_files=seed_files, instruction=augmented,
+                    query=query, max_file_tokens=max_file_tokens,
+                )
+                focus_info = {
+                    "symbols": symbols,
+                    "section": focus_section,
+                    "overhead_tokens": (context["prompt_tokens"]
+                                         - baseline_tokens),
+                }
+
         prompt = context["prompt"]
         prompt_tokens = context["prompt_tokens"]
 
@@ -359,6 +437,15 @@ class CodeEngine:
                 **kwargs,
             )
 
+        if focus_info is not None:
+            # Substring match, so 'Order' also covers 'OrderItem' — a known
+            # overcount of the heuristic proxy (documented in the docstring).
+            content = (response.content or "").lower()
+            focus_info["coverage"] = sum(
+                1 for symbol in focus_info["symbols"]
+                if symbol.lower() in content
+            ) / len(focus_info["symbols"])
+
         return {
             "prompt": prompt,
             "prompt_tokens": prompt_tokens,
@@ -374,4 +461,5 @@ class CodeEngine:
                 "finish_reason": response.finish_reason,
             },
             "mode": mode,
+            "focus": focus_info,
         }

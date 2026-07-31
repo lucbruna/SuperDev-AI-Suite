@@ -1,23 +1,23 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Set
+from typing import Any
 
 
 class Indexing:
     """Index structures for efficient long-term memory retrieval."""
 
     def __init__(self):
-        self._keys: Dict[str, Dict[str, Any]] = {}
-        self._tags: Dict[str, Set[str]] = {}
-        self._keywords: Dict[str, Set[str]] = {}
+        self._keys: dict[str, dict[str, Any]] = {}
+        self._tags: dict[str, set[str]] = {}
+        self._keywords: dict[str, set[str]] = {}
 
     @property
     def count(self) -> int:
         return len(self._keys)
 
-    def add(self, key: str, data: Dict[str, Any]) -> None:
+    def add(self, key: str, data: dict[str, Any]) -> None:
         self._keys[key] = data
-        for k, v in data.items():
+        for _k, v in data.items():
             if isinstance(v, str):
                 for word in v.lower().split():
                     if len(word) > 2:
@@ -37,9 +37,9 @@ class Indexing:
             tag_set.discard(key)
         return True
 
-    def search(self, query: str) -> List[str]:
+    def search(self, query: str) -> list[str]:
         q = query.lower()
-        results: Set[str] = set()
+        results: set[str] = set()
         for key in self._keys:
             if q in key.lower():
                 results.add(key)
@@ -60,7 +60,7 @@ class Indexing:
                 score += 1.0
         return score
 
-    def search_by_tag(self, tag: str) -> List[str]:
+    def search_by_tag(self, tag: str) -> list[str]:
         return list(self._tags.get(tag, set()))
 
     def clear(self) -> None:
@@ -68,5 +68,5 @@ class Indexing:
         self._tags.clear()
         self._keywords.clear()
 
-    def keys(self) -> List[str]:
+    def keys(self) -> list[str]:
         return list(self._keys.keys())

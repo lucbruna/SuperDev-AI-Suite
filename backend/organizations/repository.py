@@ -1,8 +1,9 @@
 
-from backend.organizations.model import Organization, OrganizationInvite, OrganizationMember
-from backend.organizations.schema import OrganizationCreate, OrganizationUpdate
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from backend.organizations.model import Organization, OrganizationInvite, OrganizationMember
+from backend.organizations.schema import OrganizationCreate, OrganizationUpdate
 
 
 class OrganizationRepository:

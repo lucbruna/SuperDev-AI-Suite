@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 from .abstraction import Abstraction
 from .concept_merger import ConceptMerger
@@ -58,7 +58,7 @@ class ConsolidationEngine:
     def concepts(self) -> ConceptMerger:
         return self._concepts
 
-    def consolidate(self, entries: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def consolidate(self, entries: list[dict[str, Any]]) -> dict[str, Any]:
         deduped = self._duplicates.deduplicate(entries)
         summary = self._summarizer.summarize(deduped)
         patterns = self._patterns.detect(deduped)
@@ -72,7 +72,7 @@ class ConsolidationEngine:
             "consolidation_id": self._consolidation_count,
         }
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         return {
             "consolidation_count": self._consolidation_count,
             "learning_episodes": self._learning.episode_count,

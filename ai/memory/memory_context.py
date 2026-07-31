@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .memory_models import MemoryEntry
-from .memory_types import MemoryData, MemoryID, MemoryScope, Tags, Timestamp
+from .memory_types import MemoryData, MemoryID, MemoryScope, Tags
 
 
 class MemoryContext:
@@ -12,8 +12,8 @@ class MemoryContext:
     def __init__(self, context_id: str, max_length: int = 100):
         self._context_id = context_id
         self._max_length = max_length
-        self._entries: List[MemoryEntry] = []
-        self._metadata: Dict[str, Any] = {}
+        self._entries: list[MemoryEntry] = []
+        self._metadata: dict[str, Any] = {}
 
     @property
     def context_id(self) -> str:
@@ -24,11 +24,11 @@ class MemoryContext:
         return self._max_length
 
     @property
-    def entries(self) -> List[MemoryEntry]:
+    def entries(self) -> list[MemoryEntry]:
         return list(self._entries)
 
     @property
-    def metadata(self) -> Dict[str, Any]:
+    def metadata(self) -> dict[str, Any]:
         return dict(self._metadata)
 
     @property
@@ -52,12 +52,12 @@ class MemoryContext:
                 return entry
         return None
 
-    def get_recent(self, count: int = 10) -> List[MemoryEntry]:
+    def get_recent(self, count: int = 10) -> list[MemoryEntry]:
         return list(self._entries[-count:])
 
-    def search(self, query: str) -> List[MemoryEntry]:
+    def search(self, query: str) -> list[MemoryEntry]:
         query_lower = query.lower()
-        results: List[MemoryEntry] = []
+        results: list[MemoryEntry] = []
         for entry in self._entries:
             if query_lower in entry.key.lower():
                 results.append(entry)
@@ -68,7 +68,7 @@ class MemoryContext:
                     break
         return results
 
-    def filter_by_tags(self, tags: Tags) -> List[MemoryEntry]:
+    def filter_by_tags(self, tags: Tags) -> list[MemoryEntry]:
         return [e for e in self._entries if any(t in e.tags for t in tags)]
 
     def set_metadata(self, key: str, value: Any) -> None:
@@ -81,7 +81,7 @@ class MemoryContext:
         self._entries.clear()
         self._metadata.clear()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "context_id": self._context_id,
             "max_length": self._max_length,

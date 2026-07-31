@@ -3,14 +3,15 @@ from __future__ import annotations
 from typing import Any
 from uuid import UUID
 
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from backend.auth.rbac import Action, Resource, require_permission
 from backend.database.session import get_db
 from backend.dependencies import get_current_active_user
 from backend.knowledge_base.models import KnowledgeBaseType
 from backend.knowledge_base.service import KnowledgeBaseService, get_knowledge_base_service
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel
-from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(dependencies=[Depends(get_current_active_user)])
 
@@ -164,7 +165,7 @@ async def get_knowledge_base(
     kb = await service.vector_store.get_knowledge_base(kb_id)
     if not kb:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Knowledge base not found")
-    
+
     return KnowledgeBaseResponse(
         id=kb.id,
         name=kb.name,
@@ -264,14 +265,14 @@ async def search_knowledge_base(
     kb = await service.vector_store.get_knowledge_base(kb_id)
     if not kb:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Knowledge base not found")
-    
+
     results = await service.search(
         query=request.query,
         knowledge_base_ids=[kb_id],
         top_k=request.top_k,
         similarity_threshold=request.similarity_threshold,
     )
-    
+
     return SearchResponse(
         results=[
             SearchResultItem(
@@ -301,7 +302,7 @@ async def search_all_knowledge_bases(
         top_k=request.top_k,
         similarity_threshold=request.similarity_threshold,
     )
-    
+
     return SearchResponse(
         results=[
             SearchResultItem(
@@ -329,13 +330,13 @@ async def get_context(
     kb = await service.vector_store.get_knowledge_base(kb_id)
     if not kb:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Knowledge base not found")
-    
+
     context = await service.get_context_for_query(
         query=request.query,
         knowledge_base_ids=[kb_id],
         max_tokens=request.max_tokens,
     )
-    
+
     return ContextResponse(
         context=context,
         total_tokens=len(context.split()),
@@ -353,7 +354,7 @@ async def get_context_all(
         knowledge_base_ids=request.knowledge_base_ids,
         max_tokens=request.max_tokens,
     )
-    
+
     return ContextResponse(
         context=context,
         total_tokens=len(context.split()),
@@ -371,14 +372,14 @@ async def ingest_repository(
     kb = await service.vector_store.get_knowledge_base(kb_id)
     if not kb:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Knowledge base not found")
-    
+
     count = await service.ingest_repository(
         knowledge_base_id=kb_id,
         repo_path=request.repo_path,
         file_patterns=request.file_patterns,
         exclude_patterns=request.exclude_patterns,
     )
-    
+
     return {"ingested_files": count, "knowledge_base_id": str(kb_id)}
 
 
@@ -394,14 +395,14 @@ async def find_similar_code(
     kb = await service.vector_store.get_knowledge_base(kb_id)
     if not kb:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Knowledge base not found")
-    
+
     results = await service.find_similar_code(
         code_snippet=code_snippet,
         language=language,
         knowledge_base_ids=[kb_id],
         top_k=top_k,
     )
-    
+
     return SearchResponse(
         results=[
             SearchResultItem(

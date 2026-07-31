@@ -1,5 +1,6 @@
 """Analyzer for test coverage metrics."""
-from typing import List, Dict, Any, Optional
+from typing import Any
+
 from .models import CoverageReport
 
 
@@ -7,7 +8,7 @@ class CoverageAnalyzer:
     """Analyzes test coverage across codebase."""
 
     def __init__(self):
-        self._reports: List[CoverageReport] = []
+        self._reports: list[CoverageReport] = []
 
     def create_report(self) -> CoverageReport:
         report = CoverageReport()
@@ -28,7 +29,7 @@ class CoverageAnalyzer:
         report.total_functions += total_functions
         report.covered_functions += covered_functions
 
-    def compute_gaps(self, report: CoverageReport, threshold: float = 0.8) -> List[Dict[str, Any]]:
+    def compute_gaps(self, report: CoverageReport, threshold: float = 0.8) -> list[dict[str, Any]]:
         gaps = []
         for file_path, data in report.files.items():
             line_cov = data["covered_lines"] / data["total_lines"] if data["total_lines"] > 0 else 0
@@ -40,7 +41,7 @@ class CoverageAnalyzer:
                 })
         return gaps
 
-    def get_summary(self, report: CoverageReport) -> Dict[str, Any]:
+    def get_summary(self, report: CoverageReport) -> dict[str, Any]:
         return {
             "total_lines": report.total_lines,
             "covered_lines": report.covered_lines,
@@ -51,5 +52,5 @@ class CoverageAnalyzer:
             "files_analyzed": len(report.files),
         }
 
-    def get_all_reports(self) -> List[CoverageReport]:
+    def get_all_reports(self) -> list[CoverageReport]:
         return list(self._reports)

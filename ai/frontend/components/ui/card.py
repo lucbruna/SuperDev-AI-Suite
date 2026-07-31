@@ -1,8 +1,8 @@
 """
 Card UI Component
 """
-from typing import Optional, Any, Callable
-from dataclasses import dataclass, field
+from collections.abc import Callable
+from dataclasses import dataclass
 from enum import Enum
 
 
@@ -15,25 +15,25 @@ class CardVariant(Enum):
 
 @dataclass
 class CardProps:
-    title: Optional[str] = None
-    subtitle: Optional[str] = None
+    title: str | None = None
+    subtitle: str | None = None
     variant: CardVariant = CardVariant.DEFAULT
     padding: bool = True
     hoverable: bool = False
     bordered: bool = False
     loading: bool = False
-    onClick: Optional[Callable] = None
-    className: Optional[str] = None
+    onClick: Callable | None = None
+    className: str | None = None
 
 
 class Card:
-    def __init__(self, props: Optional[CardProps] = None):
+    def __init__(self, props: CardProps | None = None):
         self.props = props or CardProps()
-        
+
     def handle_click(self):
         if self.props.onClick:
             self.props.onClick()
-            
+
     def get_class_name(self):
         classes = ["card", "card-" + self.props.variant.value]
         if self.props.hoverable:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class Consolidation:
@@ -9,14 +9,14 @@ class Consolidation:
     def __init__(self, min_importance: float = 0.5, batch_size: int = 100):
         self._min_importance = min_importance
         self._batch_size = batch_size
-        self._stats: Dict[str, int] = {"consolidated": 0, "skipped": 0, "failed": 0}
+        self._stats: dict[str, int] = {"consolidated": 0, "skipped": 0, "failed": 0}
 
     @property
     def min_importance(self) -> float:
         return self._min_importance
 
     @property
-    def stats(self) -> Dict[str, int]:
+    def stats(self) -> dict[str, int]:
         return dict(self._stats)
 
     def run(self, source: Any, target: Any) -> int:
@@ -34,8 +34,8 @@ class Consolidation:
                 self._stats["skipped"] += 1
         return count
 
-    def _extract_entries(self, source: Any) -> List[Dict[str, Any]]:
-        entries: List[Dict[str, Any]] = []
+    def _extract_entries(self, source: Any) -> list[dict[str, Any]]:
+        entries: list[dict[str, Any]] = []
         if hasattr(source, "to_dict_list") and callable(source.to_dict_list):
             entries = source.to_dict_list()
         elif hasattr(source, "items") and callable(source.items):
@@ -50,7 +50,7 @@ class Consolidation:
                 entries.append({"key": str(key), "data": value})
         return entries[:self._batch_size]
 
-    def _should_consolidate(self, entry: Dict[str, Any]) -> bool:
+    def _should_consolidate(self, entry: dict[str, Any]) -> bool:
         importance = entry.get("importance", 0.0)
         if isinstance(importance, (int, float)):
             return importance >= self._min_importance

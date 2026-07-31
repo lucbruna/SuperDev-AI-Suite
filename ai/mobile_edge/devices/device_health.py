@@ -1,8 +1,7 @@
 """Device Health - Device health monitoring."""
-from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
-from enum import Enum
 from datetime import datetime
+from enum import Enum
 
 
 class HealthLevel(Enum):
@@ -22,14 +21,14 @@ class HealthReport:
     storage_usage: float = 0.0
     temperature: float = 0.0
     network_status: str = "unknown"
-    issues: List[str] = field(default_factory=list)
+    issues: list[str] = field(default_factory=list)
     reported_at: datetime = field(default_factory=datetime.now)
 
 
 class DeviceHealthMonitor:
     def __init__(self):
-        self.reports: Dict[str, List[HealthReport]] = {}
-        self.thresholds: Dict[str, Dict[str, float]] = {}
+        self.reports: dict[str, list[HealthReport]] = {}
+        self.thresholds: dict[str, dict[str, float]] = {}
 
     def report(self, device_id: str, **kwargs) -> HealthReport:
         report = HealthReport(device_id=device_id, **kwargs)
@@ -39,14 +38,14 @@ class DeviceHealthMonitor:
     def set_thresholds(self, device_id: str, **thresholds) -> None:
         self.thresholds[device_id] = thresholds
 
-    def get_latest(self, device_id: str) -> Optional[HealthReport]:
+    def get_latest(self, device_id: str) -> HealthReport | None:
         reports = self.reports.get(device_id, [])
         return reports[-1] if reports else None
 
-    def get_history(self, device_id: str, limit: int = 100) -> List[HealthReport]:
+    def get_history(self, device_id: str, limit: int = 100) -> list[HealthReport]:
         return self.reports.get(device_id, [])[-limit:]
 
-    def check_alerts(self, device_id: str) -> List[str]:
+    def check_alerts(self, device_id: str) -> list[str]:
         latest = self.get_latest(device_id)
         if not latest:
             return []
@@ -60,5 +59,5 @@ class DeviceHealthMonitor:
             alerts.append(f"Low battery: {latest.battery_level}%")
         return alerts
 
-    def list_devices(self) -> List[str]:
+    def list_devices(self) -> list[str]:
         return list(self.reports.keys())

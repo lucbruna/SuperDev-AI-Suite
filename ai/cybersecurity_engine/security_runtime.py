@@ -1,14 +1,15 @@
 """Cybersecurity Engine Runtime — Runtime context for security operations."""
-from typing import Dict, Any, Optional
 from datetime import datetime
+from typing import Any
+
 from .security_config import CybersecurityConfig
 
 
 class SecurityRuntime:
-    def __init__(self, config: Optional[CybersecurityConfig] = None):
+    def __init__(self, config: CybersecurityConfig | None = None):
         self._config = config or CybersecurityConfig()
-        self._start_time: Optional[datetime] = None
-        self._metrics: Dict[str, Any] = {}
+        self._start_time: datetime | None = None
+        self._metrics: dict[str, Any] = {}
 
     def start(self) -> None:
         self._start_time = datetime.now()
@@ -20,10 +21,10 @@ class SecurityRuntime:
     def record_metric(self, key: str, value: Any) -> None:
         self._metrics[key] = value
 
-    def get_metric(self, key: str) -> Optional[Any]:
+    def get_metric(self, key: str) -> Any | None:
         return self._metrics.get(key)
 
-    def get_all_metrics(self) -> Dict[str, Any]:
+    def get_all_metrics(self) -> dict[str, Any]:
         return dict(self._metrics)
 
     @property

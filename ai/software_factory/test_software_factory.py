@@ -1,8 +1,6 @@
 """Comprehensive tests for software_factory subsystem — Volume 32."""
-import pytest
-import sys
 import os
-import importlib
+import sys
 
 # Ensure software_factory is importable
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -11,11 +9,11 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 class TestFactoryEngine:
     def test_import(self):
-        from software_factory.factory_engine import SoftwareFactoryEngine, FactoryPhase, ProjectStatus
+        from software_factory.factory_engine import SoftwareFactoryEngine
         assert SoftwareFactoryEngine is not None
 
     def test_create_project(self):
-        from software_factory.factory_engine import SoftwareFactoryEngine, ProjectStatus
+        from software_factory.factory_engine import ProjectStatus, SoftwareFactoryEngine
         engine = SoftwareFactoryEngine()
         proj = engine.create_project("TestApp", "A test application", "alice")
         assert proj.name == "TestApp"
@@ -23,7 +21,7 @@ class TestFactoryEngine:
         assert proj.status == ProjectStatus.PLANNING
 
     def test_advance_phase(self):
-        from software_factory.factory_engine import SoftwareFactoryEngine, FactoryPhase
+        from software_factory.factory_engine import FactoryPhase, SoftwareFactoryEngine
         engine = SoftwareFactoryEngine()
         proj = engine.create_project("PhaseTest")
         assert proj.phase == FactoryPhase.IDEATION
@@ -31,14 +29,14 @@ class TestFactoryEngine:
         assert proj.phase == FactoryPhase.REQUIREMENTS
 
     def test_set_status(self):
-        from software_factory.factory_engine import SoftwareFactoryEngine, ProjectStatus
+        from software_factory.factory_engine import ProjectStatus, SoftwareFactoryEngine
         engine = SoftwareFactoryEngine()
         proj = engine.create_project("StatusTest")
         engine.set_status(proj.project_id, ProjectStatus.DEPLOYED)
         assert proj.status == ProjectStatus.DEPLOYED
 
     def test_list_projects(self):
-        from software_factory.factory_engine import SoftwareFactoryEngine, ProjectStatus
+        from software_factory.factory_engine import SoftwareFactoryEngine
         engine = SoftwareFactoryEngine()
         engine.create_project("A")
         engine.create_project("B")
@@ -175,7 +173,7 @@ class TestFactorySecurity:
         assert issue.resolved is True
 
     def test_get_score(self):
-        from software_factory.factory_security import FactorySecurity, SecurityCheck, SecuritySeverity
+        from software_factory.factory_security import FactorySecurity
         sec = FactorySecurity()
         sec.scan_project("p1", ["a.py", "b.py"])
         score = sec.get_score("p1")
@@ -184,7 +182,7 @@ class TestFactorySecurity:
 
 class TestFactoryModels:
     def test_tech_stack(self):
-        from software_factory.factory_models import TechStack, Language, DatabaseType
+        from software_factory.factory_models import DatabaseType, Language, TechStack
         ts = TechStack(language=Language.PYTHON, database=DatabaseType.SQLITE)
         assert ts.language == Language.PYTHON
 
@@ -220,13 +218,13 @@ class TestFactoryProtocols:
 
 class TestRequirementsModels:
     def test_requirement_creation(self):
-        from software_factory.requirements.models import Requirement, RequirementType, Priority
+        from software_factory.requirements.models import Requirement, RequirementType
         req = Requirement(title="Login feature", description="Users can log in", requirement_type=RequirementType.FUNCTIONAL)
         assert req.title == "Login feature"
         assert req.requirement_type == RequirementType.FUNCTIONAL
 
     def test_requirement_set(self):
-        from software_factory.requirements.models import RequirementSet, Requirement
+        from software_factory.requirements.models import Requirement, RequirementSet
         rs = RequirementSet(name="Sprint 1")
         rs.add_requirement(Requirement(title="A"))
         rs.add_requirement(Requirement(title="B"))
@@ -250,15 +248,15 @@ class TestRequirementsParser:
 
 class TestRequirementsValidator:
     def test_valid(self):
-        from software_factory.requirements.requirements_validator import RequirementsValidator
         from software_factory.requirements.models import Requirement
+        from software_factory.requirements.requirements_validator import RequirementsValidator
         val = RequirementsValidator()
         result = val.validate(Requirement(title="Valid Req", description="Desc"))
         assert result.is_valid is True
 
     def test_missing_title(self):
-        from software_factory.requirements.requirements_validator import RequirementsValidator
         from software_factory.requirements.models import Requirement
+        from software_factory.requirements.requirements_validator import RequirementsValidator
         val = RequirementsValidator()
         result = val.validate(Requirement(title="", description="Desc"))
         assert result.is_valid is False
@@ -266,16 +264,16 @@ class TestRequirementsValidator:
 
 class TestRequirementsManager:
     def test_create_and_add(self):
-        from software_factory.requirements.requirements_manager import RequirementsManager
         from software_factory.requirements.models import Requirement
+        from software_factory.requirements.requirements_manager import RequirementsManager
         mgr = RequirementsManager()
         rs = mgr.create_set("Sprint 1")
         mgr.add_requirement(rs.set_id, Requirement(title="R1"))
         assert rs.total_count() == 1
 
     def test_approve(self):
-        from software_factory.requirements.requirements_manager import RequirementsManager
         from software_factory.requirements.models import Requirement
+        from software_factory.requirements.requirements_manager import RequirementsManager
         mgr = RequirementsManager()
         req = Requirement(title="ApproveMe")
         mgr.approve_requirement(req)
@@ -284,8 +282,8 @@ class TestRequirementsManager:
 
 class TestRequirementsAnalyzer:
     def test_analyze_set(self):
+        from software_factory.requirements.models import Requirement, RequirementSet
         from software_factory.requirements.requirements_analyzer import RequirementsAnalyzer
-        from software_factory.requirements.models import RequirementSet, Requirement
         analyzer = RequirementsAnalyzer()
         rs = RequirementSet(name="Test", requirements=[
             Requirement(title="A", description="Desc A"),
@@ -295,8 +293,8 @@ class TestRequirementsAnalyzer:
         assert result["total"] == 2
 
     def test_quality_score(self):
+        from software_factory.requirements.models import Requirement, RequirementSet
         from software_factory.requirements.requirements_analyzer import RequirementsAnalyzer
-        from software_factory.requirements.models import RequirementSet, Requirement
         analyzer = RequirementsAnalyzer()
         rs = RequirementSet(name="Q", requirements=[Requirement(title="X", description="Y")])
         score = analyzer.compute_quality_score(rs)
@@ -314,8 +312,8 @@ class TestRequirementsMapper:
 
 class TestRequirementsReporter:
     def test_status_report(self):
+        from software_factory.requirements.models import Requirement, RequirementSet
         from software_factory.requirements.requirements_reporter import RequirementsReporter
-        from software_factory.requirements.models import RequirementSet, Requirement
         reporter = RequirementsReporter()
         rs = RequirementSet(name="R", requirements=[Requirement(title="T")])
         report = reporter.generate_status_report(rs)
@@ -372,7 +370,7 @@ class TestArchitectureDesigner:
 class TestArchitectureAnalyzer:
     def test_analyze(self):
         from software_factory.architecture.architecture_analyzer import ArchitectureAnalyzer
-        from software_factory.architecture.models import ArchitectureComponent, Connector, ComponentType
+        from software_factory.architecture.models import ArchitectureComponent, ComponentType, Connector
         analyzer = ArchitectureAnalyzer()
         comps = [ArchitectureComponent(name="A", component_type=ComponentType.SERVICE)]
         conns = [Connector(source_id="x", target_id="y")]
@@ -383,7 +381,7 @@ class TestArchitectureAnalyzer:
 class TestArchitectureValidator:
     def test_validate_valid(self):
         from software_factory.architecture.architecture_validator import ArchitectureValidator
-        from software_factory.architecture.models import ArchitectureComponent, ComponentType
+        from software_factory.architecture.models import ArchitectureComponent
         validator = ArchitectureValidator()
         comp = ArchitectureComponent(component_id="c1", name="A", interfaces=["api"])
         result = validator.validate([comp], [])
@@ -401,7 +399,7 @@ class TestArchitectureRenderer:
 
     def test_render_mermaid(self):
         from software_factory.architecture.architecture_renderer import ArchitectureRenderer
-        from software_factory.architecture.models import ArchitectureComponent, Connector, ComponentType, ConnectorType
+        from software_factory.architecture.models import ArchitectureComponent, ComponentType, Connector, ConnectorType
         renderer = ArchitectureRenderer()
         c1 = ArchitectureComponent(component_id="c1", name="API", component_type=ComponentType.API)
         c2 = ArchitectureComponent(component_id="c2", name="DB", component_type=ComponentType.DATABASE)
@@ -425,7 +423,7 @@ class TestArchitectureEngine:
 
 class TestGenerationModels:
     def test_template(self):
-        from software_factory.generation.models import Template, TemplateVariable
+        from software_factory.generation.models import Template
         t = Template(name="py_class", content="class {{name}}:\\n    pass")
         rendered = t.render({"name": "MyClass"})
         assert "MyClass" in rendered
@@ -449,8 +447,8 @@ class TestCodeGenerator:
 
 class TestTemplateEngine:
     def test_register_and_render(self):
-        from software_factory.generation.template_engine import TemplateEngine
         from software_factory.generation.models import Template
+        from software_factory.generation.template_engine import TemplateEngine
         engine = TemplateEngine()
         t = Template(name="hello", content="Hello {{name}}!")
         engine.register(t)
@@ -494,7 +492,7 @@ class TestDatabaseModels:
         assert col.primary_key is True
 
     def test_table(self):
-        from software_factory.database.models import Table, Column, ColumnType
+        from software_factory.database.models import Column, ColumnType, Table
         table = Table(name="users")
         table.add_column(Column(name="id", column_type=ColumnType.INTEGER, primary_key=True))
         table.add_column(Column(name="name", column_type=ColumnType.VARCHAR))
@@ -569,7 +567,7 @@ class TestQueryBuilder:
 class TestDatabaseAnalyzer:
     def test_analyze_schema(self):
         from software_factory.database.database_analyzer import DatabaseAnalyzer
-        from software_factory.database.models import DatabaseSchema, Table, Column, ColumnType
+        from software_factory.database.models import Column, ColumnType, DatabaseSchema, Table
         analyzer = DatabaseAnalyzer()
         schema = DatabaseSchema(name="test")
         table = Table(name="users")
@@ -599,7 +597,7 @@ class TestTestingModels:
         assert tc.name == "test_add"
 
     def test_test_suite(self):
-        from software_factory.testing.models import TestSuite, TestCase
+        from software_factory.testing.models import TestCase, TestSuite
         suite = TestSuite(name="MathTests")
         suite.add_test(TestCase(name="t1"))
         suite.add_test(TestCase(name="t2"))
@@ -613,8 +611,8 @@ class TestTestingModels:
 
 class TestTestGenerator:
     def test_generate_for_module(self):
-        from software_factory.testing.test_generator import TestGenerator
         from software_factory.testing.models import TestCategory
+        from software_factory.testing.test_generator import TestGenerator
         gen = TestGenerator()
         tests = gen.generate_for_module("auth.login", TestCategory.UNIT)
         assert len(tests) >= 1
@@ -628,8 +626,8 @@ class TestTestGenerator:
 
 class TestTestRunner:
     def test_run_suite(self):
+        from software_factory.testing.models import TestCase, TestStatus, TestSuite
         from software_factory.testing.test_runner import TestRunner
-        from software_factory.testing.models import TestSuite, TestCase, TestStatus
         runner = TestRunner()
         suite = TestSuite(name="Simple", tests=[TestCase(name="t1"), TestCase(name="t2")])
         results = runner.run_suite(suite)
@@ -639,8 +637,8 @@ class TestTestRunner:
 
 class TestTestReporter:
     def test_generate_report(self):
-        from software_factory.testing.test_reporter import TestReporter
         from software_factory.testing.models import TestResult, TestStatus
+        from software_factory.testing.test_reporter import TestReporter
         reporter = TestReporter()
         results = [
             TestResult(test_name="t1", status=TestStatus.PASSED, duration=0.1),
@@ -792,8 +790,8 @@ class TestEnvironmentManager:
 
 class TestRollbackHandler:
     def test_create_plan_and_rollback(self):
-        from software_factory.deployment.rollback_handler import RollbackHandler
         from software_factory.deployment.models import Deployment
+        from software_factory.deployment.rollback_handler import RollbackHandler
         handler = RollbackHandler()
         plan = handler.create_plan("d1", ["restore_db", "restart"])
         d = Deployment(deployment_id="d1")
@@ -813,12 +811,12 @@ class TestDeploymentEngine:
 
 class TestQualityModels:
     def test_quality_issue(self):
-        from software_factory.quality.models import QualityIssue, IssueSeverity, IssueCategory
+        from software_factory.quality.models import IssueSeverity, QualityIssue
         issue = QualityIssue(file_path="a.py", line_number=10, severity=IssueSeverity.WARNING, message="Too long")
         assert issue.severity == IssueSeverity.WARNING
 
     def test_quality_report(self):
-        from software_factory.quality.models import QualityReport, QualityIssue, IssueSeverity
+        from software_factory.quality.models import IssueSeverity, QualityIssue, QualityReport
         report = QualityReport(score=85.0, issues=[
             QualityIssue(severity=IssueSeverity.WARNING),
             QualityIssue(severity=IssueSeverity.INFO),

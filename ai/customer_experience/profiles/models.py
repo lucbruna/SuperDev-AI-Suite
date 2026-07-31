@@ -1,8 +1,8 @@
 """Profile models."""
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
 from enum import Enum
+from typing import Any
 
 
 class SegmentType(Enum):
@@ -27,7 +27,7 @@ class CustomerSegment:
     segment_id: str
     name: str
     segment_type: SegmentType = SegmentType.BEHAVIORAL
-    criteria: Dict[str, Any] = field(default_factory=dict)
+    criteria: dict[str, Any] = field(default_factory=dict)
     customer_count: int = 0
     created_at: datetime = field(default_factory=datetime.now)
 
@@ -37,7 +37,7 @@ class BehaviorEvent:
     event_id: str
     customer_id: str
     event_type: str = ""
-    event_data: Dict[str, Any] = field(default_factory=dict)
+    event_data: dict[str, Any] = field(default_factory=dict)
     timestamp: datetime = field(default_factory=datetime.now)
 
 
@@ -58,5 +58,5 @@ class ProfileInsight:
     insight_type: str = ""
     description: str = ""
     confidence: float = 0.0
-    data: Dict[str, Any] = field(default_factory=dict)
+    data: dict[str, Any] = field(default_factory=dict)
     created_at: datetime = field(default_factory=datetime.now)

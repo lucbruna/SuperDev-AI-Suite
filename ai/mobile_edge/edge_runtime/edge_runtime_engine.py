@@ -1,9 +1,6 @@
 """Edge Runtime Engine - Core edge AI runtime management."""
-from typing import Dict, Any, Optional, List, Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
-from datetime import datetime
-import hashlib
 
 
 class RuntimeState(Enum):
@@ -25,9 +22,9 @@ class RuntimeConfig:
 
 class EdgeRuntimeEngine:
     def __init__(self):
-        self.configs: Dict[str, RuntimeConfig] = {}
-        self.states: Dict[str, RuntimeState] = {}
-        self.metrics: Dict[str, Dict[str, float]] = {}
+        self.configs: dict[str, RuntimeConfig] = {}
+        self.states: dict[str, RuntimeState] = {}
+        self.metrics: dict[str, dict[str, float]] = {}
 
     def configure(self, device_id: str, **kwargs) -> RuntimeConfig:
         config = RuntimeConfig(device_id=device_id, **kwargs)
@@ -53,10 +50,10 @@ class EdgeRuntimeEngine:
     def record_metric(self, device_id: str, metric: str, value: float) -> None:
         self.metrics.setdefault(device_id, {})[metric] = value
 
-    def get_metrics(self, device_id: str) -> Dict[str, float]:
+    def get_metrics(self, device_id: str) -> dict[str, float]:
         return self.metrics.get(device_id, {})
 
-    def list_devices(self) -> List[str]:
+    def list_devices(self) -> list[str]:
         return list(self.configs.keys())
 
     def count(self) -> int:

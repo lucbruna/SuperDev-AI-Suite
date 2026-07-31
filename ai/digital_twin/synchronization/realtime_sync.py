@@ -1,12 +1,15 @@
 """Realtime sync."""
 from __future__ import annotations
-from typing import Any, Callable, Dict, List
+
 import time
+from collections.abc import Callable
+from typing import Any
+
 
 class RealtimeSync:
     def __init__(self) -> None:
-        self._channels: Dict[str, List[Callable]] = {}
-        self._buffer: List[Dict[str, Any]] = []
+        self._channels: dict[str, list[Callable]] = {}
+        self._buffer: list[dict[str, Any]] = []
         self._started = False
     def start(self) -> None:
         self._started = True
@@ -24,11 +27,11 @@ class RealtimeSync:
         return count
     def buffer_size(self) -> int:
         return len(self._buffer)
-    def flush(self) -> List[Dict[str, Any]]:
+    def flush(self) -> list[dict[str, Any]]:
         flushed = self._buffer[:]
         self._buffer.clear()
         return flushed
-    def list_channels(self) -> List[str]:
+    def list_channels(self) -> list[str]:
         return list(self._channels.keys())
     def subscriber_count(self, channel: str = "") -> int:
         if channel:

@@ -1,19 +1,42 @@
 """Comprehensive tests for ai_knowledge_engine (Volume 40)."""
-import sys
 import os
+import sys
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import unittest
 
 from ai_knowledge_engine import (
-    KnowledgeType, SourceType, ConfidenceLevel, ValidationStatus, LearningPhase,
-    Knowledge, Document, ResearchQuery, ResearchResult, LearningExperience, EmbeddingVector,
-    KnowledgeEngine, ResearchEngine, KnowledgeManager,
-    ResearchSubEngine, DocumentSubEngine, VectorSubEngine, EmbeddingSubEngine,
-    ReasoningSubEngine, LearningSubEngine, ValidationSubEngine, GraphSubEngine,
-    KnowledgeConfig, KnowledgeFactory, KnowledgeRegistry, KnowledgeRuntime,
-    KnowledgeContext, KnowledgeEvent, KnowledgeEventType,
-    KnowledgeMetrics, KnowledgeLogger, KnowledgeSecurity,
+    ConfidenceLevel,
+    Document,
+    DocumentSubEngine,
+    EmbeddingSubEngine,
+    GraphSubEngine,
+    Knowledge,
+    KnowledgeConfig,
+    KnowledgeContext,
+    KnowledgeEngine,
+    KnowledgeEvent,
+    KnowledgeEventType,
+    KnowledgeFactory,
+    KnowledgeLogger,
+    KnowledgeManager,
+    KnowledgeMetrics,
+    KnowledgeRegistry,
+    KnowledgeRuntime,
+    KnowledgeSecurity,
+    KnowledgeType,
+    LearningExperience,
+    LearningSubEngine,
+    ReasoningSubEngine,
+    ResearchEngine,
+    ResearchQuery,
+    ResearchResult,
+    ResearchSubEngine,
+    SourceType,
+    ValidationStatus,
+    ValidationSubEngine,
+    VectorSubEngine,
 )
 
 
@@ -231,8 +254,8 @@ class TestVectorSubEngine(unittest.TestCase):
 
     def test_similarity_search(self):
         e1 = self.engine.store("machine learning")
-        e2 = self.engine.store("deep learning")
-        e3 = self.engine.store("cooking")
+        self.engine.store("deep learning")
+        self.engine.store("cooking")
         similar = self.engine.get_similar(e1.entry_id, 2)
         self.assertEqual(len(similar), 2)
 
@@ -466,7 +489,7 @@ class TestInfrastructure(unittest.TestCase):
 
     def test_security(self):
         sec = KnowledgeSecurity()
-        from ai_knowledge_engine.knowledge_security import AccessPolicy, AccessPermission
+        from ai_knowledge_engine.knowledge_security import AccessPermission, AccessPolicy
         policy = AccessPolicy(policy_id="p1", user_role="admin", resource_type="knowledge", permissions=[AccessPermission.READ, AccessPermission.WRITE])
         sec.add_policy(policy)
         self.assertTrue(sec.check_access("admin", "knowledge", AccessPermission.READ))

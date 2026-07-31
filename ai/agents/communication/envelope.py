@@ -1,19 +1,19 @@
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 
 class Envelope:
     """Message envelope with metadata wrapper."""
 
-    def __init__(self, message: Dict[str, Any], priority: int = 0, ttl: float = 300.0) -> None:
+    def __init__(self, message: dict[str, Any], priority: int = 0, ttl: float = 300.0) -> None:
         self._message = message
         self._priority = priority
         self._ttl = ttl
-        self._headers: Dict[str, str] = {}
+        self._headers: dict[str, str] = {}
 
     @property
-    def message(self) -> Dict[str, Any]:
+    def message(self) -> dict[str, Any]:
         return dict(self._message)
 
     @property
@@ -30,7 +30,7 @@ class Envelope:
     def get_header(self, key: str) -> str:
         return self._headers.get(key, "")
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "message": self._message,
             "priority": self._priority,

@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import asyncio
 import time
-from typing import Any, Callable, Dict, List, Optional
+from collections.abc import Callable
+from typing import Any
 
 
 class ScheduledTask:
@@ -66,7 +67,7 @@ class MemoryScheduler:
     """Scheduler for background memory maintenance and periodic tasks."""
 
     def __init__(self):
-        self._tasks: Dict[str, ScheduledTask] = {}
+        self._tasks: dict[str, ScheduledTask] = {}
         self._running: bool = False
 
     def add_task(
@@ -87,7 +88,7 @@ class MemoryScheduler:
         return self._tasks.get(name)
 
     @property
-    def tasks(self) -> Dict[str, ScheduledTask]:
+    def tasks(self) -> dict[str, ScheduledTask]:
         return dict(self._tasks)
 
     @property
@@ -105,15 +106,15 @@ class MemoryScheduler:
     def stop(self) -> None:
         self._running = False
 
-    def run_due(self) -> List[str]:
-        ran: List[str] = []
+    def run_due(self) -> list[str]:
+        ran: list[str] = []
         for task in self._tasks.values():
             if task.is_due:
                 task.execute()
                 ran.append(task.name)
         return ran
 
-    def summary(self) -> Dict[str, Any]:
+    def summary(self) -> dict[str, Any]:
         return {
             "task_count": len(self._tasks),
             "running": self._running,

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from backend.database.models.project import Project
-from backend.repositories.base_repository import BaseRepository
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from backend.database.models.project import Project
+from backend.repositories.base_repository import BaseRepository
 
 
 class ProjectRepository(BaseRepository[Project]):

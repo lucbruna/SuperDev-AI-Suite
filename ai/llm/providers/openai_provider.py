@@ -6,14 +6,13 @@ from collections.abc import AsyncIterator
 from typing import Any
 
 from .base_provider import (
-    BaseLLMProvider,
     OPENAI_PRICING,
+    BaseLLMProvider,
     ProviderError,
     ProviderErrorCode,
     StreamDelta,
     _exponential_backoff,
     _is_retryable,
-    convert_messages,
     count_tokens,
 )
 

@@ -1,8 +1,11 @@
 """Network monitoring."""
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
+
+import time
+import uuid
 from enum import Enum
-import time, uuid
+from typing import Any
+
 
 class ConnectionStatus(Enum):
     ACTIVE = "active"
@@ -23,8 +26,8 @@ class NetworkConnection:
 
 class NetworkMonitor:
     def __init__(self) -> None:
-        self._connections: Dict[str, NetworkConnection] = {}
-        self._traffic_log: List[Dict[str, Any]] = []
+        self._connections: dict[str, NetworkConnection] = {}
+        self._traffic_log: list[dict[str, Any]] = []
         self._suspicious_ports: set[int] = {22, 3389, 4444, 5555}
     def track_connection(self, source_ip: str, dest_ip: str, dest_port: int) -> NetworkConnection:
         conn_id = str(uuid.uuid4())[:8]
@@ -53,11 +56,11 @@ class NetworkMonitor:
             conn.status = ConnectionStatus.BLOCKED
             return True
         return False
-    def get_active_connections(self) -> List[Dict[str, Any]]:
+    def get_active_connections(self) -> list[dict[str, Any]]:
         return [{"id": c.conn_id, "src": c.source_ip, "dst": c.dest_ip, "port": c.dest_port, "status": c.status.value} for c in self._connections.values() if c.status == ConnectionStatus.ACTIVE]
-    def get_suspicious_connections(self) -> List[Dict[str, Any]]:
+    def get_suspicious_connections(self) -> list[dict[str, Any]]:
         return [{"id": c.conn_id, "src": c.source_ip, "dst": c.dest_ip, "port": c.dest_port} for c in self._connections.values() if c.status == ConnectionStatus.SUSPICIOUS]
-    def get_traffic_summary(self) -> Dict[str, int]:
+    def get_traffic_summary(self) -> dict[str, int]:
         total_sent = sum(c.bytes_sent for c in self._connections.values())
         total_received = sum(c.bytes_received for c in self._connections.values())
         return {"total_sent": total_sent, "total_received": total_received, "connections": len(self._connections)}

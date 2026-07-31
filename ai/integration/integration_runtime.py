@@ -1,12 +1,12 @@
 """
 Integration Runtime - Runtime execution environment
 """
-from typing import Dict, Any, Optional, List, Callable
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
 import threading
+from dataclasses import dataclass
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class RuntimeState(Enum):
@@ -23,8 +23,8 @@ class RuntimeTask:
     name: str
     integration_id: str
     state: str = "pending"
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
     result: Any = None
     error: str = ""
 
@@ -32,10 +32,10 @@ class RuntimeTask:
 class IntegrationRuntime:
     def __init__(self):
         self.state = RuntimeState.STOPPED
-        self.tasks: Dict[str, RuntimeTask] = {}
-        self.running_integrations: Dict[str, Dict[str, Any]] = {}
-        self.logs: List[Dict[str, Any]] = []
-        self.config: Dict[str, Any] = {"max_concurrent": 10, "task_timeout": 300}
+        self.tasks: dict[str, RuntimeTask] = {}
+        self.running_integrations: dict[str, dict[str, Any]] = {}
+        self.logs: list[dict[str, Any]] = []
+        self.config: dict[str, Any] = {"max_concurrent": 10, "task_timeout": 300}
         self._lock = threading.Lock()
 
     def start(self) -> bool:
@@ -77,7 +77,7 @@ class IntegrationRuntime:
             return True
         return False
 
-    def register_integration(self, integration_id: str, config: Dict[str, Any] = None) -> None:
+    def register_integration(self, integration_id: str, config: dict[str, Any] = None) -> None:
         self.running_integrations[integration_id] = config or {}
 
     def unregister_integration(self, integration_id: str) -> bool:
@@ -86,10 +86,10 @@ class IntegrationRuntime:
             return True
         return False
 
-    def get_task(self, task_id: str) -> Optional[RuntimeTask]:
+    def get_task(self, task_id: str) -> RuntimeTask | None:
         return self.tasks.get(task_id)
 
-    def get_tasks_by_integration(self, integration_id: str) -> List[RuntimeTask]:
+    def get_tasks_by_integration(self, integration_id: str) -> list[RuntimeTask]:
         return [t for t in self.tasks.values() if t.integration_id == integration_id]
 
     def update_config(self, **kwargs) -> None:
@@ -98,7 +98,7 @@ class IntegrationRuntime:
     def _log(self, message: str) -> None:
         self.logs.append({"message": message, "timestamp": datetime.now().isoformat(), "state": self.state.value})
 
-    def get_logs(self, limit: int = 100) -> List[Dict[str, Any]]:
+    def get_logs(self, limit: int = 100) -> list[dict[str, Any]]:
         return self.logs[-limit:]
 
     def is_running(self) -> bool:

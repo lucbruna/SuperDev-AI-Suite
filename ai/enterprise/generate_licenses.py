@@ -1,5 +1,6 @@
 """Licenses subsystem generator."""
 import os
+
 BASE = r'C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\enterprise\licenses'
 
 def w(path, content):

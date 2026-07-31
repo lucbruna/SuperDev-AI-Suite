@@ -1,11 +1,12 @@
 """BI Factory — Factory for creating BI components."""
-from typing import Dict, Any, Optional, List
-from .bi_models import KPI, Insight, Prediction, Decision, DataSource, MetricType, AnalysisType, DecisionType, RiskLevel
+from typing import Any
+
+from .bi_models import KPI, AnalysisType, DataSource, Decision, DecisionType, Insight, MetricType, Prediction
 
 
 class BIFactory:
     def __init__(self):
-        self._templates: Dict[str, Dict[str, Any]] = {
+        self._templates: dict[str, dict[str, Any]] = {
             "revenue_kpi": {"name": "Revenue", "metric_type": MetricType.CURRENCY, "target": 1000000},
             "conversion_kpi": {"name": "Conversion Rate", "metric_type": MetricType.PERCENTAGE, "target": 5.0},
             "churn_kpi": {"name": "Churn Rate", "metric_type": MetricType.PERCENTAGE, "target": 2.0},
@@ -26,7 +27,7 @@ class BIFactory:
     def create_prediction(self, target_metric: str, predicted_value: float, horizon: str = "30d", **kwargs) -> Prediction:
         return Prediction(target_metric=target_metric, predicted_value=predicted_value, horizon=horizon, **kwargs)
 
-    def create_decision(self, title: str, options: List[Dict[str, Any]], decision_type: DecisionType = DecisionType.STRATEGIC, **kwargs) -> Decision:
+    def create_decision(self, title: str, options: list[dict[str, Any]], decision_type: DecisionType = DecisionType.STRATEGIC, **kwargs) -> Decision:
         return Decision(title=title, options=options, decision_type=decision_type, **kwargs)
 
     def create_source(self, name: str, source_type: str = "database", **kwargs) -> DataSource:
@@ -37,11 +38,11 @@ class BIFactory:
             st = DataSourceType.DATABASE
         return DataSource(name=name, source_type=st, **kwargs)
 
-    def register_template(self, name: str, template: Dict[str, Any]) -> None:
+    def register_template(self, name: str, template: dict[str, Any]) -> None:
         self._templates[name] = template
 
-    def get_template(self, name: str) -> Optional[Dict[str, Any]]:
+    def get_template(self, name: str) -> dict[str, Any] | None:
         return self._templates.get(name)
 
-    def list_templates(self) -> List[str]:
+    def list_templates(self) -> list[str]:
         return list(self._templates.keys())

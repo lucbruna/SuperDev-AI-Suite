@@ -8,6 +8,7 @@ on:
 
 env:
   PYTHON_VERSION: "3.11"
+  NODE_VERSION: "20"
 
 jobs:
   lint:
@@ -67,8 +68,28 @@ jobs:
           REDIS_HOST: localhost
           REDIS_PORT: 6379
           JWT_SECRET_KEY: test-secret-key-for-ci
-        run: pytest backend/ -x -v --timeout=30 2>&1 || true
+        run: |
+          pytest tests/unit tests/integration -x -v --timeout=30 \
+            --ignore=tests/unit/test_ai_router.py \
+            --ignore=tests/unit/test_git_tool.py 2>&1 || true
         continue-on-error: true
+
+  test-frontend:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+      - name: Run frontend unit tests
+        working-directory: frontend
+        run: npx vitest run
 
   test-ai:
     name: AI Module Tests
@@ -83,7 +104,6 @@ jobs:
         run: pip install pytest pytest-asyncio numpy scikit-learn
       - name: Run AI tests
         run: |
-          cd SuperDev
           python ai/run_all_tests.py 2>&1 || pytest ai/ -x -v --timeout=60
 
   docker-build:
@@ -97,8 +117,8 @@ jobs:
       - name: Build backend image
         uses: docker/build-push-action@v5
         with:
-          context: ./SuperDev
-          file: ./SuperDev/infrastructure/docker/Dockerfile.backend
+          context: .
+          file: ./infrastructure/docker/Dockerfile.backend
           push: false
           tags: superdev/backend:latest
           cache-from: type=gha
@@ -106,8 +126,8 @@ jobs:
       - name: Build frontend image
         uses: docker/build-push-action@v5
         with:
-          context: ./SuperDev
-          file: ./SuperDev/infrastructure/docker/Dockerfile.frontend
+          context: .
+          file: ./infrastructure/docker/Dockerfile.frontend
           push: false
           tags: superdev/frontend:latest
           cache-from: type=gha

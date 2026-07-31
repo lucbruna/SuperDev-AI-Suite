@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 from .adaptive_learning import AdaptiveLearning
 from .evaluation import Evaluation
@@ -64,7 +64,7 @@ class LearningEngine:
     def evaluation(self) -> Evaluation:
         return self._evaluation
 
-    def learn(self, data: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def learn(self, data: list[dict[str, Any]]) -> dict[str, Any]:
         patterns = self._pattern.learn(data)
         self._incremental.update(data)
         self._learning_count += 1
@@ -74,7 +74,7 @@ class LearningEngine:
             "sample_count": len(data),
         }
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         return {
             "learning_count": self._learning_count,
             "feedback_samples": self._feedback.sample_count,

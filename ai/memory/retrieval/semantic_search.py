@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 
 class SemanticSearch:
@@ -13,9 +13,9 @@ class SemanticSearch:
     def search_count(self) -> int:
         return self._search_count
 
-    def search(self, query: str, entries: List[Dict[str, Any]], top_k: int = 10) -> List[Dict[str, Any]]:
+    def search(self, query: str, entries: list[dict[str, Any]], top_k: int = 10) -> list[dict[str, Any]]:
         q_words = set(query.lower().split())
-        scored: List[tuple] = []
+        scored: list[tuple] = []
         for entry in entries:
             content = str(entry.get("content", ""))
             entry_words = set(content.lower().split())
@@ -28,9 +28,9 @@ class SemanticSearch:
         self._search_count += 1
         return [entry for _, entry in scored[:top_k]]
 
-    def search_by_embedding(self, query: str, entries: List[Dict[str, Any]], top_k: int = 10) -> List[Dict[str, Any]]:
+    def search_by_embedding(self, query: str, entries: list[dict[str, Any]], top_k: int = 10) -> list[dict[str, Any]]:
         q_words = set(query.lower().split())
-        scored: List[tuple] = []
+        scored: list[tuple] = []
         for entry in entries:
             content = str(entry.get("content", ""))
             embedding = entry.get("embedding", [])

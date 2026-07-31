@@ -7,11 +7,11 @@ import uuid
 from collections import deque
 from contextvars import ContextVar
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 
-class SpanStatus(str, Enum):
+class SpanStatus(StrEnum):
     OK = "OK"
     ERROR = "ERROR"
     UNSET = "UNSET"

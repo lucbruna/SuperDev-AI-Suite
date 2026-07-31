@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .embedding_repository import EmbeddingRepository
 
@@ -10,7 +10,7 @@ from .embedding_repository import EmbeddingRepository
 class BackupEntry:
     """A single backup entry containing vector data and metadata."""
 
-    def __init__(self, vector_id: str, vector: List[float], metadata: Dict[str, Any]):
+    def __init__(self, vector_id: str, vector: list[float], metadata: dict[str, Any]):
         self._vector_id = vector_id
         self._vector = list(vector)
         self._metadata = dict(metadata)
@@ -20,14 +20,14 @@ class BackupEntry:
         return self._vector_id
 
     @property
-    def vector(self) -> List[float]:
+    def vector(self) -> list[float]:
         return list(self._vector)
 
     @property
-    def metadata(self) -> Dict[str, Any]:
+    def metadata(self) -> dict[str, Any]:
         return dict(self._metadata)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "vector_id": self._vector_id,
             "vector": list(self._vector),
@@ -40,13 +40,13 @@ class Backup:
 
     def __init__(self, repository: EmbeddingRepository):
         self._repository = repository
-        self._backups: Dict[str, List[BackupEntry]] = {}
+        self._backups: dict[str, list[BackupEntry]] = {}
 
     @property
     def backup_count(self) -> int:
         return len(self._backups)
 
-    def create_backup(self, name: Optional[str] = None) -> str:
+    def create_backup(self, name: str | None = None) -> str:
         backup_id = name or f"backup_{int(time.time())}"
         entries = []
         for entry in self._repository.list_entries():
@@ -54,19 +54,19 @@ class Backup:
         self._backups[backup_id] = entries
         return backup_id
 
-    def get_backup(self, backup_id: str) -> Optional[List[BackupEntry]]:
+    def get_backup(self, backup_id: str) -> list[BackupEntry] | None:
         entries = self._backups.get(backup_id)
         if entries is None:
             return None
         return list(entries)
 
-    def list_backups(self) -> List[str]:
+    def list_backups(self) -> list[str]:
         return list(self._backups.keys())
 
     def delete_backup(self, backup_id: str) -> bool:
         return self._backups.pop(backup_id, None) is not None
 
-    def export_to_json(self, backup_id: str) -> Optional[str]:
+    def export_to_json(self, backup_id: str) -> str | None:
         entries = self.get_backup(backup_id)
         if entries is None:
             return None

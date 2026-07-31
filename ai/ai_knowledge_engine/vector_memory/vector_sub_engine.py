@@ -1,40 +1,40 @@
 """Vector memory subsystem engine — Vector-based memory for similarity search."""
-import uuid
 import math
-from datetime import datetime
-from typing import Dict, Any, List, Optional
+import uuid
 from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Any
 
 
 @dataclass
 class VectorEntry:
     entry_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     text: str = ""
-    vector: List[float] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    vector: list[float] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
     created_at: datetime = field(default_factory=datetime.now)
 
 
 class VectorSubEngine:
     def __init__(self, dimensions: int = 128):
-        self._entries: Dict[str, VectorEntry] = {}
+        self._entries: dict[str, VectorEntry] = {}
         self._dimensions = dimensions
-        self._index: Dict[str, List[str]] = {}
+        self._index: dict[str, list[str]] = {}
 
-    def store(self, text: str, vector: Optional[List[float]] = None, metadata: Optional[Dict[str, Any]] = None) -> VectorEntry:
+    def store(self, text: str, vector: list[float] | None = None, metadata: dict[str, Any] | None = None) -> VectorEntry:
         if vector is None:
             vector = self._hash_embed(text)
         entry = VectorEntry(text=text, vector=vector, metadata=metadata or {})
         self._entries[entry.entry_id] = entry
         return entry
 
-    def get(self, entry_id: str) -> Optional[VectorEntry]:
+    def get(self, entry_id: str) -> VectorEntry | None:
         return self._entries.get(entry_id)
 
     def delete(self, entry_id: str) -> bool:
         return self._entries.pop(entry_id, None) is not None
 
-    def search(self, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
+    def search(self, query: str, top_k: int = 5) -> list[dict[str, Any]]:
         query_vector = self._hash_embed(query)
         scored = []
         for entry in self._entries.values():
@@ -46,7 +46,7 @@ class VectorSubEngine:
             for s in scored[:top_k]
         ]
 
-    def search_by_vector(self, vector: List[float], top_k: int = 5) -> List[Dict[str, Any]]:
+    def search_by_vector(self, vector: list[float], top_k: int = 5) -> list[dict[str, Any]]:
         scored = []
         for entry in self._entries.values():
             score = self._cosine_similarity(vector, entry.vector)
@@ -57,7 +57,7 @@ class VectorSubEngine:
             for s in scored[:top_k]
         ]
 
-    def get_similar(self, entry_id: str, top_k: int = 5) -> List[Dict[str, Any]]:
+    def get_similar(self, entry_id: str, top_k: int = 5) -> list[dict[str, Any]]:
         entry = self._entries.get(entry_id)
         if not entry:
             return []
@@ -83,7 +83,7 @@ class VectorSubEngine:
             removed += 1
         return removed
 
-    def _hash_embed(self, text: str) -> List[float]:
+    def _hash_embed(self, text: str) -> list[float]:
         import hashlib
         h = hashlib.sha256(text.encode()).hexdigest()
         vector = []
@@ -94,10 +94,10 @@ class VectorSubEngine:
             vector.append(0.0)
         return vector[:self._dimensions]
 
-    def _cosine_similarity(self, a: List[float], b: List[float]) -> float:
+    def _cosine_similarity(self, a: list[float], b: list[float]) -> float:
         if len(a) != len(b) or not a:
             return 0.0
-        dot = sum(x * y for x, y in zip(a, b))
+        dot = sum(x * y for x, y in zip(a, b, strict=False))
         norm_a = math.sqrt(sum(x * x for x in a))
         norm_b = math.sqrt(sum(x * x for x in b))
         if norm_a == 0 or norm_b == 0:

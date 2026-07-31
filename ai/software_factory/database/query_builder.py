@@ -1,5 +1,5 @@
 """Query builder for constructing SQL queries."""
-from typing import List, Dict, Any, Optional
+from typing import Any
 
 
 class QueryBuilder:
@@ -7,9 +7,9 @@ class QueryBuilder:
 
     def __init__(self):
         self._query = ""
-        self._params: List[Any] = []
+        self._params: list[Any] = []
 
-    def select(self, columns: List[str], table: str) -> "QueryBuilder":
+    def select(self, columns: list[str], table: str) -> "QueryBuilder":
         cols = ", ".join(columns) if columns else "*"
         self._query = f"SELECT {cols} FROM {table}"
         return self
@@ -38,14 +38,14 @@ class QueryBuilder:
         self._query += f" OFFSET {count}"
         return self
 
-    def insert(self, table: str, columns: List[str], values: List[Any]) -> "QueryBuilder":
+    def insert(self, table: str, columns: list[str], values: list[Any]) -> "QueryBuilder":
         cols = ", ".join(columns)
         placeholders = ", ".join(["?" for _ in values])
         self._query = f"INSERT INTO {table} ({cols}) VALUES ({placeholders})"
         self._params = list(values)
         return self
 
-    def update(self, table: str, sets: Dict[str, Any]) -> "QueryBuilder":
+    def update(self, table: str, sets: dict[str, Any]) -> "QueryBuilder":
         set_str = ", ".join(f"{k} = ?" for k in sets)
         self._query = f"UPDATE {table} SET {set_str}"
         self._params = list(sets.values())
@@ -58,7 +58,7 @@ class QueryBuilder:
     def build(self) -> str:
         return self._query
 
-    def get_params(self) -> List[Any]:
+    def get_params(self) -> list[Any]:
         return list(self._params)
 
     def reset(self) -> None:

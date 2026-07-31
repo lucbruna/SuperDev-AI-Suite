@@ -1,9 +1,9 @@
 """Audit engine."""
 import uuid
-from datetime import datetime
-from typing import Dict, Any, List, Optional
-from enum import Enum
 from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class AuditAction(Enum):
@@ -35,27 +35,27 @@ class AuditEntry:
     ip_address: str = ""
     severity: AuditSeverity = AuditSeverity.LOW
     success: bool = True
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
 class AuditQuery:
-    user_id: Optional[str] = None
-    action: Optional[AuditAction] = None
-    resource: Optional[str] = None
-    severity: Optional[AuditSeverity] = None
-    start_time: Optional[datetime] = None
-    end_time: Optional[datetime] = None
+    user_id: str | None = None
+    action: AuditAction | None = None
+    resource: str | None = None
+    severity: AuditSeverity | None = None
+    start_time: datetime | None = None
+    end_time: datetime | None = None
     limit: int = 100
 
 
 class AuditEngine:
     def __init__(self, retention_days: int = 365):
-        self._entries: List[AuditEntry] = []
+        self._entries: list[AuditEntry] = []
         self._retention_days = retention_days
         self._max_entries: int = 100000
 
-    def log(self, action: AuditAction, user_id: str = "", resource: str = "", details: str = "", ip_address: str = "", severity: AuditSeverity = AuditSeverity.LOW, success: bool = True, metadata: Optional[Dict[str, Any]] = None) -> AuditEntry:
+    def log(self, action: AuditAction, user_id: str = "", resource: str = "", details: str = "", ip_address: str = "", severity: AuditSeverity = AuditSeverity.LOW, success: bool = True, metadata: dict[str, Any] | None = None) -> AuditEntry:
         entry = AuditEntry(
             action=action,
             user_id=user_id,
@@ -71,7 +71,7 @@ class AuditEngine:
             self._entries = self._entries[-self._max_entries:]
         return entry
 
-    def query(self, audit_query: AuditQuery) -> List[AuditEntry]:
+    def query(self, audit_query: AuditQuery) -> list[AuditEntry]:
         results = list(self._entries)
         if audit_query.user_id:
             results = [e for e in results if e.user_id == audit_query.user_id]
@@ -87,25 +87,25 @@ class AuditEngine:
             results = [e for e in results if e.timestamp <= audit_query.end_time]
         return results[-audit_query.limit:]
 
-    def get_entry(self, entry_id: str) -> Optional[AuditEntry]:
+    def get_entry(self, entry_id: str) -> AuditEntry | None:
         for e in self._entries:
             if e.entry_id == entry_id:
                 return e
         return None
 
-    def get_user_history(self, user_id: str, limit: int = 50) -> List[AuditEntry]:
+    def get_user_history(self, user_id: str, limit: int = 50) -> list[AuditEntry]:
         user_entries = [e for e in self._entries if e.user_id == user_id]
         return user_entries[-limit:]
 
-    def get_resource_history(self, resource: str, limit: int = 50) -> List[AuditEntry]:
+    def get_resource_history(self, resource: str, limit: int = 50) -> list[AuditEntry]:
         resource_entries = [e for e in self._entries if e.resource == resource]
         return resource_entries[-limit:]
 
-    def get_failed_actions(self, limit: int = 100) -> List[AuditEntry]:
+    def get_failed_actions(self, limit: int = 100) -> list[AuditEntry]:
         failed = [e for e in self._entries if not e.success]
         return failed[-limit:]
 
-    def get_summary(self) -> Dict[str, Any]:
+    def get_summary(self) -> dict[str, Any]:
         action_counts = {}
         for entry in self._entries:
             action = entry.action.value

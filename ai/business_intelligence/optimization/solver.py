@@ -1,9 +1,11 @@
 """Optimization solver."""
 import time
-from typing import List, Optional
+
 from .models import (
-    OptimizationProblem, Solution, Variable, Constraint,
-    ObjectiveFunction, OptimizationType, ConstraintType, Objective,
+    ConstraintType,
+    Objective,
+    OptimizationProblem,
+    Solution,
 )
 
 
@@ -63,10 +65,10 @@ class OptimizationSolver:
         self._solutions[problem_id] = solution
         return solution
 
-    def get_solution(self, problem_id: str) -> Optional[Solution]:
+    def get_solution(self, problem_id: str) -> Solution | None:
         return self._solutions.get(problem_id)
 
-    def sensitivity_analysis(self, problem_id: str) -> List[dict]:
+    def sensitivity_analysis(self, problem_id: str) -> list[dict]:
         solution = self._solutions.get(problem_id)
         if not solution:
             return []

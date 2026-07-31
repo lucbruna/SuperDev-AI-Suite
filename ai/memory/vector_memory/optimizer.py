@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .vector_store import VectorStore
 
@@ -70,7 +70,7 @@ class Optimizer:
         self._last_optimized = time.time()
         return removed
 
-    def stats(self) -> Dict[str, Any]:
+    def stats(self) -> dict[str, Any]:
         return {
             "last_optimized": self._last_optimized,
             "optimization_count": self._optimization_count,

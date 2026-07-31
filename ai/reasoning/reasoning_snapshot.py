@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from .reasoning_models import ReasoningResult
@@ -13,10 +13,10 @@ class ReasoningSnapshot:
         self._snapshots: dict[str, dict[str, Any]] = {}
 
     def create(self, result: ReasoningResult, state: dict[str, Any] | None = None) -> str:
-        snapshot_id = f"snap_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}"
+        snapshot_id = f"snap_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}"
         self._snapshots[snapshot_id] = {
             "id": snapshot_id,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "result": {
                 "decision": result.decision,
                 "confidence": result.confidence,

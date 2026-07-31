@@ -1,37 +1,37 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from .graph_node import GraphNode
 from .graph_edge import GraphEdge
+from .graph_node import GraphNode
 
 
 class GraphQuery:
     """Query builder for the knowledge graph."""
 
     def __init__(self) -> None:
-        self._label_filter: Optional[str] = None
-        self._property_filters: Dict[str, Any] = {}
-        self._relation_filter: Optional[str] = None
-        self._limit: Optional[int] = None
+        self._label_filter: str | None = None
+        self._property_filters: dict[str, Any] = {}
+        self._relation_filter: str | None = None
+        self._limit: int | None = None
 
-    def filter_by_label(self, label: str) -> "GraphQuery":
+    def filter_by_label(self, label: str) -> GraphQuery:
         self._label_filter = label
         return self
 
-    def filter_by_property(self, key: str, value: Any) -> "GraphQuery":
+    def filter_by_property(self, key: str, value: Any) -> GraphQuery:
         self._property_filters[key] = value
         return self
 
-    def filter_by_relation(self, relation: str) -> "GraphQuery":
+    def filter_by_relation(self, relation: str) -> GraphQuery:
         self._relation_filter = relation
         return self
 
-    def limit(self, count: int) -> "GraphQuery":
+    def limit(self, count: int) -> GraphQuery:
         self._limit = count
         return self
 
-    def execute_nodes(self, nodes: List[GraphNode]) -> List[GraphNode]:
+    def execute_nodes(self, nodes: list[GraphNode]) -> list[GraphNode]:
         results = list(nodes)
         if self._label_filter:
             results = [n for n in results if n.label == self._label_filter]
@@ -41,7 +41,7 @@ class GraphQuery:
             results = results[: self._limit]
         return results
 
-    def execute_edges(self, edges: List[GraphEdge]) -> List[GraphEdge]:
+    def execute_edges(self, edges: list[GraphEdge]) -> list[GraphEdge]:
         results = list(edges)
         if self._relation_filter:
             results = [e for e in results if e.relation == self._relation_filter]

@@ -15,8 +15,9 @@ class SymbolIndex:
     """Indexes symbols (classes, functions, imports) across the codebase.
 
     Populated from :class:`ASTManager` parse results: each symbol maps to one
-    or more locations ``{"kind", "path"}``. ``search`` provides substring
-    lookup used for navigation and prompt-context selection.
+    or more locations ``{"kind", "path"}``. ``search`` is the plain
+    substring lookup; ``rank`` adds relevance ordering (used by code
+    navigation and prompt-context selection).
     """
 
     def __init__(self, ast_manager: ASTManager | None = None) -> None:

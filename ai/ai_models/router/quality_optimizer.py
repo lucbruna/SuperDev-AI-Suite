@@ -1,10 +1,12 @@
 """Quality optimizer."""
 from __future__ import annotations
-from typing import Any, Dict, List
+
+from typing import Any
+
 
 class QualityOptimizer:
     def __init__(self) -> None:
-        self._scores: Dict[str, Dict[str, float]] = {}
+        self._scores: dict[str, dict[str, float]] = {}
     def record_score(self, model_id: str, task_type: str, score: float) -> None:
         self._scores.setdefault(model_id, {})
         key = task_type
@@ -29,16 +31,13 @@ class QualityOptimizer:
                 best_score = score
                 best_model = model_id
         return best_model
-    def rank_models(self, task_type: str = "") -> List[Dict[str, Any]]:
+    def rank_models(self, task_type: str = "") -> list[dict[str, Any]]:
         rankings = []
         for model_id, scores in self._scores.items():
-            if task_type:
-                score = scores.get(task_type, 0)
-            else:
-                score = sum(scores.values()) / len(scores) if scores else 0
+            score = scores.get(task_type, 0) if task_type else sum(scores.values()) / len(scores) if scores else 0
             rankings.append({"model_id": model_id, "score": score})
         return sorted(rankings, key=lambda x: x["score"], reverse=True)
-    def list_models(self) -> List[str]:
+    def list_models(self) -> list[str]:
         return list(self._scores.keys())
     def clear(self, model_id: str = "") -> int:
         if model_id:

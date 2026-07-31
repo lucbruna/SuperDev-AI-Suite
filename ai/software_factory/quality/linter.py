@@ -1,7 +1,7 @@
 """Linter for detecting code quality issues."""
-from typing import List
 import re
-from .models import QualityIssue, IssueSeverity, IssueCategory
+
+from .models import IssueCategory, IssueSeverity, QualityIssue
 
 
 class Linter:
@@ -17,7 +17,7 @@ class Linter:
             (r"exec\(", IssueSeverity.ERROR, IssueCategory.SECURITY, "Use of exec() is dangerous"),
         ]
 
-    def lint(self, content: str) -> List[QualityIssue]:
+    def lint(self, content: str) -> list[QualityIssue]:
         issues = []
         lines = content.split("\n")
         for line_num, line in enumerate(lines, 1):
@@ -31,7 +31,7 @@ class Linter:
                     ))
         return issues
 
-    def lint_line(self, line: str, line_number: int) -> List[QualityIssue]:
+    def lint_line(self, line: str, line_number: int) -> list[QualityIssue]:
         issues = []
         for pattern, severity, category, message in self._patterns:
             if re.search(pattern, line):

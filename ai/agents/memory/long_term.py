@@ -2,15 +2,15 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class LongTermMemory:
     """Persistent memory with importance scoring and access-based retention."""
 
     def __init__(self) -> None:
-        self._store: Dict[str, Dict[str, Any]] = {}
-        self._access_counts: Dict[str, int] = {}
+        self._store: dict[str, dict[str, Any]] = {}
+        self._access_counts: dict[str, int] = {}
 
     def store(self, key: str, value: Any, importance: float = 0.5) -> None:
         self._store[key] = {
@@ -21,7 +21,7 @@ class LongTermMemory:
         }
         self._access_counts[key] = self._access_counts.get(key, 0) + 1
 
-    def retrieve(self, key: str) -> Optional[Any]:
+    def retrieve(self, key: str) -> Any | None:
         entry = self._store.get(key)
         if entry is None:
             return None
@@ -41,14 +41,14 @@ class LongTermMemory:
     def count(self) -> int:
         return len(self._store)
 
-    def get_all(self) -> Dict[str, Any]:
+    def get_all(self) -> dict[str, Any]:
         return {k: v.get("value") for k, v in self._store.items()}
 
-    def keys(self) -> List[str]:
+    def keys(self) -> list[str]:
         return list(self._store.keys())
 
     def get_by_importance(self, min_importance: float = 0.0,
-                          max_importance: float = 1.0) -> Dict[str, Any]:
+                          max_importance: float = 1.0) -> dict[str, Any]:
         result = {}
         for k, v in self._store.items():
             imp = v.get("importance", 0.5)
@@ -56,7 +56,7 @@ class LongTermMemory:
                 result[k] = v.get("value")
         return result
 
-    def get_most_accessed(self, limit: int = 10) -> List[str]:
+    def get_most_accessed(self, limit: int = 10) -> list[str]:
         sorted_keys = sorted(
             self._access_counts.keys(),
             key=lambda k: self._access_counts.get(k, 0),
@@ -68,7 +68,7 @@ class LongTermMemory:
         self._store.clear()
         self._access_counts.clear()
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         return {
             "count": len(self._store),
             "keys": list(self._store.keys()),

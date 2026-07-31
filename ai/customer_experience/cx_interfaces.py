@@ -1,9 +1,15 @@
 """CX Interfaces — Protocol interfaces for customer experience."""
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any
+
 from .cx_models import (
-    Customer, CustomerProfile, Interaction, Ticket,
-    Lead, Recommendation, LoyaltyTransaction, CustomerJourney,
+    Customer,
+    CustomerJourney,
+    CustomerProfile,
+    Lead,
+    LoyaltyTransaction,
+    Recommendation,
+    Ticket,
 )
 
 
@@ -13,15 +19,15 @@ class CRMEngineInterface(ABC):
         pass
 
     @abstractmethod
-    def get_customer(self, customer_id: str) -> Optional[Customer]:
+    def get_customer(self, customer_id: str) -> Customer | None:
         pass
 
     @abstractmethod
-    def update_customer(self, customer_id: str, updates: Dict[str, Any]) -> Optional[Customer]:
+    def update_customer(self, customer_id: str, updates: dict[str, Any]) -> Customer | None:
         pass
 
     @abstractmethod
-    def search_customers(self, query: str) -> List[Customer]:
+    def search_customers(self, query: str) -> list[Customer]:
         pass
 
 
@@ -31,11 +37,11 @@ class ProfileEngineInterface(ABC):
         pass
 
     @abstractmethod
-    def get_profile(self, customer_id: str) -> Optional[CustomerProfile]:
+    def get_profile(self, customer_id: str) -> CustomerProfile | None:
         pass
 
     @abstractmethod
-    def update_profile(self, customer_id: str, updates: Dict[str, Any]) -> Optional[CustomerProfile]:
+    def update_profile(self, customer_id: str, updates: dict[str, Any]) -> CustomerProfile | None:
         pass
 
 
@@ -49,7 +55,7 @@ class SalesEngineInterface(ABC):
         pass
 
     @abstractmethod
-    def get_leads(self, status: Optional[str] = None) -> List[Lead]:
+    def get_leads(self, status: str | None = None) -> list[Lead]:
         pass
 
 
@@ -63,13 +69,13 @@ class SupportEngineInterface(ABC):
         pass
 
     @abstractmethod
-    def get_tickets(self, status: Optional[str] = None) -> List[Ticket]:
+    def get_tickets(self, status: str | None = None) -> list[Ticket]:
         pass
 
 
 class RecommendationEngineInterface(ABC):
     @abstractmethod
-    def recommend(self, customer_id: str, context: Optional[Dict] = None) -> List[Recommendation]:
+    def recommend(self, customer_id: str, context: dict | None = None) -> list[Recommendation]:
         pass
 
     @abstractmethod
@@ -79,11 +85,11 @@ class RecommendationEngineInterface(ABC):
 
 class SentimentEngineInterface(ABC):
     @abstractmethod
-    def analyze(self, text: str) -> Dict[str, Any]:
+    def analyze(self, text: str) -> dict[str, Any]:
         pass
 
     @abstractmethod
-    def get_customer_sentiment(self, customer_id: str) -> Dict[str, Any]:
+    def get_customer_sentiment(self, customer_id: str) -> dict[str, Any]:
         pass
 
 
@@ -111,5 +117,5 @@ class JourneyEngineInterface(ABC):
         pass
 
     @abstractmethod
-    def get_journey(self, customer_id: str) -> Optional[CustomerJourney]:
+    def get_journey(self, customer_id: str) -> CustomerJourney | None:
         pass

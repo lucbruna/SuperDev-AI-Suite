@@ -1,5 +1,5 @@
 """Analyzer for code complexity metrics."""
-from typing import List
+
 from .models import QualityMetric
 
 
@@ -13,7 +13,7 @@ class ComplexityAnalyzer:
             "max_line_length": 100,
         }
 
-    def analyze(self, content: str) -> List[QualityMetric]:
+    def analyze(self, content: str) -> list[QualityMetric]:
         metrics = []
         lines = content.split("\n")
         code_lines = [l for l in lines if l.strip() and not l.strip().startswith("#")]

@@ -1,19 +1,21 @@
 """Context storage."""
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
+
 import time
+from typing import Any
+
 
 class ContextStorage:
     def __init__(self, max_tokens: int = 4000) -> None:
-        self._contexts: Dict[str, List[Dict[str, Any]]] = {}
+        self._contexts: dict[str, list[dict[str, Any]]] = {}
         self._max_tokens = max_tokens
-    def add(self, session_id: str, content: str, role: str = "user", metadata: Dict[str, Any] = None) -> Dict[str, Any]:
+    def add(self, session_id: str, content: str, role: str = "user", metadata: dict[str, Any] = None) -> dict[str, Any]:
         entry = {"content": content, "role": role, "metadata": metadata or {}, "timestamp": time.time()}
         self._contexts.setdefault(session_id, []).append(entry)
         return entry
-    def get_history(self, session_id: str, limit: int = 20) -> List[Dict[str, Any]]:
+    def get_history(self, session_id: str, limit: int = 20) -> list[dict[str, Any]]:
         return self._contexts.get(session_id, [])[-limit:]
-    def get_context_window(self, session_id: str, max_messages: int = 10) -> List[Dict[str, Any]]:
+    def get_context_window(self, session_id: str, max_messages: int = 10) -> list[dict[str, Any]]:
         history = self._contexts.get(session_id, [])
         return history[-max_messages:]
     def truncate(self, session_id: str, keep_last: int = 10) -> int:
@@ -28,7 +30,7 @@ class ContextStorage:
             del self._contexts[session_id]
             return True
         return False
-    def list_sessions(self) -> List[str]:
+    def list_sessions(self) -> list[str]:
         return list(self._contexts.keys())
     def token_estimate(self, session_id: str) -> int:
         return sum(len(str(m.get("content", ""))) // 4 for m in self._contexts.get(session_id, []))

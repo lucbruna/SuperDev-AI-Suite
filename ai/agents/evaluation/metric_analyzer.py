@@ -1,27 +1,27 @@
 """Metric analyzer for trend detection and insights."""
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 
 class MetricAnalyzer:
     """Analyzes metric trends over time to detect patterns."""
 
     def __init__(self) -> None:
-        self._history: List[Dict[str, Any]] = []
+        self._history: list[dict[str, Any]] = []
 
-    def record(self, metrics: Dict[str, Any]) -> None:
+    def record(self, metrics: dict[str, Any]) -> None:
         self._history.append(metrics)
 
-    def analyze_trends(self, data: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def analyze_trends(self, data: list[dict[str, Any]]) -> dict[str, Any]:
         if not data:
             return {"trends": {}, "summary": "No data available"}
-        numeric_keys: Dict[str, List[float]] = {}
+        numeric_keys: dict[str, list[float]] = {}
         for entry in data:
             for key, value in entry.items():
                 if isinstance(value, (int, float)):
                     numeric_keys.setdefault(key, []).append(float(value))
-        trends: Dict[str, Any] = {}
+        trends: dict[str, Any] = {}
         for key, values in numeric_keys.items():
             if len(values) < 2:
                 trends[key] = {"direction": "stable", "avg": round(values[0], 3)}
@@ -49,5 +49,5 @@ class MetricAnalyzer:
             "declining": declining,
         }
 
-    def get_history(self, limit: int = 50) -> List[Dict[str, Any]]:
+    def get_history(self, limit: int = 50) -> list[dict[str, Any]]:
         return self._history[-limit:]

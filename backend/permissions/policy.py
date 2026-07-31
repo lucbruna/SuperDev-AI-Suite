@@ -85,7 +85,4 @@ class PolicyEngine:
         if action.endswith(":write"):
             return is_owner or is_org_member
 
-        if action.endswith(":read"):
-            return True
-
-        return False
+        return bool(action.endswith(":read"))

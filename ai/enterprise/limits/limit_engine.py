@@ -1,12 +1,11 @@
 """Limit engine."""
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
-import time
+
 
 class LimitEngine:
     def __init__(self) -> None:
-        self._limits: Dict[str, Dict[str, float]] = {}
-        self._usage: Dict[str, Dict[str, float]] = {}
+        self._limits: dict[str, dict[str, float]] = {}
+        self._usage: dict[str, dict[str, float]] = {}
         self._started = False
     def start(self) -> None:
         self._started = True
@@ -29,9 +28,9 @@ class LimitEngine:
         if limit == 0 or limit == float('inf'):
             return 0.0
         return (self.get_usage(org_id, resource) / limit) * 100
-    def list_limits(self, org_id: str) -> Dict[str, float]:
+    def list_limits(self, org_id: str) -> dict[str, float]:
         return dict(self._limits.get(org_id, {}))
-    def list_usage(self, org_id: str) -> Dict[str, float]:
+    def list_usage(self, org_id: str) -> dict[str, float]:
         return dict(self._usage.get(org_id, {}))
     def reset_usage(self, org_id: str, resource: str = "") -> float:
         if resource:

@@ -5,12 +5,13 @@ from dataclasses import dataclass
 from uuid import UUID
 
 import pathspec
-from backend.database.session import get_db
-from backend.knowledge_base.embedding_service import EmbeddingService
-from backend.knowledge_base.models import KnowledgeBase, KnowledgeBaseType, KnowledgeChunk, KnowledgeEntry
 from fastapi import Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from backend.database.session import get_db
+from backend.knowledge_base.embedding_service import EmbeddingService
+from backend.knowledge_base.models import KnowledgeBase, KnowledgeBaseType, KnowledgeChunk, KnowledgeEntry
 
 
 async def get_knowledge_base_service(db: AsyncSession = Depends(get_db)) -> KnowledgeBaseService:
@@ -44,31 +45,31 @@ class VectorStore:
         similarity_threshold: float = 0.5,
     ) -> list[SearchResult]:
         query_embedding = self.embedding_service.embed_text(query)
-        
+
         stmt = (
             select(KnowledgeChunk, KnowledgeEntry, KnowledgeBase)
             .join(KnowledgeEntry, KnowledgeChunk.entry_id == KnowledgeEntry.id)
             .join(KnowledgeBase, KnowledgeEntry.knowledge_base_id == KnowledgeBase.id)
             .where(KnowledgeChunk.embedding.is_not(None))
         )
-        
+
         if knowledge_base_ids:
             stmt = stmt.where(KnowledgeEntry.knowledge_base_id.in_(knowledge_base_ids))
-        
+
         stmt = stmt.order_by(KnowledgeChunk.embedding.cosine_distance(query_embedding)).limit(top_k * 2)
-        
+
         results = await self.session.execute(stmt)
         rows = results.all()
-        
+
         search_results = []
         for chunk, entry, _kb in rows:
             if chunk.embedding is None:
                 continue
-            
+
             similarity = 1 - chunk.embedding.cosine_distance(query_embedding)
             if similarity >= similarity_threshold:
                 search_results.append(SearchResult(entry=entry, chunk=chunk, similarity=similarity))
-        
+
         search_results.sort(key=lambda x: x.similarity, reverse=True)
         return search_results[:top_k]
 
@@ -111,7 +112,7 @@ class KnowledgeBaseService:
         kb = await self.session.get(KnowledgeBase, knowledge_base_id)
         if not kb:
             raise ValueError(f"Knowledge base {knowledge_base_id} not found")
-        
+
         entry = KnowledgeEntry(
             knowledge_base_id=knowledge_base_id,
             title=title,
@@ -124,10 +125,10 @@ class KnowledgeBaseService:
         )
         self.session.add(entry)
         await self.session.flush()
-        
+
         await self._create_chunks(entry, content)
         await self.session.commit()
-        
+
         return entry
 
     async def add_code_file(
@@ -140,10 +141,10 @@ class KnowledgeBaseService:
     ) -> KnowledgeEntry:
         entry_tags = tags or []
         entry_tags.extend(["code", "repository"])
-        
+
         if language:
             entry_tags.append(language)
-        
+
         return await self.add_document(
             knowledge_base_id=knowledge_base_id,
             title=os.path.basename(file_path),
@@ -156,10 +157,10 @@ class KnowledgeBaseService:
 
     async def _create_chunks(self, entry: KnowledgeEntry, content: str) -> list[KnowledgeChunk]:
         chunks_data = self._split_into_chunks(content)
-        
+
         chunk_texts = [chunk[1] for chunk in chunks_data]
         embeddings = self.embedding_service.embed_texts(chunk_texts)
-        
+
         chunks = []
         for (chunk_index, chunk_content, chunk_metadata), embedding in zip(chunks_data, embeddings, strict=False):
             chunk = KnowledgeChunk(
@@ -172,7 +173,7 @@ class KnowledgeBaseService:
             )
             self.session.add(chunk)
             chunks.append(chunk)
-        
+
         await self.session.flush()
         return chunks
 
@@ -182,28 +183,28 @@ class KnowledgeBaseService:
         current_chunk = []
         current_size = 0
         chunk_index = 0
-        
+
         for line in lines:
             line_size = len(line) + 1
-            
+
             if current_size + line_size > self.chunk_config.chunk_size and current_chunk:
                 chunk_content = "\n".join(current_chunk)
                 if len(chunk_content) >= self.chunk_config.min_chunk_size:
                     chunks.append((chunk_index, chunk_content, {"lines": len(current_chunk)}))
                     chunk_index += 1
-                
+
                 overlap_lines = max(1, self.chunk_config.chunk_overlap // (current_size // len(current_chunk)) if current_chunk else 1)
                 current_chunk = current_chunk[-overlap_lines:] if overlap_lines < len(current_chunk) else current_chunk
                 current_size = sum(len(l) + 1 for l in current_chunk)
-            
+
             current_chunk.append(line)
             current_size += line_size
-        
+
         if current_chunk:
             chunk_content = "\n".join(current_chunk)
             if len(chunk_content) >= self.chunk_config.min_chunk_size:
                 chunks.append((chunk_index, chunk_content, {"lines": len(current_chunk)}))
-        
+
         return chunks
 
     async def search(
@@ -228,16 +229,16 @@ class KnowledgeBaseService:
         top_k: int = 5,
     ) -> list[SearchResult]:
         query = f"```{language or ''}\n{code_snippet}\n```" if language else code_snippet
-        
+
         results = await self.search(
             query=query,
             knowledge_base_ids=knowledge_base_ids,
             top_k=top_k * 2,
         )
-        
+
         if language:
             results = [r for r in results if r.entry.language == language]
-        
+
         return results[:top_k]
 
     async def get_context_for_query(
@@ -252,20 +253,20 @@ class KnowledgeBaseService:
             top_k=20,
             similarity_threshold=0.4,
         )
-        
+
         context_parts = []
         total_tokens = 0
-        
+
         for result in results:
             chunk_text = f"Source: {result.entry.title}\n{result.chunk.content}\n---\n"
             chunk_tokens = len(chunk_text.split())
-            
+
             if total_tokens + chunk_tokens > max_tokens:
                 break
-            
+
             context_parts.append(chunk_text)
             total_tokens += chunk_tokens
-        
+
         return "\n".join(context_parts)
 
     async def ingest_repository(
@@ -277,34 +278,34 @@ class KnowledgeBaseService:
     ) -> int:
         if file_patterns is None:
             file_patterns = ["*.py", "*.js", "*.ts", "*.java", "*.go", "*.rs", "*.cpp", "*.h", "*.cs", "*.php", "*.rb", "*.swift", "*.kt"]
-        
+
         if exclude_patterns is None:
             exclude_patterns = [".git", "__pycache__", "node_modules", "dist", "build", "*.pyc", ".venv", "venv", "target"]
-        
+
         spec = pathspec.PathSpec.from_lines("gitwildmatch", exclude_patterns)
         pattern_specs = [pathspec.PathSpec.from_lines("gitwildmatch", [p]) for p in file_patterns]
-        
+
         count = 0
         for root, dirs, files in os.walk(repo_path):
             dirs[:] = [d for d in dirs if not spec.match_file(os.path.relpath(os.path.join(root, d), repo_path))]
-            
+
             for file in files:
                 file_path = os.path.join(root, file)
                 rel_path = os.path.relpath(file_path, repo_path)
-                
+
                 if not any(ps.match_file(rel_path) for ps in pattern_specs):
                     continue
-                
+
                 try:
                     with open(file_path, encoding="utf-8") as f:
                         content = f.read()
-                    
+
                     if not content.strip():
                         continue
-                    
+
                     ext = os.path.splitext(file)[1].lstrip(".")
                     language = self._get_language_from_extension(ext)
-                    
+
                     await self.add_code_file(
                         knowledge_base_id=knowledge_base_id,
                         file_path=rel_path,
@@ -314,7 +315,7 @@ class KnowledgeBaseService:
                     count += 1
                 except Exception:
                     continue
-        
+
         await self.session.commit()
         return count
 

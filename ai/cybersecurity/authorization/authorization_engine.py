@@ -1,9 +1,9 @@
 """
 Authorization Engine
 """
-from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any
 
 
 class AccessDecision(Enum):
@@ -17,28 +17,28 @@ class AccessRequest:
     user_id: str
     resource: str
     action: str
-    context: Dict[str, Any] = field(default_factory=dict)
+    context: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
 class AccessPolicy:
     name: str
     effect: str = "allow"
-    actions: List[str] = field(default_factory=list)
-    resources: List[str] = field(default_factory=list)
-    conditions: Dict[str, Any] = field(default_factory=dict)
+    actions: list[str] = field(default_factory=list)
+    resources: list[str] = field(default_factory=list)
+    conditions: dict[str, Any] = field(default_factory=dict)
     priority: int = 0
     enabled: bool = True
 
 
 class AuthorizationEngine:
     def __init__(self):
-        self.policies: List[AccessPolicy] = []
-        
+        self.policies: list[AccessPolicy] = []
+
     def add_policy(self, policy: AccessPolicy) -> None:
         self.policies.append(policy)
         self.policies.sort(key=lambda p: p.priority, reverse=True)
-        
+
     def evaluate(self, request: AccessRequest) -> AccessDecision:
         for policy in self.policies:
             if not policy.enabled:
@@ -46,7 +46,7 @@ class AuthorizationEngine:
             if self._matches_policy(policy, request):
                 return AccessDecision.ALLOW if policy.effect == "allow" else AccessDecision.DENY
         return AccessDecision.DENY
-        
+
     def _matches_policy(self, policy: AccessPolicy, request: AccessRequest) -> bool:
         if policy.actions and request.action not in policy.actions:
             return False
@@ -61,18 +61,18 @@ class AuthorizationEngine:
             elif request.context[key] != value:
                 return False
         return True
-        
-    def check_access(self, user_id: str, resource: str, action: str, context: Dict = None) -> bool:
+
+    def check_access(self, user_id: str, resource: str, action: str, context: dict = None) -> bool:
         request = AccessRequest(user_id=user_id, resource=resource, action=action, context=context or {})
         decision = self.evaluate(request)
         return decision == AccessDecision.ALLOW
-        
+
     def remove_policy(self, name: str) -> bool:
         for i, p in enumerate(self.policies):
             if p.name == name:
                 self.policies.pop(i)
                 return True
         return False
-        
-    def list_policies(self) -> List[AccessPolicy]:
+
+    def list_policies(self) -> list[AccessPolicy]:
         return self.policies.copy()

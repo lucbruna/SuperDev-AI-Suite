@@ -1,10 +1,10 @@
 """
 Privacy Compliance Manager (GDPR/CCPA)
 """
-from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
-from enum import Enum
 from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class ConsentType(Enum):
@@ -37,7 +37,7 @@ class Consent:
     consent_type: ConsentType
     status: ConsentStatus = ConsentStatus.GRANTED
     granted_at: datetime = field(default_factory=datetime.now)
-    expires_at: Optional[datetime] = None
+    expires_at: datetime | None = None
     ip_address: str = ""
     method: str = "web_form"
 
@@ -49,15 +49,15 @@ class DataSubjectRequestRecord:
     request_type: DataSubjectRequest
     status: str = "pending"
     submitted_at: datetime = field(default_factory=datetime.now)
-    completed_at: Optional[datetime] = None
+    completed_at: datetime | None = None
     notes: str = ""
 
 
 class PrivacyManager:
     def __init__(self):
-        self.consents: Dict[str, Consent] = {}
-        self.dsar_records: Dict[str, DataSubjectRequestRecord] = {}
-        self.data_processing: List[Dict[str, Any]] = []
+        self.consents: dict[str, Consent] = {}
+        self.dsar_records: dict[str, DataSubjectRequestRecord] = {}
+        self.data_processing: list[dict[str, Any]] = []
 
     def record_consent(self, user_id: str, consent_type: ConsentType, granted: bool = True, ip_address: str = "") -> Consent:
         consent_id = f"consent_{user_id}_{consent_type.value}"
@@ -93,13 +93,13 @@ class PrivacyManager:
             return True
         return False
 
-    def get_user_consents(self, user_id: str) -> List[Consent]:
+    def get_user_consents(self, user_id: str) -> list[Consent]:
         return [c for c in self.consents.values() if c.user_id == user_id]
 
-    def get_pending_dsars(self) -> List[DataSubjectRequestRecord]:
+    def get_pending_dsars(self) -> list[DataSubjectRequestRecord]:
         return [r for r in self.dsar_records.values() if r.status == "pending"]
 
-    def log_processing(self, purpose: str, data_categories: List[str], legal_basis: str = "") -> None:
+    def log_processing(self, purpose: str, data_categories: list[str], legal_basis: str = "") -> None:
         self.data_processing.append({"purpose": purpose, "categories": data_categories, "legal_basis": legal_basis, "timestamp": datetime.now().isoformat()})
 
     def count(self) -> int:

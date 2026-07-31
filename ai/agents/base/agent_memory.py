@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class AgentMemory:
@@ -8,8 +8,8 @@ class AgentMemory:
 
     def __init__(self, max_size: int = 100) -> None:
         self._max_size = max_size
-        self._short_term: List[Dict[str, Any]] = []
-        self._long_term: Dict[str, Any] = {}
+        self._short_term: list[dict[str, Any]] = []
+        self._long_term: dict[str, Any] = {}
 
     def remember(self, key: str, value: Any) -> None:
         self._short_term.append({"key": key, "value": value})
@@ -17,7 +17,7 @@ class AgentMemory:
             self._short_term.pop(0)
         self._long_term[key] = value
 
-    def recall(self, key: str) -> Optional[Any]:
+    def recall(self, key: str) -> Any | None:
         return self._long_term.get(key)
 
     def forget(self, key: str) -> bool:
@@ -28,7 +28,7 @@ class AgentMemory:
         self._short_term.clear()
         self._long_term.clear()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "short_term_count": len(self._short_term),
             "long_term_count": len(self._long_term),

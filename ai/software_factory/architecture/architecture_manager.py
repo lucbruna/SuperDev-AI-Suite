@@ -1,9 +1,14 @@
 """Manager for architecture lifecycle and persistence."""
-from typing import List, Dict, Any, Optional
 from datetime import datetime
+from typing import Any
+
 from .models import (
-    ArchitectureComponent, Connector, ArchitecturePattern,
-    ArchitectureView, ArchitectureDecision, DesignConstraint,
+    ArchitectureComponent,
+    ArchitectureDecision,
+    ArchitecturePattern,
+    ArchitectureView,
+    Connector,
+    DesignConstraint,
 )
 
 
@@ -11,13 +16,13 @@ class ArchitectureManager:
     """Manages architecture versions, decisions, and constraints."""
 
     def __init__(self):
-        self._components: Dict[str, ArchitectureComponent] = {}
-        self._connectors: Dict[str, Connector] = {}
-        self._patterns: Dict[str, ArchitecturePattern] = {}
-        self._views: Dict[str, ArchitectureView] = {}
-        self._decisions: List[ArchitectureDecision] = []
-        self._constraints: List[DesignConstraint] = []
-        self._versions: List[Dict[str, Any]] = []
+        self._components: dict[str, ArchitectureComponent] = {}
+        self._connectors: dict[str, Connector] = {}
+        self._patterns: dict[str, ArchitecturePattern] = {}
+        self._views: dict[str, ArchitectureView] = {}
+        self._decisions: list[ArchitectureDecision] = []
+        self._constraints: list[DesignConstraint] = []
+        self._versions: list[dict[str, Any]] = []
 
     def save_snapshot(self, version_name: str) -> str:
         snapshot = {
@@ -32,19 +37,19 @@ class ArchitectureManager:
     def add_constraint(self, constraint: DesignConstraint) -> None:
         self._constraints.append(constraint)
 
-    def get_constraints(self) -> List[DesignConstraint]:
+    def get_constraints(self) -> list[DesignConstraint]:
         return list(self._constraints)
 
-    def get_version_history(self) -> List[Dict[str, Any]]:
+    def get_version_history(self) -> list[dict[str, Any]]:
         return list(self._versions)
 
     def add_decision(self, decision: ArchitectureDecision) -> None:
         self._decisions.append(decision)
 
-    def get_decisions(self) -> List[ArchitectureDecision]:
+    def get_decisions(self) -> list[ArchitectureDecision]:
         return list(self._decisions)
 
-    def get_summary(self) -> Dict[str, Any]:
+    def get_summary(self) -> dict[str, Any]:
         return {
             "components": len(self._components),
             "connectors": len(self._connectors),

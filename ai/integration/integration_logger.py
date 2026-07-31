@@ -1,12 +1,11 @@
 """
 Integration Logger - Structured logging for integrations
 """
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import hashlib
-import json
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class LogLevel(Enum):
@@ -24,41 +23,41 @@ class LogEntry:
     message: str
     integration_id: str = ""
     source: str = ""
-    data: Dict[str, Any] = field(default_factory=dict)
+    data: dict[str, Any] = field(default_factory=dict)
     timestamp: datetime = field(default_factory=datetime.now)
     trace_id: str = ""
 
 
 class IntegrationLogger:
     def __init__(self):
-        self.entries: List[LogEntry] = []
+        self.entries: list[LogEntry] = []
         self.min_level: LogLevel = LogLevel.INFO
-        self.sinks: List[str] = ["console"]
-        self.filters: Dict[str, Any] = {}
+        self.sinks: list[str] = ["console"]
+        self.filters: dict[str, Any] = {}
 
-    def log(self, level: LogLevel, message: str, integration_id: str = "", data: Dict[str, Any] = None, **kwargs) -> Optional[LogEntry]:
+    def log(self, level: LogLevel, message: str, integration_id: str = "", data: dict[str, Any] = None, **kwargs) -> LogEntry | None:
         if level.value < self.min_level.value:
             return None
         entry = LogEntry(entry_id=hashlib.sha256(f"{message}{datetime.now().isoformat()}".encode()).hexdigest()[:16], level=level, message=message, integration_id=integration_id, data=data or {}, **kwargs)
         self.entries.append(entry)
         return entry
 
-    def debug(self, message: str, integration_id: str = "", **kwargs) -> Optional[LogEntry]:
+    def debug(self, message: str, integration_id: str = "", **kwargs) -> LogEntry | None:
         return self.log(LogLevel.DEBUG, message, integration_id, **kwargs)
 
-    def info(self, message: str, integration_id: str = "", **kwargs) -> Optional[LogEntry]:
+    def info(self, message: str, integration_id: str = "", **kwargs) -> LogEntry | None:
         return self.log(LogLevel.INFO, message, integration_id, **kwargs)
 
-    def warning(self, message: str, integration_id: str = "", **kwargs) -> Optional[LogEntry]:
+    def warning(self, message: str, integration_id: str = "", **kwargs) -> LogEntry | None:
         return self.log(LogLevel.WARNING, message, integration_id, **kwargs)
 
-    def error(self, message: str, integration_id: str = "", **kwargs) -> Optional[LogEntry]:
+    def error(self, message: str, integration_id: str = "", **kwargs) -> LogEntry | None:
         return self.log(LogLevel.ERROR, message, integration_id, **kwargs)
 
-    def critical(self, message: str, integration_id: str = "", **kwargs) -> Optional[LogEntry]:
+    def critical(self, message: str, integration_id: str = "", **kwargs) -> LogEntry | None:
         return self.log(LogLevel.CRITICAL, message, integration_id, **kwargs)
 
-    def get_entries(self, level: LogLevel = None, integration_id: str = None, limit: int = 100) -> List[LogEntry]:
+    def get_entries(self, level: LogLevel = None, integration_id: str = None, limit: int = 100) -> list[LogEntry]:
         results = self.entries
         if level:
             results = [e for e in results if e.level == level]

@@ -1,8 +1,12 @@
 """ABAC (Attribute-Based Access Control)."""
 from __future__ import annotations
-from typing import Any, Callable, Dict, List, Optional
+
+import time
+import uuid
+from collections.abc import Callable
 from enum import Enum
-import time, uuid
+from typing import Any
+
 
 class ABACEffect(Enum):
     PERMIT = "permit"
@@ -11,20 +15,20 @@ class ABACEffect(Enum):
     INDETERMINATE = "indeterminate"
 
 class ABACPolicy:
-    def __init__(self, name: str, target: Dict[str, Any], effect: ABACEffect) -> None:
+    def __init__(self, name: str, target: dict[str, Any], effect: ABACEffect) -> None:
         self.policy_id = str(uuid.uuid4())[:8]
         self.name = name
         self.target = target
         self.effect = effect
-        self.obligations: List[str] = []
+        self.obligations: list[str] = []
         self.enabled = True
 
 class ABACEngine:
     def __init__(self) -> None:
-        self._policies: Dict[str, ABACPolicy] = {}
-        self._decisions: List[Dict[str, Any]] = []
-        self._attribute_providers: Dict[str, Callable[..., Any]] = {}
-    def add_policy(self, name: str, target: Dict[str, Any], effect: ABACEffect) -> ABACPolicy:
+        self._policies: dict[str, ABACPolicy] = {}
+        self._decisions: list[dict[str, Any]] = []
+        self._attribute_providers: dict[str, Callable[..., Any]] = {}
+    def add_policy(self, name: str, target: dict[str, Any], effect: ABACEffect) -> ABACPolicy:
         policy = ABACPolicy(name, target, effect)
         self._policies[policy.policy_id] = policy
         return policy
@@ -35,7 +39,7 @@ class ABACEngine:
         return False
     def register_attribute_provider(self, name: str, provider: Callable[..., Any]) -> None:
         self._attribute_providers[name] = provider
-    def evaluate(self, subject: Dict[str, Any], resource: Dict[str, Any], action: str, environment: Optional[Dict[str, Any]] = None) -> ABACEffect:
+    def evaluate(self, subject: dict[str, Any], resource: dict[str, Any], action: str, environment: dict[str, Any] | None = None) -> ABACEffect:
         context = {"subject": subject, "resource": resource, "action": action, "environment": environment or {}}
         for policy in sorted(self._policies.values(), key=lambda p: p.policy_id):
             if not policy.enabled:
@@ -46,7 +50,7 @@ class ABACEngine:
                 return decision
         self._decisions.append({"policy_id": None, "name": "default", "effect": ABACEffect.DENY.value, "context": context, "timestamp": time.time()})
         return ABACEffect.DENY
-    def _match_target(self, target: Dict[str, Any], context: Dict[str, Any]) -> bool:
+    def _match_target(self, target: dict[str, Any], context: dict[str, Any]) -> bool:
         for key, value in target.items():
             parts = key.split(".")
             current = context
@@ -58,7 +62,7 @@ class ABACEngine:
             if current != value:
                 return False
         return True
-    def get_decisions(self, limit: int = 100) -> List[Dict[str, Any]]:
+    def get_decisions(self, limit: int = 100) -> list[dict[str, Any]]:
         return self._decisions[-limit:]
-    def list_policies(self) -> List[Dict[str, Any]]:
+    def list_policies(self) -> list[dict[str, Any]]:
         return [{"id": p.policy_id, "name": p.name, "effect": p.effect.value, "target": p.target, "enabled": p.enabled} for p in self._policies.values()]

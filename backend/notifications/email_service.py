@@ -106,9 +106,10 @@ class EmailService:
             return result
 
         try:
-            import aiosmtplib
             from email.mime.multipart import MIMEMultipart
             from email.mime.text import MIMEText
+
+            import aiosmtplib
 
             msg = MIMEMultipart("alternative")
             msg["From"] = message.from_email or self.from_email

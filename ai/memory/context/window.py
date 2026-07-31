@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class ContextWindow:
@@ -24,7 +24,7 @@ class ContextWindow:
     def position(self) -> int:
         return self._position
 
-    def slice(self, data: List[Any], offset: Optional[int] = None) -> List[Any]:
+    def slice(self, data: list[Any], offset: int | None = None) -> list[Any]:
         start = offset if offset is not None else self._position
         end = start + self._window_size
         return list(data[start:end])
@@ -40,16 +40,16 @@ class ContextWindow:
             return 0
         return (total_items + self._window_size - 1) // self._window_size
 
-    def sliding_windows(self, data: List[Any], stride: int = 1) -> List[List[Any]]:
-        windows: List[List[Any]] = []
+    def sliding_windows(self, data: list[Any], stride: int = 1) -> list[list[Any]]:
+        windows: list[list[Any]] = []
         for i in range(0, len(data) - self._window_size + 1, stride):
             windows.append(list(data[i : i + self._window_size]))
         return windows
 
-    def context_chunks(self, context: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def context_chunks(self, context: dict[str, Any]) -> list[dict[str, Any]]:
         content = context.get("content", {})
         items = list(content.items())
-        chunks: List[Dict[str, Any]] = []
+        chunks: list[dict[str, Any]] = []
         for i in range(0, len(items), self._window_size):
             chunk = dict(items[i : i + self._window_size])
             chunks.append({"chunk_index": len(chunks), "content": chunk})

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, List, Optional
+from collections.abc import Callable
+from typing import Any
 
 
 class ReusableTask:
@@ -12,7 +13,7 @@ class ReusableTask:
         self._category = category
         self._handler = handler
         self._description = description
-        self._parameters: Dict[str, Any] = {}
+        self._parameters: dict[str, Any] = {}
 
     @property
     def task_id(self) -> str:
@@ -39,13 +40,13 @@ class ReusableTask:
         return self._description
 
     @property
-    def parameters(self) -> Dict[str, Any]:
+    def parameters(self) -> dict[str, Any]:
         return dict(self._parameters)
 
     def add_parameter(self, name: str, default: Any = None) -> None:
         self._parameters[name] = default
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "task_id": self._task_id,
             "name": self._name,
@@ -59,7 +60,7 @@ class ReusableTasks:
     """Registry of reusable task definitions."""
 
     def __init__(self):
-        self._tasks: Dict[str, ReusableTask] = {}
+        self._tasks: dict[str, ReusableTask] = {}
 
     @property
     def count(self) -> int:
@@ -71,7 +72,7 @@ class ReusableTasks:
     def get(self, task_id: str) -> ReusableTask | None:
         return self._tasks.get(task_id)
 
-    def get_by_category(self, category: str) -> List[ReusableTask]:
+    def get_by_category(self, category: str) -> list[ReusableTask]:
         return [t for t in self._tasks.values() if t.category == category]
 
     def execute(self, task_id: str, **kwargs: Any) -> Any | None:

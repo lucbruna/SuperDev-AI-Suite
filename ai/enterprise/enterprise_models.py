@@ -1,9 +1,12 @@
 """Enterprise data models."""
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
-from enum import Enum
+
+import time
+import uuid
 from dataclasses import dataclass, field
-import time, uuid
+from enum import Enum
+from typing import Any
+
 
 class OrganizationStatus(Enum):
     ACTIVE = "active"
@@ -44,8 +47,8 @@ class Organization:
     status: OrganizationStatus = OrganizationStatus.ACTIVE
     plan: str = "starter"
     created_at: float = field(default_factory=time.time)
-    settings: Dict[str, Any] = field(default_factory=dict)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    settings: dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 @dataclass
 class User:
@@ -57,7 +60,7 @@ class User:
     status: UserStatus = UserStatus.ACTIVE
     created_at: float = field(default_factory=time.time)
     last_login: float = 0.0
-    preferences: Dict[str, Any] = field(default_factory=dict)
+    preferences: dict[str, Any] = field(default_factory=dict)
 
 @dataclass
 class Subscription:
@@ -113,7 +116,7 @@ class UsageRecord:
     quantity: float = 0.0
     unit: str = ""
     timestamp: float = field(default_factory=time.time)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 @dataclass
 class Contract:
@@ -123,5 +126,5 @@ class Contract:
     status: str = "active"
     start_date: float = field(default_factory=time.time)
     end_date: float = 0.0
-    terms: Dict[str, Any] = field(default_factory=dict)
-    sla: Dict[str, Any] = field(default_factory=dict)
+    terms: dict[str, Any] = field(default_factory=dict)
+    sla: dict[str, Any] = field(default_factory=dict)

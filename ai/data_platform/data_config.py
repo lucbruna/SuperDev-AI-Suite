@@ -1,13 +1,12 @@
 """Data Platform Config — Configuration for the data platform."""
 from dataclasses import dataclass, field
-from typing import Dict, Any, Optional
 
 
 @dataclass
 class DataPlatformConfig:
     max_records_per_batch: int = 10000
     max_concurrent_pipelines: int = 10
-    storage_tier_thresholds: Dict[str, int] = field(default_factory=lambda: {
+    storage_tier_thresholds: dict[str, int] = field(default_factory=lambda: {
         "hot_days": 30,
         "warm_days": 90,
         "cold_days": 365,

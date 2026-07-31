@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Set
+from typing import Any
 
 
 class KnowledgeMerger:
@@ -13,10 +13,10 @@ class KnowledgeMerger:
     def merge_count(self) -> int:
         return self._merges
 
-    def merge(self, entries: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def merge(self, entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
         if not entries:
             return []
-        merged: Dict[str, Dict[str, Any]] = {}
+        merged: dict[str, dict[str, Any]] = {}
         for entry in entries:
             key = entry.get("topic", entry.get("type", "unknown"))
             if key in merged:
@@ -35,13 +35,13 @@ class KnowledgeMerger:
                 merged[key]["merge_count"] = 1
         return list(merged.values())
 
-    def merge_by_key(self, entries: List[Dict[str, Any]], merge_key: str) -> List[Dict[str, Any]]:
-        groups: Dict[str, List[Dict[str, Any]]] = {}
+    def merge_by_key(self, entries: list[dict[str, Any]], merge_key: str) -> list[dict[str, Any]]:
+        groups: dict[str, list[dict[str, Any]]] = {}
         for entry in entries:
             k = str(entry.get(merge_key, "unknown"))
             groups.setdefault(k, []).append(entry)
-        result: List[Dict[str, Any]] = []
-        for key, group in groups.items():
+        result: list[dict[str, Any]] = []
+        for _key, group in groups.items():
             if len(group) == 1:
                 result.append(group[0])
             else:

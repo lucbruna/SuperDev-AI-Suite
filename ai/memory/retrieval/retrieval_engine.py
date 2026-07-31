@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .graph_search import GraphSearch
 from .hybrid_search import HybridSearch
@@ -64,7 +64,7 @@ class RetrievalEngine:
     def relevance(self) -> Relevance:
         return self._relevance
 
-    def retrieve(self, query: str, entries: List[Dict[str, Any]], method: str = "search") -> List[Dict[str, Any]]:
+    def retrieve(self, query: str, entries: list[dict[str, Any]], method: str = "search") -> list[dict[str, Any]]:
         method_map = {
             "search": self._search.search,
             "semantic": self._semantic.search,
@@ -79,7 +79,7 @@ class RetrievalEngine:
         self._retrieval_count += 1
         return ranked
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         return {
             "retrieval_count": self._retrieval_count,
             "ranking_count": self._ranking.ranking_count,

@@ -1,8 +1,8 @@
 """
 Performance Dashboard
 """
-from typing import Optional, List, Dict, Any
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
@@ -18,19 +18,19 @@ class PerformanceMetric:
 
 class PerformanceDashboard:
     def __init__(self):
-        self.metrics: List[PerformanceMetric] = []
+        self.metrics: list[PerformanceMetric] = []
         self.time_range: str = "1h"
-        
+
     def add_metric(self, metric: PerformanceMetric) -> None:
         self.metrics.append(metric)
-        
+
     def update(self, name: str, value: float) -> None:
         for m in self.metrics:
             if m.name == name:
                 m.current = value
                 m.peak = max(m.peak, value)
                 return
-                
+
     def get_health(self) -> str:
         for m in self.metrics:
             if m.threshold_critical > 0 and m.current > m.threshold_critical:
@@ -38,8 +38,8 @@ class PerformanceDashboard:
             if m.threshold_warning > 0 and m.current > m.threshold_warning:
                 return "warning"
         return "healthy"
-        
-    def render(self) -> Dict[str, Any]:
+
+    def render(self) -> dict[str, Any]:
         return {
             "metrics": [{"name": m.name, "current": m.current, "unit": m.unit} for m in self.metrics],
             "health": self.get_health(),

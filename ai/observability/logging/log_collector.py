@@ -1,14 +1,17 @@
 """Log collector."""
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
-import time, uuid
+
+import time
+import uuid
+from typing import Any
+
 
 class LogCollector:
     def __init__(self, buffer_size: int = 1000) -> None:
-        self._buffer: List[Dict[str, Any]] = []
+        self._buffer: list[dict[str, Any]] = []
         self._buffer_size = buffer_size
         self._flushed = 0
-    def collect(self, entry: Dict[str, Any]) -> bool:
+    def collect(self, entry: dict[str, Any]) -> bool:
         entry.setdefault("id", str(uuid.uuid4())[:8])
         entry.setdefault("timestamp", time.time())
         self._buffer.append(entry)
@@ -20,7 +23,7 @@ class LogCollector:
         self._buffer = []
         self._flushed += n
         return n
-    def get_buffer(self) -> List[Dict[str, Any]]:
+    def get_buffer(self) -> list[dict[str, Any]]:
         return list(self._buffer)
     def buffer_size(self) -> int:
         return len(self._buffer)

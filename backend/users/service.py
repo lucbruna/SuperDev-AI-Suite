@@ -1,8 +1,9 @@
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from backend.auth.passwords import hash_password
 from backend.database.models.user import User
 from backend.users.repository import UserRepository
 from backend.users.schema import UserCreate, UserList, UserResponse, UserUpdate
-from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class UserService:

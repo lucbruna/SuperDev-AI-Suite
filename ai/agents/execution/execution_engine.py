@@ -1,18 +1,18 @@
 """Execution engine for task orchestration and workflow management."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from .task_executor import TaskExecutor
-from .workflow_runner import WorkflowRunner
 from .parallel_executor import ParallelExecutor
 from .progress_tracker import ProgressTracker
+from .task_executor import TaskExecutor
+from .workflow_runner import WorkflowRunner
 
 
 class ExecutionEngine:
     """Central orchestrator for agent task execution and workflow management."""
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(self, config: dict[str, Any] | None = None) -> None:
         self._config = config or {}
         self._task_executor = TaskExecutor()
         self._workflow_runner = WorkflowRunner()
@@ -23,7 +23,7 @@ class ExecutionEngine:
         self._execution_count: int = 0
         self._error_count: int = 0
 
-    async def execute_task(self, task_id: str, task_spec: Dict[str, Any]) -> Dict[str, Any]:
+    async def execute_task(self, task_id: str, task_spec: dict[str, Any]) -> dict[str, Any]:
         self._execution_count += 1
         self._progress.start(task_id, 1)
         try:
@@ -34,7 +34,7 @@ class ExecutionEngine:
             self._error_count += 1
             return {"task_id": task_id, "status": "failed", "error": str(e)}
 
-    async def execute_workflow(self, workflow: Dict[str, Any]) -> Dict[str, Any]:
+    async def execute_workflow(self, workflow: dict[str, Any]) -> dict[str, Any]:
         self._execution_count += 1
         wf_id = workflow.get("id", f"wf_{self._execution_count}")
         self._progress.start(wf_id, len(workflow.get("steps", [])))
@@ -42,13 +42,13 @@ class ExecutionEngine:
         self._progress.complete(wf_id)
         return {"workflow_id": wf_id, "status": "completed", "result": result}
 
-    def get_execution_status(self, task_id: str) -> Optional[Dict[str, Any]]:
+    def get_execution_status(self, task_id: str) -> dict[str, Any] | None:
         return self._task_executor.get_status(task_id)
 
-    def get_progress(self, operation_id: str) -> Optional[Dict[str, Any]]:
+    def get_progress(self, operation_id: str) -> dict[str, Any] | None:
         return self._progress.get_progress(operation_id)
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         return {
             "total_executions": self._execution_count,
             "total_errors": self._error_count,

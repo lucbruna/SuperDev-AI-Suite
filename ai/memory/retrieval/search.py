@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 
 class Search:
@@ -13,9 +13,9 @@ class Search:
     def search_count(self) -> int:
         return self._search_count
 
-    def search(self, query: str, entries: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def search(self, query: str, entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
         q = query.lower()
-        results: List[Dict[str, Any]] = []
+        results: list[dict[str, Any]] = []
         for entry in entries:
             content = str(entry.get("content", ""))
             if q in content.lower():
@@ -23,9 +23,9 @@ class Search:
         self._search_count += 1
         return results
 
-    def search_fields(self, query: str, entries: List[Dict[str, Any]], fields: List[str]) -> List[Dict[str, Any]]:
+    def search_fields(self, query: str, entries: list[dict[str, Any]], fields: list[str]) -> list[dict[str, Any]]:
         q = query.lower()
-        results: List[Dict[str, Any]] = []
+        results: list[dict[str, Any]] = []
         for entry in entries:
             for field in fields:
                 val = str(entry.get(field, ""))

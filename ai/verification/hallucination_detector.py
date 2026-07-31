@@ -21,7 +21,7 @@ class HallucinationDetector:
                 continue
             words = sentence.lower().split()
             if len(words) > 3:
-                key = " ".join(words[:5])
+                " ".join(words[:5])
                 if not any(fact in sentence.lower() for fact in self._known_facts):
                     if self._known_facts:
                         suspicious.append(sentence[:80])

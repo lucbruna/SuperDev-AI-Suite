@@ -1,5 +1,6 @@
 """Usage subsystem generator."""
 import os
+
 BASE = r'C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\enterprise\usage'
 
 def w(path, content):

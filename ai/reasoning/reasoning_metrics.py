@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 
@@ -12,7 +12,7 @@ class ReasoningMetrics:
         self._total_reasoning_time = 0.0
         self._total_hypotheses = 0
         self._confidence_sum = 0.0
-        self._start_time = datetime.now(timezone.utc)
+        self._start_time = datetime.now(UTC)
 
     def record_reasoning(self, duration_ms: float, confidence: float) -> None:
         self._total_reasoning_calls += 1
@@ -23,7 +23,7 @@ class ReasoningMetrics:
         self._total_hypotheses += 1
 
     def snapshot(self) -> dict[str, Any]:
-        uptime = (datetime.now(timezone.utc) - self._start_time).total_seconds()
+        uptime = (datetime.now(UTC) - self._start_time).total_seconds()
         return {
             "total_reasoning_calls": self._total_reasoning_calls,
             "avg_duration_ms": self._total_reasoning_time / max(self._total_reasoning_calls, 1),

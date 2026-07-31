@@ -1,24 +1,19 @@
 from __future__ import annotations
 
-from typing import Any
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock
 
 import pytest
 
 from ..llm_factory import LLMFactory
-from ..llm_registry import LLMRegistry
 from ..llm_manager import LLMManager
+from ..llm_registry import LLMRegistry
 from ..providers.base_provider import (
-    BaseLLMProvider,
     ProviderError,
     ProviderErrorCode,
     TokenBucket,
-    _exponential_backoff,
-    _is_retryable,
     estimate_cost,
 )
 from ..providers.mock_provider import MockProvider
-
 
 # =========================================================================
 # BaseLLMProvider

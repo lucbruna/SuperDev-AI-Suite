@@ -1,12 +1,12 @@
 """Formatter for code style enforcement."""
-from typing import List, Dict, Any
+from typing import Any
 
 
 class Formatter:
     """Formats code according to style rules."""
 
     def __init__(self):
-        self._config: Dict[str, Any] = {
+        self._config: dict[str, Any] = {
             "max_line_length": 88,
             "indent_size": 4,
             "use_spaces": True,
@@ -23,7 +23,7 @@ class Formatter:
                 formatted.append("")
         return "\n".join(formatted)
 
-    def check_line_length(self, content: str, max_length: int = None) -> List[Dict[str, Any]]:
+    def check_line_length(self, content: str, max_length: int = None) -> list[dict[str, Any]]:
         max_len = max_length or self._config["max_line_length"]
         violations = []
         for i, line in enumerate(content.split("\n"), 1):
@@ -35,7 +35,7 @@ class Formatter:
                 })
         return violations
 
-    def check_indentation(self, content: str) -> List[Dict[str, Any]]:
+    def check_indentation(self, content: str) -> list[dict[str, Any]]:
         violations = []
         indent_size = self._config["indent_size"]
         for i, line in enumerate(content.split("\n"), 1):
@@ -49,5 +49,5 @@ class Formatter:
     def set_config(self, key: str, value: Any) -> None:
         self._config[key] = value
 
-    def get_config(self) -> Dict[str, Any]:
+    def get_config(self) -> dict[str, Any]:
         return dict(self._config)

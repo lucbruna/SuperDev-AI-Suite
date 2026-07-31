@@ -1,7 +1,8 @@
 """Runner for executing test suites."""
-from typing import List, Dict, Any, Optional
 from datetime import datetime
-from .models import TestCase, TestSuite, TestResult, TestStatus
+from typing import Any
+
+from .models import TestCase, TestResult, TestStatus, TestSuite
 
 
 class TestRunner:
@@ -9,9 +10,9 @@ class TestRunner:
 
     def __init__(self):
         self._running = False
-        self._execution_history: List[Dict[str, Any]] = []
+        self._execution_history: list[dict[str, Any]] = []
 
-    def run_suite(self, suite: TestSuite) -> List[TestResult]:
+    def run_suite(self, suite: TestSuite) -> list[TestResult]:
         """Run all enabled tests in a suite."""
         results = []
         self._running = True
@@ -29,7 +30,7 @@ class TestRunner:
 
     def _run_single(self, test: TestCase) -> TestResult:
         """Execute a single test case."""
-        start = datetime.utcnow()
+        datetime.utcnow()
         try:
             # Simulate test execution
             result = TestResult(
@@ -55,5 +56,5 @@ class TestRunner:
     def is_running(self) -> bool:
         return self._running
 
-    def get_history(self) -> List[Dict[str, Any]]:
+    def get_history(self) -> list[dict[str, Any]]:
         return list(self._execution_history)

@@ -4,8 +4,8 @@ from typing import Any
 
 from .consistency_checker import ConsistencyChecker
 from .contradiction_detector import ContradictionDetector
-from .hallucination_detector import HallucinationDetector
 from .fact_checker import FactChecker
+from .hallucination_detector import HallucinationDetector
 from .validation_engine import ValidationEngine
 
 

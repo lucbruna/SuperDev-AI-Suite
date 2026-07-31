@@ -1,10 +1,11 @@
 """Core engine for requirements analysis and processing."""
-from typing import List, Dict, Any, Optional
 from datetime import datetime
-from .models import Requirement, RequirementSet, RequirementType, Priority, RequirementStatus
+from typing import Any
+
+from .models import RequirementSet
+from .requirements_analyzer import RequirementsAnalyzer
 from .requirements_parser import RequirementsParser
 from .requirements_validator import RequirementsValidator
-from .requirements_analyzer import RequirementsAnalyzer
 
 
 class RequirementsEngine:
@@ -14,10 +15,10 @@ class RequirementsEngine:
         self.parser = RequirementsParser()
         self.validator = RequirementsValidator()
         self.analyzer = RequirementsAnalyzer()
-        self._requirement_sets: Dict[str, RequirementSet] = {}
-        self._processing_history: List[Dict[str, Any]] = []
+        self._requirement_sets: dict[str, RequirementSet] = {}
+        self._processing_history: list[dict[str, Any]] = []
 
-    def process_requirements(self, raw_data: List[Dict[str, Any]]) -> RequirementSet:
+    def process_requirements(self, raw_data: list[dict[str, Any]]) -> RequirementSet:
         """Parse, validate, and analyze raw requirements data."""
         parsed = self.parser.parse_many(raw_data)
         validated = []
@@ -33,19 +34,19 @@ class RequirementsEngine:
         self._requirement_sets[req_set.set_id] = req_set
         return req_set
 
-    def get_set(self, set_id: str) -> Optional[RequirementSet]:
+    def get_set(self, set_id: str) -> RequirementSet | None:
         return self._requirement_sets.get(set_id)
 
-    def analyze_set(self, set_id: str) -> Dict[str, Any]:
+    def analyze_set(self, set_id: str) -> dict[str, Any]:
         req_set = self._requirement_sets.get(set_id)
         if not req_set:
             return {"error": "Set not found"}
         return self.analyzer.analyze_set(req_set)
 
-    def get_all_sets(self) -> List[RequirementSet]:
+    def get_all_sets(self) -> list[RequirementSet]:
         return list(self._requirement_sets.values())
 
-    def get_processing_history(self) -> List[Dict[str, Any]]:
+    def get_processing_history(self) -> list[dict[str, Any]]:
         return list(self._processing_history)
 
     def _record_processing(self, req_id: str, stage: str, success: bool) -> None:

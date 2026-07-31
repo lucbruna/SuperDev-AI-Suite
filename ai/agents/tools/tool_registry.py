@@ -1,16 +1,16 @@
 """Tool registration and lifecycle management."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class ToolRegistry:
     """Manages the registration and lifecycle of agent tools."""
 
     def __init__(self) -> None:
-        self._tools: Dict[str, Dict[str, Any]] = {}
+        self._tools: dict[str, dict[str, Any]] = {}
 
-    def register(self, tool: Dict[str, Any]) -> Dict[str, Any]:
+    def register(self, tool: dict[str, Any]) -> dict[str, Any]:
         tool_id = tool.get("id", f"tool_{len(self._tools) + 1}")
         self._tools[tool_id] = {
             "id": tool_id,
@@ -23,7 +23,7 @@ class ToolRegistry:
         }
         return {"status": "registered", "tool_id": tool_id}
 
-    def get(self, tool_id: str) -> Optional[Dict[str, Any]]:
+    def get(self, tool_id: str) -> dict[str, Any] | None:
         return dict(self._tools.get(tool_id)) if tool_id in self._tools else None
 
     def remove(self, tool_id: str) -> bool:
@@ -44,7 +44,7 @@ class ToolRegistry:
             return True
         return False
 
-    def list_all(self) -> List[Dict[str, Any]]:
+    def list_all(self) -> list[dict[str, Any]]:
         return [
             {"id": t["id"], "name": t["name"], "category": t["category"]}
             for t in self._tools.values()

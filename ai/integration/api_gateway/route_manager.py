@@ -1,10 +1,8 @@
 """
 Route Manager - Route configuration
 """
-from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
 from enum import Enum
-from datetime import datetime
 
 
 class RouteGroup(Enum):
@@ -22,15 +20,15 @@ class RouteConfig:
     version: str = "v1"
     timeout: int = 30
     cache_ttl: int = 0
-    cors_origins: List[str] = field(default_factory=list)
-    tags: List[str] = field(default_factory=list)
+    cors_origins: list[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
 
 
 class RouteManager:
     def __init__(self):
-        self.routes: Dict[str, RouteConfig] = {}
-        self.groups: Dict[str, List[str]] = {}
-        self.versions: Dict[str, List[str]] = {}
+        self.routes: dict[str, RouteConfig] = {}
+        self.groups: dict[str, list[str]] = {}
+        self.versions: dict[str, list[str]] = {}
 
     def add_route(self, path: str, target: str, group: RouteGroup = RouteGroup.INTERNAL, **kwargs) -> RouteConfig:
         config = RouteConfig(path=path, target=target, group=group, **kwargs)
@@ -45,14 +43,14 @@ class RouteManager:
             return True
         return False
 
-    def get_route(self, path: str) -> Optional[RouteConfig]:
+    def get_route(self, path: str) -> RouteConfig | None:
         return self.routes.get(path)
 
-    def get_by_group(self, group: RouteGroup) -> List[RouteConfig]:
+    def get_by_group(self, group: RouteGroup) -> list[RouteConfig]:
         paths = self.groups.get(group.value, [])
         return [self.routes[p] for p in paths if p in self.routes]
 
-    def get_by_version(self, version: str) -> List[RouteConfig]:
+    def get_by_version(self, version: str) -> list[RouteConfig]:
         paths = self.versions.get(version, [])
         return [self.routes[p] for p in paths if p in self.routes]
 
@@ -65,7 +63,7 @@ class RouteManager:
             return True
         return False
 
-    def list_all(self) -> List[RouteConfig]:
+    def list_all(self) -> list[RouteConfig]:
         return list(self.routes.values())
 
     def count(self) -> int:

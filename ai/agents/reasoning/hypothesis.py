@@ -2,20 +2,20 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class HypothesisManager:
     """Generates, tracks, and evaluates hypotheses."""
 
     def __init__(self) -> None:
-        self._hypotheses: Dict[str, Dict[str, Any]] = {}
+        self._hypotheses: dict[str, dict[str, Any]] = {}
         self._generation_count: int = 0
 
     def generate(self, problem: str,
-                 context: Optional[Dict[str, Any]] = None) -> List[str]:
+                 context: dict[str, Any] | None = None) -> list[str]:
         self._generation_count += 1
-        hypotheses: List[str] = []
+        hypotheses: list[str] = []
         hypotheses.append(f"The root cause is related to: {problem[:100]}")
         if context:
             for key in list(context.keys())[:3]:
@@ -37,16 +37,16 @@ class HypothesisManager:
             return True
         return False
 
-    def get_supported(self) -> List[Dict[str, Any]]:
+    def get_supported(self) -> list[dict[str, Any]]:
         return [h for h in self._hypotheses.values() if h["status"] == "supported"]
 
-    def get_rejected(self) -> List[Dict[str, Any]]:
+    def get_rejected(self) -> list[dict[str, Any]]:
         return [h for h in self._hypotheses.values() if h["status"] == "rejected"]
 
     def count(self) -> int:
         return len(self._hypotheses)
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         return {
             "total_generated": self._generation_count,
             "active": len(self._hypotheses),

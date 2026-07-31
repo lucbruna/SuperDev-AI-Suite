@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from typing import Any
-from datetime import datetime, timezone
 
 
 class Regression:
@@ -54,7 +54,7 @@ class Regression:
             "passed": passed,
             "failed": len(tests_to_run) - passed,
             "results": results,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
     @property

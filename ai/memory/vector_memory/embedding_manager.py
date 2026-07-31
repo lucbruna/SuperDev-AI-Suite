@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import hashlib
-import json
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .cache import Cache
 from .embedding_repository import EmbeddingRepository
@@ -11,7 +10,7 @@ from .embedding_repository import EmbeddingRepository
 class EmbeddingManager:
     """Manages embedding life cycle — generation, caching, delegation."""
 
-    def __init__(self, repository: Optional[EmbeddingRepository] = None, cache: Optional[Cache] = None):
+    def __init__(self, repository: EmbeddingRepository | None = None, cache: Cache | None = None):
         self._repository = repository or EmbeddingRepository()
         self._cache = cache or Cache()
         self._dimension: int = 0
@@ -27,7 +26,7 @@ class EmbeddingManager:
     def _content_hash(self, content: str) -> str:
         return hashlib.sha256(content.encode("utf-8")).hexdigest()
 
-    def embed(self, content: str, metadata: Optional[Dict[str, Any]] = None) -> List[float]:
+    def embed(self, content: str, metadata: dict[str, Any] | None = None) -> list[float]:
         cached = self._cache.get(content)
         if cached is not None:
             return cached
@@ -39,10 +38,10 @@ class EmbeddingManager:
         self._cache.set(content, vector)
         return vector
 
-    def embed_batch(self, items: List[Tuple[str, Dict[str, Any]]]) -> List[List[float]]:
+    def embed_batch(self, items: list[Tuple[str, dict[str, Any]]]) -> list[list[float]]:
         return [self.embed(content, meta) for content, meta in items]
 
-    def _generate(self, content: str) -> List[float]:
+    def _generate(self, content: str) -> list[float]:
         """Deterministic pseudo-embedding from content hash for baseline use."""
         h = hashlib.sha256(content.encode("utf-8")).digest()
         vec = [b / 255.0 for b in h]

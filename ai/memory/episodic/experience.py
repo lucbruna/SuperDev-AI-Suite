@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class Experience:
@@ -11,9 +11,9 @@ class Experience:
         self,
         experience_id: str,
         summary: str,
-        context: Dict[str, Any] | None = None,
+        context: dict[str, Any] | None = None,
         outcome: str = "",
-        tags: List[str] | None = None,
+        tags: list[str] | None = None,
     ):
         self._experience_id = experience_id
         self._summary = summary
@@ -21,7 +21,7 @@ class Experience:
         self._outcome = outcome
         self._tags = tags or []
         self._timestamp = time.time()
-        self._events: List[Dict[str, Any]] = []
+        self._events: list[dict[str, Any]] = []
         self._importance: float = 0.0
 
     @property
@@ -33,7 +33,7 @@ class Experience:
         return self._summary
 
     @property
-    def context(self) -> Dict[str, Any]:
+    def context(self) -> dict[str, Any]:
         return dict(self._context)
 
     @property
@@ -41,7 +41,7 @@ class Experience:
         return self._outcome
 
     @property
-    def tags(self) -> List[str]:
+    def tags(self) -> list[str]:
         return list(self._tags)
 
     @property
@@ -56,10 +56,10 @@ class Experience:
     def importance(self, value: float) -> None:
         self._importance = max(0.0, min(1.0, value))
 
-    def add_event(self, event: Dict[str, Any]) -> None:
+    def add_event(self, event: dict[str, Any]) -> None:
         self._events.append(event)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "experience_id": self._experience_id,
             "summary": self._summary,

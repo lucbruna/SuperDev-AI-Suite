@@ -1,57 +1,56 @@
 """Data Platform — Comprehensive test suite."""
-import pytest
-from datetime import datetime
 
 # Core models
-from data_platform.data_models import (
-    DataSourceType, DataFormat, PipelineStatus, DataQualityLevel, StorageTier,
-    DataSource, DataRecord, DataPipeline, DataSchema, DataCatalogEntry, DataPartition, DataLineage,
-)
-
-# Core engine
-from data_platform.data_engine import DataPlatformEngine
+from data_platform.analytics.engine import AnalyticsEngine
+from data_platform.analytics.models import AnalyticsQuery, Dashboard, QueryType
 
 # Core support
 from data_platform.data_config import DataPlatformConfig
-from data_platform.data_factory import DataPlatformFactory
-from data_platform.data_metrics import DataPlatformMetrics
-from data_platform.data_logger import DataPlatformLogger, DataLogLevel
-from data_platform.data_security import DataPlatformSecurity, DataAccessLevel
 from data_platform.data_context import DataPlatformContext
+
+# Core engine
+from data_platform.data_engine import DataPlatformEngine
+from data_platform.data_factory import DataPlatformFactory
+from data_platform.data_logger import DataLogLevel, DataPlatformLogger
+from data_platform.data_metrics import DataPlatformMetrics
+from data_platform.data_models import (
+    DataCatalogEntry,
+    DataPipeline,
+    DataRecord,
+    DataSchema,
+    DataSource,
+    PipelineStatus,
+)
 from data_platform.data_runtime import DataPlatformRuntime
-from data_platform.data_events import DataEvent, DataEventType
+from data_platform.data_security import DataAccessLevel, DataPlatformSecurity
+from data_platform.etl.engine import ETLEngine
+from data_platform.etl.models import ETLPipeline, ETLStatus, ETLStep, StepType
+from data_platform.governance.engine import GovernanceEngine
+from data_platform.governance.models import (
+    AccessLevel,
+    AccessPolicy,
+    AuditEntry,
+    ComplianceRule,
+    ComplianceStandard,
+    RetentionPolicy,
+)
 
 # Subsystem engines
 from data_platform.ingestion.engine import IngestionEngine
-from data_platform.ingestion.models import Connector, IngestionBatch, DataSource as IngestionSource, ConnectorType, IngestionStatus
-
-from data_platform.storage.engine import StorageEngine
-from data_platform.storage.models import StorageBucket, StoredObject, DataPartition as StoragePartition, StorageType, StorageTier as STier
-
-from data_platform.processing.engine import ProcessingEngine
-from data_platform.processing.models import TransformRule, ProcessingJob, TransformType, ProcessingStatus
-
-from data_platform.streaming.engine import StreamingEngine
-from data_platform.streaming.models import StreamTopic, StreamEvent, StreamConsumer, StreamStatus, EventType
-
-from data_platform.etl.engine import ETLEngine
-from data_platform.etl.models import ETLStep, ETLPipeline, StepType, ETLStatus
-
-from data_platform.quality.engine import QualityEngine
-from data_platform.quality.models import QualityRule, QualityReport, QualityCheckType, QualityStatus
-
-from data_platform.governance.engine import GovernanceEngine
-from data_platform.governance.models import AccessPolicy, RetentionPolicy, AuditEntry, ComplianceRule, AccessLevel, ComplianceStandard
-
-from data_platform.analytics.engine import AnalyticsEngine
-from data_platform.analytics.models import AnalyticsQuery, Insight, Dashboard, QueryType, InsightType
-
-from data_platform.machine_learning.engine import MLEngine
-from data_platform.machine_learning.models import MLModel, TrainingJob, Prediction, ModelType, ModelStatus
-
+from data_platform.ingestion.models import Connector, ConnectorType, IngestionStatus
 from data_platform.knowledge_graph.engine import KnowledgeGraphEngine
-from data_platform.knowledge_graph.models import Entity, Relation, KnowledgePath, EntityType, RelationType
-
+from data_platform.knowledge_graph.models import Entity, EntityType, Relation, RelationType
+from data_platform.machine_learning.engine import MLEngine
+from data_platform.machine_learning.models import MLModel, ModelStatus, ModelType
+from data_platform.processing.engine import ProcessingEngine
+from data_platform.processing.models import ProcessingJob, ProcessingStatus, TransformRule, TransformType
+from data_platform.quality.engine import QualityEngine
+from data_platform.quality.models import QualityStatus
+from data_platform.storage.engine import StorageEngine
+from data_platform.storage.models import DataPartition as StoragePartition
+from data_platform.storage.models import StorageBucket, StorageType, StoredObject
+from data_platform.streaming.engine import StreamingEngine
+from data_platform.streaming.models import StreamConsumer, StreamEvent, StreamTopic
 
 # ========== Core Engine Tests ==========
 

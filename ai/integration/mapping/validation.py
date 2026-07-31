@@ -1,25 +1,25 @@
 """
 Mapping Validation - Validate mappings
 """
-from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
+from typing import Any
 
 
 @dataclass
 class ValidationResult:
     valid: bool
-    errors: List[str] = field(default_factory=list)
-    warnings: List[str] = field(default_factory=list)
+    errors: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
 
 
 class MappingValidator:
     def __init__(self):
-        self.schemas: Dict[str, Dict[str, Any]] = {}
+        self.schemas: dict[str, dict[str, Any]] = {}
 
-    def register_schema(self, name: str, schema: Dict[str, Any]) -> None:
+    def register_schema(self, name: str, schema: dict[str, Any]) -> None:
         self.schemas[name] = schema
 
-    def validate_mapping(self, source_schema: str, target_schema: str, field_mappings: Dict[str, str]) -> ValidationResult:
+    def validate_mapping(self, source_schema: str, target_schema: str, field_mappings: dict[str, str]) -> ValidationResult:
         errors = []
         warnings = []
         source = self.schemas.get(source_schema, {})
@@ -34,7 +34,7 @@ class MappingValidator:
                 warnings.append(f"Target field '{target_field}' not in schema")
         return ValidationResult(valid=len(errors) == 0, errors=errors, warnings=warnings)
 
-    def validate_data(self, schema_name: str, data: Dict[str, Any]) -> ValidationResult:
+    def validate_data(self, schema_name: str, data: dict[str, Any]) -> ValidationResult:
         errors = []
         schema = self.schemas.get(schema_name, {})
         required = schema.get("required", [])

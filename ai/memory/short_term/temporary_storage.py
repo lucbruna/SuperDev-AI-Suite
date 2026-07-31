@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class TempEntry:
@@ -41,7 +41,7 @@ class TemporaryStorage:
 
     def __init__(self, default_ttl: float = 300.0):
         self._default_ttl = default_ttl
-        self._entries: Dict[str, TempEntry] = {}
+        self._entries: dict[str, TempEntry] = {}
 
     @property
     def default_ttl(self) -> float:
@@ -75,7 +75,7 @@ class TemporaryStorage:
             return False
         return True
 
-    def keys(self) -> List[str]:
+    def keys(self) -> list[str]:
         return list(self._entries.keys())
 
     def clear(self) -> None:

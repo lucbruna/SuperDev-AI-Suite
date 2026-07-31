@@ -1,12 +1,12 @@
 """
 Queue Engine - Core queue management
 """
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
-import hashlib
 import collections
+import hashlib
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class QueueState(Enum):
@@ -25,16 +25,16 @@ class QueueMessage:
     attempts: int = 0
     max_retries: int = 3
     created_at: datetime = field(default_factory=datetime.now)
-    processed_at: Optional[datetime] = None
+    processed_at: datetime | None = None
     error: str = ""
 
 
 class QueueEngine:
     def __init__(self):
-        self.queues: Dict[str, collections.deque] = {}
-        self.queue_states: Dict[str, QueueState] = {}
-        self.messages: Dict[str, QueueMessage] = {}
-        self.processed: List[QueueMessage] = []
+        self.queues: dict[str, collections.deque] = {}
+        self.queue_states: dict[str, QueueState] = {}
+        self.messages: dict[str, QueueMessage] = {}
+        self.processed: list[QueueMessage] = []
 
     def create_queue(self, name: str) -> None:
         self.queues[name] = collections.deque()
@@ -49,7 +49,7 @@ class QueueEngine:
         self.queues[queue_name].append(message_id)
         return msg
 
-    def dequeue(self, queue_name: str) -> Optional[QueueMessage]:
+    def dequeue(self, queue_name: str) -> QueueMessage | None:
         queue = self.queues.get(queue_name)
         if not queue or not queue:
             return None
@@ -84,7 +84,7 @@ class QueueEngine:
     def size(self, queue_name: str) -> int:
         return len(self.queues.get(queue_name, []))
 
-    def get_queue(self, queue_name: str) -> List[QueueMessage]:
+    def get_queue(self, queue_name: str) -> list[QueueMessage]:
         queue = self.queues.get(queue_name, [])
         return [self.messages[mid] for mid in queue if mid in self.messages]
 
@@ -100,7 +100,7 @@ class QueueEngine:
             return True
         return False
 
-    def list_queues(self) -> List[str]:
+    def list_queues(self) -> list[str]:
         return list(self.queues.keys())
 
     def count(self) -> int:

@@ -1,6 +1,6 @@
 """Quality subsystem."""
-from .models import QualityCheckType, QualityStatus, QualityRule, QualityCheck, QualityReport
 from .engine import QualityEngine
+from .models import QualityCheck, QualityCheckType, QualityReport, QualityRule, QualityStatus
 
 __all__ = [
     "QualityCheckType", "QualityStatus", "QualityRule", "QualityCheck", "QualityReport",

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class ShortTermMemory:
@@ -10,8 +10,8 @@ class ShortTermMemory:
 
     def __init__(self, max_size: int = 100) -> None:
         self._max_size = max_size
-        self._store: Dict[str, Dict[str, Any]] = {}
-        self._access_order: List[str] = []
+        self._store: dict[str, dict[str, Any]] = {}
+        self._access_order: list[str] = []
 
     def store(self, key: str, value: Any) -> None:
         if key in self._store:
@@ -24,7 +24,7 @@ class ShortTermMemory:
         self._access_order.append(key)
         self._evict()
 
-    def retrieve(self, key: str) -> Optional[Any]:
+    def retrieve(self, key: str) -> Any | None:
         entry = self._store.get(key)
         if entry is None:
             return None
@@ -48,10 +48,10 @@ class ShortTermMemory:
     def count(self) -> int:
         return len(self._store)
 
-    def get_all(self) -> Dict[str, Any]:
+    def get_all(self) -> dict[str, Any]:
         return {k: v.get("value") for k, v in self._store.items()}
 
-    def keys(self) -> List[str]:
+    def keys(self) -> list[str]:
         return list(self._access_order)
 
     def clear(self) -> None:
@@ -63,7 +63,7 @@ class ShortTermMemory:
             oldest = self._access_order.pop(0)
             self._store.pop(oldest, None)
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         return {
             "size": len(self._store),
             "max_size": self._max_size,

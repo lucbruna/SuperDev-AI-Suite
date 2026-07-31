@@ -1,8 +1,8 @@
 """Workflow models."""
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
 from enum import Enum
+from typing import Any
 
 
 class WorkflowStatus(Enum):
@@ -35,7 +35,7 @@ class WorkflowDefinition:
     name: str = ""
     description: str = ""
     status: WorkflowStatus = WorkflowStatus.DRAFT
-    steps: List[Dict[str, Any]] = field(default_factory=list)
+    steps: list[dict[str, Any]] = field(default_factory=list)
     created_by: str = ""
     version: str = "1.0"
     created_at: datetime = field(default_factory=datetime.now)
@@ -62,9 +62,9 @@ class WorkflowInstance:
     initiated_by: str = ""
     status: WorkflowStatus = WorkflowStatus.ACTIVE
     current_step: str = ""
-    context: Dict[str, Any] = field(default_factory=dict)
+    context: dict[str, Any] = field(default_factory=dict)
     started_at: datetime = field(default_factory=datetime.now)
-    completed_at: Optional[datetime] = None
+    completed_at: datetime | None = None
 
 
 @dataclass

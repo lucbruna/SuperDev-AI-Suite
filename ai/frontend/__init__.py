@@ -14,11 +14,11 @@ Enterprise frontend platform with:
 """
 
 from .app.app_core import App, create_app
-from .app.router import Router, Route
-from .app.providers import AppProvider, ThemeProvider
 from .app.config import FrontendConfig
-from .app.permissions import PermissionManager
 from .app.initialization import AppInitializer
+from .app.permissions import PermissionManager
+from .app.providers import AppProvider, ThemeProvider
+from .app.router import Route, Router
 
 __all__ = [
     "App", "create_app",

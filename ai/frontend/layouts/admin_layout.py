@@ -1,8 +1,8 @@
 """
 Admin Layout
 """
-from typing import Dict, Any, List
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
@@ -15,14 +15,14 @@ class AdminMenuItem:
 
 class AdminLayout:
     def __init__(self):
-        self.menu_items: List[AdminMenuItem] = []
-        self.user_permissions: List[str] = []
-        
+        self.menu_items: list[AdminMenuItem] = []
+        self.user_permissions: list[str] = []
+
     def has_permission(self, permission: str) -> bool:
         return permission in self.user_permissions or "admin" in self.user_permissions
-        
-    def get_visible_items(self) -> List[AdminMenuItem]:
+
+    def get_visible_items(self) -> list[AdminMenuItem]:
         return [item for item in self.menu_items if not item.permission or self.has_permission(item.permission)]
-        
-    def render(self) -> Dict[str, Any]:
+
+    def render(self) -> dict[str, Any]:
         return {"visibleItems": len(self.get_visible_items()), "totalItems": len(self.menu_items)}

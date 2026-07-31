@@ -40,7 +40,7 @@ class LLMEvaluator:
             return 1.0
         expected_words = expected.split()
         actual_words = actual.split()
-        matches = sum(1 for e, a in zip(expected_words, actual_words) if e == a)
+        matches = sum(1 for e, a in zip(expected_words, actual_words, strict=False) if e == a)
         return matches / max(len(expected_words), 1)
 
     def calculate_latency_score(self, latency_ms: float) -> float:

@@ -1,8 +1,11 @@
 """Access control engine."""
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
+
+import time
+import uuid
 from enum import Enum
-import time, uuid
+from typing import Any
+
 
 class AccessDecision(Enum):
     ALLOW = "allow"
@@ -11,7 +14,7 @@ class AccessDecision(Enum):
     ESCALATE = "escalate"
 
 class AccessRequest:
-    def __init__(self, subject: str, resource: str, action: str, context: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(self, subject: str, resource: str, action: str, context: dict[str, Any] | None = None) -> None:
         self.request_id = str(uuid.uuid4())[:8]
         self.subject = subject
         self.resource = resource
@@ -21,9 +24,9 @@ class AccessRequest:
 
 class AccessControlEngine:
     def __init__(self) -> None:
-        self._policies: Dict[str, Dict[str, Any]] = {}
-        self._decisions: List[Dict[str, Any]] = []
-        self._audit_log: List[Dict[str, Any]] = []
+        self._policies: dict[str, dict[str, Any]] = {}
+        self._decisions: list[dict[str, Any]] = []
+        self._audit_log: list[dict[str, Any]] = []
     def add_policy(self, policy_id: str, subject_pattern: str, resource_pattern: str, action: str, effect: AccessDecision) -> None:
         self._policies[policy_id] = {"subject": subject_pattern, "resource": resource_pattern, "action": action, "effect": effect.value}
     def remove_policy(self, policy_id: str) -> bool:
@@ -43,14 +46,14 @@ class AccessControlEngine:
         if pattern == "*":
             return True
         return value == pattern
-    def get_decisions(self, limit: int = 100) -> List[Dict[str, Any]]:
+    def get_decisions(self, limit: int = 100) -> list[dict[str, Any]]:
         return self._decisions[-limit:]
-    def get_audit_log(self, limit: int = 100) -> List[Dict[str, Any]]:
+    def get_audit_log(self, limit: int = 100) -> list[dict[str, Any]]:
         return self._audit_log[-limit:]
-    def list_policies(self) -> List[Dict[str, Any]]:
+    def list_policies(self) -> list[dict[str, Any]]:
         return [{"id": k, "subject": v["subject"], "resource": v["resource"], "action": v["action"], "effect": v["effect"]} for k, v in self._policies.items()]
-    def stats(self) -> Dict[str, int]:
-        counts: Dict[str, int] = {}
+    def stats(self) -> dict[str, int]:
+        counts: dict[str, int] = {}
         for d in self._decisions:
             counts[d["decision"]] = counts.get(d["decision"], 0) + 1
         return counts

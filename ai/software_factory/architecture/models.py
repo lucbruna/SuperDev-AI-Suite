@@ -1,9 +1,9 @@
 """Data models for software architecture."""
-from dataclasses import dataclass, field
-from enum import Enum
-from typing import List, Optional, Dict, Any
-from datetime import datetime
 import uuid
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class ComponentType(Enum):
@@ -50,10 +50,10 @@ class ArchitectureComponent:
     description: str = ""
     component_type: ComponentType = ComponentType.MODULE
     technology: str = ""
-    responsibilities: List[str] = field(default_factory=list)
-    interfaces: List[str] = field(default_factory=list)
-    dependencies: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    responsibilities: list[str] = field(default_factory=list)
+    interfaces: list[str] = field(default_factory=list)
+    dependencies: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -76,9 +76,9 @@ class ArchitecturePattern:
     name: str = ""
     description: str = ""
     pattern_type: PatternType = PatternType.LAYERED
-    components: List[str] = field(default_factory=list)
-    connectors: List[str] = field(default_factory=list)
-    trade_offs: Dict[str, str] = field(default_factory=dict)
+    components: list[str] = field(default_factory=list)
+    connectors: list[str] = field(default_factory=list)
+    trade_offs: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -88,8 +88,8 @@ class ArchitectureView:
     name: str = ""
     description: str = ""
     perspective: str = ""
-    components: List[str] = field(default_factory=list)
-    connectors: List[str] = field(default_factory=list)
+    components: list[str] = field(default_factory=list)
+    connectors: list[str] = field(default_factory=list)
     created_at: datetime = field(default_factory=datetime.utcnow)
 
 
@@ -101,8 +101,8 @@ class ArchitectureDecision:
     status: str = "proposed"
     context: str = ""
     decision: str = ""
-    consequences: List[str] = field(default_factory=list)
-    alternatives: List[str] = field(default_factory=list)
+    consequences: list[str] = field(default_factory=list)
+    alternatives: list[str] = field(default_factory=list)
     decided_at: datetime = field(default_factory=datetime.utcnow)
 
 

@@ -1,9 +1,7 @@
 """Mobile Metrics - Performance and usage metrics for mobile/edge."""
-from typing import Dict, Any, Optional, List
+import statistics
 from dataclasses import dataclass, field
 from datetime import datetime
-import hashlib
-import statistics
 
 
 @dataclass
@@ -13,7 +11,7 @@ class MetricPoint:
     unit: str = ""
     device_id: str = ""
     timestamp: datetime = field(default_factory=datetime.now)
-    tags: Dict[str, str] = field(default_factory=dict)
+    tags: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -28,11 +26,11 @@ class MetricSummary:
 
 class MobileMetrics:
     def __init__(self):
-        self.metrics: Dict[str, List[MetricPoint]] = {}
-        self.counters: Dict[str, int] = {}
-        self.gauges: Dict[str, float] = {}
+        self.metrics: dict[str, list[MetricPoint]] = {}
+        self.counters: dict[str, int] = {}
+        self.gauges: dict[str, float] = {}
 
-    def record(self, metric_name: str, value: float, unit: str = "", device_id: str = "", tags: Dict[str, str] = None) -> MetricPoint:
+    def record(self, metric_name: str, value: float, unit: str = "", device_id: str = "", tags: dict[str, str] = None) -> MetricPoint:
         point = MetricPoint(metric_name=metric_name, value=value, unit=unit, device_id=device_id, tags=tags or {})
         self.metrics.setdefault(metric_name, []).append(point)
         return point
@@ -64,13 +62,13 @@ class MobileMetrics:
             latest=values[-1],
         )
 
-    def get_points(self, metric_name: str, limit: int = 100, device_id: str = None) -> List[MetricPoint]:
+    def get_points(self, metric_name: str, limit: int = 100, device_id: str = None) -> list[MetricPoint]:
         points = self.metrics.get(metric_name, [])
         if device_id:
             points = [p for p in points if p.device_id == device_id]
         return points[-limit:]
 
-    def list_metrics(self) -> List[str]:
+    def list_metrics(self) -> list[str]:
         return list(self.metrics.keys())
 
     def count(self) -> int:
