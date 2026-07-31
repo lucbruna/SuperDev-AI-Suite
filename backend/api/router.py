@@ -10,6 +10,7 @@ from backend.api.v1 import (
     chat,
     health,
     knowledge,
+    llm,
     plugins,
     projects,
     runtime,
@@ -28,6 +29,7 @@ v1_router.include_router(users.router, prefix="/users", tags=["users"])
 v1_router.include_router(projects.router, prefix="/projects", tags=["projects"])
 v1_router.include_router(agents.router, prefix="/agents", tags=["agents"])
 v1_router.include_router(chat.router, prefix="/chat", tags=["chat"])
+v1_router.include_router(llm.router, prefix="/llm", tags=["llm"])
 v1_router.include_router(runtime.router, prefix="/runtime", tags=["runtime"])
 v1_router.include_router(workflow.router, prefix="/workflows", tags=["workflows"])
 v1_router.include_router(plugins.router, prefix="/plugins", tags=["plugins"])
