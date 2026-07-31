@@ -32,7 +32,12 @@ class KubernetesConfigMap(BaseTool):
         namespace = params.get("namespace", "default")
         try:
             if action == "list":
-                return {"success": True, "configmaps": self._configmaps, "namespace": namespace, "count": len(self._configmaps)}
+                return {
+                    "success": True,
+                    "configmaps": self._configmaps,
+                    "namespace": namespace,
+                    "count": len(self._configmaps),
+                }
             elif action == "get":
                 name = params.get("name", "")
                 cm = next((c for c in self._configmaps if c.get("name") == name), None)

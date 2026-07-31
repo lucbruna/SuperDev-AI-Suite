@@ -1,4 +1,5 @@
 """Semantic memory for concepts, facts, and knowledge graphs."""
+
 from __future__ import annotations
 
 import time
@@ -13,8 +14,7 @@ class SemanticMemory:
         self._relations: dict[str, list[str]] = {}
         self._categories: dict[str, set[str]] = {}
 
-    def store(self, key: str, value: Any, category: str = "general",
-              metadata: dict[str, Any] | None = None) -> None:
+    def store(self, key: str, value: Any, category: str = "general", metadata: dict[str, Any] | None = None) -> None:
         self._concepts[key] = {
             "value": value,
             "category": category,
@@ -56,10 +56,7 @@ class SemanticMemory:
             cat = self._concepts[key].get("category", "general")
             self._concepts.pop(key)
             self._categories.get(cat, set()).discard(key)
-            self._relations = {
-                rk: [t for t in targets if t != key]
-                for rk, targets in self._relations.items()
-            }
+            self._relations = {rk: [t for t in targets if t != key] for rk, targets in self._relations.items()}
         return removed
 
     def count(self) -> int:

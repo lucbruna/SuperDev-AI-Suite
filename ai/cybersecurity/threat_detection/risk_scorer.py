@@ -1,6 +1,7 @@
 """
 Risk Assessment and Scoring
 """
+
 from dataclasses import dataclass, field
 from enum import Enum
 
@@ -47,9 +48,13 @@ class RiskScorer:
         self.factors: dict[str, RiskFactor] = {}
         self.assessments: list[RiskAssessment] = []
 
-    def add_factor(self, name: str, category: RiskCategory, likelihood: float = 0.5, impact: float = 0.5, weight: float = 1.0) -> RiskFactor:
+    def add_factor(
+        self, name: str, category: RiskCategory, likelihood: float = 0.5, impact: float = 0.5, weight: float = 1.0
+    ) -> RiskFactor:
         factor_id = f"factor_{len(self.factors)}"
-        factor = RiskFactor(factor_id=factor_id, name=name, category=category, likelihood=likelihood, impact=impact, weight=weight)
+        factor = RiskFactor(
+            factor_id=factor_id, name=name, category=category, likelihood=likelihood, impact=impact, weight=weight
+        )
         self.factors[factor_id] = factor
         return factor
 
@@ -65,8 +70,16 @@ class RiskScorer:
         factors = list(self.factors.values())
         score = self.calculate_risk_score(factors)
         risk_level = "critical" if score > 0.8 else "high" if score > 0.6 else "medium" if score > 0.4 else "low"
-        recs = ["Implement additional controls", "Increase monitoring"] if score > 0.6 else ["Maintain current controls"]
-        assessment = RiskAssessment(assessment_id=assessment_id, factors=factors, overall_score=score, risk_level=risk_level, recommendations=recs)
+        recs = (
+            ["Implement additional controls", "Increase monitoring"] if score > 0.6 else ["Maintain current controls"]
+        )
+        assessment = RiskAssessment(
+            assessment_id=assessment_id,
+            factors=factors,
+            overall_score=score,
+            risk_level=risk_level,
+            recommendations=recs,
+        )
         self.assessments.append(assessment)
         return assessment
 
@@ -75,8 +88,17 @@ class RiskScorer:
         ac_map = {"L": 0.77, "H": 0.44}
         pr_map = {"N": 0.85, "L": 0.62, "H": 0.27}
         cia_map = {"N": 0.0, "L": 0.22, "H": 0.56}
-        exploitability = 8.22 * av_map.get(vector.attack_vector, 0.85) * ac_map.get(vector.attack_complexity, 0.77) * pr_map.get(vector.privileges_required, 0.85)
-        impact = 7.52 * (cia_map.get(vector.confidentiality, 0) + cia_map.get(vector.integrity, 0) + cia_map.get(vector.availability, 0))
+        exploitability = (
+            8.22
+            * av_map.get(vector.attack_vector, 0.85)
+            * ac_map.get(vector.attack_complexity, 0.77)
+            * pr_map.get(vector.privileges_required, 0.85)
+        )
+        impact = 7.52 * (
+            cia_map.get(vector.confidentiality, 0)
+            + cia_map.get(vector.integrity, 0)
+            + cia_map.get(vector.availability, 0)
+        )
         if impact <= 0:
             return 0.0
         base = min(1.0, (impact + exploitability) / 10)

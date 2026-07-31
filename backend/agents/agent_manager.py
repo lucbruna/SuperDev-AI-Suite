@@ -48,16 +48,14 @@ class AgentManager:
         return self._agents.get(agent_id)
 
     def list_agents(self) -> list[dict[str, Any]]:
-        return [
-            {**agent.to_dict(), "id": agent_id}
-            for agent_id, agent in self._agents.items()
-        ]
+        return [{**agent.to_dict(), "id": agent_id} for agent_id, agent in self._agents.items()]
 
     def start_agent(self, agent_id: str) -> bool:
         agent = self._agents.get(agent_id)
         if not agent:
             return False
         from backend.agents.base_agent import AgentStatus
+
         agent._status = AgentStatus.RUNNING
         return True
 
@@ -66,6 +64,7 @@ class AgentManager:
         if not agent:
             return False
         from backend.agents.base_agent import AgentStatus
+
         agent._status = AgentStatus.IDLE
         return True
 

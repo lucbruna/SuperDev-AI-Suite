@@ -1,4 +1,5 @@
 """Agent health monitoring with heartbeat tracking."""
+
 from __future__ import annotations
 
 import time
@@ -15,8 +16,7 @@ class HealthMonitor:
         self._check_results: dict[str, dict[str, Any]] = {}
         self._default_interval: float = 10.0
 
-    def register_agent(self, agent_id: str,
-                       heartbeat_interval: float = 10.0) -> None:
+    def register_agent(self, agent_id: str, heartbeat_interval: float = 10.0) -> None:
         self._intervals[agent_id] = heartbeat_interval
         self._heartbeats[agent_id] = time.time()
 
@@ -69,22 +69,13 @@ class HealthMonitor:
         return results
 
     def get_healthy_agents(self) -> list[str]:
-        return [
-            aid for aid, r in self._check_results.items()
-            if r.get("status") == "healthy"
-        ]
+        return [aid for aid, r in self._check_results.items() if r.get("status") == "healthy"]
 
     def get_unhealthy_agents(self) -> list[str]:
-        return [
-            aid for aid, r in self._check_results.items()
-            if r.get("status") in ("unhealthy", "degraded")
-        ]
+        return [aid for aid, r in self._check_results.items() if r.get("status") in ("unhealthy", "degraded")]
 
     def get_all_statuses(self) -> dict[str, str]:
-        return {
-            aid: self._check_results.get(aid, {}).get("status", "unknown")
-            for aid in self._heartbeats
-        }
+        return {aid: self._check_results.get(aid, {}).get("status", "unknown") for aid in self._heartbeats}
 
     def is_healthy(self, agent_id: str) -> bool:
         return self._check_results.get(agent_id, {}).get("status") == "healthy"

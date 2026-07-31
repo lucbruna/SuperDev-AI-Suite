@@ -1,4 +1,5 @@
 """BI Context — Shared context for BI operations."""
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any

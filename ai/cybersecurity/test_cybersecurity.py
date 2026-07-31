@@ -3,6 +3,7 @@ Comprehensive test suite for Cybersecurity & AI Security Engine (Volume 28)
 Covers all 11 subsystems: identity, authentication, authorization, encryption,
 application, code_security, ai_security, threat_detection, incident_response, compliance, core
 """
+
 import os
 import sys
 
@@ -272,7 +273,9 @@ class TestSessionManager(unittest.TestCase):
     def test_cleanup_expired(self):
         mgr = SessionManager(timeout_seconds=0)
         mgr.create("u1")
-        import time; time.sleep(0.01)
+        import time
+
+        time.sleep(0.01)
         cleaned = mgr.cleanup_expired()
         self.assertGreaterEqual(cleaned, 1)
 
@@ -381,9 +384,10 @@ class TestPermissionManager(unittest.TestCase):
 class TestPolicyEngine(unittest.TestCase):
     def test_evaluate(self):
         pe = PolicyEngine()
-        doc = PolicyDocument(name="allow_read", statements=[
-            PolicyStatement(effect=PolicyEffect.ALLOW, actions=["read"], resources=["file1"])
-        ])
+        doc = PolicyDocument(
+            name="allow_read",
+            statements=[PolicyStatement(effect=PolicyEffect.ALLOW, actions=["read"], resources=["file1"])],
+        )
         pe.add_policy(doc)
         self.assertTrue(pe.is_allowed("read", "file1"))
         self.assertFalse(pe.is_allowed("write", "file1"))
@@ -574,7 +578,9 @@ class TestDependencyScanner(unittest.TestCase):
     def test_scan(self):
         ds = DependencyScanner()
         ds.add_dependency("flask", "2.0.0")
-        ds.add_vulnerability(Vulnerability(vuln_id="v1", package="flask", version="2.0.0", severity=Severity.HIGH, cvss_score=7.5))
+        ds.add_vulnerability(
+            Vulnerability(vuln_id="v1", package="flask", version="2.0.0", severity=Severity.HIGH, cvss_score=7.5)
+        )
         result = ds.scan()
         self.assertEqual(result.vulnerable_count, 1)
 
@@ -642,7 +648,7 @@ class TestSecretScanner(unittest.TestCase):
 class TestCredentialDetector(unittest.TestCase):
     def test_detect(self):
         detector = CredentialDetector()
-        findings = detector.detect("app.py", 'Bearer eyJhbGciOiJIUzI1NiJ9.test.signature')
+        findings = detector.detect("app.py", "Bearer eyJhbGciOiJIUzI1NiJ9.test.signature")
         self.assertGreater(len(findings), 0)
 
 
@@ -661,7 +667,11 @@ class TestLicenseScanner(unittest.TestCase):
 class TestVulnerabilityScanner(unittest.TestCase):
     def test_scan(self):
         scanner = VulnerabilityScanner()
-        scanner.add_pattern(VulnPattern(pattern_id="p1", name="sql_injection", regex_pattern="SELECT.*FROM", severity=CodeVulnSeverity.HIGH))
+        scanner.add_pattern(
+            VulnPattern(
+                pattern_id="p1", name="sql_injection", regex_pattern="SELECT.*FROM", severity=CodeVulnSeverity.HIGH
+            )
+        )
         results = scanner.scan_file("query.py", "SELECT * FROM users")
         self.assertEqual(len(results), 1)
 
@@ -908,6 +918,7 @@ class TestRiskScorer(unittest.TestCase):
     def test_cvss(self):
         rs = RiskScorer()
         from threat_detection.risk_scorer import CVSSVector
+
         vector = CVSSVector(attack_vector="N", attack_complexity="L", confidentiality="H")
         score = rs.calculate_cvss(vector)
         self.assertGreater(score, 0)
@@ -1112,9 +1123,16 @@ class TestFileCounts(unittest.TestCase):
     def test_all_subsystems_present(self):
         base = os.path.dirname(os.path.abspath(__file__))
         expected_dirs = [
-            "identity", "authentication", "authorization", "encryption",
-            "application", "code_security", "ai_security", "threat_detection",
-            "incident_response", "compliance"
+            "identity",
+            "authentication",
+            "authorization",
+            "encryption",
+            "application",
+            "code_security",
+            "ai_security",
+            "threat_detection",
+            "incident_response",
+            "compliance",
         ]
         for d in expected_dirs:
             dir_path = os.path.join(base, d)
@@ -1125,11 +1143,19 @@ class TestFileCounts(unittest.TestCase):
     def test_core_files_exist(self):
         base = os.path.dirname(os.path.abspath(__file__))
         core_files = [
-            "security_config.py", "security_context.py", "security_engine.py",
-            "security_events.py", "security_factory.py", "security_interfaces.py",
-            "security_logger.py", "security_manager.py", "security_metrics.py",
-            "security_models.py", "security_protocols.py", "security_registry.py",
-            "security_runtime.py"
+            "security_config.py",
+            "security_context.py",
+            "security_engine.py",
+            "security_events.py",
+            "security_factory.py",
+            "security_interfaces.py",
+            "security_logger.py",
+            "security_manager.py",
+            "security_metrics.py",
+            "security_models.py",
+            "security_protocols.py",
+            "security_registry.py",
+            "security_runtime.py",
         ]
         for f in core_files:
             self.assertTrue(os.path.exists(os.path.join(base, f)), f"Missing core file: {f}")

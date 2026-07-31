@@ -1,4 +1,5 @@
 """Creation configuration defaults and presets."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -41,7 +42,11 @@ AGENT_TYPE_PRESETS: dict[str, dict[str, Any]] = {
     "supervisor": {
         "model": ModelDefaults(temperature=0.3, max_tokens=8192),
         "capabilities": CapabilityPresets(
-            chat=True, tools=True, planning=True, reasoning=True, memory=True,
+            chat=True,
+            tools=True,
+            planning=True,
+            reasoning=True,
+            memory=True,
         ),
         "security": SecurityPresets(require_approval=True),
     },
@@ -53,7 +58,9 @@ AGENT_TYPE_PRESETS: dict[str, dict[str, Any]] = {
     "coder": {
         "model": ModelDefaults(temperature=0.2, max_tokens=4096),
         "capabilities": CapabilityPresets(
-            chat=True, tools=True, code_execution=True,
+            chat=True,
+            tools=True,
+            code_execution=True,
         ),
         "security": SecurityPresets(sandbox_mode=True),
     },
@@ -65,7 +72,9 @@ AGENT_TYPE_PRESETS: dict[str, dict[str, Any]] = {
     "qa": {
         "model": ModelDefaults(temperature=0.2, max_tokens=4096),
         "capabilities": CapabilityPresets(
-            chat=True, tools=True, code_execution=True,
+            chat=True,
+            tools=True,
+            code_execution=True,
         ),
         "security": SecurityPresets(),
     },
@@ -77,7 +86,9 @@ AGENT_TYPE_PRESETS: dict[str, dict[str, Any]] = {
     "architect": {
         "model": ModelDefaults(temperature=0.5, max_tokens=6144),
         "capabilities": CapabilityPresets(
-            planning=True, reasoning=True, memory=True,
+            planning=True,
+            reasoning=True,
+            memory=True,
         ),
         "security": SecurityPresets(),
     },

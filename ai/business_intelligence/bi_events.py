@@ -1,4 +1,5 @@
 """BI Events — Event-driven messaging for BI operations."""
+
 import contextlib
 import hashlib
 from collections.abc import Callable

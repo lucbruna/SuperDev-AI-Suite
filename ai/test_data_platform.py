@@ -54,6 +54,7 @@ from data_platform.streaming.models import StreamConsumer, StreamEvent, StreamTo
 
 # ========== Core Engine Tests ==========
 
+
 class TestCoreEngine:
     def test_register_source(self):
         engine = DataPlatformEngine()
@@ -95,7 +96,9 @@ class TestCoreEngine:
 
     def test_schema(self):
         engine = DataPlatformEngine()
-        s = DataSchema(schema_id="SC001", name="Sales Schema", dataset="sales", fields=[{"name": "amount", "type": "float"}])
+        s = DataSchema(
+            schema_id="SC001", name="Sales Schema", dataset="sales", fields=[{"name": "amount", "type": "float"}]
+        )
         engine.register_schema(s)
         assert engine.get_schema("SC001") is s
 
@@ -116,6 +119,7 @@ class TestCoreEngine:
 
 
 # ========== Ingestion Tests ==========
+
 
 class TestIngestionSubsystem:
     def test_register_connector(self):
@@ -145,6 +149,7 @@ class TestIngestionSubsystem:
 
 
 # ========== Storage Tests ==========
+
 
 class TestStorageSubsystem:
     def test_create_bucket(self):
@@ -182,17 +187,22 @@ class TestStorageSubsystem:
 
 # ========== Processing Tests ==========
 
+
 class TestProcessingSubsystem:
     def test_transform_filter(self):
         engine = ProcessingEngine()
-        rule = TransformRule(rule_id="R001", transform_type=TransformType.FILTER, config={"field": "status", "value": "active"})
+        rule = TransformRule(
+            rule_id="R001", transform_type=TransformType.FILTER, config={"field": "status", "value": "active"}
+        )
         records = [{"status": "active"}, {"status": "inactive"}, {"status": "active"}]
         result = engine.transform_records(records, [rule])
         assert len(result) == 2
 
     def test_transform_map(self):
         engine = ProcessingEngine()
-        rule = TransformRule(rule_id="R001", transform_type=TransformType.MAP, config={"mapping": {"old_name": "new_name"}})
+        rule = TransformRule(
+            rule_id="R001", transform_type=TransformType.MAP, config={"mapping": {"old_name": "new_name"}}
+        )
         records = [{"old_name": "test"}]
         result = engine.transform_records(records, [rule])
         assert "new_name" in result[0]
@@ -206,7 +216,11 @@ class TestProcessingSubsystem:
 
     def test_aggregate(self):
         engine = ProcessingEngine()
-        records = [{"region": "north", "amount": 100}, {"region": "north", "amount": 200}, {"region": "south", "amount": 150}]
+        records = [
+            {"region": "north", "amount": 100},
+            {"region": "north", "amount": 200},
+            {"region": "south", "amount": 150},
+        ]
         result = engine.aggregate_records(records, "region", "amount", "sum")
         assert len(result) == 2
         north = [r for r in result if r["region"] == "north"][0]
@@ -223,6 +237,7 @@ class TestProcessingSubsystem:
 
 
 # ========== Streaming Tests ==========
+
 
 class TestStreamingSubsystem:
     def test_create_topic(self):
@@ -251,12 +266,14 @@ class TestStreamingSubsystem:
     def test_pipeline(self):
         engine = StreamingEngine()
         from data_platform.streaming.models import StreamPipeline
+
         p = StreamPipeline(pipeline_id="P001", name="Process Events", source_topic="T001", target_topic="T002")
         engine.create_pipeline(p)
         assert engine.start_pipeline("P001") is True
 
 
 # ========== ETL Tests ==========
+
 
 class TestETLSubsystem:
     def test_pipeline_lifecycle(self):
@@ -288,6 +305,7 @@ class TestETLSubsystem:
 
 # ========== Quality Tests ==========
 
+
 class TestQualitySubsystem:
     def test_completeness_check(self):
         engine = QualityEngine()
@@ -315,6 +333,7 @@ class TestQualitySubsystem:
 
 
 # ========== Governance Tests ==========
+
 
 class TestGovernanceSubsystem:
     def test_access_control(self):
@@ -347,6 +366,7 @@ class TestGovernanceSubsystem:
 
 # ========== Analytics Tests ==========
 
+
 class TestAnalyticsSubsystem:
     def test_query_select(self):
         engine = AnalyticsEngine()
@@ -364,8 +384,14 @@ class TestAnalyticsSubsystem:
 
     def test_query_group_by(self):
         engine = AnalyticsEngine()
-        records = [{"region": "north", "amount": 100}, {"region": "north", "amount": 200}, {"region": "south", "amount": 150}]
-        query = AnalyticsQuery(query_id="Q001", dataset="sales", query_type=QueryType.GROUP_BY, group_by=["region"], metrics=["amount"])
+        records = [
+            {"region": "north", "amount": 100},
+            {"region": "north", "amount": 200},
+            {"region": "south", "amount": 150},
+        ]
+        query = AnalyticsQuery(
+            query_id="Q001", dataset="sales", query_type=QueryType.GROUP_BY, group_by=["region"], metrics=["amount"]
+        )
         result = engine.execute_query(records, query)
         assert result.row_count == 2
 
@@ -389,6 +415,7 @@ class TestAnalyticsSubsystem:
 
 
 # ========== ML Tests ==========
+
 
 class TestMLSubsystem:
     def test_create_model(self):
@@ -443,6 +470,7 @@ class TestMLSubsystem:
 
 # ========== Knowledge Graph Tests ==========
 
+
 class TestKnowledgeGraphSubsystem:
     def test_add_entity(self):
         engine = KnowledgeGraphEngine()
@@ -495,6 +523,7 @@ class TestKnowledgeGraphSubsystem:
 
 
 # ========== Support Class Tests ==========
+
 
 class TestSupportClasses:
     def test_config(self):

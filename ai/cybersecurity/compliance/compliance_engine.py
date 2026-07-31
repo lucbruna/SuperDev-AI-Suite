@@ -1,6 +1,7 @@
 """
 Compliance Framework Engine
 """
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -79,7 +80,13 @@ class ComplianceEngine:
         framework_controls = [c for c in self.controls.values() if c.framework == framework]
         implemented = sum(1 for c in framework_controls if c.status == ControlStatus.IMPLEMENTED)
         score = (implemented / max(len(framework_controls), 1)) * 100
-        assessment = ComplianceAssessment(assessment_id=hashlib.sha256(f"{framework.value}{datetime.now().isoformat()}".encode()).hexdigest()[:16], framework=framework, controls=framework_controls, score=score, assessor=assessor)
+        assessment = ComplianceAssessment(
+            assessment_id=hashlib.sha256(f"{framework.value}{datetime.now().isoformat()}".encode()).hexdigest()[:16],
+            framework=framework,
+            controls=framework_controls,
+            score=score,
+            assessor=assessor,
+        )
         self.assessments.append(assessment)
         return assessment
 
@@ -88,8 +95,19 @@ class ComplianceEngine:
         implemented = sum(1 for c in framework_controls if c.status == ControlStatus.IMPLEMENTED)
         partial = sum(1 for c in framework_controls if c.status == ControlStatus.PARTIALLY_IMPLEMENTED)
         not_impl = sum(1 for c in framework_controls if c.status == ControlStatus.NOT_IMPLEMENTED)
-        gaps = [c for c in framework_controls if c.status in (ControlStatus.NOT_IMPLEMENTED, ControlStatus.PARTIALLY_IMPLEMENTED)]
-        analysis = GapAnalysis(framework=framework, total_controls=len(framework_controls), implemented=implemented, partial=partial, not_implemented=not_impl, gaps=gaps)
+        gaps = [
+            c
+            for c in framework_controls
+            if c.status in (ControlStatus.NOT_IMPLEMENTED, ControlStatus.PARTIALLY_IMPLEMENTED)
+        ]
+        analysis = GapAnalysis(
+            framework=framework,
+            total_controls=len(framework_controls),
+            implemented=implemented,
+            partial=partial,
+            not_implemented=not_impl,
+            gaps=gaps,
+        )
         self.gap_analyses.append(analysis)
         return analysis
 

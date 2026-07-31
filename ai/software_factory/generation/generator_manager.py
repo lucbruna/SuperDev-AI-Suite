@@ -1,4 +1,5 @@
 """Manager for generator configurations and history."""
+
 from datetime import datetime
 from typing import Any
 
@@ -26,12 +27,14 @@ class GeneratorManager:
         return self._templates.get(template_id)
 
     def record_generation(self, project_id: str, template_id: str, output_path: str) -> None:
-        self._history.append({
-            "project_id": project_id,
-            "template_id": template_id,
-            "output_path": output_path,
-            "timestamp": datetime.utcnow().isoformat(),
-        })
+        self._history.append(
+            {
+                "project_id": project_id,
+                "template_id": template_id,
+                "output_path": output_path,
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+        )
 
     def get_history(self) -> list[dict[str, Any]]:
         return list(self._history)

@@ -31,6 +31,7 @@ from ..tokenizer.token_counter import TokenCounter
 
 # ── Routing ──────────────────────────────────────────────────────
 
+
 class TestCapabilityRouter:
     @pytest.mark.asyncio
     async def test_route_by_capability(self) -> None:
@@ -110,16 +111,24 @@ class TestSmartRouter:
     async def test_route(self) -> None:
         router = SmartRouter()
         providers = [
-            ProviderInfo(name="a", model="m", latency_p50=100, cost_per_token=0.001,
-                         capabilities=["chat"], state=ProviderState.ACTIVE),
-            ProviderInfo(name="b", model="m", latency_p50=500, cost_per_token=0.01,
-                         capabilities=[], state=ProviderState.ACTIVE),
+            ProviderInfo(
+                name="a",
+                model="m",
+                latency_p50=100,
+                cost_per_token=0.001,
+                capabilities=["chat"],
+                state=ProviderState.ACTIVE,
+            ),
+            ProviderInfo(
+                name="b", model="m", latency_p50=500, cost_per_token=0.01, capabilities=[], state=ProviderState.ACTIVE
+            ),
         ]
         result = await router.route({"capabilities": ["chat"]}, providers)
         assert result == "a"
 
 
 # ── Prompts ──────────────────────────────────────────────────────
+
 
 class TestPromptTemplate:
     def test_render(self) -> None:
@@ -148,6 +157,7 @@ class TestPromptManager:
 
 # ── Tokenizer ────────────────────────────────────────────────────
 
+
 class TestTokenCounter:
     def test_count(self) -> None:
         tc = TokenCounter()
@@ -161,6 +171,7 @@ class TestTokenCounter:
 
 
 # ── Embeddings ───────────────────────────────────────────────────
+
 
 class TestEmbeddingService:
     @pytest.mark.asyncio
@@ -183,6 +194,7 @@ class TestEmbeddingService:
 
 # ── Streaming ────────────────────────────────────────────────────
 
+
 class TestStreamHandler:
     @pytest.mark.asyncio
     async def test_collect(self) -> None:
@@ -197,6 +209,7 @@ class TestStreamHandler:
 
 
 # ── Fallback ─────────────────────────────────────────────────────
+
 
 class TestFallbackHandler:
     @pytest.mark.asyncio
@@ -217,6 +230,7 @@ class TestFallbackHandler:
 
 # ── Moderation ───────────────────────────────────────────────────
 
+
 class TestContentModerator:
     def test_clean_text(self) -> None:
         mod = ContentModerator()
@@ -235,6 +249,7 @@ class TestContentModerator:
 
 
 # ── Evaluation ───────────────────────────────────────────────────
+
 
 class TestLLMEvaluator:
     @pytest.mark.asyncio
@@ -269,6 +284,7 @@ class TestMetricsCalculator:
 
 # ── Pricing ──────────────────────────────────────────────────────
 
+
 class TestPricingCalculator:
     def test_calculate_cost(self) -> None:
         pc = PricingCalculator()
@@ -282,6 +298,7 @@ class TestPricingCalculator:
 
 
 # ── Telemetry ────────────────────────────────────────────────────
+
 
 class TestTelemetryCollector:
     def test_record_and_get(self) -> None:
@@ -301,6 +318,7 @@ class TestTelemetryCollector:
 
 
 # ── Advanced Cache ───────────────────────────────────────────────
+
 
 class TestAdvancedCache:
     @pytest.mark.asyncio
@@ -330,6 +348,7 @@ class TestAdvancedCache:
 
 
 # ── Compatibility ────────────────────────────────────────────────
+
 
 class TestCompatibilityLayer:
     def test_resolve_alias(self) -> None:

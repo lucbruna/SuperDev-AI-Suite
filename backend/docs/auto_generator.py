@@ -74,19 +74,27 @@ class AutoDocGenerator:
         total_files = len(self._output["modules"])
         total_lines = sum(m.get("total_lines", 0) for m in self._output["modules"].values() if isinstance(m, dict))
         total_classes = sum(len(m.get("classes", [])) for m in self._output["modules"].values() if isinstance(m, dict))
-        total_functions = sum(len(m.get("functions", [])) for m in self._output["modules"].values() if isinstance(m, dict))
+        total_functions = sum(
+            len(m.get("functions", [])) for m in self._output["modules"].values() if isinstance(m, dict)
+        )
         self._output["summary"] = {
             "files": total_files,
             "lines": total_lines,
             "classes": total_classes,
             "functions": total_functions,
-            "python_files": sum(1 for k, v in self._output["modules"].items() if k.endswith(".py") and isinstance(v, dict) and "classes" in v),
+            "python_files": sum(
+                1
+                for k, v in self._output["modules"].items()
+                if k.endswith(".py") and isinstance(v, dict) and "classes" in v
+            ),
         }
 
     def to_markdown(self) -> str:
         lines = [f"# {self._output['project']} Documentation", f"Generated: {self._output['generated_at']}", ""]
         s = self._output["summary"]
-        lines.append(f"## Summary\n- Files: {s['files']}\n- Lines: {s['lines']}\n- Classes: {s['classes']}\n- Functions: {s['functions']}\n")
+        lines.append(
+            f"## Summary\n- Files: {s['files']}\n- Lines: {s['lines']}\n- Classes: {s['classes']}\n- Functions: {s['functions']}\n"
+        )
         lines.append("## Modules\n")
         for mod_path, mod_data in sorted(self._output["modules"].items()):
             if not isinstance(mod_data, dict):
@@ -118,6 +126,7 @@ class AutoDocGenerator:
             content = self.to_markdown()
         else:
             import json
+
             content = json.dumps(self._output, indent=2, default=str)
         output_file.write_text(content, encoding="utf-8")
         return str(output_file)

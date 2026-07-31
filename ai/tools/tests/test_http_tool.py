@@ -11,8 +11,7 @@ class TestHTTPTool:
     @pytest.mark.asyncio
     async def test_blocks_private_url(self) -> None:
         tool = HTTPTool()
-        result = await tool.execute(
-            {"url": "http://169.254.169.254/latest/meta-data/"})
+        result = await tool.execute({"url": "http://169.254.169.254/latest/meta-data/"})
         assert result["success"] is False
         assert "internal" in result["error"]
 

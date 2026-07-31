@@ -1,6 +1,7 @@
 """
 Adapter Manager - Adapter lifecycle
 """
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -24,7 +25,13 @@ class AdapterManager:
 
     def register(self, name: str, adapter_type: str, source_format: str, target_format: str) -> AdapterInfo:
         adapter_id = hashlib.sha256(f"{name}{adapter_type}".encode()).hexdigest()[:16]
-        info = AdapterInfo(adapter_id=adapter_id, name=name, adapter_type=adapter_type, source_format=source_format, target_format=target_format)
+        info = AdapterInfo(
+            adapter_id=adapter_id,
+            name=name,
+            adapter_type=adapter_type,
+            source_format=source_format,
+            target_format=target_format,
+        )
         self.adapters[adapter_id] = info
         return info
 

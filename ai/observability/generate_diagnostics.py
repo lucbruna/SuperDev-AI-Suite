@@ -1,15 +1,20 @@
 """Diagnostics subsystem generator."""
+
 import os
 
-BASE = r'C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\observability\diagnostics'
+BASE = r"C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\observability\diagnostics"
+
 
 def w(path, content):
     full = os.path.join(BASE, path)
     os.makedirs(os.path.dirname(full), exist_ok=True)
-    with open(full, 'w', encoding='utf-8') as f:
+    with open(full, "w", encoding="utf-8") as f:
         f.write(content)
 
-w('diagnostics_engine.py', '''"""Diagnostics engine."""
+
+w(
+    "diagnostics_engine.py",
+    '''"""Diagnostics engine."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
@@ -34,9 +39,12 @@ class DiagnosticsEngine:
         return self._history[-limit:]
     def list_analyzers(self) -> List[str]:
         return list(self._analyzers.keys())
-''')
+''',
+)
 
-w('root_cause.py', '''"""Root cause analysis."""
+w(
+    "root_cause.py",
+    '''"""Root cause analysis."""
 from __future__ import annotations
 from typing import Any, Dict, List
 
@@ -63,9 +71,12 @@ class RootCauseAnalyzer:
         return list(self._symptoms.keys())
     def list_causes(self) -> List[str]:
         return list(self._causes.keys())
-''')
+''',
+)
 
-w('analyzer.py', '''"""General analyzer."""
+w(
+    "analyzer.py",
+    '''"""General analyzer."""
 from __future__ import annotations
 from typing import Any, Dict, List
 
@@ -87,9 +98,12 @@ class GeneralAnalyzer:
             self._rules.pop(index)
             return True
         return False
-''')
+''',
+)
 
-w('recommendation.py', '''"""Recommendation engine."""
+w(
+    "recommendation.py",
+    '''"""Recommendation engine."""
 from __future__ import annotations
 from typing import Any, Dict, List
 
@@ -113,9 +127,12 @@ class RecommendationEngine:
             del self._templates[category]
             return True
         return False
-''')
+''',
+)
 
-w('auto_fix.py', '''"""Auto-fix capability."""
+w(
+    "auto_fix.py",
+    '''"""Auto-fix capability."""
 from __future__ import annotations
 from typing import Any, Callable, Dict, List
 
@@ -145,9 +162,12 @@ class AutoFix:
             del self._fixes[issue_type]
             return True
         return False
-''')
+''',
+)
 
-w('history.py', '''"""Diagnostics history."""
+w(
+    "history.py",
+    '''"""Diagnostics history."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import time
@@ -175,9 +195,12 @@ class DiagnosticsHistory:
         return n
     def get_recent(self, limit: int = 20) -> List[Dict[str, Any]]:
         return self._entries[-limit:]
-''')
+''',
+)
 
-w('__init__.py', '''"""Diagnostics subsystem."""
+w(
+    "__init__.py",
+    '''"""Diagnostics subsystem."""
 from .diagnostics_engine import DiagnosticsEngine
 from .root_cause import RootCauseAnalyzer
 from .analyzer import GeneralAnalyzer
@@ -189,6 +212,7 @@ __all__ = [
     "DiagnosticsEngine", "RootCauseAnalyzer", "GeneralAnalyzer",
     "RecommendationEngine", "AutoFix", "DiagnosticsHistory"
 ]
-''')
+''',
+)
 
 print("diagnostics/: 7 files created")

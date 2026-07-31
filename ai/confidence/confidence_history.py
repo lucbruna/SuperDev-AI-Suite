@@ -11,11 +11,13 @@ class ConfidenceHistory:
         self._entries: list[dict[str, Any]] = []
 
     async def record(self, score: float, context_id: str) -> None:
-        self._entries.append({
-            "score": score,
-            "context_id": context_id,
-            "timestamp": datetime.now().isoformat(),
-        })
+        self._entries.append(
+            {
+                "score": score,
+                "context_id": context_id,
+                "timestamp": datetime.now().isoformat(),
+            }
+        )
 
     async def get_trend(self, context_id: str) -> list[dict[str, Any]]:
         return [e for e in self._entries if e.get("context_id") == context_id]

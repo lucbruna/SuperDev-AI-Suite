@@ -1,4 +1,5 @@
 """Monitoring protocols."""
+
 from __future__ import annotations
 
 from typing import Any, Protocol, runtime_checkable
@@ -8,20 +9,24 @@ from typing import Any, Protocol, runtime_checkable
 class Loggable(Protocol):
     def to_log_entry(self) -> dict[str, Any]: ...
 
+
 @runtime_checkable
 class Monitored(Protocol):
     def get_metrics(self) -> dict[str, float]: ...
     def get_health(self) -> str: ...
+
 
 @runtime_checkable
 class Traceable(Protocol):
     def get_trace_id(self) -> str: ...
     def get_span(self) -> dict[str, Any]: ...
 
+
 @runtime_checkable
 class Alertable(Protocol):
     def check_alerts(self) -> list: ...
     def get_alert_rules(self) -> list: ...
+
 
 @runtime_checkable
 class Reportable(Protocol):

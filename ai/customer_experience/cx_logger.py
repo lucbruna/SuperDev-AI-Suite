@@ -1,4 +1,5 @@
 """CX Logger — Structured logging for CX operations."""
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -27,7 +28,14 @@ class CXLogger:
     def __init__(self):
         self.entries: list[CXLogEntry] = []
 
-    def log(self, level: CXLogLevel, message: str, source: str = "", project_id: str = "", data: dict[str, Any] | None = None) -> CXLogEntry:
+    def log(
+        self,
+        level: CXLogLevel,
+        message: str,
+        source: str = "",
+        project_id: str = "",
+        data: dict[str, Any] | None = None,
+    ) -> CXLogEntry:
         entry = CXLogEntry(level=level, message=message, source=source, project_id=project_id, data=data or {})
         self.entries.append(entry)
         return entry

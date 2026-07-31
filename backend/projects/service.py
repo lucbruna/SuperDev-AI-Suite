@@ -96,7 +96,9 @@ class ProjectService:
         await self.session.commit()
 
     async def list_projects(
-        self, page: int = 1, page_size: int = 20,
+        self,
+        page: int = 1,
+        page_size: int = 20,
         organization_id: uuid.UUID | None = None,
         owner_id: uuid.UUID | None = None,
         is_archived: bool | None = None,
@@ -121,7 +123,9 @@ class ProjectService:
             pages=pages,
         )
 
-    async def add_member(self, project_id: uuid.UUID, user_id: uuid.UUID, role: str = "member") -> ProjectMemberResponse:
+    async def add_member(
+        self, project_id: uuid.UUID, user_id: uuid.UUID, role: str = "member"
+    ) -> ProjectMemberResponse:
         project = await self.repo.get_by_id(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")

@@ -1,4 +1,5 @@
 """Personality engine for agent behavior customization."""
+
 from __future__ import annotations
 
 from typing import Any

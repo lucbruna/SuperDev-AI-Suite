@@ -1,4 +1,5 @@
 """BI Protocols — Protocol definitions for BI operations."""
+
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any

@@ -1,4 +1,5 @@
 """Manager for deployment environments."""
+
 from typing import Any
 
 from .models import Environment, EnvironmentType
@@ -10,8 +11,9 @@ class EnvironmentManager:
     def __init__(self):
         self._environments: dict[str, Environment] = {}
 
-    def create_environment(self, name: str, env_type: EnvironmentType = EnvironmentType.DEVELOPMENT,
-                           url: str = "") -> Environment:
+    def create_environment(
+        self, name: str, env_type: EnvironmentType = EnvironmentType.DEVELOPMENT, url: str = ""
+    ) -> Environment:
         env = Environment(name=name, environment_type=env_type, url=url)
         self._environments[env.env_id] = env
         return env

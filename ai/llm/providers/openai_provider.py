@@ -57,6 +57,7 @@ class OpenAIProvider(BaseLLMProvider):
         if self._aclient is None:
             try:
                 from openai import AsyncOpenAI
+
                 kwargs: dict[str, Any] = {"api_key": self._api_key, "max_retries": 0}
                 if self._base_url:
                     kwargs["base_url"] = self._base_url
@@ -64,7 +65,9 @@ class OpenAIProvider(BaseLLMProvider):
                     kwargs["organization"] = self._organization
                 self._aclient = AsyncOpenAI(**kwargs)
             except ImportError:
-                raise ProviderError(ProviderErrorCode.API_ERROR, "openai library required. pip install openai", provider="openai")
+                raise ProviderError(
+                    ProviderErrorCode.API_ERROR, "openai library required. pip install openai", provider="openai"
+                )
         return self._aclient
 
     # ── ILLMProvider ────────────────────────────────────────────────
@@ -85,7 +88,11 @@ class OpenAIProvider(BaseLLMProvider):
                 except ProviderError as e:
                     attempt += 1
                     if attempt > self._max_retries or not _is_retryable(e, self._retry_codes):
-                        yield {"content": f"[{self._name} error: {e.message}]", "finish_reason": "error", "error": e.message}
+                        yield {
+                            "content": f"[{self._name} error: {e.message}]",
+                            "finish_reason": "error",
+                            "error": e.message,
+                        }
                         break
                     retry_after = e.retry_after or _exponential_backoff(attempt - 1)
                     await asyncio.sleep(retry_after)
@@ -93,9 +100,14 @@ class OpenAIProvider(BaseLLMProvider):
                     pe = ProviderError.from_exception(e, self._name)
                     attempt += 1
                     if attempt > self._max_retries or not _is_retryable(pe, self._retry_codes):
-                        yield {"content": f"[{self._name} error: {pe.message}]", "finish_reason": "error", "error": pe.message}
+                        yield {
+                            "content": f"[{self._name} error: {pe.message}]",
+                            "finish_reason": "error",
+                            "error": pe.message,
+                        }
                         break
                     await asyncio.sleep(_exponential_backoff(attempt - 1))
+
         return _stream()
 
     async def validate(self, params: dict[str, Any]) -> bool:
@@ -235,6 +247,7 @@ class OpenAIProvider(BaseLLMProvider):
 
     async def health(self) -> dict[str, Any]:
         import time as time_module
+
         start = time_module.monotonic()
         try:
             client = self._get_client()
@@ -249,15 +262,67 @@ class OpenAIProvider(BaseLLMProvider):
 
     async def list_models(self) -> list[dict[str, Any]]:
         models = [
-            {"id": "gpt-4o", "name": "GPT-4o", "capabilities": ["chat", "vision", "tools", "json"], "context_window": 128000, "max_tokens": 16384},
-            {"id": "gpt-4o-mini", "name": "GPT-4o Mini", "capabilities": ["chat", "vision", "tools", "json"], "context_window": 128000, "max_tokens": 16384},
-            {"id": "gpt-4-turbo", "name": "GPT-4 Turbo", "capabilities": ["chat", "vision", "tools", "json"], "context_window": 128000, "max_tokens": 4096},
-            {"id": "gpt-4", "name": "GPT-4", "capabilities": ["chat", "tools"], "context_window": 8192, "max_tokens": 4096},
-            {"id": "gpt-3.5-turbo", "name": "GPT-3.5 Turbo", "capabilities": ["chat", "tools"], "context_window": 16385, "max_tokens": 4096},
-            {"id": "o1-mini", "name": "O1 Mini", "capabilities": ["chat"], "context_window": 128000, "max_tokens": 65536},
-            {"id": "o1-preview", "name": "O1 Preview", "capabilities": ["chat"], "context_window": 128000, "max_tokens": 32768},
-            {"id": "text-embedding-3-small", "name": "Embedding 3 Small", "capabilities": ["embedding"], "dimensions": 1536},
-            {"id": "text-embedding-3-large", "name": "Embedding 3 Large", "capabilities": ["embedding"], "dimensions": 3072},
+            {
+                "id": "gpt-4o",
+                "name": "GPT-4o",
+                "capabilities": ["chat", "vision", "tools", "json"],
+                "context_window": 128000,
+                "max_tokens": 16384,
+            },
+            {
+                "id": "gpt-4o-mini",
+                "name": "GPT-4o Mini",
+                "capabilities": ["chat", "vision", "tools", "json"],
+                "context_window": 128000,
+                "max_tokens": 16384,
+            },
+            {
+                "id": "gpt-4-turbo",
+                "name": "GPT-4 Turbo",
+                "capabilities": ["chat", "vision", "tools", "json"],
+                "context_window": 128000,
+                "max_tokens": 4096,
+            },
+            {
+                "id": "gpt-4",
+                "name": "GPT-4",
+                "capabilities": ["chat", "tools"],
+                "context_window": 8192,
+                "max_tokens": 4096,
+            },
+            {
+                "id": "gpt-3.5-turbo",
+                "name": "GPT-3.5 Turbo",
+                "capabilities": ["chat", "tools"],
+                "context_window": 16385,
+                "max_tokens": 4096,
+            },
+            {
+                "id": "o1-mini",
+                "name": "O1 Mini",
+                "capabilities": ["chat"],
+                "context_window": 128000,
+                "max_tokens": 65536,
+            },
+            {
+                "id": "o1-preview",
+                "name": "O1 Preview",
+                "capabilities": ["chat"],
+                "context_window": 128000,
+                "max_tokens": 32768,
+            },
+            {
+                "id": "text-embedding-3-small",
+                "name": "Embedding 3 Small",
+                "capabilities": ["embedding"],
+                "dimensions": 1536,
+            },
+            {
+                "id": "text-embedding-3-large",
+                "name": "Embedding 3 Large",
+                "capabilities": ["embedding"],
+                "dimensions": 3072,
+            },
         ]
         return models
 

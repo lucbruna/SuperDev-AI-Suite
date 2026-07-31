@@ -1,4 +1,5 @@
 """Device Registry - Enterprise device registry."""
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -25,7 +26,9 @@ class DeviceRegistry:
 
     def register(self, device_id: str, owner: str = "", department: str = "", **kwargs) -> DeviceRegistration:
         reg_id = hashlib.sha256(f"{device_id}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
-        reg = DeviceRegistration(registration_id=reg_id, device_id=device_id, owner=owner, department=department, **kwargs)
+        reg = DeviceRegistration(
+            registration_id=reg_id, device_id=device_id, owner=owner, department=department, **kwargs
+        )
         self.registrations[reg_id] = reg
         self.by_device[device_id] = reg_id
         return reg

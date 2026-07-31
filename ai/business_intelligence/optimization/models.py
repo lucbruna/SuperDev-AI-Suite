@@ -1,4 +1,5 @@
 """Optimization models."""
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -28,7 +29,7 @@ class ConstraintType(Enum):
 class Variable:
     name: str
     lower_bound: float = 0.0
-    upper_bound: float = float('inf')
+    upper_bound: float = float("inf")
     var_type: str = "continuous"
 
 

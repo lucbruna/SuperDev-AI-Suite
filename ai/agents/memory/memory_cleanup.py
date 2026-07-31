@@ -1,4 +1,5 @@
 """Memory cleanup and garbage collection."""
+
 from __future__ import annotations
 
 import time
@@ -12,8 +13,7 @@ class MemoryCleanup:
         self._cleanup_count: int = 0
         self._total_removed: int = 0
 
-    def cleanup_all(self, memory_engine: Any,
-                    max_age_hours: int = 168) -> dict[str, Any]:
+    def cleanup_all(self, memory_engine: Any, max_age_hours: int = 168) -> dict[str, Any]:
         max_age_seconds = max_age_hours * 3600
         now = time.time()
         removed = 0

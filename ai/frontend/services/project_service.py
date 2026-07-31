@@ -1,6 +1,7 @@
 """
 Project Service
 """
+
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -28,6 +29,7 @@ class ProjectService:
 
     def create(self, name: str, description: str = "") -> Project:
         import uuid
+
         project = Project(id=str(uuid.uuid4()), name=name, description=description)
         self.projects.append(project)
         return project

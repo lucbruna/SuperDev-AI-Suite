@@ -1,4 +1,5 @@
 """Quality scoring for agent outputs."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -17,8 +18,7 @@ class QualityScorer:
         avg = sum(criteria_scores.values()) / max(len(criteria_scores), 1)
         return {"score": round(avg, 2), "criteria": criteria_scores}
 
-    def score_output(self, output: dict[str, Any],
-                     criteria: list[str] | None = None) -> dict[str, Any]:
+    def score_output(self, output: dict[str, Any], criteria: list[str] | None = None) -> dict[str, Any]:
         check_criteria = criteria or self._default_criteria
         scores: dict[str, float] = {}
         for c in check_criteria:

@@ -1,4 +1,5 @@
 """Fingerprint - Fingerprint biometric module."""
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -21,9 +22,13 @@ class FingerprintManager:
         self.templates: dict[str, FingerprintTemplate] = {}
         self.scan_log: list[dict[str, Any]] = []
 
-    def enroll(self, user_id: str, finger_id: int, template_data: str = "", quality: float = 0.0) -> FingerprintTemplate:
+    def enroll(
+        self, user_id: str, finger_id: int, template_data: str = "", quality: float = 0.0
+    ) -> FingerprintTemplate:
         template_id = hashlib.sha256(f"{user_id}{finger_id}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
-        template = FingerprintTemplate(template_id=template_id, user_id=user_id, finger_id=finger_id, template_data=template_data, quality=quality)
+        template = FingerprintTemplate(
+            template_id=template_id, user_id=user_id, finger_id=finger_id, template_data=template_data, quality=quality
+        )
         self.templates[template_id] = template
         return template
 
@@ -31,9 +36,18 @@ class FingerprintManager:
         for t in self.templates.values():
             if t.user_id == user_id and t.finger_id == finger_id and t.active:
                 if not probe_data or t.template_data == hashlib.sha256(probe_data.encode()).hexdigest():
-                    self.scan_log.append({"user_id": user_id, "finger_id": finger_id, "match": True, "timestamp": datetime.now().isoformat()})
+                    self.scan_log.append(
+                        {
+                            "user_id": user_id,
+                            "finger_id": finger_id,
+                            "match": True,
+                            "timestamp": datetime.now().isoformat(),
+                        }
+                    )
                     return True
-        self.scan_log.append({"user_id": user_id, "finger_id": finger_id, "match": False, "timestamp": datetime.now().isoformat()})
+        self.scan_log.append(
+            {"user_id": user_id, "finger_id": finger_id, "match": False, "timestamp": datetime.now().isoformat()}
+        )
         return False
 
     def get_user_templates(self, user_id: str) -> list[FingerprintTemplate]:

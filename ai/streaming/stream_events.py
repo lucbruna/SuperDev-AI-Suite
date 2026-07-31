@@ -39,6 +39,7 @@ class StreamEvent:
     @classmethod
     def start(cls, stream_id: str, metadata: dict | None = None) -> StreamEvent:
         import time
+
         return cls(
             event=StreamEventType.START,
             data=metadata or {},
@@ -49,6 +50,7 @@ class StreamEvent:
     @classmethod
     def chunk(cls, stream_id: str, content: str, index: int = 0) -> StreamEvent:
         import time
+
         return cls(
             event=StreamEventType.CHUNK,
             data={"content": content, "index": index},
@@ -59,6 +61,7 @@ class StreamEvent:
     @classmethod
     def end(cls, stream_id: str, usage: dict | None = None) -> StreamEvent:
         import time
+
         return cls(
             event=StreamEventType.END,
             data=usage or {},
@@ -69,6 +72,7 @@ class StreamEvent:
     @classmethod
     def error(cls, stream_id: str, message: str) -> StreamEvent:
         import time
+
         return cls(
             event=StreamEventType.ERROR,
             data={"error": message},
@@ -79,6 +83,7 @@ class StreamEvent:
     @classmethod
     def cancel(cls, stream_id: str) -> StreamEvent:
         import time
+
         return cls(
             event=StreamEventType.CANCEL,
             data={},

@@ -1,6 +1,7 @@
 """
 AI Reasoning View
 """
+
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
@@ -42,6 +43,8 @@ class ReasoningView:
 
     def render(self) -> dict[str, Any]:
         return {
-            "thoughts": [{"step": t.step.value, "content": t.content, "confidence": t.confidence} for t in self.thoughts],
+            "thoughts": [
+                {"step": t.step.value, "content": t.content, "confidence": t.confidence} for t in self.thoughts
+            ],
             "isVisible": self.is_visible,
         }

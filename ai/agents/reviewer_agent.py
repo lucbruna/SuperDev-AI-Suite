@@ -57,11 +57,15 @@ class ReviewerAgent(BaseAgent):
         lines = code.split("\n")
         for i, line in enumerate(lines, 1):
             if len(line) > 100:
-                issues.append({"type": "style", "line": i, "message": f"Line too long ({len(line)} > 100)", "severity": "warning"})
+                issues.append(
+                    {"type": "style", "line": i, "message": f"Line too long ({len(line)} > 100)", "severity": "warning"}
+                )
             if line.strip().endswith(" ") or line.strip().endswith("\t"):
                 issues.append({"type": "style", "line": i, "message": "Trailing whitespace", "severity": "info"})
             if "\t" in line:
-                issues.append({"type": "style", "line": i, "message": "Tab character used, use spaces", "severity": "warning"})
+                issues.append(
+                    {"type": "style", "line": i, "message": "Tab character used, use spaces", "severity": "warning"}
+                )
         return issues
 
     def _check_security(self, code: str) -> list[dict[str, Any]]:
@@ -75,7 +79,7 @@ class ReviewerAgent(BaseAgent):
         ]
         for pattern, message, severity in patterns:
             for m in re.finditer(pattern, code):
-                line_num = code[:m.start()].count("\n") + 1
+                line_num = code[: m.start()].count("\n") + 1
                 issues.append({"type": "security", "line": line_num, "message": message, "severity": severity})
         return issues
 
@@ -99,7 +103,9 @@ class ReviewerAgent(BaseAgent):
             elif func_lines > 0:
                 func_lines += 1
                 if func_lines > 80:
-                    issues.append({"type": "complexity", "line": i, "message": "Function/class too long", "severity": "warning"})
+                    issues.append(
+                        {"type": "complexity", "line": i, "message": "Function/class too long", "severity": "warning"}
+                    )
                     func_lines = 0
         return issues
 

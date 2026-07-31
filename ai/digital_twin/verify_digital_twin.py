@@ -1,12 +1,14 @@
 """Comprehensive tests for Volume 23 — Digital Twin & Simulation Engine."""
+
 import os
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 
 passed = 0
 failed = 0
 total = 0
+
 
 def test(name, condition):
     global passed, failed, total
@@ -17,6 +19,7 @@ def test(name, condition):
     else:
         failed += 1
         print(f"  FAIL: {name}")
+
 
 # === Core Infrastructure ===
 print("\n=== Core Infrastructure ===")
@@ -428,7 +431,7 @@ ver.verify("check1", {"a": 1, "b": 2}, {"a": 1, "b": 2})
 test("VerificationEngine", ver.count() > 0)
 
 # === Summary ===
-print(f"\n{'='*50}")
+print(f"\n{'=' * 50}")
 print(f"Volume 23 — Digital Twin: {passed}/{total} tests passed ({failed} failed)")
-print(f"{'='*50}")
+print(f"{'=' * 50}")
 sys.exit(0 if failed == 0 else 1)

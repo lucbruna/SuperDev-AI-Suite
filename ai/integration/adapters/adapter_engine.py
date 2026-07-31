@@ -1,6 +1,7 @@
 """
 Adapter Engine - Core adaptation logic
 """
+
 import hashlib
 from collections.abc import Callable
 from dataclasses import dataclass, field

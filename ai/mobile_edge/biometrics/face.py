@@ -1,4 +1,5 @@
 """Face - Face recognition module."""
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -33,7 +34,12 @@ class FaceRecognitionManager:
         for t in self.templates.values():
             if not t.active or not t.embedding or not probe_embedding:
                 continue
-            score = sum(a * b for a, b in zip(t.embedding, probe_embedding, strict=False)) / (sum(a ** 2 for a in t.embedding) ** 0.5 * sum(b ** 2 for b in probe_embedding) ** 0.5) if probe_embedding else 0
+            score = (
+                sum(a * b for a, b in zip(t.embedding, probe_embedding, strict=False))
+                / (sum(a**2 for a in t.embedding) ** 0.5 * sum(b**2 for b in probe_embedding) ** 0.5)
+                if probe_embedding
+                else 0
+            )
             if score > best_score and score >= threshold:
                 best_score = score
                 best_match = t.user_id
@@ -43,7 +49,12 @@ class FaceRecognitionManager:
     def verify(self, user_id: str, probe_embedding: list[float] = None) -> bool:
         for t in self.templates.values():
             if t.user_id == user_id and t.active and t.embedding and probe_embedding:
-                score = sum(a * b for a, b in zip(t.embedding, probe_embedding, strict=False)) / (sum(a ** 2 for a in t.embedding) ** 0.5 * sum(b ** 2 for b in probe_embedding) ** 0.5) if probe_embedding else 0
+                score = (
+                    sum(a * b for a, b in zip(t.embedding, probe_embedding, strict=False))
+                    / (sum(a**2 for a in t.embedding) ** 0.5 * sum(b**2 for b in probe_embedding) ** 0.5)
+                    if probe_embedding
+                    else 0
+                )
                 return score >= 0.8
         return False
 

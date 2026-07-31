@@ -1,4 +1,5 @@
 """Certificate management."""
+
 from __future__ import annotations
 
 import hashlib
@@ -16,25 +17,30 @@ class Certificate:
         self.fingerprint = hashlib.sha256((cert_id + subject).encode()).hexdigest()[:16]
         self.revoked = False
 
+
 class CertificateManager:
     def __init__(self) -> None:
         self._certificates: dict[str, Certificate] = {}
         self._ca_cert: Certificate | None = None
+
     def create_certificate(self, cert_id: str, subject: str, valid_days: int = 365) -> Certificate:
         issuer = self._ca_cert.subject if self._ca_cert else "self-signed"
         cert = Certificate(cert_id, subject, issuer, valid_days)
         self._certificates[cert_id] = cert
         return cert
+
     def get_certificate(self, cert_id: str) -> Certificate | None:
         cert = self._certificates.get(cert_id)
         if cert and not cert.revoked and cert.expires_at > time.time():
             return cert
         return None
+
     def revoke_certificate(self, cert_id: str) -> bool:
         if cert_id in self._certificates:
             self._certificates[cert_id].revoked = True
             return True
         return False
+
     def verify_certificate(self, cert_id: str) -> dict[str, Any]:
         cert = self._certificates.get(cert_id)
         if not cert:
@@ -44,8 +50,10 @@ class CertificateManager:
         if cert.expires_at < time.time():
             return {"valid": False, "error": "expired"}
         return {"valid": True, "subject": cert.subject, "fingerprint": cert.fingerprint}
+
     def list_certificates(self) -> list[str]:
         return list(self._certificates.keys())
+
     def set_ca(self, cert_id: str, subject: str) -> Certificate:
         self._ca_cert = Certificate(cert_id, subject, "self", valid_days=3650)
         self._certificates[cert_id] = self._ca_cert

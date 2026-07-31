@@ -1,4 +1,5 @@
 """Tracing subsystem engine."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -9,18 +10,26 @@ class TracingEngine:
         self._sample_rate = sample_rate
         self._traces: dict[str, list[dict[str, Any]]] = {}
         self._started = False
+
     def start(self) -> None:
         self._started = True
+
     def stop(self) -> None:
         self._started = False
+
     def is_running(self) -> bool:
         return self._started
+
     def should_sample(self) -> bool:
         import random
+
         return random.random() < self._sample_rate
+
     def get_trace(self, trace_id: str) -> list[dict[str, Any]]:
         return self._traces.get(trace_id, [])
+
     def get_all_traces(self, limit: int = 50) -> dict[str, list[dict[str, Any]]]:
         return dict(list(self._traces.items())[-limit:])
+
     def get_status(self) -> dict[str, Any]:
         return {"running": self._started, "traces": len(self._traces), "sample_rate": self._sample_rate}

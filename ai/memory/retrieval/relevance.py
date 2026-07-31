@@ -37,7 +37,9 @@ class Relevance:
     def threshold(self, items: list[dict[str, Any]], min_relevance: float = 0.5) -> list[dict[str, Any]]:
         return [item for item in items if item.get("relevance", 0) >= min_relevance]
 
-    def feedback_adjust(self, items: list[dict[str, Any]], relevant_ids: list[str], boost: float = 0.2) -> list[dict[str, Any]]:
+    def feedback_adjust(
+        self, items: list[dict[str, Any]], relevant_ids: list[str], boost: float = 0.2
+    ) -> list[dict[str, Any]]:
         for item in items:
             if item.get("id") in relevant_ids:
                 item["relevance"] = item.get("relevance", 0) + boost

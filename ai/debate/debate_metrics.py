@@ -10,11 +10,13 @@ class DebateMetrics:
         self._records: list[dict[str, Any]] = []
 
     async def record(self, topic: str, agent_count: int, consensus_reached: bool) -> None:
-        self._records.append({
-            "topic": topic,
-            "agent_count": agent_count,
-            "consensus_reached": consensus_reached,
-        })
+        self._records.append(
+            {
+                "topic": topic,
+                "agent_count": agent_count,
+                "consensus_reached": consensus_reached,
+            }
+        )
 
     async def consensus_rate(self) -> float:
         if not self._records:
@@ -26,5 +28,7 @@ class DebateMetrics:
         return {
             "total_debates": len(self._records),
             "consensus_rate": await self.consensus_rate(),
-            "avg_agents": sum(r.get("agent_count", 0) for r in self._records) / len(self._records) if self._records else 0,
+            "avg_agents": sum(r.get("agent_count", 0) for r in self._records) / len(self._records)
+            if self._records
+            else 0,
         }

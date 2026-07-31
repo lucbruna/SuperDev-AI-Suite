@@ -1,4 +1,5 @@
 """Knowledge Engine Metrics — Metrics tracking for knowledge operations."""
+
 from datetime import datetime
 from typing import Any
 
@@ -40,11 +41,13 @@ class KnowledgeMetrics:
         self._embeddings_created += 1
 
     def record_event(self, event_type: str, details: dict[str, Any] = None) -> None:
-        self._events.append({
-            "event_type": event_type,
-            "details": details or {},
-            "timestamp": datetime.now().isoformat(),
-        })
+        self._events.append(
+            {
+                "event_type": event_type,
+                "details": details or {},
+                "timestamp": datetime.now().isoformat(),
+            }
+        )
 
     def get_stats(self) -> dict[str, Any]:
         return {

@@ -56,6 +56,7 @@ app.add_middleware(
 
 # ── Routes ────────────────────────────────────────────────────────
 
+
 @app.get("/")
 async def root():
     return {
@@ -185,6 +186,7 @@ async def list_providers():
 
 # ── Chat ──────────────────────────────────────────────────────────
 
+
 @app.post("/api/v1/chat")
 async def chat(message: dict):
     user_msg = message.get("message", "")
@@ -224,13 +226,32 @@ ADMIN_USER = {
     "is_superuser": True,
     "role": "admin",
     "permissions": [
-        "users:create", "users:read", "users:update", "users:delete",
-        "projects:create", "projects:read", "projects:update", "projects:delete",
-        "agents:create", "agents:read", "agents:update", "agents:delete", "agents:execute",
-        "workflows:create", "workflows:read", "workflows:update", "workflows:delete", "workflows:execute",
-        "plugins:install", "plugins:uninstall", "plugins:configure",
-        "providers:configure", "providers:enable", "providers:disable",
-        "settings:read", "settings:update",
+        "users:create",
+        "users:read",
+        "users:update",
+        "users:delete",
+        "projects:create",
+        "projects:read",
+        "projects:update",
+        "projects:delete",
+        "agents:create",
+        "agents:read",
+        "agents:update",
+        "agents:delete",
+        "agents:execute",
+        "workflows:create",
+        "workflows:read",
+        "workflows:update",
+        "workflows:delete",
+        "workflows:execute",
+        "plugins:install",
+        "plugins:uninstall",
+        "plugins:configure",
+        "providers:configure",
+        "providers:enable",
+        "providers:disable",
+        "settings:read",
+        "settings:update",
         "admin:full_access",
         "security:audit",
         "system:manage",
@@ -241,6 +262,7 @@ ADMIN_USER = {
 
 
 # ── Auth (simplificado) ──────────────────────────────────────────
+
 
 @app.post("/api/v1/auth/login")
 async def login(credentials: dict):
@@ -343,4 +365,5 @@ async def delete_user(user_id: str):
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)

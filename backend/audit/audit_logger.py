@@ -115,7 +115,7 @@ class AuditLogger:
         self._entries.append(entry)
 
         if len(self._entries) > self._max_entries:
-            self._entries = self._entries[-self._max_entries:]
+            self._entries = self._entries[-self._max_entries :]
 
         for listener in self._listeners:
             with contextlib.suppress(Exception):
@@ -150,16 +150,13 @@ class AuditLogger:
             entries = [e for e in entries if e.timestamp <= end_time]
 
         entries.sort(key=lambda e: e.timestamp, reverse=True)
-        return entries[offset:offset + limit]
+        return entries[offset : offset + limit]
 
     def get_user_activity(self, user_id: str, limit: int = 50) -> list[AuditEntry]:
         return self.query(user_id=user_id, limit=limit)
 
     def get_resource_history(self, resource: str, resource_id: str, limit: int = 50) -> list[AuditEntry]:
-        entries = [
-            e for e in self._entries
-            if e.resource == resource and e.resource_id == resource_id
-        ]
+        entries = [e for e in self._entries if e.resource == resource and e.resource_id == resource_id]
         entries.sort(key=lambda e: e.timestamp, reverse=True)
         return entries[:limit]
 
@@ -218,6 +215,7 @@ class AuditLogger:
 
         if format == "json":
             import json
+
             return json.dumps([e.to_dict() for e in entries], indent=2)
         elif format == "csv":
             lines = ["id,timestamp,action,resource,resource_id,user_id,severity,success"]

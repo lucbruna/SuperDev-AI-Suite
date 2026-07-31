@@ -114,7 +114,11 @@ async def mcp_tools():
         {
             "name": "write_file",
             "description": "Write content to a file",
-            "input_schema": {"type": "object", "properties": {"path": {"type": "string"}, "content": {"type": "string"}}, "required": ["path", "content"]},
+            "input_schema": {
+                "type": "object",
+                "properties": {"path": {"type": "string"}, "content": {"type": "string"}},
+                "required": ["path", "content"],
+            },
         },
         {
             "name": "execute_command",

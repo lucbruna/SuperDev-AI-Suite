@@ -48,20 +48,16 @@ class BaseSSOProvider(ABC):
 
     @property
     @abstractmethod
-    def provider_type(self) -> SSOProviderType:
-        ...
+    def provider_type(self) -> SSOProviderType: ...
 
     @abstractmethod
-    async def get_authorization_url(self, state: str) -> str:
-        ...
+    async def get_authorization_url(self, state: str) -> str: ...
 
     @abstractmethod
-    async def handle_callback(self, code: str, state: str) -> SSOUserInfo:
-        ...
+    async def handle_callback(self, code: str, state: str) -> SSOUserInfo: ...
 
     @abstractmethod
-    async def validate_token(self, token: str) -> SSOUserInfo | None:
-        ...
+    async def validate_token(self, token: str) -> SSOUserInfo | None: ...
 
     async def health_check(self) -> bool:
         return True
@@ -76,6 +72,7 @@ class OIDCProvider(BaseSSOProvider):
 
     async def get_authorization_url(self, state: str) -> str:
         import urllib.parse
+
         params = {
             "client_id": self.config.client_id,
             "redirect_uri": self.config.redirect_uri,
@@ -185,6 +182,7 @@ class GitHubProvider(BaseSSOProvider):
 
     async def get_authorization_url(self, state: str) -> str:
         import urllib.parse
+
         params = {
             "client_id": self.config.client_id,
             "redirect_uri": self.config.redirect_uri,

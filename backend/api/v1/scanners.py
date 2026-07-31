@@ -25,6 +25,7 @@ router = APIRouter(
 
 # ─── Schemas ──────────────────────────────────────────────────────────────────
 
+
 class ScanRequest(BaseModel):
     target: str = "."
     timeout: int = 30
@@ -90,6 +91,7 @@ class SecurityResponse(BaseModel):
 
 # ─── Utils ────────────────────────────────────────────────────────────────────
 
+
 def _finding_to_dict(f) -> dict:
     return {
         "rule_id": getattr(f, "rule_id", ""),
@@ -124,6 +126,7 @@ def _security_finding_to_dict(f) -> dict:
 async def run_scanner(name: str, scanner_class, target: str, timeout: int = 30) -> dict[str, Any]:
     """Instantiate and run a scanner, returning structured results."""
     import asyncio
+
     start = time.time()
     try:
         scanner = scanner_class()
@@ -164,6 +167,7 @@ async def run_scanner(name: str, scanner_class, target: str, timeout: int = 30) 
 async def run_security(name: str, analyzer_class, target: str, timeout: int = 30) -> dict[str, Any]:
     """Instantiate and run a security analyzer, returning structured results."""
     import asyncio
+
     start = time.time()
     try:
         analyzer = analyzer_class()
@@ -322,6 +326,7 @@ def _resolve_scanner_class(scanner_id: str) -> Any:
     try:
         module_path, class_name = import_path.split(":")
         import importlib
+
         module = importlib.import_module(module_path)
         cls = getattr(module, class_name)
         entry["class"] = cls
@@ -329,12 +334,15 @@ def _resolve_scanner_class(scanner_id: str) -> Any:
     except (ImportError, AttributeError) as e:
         logger.warning(
             "Failed to import scanner '%s' from %s: %s",
-            scanner_id, import_path, e,
+            scanner_id,
+            import_path,
+            e,
         )
         return None
 
 
 # ─── Endpoints ────────────────────────────────────────────────────────────────
+
 
 @router.get("", response_model=ScannersListResponse)
 async def list_scanners() -> dict[str, Any]:
@@ -342,11 +350,13 @@ async def list_scanners() -> dict[str, Any]:
     scanners = []
     for sid, info in SCANNER_REGISTRY.items():
         cls = _resolve_scanner_class(sid)
-        scanners.append(ScannerInfo(
-            name=sid,
-            description=info["description"],
-            available=cls is not None,
-        ))
+        scanners.append(
+            ScannerInfo(
+                name=sid,
+                description=info["description"],
+                available=cls is not None,
+            )
+        )
     return {"scanners": scanners}
 
 

@@ -1,6 +1,7 @@
 """
 Retry Manager - Webhook retry logic
 """
+
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
@@ -28,15 +29,25 @@ class RetryManager:
         self.policies: dict[str, RetryPolicy] = {}
         self.retries: dict[str, RetryEntry] = {}
 
-    def set_policy(self, webhook_id: str, max_retries: int = 3, initial_delay_ms: int = 1000, backoff_multiplier: float = 2.0) -> RetryPolicy:
-        policy = RetryPolicy(max_retries=max_retries, initial_delay_ms=initial_delay_ms, backoff_multiplier=backoff_multiplier)
+    def set_policy(
+        self, webhook_id: str, max_retries: int = 3, initial_delay_ms: int = 1000, backoff_multiplier: float = 2.0
+    ) -> RetryPolicy:
+        policy = RetryPolicy(
+            max_retries=max_retries, initial_delay_ms=initial_delay_ms, backoff_multiplier=backoff_multiplier
+        )
         self.policies[webhook_id] = policy
         return policy
 
     def schedule_retry(self, entry_id: str, webhook_id: str, attempt: int, last_error: str = "") -> RetryEntry:
         policy = self.policies.get(webhook_id, RetryPolicy())
-        delay_ms = min(policy.initial_delay_ms * (policy.backoff_multiplier ** attempt), policy.max_delay_ms)
-        entry = RetryEntry(entry_id=entry_id, webhook_id=webhook_id, attempt=attempt, next_retry_at=datetime.now() + timedelta(milliseconds=delay_ms), last_error=last_error)
+        delay_ms = min(policy.initial_delay_ms * (policy.backoff_multiplier**attempt), policy.max_delay_ms)
+        entry = RetryEntry(
+            entry_id=entry_id,
+            webhook_id=webhook_id,
+            attempt=attempt,
+            next_retry_at=datetime.now() + timedelta(milliseconds=delay_ms),
+            last_error=last_error,
+        )
         self.retries[entry_id] = entry
         return entry
 

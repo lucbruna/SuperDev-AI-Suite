@@ -1,4 +1,5 @@
 """Mobile Models - Data models for mobile/edge platform."""
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum

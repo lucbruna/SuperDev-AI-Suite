@@ -1,4 +1,5 @@
 """Reasoning subsystem - inference, deduction, decision making."""
+
 from __future__ import annotations
 
 from .decision import DecisionEngine
@@ -10,7 +11,11 @@ from .reasoning_engine import ReasoningEngine
 from .verification import VerificationEngine
 
 __all__ = [
-    "ReasoningEngine", "InferenceEngine", "DeductionEngine",
-    "ReasoningEvaluator", "DecisionEngine", "HypothesisManager",
+    "ReasoningEngine",
+    "InferenceEngine",
+    "DeductionEngine",
+    "ReasoningEvaluator",
+    "DecisionEngine",
+    "HypothesisManager",
     "VerificationEngine",
 ]

@@ -11,11 +11,13 @@ class HypothesisHistory:
         self._entries: list[dict[str, Any]] = []
 
     async def record(self, hypothesis: dict[str, Any], outcome: str) -> None:
-        self._entries.append({
-            **hypothesis,
-            "outcome": outcome,
-            "timestamp": datetime.now().isoformat(),
-        })
+        self._entries.append(
+            {
+                **hypothesis,
+                "outcome": outcome,
+                "timestamp": datetime.now().isoformat(),
+            }
+        )
 
     async def get_history(self, hypothesis_id: str) -> list[dict[str, Any]]:
         return [e for e in self._entries if e.get("id") == hypothesis_id]

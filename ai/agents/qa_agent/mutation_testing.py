@@ -33,6 +33,7 @@ class MutationTesting:
 
     def run_mutation_suite(self) -> dict[str, Any]:
         import random
+
         for mutant in self._mutants.values():
             mutant["killed"] = random.random() > 0.3
         killed = sum(1 for m in self._mutants.values() if m["killed"])
@@ -56,9 +57,7 @@ class MutationTesting:
     def survival_rate(self) -> float:
         if not self._mutants:
             return 0.0
-        return round(
-            sum(1 for m in self._mutants.values() if not m["killed"]) / len(self._mutants) * 100, 1
-        )
+        return round(sum(1 for m in self._mutants.values() if not m["killed"]) / len(self._mutants) * 100, 1)
 
     def to_dict(self) -> dict[str, Any]:
         return {

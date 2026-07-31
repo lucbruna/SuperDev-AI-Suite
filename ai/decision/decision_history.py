@@ -13,13 +13,15 @@ class DecisionHistory:
         self._entries: list[dict[str, Any]] = []
 
     def record(self, result: DecisionResult) -> None:
-        self._entries.append({
-            "timestamp": datetime.now(UTC).isoformat(),
-            "context_id": result.context_id,
-            "decision": result.decision,
-            "confidence": result.confidence,
-            "alternatives": result.alternatives,
-        })
+        self._entries.append(
+            {
+                "timestamp": datetime.now(UTC).isoformat(),
+                "context_id": result.context_id,
+                "decision": result.decision,
+                "confidence": result.confidence,
+                "alternatives": result.alternatives,
+            }
+        )
 
     def search(self, query: str) -> list[dict[str, Any]]:
         q = query.lower()

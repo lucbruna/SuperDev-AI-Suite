@@ -1,6 +1,7 @@
 """
 Integration Config - Configuration management
 """
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -31,7 +32,9 @@ class IntegrationConfig:
         self.defaults: dict[str, Any] = {"timeout": 30, "retries": 3, "batch_size": 100, "log_level": "info"}
         self.environments: dict[str, dict[str, Any]] = {}
 
-    def set(self, key: str, value: Any, category: str = "general", encrypted: bool = False, description: str = "") -> ConfigEntry:
+    def set(
+        self, key: str, value: Any, category: str = "general", encrypted: bool = False, description: str = ""
+    ) -> ConfigEntry:
         entry = ConfigEntry(key=key, value=value, category=category, encrypted=encrypted, description=description)
         self.entries[key] = entry
         return entry

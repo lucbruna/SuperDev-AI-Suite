@@ -61,19 +61,31 @@ class CodeReviewer:
                 score -= 10
 
             if "eval(" in code or "exec(" in code:
-                security_issues.append({"type": "security", "message": "Use of eval/exec is dangerous", "severity": "critical"})
+                security_issues.append(
+                    {"type": "security", "message": "Use of eval/exec is dangerous", "severity": "critical"}
+                )
                 score -= 30
 
             if "os.system(" in code or "os.popen(" in code:
-                security_issues.append({"type": "security", "message": "Use of os.system/os.popen is dangerous", "severity": "critical"})
+                security_issues.append(
+                    {"type": "security", "message": "Use of os.system/os.popen is dangerous", "severity": "critical"}
+                )
                 score -= 30
 
             if "subprocess" in code and ("shell=True" in code or "call(" in code or "Popen(" in code):
-                security_issues.append({"type": "security", "message": "subprocess with shell or direct call can be dangerous", "severity": "high"})
+                security_issues.append(
+                    {
+                        "type": "security",
+                        "message": "subprocess with shell or direct call can be dangerous",
+                        "severity": "high",
+                    }
+                )
                 score -= 20
 
             if "__import__(" in code:
-                security_issues.append({"type": "security", "message": "Dynamic imports with __import__ are risky", "severity": "high"})
+                security_issues.append(
+                    {"type": "security", "message": "Dynamic imports with __import__ are risky", "severity": "high"}
+                )
                 score -= 15
 
             if len(lines) > 500:
@@ -114,6 +126,7 @@ Output JSON format:
     def _parse_review(self, content: str) -> ReviewResult:
         try:
             import re
+
             json_match = re.search(r"\{.*\}", content, re.DOTALL)
             if json_match:
                 data = json.loads(json_match.group())

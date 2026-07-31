@@ -20,10 +20,12 @@ async def check_agent_health(agent_id: str) -> dict[str, Any]:
 def _get_memory_usage() -> float:
     try:
         import psutil
+
         return psutil.virtual_memory().percent
     except ImportError:
         try:
             import os
+
             if hasattr(os, "times"):
                 return 0.0
         except Exception:

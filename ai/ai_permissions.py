@@ -11,17 +11,33 @@ class AIPermissions:
         self._permissions: dict[str, set[str]] = {}
         self._role_permissions: dict[str, set[str]] = {
             "admin": {
-                "engine.*", "provider.*", "agent.*", "tool.*",
-                "model.*", "session.*", "runtime.*", "metrics.*",
-                "config.*", "logs.*",
+                "engine.*",
+                "provider.*",
+                "agent.*",
+                "tool.*",
+                "model.*",
+                "session.*",
+                "runtime.*",
+                "metrics.*",
+                "config.*",
+                "logs.*",
             },
             "user": {
-                "agent.execute", "agent.list", "tool.execute", "tool.list",
-                "model.list", "session.create", "session.list",
-                "chat.*", "embeddings.*",
+                "agent.execute",
+                "agent.list",
+                "tool.execute",
+                "tool.list",
+                "model.list",
+                "session.create",
+                "session.list",
+                "chat.*",
+                "embeddings.*",
             },
             "viewer": {
-                "agent.list", "tool.list", "model.list", "session.list",
+                "agent.list",
+                "tool.list",
+                "model.list",
+                "session.list",
             },
         }
         self._cache: dict[str, bool] = {}

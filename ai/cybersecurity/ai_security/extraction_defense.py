@@ -1,6 +1,7 @@
 """
 Model Extraction Defense
 """
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -57,7 +58,9 @@ class ExtractionDefense:
         query_count = self.user_queries.get(user_id, 0)
         is_extraction = query_count > self.rate_limit
         confidence = min(1.0, query_count / (self.rate_limit * 2))
-        attempt = ExtractionAttempt(user_id=user_id, query_count=query_count, is_extraction=is_extraction, confidence=confidence)
+        attempt = ExtractionAttempt(
+            user_id=user_id, query_count=query_count, is_extraction=is_extraction, confidence=confidence
+        )
         return attempt
 
     def perturb_response(self, response: str) -> str:

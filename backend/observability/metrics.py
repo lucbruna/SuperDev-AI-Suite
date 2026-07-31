@@ -70,8 +70,7 @@ class MetricsCollector:
             # Calculate request stats
             total_requests = sum(self._request_count.values())
             total_errors = sum(
-                v for k, v in self._error_count.items()
-                if not k.split()[-1].isdigit() or int(k.split()[-1]) >= 500
+                v for k, v in self._error_count.items() if not k.split()[-1].isdigit() or int(k.split()[-1]) >= 500
             )
 
             # Calculate average durations
@@ -89,9 +88,7 @@ class MetricsCollector:
                 "uptime_seconds": round(uptime, 2),
                 "total_requests": total_requests,
                 "total_errors": total_errors,
-                "error_rate_pct": round(
-                    (total_errors / total_requests * 100) if total_requests > 0 else 0, 2
-                ),
+                "error_rate_pct": round((total_errors / total_requests * 100) if total_requests > 0 else 0, 2),
                 "requests_by_endpoint": dict(self._request_count),
                 "errors": dict(self._error_count),
                 "durations": avg_durations,

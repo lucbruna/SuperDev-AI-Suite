@@ -1,4 +1,5 @@
 """Core engine for requirements analysis and processing."""
+
 from datetime import datetime
 from typing import Any
 
@@ -50,9 +51,11 @@ class RequirementsEngine:
         return list(self._processing_history)
 
     def _record_processing(self, req_id: str, stage: str, success: bool) -> None:
-        self._processing_history.append({
-            "requirement_id": req_id,
-            "stage": stage,
-            "success": success,
-            "timestamp": datetime.utcnow().isoformat(),
-        })
+        self._processing_history.append(
+            {
+                "requirement_id": req_id,
+                "stage": stage,
+                "success": success,
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+        )

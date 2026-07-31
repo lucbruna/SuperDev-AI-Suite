@@ -25,7 +25,7 @@ def truncate(value: str, max_length: int = 100, suffix: str = "...") -> str:
     last_space = truncated.rfind(" ")
     if last_space > 0:
         # Keep the space before the suffix
-        truncated = truncated[:last_space + 1]
+        truncated = truncated[: last_space + 1]
 
     return truncated + suffix
 

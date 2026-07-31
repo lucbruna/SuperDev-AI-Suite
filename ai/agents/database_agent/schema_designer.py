@@ -39,37 +39,29 @@ class SchemaDesigner:
     def table_count(self) -> int:
         return len(self._tables)
 
-    def add_foreign_key(
-        self, table: str, column: str, ref_table: str, ref_column: str
-    ) -> bool:
+    def add_foreign_key(self, table: str, column: str, ref_table: str, ref_column: str) -> bool:
         tbl = self._tables.get(table)
         if tbl is None:
             return False
-        tbl["foreign_keys"].append({
-            "column": column,
-            "ref_table": ref_table,
-            "ref_column": ref_column,
-        })
+        tbl["foreign_keys"].append(
+            {
+                "column": column,
+                "ref_table": ref_table,
+                "ref_column": ref_column,
+            }
+        )
         return True
 
     def generate_ddl(self, name: str) -> str:
         tbl = self._tables.get(name)
         if tbl is None:
             return f"-- Table '{name}' not found"
-        col_lines = "\n  ".join(
-            f"{c['name']} {c.get('type', 'VARCHAR(255)')}"
-            for c in tbl["columns"]
-        )
+        col_lines = "\n  ".join(f"{c['name']} {c.get('type', 'VARCHAR(255)')}" for c in tbl["columns"])
         fk_lines = "\n".join(
             f",\n  FOREIGN KEY ({fk['column']}) REFERENCES {fk['ref_table']}({fk['ref_column']})"
             for fk in tbl["foreign_keys"]
         )
-        return (
-            f"CREATE TABLE {name} (\n"
-            f"  {col_lines}"
-            f"{fk_lines}\n"
-            f");\n"
-        )
+        return f"CREATE TABLE {name} (\n  {col_lines}{fk_lines}\n);\n"
 
     def to_dict(self) -> dict[str, Any]:
         return {

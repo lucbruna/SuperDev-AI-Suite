@@ -1,4 +1,5 @@
 """Security logger for audit trails and security events."""
+
 from __future__ import annotations
 
 import time
@@ -42,8 +43,9 @@ class SecurityLogger:
     def critical(self, category: str, message: str, **kwargs: Any) -> None:
         self._log("CRITICAL", category, message, kwargs)
 
-    def get_entries(self, level: str | None = None, category: str | None = None,
-                    limit: int = 50) -> list[dict[str, Any]]:
+    def get_entries(
+        self, level: str | None = None, category: str | None = None, limit: int = 50
+    ) -> list[dict[str, Any]]:
         entries = self._entries
         if level:
             entries = [e for e in entries if e["level"] == level]

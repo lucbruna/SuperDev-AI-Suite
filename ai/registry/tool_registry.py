@@ -28,12 +28,14 @@ class ToolRegistry:
             tool_cls = self._tools.get(name)
             if tool_cls:
                 instance = tool_cls()
-                result.append({
-                    "name": name,
-                    "description": instance.description(),
-                    "permissions": instance.permissions(),
-                    "category": category,
-                })
+                result.append(
+                    {
+                        "name": name,
+                        "description": instance.description(),
+                        "permissions": instance.permissions(),
+                        "category": category,
+                    }
+                )
         return result
 
     def list_all(self) -> list[dict[str, Any]]:
@@ -44,10 +46,12 @@ class ToolRegistry:
                 (cat for cat, names in self._categories.items() if name in names),
                 "general",
             )
-            result.append({
-                "name": name,
-                "description": instance.description(),
-                "permissions": instance.permissions(),
-                "category": category,
-            })
+            result.append(
+                {
+                    "name": name,
+                    "description": instance.description(),
+                    "permissions": instance.permissions(),
+                    "category": category,
+                }
+            )
         return result

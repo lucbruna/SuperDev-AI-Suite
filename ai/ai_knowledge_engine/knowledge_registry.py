@@ -1,4 +1,5 @@
 """Knowledge Registry — Registry for knowledge components."""
+
 from typing import Any
 
 
@@ -7,7 +8,9 @@ class KnowledgeRegistry:
         self._components: dict[str, dict[str, Any]] = {}
         self._categories: dict[str, list[str]] = {}
 
-    def register(self, name: str, component: Any, category: str = "default", metadata: dict[str, Any] | None = None) -> None:
+    def register(
+        self, name: str, component: Any, category: str = "default", metadata: dict[str, Any] | None = None
+    ) -> None:
         self._components[name] = {"component": component, "category": category, "metadata": metadata or {}}
         if category not in self._categories:
             self._categories[category] = []

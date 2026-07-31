@@ -1,6 +1,7 @@
 """
 Compliance Reporting
 """
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -47,7 +48,9 @@ class ComplianceReporter:
         self.metrics: dict[str, list[ComplianceMetric]] = {}
         self.reports: list[ComplianceReport] = []
 
-    def record_metric(self, metric_name: str, value: float, target: float = 100.0, trend: TrendDirection = TrendDirection.STABLE) -> ComplianceMetric:
+    def record_metric(
+        self, metric_name: str, value: float, target: float = 100.0, trend: TrendDirection = TrendDirection.STABLE
+    ) -> ComplianceMetric:
         metric = ComplianceMetric(metric_name=metric_name, value=value, target=target, trend=trend)
         self.metrics.setdefault(metric_name, []).append(metric)
         return metric
@@ -60,7 +63,15 @@ class ComplianceReporter:
         overall = sum(m.value for m in all_metrics) / max(len(all_metrics), 1)
         findings = [f"Metric {m.metric_name}: {m.value}%" for m in all_metrics if m.value < m.target]
         recs = ["Improve " + m.metric_name for m in all_metrics if m.value < m.target]
-        report = ComplianceReport(report_id=f"report_{len(self.reports)}", framework=framework, format=format, metrics=all_metrics, overall_score=overall, findings=findings, recommendations=recs)
+        report = ComplianceReport(
+            report_id=f"report_{len(self.reports)}",
+            framework=framework,
+            format=format,
+            metrics=all_metrics,
+            overall_score=overall,
+            findings=findings,
+            recommendations=recs,
+        )
         self.reports.append(report)
         return report
 
@@ -82,7 +93,12 @@ class ComplianceReporter:
             if metric_list:
                 framework_metrics.append(metric_list[-1])
         overall = sum(m.value for m in framework_metrics) / max(len(framework_metrics), 1)
-        return {"framework": framework, "overall_score": overall, "total_metrics": len(framework_metrics), "below_target": sum(1 for m in framework_metrics if m.value < m.target)}
+        return {
+            "framework": framework,
+            "overall_score": overall,
+            "total_metrics": len(framework_metrics),
+            "below_target": sum(1 for m in framework_metrics if m.value < m.target),
+        }
 
     def get_reports(self, framework: str = None) -> list[ComplianceReport]:
         if framework:

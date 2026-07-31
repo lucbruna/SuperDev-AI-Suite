@@ -1,15 +1,20 @@
 """Reporting subsystem generator."""
+
 import os
 
-BASE = r'C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\observability\reporting'
+BASE = r"C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\observability\reporting"
+
 
 def w(path, content):
     full = os.path.join(BASE, path)
     os.makedirs(os.path.dirname(full), exist_ok=True)
-    with open(full, 'w', encoding='utf-8') as f:
+    with open(full, "w", encoding="utf-8") as f:
         f.write(content)
 
-w('report_engine.py', '''"""Report engine."""
+
+w(
+    "report_engine.py",
+    '''"""Report engine."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time
@@ -51,9 +56,12 @@ class ReportEngine:
             del self._reports[report_id]
             return True
         return False
-''')
+''',
+)
 
-w('uptime_report.py', '''"""Uptime report."""
+w(
+    "uptime_report.py",
+    '''"""Uptime report."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import time
@@ -78,9 +86,12 @@ class UptimeReport:
         return list(self._checks.keys())
     def get_service_history(self, service: str, limit: int = 100) -> List[Dict[str, Any]]:
         return self._checks.get(service, [])[-limit:]
-''')
+''',
+)
 
-w('performance_report.py', '''"""Performance report."""
+w(
+    "performance_report.py",
+    '''"""Performance report."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import time
@@ -108,9 +119,12 @@ class PerformanceReport:
         n = sum(len(v) for v in self._metrics.values())
         self._metrics.clear()
         return n
-''')
+''',
+)
 
-w('incident_report.py', '''"""Incident report."""
+w(
+    "incident_report.py",
+    '''"""Incident report."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import time
@@ -140,9 +154,12 @@ class IncidentReport:
         n = len(self._incidents)
         self._incidents.clear()
         return n
-''')
+''',
+)
 
-w('cost_report.py', '''"""Cost report."""
+w(
+    "cost_report.py",
+    '''"""Cost report."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import time
@@ -177,9 +194,12 @@ class CostReport:
         n = sum(len(v) for v in self._costs.values())
         self._costs.clear()
         return n
-''')
+''',
+)
 
-w('export.py', '''"""Report export."""
+w(
+    "export.py",
+    '''"""Report export."""
 from __future__ import annotations
 from typing import Any, Dict
 import json
@@ -217,9 +237,12 @@ class ReportExporter:
         return result
     def get_export_history(self) -> list:
         return list(self._exports)
-''')
+''',
+)
 
-w('__init__.py', '''"""Reporting subsystem."""
+w(
+    "__init__.py",
+    '''"""Reporting subsystem."""
 from .report_engine import ReportEngine
 from .uptime_report import UptimeReport
 from .performance_report import PerformanceReport
@@ -231,6 +254,7 @@ __all__ = [
     "ReportEngine", "UptimeReport", "PerformanceReport",
     "IncidentReport", "CostReport", "ReportExporter"
 ]
-''')
+''',
+)
 
 print("reporting/: 7 files created")

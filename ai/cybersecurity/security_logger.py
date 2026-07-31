@@ -1,6 +1,7 @@
 """
 Security Logger
 """
+
 import json
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -28,7 +29,7 @@ class SecurityLogger:
         entry = LogEntry(level=level, message=message, source=source, details=kwargs)
         self.entries.append(entry)
         if len(self.entries) > self.max_entries:
-            self.entries = self.entries[-self.max_entries:]
+            self.entries = self.entries[-self.max_entries :]
         return entry
 
     def debug(self, message: str, source: str = "", **kwargs) -> LogEntry:
@@ -65,7 +66,9 @@ class SecurityLogger:
         self.entries.clear()
 
     def export_json(self) -> str:
-        return json.dumps([
-            {"level": e.level, "message": e.message, "source": e.source, "timestamp": e.timestamp.isoformat()}
-            for e in self.entries
-        ])
+        return json.dumps(
+            [
+                {"level": e.level, "message": e.message, "source": e.source, "timestamp": e.timestamp.isoformat()}
+                for e in self.entries
+            ]
+        )

@@ -36,16 +36,19 @@ class SmokeTests:
 
     def run_smoke_suite(self) -> list[dict[str, Any]]:
         import random
+
         results = []
         for test in self._tests.values():
             actual = test["expected_status"] if random.random() > 0.1 else 500
-            results.append({
-                "name": test["name"],
-                "endpoint": test["endpoint"],
-                "expected": test["expected_status"],
-                "actual": actual,
-                "passed": actual == test["expected_status"],
-            })
+            results.append(
+                {
+                    "name": test["name"],
+                    "endpoint": test["endpoint"],
+                    "expected": test["expected_status"],
+                    "actual": actual,
+                    "passed": actual == test["expected_status"],
+                }
+            )
         return results
 
     @property

@@ -33,6 +33,7 @@ async def handle_webhook(request: Request):
         raise HTTPException(status_code=401, detail="Invalid signature")
 
     import json
+
     payload = json.loads(body)
 
     if event == "issues" and payload.get("action") in ("opened", "labeled"):

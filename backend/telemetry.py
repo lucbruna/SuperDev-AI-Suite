@@ -75,7 +75,9 @@ def configure_tracing(settings: TelemetrySettings | None = None) -> Any | None:
         return None
 
     try:
-        endpoint = _otel_setting(settings, "traces_endpoint") or _otel_setting(settings, "exporter_endpoint", "http://localhost:4318")
+        endpoint = _otel_setting(settings, "traces_endpoint") or _otel_setting(
+            settings, "exporter_endpoint", "http://localhost:4318"
+        )
         resource = Resource.create({"service.name": settings.service_name})
         provider = TracerProvider(resource=resource)
         exporter = OTLPSpanExporter(endpoint=endpoint)
@@ -103,7 +105,9 @@ def configure_metrics(settings: TelemetrySettings | None = None) -> Any | None:
         return None
 
     try:
-        endpoint = _otel_setting(settings, "metrics_endpoint") or _otel_setting(settings, "exporter_endpoint", "http://localhost:4318")
+        endpoint = _otel_setting(settings, "metrics_endpoint") or _otel_setting(
+            settings, "exporter_endpoint", "http://localhost:4318"
+        )
         resource = Resource.create({"service.name": settings.service_name})
         reader = PeriodicExportingMetricReader(
             OTLPMetricExporter(endpoint=endpoint),

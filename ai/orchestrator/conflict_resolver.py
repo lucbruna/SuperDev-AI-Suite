@@ -48,6 +48,7 @@ class ConflictResolver:
         if not entries:
             return None
         from collections import Counter
+
         values = [str(e.get("value")) for e in entries]
         counter = Counter(values)
         most_common = counter.most_common(1)
@@ -57,7 +58,9 @@ class ConflictResolver:
                     return e["value"]
         return entries[0].get("value")
 
-    async def detect_conflicts(self, key: str, entries: list[dict[str, Any]], threshold: float = 5.0) -> list[dict[str, Any]]:
+    async def detect_conflicts(
+        self, key: str, entries: list[dict[str, Any]], threshold: float = 5.0
+    ) -> list[dict[str, Any]]:
         if len(entries) < 2:
             return []
         values = [e.get("value") for e in entries]
@@ -69,12 +72,14 @@ class ConflictResolver:
             for j, e2 in enumerate(entries):
                 if i < j and str(e1.get("value")) != str(e2.get("value")):
                     time_diff = abs(e1.get("timestamp", 0) - e2.get("timestamp", 0))
-                    conflicts.append({
-                        "key": key,
-                        "agent_a": e1.get("agent_id"),
-                        "agent_b": e2.get("agent_id"),
-                        "value_a": e1.get("value"),
-                        "value_b": e2.get("value"),
-                        "time_diff": time_diff,
-                    })
+                    conflicts.append(
+                        {
+                            "key": key,
+                            "agent_a": e1.get("agent_id"),
+                            "agent_b": e2.get("agent_id"),
+                            "value_a": e1.get("value"),
+                            "value_b": e2.get("value"),
+                            "time_diff": time_diff,
+                        }
+                    )
         return conflicts[:10]

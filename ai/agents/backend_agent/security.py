@@ -52,12 +52,14 @@ class Security:
         findings = []
         for pattern, description, severity in DANGEROUS_PATTERNS:
             if pattern in code_snippet:
-                findings.append({
-                    "pattern": pattern,
-                    "description": description,
-                    "severity": severity,
-                    "line": code_snippet[:code_snippet.index(pattern)].count("\n") + 1,
-                })
+                findings.append(
+                    {
+                        "pattern": pattern,
+                        "description": description,
+                        "severity": severity,
+                        "line": code_snippet[: code_snippet.index(pattern)].count("\n") + 1,
+                    }
+                )
         return findings
 
     def to_dict(self) -> dict[str, Any]:

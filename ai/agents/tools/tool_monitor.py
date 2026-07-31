@@ -1,4 +1,5 @@
 """Tool execution monitoring."""
+
 from __future__ import annotations
 
 import time
@@ -12,12 +13,14 @@ class ToolMonitor:
         self._records: list[dict[str, Any]] = []
 
     def record(self, tool_id: str, result: dict[str, Any]) -> None:
-        self._records.append({
-            "tool_id": tool_id,
-            "status": result.get("status", "unknown"),
-            "duration_ms": result.get("duration_ms", 0),
-            "timestamp": time.time(),
-        })
+        self._records.append(
+            {
+                "tool_id": tool_id,
+                "status": result.get("status", "unknown"),
+                "duration_ms": result.get("duration_ms", 0),
+                "timestamp": time.time(),
+            }
+        )
 
     def get_summary(self) -> dict[str, Any]:
         if not self._records:

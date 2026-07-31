@@ -1,4 +1,5 @@
 """Sales engine."""
+
 import uuid
 
 from .models import LeadSource, SalesActivity, SalesLead, SalesPrediction, SalesStage

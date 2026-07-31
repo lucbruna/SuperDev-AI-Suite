@@ -1,4 +1,5 @@
 """Code generator for producing source files."""
+
 from typing import Any
 
 from .models import TemplateLanguage
@@ -10,16 +11,20 @@ class CodeGenerator:
     def __init__(self):
         self._generators: dict[str, Any] = {}
 
-    def generate_class(self, class_name: str, attributes: list[dict[str, str]],
-                       methods: list[str], language: TemplateLanguage = TemplateLanguage.PYTHON) -> str:
+    def generate_class(
+        self,
+        class_name: str,
+        attributes: list[dict[str, str]],
+        methods: list[str],
+        language: TemplateLanguage = TemplateLanguage.PYTHON,
+    ) -> str:
         if language == TemplateLanguage.PYTHON:
             return self._generate_python_class(class_name, attributes, methods)
         elif language == TemplateLanguage.TYPESCRIPT:
             return self._generate_typescript_class(class_name, attributes, methods)
         return f"// Class: {class_name}"
 
-    def _generate_python_class(self, class_name: str, attributes: list[dict[str, str]],
-                                methods: list[str]) -> str:
+    def _generate_python_class(self, class_name: str, attributes: list[dict[str, str]], methods: list[str]) -> str:
         lines = [f"class {class_name}:"]
         lines.append('    """Auto-generated class."""')
         lines.append("")
@@ -34,8 +39,7 @@ class CodeGenerator:
             lines.append("        pass")
         return "\n".join(lines)
 
-    def _generate_typescript_class(self, class_name: str, attributes: list[dict[str, str]],
-                                    methods: list[str]) -> str:
+    def _generate_typescript_class(self, class_name: str, attributes: list[dict[str, str]], methods: list[str]) -> str:
         lines = [f"export class {class_name} {{"]
         for attr in attributes:
             name = attr.get("name", "item")
@@ -45,15 +49,15 @@ class CodeGenerator:
         lines.append("}")
         return "\n".join(lines)
 
-    def generate_function(self, name: str, params: list[str],
-                          body: str, language: TemplateLanguage = TemplateLanguage.PYTHON) -> str:
+    def generate_function(
+        self, name: str, params: list[str], body: str, language: TemplateLanguage = TemplateLanguage.PYTHON
+    ) -> str:
         if language == TemplateLanguage.PYTHON:
             param_str = ", ".join(params)
             return f"def {name}({param_str}):\n    {body}"
         return f"function {name}({', '.join(params)}) {{ {body} }}"
 
-    def generate_module(self, module_name: str, imports: list[str],
-                        classes: list[str], functions: list[str]) -> str:
+    def generate_module(self, module_name: str, imports: list[str], classes: list[str], functions: list[str]) -> str:
         lines = [f'"""Module: {module_name}"""', ""]
         for imp in imports:
             lines.append(imp)

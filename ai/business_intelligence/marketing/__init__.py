@@ -1,4 +1,5 @@
 """Business Intelligence Marketing subsystem."""
+
 from .engine import MarketingEngine
 from .models import (
     Campaign,
@@ -11,7 +12,12 @@ from .models import (
 )
 
 __all__ = [
-    "CampaignStatus", "ChannelType",
-    "Campaign", "Lead", "ConversionEvent", "MarketingMetrics", "Segment",
+    "CampaignStatus",
+    "ChannelType",
+    "Campaign",
+    "Lead",
+    "ConversionEvent",
+    "MarketingMetrics",
+    "Segment",
     "MarketingEngine",
 ]

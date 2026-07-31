@@ -1,4 +1,5 @@
 """Router subsystem."""
+
 from .ai_router import AIRouter
 from .cost_optimizer import CostOptimizer
 from .fallback_manager import FallbackManager
@@ -8,6 +9,11 @@ from .quality_optimizer import QualityOptimizer
 from .task_classifier import TaskClassifier
 
 __all__ = [
-    "AIRouter", "TaskClassifier", "ModelSelector", "CostOptimizer",
-    "QualityOptimizer", "LatencyOptimizer", "FallbackManager"
+    "AIRouter",
+    "TaskClassifier",
+    "ModelSelector",
+    "CostOptimizer",
+    "QualityOptimizer",
+    "LatencyOptimizer",
+    "FallbackManager",
 ]

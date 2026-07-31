@@ -39,11 +39,7 @@ class Reinforcement:
         return [pid for pid, total in accum.items() if total >= threshold]
 
     def total_reinforcement(self, pattern_id: str) -> float:
-        return sum(
-            e["reinforcement"]
-            for e in self._reinforcement_log
-            if e["pattern_id"] == pattern_id
-        )
+        return sum(e["reinforcement"] for e in self._reinforcement_log if e["pattern_id"] == pattern_id)
 
     def clear(self) -> None:
         self._reinforcement_log.clear()

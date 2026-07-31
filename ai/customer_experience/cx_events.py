@@ -1,4 +1,5 @@
 """CX Events — Event-driven messaging for CX operations."""
+
 import contextlib
 import hashlib
 from collections.abc import Callable
@@ -47,7 +48,9 @@ class CXEventBus:
     def subscribe(self, event_type: CXEventType, handler: Callable) -> None:
         self.subscribers.setdefault(event_type, []).append(handler)
 
-    def get_events(self, event_type: CXEventType | None = None, source: str | None = None, limit: int = 100) -> list[CXEvent]:
+    def get_events(
+        self, event_type: CXEventType | None = None, source: str | None = None, limit: int = 100
+    ) -> list[CXEvent]:
         events = self.events
         if event_type:
             events = [e for e in events if e.event_type == event_type]

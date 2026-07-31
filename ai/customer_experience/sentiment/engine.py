@@ -1,11 +1,40 @@
 """Sentiment engine."""
+
 import uuid
 from datetime import datetime
 
 from .models import SatisfactionScore, SentimentResult, SentimentType
 
-POSITIVE_WORDS = {"great", "excellent", "good", "love", "amazing", "wonderful", "fantastic", "best", "happy", "perfect", "awesome", "brilliant", "outstanding"}
-NEGATIVE_WORDS = {"bad", "terrible", "hate", "awful", "worst", "poor", "horrible", "disappointing", "angry", "sad", "frustrated", "annoyed", "broken"}
+POSITIVE_WORDS = {
+    "great",
+    "excellent",
+    "good",
+    "love",
+    "amazing",
+    "wonderful",
+    "fantastic",
+    "best",
+    "happy",
+    "perfect",
+    "awesome",
+    "brilliant",
+    "outstanding",
+}
+NEGATIVE_WORDS = {
+    "bad",
+    "terrible",
+    "hate",
+    "awful",
+    "worst",
+    "poor",
+    "horrible",
+    "disappointing",
+    "angry",
+    "sad",
+    "frustrated",
+    "annoyed",
+    "broken",
+}
 
 
 class SentimentEngine:

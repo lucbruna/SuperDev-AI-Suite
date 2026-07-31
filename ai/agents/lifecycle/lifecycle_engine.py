@@ -1,4 +1,5 @@
 """Central lifecycle engine coordinating all lifecycle phases."""
+
 from __future__ import annotations
 
 import contextlib
@@ -38,9 +39,14 @@ class AgentLifecycleState(Enum):
 
 
 class LifecycleEvent:
-    def __init__(self, agent_id: str, from_state: AgentLifecycleState,
-                 to_state: AgentLifecycleState, timestamp: float,
-                 metadata: dict[str, Any] | None = None) -> None:
+    def __init__(
+        self,
+        agent_id: str,
+        from_state: AgentLifecycleState,
+        to_state: AgentLifecycleState,
+        timestamp: float,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
         self.agent_id = agent_id
         self.from_state = from_state
         self.to_state = to_state
@@ -66,8 +72,7 @@ class LifecycleEngine:
         self._hooks: dict[str, list[Callable[..., Any]]] = {}
         self._transitions_count: int = 0
 
-    def register_agent(self, agent_id: str,
-                       initial: AgentLifecycleState = AgentLifecycleState.CREATED) -> None:
+    def register_agent(self, agent_id: str, initial: AgentLifecycleState = AgentLifecycleState.CREATED) -> None:
         self._states[agent_id] = initial
         self._history[agent_id] = []
 
@@ -81,8 +86,7 @@ class LifecycleEngine:
     def get_state(self, agent_id: str) -> AgentLifecycleState | None:
         return self._states.get(agent_id)
 
-    def transition(self, agent_id: str, target: AgentLifecycleState,
-                   metadata: dict[str, Any] | None = None) -> bool:
+    def transition(self, agent_id: str, target: AgentLifecycleState, metadata: dict[str, Any] | None = None) -> bool:
         current = self._states.get(agent_id)
         if current is None or not current.can_transition_to(target):
             return False
@@ -99,8 +103,9 @@ class LifecycleEngine:
     def add_hook(self, state_name: str, callback: Callable[..., Any]) -> None:
         self._hooks.setdefault(state_name, []).append(callback)
 
-    def _fire_hooks(self, agent_id: str, from_s: AgentLifecycleState,
-                    to_s: AgentLifecycleState, event: LifecycleEvent) -> None:
+    def _fire_hooks(
+        self, agent_id: str, from_s: AgentLifecycleState, to_s: AgentLifecycleState, event: LifecycleEvent
+    ) -> None:
         for cb in self._hooks.get(to_s.name, []):
             with contextlib.suppress(Exception):
                 cb(event)

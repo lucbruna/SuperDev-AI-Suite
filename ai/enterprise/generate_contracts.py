@@ -1,15 +1,20 @@
 """Contracts subsystem generator."""
+
 import os
 
-BASE = r'C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\enterprise\contracts'
+BASE = r"C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\enterprise\contracts"
+
 
 def w(path, content):
     full = os.path.join(BASE, path)
     os.makedirs(os.path.dirname(full), exist_ok=True)
-    with open(full, 'w', encoding='utf-8') as f:
+    with open(full, "w", encoding="utf-8") as f:
         f.write(content)
 
-w('contract_engine.py', '''"""Contract engine."""
+
+w(
+    "contract_engine.py",
+    '''"""Contract engine."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time
@@ -49,9 +54,12 @@ class ContractEngine:
         return len(self._contracts)
     def is_running(self) -> bool:
         return self._started
-''')
+''',
+)
 
-w('agreement.py', '''"""Contract agreement."""
+w(
+    "agreement.py",
+    '''"""Contract agreement."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import time
@@ -83,9 +91,12 @@ class AgreementManager:
         return [a for a in self._agreements.values() if a["status"] == "active"]
     def count(self) -> int:
         return len(self._agreements)
-''')
+''',
+)
 
-w('customer.py', '''"""Contract customer."""
+w(
+    "customer.py",
+    '''"""Contract customer."""
 from __future__ import annotations
 from typing import Any, Dict, List
 
@@ -112,9 +123,12 @@ class ContractCustomer:
             del self._customers[contract_id]
             return True
         return False
-''')
+''',
+)
 
-w('renewal.py', '''"""Contract renewal."""
+w(
+    "renewal.py",
+    '''"""Contract renewal."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import time
@@ -146,9 +160,12 @@ class ContractRenewal:
         return list(self._renewals.values())
     def count(self) -> int:
         return len(self._renewals)
-''')
+''',
+)
 
-w('SLA.py', '''"""SLA management."""
+w(
+    "SLA.py",
+    '''"""SLA management."""
 from __future__ import annotations
 from typing import Any, Dict, List
 
@@ -186,9 +203,12 @@ class SLAManager:
             del self._slas[contract_id]
             return True
         return False
-''')
+''',
+)
 
-w('compliance.py', '''"""Contract compliance."""
+w(
+    "compliance.py",
+    '''"""Contract compliance."""
 from __future__ import annotations
 from typing import Any, Dict, List
 
@@ -221,9 +241,12 @@ class ComplianceManager:
             del self._compliance[contract_id]
             return True
         return False
-''')
+''',
+)
 
-w('__init__.py', '''"""Contracts subsystem."""
+w(
+    "__init__.py",
+    '''"""Contracts subsystem."""
 from .contract_engine import ContractEngine
 from .agreement import AgreementManager
 from .customer import ContractCustomer
@@ -235,6 +258,7 @@ __all__ = [
     "ContractEngine", "AgreementManager", "ContractCustomer",
     "ContractRenewal", "SLAManager", "ComplianceManager"
 ]
-''')
+''',
+)
 
 print("contracts/: 7 files created")

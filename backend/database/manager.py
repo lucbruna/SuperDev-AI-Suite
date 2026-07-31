@@ -115,7 +115,7 @@ class DatabaseManager:
         )
 
         # Initialize read-only replica if configured
-        if hasattr(db_config, 'readonly_url') and db_config.readonly_url:
+        if hasattr(db_config, "readonly_url") and db_config.readonly_url:
             self._readonly_engine = self.create_engine(
                 database_url=db_config.readonly_url,
                 pool_size=db_config.pool_size * 2,

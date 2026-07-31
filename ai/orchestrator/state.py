@@ -203,10 +203,7 @@ class OrchestrationState:
         if not self._persist_path:
             return
         try:
-            data = {
-                sid: session.model_dump(mode="json")
-                for sid, session in self._sessions.items()
-            }
+            data = {sid: session.model_dump(mode="json") for sid, session in self._sessions.items()}
             with open(self._persist_path, "w") as f:
                 json.dump(data, f, indent=2, default=str)
         except Exception:

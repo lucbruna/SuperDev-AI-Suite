@@ -1,4 +1,5 @@
 """Version management and release tagging subsystem."""
+
 from .branch_manager import BranchManager
 from .dependency_resolver import DependencyResolver
 from .models import Branch, DependencyGraph, Tag, Version, VersionConstraint, VersionType

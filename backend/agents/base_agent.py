@@ -80,11 +80,13 @@ class BaseAgent(ABC):
         return self._status
 
     def register_tool(self, name: str, description: str, parameters: dict[str, Any]) -> None:
-        self._tools.append({
-            "name": name,
-            "description": description,
-            "parameters": parameters,
-        })
+        self._tools.append(
+            {
+                "name": name,
+                "description": description,
+                "parameters": parameters,
+            }
+        )
 
     def get_tools_schema(self) -> list[dict[str, Any]]:
         return self._tools
@@ -95,16 +97,14 @@ class BaseAgent(ABC):
         input_text: str,
         context: dict[str, Any] | None = None,
         **kwargs,
-    ) -> AgentResult:
-        ...
+    ) -> AgentResult: ...
 
     @abstractmethod
     async def think(
         self,
         messages: list[dict[str, str]],
         **kwargs,
-    ) -> str:
-        ...
+    ) -> str: ...
 
     @abstractmethod
     async def act(
@@ -112,8 +112,7 @@ class BaseAgent(ABC):
         action: str,
         action_input: dict[str, Any],
         **kwargs,
-    ) -> Any:
-        ...
+    ) -> Any: ...
 
     def to_dict(self) -> dict[str, Any]:
         return {

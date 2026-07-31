@@ -35,7 +35,7 @@ class RagChunk(BaseTool):
                 content = params.get("content", "")
                 chunk_size = params.get("chunk_size", 500)
                 overlap = params.get("overlap", 50)
-                text_chunks = [content[i:i + chunk_size] for i in range(0, len(content), chunk_size - overlap)]
+                text_chunks = [content[i : i + chunk_size] for i in range(0, len(content), chunk_size - overlap)]
                 chunks = []
                 for i, text in enumerate(text_chunks):
                     chunk = {"id": f"chunk_{len(self._chunks) + 1}", "doc_id": doc_id, "index": i, "text": text}
@@ -44,9 +44,7 @@ class RagChunk(BaseTool):
                 return {"success": True, "chunks": chunks, "count": len(chunks)}
             elif action == "merge":
                 chunk_ids = params.get("chunk_ids", [])
-                merged_text = " ".join(
-                    c["text"] for c in self._chunks if c.get("id") in chunk_ids
-                )
+                merged_text = " ".join(c["text"] for c in self._chunks if c.get("id") in chunk_ids)
                 return {"success": True, "merged": merged_text}
             elif action == "list_chunks":
                 return {"success": True, "chunks": self._chunks, "count": len(self._chunks)}

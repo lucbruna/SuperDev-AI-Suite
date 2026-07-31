@@ -26,12 +26,14 @@ class AlertManager:
         for rule in self._rules.values():
             metric_name = rule["condition"].split()[0] if rule["condition"] else ""
             if metric_name in metrics:
-                results.append({
-                    "rule": rule["name"],
-                    "severity": rule["severity"],
-                    "triggered": True,
-                    "metric_value": metrics[metric_name],
-                })
+                results.append(
+                    {
+                        "rule": rule["name"],
+                        "severity": rule["severity"],
+                        "triggered": True,
+                        "metric_value": metrics[metric_name],
+                    }
+                )
         self._alerts.extend(results)
         return results
 

@@ -4,6 +4,7 @@ Volume 13 of SuperDev AI Suite v5 Enterprise.
 Manages the full agent lifecycle: creation, communication, collaboration,
 memory, planning, reasoning, execution, evaluation, learning, and optimization.
 """
+
 from __future__ import annotations
 
 import time
@@ -232,12 +233,14 @@ class AgentEngine:
     def dispatch(self, agent_id: str, task: dict[str, Any]) -> dict[str, Any]:
         """Dispatch a task to a specific agent."""
         result = self._dispatcher.dispatch(agent_id, task)
-        self._task_history.append({
-            "agent_id": agent_id,
-            "task": task,
-            "result": result,
-            "timestamp": time.time(),
-        })
+        self._task_history.append(
+            {
+                "agent_id": agent_id,
+                "task": task,
+                "result": result,
+                "timestamp": time.time(),
+            }
+        )
         self._metrics.increment("tasks_dispatched")
         return result
 

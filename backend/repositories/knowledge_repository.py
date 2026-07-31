@@ -108,11 +108,7 @@ class KnowledgeChunkRepository(BaseRepository[KnowledgeChunk]):
 
     async def get_by_entry(self, entry_id: str) -> list[KnowledgeChunk]:
         """Get all chunks for a specific entry, ordered by index."""
-        query = (
-            select(self.model)
-            .where(self.model.entry_id == entry_id)
-            .order_by(self.model.chunk_index)
-        )
+        query = select(self.model).where(self.model.entry_id == entry_id).order_by(self.model.chunk_index)
         result = await self.db.execute(query)
         return list(result.scalars().all())
 

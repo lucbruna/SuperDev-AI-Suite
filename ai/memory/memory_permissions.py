@@ -6,6 +6,7 @@ from typing import Any
 
 class MemoryAction(Enum):
     """Actions that can be performed on memory."""
+
     READ = auto()
     WRITE = auto()
     UPDATE = auto()
@@ -18,6 +19,7 @@ class MemoryAction(Enum):
 
 class MemoryRole(Enum):
     """Predefined permission roles."""
+
     NONE = auto()
     READER = auto()
     WRITER = auto()
@@ -31,18 +33,32 @@ _ROLE_PERMISSIONS: dict[MemoryRole, set[MemoryAction]] = {
     MemoryRole.READER: {MemoryAction.READ},
     MemoryRole.WRITER: {MemoryAction.READ, MemoryAction.WRITE, MemoryAction.UPDATE},
     MemoryRole.OPERATOR: {
-        MemoryAction.READ, MemoryAction.WRITE, MemoryAction.UPDATE,
-        MemoryAction.DELETE, MemoryAction.BACKUP, MemoryAction.RESTORE,
+        MemoryAction.READ,
+        MemoryAction.WRITE,
+        MemoryAction.UPDATE,
+        MemoryAction.DELETE,
+        MemoryAction.BACKUP,
+        MemoryAction.RESTORE,
     },
     MemoryRole.ADMIN: {
-        MemoryAction.READ, MemoryAction.WRITE, MemoryAction.UPDATE,
-        MemoryAction.DELETE, MemoryAction.BACKUP, MemoryAction.RESTORE,
-        MemoryAction.MANAGE, MemoryAction.CONFIGURE,
+        MemoryAction.READ,
+        MemoryAction.WRITE,
+        MemoryAction.UPDATE,
+        MemoryAction.DELETE,
+        MemoryAction.BACKUP,
+        MemoryAction.RESTORE,
+        MemoryAction.MANAGE,
+        MemoryAction.CONFIGURE,
     },
     MemoryRole.SYSTEM: {
-        MemoryAction.READ, MemoryAction.WRITE, MemoryAction.UPDATE,
-        MemoryAction.DELETE, MemoryAction.MANAGE, MemoryAction.BACKUP,
-        MemoryAction.RESTORE, MemoryAction.CONFIGURE,
+        MemoryAction.READ,
+        MemoryAction.WRITE,
+        MemoryAction.UPDATE,
+        MemoryAction.DELETE,
+        MemoryAction.MANAGE,
+        MemoryAction.BACKUP,
+        MemoryAction.RESTORE,
+        MemoryAction.CONFIGURE,
     },
 }
 
@@ -102,8 +118,5 @@ class MemoryPermissions:
     def to_dict(self) -> dict[str, Any]:
         return {
             "roles": {k: v.name for k, v in self._role_assignments.items()},
-            "custom_policies": {
-                k: [a.name for a in v]
-                for k, v in self._custom_policies.items()
-            },
+            "custom_policies": {k: [a.name for a in v] for k, v in self._custom_policies.items()},
         }

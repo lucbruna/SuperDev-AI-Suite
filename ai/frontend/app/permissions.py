@@ -1,6 +1,7 @@
 """
 Frontend Permissions System
 """
+
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
@@ -8,6 +9,7 @@ from typing import Any
 
 class Permission(Enum):
     """System permissions."""
+
     # Dashboard
     VIEW_DASHBOARD = "view_dashboard"
     EDIT_DASHBOARD = "edit_dashboard"
@@ -64,6 +66,7 @@ class Permission(Enum):
 
 class Role(Enum):
     """User roles."""
+
     SUPER_ADMIN = "super_admin"
     ADMIN = "admin"
     MANAGER = "manager"
@@ -75,6 +78,7 @@ class Role(Enum):
 @dataclass
 class RolePermissions:
     """Role to permissions mapping."""
+
     role: Role
     permissions: set[Permission] = field(default_factory=set)
 
@@ -248,8 +252,7 @@ class PermissionManager:
             self.user_permissions[user_id] = set()
         self.user_permissions[user_id].update(custom)
 
-    def filter_by_permission(self, user_id: str, items: list[Any],
-                            key: str = "permission") -> list[Any]:
+    def filter_by_permission(self, user_id: str, items: list[Any], key: str = "permission") -> list[Any]:
         """Filter items by user permission."""
         result = []
         for item in items:

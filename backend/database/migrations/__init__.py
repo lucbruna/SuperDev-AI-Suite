@@ -3,6 +3,7 @@
 Provides functions to run Alembic migrations, create/drop tables,
 and manage the database lifecycle without the CLI.
 """
+
 from __future__ import annotations
 
 import logging
@@ -78,6 +79,7 @@ async def get_current_revision() -> str | None:
         alembic_cfg.set_main_option("script_location", str(_ALEMBIC_DIR))
 
         from alembic.script import ScriptDirectory
+
         script = ScriptDirectory.from_config(alembic_cfg)
         head = script.get_current_head()
         return head

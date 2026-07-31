@@ -10,12 +10,14 @@ class ChainMetrics:
         self._records: list[dict[str, Any]] = []
 
     async def record(self, chain_id: str, steps: int, duration: float, success: bool) -> None:
-        self._records.append({
-            "chain_id": chain_id,
-            "steps": steps,
-            "duration": duration,
-            "success": success,
-        })
+        self._records.append(
+            {
+                "chain_id": chain_id,
+                "steps": steps,
+                "duration": duration,
+                "success": success,
+            }
+        )
 
     async def average_steps(self) -> float:
         if not self._records:
@@ -26,5 +28,7 @@ class ChainMetrics:
         return {
             "total_chains": len(self._records),
             "avg_steps": await self.average_steps(),
-            "success_rate": sum(1 for r in self._records if r.get("success")) / len(self._records) if self._records else 0,
+            "success_rate": sum(1 for r in self._records if r.get("success")) / len(self._records)
+            if self._records
+            else 0,
         }

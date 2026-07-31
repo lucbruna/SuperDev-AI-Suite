@@ -99,7 +99,11 @@ class LocalProvider(BaseLLMProvider):
                 except ProviderError as e:
                     attempt += 1
                     if attempt > self._max_retries or not _is_retryable(e, self._retry_codes):
-                        yield {"content": f"[{self._name} error: {e.message}]", "finish_reason": "error", "error": e.message}
+                        yield {
+                            "content": f"[{self._name} error: {e.message}]",
+                            "finish_reason": "error",
+                            "error": e.message,
+                        }
                         break
                     retry_after = e.retry_after or _exponential_backoff(attempt - 1)
                     await asyncio.sleep(retry_after)
@@ -107,7 +111,11 @@ class LocalProvider(BaseLLMProvider):
                     pe = ProviderError.from_exception(e, self._name)
                     attempt += 1
                     if attempt > self._max_retries or not _is_retryable(pe, self._retry_codes):
-                        yield {"content": f"[{self._name} error: {pe.message}]", "finish_reason": "error", "error": pe.message}
+                        yield {
+                            "content": f"[{self._name} error: {pe.message}]",
+                            "finish_reason": "error",
+                            "error": pe.message,
+                        }
                         break
                     await asyncio.sleep(_exponential_backoff(attempt - 1))
 
@@ -203,11 +211,13 @@ class LocalProvider(BaseLLMProvider):
         # Check for vision content
         image = kwargs.get("image") or kwargs.get("image_url")
         if image:
-            messages.append({
-                "role": "user",
-                "content": prompt,
-                "images": [image],
-            })
+            messages.append(
+                {
+                    "role": "user",
+                    "content": prompt,
+                    "images": [image],
+                }
+            )
         else:
             messages.append({"role": "user", "content": prompt})
 
@@ -253,14 +263,20 @@ class LocalProvider(BaseLLMProvider):
                 # Ollama tool calls have function structure
                 tc_dict = tc if isinstance(tc, dict) else tc.model_dump()
                 if isinstance(tc_dict, dict):
-                    tool_calls.append({
-                        "id": tc_dict.get("id", ""),
-                        "type": "function",
-                        "function": {
-                            "name": tc_dict.get("function", {}).get("name", "") if isinstance(tc_dict.get("function"), dict) else tc_dict.get("function", tc_dict.get("name", "")),
-                            "arguments": tc_dict.get("function", {}).get("arguments", "{}") if isinstance(tc_dict.get("function"), dict) else "{}",
-                        },
-                    })
+                    tool_calls.append(
+                        {
+                            "id": tc_dict.get("id", ""),
+                            "type": "function",
+                            "function": {
+                                "name": tc_dict.get("function", {}).get("name", "")
+                                if isinstance(tc_dict.get("function"), dict)
+                                else tc_dict.get("function", tc_dict.get("name", "")),
+                                "arguments": tc_dict.get("function", {}).get("arguments", "{}")
+                                if isinstance(tc_dict.get("function"), dict)
+                                else "{}",
+                            },
+                        }
+                    )
 
         pt = resp.prompt_eval_count if resp.prompt_eval_count is not None else count_tokens(prompt)
         ct = resp.eval_count if resp.eval_count is not None else count_tokens(content)
@@ -281,9 +297,19 @@ class LocalProvider(BaseLLMProvider):
         msg = str(exc).lower()
 
         if "connection refused" in msg or "connection error" in msg or "connect" in msg:
-            return ProviderError(ProviderErrorCode.SERVER_ERROR, f"Ollama not running at {self._endpoint}. Start with: ollama serve", 503, provider="local")
+            return ProviderError(
+                ProviderErrorCode.SERVER_ERROR,
+                f"Ollama not running at {self._endpoint}. Start with: ollama serve",
+                503,
+                provider="local",
+            )
         if "not found" in msg or "pull" in msg or "model" in msg:
-            return ProviderError(ProviderErrorCode.INVALID_REQUEST, f"Model not found. Pull with: ollama pull {self._model}", 404, provider="local")
+            return ProviderError(
+                ProviderErrorCode.INVALID_REQUEST,
+                f"Model not found. Pull with: ollama pull {self._model}",
+                404,
+                provider="local",
+            )
         if "timeout" in msg or "timed out" in msg:
             return ProviderError(ProviderErrorCode.TIMEOUT, str(exc), 408, provider="local")
         if "400" in msg:

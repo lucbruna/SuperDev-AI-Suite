@@ -34,7 +34,12 @@ class GitCommit(BaseTool):
             else:
                 subprocess.run(["git", "add", "-A"], cwd=path, capture_output=True, text=True, timeout=15)
             r = subprocess.run(["git", "commit", "-m", message], cwd=path, capture_output=True, text=True, timeout=15)
-            return {"success": r.returncode == 0, "stdout": r.stdout, "stderr": r.stderr, "hash": r.stdout.split()[0] if r.returncode == 0 else ""}
+            return {
+                "success": r.returncode == 0,
+                "stdout": r.stdout,
+                "stderr": r.stderr,
+                "hash": r.stdout.split()[0] if r.returncode == 0 else "",
+            }
         except Exception as e:
             return {"success": False, "error": str(e)}
 

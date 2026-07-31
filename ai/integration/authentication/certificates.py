@@ -1,6 +1,7 @@
 """
 Certificate Management for Integrations
 """
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -23,9 +24,13 @@ class CertificateManager:
     def __init__(self):
         self.certificates: dict[str, Certificate] = {}
 
-    def register_certificate(self, name: str, cert_type: str = "client", subject: str = "", fingerprint: str = "", **kwargs) -> Certificate:
+    def register_certificate(
+        self, name: str, cert_type: str = "client", subject: str = "", fingerprint: str = "", **kwargs
+    ) -> Certificate:
         cert_id = hashlib.sha256(f"{name}{cert_type}".encode()).hexdigest()[:16]
-        cert = Certificate(cert_id=cert_id, name=name, cert_type=cert_type, subject=subject, fingerprint=fingerprint, **kwargs)
+        cert = Certificate(
+            cert_id=cert_id, name=name, cert_type=cert_type, subject=subject, fingerprint=fingerprint, **kwargs
+        )
         self.certificates[cert_id] = cert
         return cert
 

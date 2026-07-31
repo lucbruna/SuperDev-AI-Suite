@@ -128,6 +128,7 @@ def _resolve_builder_class(builder_id: str) -> Any:
     try:
         module_path, class_name = import_path.split(":")
         import importlib
+
         module = importlib.import_module(module_path)
         cls = getattr(module, class_name)
         entry["class"] = cls
@@ -135,7 +136,9 @@ def _resolve_builder_class(builder_id: str) -> Any:
     except (ImportError, AttributeError) as e:
         logger.warning(
             "Failed to import builder '%s' from %s: %s",
-            builder_id, import_path, e,
+            builder_id,
+            import_path,
+            e,
         )
         return None
 
@@ -208,13 +211,15 @@ async def list_builders() -> dict[str, Any]:
     builders = []
     for bid, info in BUILDER_REGISTRY.items():
         cls = _resolve_builder_class(bid)
-        builders.append(BuilderInfo(
-            name=bid,
-            description=info["description"],
-            available=cls is not None,
-            frameworks=info.get("frameworks", []),
-            api_types=info.get("api_types", []),
-        ))
+        builders.append(
+            BuilderInfo(
+                name=bid,
+                description=info["description"],
+                available=cls is not None,
+                frameworks=info.get("frameworks", []),
+                api_types=info.get("api_types", []),
+            )
+        )
     return {"builders": builders}
 
 

@@ -11,6 +11,7 @@ class Coverage:
 
     def analyze(self, file_or_module: str) -> dict[str, Any]:
         import random
+
         return {
             "module": file_or_module,
             "line_coverage": round(random.uniform(60, 95), 1),

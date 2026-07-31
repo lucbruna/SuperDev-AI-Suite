@@ -1,4 +1,5 @@
 """Device Manager - Enterprise device fleet management."""
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -59,7 +60,9 @@ class DeviceManager:
         if device:
             device.health = health
             device.last_seen = datetime.now()
-            self.health_history.setdefault(device_id, []).append({"health": health.value, "message": message, "timestamp": datetime.now().isoformat()})
+            self.health_history.setdefault(device_id, []).append(
+                {"health": health.value, "message": message, "timestamp": datetime.now().isoformat()}
+            )
             return True
         return False
 
@@ -85,7 +88,11 @@ class DeviceManager:
         return devices
 
     def search_devices(self, query: str) -> list[DeviceRecord]:
-        return [d for d in self.devices.values() if query.lower() in d.name.lower() or any(query.lower() in t.lower() for t in d.tags)]
+        return [
+            d
+            for d in self.devices.values()
+            if query.lower() in d.name.lower() or any(query.lower() in t.lower() for t in d.tags)
+        ]
 
     def get_health_history(self, device_id: str, limit: int = 100) -> list[dict[str, Any]]:
         return self.health_history.get(device_id, [])[-limit:]

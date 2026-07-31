@@ -42,6 +42,7 @@ def get_orchestrator() -> Any:
 
 # ─── Schemas ──────────────────────────────────────────────────────────────────
 
+
 class BootRequest(BaseModel):
     config_path: str = ""
     safe_mode: bool = False
@@ -71,6 +72,7 @@ class ScheduleRequest(BaseModel):
 
 
 # ─── System ───────────────────────────────────────────────────────────────────
+
 
 @router.post("/boot", response_model=BootResponse)
 async def boot_system(
@@ -121,6 +123,7 @@ async def system_health() -> dict[str, Any]:
 
 
 # ─── Agents ──────────────────────────────────────────────────────────────────
+
 
 @router.get("/agents")
 async def list_agents() -> dict[str, Any]:
@@ -175,6 +178,7 @@ async def execute_agent(request: ExecuteRequest) -> dict[str, Any]:
 
 # ─── Workflows ───────────────────────────────────────────────────────────────
 
+
 @router.post("/workflows")
 async def create_workflow(config: dict[str, Any]) -> dict[str, Any]:
     """Create a new workflow."""
@@ -184,7 +188,8 @@ async def create_workflow(config: dict[str, Any]) -> dict[str, Any]:
 
 @router.post("/workflows/{workflow_id}/execute")
 async def execute_workflow(
-    workflow_id: str, context: dict[str, Any] | None = None,
+    workflow_id: str,
+    context: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Execute a workflow."""
     orch = get_orchestrator()
@@ -206,6 +211,7 @@ async def list_workflows(status: str = "") -> dict[str, Any]:
 
 # ─── Scheduler ───────────────────────────────────────────────────────────────
 
+
 @router.get("/scheduler/tasks")
 async def list_scheduled_tasks() -> dict[str, Any]:
     """List all scheduled tasks."""
@@ -225,6 +231,7 @@ async def run_task(task_id: str) -> dict[str, Any]:
 
 # ─── Metrics ─────────────────────────────────────────────────────────────────
 
+
 @router.get("/metrics")
 async def get_metrics() -> dict[str, Any]:
     """Get system-wide metrics."""
@@ -240,6 +247,7 @@ async def get_metrics() -> dict[str, Any]:
 
 # ─── Self-Test ────────────────────────────────────────────────────────────────
 
+
 @router.get("/self-test")
 async def self_test() -> dict[str, Any]:
     """Run system self-diagnostics: scanner resolution, scan execution, error handling."""
@@ -254,12 +262,14 @@ async def self_test() -> dict[str, Any]:
         nonlocal failures
         if not passed:
             failures += 1
-        results.append({
-            "test": name,
-            "passed": passed,
-            "detail": detail[:200],
-            "data": data,
-        })
+        results.append(
+            {
+                "test": name,
+                "passed": passed,
+                "detail": detail[:200],
+                "data": data,
+            }
+        )
 
     # ── Test 1: Scanner resolution ────────────────────────────────────
     available = 0
@@ -279,6 +289,7 @@ async def self_test() -> dict[str, Any]:
 
     # ── Test 2: Run filesystem scanner (lightweight) ──────────────────
     import os
+
     target = os.path.abspath("./backend")
 
     try:
@@ -291,7 +302,11 @@ async def self_test() -> dict[str, Any]:
                 "filesystem_scan",
                 passed=not result.get("error", ""),
                 detail=f"{result.get('total_findings', 0)} findings em {elapsed:.0f}ms | sev: {result.get('by_severity', {})}",
-                data={"findings": result.get("total_findings", 0), "duration_ms": elapsed, "by_severity": result.get("by_severity", {})},
+                data={
+                    "findings": result.get("total_findings", 0),
+                    "duration_ms": elapsed,
+                    "by_severity": result.get("by_severity", {}),
+                },
             )
         else:
             add_result("filesystem_scan", passed=False, detail="Scanner nao disponivel")
@@ -363,8 +378,13 @@ async def self_test() -> dict[str, Any]:
         cls = _resolve_builder_class("backend")
         if cls:
             from backend.api.v1.builders import BuildRequest, run_builder
+
             t0 = time.time()
-            result = await run_builder("backend", cls, BuildRequest(project_name="TestProj", include_docker=False, include_tests=False, include_ci=False))
+            result = await run_builder(
+                "backend",
+                cls,
+                BuildRequest(project_name="TestProj", include_docker=False, include_tests=False, include_ci=False),
+            )
             elapsed = round((time.time() - t0) * 1000, 2)
             add_result(
                 "backend_builder",
@@ -379,6 +399,7 @@ async def self_test() -> dict[str, Any]:
 
     # ── Summary ────────────────────────────────────────────────────────
     from datetime import datetime
+
     passed_count = sum(1 for r in results if r["passed"])
     return {
         "success": failures == 0,

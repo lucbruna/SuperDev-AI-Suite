@@ -34,9 +34,7 @@ class PythonTool:
 
         full_code = "\n".join(imports) + "\n\n" + code if imports else code
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".py", delete=False, encoding="utf-8"
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False, encoding="utf-8") as f:
             f.write(full_code)
             script_path = f.name
 
@@ -47,9 +45,7 @@ class PythonTool:
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
-            stdout, stderr = await asyncio.wait_for(
-                proc.communicate(), timeout=timeout
-            )
+            stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
             return {
                 "success": proc.returncode == 0,
                 "stdout": stdout.decode("utf-8", errors="replace") if stdout else "",
@@ -67,6 +63,7 @@ class PythonTool:
             return {"success": False, "stdout": "", "stderr": str(e), "exit_code": -1}
         finally:
             import os
+
             with contextlib.suppress(Exception):
                 os.unlink(script_path)
 

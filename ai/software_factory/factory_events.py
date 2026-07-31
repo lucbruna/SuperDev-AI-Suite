@@ -1,4 +1,5 @@
 """Factory Events - Event-driven messaging for factory operations."""
+
 import contextlib
 import hashlib
 from collections.abc import Callable
@@ -37,7 +38,9 @@ class FactoryEventBus:
         self.subscribers: dict[FactoryEventType, list[Callable]] = {}
 
     def publish(self, event_type: FactoryEventType, project_id: str, data: dict[str, Any] = None) -> FactoryEvent:
-        event_id = hashlib.sha256(f"{event_type.value}{project_id}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
+        event_id = hashlib.sha256(f"{event_type.value}{project_id}{datetime.now().isoformat()}".encode()).hexdigest()[
+            :16
+        ]
         event = FactoryEvent(event_id=event_id, event_type=event_type, project_id=project_id, data=data or {})
         self.events.append(event)
         for handler in self.subscribers.get(event_type, []):
@@ -48,7 +51,9 @@ class FactoryEventBus:
     def subscribe(self, event_type: FactoryEventType, handler: Callable) -> None:
         self.subscribers.setdefault(event_type, []).append(handler)
 
-    def get_events(self, event_type: FactoryEventType = None, project_id: str = None, limit: int = 100) -> list[FactoryEvent]:
+    def get_events(
+        self, event_type: FactoryEventType = None, project_id: str = None, limit: int = 100
+    ) -> list[FactoryEvent]:
         events = self.events
         if event_type:
             events = [e for e in events if e.event_type == event_type]

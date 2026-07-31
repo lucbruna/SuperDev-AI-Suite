@@ -41,7 +41,11 @@ class LlmChat(BaseTool):
                 self._conversations[conversation_id].append({"role": "assistant", "content": reply})
                 return {"success": True, "reply": reply, "conversation_id": conversation_id}
             elif action == "history":
-                return {"success": True, "messages": self._conversations[conversation_id], "count": len(self._conversations[conversation_id])}
+                return {
+                    "success": True,
+                    "messages": self._conversations[conversation_id],
+                    "count": len(self._conversations[conversation_id]),
+                }
             elif action == "clear":
                 self._conversations[conversation_id] = []
                 return {"success": True, "message": "Conversation cleared"}

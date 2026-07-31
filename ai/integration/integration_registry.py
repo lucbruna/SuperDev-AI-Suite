@@ -1,6 +1,7 @@
 """
 Integration Registry - Central registry for all integrations
 """
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -27,9 +28,18 @@ class IntegrationRegistry:
         self.categories: dict[str, list[str]] = {}
         self.aliases: dict[str, str] = {}
 
-    def register(self, name: str, integration_type: str, endpoint: str = "", capabilities: list[str] = None, **kwargs) -> RegistryEntry:
+    def register(
+        self, name: str, integration_type: str, endpoint: str = "", capabilities: list[str] = None, **kwargs
+    ) -> RegistryEntry:
         entry_id = hashlib.sha256(f"{name}{integration_type}".encode()).hexdigest()[:16]
-        entry = RegistryEntry(entry_id=entry_id, name=name, integration_type=integration_type, endpoint=endpoint, capabilities=capabilities or [], metadata=kwargs)
+        entry = RegistryEntry(
+            entry_id=entry_id,
+            name=name,
+            integration_type=integration_type,
+            endpoint=endpoint,
+            capabilities=capabilities or [],
+            metadata=kwargs,
+        )
         self.entries[entry_id] = entry
         return entry
 
@@ -68,7 +78,11 @@ class IntegrationRegistry:
         return [self.entries[i] for i in ids if i in self.entries]
 
     def search(self, query: str) -> list[RegistryEntry]:
-        return [e for e in self.entries.values() if query.lower() in e.name.lower() or query.lower() in e.integration_type.lower()]
+        return [
+            e
+            for e in self.entries.values()
+            if query.lower() in e.name.lower() or query.lower() in e.integration_type.lower()
+        ]
 
     def list_all(self) -> list[RegistryEntry]:
         return list(self.entries.values())

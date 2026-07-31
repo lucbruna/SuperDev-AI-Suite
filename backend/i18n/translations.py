@@ -273,10 +273,7 @@ class I18nService:
             "current_locale": self._current_locale,
             "fallback_locale": self._fallback_locale,
             "supported_locales": self.get_supported_locales(),
-            "translation_counts": {
-                locale: len(ts.translations)
-                for locale, ts in self._translations.items()
-            },
+            "translation_counts": {locale: len(ts.translations) for locale, ts in self._translations.items()},
         }
 
 

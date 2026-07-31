@@ -7,9 +7,9 @@ from .legacy_adapter import LegacyAdapter
 from .protocol_adapter import ProtocolAdapter
 
 __all__ = [
-    'AdapterEngine',
-    'AdapterManager',
-    'ProtocolAdapter',
-    'FormatAdapter',
-    'LegacyAdapter',
+    "AdapterEngine",
+    "AdapterManager",
+    "ProtocolAdapter",
+    "FormatAdapter",
+    "LegacyAdapter",
 ]

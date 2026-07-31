@@ -1,4 +1,5 @@
 """ERP Logger — Structured logging for ERP operations."""
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -27,7 +28,14 @@ class ERPLogger:
     def __init__(self):
         self.entries: list[ERPLogEntry] = []
 
-    def log(self, level: ERPLogLevel, message: str, source: str = "", project_id: str = "", data: dict[str, Any] | None = None) -> ERPLogEntry:
+    def log(
+        self,
+        level: ERPLogLevel,
+        message: str,
+        source: str = "",
+        project_id: str = "",
+        data: dict[str, Any] | None = None,
+    ) -> ERPLogEntry:
         entry = ERPLogEntry(level=level, message=message, source=source, project_id=project_id, data=data or {})
         self.entries.append(entry)
         return entry

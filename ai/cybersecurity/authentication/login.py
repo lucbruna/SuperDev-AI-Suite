@@ -1,6 +1,7 @@
 """
 Login Manager
 """
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -48,12 +49,14 @@ class LoginManager:
             return False, "Account locked"
 
         success = self.verify_password(user_id, password)
-        self.attempts.append(LoginAttempt(
-            user_id=user_id,
-            ip_address=ip_address,
-            success=success,
-            failure_reason="" if success else "Invalid credentials"
-        ))
+        self.attempts.append(
+            LoginAttempt(
+                user_id=user_id,
+                ip_address=ip_address,
+                success=success,
+                failure_reason="" if success else "Invalid credentials",
+            )
+        )
 
         if success:
             return True, "Login successful"

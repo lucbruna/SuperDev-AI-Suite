@@ -1,4 +1,5 @@
 """Governance subsystem."""
+
 from .engine import GovernanceEngine
 from .models import (
     AccessLevel,
@@ -11,6 +12,12 @@ from .models import (
 )
 
 __all__ = [
-    "AccessLevel", "ComplianceStandard", "PolicyStatus", "AccessPolicy", "RetentionPolicy",
-    "AuditEntry", "ComplianceRule", "GovernanceEngine",
+    "AccessLevel",
+    "ComplianceStandard",
+    "PolicyStatus",
+    "AccessPolicy",
+    "RetentionPolicy",
+    "AuditEntry",
+    "ComplianceRule",
+    "GovernanceEngine",
 ]

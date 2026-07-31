@@ -1,4 +1,5 @@
 """BI Config — Configuration management for BI operations."""
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any

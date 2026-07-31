@@ -1,4 +1,5 @@
 """Comprehensive tests for cybersecurity_engine (Volume 39)."""
+
 import os
 import sys
 
@@ -57,7 +58,9 @@ class TestCybersecurityEngine(unittest.TestCase):
         self.engine = CybersecurityEngine()
 
     def test_report_threat(self):
-        threat = Threat(threat_type=ThreatType.MALWARE, severity=ThreatSeverity.HIGH, source_ip="1.2.3.4", target="server1")
+        threat = Threat(
+            threat_type=ThreatType.MALWARE, severity=ThreatSeverity.HIGH, source_ip="1.2.3.4", target="server1"
+        )
         result = self.engine.report_threat(threat)
         self.assertIsNotNone(self.engine.get_threat(result.threat_id))
 
@@ -206,7 +209,13 @@ class TestVulnerabilityEngine(unittest.TestCase):
         self.assertEqual(result.findings[0].severity, VulnSeverity.HIGH)
 
     def test_scan_dependencies(self):
-        deps = [{"name": "requests", "version": "2.20", "vulnerabilities": [{"severity": "high", "description": "CVE-1234", "cvss": 8.5}]}]
+        deps = [
+            {
+                "name": "requests",
+                "version": "2.20",
+                "vulnerabilities": [{"severity": "high", "description": "CVE-1234", "cvss": 8.5}],
+            }
+        ]
         result = self.engine.scan_dependencies("app", deps)
         self.assertEqual(len(result.findings), 1)
 
@@ -317,7 +326,9 @@ class TestMonitoringEngine(unittest.TestCase):
         self.assertEqual(snap.value, 85.0)
 
     def test_alert_generation(self):
-        rule = MonitoringRule(name="high_cpu", metric="cpu_usage", threshold=80.0, operator="gt", severity=AlertSeverity.WARNING)
+        rule = MonitoringRule(
+            name="high_cpu", metric="cpu_usage", threshold=80.0, operator="gt", severity=AlertSeverity.WARNING
+        )
         self.engine.add_rule(rule)
         self.engine.record_metric("cpu_usage", 90.0, "%")
         alerts = self.engine.get_alerts(severity=AlertSeverity.WARNING)
@@ -365,6 +376,7 @@ class TestIncidentResponse(unittest.TestCase):
 
     def test_playbook(self):
         from cybersecurity_engine.incident_response.incident_engine import Playbook
+
         pb = Playbook(name="Malware Response", incident_type="malware", estimated_time_minutes=30)
         self.engine.add_playbook(pb)
         found = self.engine.get_playbook("malware")
@@ -382,32 +394,45 @@ class TestComplianceEngine(unittest.TestCase):
 
     def test_add_control(self):
         from cybersecurity_engine.compliance.compliance_engine import ComplianceControl
-        ctrl = ComplianceControl(framework=ComplianceFramework.NIST, title="Access Control", status=ComplianceStatus.NOT_ASSESSED)
+
+        ctrl = ComplianceControl(
+            framework=ComplianceFramework.NIST, title="Access Control", status=ComplianceStatus.NOT_ASSESSED
+        )
         self.engine.add_control(ctrl)
         self.assertIsNotNone(self.engine.get_control(ctrl.control_id))
 
     def test_update_control(self):
         from cybersecurity_engine.compliance.compliance_engine import ComplianceControl
+
         ctrl = ComplianceControl(framework=ComplianceFramework.GDPR, title="Data Protection")
         self.engine.add_control(ctrl)
         self.assertTrue(self.engine.update_control_status(ctrl.control_id, ComplianceStatus.COMPLIANT, ["Evidence 1"]))
 
     def test_assess_framework(self):
         from cybersecurity_engine.compliance.compliance_engine import ComplianceControl
-        self.engine.add_control(ComplianceControl(framework=ComplianceFramework.SOC2, title="C1", status=ComplianceStatus.COMPLIANT))
-        self.engine.add_control(ComplianceControl(framework=ComplianceFramework.SOC2, title="C2", status=ComplianceStatus.NON_COMPLIANT))
+
+        self.engine.add_control(
+            ComplianceControl(framework=ComplianceFramework.SOC2, title="C1", status=ComplianceStatus.COMPLIANT)
+        )
+        self.engine.add_control(
+            ComplianceControl(framework=ComplianceFramework.SOC2, title="C2", status=ComplianceStatus.NON_COMPLIANT)
+        )
         assessment = self.engine.assess_framework(ComplianceFramework.SOC2)
         self.assertEqual(assessment.total_controls, 2)
         self.assertEqual(assessment.compliant, 1)
 
     def test_get_gaps(self):
         from cybersecurity_engine.compliance.compliance_engine import ComplianceControl
-        self.engine.add_control(ComplianceControl(framework=ComplianceFramework.HIPAA, title="H1", status=ComplianceStatus.NON_COMPLIANT))
+
+        self.engine.add_control(
+            ComplianceControl(framework=ComplianceFramework.HIPAA, title="H1", status=ComplianceStatus.NON_COMPLIANT)
+        )
         gaps = self.engine.get_gaps(ComplianceFramework.HIPAA)
         self.assertEqual(len(gaps), 1)
 
     def test_stats(self):
         from cybersecurity_engine.compliance.compliance_engine import ComplianceControl
+
         self.engine.add_control(ComplianceControl(framework=ComplianceFramework.NIST, title="N1"))
         stats = self.engine.get_stats()
         self.assertEqual(stats["total_controls"], 1)
@@ -424,12 +449,14 @@ class TestPenetrationEngine(unittest.TestCase):
 
     def test_add_target(self):
         from cybersecurity_engine.penetration.pentest_engine import PentestTarget
+
         eng = self.engine.create_engagement("Test")
         target = PentestTarget(hostname="web-server", ip_address="192.168.1.10", ports=[80, 443])
         self.assertTrue(self.engine.add_target(eng.engagement_id, target))
 
     def test_add_finding(self):
         from cybersecurity_engine.penetration.pentest_engine import PentestFinding
+
         eng = self.engine.create_engagement("Test")
         finding = PentestFinding(title="XSS", severity=PentestVulnFinding.HIGH, cvss=7.5)
         self.assertTrue(self.engine.add_finding(eng.engagement_id, finding))
@@ -461,6 +488,7 @@ class TestAuditEngine(unittest.TestCase):
 
     def test_query(self):
         from cybersecurity_engine.audit.audit_engine import AuditQuery
+
         self.engine.log(AuditAction.CREATE, user_id="u1")
         self.engine.log(AuditAction.READ, user_id="u2")
         q = AuditQuery(user_id="u1")

@@ -27,11 +27,30 @@ _SAFE_OPERATORS: dict[type, Any] = {
     ast.UAdd: operator.pos,
 }
 
-_BLOCKED = frozenset({
-    "__import__", "exec", "eval", "compile", "open", "getattr", "setattr",
-    "delattr", "globals", "locals", "vars", "dir", "type", "super",
-    "breakpoint", "exit", "quit", "help", "input", "print",
-})
+_BLOCKED = frozenset(
+    {
+        "__import__",
+        "exec",
+        "eval",
+        "compile",
+        "open",
+        "getattr",
+        "setattr",
+        "delattr",
+        "globals",
+        "locals",
+        "vars",
+        "dir",
+        "type",
+        "super",
+        "breakpoint",
+        "exit",
+        "quit",
+        "help",
+        "input",
+        "print",
+    }
+)
 
 
 def _safe_eval(node: ast.AST, context: dict[str, Any]) -> Any:

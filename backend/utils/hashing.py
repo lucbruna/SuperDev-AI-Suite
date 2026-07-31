@@ -9,6 +9,7 @@ def sha256_hash(value: str) -> str:
 def md5_hash(value: str) -> str:
     """DEPRECATED: Use sha256_hash() instead. MD5 is cryptographically weak."""
     import warnings
+
     warnings.warn("md5_hash is deprecated, use sha256_hash instead", DeprecationWarning, stacklevel=2)
     return hashlib.md5(value.encode("utf-8")).hexdigest()
 

@@ -1,4 +1,5 @@
 """Planning optimization for task ordering and resource allocation."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -10,8 +11,7 @@ class PlanningOptimizer:
     def __init__(self) -> None:
         self._optimization_count: int = 0
 
-    def optimize(self, tasks: list[dict[str, Any]],
-                 strategy: str = "time") -> list[dict[str, Any]]:
+    def optimize(self, tasks: list[dict[str, Any]], strategy: str = "time") -> list[dict[str, Any]]:
         self._optimization_count += 1
         if strategy == "time":
             return self._optimize_for_time(tasks)
@@ -35,10 +35,7 @@ class PlanningOptimizer:
 
     def estimate_completion_time(self, tasks: list[dict[str, Any]]) -> dict[str, Any]:
         effort_map = {"low": 5, "medium": 15, "high": 30}
-        total_minutes = sum(
-            effort_map.get(t.get("estimated_effort", "medium"), 15)
-            for t in tasks
-        )
+        total_minutes = sum(effort_map.get(t.get("estimated_effort", "medium"), 15) for t in tasks)
         return {
             "total_tasks": len(tasks),
             "estimated_minutes": total_minutes,

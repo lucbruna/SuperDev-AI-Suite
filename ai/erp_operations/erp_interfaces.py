@@ -1,4 +1,5 @@
 """ERP Interfaces — Protocol interfaces for ERP operations."""
+
 from abc import ABC, abstractmethod
 from typing import Any
 

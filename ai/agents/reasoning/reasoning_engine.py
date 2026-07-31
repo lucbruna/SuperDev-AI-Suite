@@ -1,4 +1,5 @@
 """Central reasoning engine coordinating all reasoning subsystems."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -56,13 +57,15 @@ class ReasoningEngine:
             evaluated.append({"hypothesis": h, "score": score})
         evaluated.sort(key=lambda x: x["score"], reverse=True)
         best = evaluated[0] if evaluated else None
-        decision = self._decision.decide({
-            "problem": problem,
-            "inferences": inferred,
-            "deductions": deductions,
-            "hypotheses": evaluated,
-            "best": best,
-        })
+        decision = self._decision.decide(
+            {
+                "problem": problem,
+                "inferences": inferred,
+                "deductions": deductions,
+                "hypotheses": evaluated,
+                "best": best,
+            }
+        )
         conclusion_str = decision.get("chosen", problem) if isinstance(decision, dict) else str(decision)
         verified_result = self._verification.verify(conclusion_str, facts) if best else {"verified": False}
         verified = verified_result.get("verified", False)

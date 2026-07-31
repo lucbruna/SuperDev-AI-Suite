@@ -1,6 +1,7 @@
 """
 Settings Store
 """
+
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -43,4 +44,8 @@ class SettingsStore:
         self.listeners.append(callback)
 
     def render(self) -> dict[str, Any]:
-        return {"theme": self.state.theme, "language": self.state.language, "sidebarCollapsed": self.state.sidebar_collapsed}
+        return {
+            "theme": self.state.theme,
+            "language": self.state.language,
+            "sidebarCollapsed": self.state.sidebar_collapsed,
+        }

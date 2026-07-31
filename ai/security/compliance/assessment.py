@@ -1,4 +1,5 @@
 """Compliance assessment."""
+
 from __future__ import annotations
 
 import time
@@ -17,19 +18,25 @@ class Assessment:
         self.results: list[dict[str, Any]] = []
         self.status = "in_progress"
 
+
 class ComplianceAssessor:
     def __init__(self) -> None:
         self._assessments: dict[str, Assessment] = {}
+
     def start_assessment(self, standard: str, assessor: str, scope: str = "") -> Assessment:
         assessment = Assessment(standard, assessor, scope)
         self._assessments[assessment.assessment_id] = assessment
         return assessment
+
     def add_result(self, assessment_id: str, control: str, status: str, evidence: str = "") -> bool:
         assessment = self._assessments.get(assessment_id)
         if assessment:
-            assessment.results.append({"control": control, "status": status, "evidence": evidence, "timestamp": time.time()})
+            assessment.results.append(
+                {"control": control, "status": status, "evidence": evidence, "timestamp": time.time()}
+            )
             return True
         return False
+
     def complete(self, assessment_id: str) -> bool:
         assessment = self._assessments.get(assessment_id)
         if assessment:
@@ -37,13 +44,22 @@ class ComplianceAssessor:
             assessment.status = "completed"
             return True
         return False
+
     def get_assessment(self, assessment_id: str) -> dict[str, Any] | None:
         assessment = self._assessments.get(assessment_id)
         if assessment:
             passed = sum(1 for r in assessment.results if r["status"] == "pass")
             total = len(assessment.results)
-            return {"id": assessment.assessment_id, "standard": assessment.standard, "status": assessment.status, "results_count": total, "passed": passed, "score": (passed / max(total, 1)) * 100}
+            return {
+                "id": assessment.assessment_id,
+                "standard": assessment.standard,
+                "status": assessment.status,
+                "results_count": total,
+                "passed": passed,
+                "score": (passed / max(total, 1)) * 100,
+            }
         return None
+
     def list_assessments(self, standard: str = "") -> list[str]:
         if standard:
             return [a.assessment_id for a in self._assessments.values() if a.standard == standard]

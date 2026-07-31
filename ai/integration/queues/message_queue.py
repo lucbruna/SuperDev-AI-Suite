@@ -1,6 +1,7 @@
 """
 Message Queue - Message processing
 """
+
 import contextlib
 import hashlib
 from collections.abc import Callable

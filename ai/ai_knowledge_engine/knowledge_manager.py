@@ -1,4 +1,5 @@
 """Knowledge Manager — High-level knowledge management operations."""
+
 from typing import Any
 
 from .knowledge_engine import KnowledgeEngine
@@ -19,7 +20,14 @@ class KnowledgeManager:
     def engine(self) -> KnowledgeEngine:
         return self._engine
 
-    def add_knowledge(self, title: str, content: str, knowledge_type: str = "fact", source: str = "user_input", tags: list[str] | None = None) -> Knowledge:
+    def add_knowledge(
+        self,
+        title: str,
+        content: str,
+        knowledge_type: str = "fact",
+        source: str = "user_input",
+        tags: list[str] | None = None,
+    ) -> Knowledge:
         kt = KnowledgeType(knowledge_type) if knowledge_type in [e.value for e in KnowledgeType] else KnowledgeType.FACT
         st = SourceType(source) if source in [e.value for e in SourceType] else SourceType.USER_INPUT
         kb = Knowledge(title=title, content=content, knowledge_type=kt, source=st, tags=tags or [])

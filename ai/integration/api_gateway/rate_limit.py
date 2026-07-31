@@ -1,6 +1,7 @@
 """
 Rate Limiter - Request rate limiting
 """
+
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
@@ -47,9 +48,16 @@ class RateLimiter:
         count = len(self.counters[key])
         if count >= config.max_requests:
             self.blocked[key] = now + timedelta(seconds=config.window_seconds)
-            return RateLimitResult(allowed=False, remaining=0, limit=config.max_requests, retry_after=config.window_seconds)
+            return RateLimitResult(
+                allowed=False, remaining=0, limit=config.max_requests, retry_after=config.window_seconds
+            )
         self.counters[key].append(now)
-        return RateLimitResult(allowed=True, remaining=config.max_requests - count - 1, limit=config.max_requests, reset_at=window_start + timedelta(seconds=config.window_seconds))
+        return RateLimitResult(
+            allowed=True,
+            remaining=config.max_requests - count - 1,
+            limit=config.max_requests,
+            reset_at=window_start + timedelta(seconds=config.window_seconds),
+        )
 
     def reset(self, key: str) -> None:
         self.counters.pop(key, None)

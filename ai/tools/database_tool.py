@@ -42,6 +42,7 @@ class DatabaseTool(BaseTool):
 
     async def _execute_sqlite(self, conn_str: str, query: str, params: list) -> dict[str, Any]:
         import sqlite3
+
         db_path = conn_str.replace("sqlite:///", "") if conn_str else ":memory:"
         conn = sqlite3.connect(db_path)
         try:
@@ -60,6 +61,7 @@ class DatabaseTool(BaseTool):
     async def _execute_postgres(self, conn_str: str, query: str, params: list) -> dict[str, Any]:
         try:
             import asyncpg
+
             conn = await asyncpg.connect(conn_str)
             try:
                 if query.strip().upper().startswith("SELECT"):

@@ -1,4 +1,5 @@
 """Analytics protocols."""
+
 from typing import Any, Protocol, runtime_checkable
 
 

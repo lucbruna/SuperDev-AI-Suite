@@ -1,6 +1,7 @@
 """
 Certificate Management
 """
+
 import hashlib
 import secrets
 from dataclasses import dataclass, field
@@ -41,9 +42,12 @@ class CertificateManager:
         serial = secrets.token_hex(20)
         fp = hashlib.sha256(subject.encode()).hexdigest()[:32]
         cert = Certificate(
-            cert_id=cert_id, subject=subject, issuer=subject,
-            serial_number=serial, fingerprint=fp,
-            key_usage=["digital_signature", "key_encipherment"]
+            cert_id=cert_id,
+            subject=subject,
+            issuer=subject,
+            serial_number=serial,
+            fingerprint=fp,
+            key_usage=["digital_signature", "key_encipherment"],
         )
         self.certificates[cert_id] = cert
         return cert

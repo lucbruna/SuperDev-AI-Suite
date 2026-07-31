@@ -86,7 +86,12 @@ BEDROCK_MODEL_ALIAS: dict[str, str] = {
 
 def _resolve_bedrock_model(model: str) -> str:
     """Resolve a short model name to a full Bedrock model ID."""
-    if model.startswith("anthropic.") or model.startswith("meta.") or model.startswith("mistral.") or model.startswith("amazon."):
+    if (
+        model.startswith("anthropic.")
+        or model.startswith("meta.")
+        or model.startswith("mistral.")
+        or model.startswith("amazon.")
+    ):
         return model
     resolved = BEDROCK_MODEL_ALIAS.get(model)
     if resolved:
@@ -139,8 +144,15 @@ class AWSBedrockProvider(BaseLLMProvider):
             self.set_rate_limit(requests_per_minute)
         self._supports_converse = resolved in BEDROCK_CONVERSE_MODELS or any(
             resolved.startswith(prefix)
-            for prefix in ("anthropic.claude-3-5", "anthropic.claude-3-", "anthropic.claude-2", "anthropic.claude-instant",
-                           "meta.llama3-", "meta.llama3-1-", "mistral.")
+            for prefix in (
+                "anthropic.claude-3-5",
+                "anthropic.claude-3-",
+                "anthropic.claude-2",
+                "anthropic.claude-instant",
+                "meta.llama3-",
+                "meta.llama3-1-",
+                "mistral.",
+            )
         )
 
     # ── Client ──────────────────────────────────────────────────────
@@ -165,8 +177,11 @@ class AWSBedrockProvider(BaseLLMProvider):
                 )
                 # We create clients per-call via _get_async_client()
             except ImportError:
-                raise ProviderError(ProviderErrorCode.API_ERROR,
-                                    "aioboto3 library required. pip install aioboto3 botocore", provider="aws")
+                raise ProviderError(
+                    ProviderErrorCode.API_ERROR,
+                    "aioboto3 library required. pip install aioboto3 botocore",
+                    provider="aws",
+                )
         return self._session
 
     async def _get_async_client(self):
@@ -191,7 +206,11 @@ class AWSBedrockProvider(BaseLLMProvider):
                 except ProviderError as e:
                     attempt += 1
                     if attempt > self._max_retries or not _is_retryable(e, self._retry_codes):
-                        yield {"content": f"[{self._name} error: {e.message}]", "finish_reason": "error", "error": e.message}
+                        yield {
+                            "content": f"[{self._name} error: {e.message}]",
+                            "finish_reason": "error",
+                            "error": e.message,
+                        }
                         break
                     retry_after = e.retry_after or _exponential_backoff(attempt - 1)
                     await asyncio.sleep(retry_after)
@@ -199,7 +218,11 @@ class AWSBedrockProvider(BaseLLMProvider):
                     pe = ProviderError.from_exception(e, self._name)
                     attempt += 1
                     if attempt > self._max_retries or not _is_retryable(pe, self._retry_codes):
-                        yield {"content": f"[{self._name} error: {pe.message}]", "finish_reason": "error", "error": pe.message}
+                        yield {
+                            "content": f"[{self._name} error: {pe.message}]",
+                            "finish_reason": "error",
+                            "error": pe.message,
+                        }
                         break
                     await asyncio.sleep(_exponential_backoff(attempt - 1))
 
@@ -251,14 +274,16 @@ class AWSBedrockProvider(BaseLLMProvider):
         client = await self._get_async_client()
         try:
             # Titan text format
-            body = json.dumps({
-                "inputText": prompt,
-                "textGenerationConfig": {
-                    "maxTokenCount": kwargs.get("max_tokens", 4096),
-                    "temperature": kwargs.get("temperature", 0.7),
-                    "topP": kwargs.get("top_p", 1.0),
-                },
-            })
+            body = json.dumps(
+                {
+                    "inputText": prompt,
+                    "textGenerationConfig": {
+                        "maxTokenCount": kwargs.get("max_tokens", 4096),
+                        "temperature": kwargs.get("temperature", 0.7),
+                        "topP": kwargs.get("top_p", 1.0),
+                    },
+                }
+            )
 
             resp = await client.invoke_model(
                 modelId=model,
@@ -357,7 +382,9 @@ class AWSBedrockProvider(BaseLLMProvider):
                         provider="aws",
                     )
                 elif "modelStreamErrorException" in event:
-                    raise self._classify_error(Exception(event["modelStreamErrorException"].get("message", "Model stream error")))
+                    raise self._classify_error(
+                        Exception(event["modelStreamErrorException"].get("message", "Model stream error"))
+                    )
 
         except Exception as e:
             if not isinstance(e, ProviderError):
@@ -384,14 +411,16 @@ class AWSBedrockProvider(BaseLLMProvider):
             tool_calls = []
             for tp in tool_parts:
                 tu = tp["toolUse"]
-                tool_calls.append({
-                    "id": tu.get("toolUseId", ""),
-                    "type": "function",
-                    "function": {
-                        "name": tu.get("name", ""),
-                        "arguments": json.dumps(tu.get("input", {})),
-                    },
-                })
+                tool_calls.append(
+                    {
+                        "id": tu.get("toolUseId", ""),
+                        "type": "function",
+                        "function": {
+                            "name": tu.get("name", ""),
+                            "arguments": json.dumps(tu.get("input", {})),
+                        },
+                    }
+                )
 
         stop_reason_raw = output.get("stopReason", "stop")
         finish_reason = {
@@ -431,10 +460,12 @@ class AWSBedrockProvider(BaseLLMProvider):
             messages.append({"role": role if role != "system" else "user", "content": content})
 
         # Add current prompt
-        messages.append({
-            "role": "user",
-            "content": [{"text": prompt}],
-        })
+        messages.append(
+            {
+                "role": "user",
+                "content": [{"text": prompt}],
+            }
+        )
 
         return messages
 
@@ -462,15 +493,17 @@ class AWSBedrockProvider(BaseLLMProvider):
         for tool in tools:
             if tool.get("type") == "function":
                 fn = tool["function"]
-                bedrock_tools.append({
-                    "toolSpec": {
-                        "name": fn.get("name", ""),
-                        "description": fn.get("description", ""),
-                        "inputSchema": {
-                            "json": fn.get("parameters", {}),
-                        },
+                bedrock_tools.append(
+                    {
+                        "toolSpec": {
+                            "name": fn.get("name", ""),
+                            "description": fn.get("description", ""),
+                            "inputSchema": {
+                                "json": fn.get("parameters", {}),
+                            },
+                        }
                     }
-                })
+                )
         return {"tools": bedrock_tools}
 
     # ── Error classification ────────────────────────────────────────
@@ -505,7 +538,13 @@ class AWSBedrockProvider(BaseLLMProvider):
                 # List foundation models as health check
                 await client.list_foundation_models()
                 elapsed = (time_module.monotonic() - start) * 1000
-                return {"status": "healthy", "latency_ms": round(elapsed, 1), "provider": "aws", "model": self._model, "region": self._region}
+                return {
+                    "status": "healthy",
+                    "latency_ms": round(elapsed, 1),
+                    "provider": "aws",
+                    "model": self._model,
+                    "region": self._region,
+                }
             finally:
                 await client.__aexit__(None, None, None)
         except Exception as e:
@@ -516,13 +555,55 @@ class AWSBedrockProvider(BaseLLMProvider):
 
     async def list_models(self) -> list[dict[str, Any]]:
         return [
-            {"id": "anthropic.claude-3-5-sonnet-20241022-v2:0", "name": "Claude 3.5 Sonnet", "provider": "Anthropic", "capabilities": ["chat", "vision", "tools"], "context_window": 200000},
-            {"id": "anthropic.claude-3-opus-20240229-v1:0", "name": "Claude 3 Opus", "provider": "Anthropic", "capabilities": ["chat", "vision", "tools"], "context_window": 200000},
-            {"id": "anthropic.claude-3-haiku-20240307-v1:0", "name": "Claude 3 Haiku", "provider": "Anthropic", "capabilities": ["chat", "vision", "tools"], "context_window": 200000},
-            {"id": "meta.llama3-1-70b-instruct-v1:0", "name": "Llama 3.1 70B", "provider": "Meta", "capabilities": ["chat", "tools"], "context_window": 128000},
-            {"id": "meta.llama3-1-8b-instruct-v1:0", "name": "Llama 3.1 8B", "provider": "Meta", "capabilities": ["chat", "tools"], "context_window": 128000},
-            {"id": "mistral.mistral-large-2402-v1:0", "name": "Mistral Large", "provider": "Mistral", "capabilities": ["chat", "tools"], "context_window": 32000},
-            {"id": "amazon.titan-text-premier-v1:0", "name": "Titan Text Premier", "provider": "Amazon", "capabilities": ["chat"], "context_window": 32000},
+            {
+                "id": "anthropic.claude-3-5-sonnet-20241022-v2:0",
+                "name": "Claude 3.5 Sonnet",
+                "provider": "Anthropic",
+                "capabilities": ["chat", "vision", "tools"],
+                "context_window": 200000,
+            },
+            {
+                "id": "anthropic.claude-3-opus-20240229-v1:0",
+                "name": "Claude 3 Opus",
+                "provider": "Anthropic",
+                "capabilities": ["chat", "vision", "tools"],
+                "context_window": 200000,
+            },
+            {
+                "id": "anthropic.claude-3-haiku-20240307-v1:0",
+                "name": "Claude 3 Haiku",
+                "provider": "Anthropic",
+                "capabilities": ["chat", "vision", "tools"],
+                "context_window": 200000,
+            },
+            {
+                "id": "meta.llama3-1-70b-instruct-v1:0",
+                "name": "Llama 3.1 70B",
+                "provider": "Meta",
+                "capabilities": ["chat", "tools"],
+                "context_window": 128000,
+            },
+            {
+                "id": "meta.llama3-1-8b-instruct-v1:0",
+                "name": "Llama 3.1 8B",
+                "provider": "Meta",
+                "capabilities": ["chat", "tools"],
+                "context_window": 128000,
+            },
+            {
+                "id": "mistral.mistral-large-2402-v1:0",
+                "name": "Mistral Large",
+                "provider": "Mistral",
+                "capabilities": ["chat", "tools"],
+                "context_window": 32000,
+            },
+            {
+                "id": "amazon.titan-text-premier-v1:0",
+                "name": "Titan Text Premier",
+                "provider": "Amazon",
+                "capabilities": ["chat"],
+                "context_window": 32000,
+            },
         ]
 
     # ── Cleanup ──────────────────────────────────────────────────────

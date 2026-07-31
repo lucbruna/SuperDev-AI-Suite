@@ -29,12 +29,14 @@ class HealthChecks:
     def run_checks(self) -> list[dict[str, Any]]:
         results: list[dict[str, Any]] = []
         for check in self._checks.values():
-            results.append({
-                "name": check["name"],
-                "endpoint": check["endpoint"],
-                "status": "healthy",
-                "response_time_ms": 42,
-            })
+            results.append(
+                {
+                    "name": check["name"],
+                    "endpoint": check["endpoint"],
+                    "status": "healthy",
+                    "response_time_ms": 42,
+                }
+            )
         return results
 
     def to_dict(self) -> dict[str, Any]:

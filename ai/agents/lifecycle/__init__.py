@@ -1,4 +1,5 @@
 """Agent lifecycle management subsystem."""
+
 from __future__ import annotations
 
 from .activation import ActivationManager

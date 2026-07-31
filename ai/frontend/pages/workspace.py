@@ -1,6 +1,7 @@
 """
 Workspace Page
 """
+
 from dataclasses import dataclass
 from typing import Any
 
@@ -45,4 +46,7 @@ class WorkspacePage:
             self.show_ai_panel = not self.show_ai_panel
 
     def render(self) -> dict[str, Any]:
-        return {"tabs": [{"id": t.id, "title": t.title, "modified": t.modified} for t in self.tabs], "activeTab": self.active_tab_id}
+        return {
+            "tabs": [{"id": t.id, "title": t.title, "modified": t.modified} for t in self.tabs],
+            "activeTab": self.active_tab_id,
+        }

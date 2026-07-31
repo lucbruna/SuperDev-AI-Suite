@@ -33,18 +33,19 @@ class UserRepository(BaseRepository[User]):
     ) -> tuple[list[User], int]:
         """Search users by email, username, or full name."""
         pattern = f"%{query_str}%"
-        query = (
-            select(self.model)
+        query = select(self.model).where(
+            (self.model.email.ilike(pattern))
+            | (self.model.username.ilike(pattern))
+            | (self.model.full_name.ilike(pattern))
+        )
+        count_query = (
+            select(func.count())
+            .select_from(self.model)
             .where(
                 (self.model.email.ilike(pattern))
                 | (self.model.username.ilike(pattern))
                 | (self.model.full_name.ilike(pattern))
             )
-        )
-        count_query = select(func.count()).select_from(self.model).where(
-            (self.model.email.ilike(pattern))
-            | (self.model.username.ilike(pattern))
-            | (self.model.full_name.ilike(pattern))
         )
 
         total_result = await self.db.execute(count_query)

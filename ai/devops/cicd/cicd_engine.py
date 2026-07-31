@@ -1,4 +1,5 @@
 """CI/CD engine."""
+
 from __future__ import annotations
 
 import time
@@ -10,12 +11,20 @@ class CICDEngine:
         self._pipelines: dict[str, dict[str, Any]] = {}
         self._runs: list[dict[str, Any]] = []
         self._started = False
+
     def start(self) -> None:
         self._started = True
+
     def create_pipeline(self, name: str, stages: list[str] = None) -> dict[str, Any]:
-        pipeline = {"name": name, "stages": stages or ["build", "test", "deploy"], "status": "active", "created_at": time.time()}
+        pipeline = {
+            "name": name,
+            "stages": stages or ["build", "test", "deploy"],
+            "status": "active",
+            "created_at": time.time(),
+        }
         self._pipelines[name] = pipeline
         return pipeline
+
     def run_pipeline(self, name: str, trigger: str = "manual") -> dict[str, Any]:
         if name not in self._pipelines:
             return {"error": "not_found"}
@@ -26,16 +35,21 @@ class CICDEngine:
         run = {"pipeline": name, "trigger": trigger, "stages": results, "status": "success", "timestamp": time.time()}
         self._runs.append(run)
         return run
+
     def get_pipeline(self, name: str) -> dict[str, Any]:
         return self._pipelines.get(name, {"error": "not_found"})
+
     def list_pipelines(self) -> list[dict[str, Any]]:
         return list(self._pipelines.values())
+
     def get_runs(self, pipeline: str = "", limit: int = 20) -> list[dict[str, Any]]:
         runs = self._runs
         if pipeline:
             runs = [r for r in runs if r["pipeline"] == pipeline]
         return runs[-limit:]
+
     def count(self) -> int:
         return len(self._pipelines)
+
     def is_running(self) -> bool:
         return self._started

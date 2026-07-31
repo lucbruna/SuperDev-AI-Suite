@@ -1,4 +1,5 @@
 """Edge AI Runtime Engine - Local AI processing on edge devices."""
+
 import hashlib
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -55,7 +56,9 @@ class EdgeEngine:
         self.inference_log: list[InferenceResult] = []
         self.handlers: dict[str, Callable] = {}
 
-    def register_model(self, name: str, version: str = "1.0", size_mb: float = 0.0, accelerator: AcceleratorType = AcceleratorType.CPU) -> EdgeModel:
+    def register_model(
+        self, name: str, version: str = "1.0", size_mb: float = 0.0, accelerator: AcceleratorType = AcceleratorType.CPU
+    ) -> EdgeModel:
         model_id = hashlib.sha256(f"{name}{version}".encode()).hexdigest()[:16]
         model = EdgeModel(model_id=model_id, name=name, version=version, size_mb=size_mb, accelerator=accelerator)
         self.models[model_id] = model
@@ -99,11 +102,20 @@ class EdgeEngine:
         if handler:
             try:
                 output = handler("infer", input_data)
-                result = InferenceResult(result_id=result_id, model_id=model_id, input_data=input_data, output_data=output, confidence=0.95, latency_ms=10.0)
+                result = InferenceResult(
+                    result_id=result_id,
+                    model_id=model_id,
+                    input_data=input_data,
+                    output_data=output,
+                    confidence=0.95,
+                    latency_ms=10.0,
+                )
             except Exception:
                 return None
         else:
-            result = InferenceResult(result_id=result_id, model_id=model_id, input_data=input_data, output_data=input_data, confidence=0.0)
+            result = InferenceResult(
+                result_id=result_id, model_id=model_id, input_data=input_data, output_data=input_data, confidence=0.0
+            )
         self.inference_log.append(result)
         self.inference_cache[result_id] = result
         return result

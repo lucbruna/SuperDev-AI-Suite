@@ -18,6 +18,7 @@ class SemanticIndex:
             return self._index[key]
         try:
             from openai import OpenAI
+
             client = OpenAI()
             response = client.embeddings.create(model=self._embedding_model, input=text)
             embedding = response.data[0].embedding

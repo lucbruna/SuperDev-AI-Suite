@@ -1,4 +1,5 @@
 """ERP Models — Core data models for ERP operations."""
+
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime

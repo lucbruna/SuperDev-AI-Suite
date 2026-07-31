@@ -43,10 +43,7 @@ class FallbackHandler:
         self._errors[provider].append(error)
 
     def get_fallback_history(self) -> list[dict[str, Any]]:
-        return [
-            {"provider": p, "errors": errs}
-            for p, errs in self._errors.items()
-        ]
+        return [{"provider": p, "errors": errs} for p, errs in self._errors.items()]
 
     @property
     def total_attempts(self) -> int:

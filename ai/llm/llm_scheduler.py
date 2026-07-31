@@ -11,6 +11,7 @@ from .llm_logger import LLMLogger
 @dataclass
 class ScheduledTask:
     """Represents a scheduled LLM task."""
+
     task_id: str
     provider: str
     prompt: str

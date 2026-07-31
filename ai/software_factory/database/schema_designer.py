@@ -1,4 +1,5 @@
 """Schema designer for creating database schemas."""
+
 from typing import Any
 
 from .models import Column, ColumnType, DatabaseSchema, ForeignKey, Index, Table
@@ -15,8 +16,7 @@ class SchemaDesigner:
         self._schemas[schema.schema_id] = schema
         return schema
 
-    def create_table(self, schema: DatabaseSchema, name: str,
-                     columns: list[dict[str, Any]]) -> Table:
+    def create_table(self, schema: DatabaseSchema, name: str, columns: list[dict[str, Any]]) -> Table:
         table = Table(name=name)
         for col_def in columns:
             col_type_str = col_def.get("type", "varchar")
@@ -41,11 +41,14 @@ class SchemaDesigner:
         table.indexes.append(idx)
         return idx
 
-    def add_foreign_key(self, table: Table, name: str, columns: list[str],
-                        ref_table: str, ref_columns: list[str]) -> ForeignKey:
+    def add_foreign_key(
+        self, table: Table, name: str, columns: list[str], ref_table: str, ref_columns: list[str]
+    ) -> ForeignKey:
         fk = ForeignKey(
-            name=name, columns=columns,
-            reference_table=ref_table, reference_columns=ref_columns,
+            name=name,
+            columns=columns,
+            reference_table=ref_table,
+            reference_columns=ref_columns,
         )
         table.foreign_keys.append(fk)
         return fk

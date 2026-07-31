@@ -31,16 +31,19 @@ class Consistency:
 
     def run_checks(self) -> list[dict[str, Any]]:
         import random
+
         results = []
         for check in self._checks.values():
             passed = random.random() > 0.2
-            results.append({
-                "check": check["name"],
-                "query": check["query"],
-                "expected": check["expected"],
-                "actual": check["expected"] if passed else "MISMATCH",
-                "passed": passed,
-            })
+            results.append(
+                {
+                    "check": check["name"],
+                    "query": check["query"],
+                    "expected": check["expected"],
+                    "actual": check["expected"] if passed else "MISMATCH",
+                    "passed": passed,
+                }
+            )
         return results
 
     @property
@@ -51,11 +54,13 @@ class Consistency:
         repairs = []
         for issue in issues:
             if not issue.get("passed", True):
-                repairs.append({
-                    "check": issue.get("check", "unknown"),
-                    "action": "Data synchronized from replica",
-                    "status": "repaired",
-                })
+                repairs.append(
+                    {
+                        "check": issue.get("check", "unknown"),
+                        "action": "Data synchronized from replica",
+                        "status": "repaired",
+                    }
+                )
         return repairs
 
     def to_dict(self) -> dict[str, Any]:

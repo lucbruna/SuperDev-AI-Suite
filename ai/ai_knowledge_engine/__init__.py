@@ -43,16 +43,40 @@ from .vector_memory import VectorSubEngine
 
 __all__ = [
     # Enums
-    "KnowledgeType", "SourceType", "ConfidenceLevel", "ValidationStatus", "LearningPhase",
+    "KnowledgeType",
+    "SourceType",
+    "ConfidenceLevel",
+    "ValidationStatus",
+    "LearningPhase",
     # Models
-    "Knowledge", "Document", "ResearchQuery", "ResearchResult", "LearningExperience", "EmbeddingVector",
+    "Knowledge",
+    "Document",
+    "ResearchQuery",
+    "ResearchResult",
+    "LearningExperience",
+    "EmbeddingVector",
     # Core engines
-    "KnowledgeEngine", "ResearchEngine", "KnowledgeManager",
+    "KnowledgeEngine",
+    "ResearchEngine",
+    "KnowledgeManager",
     # Subsystems
-    "ResearchSubEngine", "DocumentSubEngine", "VectorSubEngine", "EmbeddingSubEngine",
-    "ReasoningSubEngine", "LearningSubEngine", "ValidationSubEngine", "GraphSubEngine",
+    "ResearchSubEngine",
+    "DocumentSubEngine",
+    "VectorSubEngine",
+    "EmbeddingSubEngine",
+    "ReasoningSubEngine",
+    "LearningSubEngine",
+    "ValidationSubEngine",
+    "GraphSubEngine",
     # Infrastructure
-    "KnowledgeConfig", "KnowledgeFactory", "KnowledgeRegistry", "KnowledgeRuntime",
-    "KnowledgeContext", "KnowledgeEvent", "KnowledgeEventType",
-    "KnowledgeMetrics", "KnowledgeLogger", "KnowledgeSecurity",
+    "KnowledgeConfig",
+    "KnowledgeFactory",
+    "KnowledgeRegistry",
+    "KnowledgeRuntime",
+    "KnowledgeContext",
+    "KnowledgeEvent",
+    "KnowledgeEventType",
+    "KnowledgeMetrics",
+    "KnowledgeLogger",
+    "KnowledgeSecurity",
 ]

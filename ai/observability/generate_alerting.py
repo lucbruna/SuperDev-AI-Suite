@@ -1,15 +1,20 @@
 """Alerting subsystem generator."""
+
 import os
 
-BASE = r'C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\observability\alerting'
+BASE = r"C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\observability\alerting"
+
 
 def w(path, content):
     full = os.path.join(BASE, path)
     os.makedirs(os.path.dirname(full), exist_ok=True)
-    with open(full, 'w', encoding='utf-8') as f:
+    with open(full, "w", encoding="utf-8") as f:
         f.write(content)
 
-w('alert_engine.py', '''"""Alerting subsystem engine."""
+
+w(
+    "alert_engine.py",
+    '''"""Alerting subsystem engine."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time
@@ -37,9 +42,12 @@ class AlertEngine:
         return triggered
     def get_status(self) -> Dict[str, Any]:
         return {"running": self._started, "rules": len(self._rules), "active_alerts": len(self._active_alerts)}
-''')
+''',
+)
 
-w('rule_manager.py', '''"""Alert rule management."""
+w(
+    "rule_manager.py",
+    '''"""Alert rule management."""
 from __future__ import annotations
 from typing import Any, Callable, Dict, List
 import time
@@ -89,9 +97,12 @@ class RuleManager:
         return triggered
     def list_rules(self) -> List[Dict[str, Any]]:
         return [{"name": r.name, "severity": r.severity, "enabled": r.enabled, "trigger_count": r.trigger_count} for r in self._rules.values()]
-''')
+''',
+)
 
-w('notification.py', '''"""Alert notifications."""
+w(
+    "notification.py",
+    '''"""Alert notifications."""
 from __future__ import annotations
 from typing import Any, Callable, Dict, List
 
@@ -124,9 +135,12 @@ class AlertNotifier:
         return self._history[-limit:]
     def list_channels(self) -> List[str]:
         return list(self._channels.keys())
-''')
+''',
+)
 
-w('escalation.py', '''"""Alert escalation."""
+w(
+    "escalation.py",
+    '''"""Alert escalation."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import time
@@ -161,9 +175,12 @@ class EscalationManager:
         return [{"name": p.name, "levels": len(p.levels), "active": p.active} for p in self._policies.values()]
     def get_escalations(self, limit: int = 50) -> List[Dict[str, Any]]:
         return self._escalations[-limit:]
-''')
+''',
+)
 
-w('priority.py', '''"""Alert priority."""
+w(
+    "priority.py",
+    '''"""Alert priority."""
 from __future__ import annotations
 from enum import Enum
 
@@ -187,9 +204,12 @@ class PriorityManager:
         return False
     def list_priorities(self) -> Dict[str, str]:
         return {k: v.value for k, v in self._mapping.items()}
-''')
+''',
+)
 
-w('suppression.py', '''"""Alert suppression."""
+w(
+    "suppression.py",
+    '''"""Alert suppression."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import time
@@ -216,9 +236,12 @@ class AlertSuppression:
         before = len(self._suppressions)
         self._suppressions = [s for s in self._suppressions if s["end_time"] > now]
         return before - len(self._suppressions)
-''')
+''',
+)
 
-w('history.py', '''"""Alert history."""
+w(
+    "history.py",
+    '''"""Alert history."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import time
@@ -248,9 +271,12 @@ class AlertHistory:
         return n
     def get_recent(self, limit: int = 20) -> List[Dict[str, Any]]:
         return self._entries[-limit:]
-''')
+''',
+)
 
-w('__init__.py', '''"""Alerting subsystem."""
+w(
+    "__init__.py",
+    '''"""Alerting subsystem."""
 from .alert_engine import AlertEngine
 from .rule_manager import RuleManager
 from .notification import AlertNotifier
@@ -263,6 +289,7 @@ __all__ = [
     "AlertEngine", "RuleManager", "AlertNotifier", "EscalationManager",
     "PriorityManager", "AlertPriority", "AlertSuppression", "AlertHistory"
 ]
-''')
+''',
+)
 
 print("alerting/: 8 files created")

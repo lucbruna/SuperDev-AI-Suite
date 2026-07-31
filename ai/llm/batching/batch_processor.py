@@ -21,13 +21,15 @@ class BatchProcessor:
 
     def add_task(self, provider: str, prompt: str, **kwargs: Any) -> str:
         task_id = str(uuid.uuid4())[:8]
-        self._queue.append({
-            "task_id": task_id,
-            "provider": provider,
-            "prompt": prompt,
-            "params": kwargs,
-            "added_at": time.time(),
-        })
+        self._queue.append(
+            {
+                "task_id": task_id,
+                "provider": provider,
+                "prompt": prompt,
+                "params": kwargs,
+                "added_at": time.time(),
+            }
+        )
         return task_id
 
     async def process_all(self, batch_size: int = 10) -> list[dict[str, Any]]:
@@ -41,9 +43,7 @@ class BatchProcessor:
 
             for task in batch:
                 try:
-                    result = await self._executor.execute(
-                        task["provider"], task["prompt"], **task["params"]
-                    )
+                    result = await self._executor.execute(task["provider"], task["prompt"], **task["params"])
                     result["task_id"] = task["task_id"]
                     if result.get("success", False):
                         self._completed.append(result)

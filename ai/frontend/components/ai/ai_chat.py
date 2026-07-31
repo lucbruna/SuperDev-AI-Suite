@@ -1,6 +1,7 @@
 """
 AI Chat Interface
 """
+
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum

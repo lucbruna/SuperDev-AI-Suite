@@ -1,6 +1,7 @@
 """
 Dead Letter Queue - Unprocessable messages
 """
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -24,9 +25,18 @@ class DeadLetterQueue:
         self.letters: dict[str, DeadLetter] = {}
         self.reviewers: list[str] = []
 
-    def add(self, original_queue: str, message_id: str, payload: Any = None, error: str = "", attempts: int = 0) -> DeadLetter:
+    def add(
+        self, original_queue: str, message_id: str, payload: Any = None, error: str = "", attempts: int = 0
+    ) -> DeadLetter:
         letter_id = hashlib.sha256(f"{message_id}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
-        letter = DeadLetter(letter_id=letter_id, original_queue=original_queue, message_id=message_id, payload=payload, error=error, attempts=attempts)
+        letter = DeadLetter(
+            letter_id=letter_id,
+            original_queue=original_queue,
+            message_id=message_id,
+            payload=payload,
+            error=error,
+            attempts=attempts,
+        )
         self.letters[letter_id] = letter
         return letter
 

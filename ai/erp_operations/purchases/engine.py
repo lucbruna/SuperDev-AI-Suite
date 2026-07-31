@@ -1,4 +1,5 @@
 """Purchases engine."""
+
 import uuid
 
 from .models import PriceComparison, PurchaseOrder, PurchaseOrderStatus

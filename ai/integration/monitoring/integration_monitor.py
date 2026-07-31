@@ -1,6 +1,7 @@
 """
 Integration Monitor - Core monitoring
 """
+
 import hashlib
 import statistics
 from dataclasses import dataclass, field
@@ -42,9 +43,17 @@ class IntegrationMonitor:
         self.statuses: dict[str, IntegrationStatus] = {}
         self.alerts: list[dict[str, Any]] = []
 
-    def check_health(self, integration_id: str, status: HealthStatus = HealthStatus.HEALTHY, message: str = "", latency_ms: float = 0.0) -> HealthCheck:
+    def check_health(
+        self,
+        integration_id: str,
+        status: HealthStatus = HealthStatus.HEALTHY,
+        message: str = "",
+        latency_ms: float = 0.0,
+    ) -> HealthCheck:
         check_id = hashlib.sha256(f"{integration_id}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
-        check = HealthCheck(check_id=check_id, integration_id=integration_id, status=status, message=message, latency_ms=latency_ms)
+        check = HealthCheck(
+            check_id=check_id, integration_id=integration_id, status=status, message=message, latency_ms=latency_ms
+        )
         self.health_checks.setdefault(integration_id, []).append(check)
         if integration_id not in self.statuses:
             self.statuses[integration_id] = IntegrationStatus(integration_id=integration_id)
@@ -59,7 +68,14 @@ class IntegrationMonitor:
         return self.health_checks.get(integration_id, [])[-limit:]
 
     def alert(self, integration_id: str, message: str, severity: str = "warning") -> None:
-        self.alerts.append({"integration_id": integration_id, "message": message, "severity": severity, "timestamp": datetime.now().isoformat()})
+        self.alerts.append(
+            {
+                "integration_id": integration_id,
+                "message": message,
+                "severity": severity,
+                "timestamp": datetime.now().isoformat(),
+            }
+        )
 
     def get_alerts(self, integration_id: str = None) -> list[dict[str, Any]]:
         if integration_id:

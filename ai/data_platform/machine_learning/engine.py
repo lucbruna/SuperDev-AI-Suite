@@ -1,4 +1,5 @@
 """Machine Learning engine."""
+
 import math
 import uuid
 from datetime import datetime
@@ -21,7 +22,9 @@ class MLEngine:
     def get_model(self, model_id: str) -> MLModel | None:
         return self._models.get(model_id)
 
-    def train_model(self, model_id: str, records: list[dict[str, Any]], features: list[str], target: str) -> TrainingJob:
+    def train_model(
+        self, model_id: str, records: list[dict[str, Any]], features: list[str], target: str
+    ) -> TrainingJob:
         model = self._models.get(model_id)
         if not model:
             return TrainingJob(job_id=str(uuid.uuid4())[:8], status=ModelStatus.FAILED)
@@ -46,10 +49,19 @@ class MLEngine:
             pred_y = [sum(train_y) / len(train_y) if train_y else 0] * len(test_y)
             mse = sum((a - b) ** 2 for a, b in zip(test_y, pred_y, strict=False)) / len(test_y) if test_y else 0
             rmse = math.sqrt(mse) if mse >= 0 else 0
-            model.metrics = {"mse": mse, "rmse": rmse, "r2": 1.0 - mse / (sum((y - sum(test_y)/len(test_y))**2 for y in test_y) + 1e-10)}
+            model.metrics = {
+                "mse": mse,
+                "rmse": rmse,
+                "r2": 1.0 - mse / (sum((y - sum(test_y) / len(test_y)) ** 2 for y in test_y) + 1e-10),
+            }
         elif model.model_type == ModelType.CLASSIFICATION:
             correct = int(len(test_data) * 0.85) if test_data else 0
-            model.metrics = {"accuracy": correct / len(test_data) if test_data else 0, "precision": 0.82, "recall": 0.78, "f1": 0.80}
+            model.metrics = {
+                "accuracy": correct / len(test_data) if test_data else 0,
+                "precision": 0.82,
+                "recall": 0.78,
+                "f1": 0.80,
+            }
         elif model.model_type == ModelType.CLUSTERING:
             model.metrics = {"silhouette": 0.65, "inertia": 1250.0}
         else:

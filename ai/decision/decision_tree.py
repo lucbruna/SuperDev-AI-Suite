@@ -43,4 +43,5 @@ class DecisionTree:
             if not node.children:
                 return 1
             return 1 + max(_depth(c) for c in node.children)
+
         return _depth(self._root)

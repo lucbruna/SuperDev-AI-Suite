@@ -37,12 +37,10 @@ class RouterGenerator:
         if not self._routes:
             return "// No routes defined"
         route_imports = "\n".join(
-            f"import {r['component']} from './pages/{r['component']}';"
-            for r in self._routes.values()
+            f"import {r['component']} from './pages/{r['component']}';" for r in self._routes.values()
         )
         route_defs = "\n".join(
-            f"  {{ path: '{r['path']}', element: <{r['component']} /> }},"
-            for r in self._routes.values()
+            f"  {{ path: '{r['path']}', element: <{r['component']} /> }}," for r in self._routes.values()
         )
         return (
             f"import React from 'react';\n"

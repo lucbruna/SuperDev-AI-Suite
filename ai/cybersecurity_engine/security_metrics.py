@@ -1,4 +1,5 @@
 """Cybersecurity Engine Metrics — Metrics tracking for security operations."""
+
 from datetime import datetime
 from typing import Any
 
@@ -39,11 +40,13 @@ class SecurityMetrics:
         self._scans_performed += 1
 
     def add_event(self, event_type: str, details: dict[str, Any] = None) -> None:
-        self._events.append({
-            "type": event_type,
-            "timestamp": datetime.now().isoformat(),
-            "details": details or {},
-        })
+        self._events.append(
+            {
+                "type": event_type,
+                "timestamp": datetime.now().isoformat(),
+                "details": details or {},
+            }
+        )
 
     def get_stats(self) -> dict[str, Any]:
         return {

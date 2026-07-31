@@ -1,4 +1,5 @@
 """Service-to-service authentication using API keys and JWT."""
+
 import os
 from functools import lru_cache
 

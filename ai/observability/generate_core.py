@@ -1,19 +1,24 @@
 """Generator script for Volume 18 - Observability & Monitoring Engine."""
+
 import os
 
-BASE = r'C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\observability'
+BASE = r"C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\observability"
+
 
 def write_file(path, content):
     full = os.path.join(BASE, path)
     os.makedirs(os.path.dirname(full), exist_ok=True)
-    with open(full, 'w', encoding='utf-8') as f:
+    with open(full, "w", encoding="utf-8") as f:
         f.write(content)
+
 
 # ============================================================
 # CORE INFRASTRUCTURE
 # ============================================================
 
-write_file('monitoring_config.py', '''"""Observability configuration."""
+write_file(
+    "monitoring_config.py",
+    '''"""Observability configuration."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 from enum import Enum
@@ -82,9 +87,12 @@ class ObservabilityConfig:
     health: HealthConfig = field(default_factory=HealthConfig)
     enabled: bool = True
     debug_mode: bool = False
-''')
+''',
+)
 
-write_file('monitoring_models.py', '''"""Monitoring data models."""
+write_file(
+    "monitoring_models.py",
+    '''"""Monitoring data models."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 from enum import Enum
@@ -167,9 +175,12 @@ class Incident:
     resolved_at: Optional[float] = None
     description: str = ""
     timeline: List[Dict[str, Any]] = field(default_factory=list)
-''')
+''',
+)
 
-write_file('monitoring_events.py', '''"""Monitoring event bus."""
+write_file(
+    "monitoring_events.py",
+    '''"""Monitoring event bus."""
 from __future__ import annotations
 from typing import Any, Callable, Dict, List
 import time
@@ -204,9 +215,12 @@ class MonitoringEvents:
         n = len(self._event_log)
         self._event_log.clear()
         return n
-''')
+''',
+)
 
-write_file('monitoring_metrics.py', '''"""Metrics collection and storage."""
+write_file(
+    "monitoring_metrics.py",
+    '''"""Metrics collection and storage."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time
@@ -247,9 +261,12 @@ class MetricsCollector:
         n = sum(len(v) for v in self._series.values())
         self._series.clear()
         return n
-''')
+''',
+)
 
-write_file('monitoring_logger.py', '''"""Centralized logging service."""
+write_file(
+    "monitoring_logger.py",
+    '''"""Centralized logging service."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 from enum import Enum
@@ -297,9 +314,12 @@ class MonitoringLogger:
         n = len(self._entries)
         self._entries.clear()
         return n
-''')
+''',
+)
 
-write_file('monitoring_interfaces.py', '''"""Monitoring abstract interfaces."""
+write_file(
+    "monitoring_interfaces.py",
+    '''"""Monitoring abstract interfaces."""
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
@@ -341,9 +361,12 @@ class DiagnosticsInterface(ABC):
     def diagnose(self, problem: str) -> Dict[str, Any]: ...
     @abstractmethod
     def suggest_fix(self, diagnosis: Dict[str, Any]) -> List[str]: ...
-''')
+''',
+)
 
-write_file('monitoring_protocols.py', '''"""Monitoring protocols."""
+write_file(
+    "monitoring_protocols.py",
+    '''"""Monitoring protocols."""
 from __future__ import annotations
 from typing import Any, Dict, Protocol, runtime_checkable
 
@@ -370,9 +393,12 @@ class Alertable(Protocol):
 class Reportable(Protocol):
     def generate_report(self, report_type: str = "") -> Dict[str, Any]: ...
     def export_report(self, format: str = "json") -> str: ...
-''')
+''',
+)
 
-write_file('monitoring_context.py', '''"""Monitoring context management."""
+write_file(
+    "monitoring_context.py",
+    '''"""Monitoring context management."""
 from __future__ import annotations
 from typing import Any, Dict, Optional
 import time, uuid
@@ -399,9 +425,12 @@ class MonitoringContext:
         return self._session_id
     def uptime(self) -> float:
         return time.time() - self._started_at
-''')
+''',
+)
 
-write_file('monitoring_registry.py', '''"""Monitoring component registry."""
+write_file(
+    "monitoring_registry.py",
+    '''"""Monitoring component registry."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time
@@ -431,9 +460,12 @@ class MonitoringRegistry:
         return list(self._components.values())
     def count(self) -> int:
         return len(self._components)
-''')
+''',
+)
 
-write_file('monitoring_runtime.py', '''"""Monitoring runtime management."""
+write_file(
+    "monitoring_runtime.py",
+    '''"""Monitoring runtime management."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time
@@ -471,9 +503,12 @@ class MonitoringRuntime:
         if task_id:
             history = [h for h in history if h["task_id"] == task_id]
         return history[-limit:]
-''')
+''',
+)
 
-write_file('monitoring_factory.py', '''"""Monitoring component factory."""
+write_file(
+    "monitoring_factory.py",
+    '''"""Monitoring component factory."""
 from __future__ import annotations
 from typing import Any, Dict, Optional
 from .monitoring_config import ObservabilityConfig
@@ -519,9 +554,12 @@ class MonitoringFactory:
         return self._runtime
     def get_config(self) -> ObservabilityConfig:
         return self._config
-''')
+''',
+)
 
-write_file('monitoring_manager.py', '''"""High-level monitoring manager."""
+write_file(
+    "monitoring_manager.py",
+    '''"""High-level monitoring manager."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 from .monitoring_factory import MonitoringFactory
@@ -559,9 +597,12 @@ class MonitoringManager:
         return self._logger
     def get_metrics(self) -> MetricsCollector:
         return self._metrics
-''')
+''',
+)
 
-write_file('observability_engine.py', '''"""Central observability engine."""
+write_file(
+    "observability_engine.py",
+    '''"""Central observability engine."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 from .monitoring_config import ObservabilityConfig
@@ -600,6 +641,7 @@ class ObservabilityEngine:
         return self._manager
     def get_config(self) -> ObservabilityConfig:
         return self._config
-''')
+''',
+)
 
 print("Core infrastructure: 13 files created")

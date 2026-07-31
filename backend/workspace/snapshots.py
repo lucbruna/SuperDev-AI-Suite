@@ -22,11 +22,7 @@ class WorkspaceSnapshot:
         return snapshot_id
 
     async def list_snapshots(self, workspace_id: str) -> list[dict]:
-        return [
-            s
-            for s in _snapshots.values()
-            if s["workspace_id"] == workspace_id
-        ]
+        return [s for s in _snapshots.values() if s["workspace_id"] == workspace_id]
 
     async def get_snapshot(self, snapshot_id: str) -> dict | None:
         return _snapshots.get(snapshot_id)

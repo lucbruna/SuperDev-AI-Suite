@@ -1,6 +1,7 @@
 """
 Connector Manager - Lifecycle management
 """
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime

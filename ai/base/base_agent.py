@@ -30,12 +30,10 @@ class BaseAgent(ABC):
         self._last_heartbeat: float | None = None
 
     @abstractmethod
-    async def initialize(self) -> None:
-        ...
+    async def initialize(self) -> None: ...
 
     @abstractmethod
-    async def execute(self, task: str, context: dict[str, Any]) -> AgentResult:
-        ...
+    async def execute(self, task: str, context: dict[str, Any]) -> AgentResult: ...
 
     async def shutdown(self) -> None:
         self._status = "shutdown"

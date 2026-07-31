@@ -1,4 +1,5 @@
 """Testes de health check (usando async_client para evitar hangs com OTEL)."""
+
 from __future__ import annotations
 
 import pytest

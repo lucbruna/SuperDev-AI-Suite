@@ -1,6 +1,7 @@
 """
 Integration Manager - Lifecycle management
 """
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -37,7 +38,14 @@ class IntegrationManager:
 
     def create_integration(self, name: str, config: dict[str, Any] = None) -> dict[str, Any]:
         integration_id = hashlib.sha256(f"{name}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
-        integration = {"id": integration_id, "name": name, "config": config or {}, "status": "active", "created_at": datetime.now().isoformat(), "updated_at": datetime.now().isoformat()}
+        integration = {
+            "id": integration_id,
+            "name": name,
+            "config": config or {},
+            "status": "active",
+            "created_at": datetime.now().isoformat(),
+            "updated_at": datetime.now().isoformat(),
+        }
         self.integrations[integration_id] = integration
         self._log_event(ManagerAction.CREATE, integration_id, {"name": name})
         return integration
@@ -79,7 +87,11 @@ class IntegrationManager:
         return [self.integrations[i] for i in ids if i in self.integrations]
 
     def schedule_sync(self, integration_id: str, interval_seconds: int = 3600) -> None:
-        self.schedules[integration_id] = {"interval": interval_seconds, "last_run": None, "next_run": datetime.now().isoformat()}
+        self.schedules[integration_id] = {
+            "interval": interval_seconds,
+            "last_run": None,
+            "next_run": datetime.now().isoformat(),
+        }
 
     def get_schedule(self, integration_id: str) -> dict[str, Any] | None:
         return self.schedules.get(integration_id)
@@ -92,7 +104,14 @@ class IntegrationManager:
         return {"success": True, "integration_id": integration_id, "tested_at": datetime.now().isoformat()}
 
     def _log_event(self, action: ManagerAction, integration_id: str, details: dict[str, Any] = None) -> None:
-        event = ManagerEvent(event_id=hashlib.sha256(f"{action.value}{integration_id}{datetime.now().isoformat()}".encode()).hexdigest()[:16], action=action, integration_id=integration_id, details=details or {})
+        event = ManagerEvent(
+            event_id=hashlib.sha256(f"{action.value}{integration_id}{datetime.now().isoformat()}".encode()).hexdigest()[
+                :16
+            ],
+            action=action,
+            integration_id=integration_id,
+            details=details or {},
+        )
         self.event_log.append(event)
 
     def get_events(self, integration_id: str = None) -> list[ManagerEvent]:

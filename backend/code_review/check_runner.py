@@ -9,10 +9,14 @@ import httpx
 class GitHubChecksClient:
     def __init__(self):
         self._token = os.getenv("GITHUB_TOKEN", "")
-        self._headers = {
-            "Authorization": f"Bearer {self._token}",
-            "Accept": "application/vnd.github.v3+json",
-        } if self._token else {}
+        self._headers = (
+            {
+                "Authorization": f"Bearer {self._token}",
+                "Accept": "application/vnd.github.v3+json",
+            }
+            if self._token
+            else {}
+        )
 
     async def create_check_run(self, repo: str, sha: str, name: str = "SuperDev Code Review") -> dict[str, Any]:
         if not self._token:
@@ -31,7 +35,9 @@ class GitHubChecksClient:
             resp.raise_for_status()
             return resp.json()
 
-    async def update_check_run(self, repo: str, check_run_id: int, conclusion: str, output: dict[str, Any]) -> dict[str, Any]:
+    async def update_check_run(
+        self, repo: str, check_run_id: int, conclusion: str, output: dict[str, Any]
+    ) -> dict[str, Any]:
         if not self._token:
             return {"status": "skipped"}
         async with httpx.AsyncClient() as client:
@@ -70,7 +76,9 @@ class GitHubChecksClient:
             resp.raise_for_status()
             return resp.text
 
-    async def create_pr_review(self, repo: str, pr_number: int, body: str, event: str = "COMMENT", comments: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+    async def create_pr_review(
+        self, repo: str, pr_number: int, body: str, event: str = "COMMENT", comments: list[dict[str, Any]] | None = None
+    ) -> dict[str, Any]:
         if not self._token:
             return {"id": 0}
         async with httpx.AsyncClient() as client:
@@ -87,8 +95,20 @@ class GitHubChecksClient:
 
     def _mock_files(self) -> list[dict[str, Any]]:
         return [
-            {"filename": "src/main.py", "status": "modified", "additions": 50, "deletions": 10, "patch": "@@ -1,5 +1,10 @@\n+import os\n+def new_func():\n+    pass"},
-            {"filename": "src/agent.py", "status": "added", "additions": 120, "deletions": 0, "patch": "@@ -0,0 +1,120 @@\n+class Agent:\n+    def run(self):\n+        pass"},
+            {
+                "filename": "src/main.py",
+                "status": "modified",
+                "additions": 50,
+                "deletions": 10,
+                "patch": "@@ -1,5 +1,10 @@\n+import os\n+def new_func():\n+    pass",
+            },
+            {
+                "filename": "src/agent.py",
+                "status": "added",
+                "additions": 120,
+                "deletions": 0,
+                "patch": "@@ -0,0 +1,120 @@\n+class Agent:\n+    def run(self):\n+        pass",
+            },
         ]
 
     def is_configured(self) -> bool:

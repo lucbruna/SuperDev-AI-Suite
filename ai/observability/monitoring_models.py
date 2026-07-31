@@ -1,4 +1,5 @@
 """Monitoring data models."""
+
 from __future__ import annotations
 
 import time
@@ -15,17 +16,20 @@ class LogLevel(Enum):
     ERROR = "error"
     CRITICAL = "critical"
 
+
 class HealthStatus(Enum):
     HEALTHY = "healthy"
     DEGRADED = "degraded"
     UNHEALTHY = "unhealthy"
     UNKNOWN = "unknown"
 
+
 class AlertSeverity(Enum):
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
     CRITICAL = "critical"
+
 
 @dataclass
 class LogEntry:
@@ -36,6 +40,7 @@ class LogEntry:
     context: dict[str, Any] = field(default_factory=dict)
     entry_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
 
+
 @dataclass
 class MetricPoint:
     name: str = ""
@@ -43,6 +48,7 @@ class MetricPoint:
     timestamp: float = field(default_factory=time.time)
     labels: dict[str, str] = field(default_factory=dict)
     metric_type: str = "gauge"
+
 
 @dataclass
 class TraceSpan:
@@ -55,6 +61,7 @@ class TraceSpan:
     status: str = "ok"
     attributes: dict[str, Any] = field(default_factory=dict)
 
+
 @dataclass
 class Alert:
     alert_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
@@ -66,6 +73,7 @@ class Alert:
     acknowledged: bool = False
     resolved: bool = False
 
+
 @dataclass
 class HealthCheck:
     component: str = ""
@@ -73,6 +81,7 @@ class HealthCheck:
     message: str = ""
     latency_ms: float = 0.0
     checked_at: float = field(default_factory=time.time)
+
 
 @dataclass
 class Incident:

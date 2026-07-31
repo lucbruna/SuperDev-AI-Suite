@@ -1,4 +1,5 @@
 """Data Platform Registry — Registry for data platform components."""
+
 from typing import Any
 
 

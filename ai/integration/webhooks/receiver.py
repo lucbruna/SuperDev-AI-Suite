@@ -1,6 +1,7 @@
 """
 Webhook Receiver - Incoming webhooks
 """
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -26,9 +27,18 @@ class WebhookReceiver:
         self.processors: dict[str, Any] = {}
         self.secrets: dict[str, str] = {}
 
-    def receive(self, source: str, event_type: str, payload: dict[str, Any], headers: dict[str, str] = None, signature: str = "") -> ReceivedWebhook:
+    def receive(
+        self, source: str, event_type: str, payload: dict[str, Any], headers: dict[str, str] = None, signature: str = ""
+    ) -> ReceivedWebhook:
         received_id = hashlib.sha256(f"{source}{event_type}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
-        webhook = ReceivedWebhook(received_id=received_id, source=source, event_type=event_type, payload=payload, headers=headers or {}, signature=signature)
+        webhook = ReceivedWebhook(
+            received_id=received_id,
+            source=source,
+            event_type=event_type,
+            payload=payload,
+            headers=headers or {},
+            signature=signature,
+        )
         self.received.append(webhook)
         return webhook
 

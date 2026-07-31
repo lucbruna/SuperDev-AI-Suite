@@ -33,10 +33,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         """Attempt to connect to Redis for distributed rate limiting."""
         try:
             import redis.asyncio as aioredis
+
             redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
-            self.redis_client = aioredis.from_url(
-                redis_url, decode_responses=True, socket_connect_timeout=2
-            )
+            self.redis_client = aioredis.from_url(redis_url, decode_responses=True, socket_connect_timeout=2)
         except Exception:
             self.redis_client = None
 

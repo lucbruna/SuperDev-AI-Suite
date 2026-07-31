@@ -1,6 +1,7 @@
 """
 Frontend Router
 """
+
 import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -10,6 +11,7 @@ from typing import Any
 
 class RouteType(Enum):
     """Route types."""
+
     PUBLIC = "public"
     PRIVATE = "private"
     GUEST = "guest"  # Only for non-authenticated users
@@ -19,6 +21,7 @@ class RouteType(Enum):
 @dataclass
 class Route:
     """Route definition."""
+
     path: str
     component: Any
     name: str = ""
@@ -36,6 +39,7 @@ class Route:
 @dataclass
 class RouteMatch:
     """Matched route result."""
+
     route: Route
     params: dict[str, str]
     query: dict[str, str]
@@ -123,12 +127,7 @@ class Router:
         for route in self.routes:
             match = self._match_pattern(route.path, path)
             if match is not None:
-                return RouteMatch(
-                    route=route,
-                    params=match,
-                    query={},
-                    hash=""
-                )
+                return RouteMatch(route=route, params=match, query={}, hash="")
         return None
 
     def _match_pattern(self, pattern: str, path: str) -> dict[str, str] | None:
@@ -139,13 +138,13 @@ class Router:
         regex_pattern = pattern
 
         # Find all :param patterns
-        param_matches = re.finditer(r':(\w+)', pattern)
+        param_matches = re.finditer(r":(\w+)", pattern)
         for match in param_matches:
             param_names.append(match.group(1))
 
         # Convert to regex
-        regex_pattern = re.sub(r':(\w+)', r'([^/]+)', regex_pattern)
-        regex_pattern = f'^{regex_pattern}$'
+        regex_pattern = re.sub(r":(\w+)", r"([^/]+)", regex_pattern)
+        regex_pattern = f"^{regex_pattern}$"
 
         # Match against path
         match = re.match(regex_pattern, path)
@@ -190,7 +189,7 @@ class Router:
         """Create a link from path and params."""
         if params:
             for key, value in params.items():
-                path = path.replace(f':{key}', value)
+                path = path.replace(f":{key}", value)
         return path
 
     def resolve(self, name: str) -> str | None:

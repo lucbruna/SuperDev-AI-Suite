@@ -30,7 +30,7 @@ class FallbackHandler:
                 return await func(primary_provider, *args, **kwargs)
             except Exception as e:
                 last_error = e
-                logger.warning(f"Primary provider failed (attempt {attempt+1}): {e}")
+                logger.warning(f"Primary provider failed (attempt {attempt + 1}): {e}")
                 if attempt < self.max_retries - 1:
                     await asyncio.sleep(self.retry_delay)
 

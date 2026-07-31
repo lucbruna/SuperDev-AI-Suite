@@ -21,8 +21,7 @@ class PatternIdentifier:
 
     def __init__(self) -> None:
         self._patterns: dict[str, dict[str, Any]] = {
-            k: {"pattern": k, "description": v}
-            for k, v in PATTERN_DEFINITIONS.items()
+            k: {"pattern": k, "description": v} for k, v in PATTERN_DEFINITIONS.items()
         }
 
     def identify_from_task(self, task: str) -> list[dict[str, Any]]:
@@ -49,18 +48,22 @@ class PatternIdentifier:
             if keyword in task_lower:
                 info = self._patterns.get(pattern_name)
                 if info:
-                    results.append({
-                        "pattern": pattern_name,
-                        "confidence": confidence,
-                        "description": info["description"],
-                    })
+                    results.append(
+                        {
+                            "pattern": pattern_name,
+                            "confidence": confidence,
+                            "description": info["description"],
+                        }
+                    )
 
         if not results:
-            results.append({
-                "pattern": "layered",
-                "confidence": 0.5,
-                "description": PATTERN_DEFINITIONS["layered"],
-            })
+            results.append(
+                {
+                    "pattern": "layered",
+                    "confidence": 0.5,
+                    "description": PATTERN_DEFINITIONS["layered"],
+                }
+            )
 
         return results
 

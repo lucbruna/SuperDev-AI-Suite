@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 # Cloud features are gracefully disabled when the engine is unavailable
 try:
     from runtime_engine.cloud.vm_orchestrator import VMOrchestrator
+
     _orchestrator = VMOrchestrator(provider="aws")
 except ImportError:
     logger.warning("runtime_engine.cloud.vm_orchestrator not available — VM features disabled")
@@ -17,6 +18,7 @@ except ImportError:
 
 try:
     from runtime_engine.cloud.container_pool import ContainerPool
+
     _pool = ContainerPool()
     _has_pool = True
 except ImportError:
@@ -26,6 +28,7 @@ except ImportError:
 
 try:
     from runtime_engine.cloud.browser import BrowserSession
+
     _browser = BrowserSession()
 except ImportError:
     logger.warning("runtime_engine.cloud.browser not available — browser sessions disabled")
@@ -33,6 +36,7 @@ except ImportError:
 
 try:
     from runtime_engine.cloud.snapshot import SnapshotManager
+
     _snapshots = SnapshotManager()
 except ImportError:
     logger.warning("runtime_engine.cloud.snapshot not available — snapshot features disabled")

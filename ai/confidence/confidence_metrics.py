@@ -10,11 +10,13 @@ class ConfidenceMetrics:
         self._records: list[dict[str, Any]] = []
 
     async def record(self, prediction: dict[str, Any], actual: Any) -> None:
-        self._records.append({
-            "predicted_score": prediction.get("score"),
-            "actual": actual,
-            "confidence": prediction.get("confidence"),
-        })
+        self._records.append(
+            {
+                "predicted_score": prediction.get("score"),
+                "actual": actual,
+                "confidence": prediction.get("confidence"),
+            }
+        )
 
     async def accuracy(self) -> float:
         if not self._records:
@@ -29,4 +31,8 @@ class ConfidenceMetrics:
         return sum(confidences) / len(confidences)
 
     async def execute(self, context: dict[str, Any]) -> dict[str, Any]:
-        return {"accuracy": await self.accuracy(), "avg_confidence": await self.average_confidence(), "total": len(self._records)}
+        return {
+            "accuracy": await self.accuracy(),
+            "avg_confidence": await self.average_confidence(),
+            "total": len(self._records),
+        }

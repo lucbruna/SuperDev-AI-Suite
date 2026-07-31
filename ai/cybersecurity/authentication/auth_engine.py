@@ -1,6 +1,7 @@
 """
 Authentication Engine
 """
+
 import secrets
 import uuid
 from dataclasses import dataclass, field
@@ -34,11 +35,7 @@ class AuthEngine:
     def create_session(self, user_id: str, ip_address: str = "", user_agent: str = "") -> AuthSession:
         token = secrets.token_hex(32)
         session = AuthSession(
-            session_id=str(uuid.uuid4()),
-            user_id=user_id,
-            token=token,
-            ip_address=ip_address,
-            user_agent=user_agent
+            session_id=str(uuid.uuid4()), user_id=user_id, token=token, ip_address=ip_address, user_agent=user_agent
         )
         self.sessions[session.session_id] = session
         return session
@@ -65,6 +62,7 @@ class AuthEngine:
 
     def lock_account(self, user_id: str, duration_seconds: int = 300) -> None:
         from datetime import timedelta
+
         self.locked_accounts[user_id] = datetime.now() + timedelta(seconds=duration_seconds)
 
     def is_locked(self, user_id: str) -> bool:

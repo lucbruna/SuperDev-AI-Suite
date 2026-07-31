@@ -102,7 +102,11 @@ class HuggingFaceProvider(BaseLLMProvider):
                 except ProviderError as e:
                     attempt += 1
                     if attempt > self._max_retries or not _is_retryable(e, self._retry_codes):
-                        yield {"content": f"[{self._name} error: {e.message}]", "finish_reason": "error", "error": e.message}
+                        yield {
+                            "content": f"[{self._name} error: {e.message}]",
+                            "finish_reason": "error",
+                            "error": e.message,
+                        }
                         break
                     retry_after = e.retry_after or _exponential_backoff(attempt - 1)
                     await asyncio.sleep(retry_after)
@@ -110,7 +114,11 @@ class HuggingFaceProvider(BaseLLMProvider):
                     pe = ProviderError.from_exception(e, self._name)
                     attempt += 1
                     if attempt > self._max_retries or not _is_retryable(pe, self._retry_codes):
-                        yield {"content": f"[{self._name} error: {pe.message}]", "finish_reason": "error", "error": pe.message}
+                        yield {
+                            "content": f"[{self._name} error: {pe.message}]",
+                            "finish_reason": "error",
+                            "error": pe.message,
+                        }
                         break
                     await asyncio.sleep(_exponential_backoff(attempt - 1))
 
@@ -194,14 +202,16 @@ class HuggingFaceProvider(BaseLLMProvider):
                 tool_calls_delta = []
                 for tc in delta.tool_calls:
                     fn = tc.function
-                    tool_calls_delta.append({
-                        "id": tc.id or "",
-                        "type": "function",
-                        "function": {
-                            "name": fn.name if fn else "",
-                            "arguments": fn.arguments if fn else "",
-                        },
-                    })
+                    tool_calls_delta.append(
+                        {
+                            "id": tc.id or "",
+                            "type": "function",
+                            "function": {
+                                "name": fn.name if fn else "",
+                                "arguments": fn.arguments if fn else "",
+                            },
+                        }
+                    )
 
             if chunk.usage:
                 usage_info = {
@@ -248,14 +258,16 @@ class HuggingFaceProvider(BaseLLMProvider):
             tool_calls = []
             for tc in message.tool_calls:
                 fn = tc.function
-                tool_calls.append({
-                    "id": tc.id,
-                    "type": "function",
-                    "function": {
-                        "name": fn.name if fn else "",
-                        "arguments": fn.arguments if fn else "",
-                    },
-                })
+                tool_calls.append(
+                    {
+                        "id": tc.id,
+                        "type": "function",
+                        "function": {
+                            "name": fn.name if fn else "",
+                            "arguments": fn.arguments if fn else "",
+                        },
+                    }
+                )
 
         pt = resp.usage.prompt_tokens if resp.usage else count_tokens(prompt)
         ct = resp.usage.completion_tokens if resp.usage else count_tokens(content)
@@ -303,7 +315,12 @@ class HuggingFaceProvider(BaseLLMProvider):
                 max_tokens=1,
             )
             elapsed = (time_module.monotonic() - start) * 1000
-            return {"status": "healthy", "latency_ms": round(elapsed, 1), "provider": "huggingface", "model": self._model}
+            return {
+                "status": "healthy",
+                "latency_ms": round(elapsed, 1),
+                "provider": "huggingface",
+                "model": self._model,
+            }
         except Exception as e:
             elapsed = (time_module.monotonic() - start) * 1000
             return {"status": "unhealthy", "latency_ms": round(elapsed, 1), "error": str(e), "provider": "huggingface"}
@@ -312,14 +329,62 @@ class HuggingFaceProvider(BaseLLMProvider):
 
     async def list_models(self) -> list[dict[str, Any]]:
         return [
-            {"id": "meta-llama/Llama-3.3-70B-Instruct", "name": "Llama 3.3 70B", "provider": "Meta", "capabilities": ["chat", "tools"], "context_window": 128000},
-            {"id": "meta-llama/Llama-3.1-8B-Instruct", "name": "Llama 3.1 8B", "provider": "Meta", "capabilities": ["chat", "tools"], "context_window": 128000},
-            {"id": "mistralai/Mistral-7B-Instruct-v0.3", "name": "Mistral 7B", "provider": "Mistral", "capabilities": ["chat"], "context_window": 32768},
-            {"id": "mistralai/Mixtral-8x7B-Instruct-v0.1", "name": "Mixtral 8x7B", "provider": "Mistral", "capabilities": ["chat"], "context_window": 32768},
-            {"id": "google/gemma-2-27b-it", "name": "Gemma 2 27B", "provider": "Google", "capabilities": ["chat"], "context_window": 8192},
-            {"id": "Qwen/Qwen2.5-72B-Instruct", "name": "Qwen 2.5 72B", "provider": "Alibaba", "capabilities": ["chat", "tools"], "context_window": 32768},
-            {"id": "microsoft/Phi-3-mini-4k-instruct", "name": "Phi-3 Mini", "provider": "Microsoft", "capabilities": ["chat"], "context_window": 4096},
-            {"id": "HuggingFaceH4/zephyr-7b-beta", "name": "Zephyr 7B", "provider": "HuggingFace H4", "capabilities": ["chat"], "context_window": 8192},
+            {
+                "id": "meta-llama/Llama-3.3-70B-Instruct",
+                "name": "Llama 3.3 70B",
+                "provider": "Meta",
+                "capabilities": ["chat", "tools"],
+                "context_window": 128000,
+            },
+            {
+                "id": "meta-llama/Llama-3.1-8B-Instruct",
+                "name": "Llama 3.1 8B",
+                "provider": "Meta",
+                "capabilities": ["chat", "tools"],
+                "context_window": 128000,
+            },
+            {
+                "id": "mistralai/Mistral-7B-Instruct-v0.3",
+                "name": "Mistral 7B",
+                "provider": "Mistral",
+                "capabilities": ["chat"],
+                "context_window": 32768,
+            },
+            {
+                "id": "mistralai/Mixtral-8x7B-Instruct-v0.1",
+                "name": "Mixtral 8x7B",
+                "provider": "Mistral",
+                "capabilities": ["chat"],
+                "context_window": 32768,
+            },
+            {
+                "id": "google/gemma-2-27b-it",
+                "name": "Gemma 2 27B",
+                "provider": "Google",
+                "capabilities": ["chat"],
+                "context_window": 8192,
+            },
+            {
+                "id": "Qwen/Qwen2.5-72B-Instruct",
+                "name": "Qwen 2.5 72B",
+                "provider": "Alibaba",
+                "capabilities": ["chat", "tools"],
+                "context_window": 32768,
+            },
+            {
+                "id": "microsoft/Phi-3-mini-4k-instruct",
+                "name": "Phi-3 Mini",
+                "provider": "Microsoft",
+                "capabilities": ["chat"],
+                "context_window": 4096,
+            },
+            {
+                "id": "HuggingFaceH4/zephyr-7b-beta",
+                "name": "Zephyr 7B",
+                "provider": "HuggingFace H4",
+                "capabilities": ["chat"],
+                "context_window": 8192,
+            },
         ]
 
     async def cleanup(self) -> None:

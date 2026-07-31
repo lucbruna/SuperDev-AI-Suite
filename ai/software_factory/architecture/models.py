@@ -1,4 +1,5 @@
 """Data models for software architecture."""
+
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -45,6 +46,7 @@ class PatternType(Enum):
 @dataclass
 class ArchitectureComponent:
     """A component in the architecture."""
+
     component_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     name: str = ""
     description: str = ""
@@ -59,6 +61,7 @@ class ArchitectureComponent:
 @dataclass
 class Connector:
     """Connection between components."""
+
     connector_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     source_id: str = ""
     target_id: str = ""
@@ -72,6 +75,7 @@ class Connector:
 @dataclass
 class ArchitecturePattern:
     """An architectural pattern definition."""
+
     pattern_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     name: str = ""
     description: str = ""
@@ -84,6 +88,7 @@ class ArchitecturePattern:
 @dataclass
 class ArchitectureView:
     """A view of the architecture from a specific perspective."""
+
     view_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     name: str = ""
     description: str = ""
@@ -96,6 +101,7 @@ class ArchitectureView:
 @dataclass
 class ArchitectureDecision:
     """An Architecture Decision Record (ADR)."""
+
     decision_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     title: str = ""
     status: str = "proposed"
@@ -109,6 +115,7 @@ class ArchitectureDecision:
 @dataclass
 class DesignConstraint:
     """A constraint on the architecture design."""
+
     constraint_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     name: str = ""
     description: str = ""

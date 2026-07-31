@@ -50,8 +50,7 @@ class JWTManager:
             "",
         ):
             raise ValueError(
-                "JWT_SECRET_KEY must be set to a strong, unique value. "
-                "Default keys are rejected for security."
+                "JWT_SECRET_KEY must be set to a strong, unique value. Default keys are rejected for security."
             )
         self._secret_key = SecretStr(secret_key)
         self._algorithm = algorithm
@@ -211,6 +210,7 @@ class JWTManager:
         exp = payload.get("exp")
         if exp:
             from datetime import datetime
+
             if isinstance(exp, datetime):
                 ttl_seconds = max(int((exp - datetime.now(exp.tzinfo)).total_seconds()), 1)
             else:
@@ -281,6 +281,7 @@ class JWTManager:
         try:
             # Decode without verification to inspect header
             from jose import jwt as jose_jwt
+
             unverified = jose_jwt.get_unverified_claims(token)
             unverified_header = jose_jwt.get_unverified_header(token)
             return {
@@ -313,6 +314,7 @@ def get_jwt_manager(
     if _jwt_manager is None:
         if secret_key is None:
             from backend.config import config
+
             secret_key = str(config.auth.secret_key)
         _jwt_manager = JWTManager(
             secret_key=secret_key,

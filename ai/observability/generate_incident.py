@@ -1,15 +1,20 @@
 """Incident subsystem generator."""
+
 import os
 
-BASE = r'C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\observability\incident'
+BASE = r"C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\observability\incident"
+
 
 def w(path, content):
     full = os.path.join(BASE, path)
     os.makedirs(os.path.dirname(full), exist_ok=True)
-    with open(full, 'w', encoding='utf-8') as f:
+    with open(full, "w", encoding="utf-8") as f:
         f.write(content)
 
-w('incident_engine.py', '''"""Incident engine."""
+
+w(
+    "incident_engine.py",
+    '''"""Incident engine."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time
@@ -45,9 +50,12 @@ class IncidentEngine:
     def get_status(self) -> Dict[str, Any]:
         open_count = sum(1 for i in self._incidents.values() if i["status"] == "open")
         return {"running": self._started, "total": len(self._incidents), "open": open_count}
-''')
+''',
+)
 
-w('incident_manager.py', '''"""Incident manager."""
+w(
+    "incident_manager.py",
+    '''"""Incident manager."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time
@@ -78,9 +86,12 @@ class IncidentManager:
             self._assignments[incident_id] = new_assignee
             return {"incident_id": incident_id, "from": old, "to": new_assignee, "timestamp": time.time()}
         return None
-''')
+''',
+)
 
-w('severity.py', '''"""Incident severity."""
+w(
+    "severity.py",
+    '''"""Incident severity."""
 from __future__ import annotations
 from enum import Enum
 from typing import Any, Dict
@@ -116,9 +127,12 @@ class SeverityManager:
             del self._levels[name]
             return True
         return False
-''')
+''',
+)
 
-w('timeline.py', '''"""Incident timeline."""
+w(
+    "timeline.py",
+    '''"""Incident timeline."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import time
@@ -143,9 +157,12 @@ class IncidentTimeline:
         n = len(self._timelines.get(incident_id, []))
         self._timelines.pop(incident_id, None)
         return n
-''')
+''',
+)
 
-w('response.py', '''"""Incident response."""
+w(
+    "response.py",
+    '''"""Incident response."""
 from __future__ import annotations
 from typing import Any, Callable, Dict, List
 
@@ -181,9 +198,12 @@ class IncidentResponder:
             del self._playbooks[name]
             return True
         return False
-''')
+''',
+)
 
-w('postmortem.py', '''"""Postmortem management."""
+w(
+    "postmortem.py",
+    '''"""Postmortem management."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import time
@@ -216,9 +236,12 @@ class PostmortemManager:
             del self._postmortems[incident_id]
             return True
         return False
-''')
+''',
+)
 
-w('__init__.py', '''"""Incident subsystem."""
+w(
+    "__init__.py",
+    '''"""Incident subsystem."""
 from .incident_engine import IncidentEngine
 from .incident_manager import IncidentManager
 from .severity import SeverityManager, IncidentSeverity
@@ -231,6 +254,7 @@ __all__ = [
     "IncidentSeverity", "IncidentTimeline", "IncidentResponder",
     "PostmortemManager"
 ]
-''')
+''',
+)
 
 print("incident/: 7 files created")

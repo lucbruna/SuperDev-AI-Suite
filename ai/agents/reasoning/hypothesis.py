@@ -1,4 +1,5 @@
 """Hypothesis generation and management for reasoning."""
+
 from __future__ import annotations
 
 import time
@@ -12,8 +13,7 @@ class HypothesisManager:
         self._hypotheses: dict[str, dict[str, Any]] = {}
         self._generation_count: int = 0
 
-    def generate(self, problem: str,
-                 context: dict[str, Any] | None = None) -> list[str]:
+    def generate(self, problem: str, context: dict[str, Any] | None = None) -> list[str]:
         self._generation_count += 1
         hypotheses: list[str] = []
         hypotheses.append(f"The root cause is related to: {problem[:100]}")

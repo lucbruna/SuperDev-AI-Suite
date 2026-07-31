@@ -1,6 +1,7 @@
 """
 Response Manager - Format and return responses
 """
+
 from dataclasses import dataclass, field
 from typing import Any
 

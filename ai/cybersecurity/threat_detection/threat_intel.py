@@ -1,6 +1,7 @@
 """
 Threat Intelligence Management
 """
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -54,7 +55,9 @@ class ThreatIntel:
         self.feeds: dict[str, ThreatFeed] = {}
         self.correlations: dict[str, list[str]] = {}
 
-    def add_ioc(self, ioc_type: IOCType, value: str, threat_level: ThreatLevel = ThreatLevel.MEDIUM, source: str = "", **kwargs) -> IOC:
+    def add_ioc(
+        self, ioc_type: IOCType, value: str, threat_level: ThreatLevel = ThreatLevel.MEDIUM, source: str = "", **kwargs
+    ) -> IOC:
         ioc_id = hashlib.sha256(f"{ioc_type.value}:{value}".encode()).hexdigest()[:16]
         ioc = IOC(ioc_id=ioc_id, ioc_type=ioc_type, value=value, threat_level=threat_level, source=source, **kwargs)
         self.iocs[ioc_id] = ioc
@@ -76,7 +79,11 @@ class ThreatIntel:
         self.correlations[ioc_id] = related_ids
 
     def search(self, query: str) -> list[IOC]:
-        return [ioc for ioc in self.iocs.values() if query.lower() in ioc.value.lower() or query.lower() in ioc.description.lower()]
+        return [
+            ioc
+            for ioc in self.iocs.values()
+            if query.lower() in ioc.value.lower() or query.lower() in ioc.description.lower()
+        ]
 
     def get_by_type(self, ioc_type: IOCType) -> list[IOC]:
         return [ioc for ioc in self.iocs.values() if ioc.ioc_type == ioc_type]

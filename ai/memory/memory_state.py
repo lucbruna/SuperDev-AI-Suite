@@ -9,6 +9,7 @@ from .memory_types import MemoryStatus
 
 class MemoryPhase(Enum):
     """High-level lifecycle phases of the memory subsystem."""
+
     UNINITIALIZED = auto()
     INITIALIZING = auto()
     READY = auto()
@@ -81,11 +82,13 @@ class MemoryState:
         self._last_consolidation = time.time()
 
     def record_error(self, error: str, details: dict[str, Any] | None = None) -> None:
-        self._errors.append({
-            "error": error,
-            "details": details or {},
-            "timestamp": time.time(),
-        })
+        self._errors.append(
+            {
+                "error": error,
+                "details": details or {},
+                "timestamp": time.time(),
+            }
+        )
 
     def clear_errors(self) -> None:
         self._errors.clear()

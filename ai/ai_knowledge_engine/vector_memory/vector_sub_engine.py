@@ -1,4 +1,5 @@
 """Vector memory subsystem engine — Vector-based memory for similarity search."""
+
 import math
 import uuid
 from dataclasses import dataclass, field
@@ -21,7 +22,9 @@ class VectorSubEngine:
         self._dimensions = dimensions
         self._index: dict[str, list[str]] = {}
 
-    def store(self, text: str, vector: list[float] | None = None, metadata: dict[str, Any] | None = None) -> VectorEntry:
+    def store(
+        self, text: str, vector: list[float] | None = None, metadata: dict[str, Any] | None = None
+    ) -> VectorEntry:
         if vector is None:
             vector = self._hash_embed(text)
         entry = VectorEntry(text=text, vector=vector, metadata=metadata or {})
@@ -52,10 +55,7 @@ class VectorSubEngine:
             score = self._cosine_similarity(vector, entry.vector)
             scored.append({"entry": entry, "score": score})
         scored.sort(key=lambda x: x["score"], reverse=True)
-        return [
-            {"id": s["entry"].entry_id, "text": s["entry"].text, "score": s["score"]}
-            for s in scored[:top_k]
-        ]
+        return [{"id": s["entry"].entry_id, "text": s["entry"].text, "score": s["score"]} for s in scored[:top_k]]
 
     def get_similar(self, entry_id: str, top_k: int = 5) -> list[dict[str, Any]]:
         entry = self._entries.get(entry_id)
@@ -85,14 +85,15 @@ class VectorSubEngine:
 
     def _hash_embed(self, text: str) -> list[float]:
         import hashlib
+
         h = hashlib.sha256(text.encode()).hexdigest()
         vector = []
         for i in range(0, min(len(h), self._dimensions * 2), 2):
-            val = int(h[i:i+2], 16) / 255.0
+            val = int(h[i : i + 2], 16) / 255.0
             vector.append(val)
         while len(vector) < self._dimensions:
             vector.append(0.0)
-        return vector[:self._dimensions]
+        return vector[: self._dimensions]
 
     def _cosine_similarity(self, a: list[float], b: list[float]) -> float:
         if len(a) != len(b) or not a:

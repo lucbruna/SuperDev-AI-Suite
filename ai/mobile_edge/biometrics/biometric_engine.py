@@ -1,4 +1,5 @@
 """Biometric Engine - Core biometric authentication."""
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -47,14 +48,26 @@ class BiometricEngine:
         self.enrollments: dict[str, list[BiometricEnrollment]] = {}
         self.attempts: list[AuthAttempt] = []
 
-    def enroll(self, user_id: str, biometric_type: BiometricType, template_data: str = "", quality_score: float = 0.0) -> BiometricEnrollment:
-        enrollment_id = hashlib.sha256(f"{user_id}{biometric_type.value}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
+    def enroll(
+        self, user_id: str, biometric_type: BiometricType, template_data: str = "", quality_score: float = 0.0
+    ) -> BiometricEnrollment:
+        enrollment_id = hashlib.sha256(
+            f"{user_id}{biometric_type.value}{datetime.now().isoformat()}".encode()
+        ).hexdigest()[:16]
         template_hash = hashlib.sha256(template_data.encode()).hexdigest() if template_data else ""
-        enrollment = BiometricEnrollment(enrollment_id=enrollment_id, user_id=user_id, biometric_type=biometric_type, template_hash=template_hash, quality_score=quality_score)
+        enrollment = BiometricEnrollment(
+            enrollment_id=enrollment_id,
+            user_id=user_id,
+            biometric_type=biometric_type,
+            template_hash=template_hash,
+            quality_score=quality_score,
+        )
         self.enrollments.setdefault(user_id, []).append(enrollment)
         return enrollment
 
-    def authenticate(self, user_id: str, biometric_type: BiometricType, probe_data: str = "", confidence_threshold: float = 0.8) -> AuthResult:
+    def authenticate(
+        self, user_id: str, biometric_type: BiometricType, probe_data: str = "", confidence_threshold: float = 0.8
+    ) -> AuthResult:
         attempt_id = hashlib.sha256(f"{user_id}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
         user_enrollments = self.enrollments.get(user_id, [])
         active = [e for e in user_enrollments if e.biometric_type == biometric_type and e.active]
@@ -70,7 +83,9 @@ class BiometricEngine:
             else:
                 result = AuthResult.FAILURE
                 confidence = 0.3
-        attempt = AuthAttempt(attempt_id=attempt_id, user_id=user_id, biometric_type=biometric_type, result=result, confidence=confidence)
+        attempt = AuthAttempt(
+            attempt_id=attempt_id, user_id=user_id, biometric_type=biometric_type, result=result, confidence=confidence
+        )
         self.attempts.append(attempt)
         return result
 

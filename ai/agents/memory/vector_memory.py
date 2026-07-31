@@ -1,4 +1,5 @@
 """Vector-based memory for semantic similarity search."""
+
 from __future__ import annotations
 
 import math
@@ -48,8 +49,7 @@ class VectorMemory:
         entry = self._store.get(key)
         return entry.get("value") if entry else None
 
-    def search(self, query: str, limit: int = 5,
-               min_score: float = -1.0) -> list[dict[str, Any]]:
+    def search(self, query: str, limit: int = 5, min_score: float = -1.0) -> list[dict[str, Any]]:
         query_emb = _simple_hash_embedding(query, self._embedding_dim)
         scores: list[tuple[str, float]] = []
         for key, emb in self._embeddings.items():
@@ -60,12 +60,14 @@ class VectorMemory:
         results: list[dict[str, Any]] = []
         for key, score in scores[:limit]:
             entry = self._store.get(key, {})
-            results.append({
-                "key": key,
-                "value": entry.get("value"),
-                "score": round(score, 4),
-                "text": entry.get("text", ""),
-            })
+            results.append(
+                {
+                    "key": key,
+                    "value": entry.get("value"),
+                    "score": round(score, 4),
+                    "text": entry.get("text", ""),
+                }
+            )
         return results
 
     def remove(self, key: str) -> bool:

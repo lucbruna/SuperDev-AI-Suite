@@ -12,7 +12,9 @@ class InlineCompletionModel:
         self._api_key = os.getenv("OPENAI_API_KEY", "")
         self._base_url = base_url or "https://api.openai.com/v1"
 
-    async def predict(self, prefix: str, suffix: str = "", language: str = "python", max_tokens: int = 64) -> dict[str, Any]:
+    async def predict(
+        self, prefix: str, suffix: str = "", language: str = "python", max_tokens: int = 64
+    ) -> dict[str, Any]:
         if not self._api_key:
             return self._local_fallback(prefix, language)
         prompt = self._build_prompt(prefix, suffix, language)
@@ -32,12 +34,18 @@ class InlineCompletionModel:
                 resp.raise_for_status()
                 data = resp.json()
                 text = data["choices"][0]["message"]["content"].strip()
-                return {"completion": text, "model": self.model_name, "tokens": data["usage"]["total_tokens"], "source": "ai"}
+                return {
+                    "completion": text,
+                    "model": self.model_name,
+                    "tokens": data["usage"]["total_tokens"],
+                    "source": "ai",
+                }
         except Exception:
             return self._local_fallback(prefix, language)
 
     async def predict_batch(self, contexts: list[tuple[str, str, str]]) -> list[dict[str, Any]]:
         import asyncio
+
         tasks = [self.predict(prefix, suffix, lang) for prefix, suffix, lang in contexts]
         return await asyncio.gather(*tasks)
 

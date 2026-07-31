@@ -80,9 +80,13 @@ class AuditLogRepository(BaseRepository[AuditLog]):
             self.model.organization_id == org_id,
             self.model.action == action,
         )
-        count_query = select(func.count()).select_from(self.model).where(
-            self.model.organization_id == org_id,
-            self.model.action == action,
+        count_query = (
+            select(func.count())
+            .select_from(self.model)
+            .where(
+                self.model.organization_id == org_id,
+                self.model.action == action,
+            )
         )
 
         total_result = await self.db.execute(count_query)

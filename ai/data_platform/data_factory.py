@@ -1,4 +1,5 @@
 """Data Platform Factory — Factory for creating data platform components."""
+
 from typing import Any
 
 from .data_models import (
@@ -18,7 +19,9 @@ from .data_models import (
 class DataPlatformFactory:
     @staticmethod
     def create_source(name: str, source_type: str = "database", connection: str = "", fmt: str = "json") -> DataSource:
-        st = DataSourceType(source_type) if source_type in [e.value for e in DataSourceType] else DataSourceType.DATABASE
+        st = (
+            DataSourceType(source_type) if source_type in [e.value for e in DataSourceType] else DataSourceType.DATABASE
+        )
         df = DataFormat(fmt) if fmt in [e.value for e in DataFormat] else DataFormat.JSON
         return DataSource(name=name, source_type=st, connection_string=connection, format=df)
 

@@ -1,4 +1,5 @@
 """Cybersecurity Engine — Core cybersecurity engine."""
+
 from datetime import datetime
 from typing import Any
 
@@ -122,5 +123,11 @@ class CybersecurityEngine:
             "audit_entries": len(self._audit_log),
             "encryption_keys": len(self._keys),
             "policies": len(self._policies),
-            "active_incidents": len([i for i in self._incidents.values() if i.status not in (IncidentStatus.CLOSED, IncidentStatus.RECOVERED)]),
+            "active_incidents": len(
+                [
+                    i
+                    for i in self._incidents.values()
+                    if i.status not in (IncidentStatus.CLOSED, IncidentStatus.RECOVERED)
+                ]
+            ),
         }

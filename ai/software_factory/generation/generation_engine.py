@@ -1,4 +1,5 @@
 """Core engine for code generation."""
+
 from typing import Any
 
 from .code_generator import CodeGenerator
@@ -21,8 +22,7 @@ class GenerationEngine:
         self._projects[project.project_id] = project
         return project.project_id
 
-    def generate_from_template(self, template: Template, variables: dict[str, Any],
-                               output_path: str) -> GeneratedFile:
+    def generate_from_template(self, template: Template, variables: dict[str, Any], output_path: str) -> GeneratedFile:
         content = template.render(variables)
         gf = GeneratedFile(
             path=output_path,
@@ -34,8 +34,9 @@ class GenerationEngine:
         self._generated_files.append(gf)
         return gf
 
-    def generate_batch(self, template: Template, batch_vars: list[dict[str, Any]],
-                       output_dir: str) -> list[GeneratedFile]:
+    def generate_batch(
+        self, template: Template, batch_vars: list[dict[str, Any]], output_dir: str
+    ) -> list[GeneratedFile]:
         results = []
         for i, variables in enumerate(batch_vars):
             path = f"{output_dir}/file_{i}.py"

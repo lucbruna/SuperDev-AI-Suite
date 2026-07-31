@@ -6,7 +6,9 @@ from typing import Any
 class Strategy:
     """A stored strategy definition."""
 
-    def __init__(self, strategy_id: str, name: str, approach: str, steps: list[str], conditions: dict[str, Any] | None = None):
+    def __init__(
+        self, strategy_id: str, name: str, approach: str, steps: list[str], conditions: dict[str, Any] | None = None
+    ):
         self._strategy_id = strategy_id
         self._name = name
         self._approach = approach

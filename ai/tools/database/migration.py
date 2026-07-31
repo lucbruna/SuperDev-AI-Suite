@@ -48,7 +48,11 @@ class DatabaseMigration(BaseTool):
             elif action == "list":
                 return {"success": True, "migrations": self._migrations, "count": len(self._migrations)}
             elif action == "status":
-                return {"success": True, "applied": self._applied, "pending": [m["name"] for m in self._migrations if m["name"] not in self._applied]}
+                return {
+                    "success": True,
+                    "applied": self._applied,
+                    "pending": [m["name"] for m in self._migrations if m["name"] not in self._applied],
+                }
             return {"success": False, "error": f"Unknown action: {action}"}
         except Exception as e:
             return {"success": False, "error": str(e)}

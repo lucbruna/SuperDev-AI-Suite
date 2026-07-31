@@ -1,4 +1,5 @@
 """Progress tracking for long-running operations."""
+
 from __future__ import annotations
 
 import time
@@ -57,7 +58,4 @@ class ProgressTracker:
         return None
 
     def get_all(self) -> dict[str, dict[str, Any]]:
-        return {
-            oid: {"status": o["status"], "percent": o.get("percent", 0.0)}
-            for oid, o in self._operations.items()
-        }
+        return {oid: {"status": o["status"], "percent": o.get("percent", 0.0)} for oid, o in self._operations.items()}

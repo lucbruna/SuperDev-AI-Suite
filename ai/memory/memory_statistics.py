@@ -34,11 +34,13 @@ class MemoryStatistics:
 
     def update_size(self, total_entries: int, total_size: int) -> None:
         now = time.time()
-        self._size_history.append({
-            "timestamp": now,
-            "entries": total_entries,
-            "size_bytes": total_size,
-        })
+        self._size_history.append(
+            {
+                "timestamp": now,
+                "entries": total_entries,
+                "size_bytes": total_size,
+            }
+        )
         if total_size > self._peak_size:
             self._peak_size = total_size
         if len(self._size_history) >= 2:

@@ -33,9 +33,7 @@ class DistributedCache:
         ttl: int | None = None,
     ) -> None:
         packed = msgpack.packb(value)
-        await self._redis.set(
-            self._make_key(key), packed, ttl=ttl
-        )
+        await self._redis.set(self._make_key(key), packed, ttl=ttl)
 
     async def delete(self, key: str) -> bool:
         return await self._redis.delete(self._make_key(key))

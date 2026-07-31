@@ -1,4 +1,5 @@
 """Manager for version operations."""
+
 from .models import Version
 
 

@@ -11,12 +11,14 @@ class DebateHistory:
         self._debates: list[dict[str, Any]] = []
 
     async def record(self, topic: str, agent_count: int, consensus: dict[str, Any]) -> None:
-        self._debates.append({
-            "topic": topic,
-            "agent_count": agent_count,
-            "consensus": consensus,
-            "timestamp": datetime.now().isoformat(),
-        })
+        self._debates.append(
+            {
+                "topic": topic,
+                "agent_count": agent_count,
+                "consensus": consensus,
+                "timestamp": datetime.now().isoformat(),
+            }
+        )
 
     async def summary(self) -> dict[str, Any]:
         if not self._debates:

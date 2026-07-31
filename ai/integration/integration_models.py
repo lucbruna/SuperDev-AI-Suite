@@ -1,6 +1,7 @@
 """
 Integration Models - Core data models
 """
+
 import hashlib
 from dataclasses import dataclass, field
 from enum import Enum

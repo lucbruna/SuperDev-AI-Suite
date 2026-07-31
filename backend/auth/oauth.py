@@ -24,16 +24,13 @@ class OAuthHandler(ABC):
         self.scope = scope
 
     @abstractmethod
-    def authorize(self, state: str) -> str:
-        ...
+    def authorize(self, state: str) -> str: ...
 
     @abstractmethod
-    async def callback(self, code: str, state: str) -> dict[str, Any]:
-        ...
+    async def callback(self, code: str, state: str) -> dict[str, Any]: ...
 
     @abstractmethod
-    async def get_user_info(self, access_token: str) -> dict[str, Any]:
-        ...
+    async def get_user_info(self, access_token: str) -> dict[str, Any]: ...
 
 
 class GoogleOAuthHandler(OAuthHandler):

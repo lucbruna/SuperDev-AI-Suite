@@ -27,12 +27,14 @@ class SecretsDetector:
         for pattern, name, severity in SECRET_PATTERNS:
             matches = re.findall(pattern, text)
             if matches:
-                findings.append({
-                    "type": name,
-                    "severity": severity,
-                    "matches": len(matches),
-                    "preview": matches[0][:20] + "..." if len(str(matches[0])) > 20 else matches[0],
-                })
+                findings.append(
+                    {
+                        "type": name,
+                        "severity": severity,
+                        "matches": len(matches),
+                        "preview": matches[0][:20] + "..." if len(str(matches[0])) > 20 else matches[0],
+                    }
+                )
         return findings
 
     def add_pattern(self, name: str, regex: str, severity: str = "high") -> str:

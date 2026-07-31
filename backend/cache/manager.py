@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class RedisNode:
     """Redis node configuration."""
+
     host: str
     port: int
     is_master: bool = True
@@ -101,7 +102,7 @@ class RedisClusterManager:
         self._primary_client = self._create_client(self._primary_pool)
 
         # Replicas (read-only) - if configured
-        if hasattr(redis_config, 'replica_hosts') and redis_config.replica_hosts:
+        if hasattr(redis_config, "replica_hosts") and redis_config.replica_hosts:
             for replica in redis_config.replica_hosts:
                 pool = self._create_pool(
                     host=replica.host,
@@ -117,9 +118,7 @@ class RedisClusterManager:
         """Initialize Redis with Sentinel for HA."""
         from redis.asyncio.sentinel import Sentinel
 
-        sentinel_hosts = [
-            (s.host, s.port) for s in redis_config.sentinel_hosts
-        ]
+        sentinel_hosts = [(s.host, s.port) for s in redis_config.sentinel_hosts]
 
         sentinel = Sentinel(
             sentinel_hosts,
@@ -151,10 +150,7 @@ class RedisClusterManager:
         """Initialize Redis Cluster."""
         from redis.asyncio.cluster import RedisCluster
 
-        startup_nodes = [
-            {"host": n.host, "port": n.port}
-            for n in redis_config.cluster_nodes
-        ]
+        startup_nodes = [{"host": n.host, "port": n.port} for n in redis_config.cluster_nodes]
 
         self._primary_client = RedisCluster(
             startup_nodes=startup_nodes,
@@ -188,17 +184,21 @@ class RedisClusterManager:
             try:
                 await client.ping()
                 info = await client.info("replication")
-                results["replicas"].append({
-                    "index": i,
-                    "healthy": True,
-                    "lag": info.get("master_link_status", "unknown"),
-                })
+                results["replicas"].append(
+                    {
+                        "index": i,
+                        "healthy": True,
+                        "lag": info.get("master_link_status", "unknown"),
+                    }
+                )
             except Exception as e:
-                results["replicas"].append({
-                    "index": i,
-                    "healthy": False,
-                    "error": str(e),
-                })
+                results["replicas"].append(
+                    {
+                        "index": i,
+                        "healthy": False,
+                        "error": str(e),
+                    }
+                )
 
         # Check sentinel
         if self._sentinel_client:
@@ -217,6 +217,7 @@ class RedisClusterManager:
         if readonly and self._replica_clients:
             # Round-robin or random selection for replicas
             import random
+
             client = random.choice(self._replica_clients)
         else:
             client = self._primary_client
@@ -333,9 +334,7 @@ class RedisClusterManager:
         async with self.get_client(readonly=False) as client:
             return await client.zrem(name, *values)
 
-    async def zrange(
-        self, name: str, start: int, end: int, desc: bool = False, readonly: bool = True
-    ) -> list:
+    async def zrange(self, name: str, start: int, end: int, desc: bool = False, readonly: bool = True) -> list:
         async with self.get_client(readonly=readonly) as client:
             return await client.zrange(name, start, end, desc=desc)
 
@@ -362,6 +361,7 @@ class RedisClusterManager:
         Returns: (allowed, current_count, remaining)
         """
         import time
+
         now = int(time.time())
         window_start = now - window
 

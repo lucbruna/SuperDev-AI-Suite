@@ -18,7 +18,7 @@ class DiagramGenerator:
             lines.append("    }")
         if len(classes) > 1:
             for i in range(len(classes) - 1):
-                lines.append(f"    {classes[i]['name']} --> {classes[i+1]['name']}")
+                lines.append(f"    {classes[i]['name']} --> {classes[i + 1]['name']}")
         lines.append("```")
         return "\n".join(lines)
 

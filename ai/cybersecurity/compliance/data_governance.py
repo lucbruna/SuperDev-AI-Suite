@@ -1,6 +1,7 @@
 """
 Data Governance and Classification
 """
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -50,7 +51,9 @@ class DataGovernance:
         self.policies: dict[str, DataPolicy] = {}
         self.access_logs: list[dict[str, Any]] = []
 
-    def register_asset(self, name: str, classification: DataClassification = DataClassification.INTERNAL, owner: str = "", **kwargs) -> DataAsset:
+    def register_asset(
+        self, name: str, classification: DataClassification = DataClassification.INTERNAL, owner: str = "", **kwargs
+    ) -> DataAsset:
         asset_id = f"asset_{len(self.assets)}"
         asset = DataAsset(asset_id=asset_id, name=name, classification=classification, owner=owner, **kwargs)
         self.assets[asset_id] = asset
@@ -70,7 +73,9 @@ class DataGovernance:
         return policy
 
     def log_access(self, asset_id: str, user: str, action: str) -> None:
-        self.access_logs.append({"asset_id": asset_id, "user": user, "action": action, "timestamp": datetime.now().isoformat()})
+        self.access_logs.append(
+            {"asset_id": asset_id, "user": user, "action": action, "timestamp": datetime.now().isoformat()}
+        )
 
     def get_assets_by_classification(self, classification: DataClassification) -> list[DataAsset]:
         return [a for a in self.assets.values() if a.classification == classification]

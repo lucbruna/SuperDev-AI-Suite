@@ -32,7 +32,12 @@ class KubernetesService(BaseTool):
         namespace = params.get("namespace", "default")
         try:
             if action == "list":
-                return {"success": True, "services": self._services, "namespace": namespace, "count": len(self._services)}
+                return {
+                    "success": True,
+                    "services": self._services,
+                    "namespace": namespace,
+                    "count": len(self._services),
+                }
             elif action == "get":
                 name = params.get("name", "")
                 svc = next((s for s in self._services if s.get("name") == name), None)

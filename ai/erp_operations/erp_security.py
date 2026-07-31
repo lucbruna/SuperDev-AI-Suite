@@ -1,4 +1,5 @@
 """ERP Security — Security validation for ERP operations."""
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -43,9 +44,13 @@ class ERPSecurity:
     def create_policy(self, name: str, rules: dict[str, Any] | None = None) -> None:
         self.policies[name] = rules or {}
 
-    def report_issue(self, check: ERPSecurityCheck, severity: ERPSeverity, description: str = "", resource: str = "", **kwargs) -> ERPSecurityIssue:
+    def report_issue(
+        self, check: ERPSecurityCheck, severity: ERPSeverity, description: str = "", resource: str = "", **kwargs
+    ) -> ERPSecurityIssue:
         issue_id = hashlib.sha256(f"{check.value}{description}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
-        issue = ERPSecurityIssue(issue_id=issue_id, check=check, severity=severity, description=description, resource=resource, **kwargs)
+        issue = ERPSecurityIssue(
+            issue_id=issue_id, check=check, severity=severity, description=description, resource=resource, **kwargs
+        )
         self.issues.append(issue)
         return issue
 

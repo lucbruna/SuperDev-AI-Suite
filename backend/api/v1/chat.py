@@ -41,6 +41,7 @@ async def chat_completions(
     db: AsyncSession = Depends(get_db),
 ) -> ChatCompletionResponse:
     from backend.dependencies import get_current_active_user
+
     user = await get_current_active_user(db=db)
 
     messages = [Message(role=m.role, content=m.content) for m in request.messages]
@@ -77,7 +78,9 @@ async def chat_completions(
             "completion_tokens": response.usage.completion_tokens,
             "total_tokens": response.usage.total_tokens,
             "estimated_cost": response.usage.estimated_cost,
-        } if response.usage else None,
+        }
+        if response.usage
+        else None,
     )
 
 
@@ -87,6 +90,7 @@ async def chat_stream(
     db: AsyncSession = Depends(get_db),
 ):
     from backend.dependencies import get_current_active_user
+
     await get_current_active_user(db=db)
 
     messages = [Message(role=m.role, content=m.content) for m in request.messages]
@@ -100,12 +104,14 @@ async def chat_stream(
                 temperature=request.temperature,
                 max_tokens=request.max_tokens,
             ):
-                data = json.dumps({
-                    "id": chunk.id,
-                    "model": chunk.model,
-                    "delta": chunk.delta,
-                    "finish_reason": chunk.finish_reason,
-                })
+                data = json.dumps(
+                    {
+                        "id": chunk.id,
+                        "model": chunk.model,
+                        "delta": chunk.delta,
+                        "finish_reason": chunk.finish_reason,
+                    }
+                )
                 yield f"data: {data}\n\n"
             yield "data: [DONE]\n\n"
         except Exception as e:

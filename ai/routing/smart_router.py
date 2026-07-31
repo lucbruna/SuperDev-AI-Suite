@@ -81,130 +81,214 @@ class SmartAIRouter:
     def _initialize_model_scores(self):
         scores = {
             "gpt-4o": ModelScore(
-                model_id="gpt-4o", provider="openai",
-                cost_score=0.3, quality_score=1.0, latency_score=0.7,
+                model_id="gpt-4o",
+                provider="openai",
+                cost_score=0.3,
+                quality_score=1.0,
+                latency_score=0.7,
                 capabilities=["chat", "code", "vision", "tools"],
-                context_window=128000, max_tokens=16384
+                context_window=128000,
+                max_tokens=16384,
             ),
             "gpt-4o-mini": ModelScore(
-                model_id="gpt-4o-mini", provider="openai",
-                cost_score=0.8, quality_score=0.7, latency_score=0.8,
+                model_id="gpt-4o-mini",
+                provider="openai",
+                cost_score=0.8,
+                quality_score=0.7,
+                latency_score=0.8,
                 capabilities=["chat", "code", "vision", "tools"],
-                context_window=128000, max_tokens=16384
+                context_window=128000,
+                max_tokens=16384,
             ),
             "gpt-4-turbo": ModelScore(
-                model_id="gpt-4-turbo", provider="openai",
-                cost_score=0.2, quality_score=0.9, latency_score=0.6,
+                model_id="gpt-4-turbo",
+                provider="openai",
+                cost_score=0.2,
+                quality_score=0.9,
+                latency_score=0.6,
                 capabilities=["chat", "code", "vision", "tools"],
-                context_window=128000, max_tokens=4096
+                context_window=128000,
+                max_tokens=4096,
             ),
             "claude-3-5-sonnet-20241022": ModelScore(
-                model_id="claude-3-5-sonnet-20241022", provider="anthropic",
-                cost_score=0.3, quality_score=1.0, latency_score=0.7,
+                model_id="claude-3-5-sonnet-20241022",
+                provider="anthropic",
+                cost_score=0.3,
+                quality_score=1.0,
+                latency_score=0.7,
                 capabilities=["chat", "code", "vision", "tools"],
-                context_window=200000, max_tokens=8192
+                context_window=200000,
+                max_tokens=8192,
             ),
             "claude-3-opus-20240229": ModelScore(
-                model_id="claude-3-opus-20240229", provider="anthropic",
-                cost_score=0.1, quality_score=1.0, latency_score=0.5,
+                model_id="claude-3-opus-20240229",
+                provider="anthropic",
+                cost_score=0.1,
+                quality_score=1.0,
+                latency_score=0.5,
                 capabilities=["chat", "code", "vision", "tools"],
-                context_window=200000, max_tokens=4096
+                context_window=200000,
+                max_tokens=4096,
             ),
             "claude-3-haiku-20240307": ModelScore(
-                model_id="claude-3-haiku-20240307", provider="anthropic",
-                cost_score=0.7, quality_score=0.6, latency_score=0.9,
+                model_id="claude-3-haiku-20240307",
+                provider="anthropic",
+                cost_score=0.7,
+                quality_score=0.6,
+                latency_score=0.9,
                 capabilities=["chat", "code", "vision", "tools"],
-                context_window=200000, max_tokens=4096
+                context_window=200000,
+                max_tokens=4096,
             ),
             "gemini-1.5-pro": ModelScore(
-                model_id="gemini-1.5-pro", provider="gemini",
-                cost_score=0.6, quality_score=0.8, latency_score=0.7,
+                model_id="gemini-1.5-pro",
+                provider="gemini",
+                cost_score=0.6,
+                quality_score=0.8,
+                latency_score=0.7,
                 capabilities=["chat", "code", "vision", "tools"],
-                context_window=1000000, max_tokens=8192
+                context_window=1000000,
+                max_tokens=8192,
             ),
             "gemini-1.5-flash": ModelScore(
-                model_id="gemini-1.5-flash", provider="gemini",
-                cost_score=0.9, quality_score=0.6, latency_score=0.9,
+                model_id="gemini-1.5-flash",
+                provider="gemini",
+                cost_score=0.9,
+                quality_score=0.6,
+                latency_score=0.9,
                 capabilities=["chat", "code", "vision", "tools"],
-                context_window=1000000, max_tokens=8192
+                context_window=1000000,
+                max_tokens=8192,
             ),
             "llama3": ModelScore(
-                model_id="llama3", provider="ollama",
-                cost_score=1.0, quality_score=0.6, latency_score=0.8,
+                model_id="llama3",
+                provider="ollama",
+                cost_score=1.0,
+                quality_score=0.6,
+                latency_score=0.8,
                 capabilities=["chat", "code"],
-                context_window=8192, max_tokens=4096
+                context_window=8192,
+                max_tokens=4096,
             ),
             "llama3.1": ModelScore(
-                model_id="llama3.1", provider="ollama",
-                cost_score=1.0, quality_score=0.7, latency_score=0.7,
+                model_id="llama3.1",
+                provider="ollama",
+                cost_score=1.0,
+                quality_score=0.7,
+                latency_score=0.7,
                 capabilities=["chat", "code"],
-                context_window=131072, max_tokens=8192
+                context_window=131072,
+                max_tokens=8192,
             ),
             "mistral": ModelScore(
-                model_id="mistral", provider="ollama",
-                cost_score=1.0, quality_score=0.6, latency_score=0.8,
+                model_id="mistral",
+                provider="ollama",
+                cost_score=1.0,
+                quality_score=0.6,
+                latency_score=0.8,
                 capabilities=["chat", "code"],
-                context_window=8192, max_tokens=4096
+                context_window=8192,
+                max_tokens=4096,
             ),
             "codestral": ModelScore(
-                model_id="codestral", provider="ollama",
-                cost_score=1.0, quality_score=0.7, latency_score=0.7,
+                model_id="codestral",
+                provider="ollama",
+                cost_score=1.0,
+                quality_score=0.7,
+                latency_score=0.7,
                 capabilities=["chat", "code"],
-                context_window=32768, max_tokens=8192
+                context_window=32768,
+                max_tokens=8192,
             ),
             "deepseek-coder": ModelScore(
-                model_id="deepseek-coder", provider="ollama",
-                cost_score=1.0, quality_score=0.7, latency_score=0.7,
+                model_id="deepseek-coder",
+                provider="ollama",
+                cost_score=1.0,
+                quality_score=0.7,
+                latency_score=0.7,
                 capabilities=["chat", "code"],
-                context_window=16384, max_tokens=4096
+                context_window=16384,
+                max_tokens=4096,
             ),
             "mixtral": ModelScore(
-                model_id="mixtral", provider="ollama",
-                cost_score=1.0, quality_score=0.7, latency_score=0.6,
+                model_id="mixtral",
+                provider="ollama",
+                cost_score=1.0,
+                quality_score=0.7,
+                latency_score=0.6,
                 capabilities=["chat", "code"],
-                context_window=32768, max_tokens=4096
+                context_window=32768,
+                max_tokens=4096,
             ),
             "phi3": ModelScore(
-                model_id="phi3", provider="ollama",
-                cost_score=1.0, quality_score=0.5, latency_score=0.9,
+                model_id="phi3",
+                provider="ollama",
+                cost_score=1.0,
+                quality_score=0.5,
+                latency_score=0.9,
                 capabilities=["chat", "code"],
-                context_window=128000, max_tokens=4096
+                context_window=128000,
+                max_tokens=4096,
             ),
             "gemma2": ModelScore(
-                model_id="gemma2", provider="ollama",
-                cost_score=1.0, quality_score=0.6, latency_score=0.8,
+                model_id="gemma2",
+                provider="ollama",
+                cost_score=1.0,
+                quality_score=0.6,
+                latency_score=0.8,
                 capabilities=["chat", "code"],
-                context_window=8192, max_tokens=4096
+                context_window=8192,
+                max_tokens=4096,
             ),
             "qwen2": ModelScore(
-                model_id="qwen2", provider="ollama",
-                cost_score=1.0, quality_score=0.6, latency_score=0.7,
+                model_id="qwen2",
+                provider="ollama",
+                cost_score=1.0,
+                quality_score=0.6,
+                latency_score=0.7,
                 capabilities=["chat", "code"],
-                context_window=32768, max_tokens=8192
+                context_window=32768,
+                max_tokens=8192,
             ),
             "openai/gpt-4o": ModelScore(
-                model_id="openai/gpt-4o", provider="openrouter",
-                cost_score=0.3, quality_score=1.0, latency_score=0.7,
+                model_id="openai/gpt-4o",
+                provider="openrouter",
+                cost_score=0.3,
+                quality_score=1.0,
+                latency_score=0.7,
                 capabilities=["chat", "code", "vision", "tools"],
-                context_window=128000, max_tokens=16384
+                context_window=128000,
+                max_tokens=16384,
             ),
             "anthropic/claude-3.5-sonnet": ModelScore(
-                model_id="anthropic/claude-3.5-sonnet", provider="openrouter",
-                cost_score=0.3, quality_score=1.0, latency_score=0.7,
+                model_id="anthropic/claude-3.5-sonnet",
+                provider="openrouter",
+                cost_score=0.3,
+                quality_score=1.0,
+                latency_score=0.7,
                 capabilities=["chat", "code", "vision", "tools"],
-                context_window=200000, max_tokens=8192
+                context_window=200000,
+                max_tokens=8192,
             ),
             "google/gemini-pro-1.5": ModelScore(
-                model_id="google/gemini-pro-1.5", provider="openrouter",
-                cost_score=0.6, quality_score=0.8, latency_score=0.7,
+                model_id="google/gemini-pro-1.5",
+                provider="openrouter",
+                cost_score=0.6,
+                quality_score=0.8,
+                latency_score=0.7,
                 capabilities=["chat", "code", "vision", "tools"],
-                context_window=1000000, max_tokens=8192
+                context_window=1000000,
+                max_tokens=8192,
             ),
             "meta-llama/llama-3.1-405b": ModelScore(
-                model_id="meta-llama/llama-3.1-405b", provider="openrouter",
-                cost_score=0.5, quality_score=0.9, latency_score=0.5,
+                model_id="meta-llama/llama-3.1-405b",
+                provider="openrouter",
+                cost_score=0.5,
+                quality_score=0.9,
+                latency_score=0.5,
                 capabilities=["chat", "code"],
-                context_window=131072, max_tokens=8192
+                context_window=131072,
+                max_tokens=8192,
             ),
         }
         for score in scores.values():
@@ -279,13 +363,13 @@ class SmartAIRouter:
                 continue
 
             total = (
-                score.cost_score * weights.get("cost", 0.33) +
-                score.quality_score * weights.get("quality", 0.33) +
-                score.latency_score * weights.get("latency", 0.34)
+                score.cost_score * weights.get("cost", 0.33)
+                + score.quality_score * weights.get("quality", 0.33)
+                + score.latency_score * weights.get("latency", 0.34)
             )
 
             if health and health.latency_ms > 0:
-                total *= (1.0 - min(health.error_rate, 0.5))
+                total *= 1.0 - min(health.error_rate, 0.5)
 
             scored_models.append((model_id, total))
 
@@ -303,9 +387,10 @@ class SmartAIRouter:
             if not provider:
                 continue
 
-            if hasattr(provider, 'list_models'):
+            if hasattr(provider, "list_models"):
                 try:
                     import asyncio
+
                     models = asyncio.run(provider.list_models())
                     for model in models:
                         if model.available and (not ctx.capability or ctx.capability in model.capabilities):

@@ -16,16 +16,12 @@ class WorkspaceRestore:
         self._filesystem = filesystem
         self._snapshot_manager = snapshot_manager
 
-    async def restore_from_snapshot(
-        self, workspace_id: str, snapshot_id: str
-    ) -> bool:
+    async def restore_from_snapshot(self, workspace_id: str, snapshot_id: str) -> bool:
         snapshot = await self._snapshot_manager.get_snapshot(snapshot_id)
         if snapshot is None or snapshot["workspace_id"] != workspace_id:
             return False
         self._filesystem.set_all_files(snapshot["files"])
-        await self._record_restore(
-            workspace_id, snapshot_id, "full", None
-        )
+        await self._record_restore(workspace_id, snapshot_id, "full", None)
         return True
 
     async def restore_specific_files(
@@ -39,17 +35,11 @@ class WorkspaceRestore:
             return False
         for fp in file_paths:
             if fp in snapshot["files"]:
-                await self._filesystem.write_file(
-                    fp, snapshot["files"][fp]
-                )
-        await self._record_restore(
-            workspace_id, snapshot_id, "partial", file_paths
-        )
+                await self._filesystem.write_file(fp, snapshot["files"][fp])
+        await self._record_restore(workspace_id, snapshot_id, "partial", file_paths)
         return True
 
-    async def get_restore_history(
-        self, workspace_id: str
-    ) -> list[dict]:
+    async def get_restore_history(self, workspace_id: str) -> list[dict]:
         return _restore_history.get(workspace_id, [])
 
     async def _record_restore(

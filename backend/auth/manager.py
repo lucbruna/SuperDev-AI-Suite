@@ -209,8 +209,7 @@ async def get_current_project(
         )
     # Check membership
     membership = await db.execute(
-        select(ProjectMember)
-        .where(
+        select(ProjectMember).where(
             and_(
                 ProjectMember.project_id == project_id,
                 ProjectMember.user_id == current_user.id,
@@ -331,11 +330,7 @@ class APIKeyAuth:
 
             # Find API key by prefix
             prefix = token[:24]  # First 24 chars as prefix
-            api_keys = await db.execute(
-                select(APIKey)
-                .where(APIKey.key_prefix == prefix)
-                .where(APIKey.is_active)
-            )
+            api_keys = await db.execute(select(APIKey).where(APIKey.key_prefix == prefix).where(APIKey.is_active))
             api_key = api_keys.scalar_one_or_none()
 
             if not api_key or not verify_password(token, api_key.key_hash):
@@ -452,40 +447,49 @@ oauth2_provider = OAuth2Provider()
 
 # Register default providers
 if config.auth.oidc_enabled:
-    oauth2_provider.register("oidc", OAuth2Config(
-        name="oidc",
-        authorization_endpoint=f"{config.auth.oidc_issuer_url}/authorize",
-        token_endpoint=f"{config.auth.oidc_issuer_url}/token",
-        userinfo_endpoint=f"{config.auth.oidc_issuer_url}/userinfo",
-        client_id=config.auth.oidc_client_id,
-        client_secret=config.auth.oidc_client_secret,
-        redirect_uri=config.auth.oidc_redirect_uri,
-        scopes=config.auth.oidc_scopes.split(","),
-    ))
+    oauth2_provider.register(
+        "oidc",
+        OAuth2Config(
+            name="oidc",
+            authorization_endpoint=f"{config.auth.oidc_issuer_url}/authorize",
+            token_endpoint=f"{config.auth.oidc_issuer_url}/token",
+            userinfo_endpoint=f"{config.auth.oidc_issuer_url}/userinfo",
+            client_id=config.auth.oidc_client_id,
+            client_secret=config.auth.oidc_client_secret,
+            redirect_uri=config.auth.oidc_redirect_uri,
+            scopes=config.auth.oidc_scopes.split(","),
+        ),
+    )
 
 if config.auth.github_oauth_enabled:
-    oauth2_provider.register("github", OAuth2Config(
-        name="github",
-        authorization_endpoint="https://github.com/login/oauth/authorize",
-        token_endpoint="https://github.com/login/oauth/access_token",
-        userinfo_endpoint="https://api.github.com/user",
-        client_id=config.auth.github_client_id,
-        client_secret=config.auth.github_client_secret,
-        redirect_uri="http://localhost:8000/api/v1/auth/github/callback",
-        scopes=["user:email", "read:org"],
-    ))
+    oauth2_provider.register(
+        "github",
+        OAuth2Config(
+            name="github",
+            authorization_endpoint="https://github.com/login/oauth/authorize",
+            token_endpoint="https://github.com/login/oauth/access_token",
+            userinfo_endpoint="https://api.github.com/user",
+            client_id=config.auth.github_client_id,
+            client_secret=config.auth.github_client_secret,
+            redirect_uri="http://localhost:8000/api/v1/auth/github/callback",
+            scopes=["user:email", "read:org"],
+        ),
+    )
 
 if config.auth.google_oauth_enabled:
-    oauth2_provider.register("google", OAuth2Config(
-        name="google",
-        authorization_endpoint="https://accounts.google.com/o/oauth2/v2/auth",
-        token_endpoint="https://oauth2.googleapis.com/token",
-        userinfo_endpoint="https://openidconnect.googleapis.com/v1/userinfo",
-        client_id=config.auth.google_client_id,
-        client_secret=config.auth.google_client_secret,
-        redirect_uri="http://localhost:8000/api/v1/auth/google/callback",
-        scopes=["openid", "profile", "email"],
-    ))
+    oauth2_provider.register(
+        "google",
+        OAuth2Config(
+            name="google",
+            authorization_endpoint="https://accounts.google.com/o/oauth2/v2/auth",
+            token_endpoint="https://oauth2.googleapis.com/token",
+            userinfo_endpoint="https://openidconnect.googleapis.com/v1/userinfo",
+            client_id=config.auth.google_client_id,
+            client_secret=config.auth.google_client_secret,
+            redirect_uri="http://localhost:8000/api/v1/auth/google/callback",
+            scopes=["openid", "profile", "email"],
+        ),
+    )
 
 
 # Role/Permission constants
@@ -673,9 +677,7 @@ async def initialize_default_roles(db: AsyncSession, org_id: str):
     for role_name, permissions in DEFAULT_ROLE_PERMISSIONS.items():
         # Check if role exists
         existing = await db.execute(
-            select(Role).where(
-                and_(Role.name == role_name.value, Role.organization_id == org_id)
-            )
+            select(Role).where(and_(Role.name == role_name.value, Role.organization_id == org_id))
         )
         if existing.scalar_one_or_none():
             continue
@@ -691,9 +693,7 @@ async def initialize_default_roles(db: AsyncSession, org_id: str):
 
         # Assign permissions
         for perm_name in permissions:
-            perm = await db.execute(
-                select(Permission).where(Permission.name == perm_name)
-            )
+            perm = await db.execute(select(Permission).where(Permission.name == perm_name))
             perm_obj = perm.scalar_one_or_none()
             if not perm_obj:
                 # Create permission
@@ -721,11 +721,7 @@ async def assign_user_role(
     expires_at: datetime | None = None,
 ) -> UserRole:
     """Assign a role to a user in an organization/project."""
-    role = await db.execute(
-        select(Role).where(
-            and_(Role.name == role_name, Role.organization_id == org_id)
-        )
-    )
+    role = await db.execute(select(Role).where(and_(Role.name == role_name, Role.organization_id == org_id)))
     role = role.scalar_one_or_none()
     if not role:
         raise ValueError(f"Role {role_name} not found in organization {org_id}")

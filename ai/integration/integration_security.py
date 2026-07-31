@@ -1,6 +1,7 @@
 """
 Integration Security - Security controls for integrations
 """
+
 import hashlib
 import secrets
 from dataclasses import dataclass, field
@@ -53,14 +54,22 @@ class IntegrationSecurity:
 
     def create_policy(self, name: str, auth_methods: list[AuthMethod] = None, **kwargs) -> SecurityPolicy:
         policy_id = hashlib.sha256(name.encode()).hexdigest()[:16]
-        policy = SecurityPolicy(policy_id=policy_id, name=name, auth_methods=auth_methods or [AuthMethod.API_KEY], **kwargs)
+        policy = SecurityPolicy(
+            policy_id=policy_id, name=name, auth_methods=auth_methods or [AuthMethod.API_KEY], **kwargs
+        )
         self.policies[policy_id] = policy
         return policy
 
     def create_token(self, integration_id: str, auth_method: AuthMethod, scopes: list[str] = None) -> SecurityToken:
         raw_token = secrets.token_urlsafe(32)
         token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
-        token = SecurityToken(token_id=hashlib.sha256(f"{integration_id}{token_hash}".encode()).hexdigest()[:16], integration_id=integration_id, auth_method=auth_method, token_hash=token_hash, scopes=scopes or [])
+        token = SecurityToken(
+            token_id=hashlib.sha256(f"{integration_id}{token_hash}".encode()).hexdigest()[:16],
+            integration_id=integration_id,
+            auth_method=auth_method,
+            token_hash=token_hash,
+            scopes=scopes or [],
+        )
         self.tokens[token.token_id] = token
         return token
 
@@ -100,7 +109,14 @@ class IntegrationSecurity:
         self.rate_counters[integration_id] = 0
 
     def audit(self, action: str, integration_id: str, details: dict[str, Any] = None) -> None:
-        self.audit_log.append({"action": action, "integration_id": integration_id, "details": details or {}, "timestamp": datetime.now().isoformat()})
+        self.audit_log.append(
+            {
+                "action": action,
+                "integration_id": integration_id,
+                "details": details or {},
+                "timestamp": datetime.now().isoformat(),
+            }
+        )
 
     def get_audit_log(self, integration_id: str = None) -> list[dict[str, Any]]:
         if integration_id:

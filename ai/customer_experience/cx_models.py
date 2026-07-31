@@ -1,4 +1,5 @@
 """CX Models — Core data models for customer experience and CRM."""
+
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime

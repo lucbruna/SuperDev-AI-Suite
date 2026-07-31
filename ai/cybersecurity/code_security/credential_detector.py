@@ -1,6 +1,7 @@
 """
 Credential Detection Engine
 """
+
 import math
 import re
 from dataclasses import dataclass
@@ -30,11 +31,11 @@ class CredentialFinding:
 class CredentialDetector:
     def __init__(self):
         self.patterns: dict[CredentialType, str] = {
-            CredentialType.BASIC_AUTH: r'Basic\s+[A-Za-z0-9+/=]+',
-            CredentialType.BEARER_TOKEN: r'Bearer\s+[\w.-]+',
-            CredentialType.JWT_SECRET: r'eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+',
+            CredentialType.BASIC_AUTH: r"Basic\s+[A-Za-z0-9+/=]+",
+            CredentialType.BEARER_TOKEN: r"Bearer\s+[\w.-]+",
+            CredentialType.JWT_SECRET: r"eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+",
             CredentialType.DATABASE_CRED: r'(user|password|passwd|pwd)\s*[=:]\s*["\']([^"\']+)',
-            CredentialType.SSH_CREDENTIAL: r'-----BEGIN\s+OPENSSH\s+PRIVATE\s+KEY-----',
+            CredentialType.SSH_CREDENTIAL: r"-----BEGIN\s+OPENSSH\s+PRIVATE\s+KEY-----",
         }
         self.findings: list[CredentialFinding] = []
         self.false_positive_patterns: list[str] = ["example", "placeholder", "test", "dummy", "xxx"]
@@ -48,7 +49,14 @@ class CredentialDetector:
                 if match:
                     entropy = self._calculate_entropy(match.group())
                     is_fp = any(fp in line.lower() for fp in self.false_positive_patterns)
-                    finding = CredentialFinding(credential_type=cred_type, file_path=file_path, line_number=line_num, snippet=line.strip()[:100], entropy=entropy, is_false_positive=is_fp)
+                    finding = CredentialFinding(
+                        credential_type=cred_type,
+                        file_path=file_path,
+                        line_number=line_num,
+                        snippet=line.strip()[:100],
+                        entropy=entropy,
+                        is_false_positive=is_fp,
+                    )
                     findings.append(finding)
         self.findings.extend(findings)
         return findings

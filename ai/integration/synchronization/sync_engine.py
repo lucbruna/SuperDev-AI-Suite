@@ -1,6 +1,7 @@
 """
 Sync Engine - Core synchronization
 """
+
 import hashlib
 from dataclasses import dataclass
 from datetime import datetime
@@ -41,7 +42,9 @@ class SyncEngine:
         self.schedules: dict[str, dict[str, Any]] = {}
         self.sync_log: list[dict[str, Any]] = []
 
-    def create_job(self, name: str, source_id: str, target_id: str, direction: SyncDirection = SyncDirection.BIDIRECTIONAL) -> SyncJob:
+    def create_job(
+        self, name: str, source_id: str, target_id: str, direction: SyncDirection = SyncDirection.BIDIRECTIONAL
+    ) -> SyncJob:
         job_id = hashlib.sha256(f"{name}{source_id}{target_id}".encode()).hexdigest()[:16]
         job = SyncJob(job_id=job_id, name=name, source_id=source_id, target_id=target_id, direction=direction)
         self.jobs[job_id] = job
@@ -57,7 +60,9 @@ class SyncEngine:
             job.records_synced += records
             job.status = SyncStatus.COMPLETED
             job.last_sync = datetime.now()
-            self.sync_log.append({"job_id": job_id, "records": records, "timestamp": datetime.now().isoformat(), "success": True})
+            self.sync_log.append(
+                {"job_id": job_id, "records": records, "timestamp": datetime.now().isoformat(), "success": True}
+            )
             return {"success": True, "records_synced": records}
         except Exception as e:
             job.status = SyncStatus.FAILED
@@ -65,7 +70,11 @@ class SyncEngine:
             return {"success": False, "error": str(e)}
 
     def schedule_job(self, job_id: str, interval_seconds: int = 3600) -> None:
-        self.schedules[job_id] = {"interval": interval_seconds, "last_run": None, "next_run": datetime.now().isoformat()}
+        self.schedules[job_id] = {
+            "interval": interval_seconds,
+            "last_run": None,
+            "next_run": datetime.now().isoformat(),
+        }
 
     def get_job(self, job_id: str) -> SyncJob | None:
         return self.jobs.get(job_id)

@@ -28,10 +28,7 @@ class ReActAgent(BaseAgent):
             self.register_tool(tool["name"], tool["description"], tool["parameters"])
 
     def _build_system_prompt(self) -> str:
-        tools_desc = "\n".join(
-            f"- {t['name']}: {t['description']}"
-            for t in self._tools
-        )
+        tools_desc = "\n".join(f"- {t['name']}: {t['description']}" for t in self._tools)
         return f"""You are {self.name}. {self.description}
 
 You have access to the following tools:
@@ -107,7 +104,8 @@ Always think step by step. Use tools when needed to accomplish the task."""
                 )
 
                 progress_event = EventBuilder.agent_progress(
-                    self.name, (step_num + 1) / self.max_steps * 100,
+                    self.name,
+                    (step_num + 1) / self.max_steps * 100,
                     step.thought[:100],
                 )
                 await manager.broadcast_all(progress_event.to_dict())
@@ -147,7 +145,12 @@ Always think step by step. Use tools when needed to accomplish the task."""
                 steps.append(step)
 
                 messages.append({"role": "assistant", "content": response_text})
-                messages.append({"role": "user", "content": f"Observation: {json.dumps(observation) if not isinstance(observation, str) else observation}"})
+                messages.append(
+                    {
+                        "role": "user",
+                        "content": f"Observation: {json.dumps(observation) if not isinstance(observation, str) else observation}",
+                    }
+                )
 
             execution_time = (time.time() - start_time) * 1000
             self._status = AgentStatus.COMPLETED

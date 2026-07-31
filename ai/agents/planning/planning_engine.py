@@ -1,4 +1,5 @@
 """Central planning engine for goal decomposition and task management."""
+
 from __future__ import annotations
 
 import time
@@ -72,8 +73,7 @@ class PlanningEngine:
         plan["started_at"] = time.time()
         return {"plan_id": plan_id, "status": "executing", "tasks": plan["tasks"]}
 
-    def complete_task(self, plan_id: str, task_id: str,
-                      result: dict[str, Any] | None = None) -> dict[str, Any]:
+    def complete_task(self, plan_id: str, task_id: str, result: dict[str, Any] | None = None) -> dict[str, Any]:
         plan = self._plans.get(plan_id)
         if plan is None:
             return {"error": "Plan not found"}
@@ -103,10 +103,7 @@ class PlanningEngine:
         return self._plans.get(plan_id)
 
     def list_plans(self) -> list[dict[str, Any]]:
-        return [
-            {"plan_id": p["plan_id"], "goal": p["goal"], "status": p["status"]}
-            for p in self._plans.values()
-        ]
+        return [{"plan_id": p["plan_id"], "goal": p["goal"], "status": p["status"]} for p in self._plans.values()]
 
     def snapshot(self) -> dict[str, Any]:
         return {

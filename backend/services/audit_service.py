@@ -47,6 +47,7 @@ class AuditService:
         log = await self.repository.get_by_id(log_id)
         if not log:
             from backend.exceptions import AppException
+
             raise AppException(message="Audit log not found", code="AUDIT_LOG_NOT_FOUND", status_code=404)
         return log
 
@@ -95,6 +96,4 @@ class AuditService:
         page_size: int = 20,
     ) -> tuple[list[AuditLog], int]:
         """List audit logs within a date range."""
-        return await self.repository.get_by_date_range(
-            organization_id, start_date, end_date, page, page_size
-        )
+        return await self.repository.get_by_date_range(organization_id, start_date, end_date, page, page_size)

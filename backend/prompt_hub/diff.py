@@ -20,13 +20,17 @@ class PromptDiffer:
         for tag, i1, i2, j1, j2 in matcher.get_opcodes():
             if tag == "equal":
                 continue
-            changes.append({
-                "type": tag,
-                "old_start": i1, "old_end": i2,
-                "new_start": j1, "new_end": j2,
-                "old_text": "\n".join(old_lines[i1:i2]) if tag in ("replace", "delete") else "",
-                "new_text": "\n".join(new_lines[j1:j2]) if tag in ("replace", "insert") else "",
-            })
+            changes.append(
+                {
+                    "type": tag,
+                    "old_start": i1,
+                    "old_end": i2,
+                    "new_start": j1,
+                    "new_end": j2,
+                    "old_text": "\n".join(old_lines[i1:i2]) if tag in ("replace", "delete") else "",
+                    "new_text": "\n".join(new_lines[j1:j2]) if tag in ("replace", "insert") else "",
+                }
+            )
         additions = sum(1 for c in changes if c["type"] in ("insert", "replace"))
         deletions = sum(1 for c in changes if c["type"] in ("delete", "replace"))
         return {

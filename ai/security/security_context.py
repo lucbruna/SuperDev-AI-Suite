@@ -1,4 +1,5 @@
 """Security context for request-scoped security state."""
+
 from __future__ import annotations
 
 import time
@@ -20,15 +21,13 @@ class SecurityContext:
             "start_time": time.time(),
         }
 
-    def set_user(self, user_id: str, roles: list[str] | None = None,
-                 permissions: list[str] | None = None) -> None:
+    def set_user(self, user_id: str, roles: list[str] | None = None, permissions: list[str] | None = None) -> None:
         self._context["user_id"] = user_id
         self._context["roles"] = roles or []
         self._context["permissions"] = permissions or []
         self._context["authenticated"] = True
 
-    def set_request(self, ip_address: str, user_agent: str = "",
-                    session_id: str = "") -> None:
+    def set_request(self, ip_address: str, user_agent: str = "", session_id: str = "") -> None:
         self._context["ip_address"] = ip_address
         self._context["user_agent"] = user_agent
         self._context["session_id"] = session_id
@@ -53,7 +52,12 @@ class SecurityContext:
 
     def clear(self) -> None:
         self._context = {
-            "user_id": "", "session_id": "", "ip_address": "",
-            "user_agent": "", "roles": [], "permissions": [],
-            "authenticated": False, "start_time": time.time(),
+            "user_id": "",
+            "session_id": "",
+            "ip_address": "",
+            "user_agent": "",
+            "roles": [],
+            "permissions": [],
+            "authenticated": False,
+            "start_time": time.time(),
         }

@@ -1,4 +1,5 @@
 """Support subsystem."""
+
 from .engine import SupportEngine
 from .models import (
     ChatMessage,
@@ -11,7 +12,12 @@ from .models import (
 )
 
 __all__ = [
-    "TicketStatus", "TicketPriority", "EscalationReason",
-    "SupportTicket", "ChatMessage", "KnowledgeArticle", "Escalation",
+    "TicketStatus",
+    "TicketPriority",
+    "EscalationReason",
+    "SupportTicket",
+    "ChatMessage",
+    "KnowledgeArticle",
+    "Escalation",
     "SupportEngine",
 ]

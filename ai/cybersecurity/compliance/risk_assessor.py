@@ -1,6 +1,7 @@
 """
 Risk Assessment Engine
 """
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -63,7 +64,9 @@ class RiskAssessor:
             level = RiskLevel.LOW
         else:
             level = RiskLevel.NEGLIGIBLE
-        risk = Risk(risk_id=risk_id, name=name, likelihood=likelihood, impact=impact, risk_level=level, score=score, **kwargs)
+        risk = Risk(
+            risk_id=risk_id, name=name, likelihood=likelihood, impact=impact, risk_level=level, score=score, **kwargs
+        )
         self.risks[risk_id] = risk
         return risk
 

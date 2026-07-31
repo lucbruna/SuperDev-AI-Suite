@@ -1,6 +1,7 @@
 """
 Security Engine - Main orchestrator
 """
+
 from typing import Any
 
 
@@ -46,6 +47,6 @@ class SecurityEngine:
 
     def health_check(self) -> bool:
         return self.running and all(
-            hasattr(m, 'is_healthy') and m.is_healthy() if hasattr(m, 'is_healthy') else True
+            hasattr(m, "is_healthy") and m.is_healthy() if hasattr(m, "is_healthy") else True
             for m in self.modules.values()
         )

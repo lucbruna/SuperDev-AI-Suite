@@ -16,6 +16,7 @@ Priority = int
 
 class MemoryScope(Enum):
     """Scope of a memory entry."""
+
     LOCAL = auto()
     SESSION = auto()
     AGENT = auto()
@@ -25,6 +26,7 @@ class MemoryScope(Enum):
 
 class MemoryStatus(Enum):
     """Lifecycle status of a memory entry."""
+
     PENDING = auto()
     ACTIVE = auto()
     ARCHIVED = auto()
@@ -35,6 +37,7 @@ class MemoryStatus(Enum):
 
 class MemoryCategory(Enum):
     """Functional category of memory."""
+
     CONTEXT = auto()
     KNOWLEDGE = auto()
     HISTORY = auto()
@@ -49,6 +52,7 @@ class MemoryCategory(Enum):
 
 class RetentionPolicy(Enum):
     """Policies for memory retention and eviction."""
+
     KEEP_FOREVER = auto()
     TTL = auto()
     LRU = auto()
@@ -59,6 +63,7 @@ class RetentionPolicy(Enum):
 
 class ConsolidationStrategy(Enum):
     """Strategies for memory consolidation."""
+
     MERGE = auto()
     SUMMARIZE = auto()
     COMPRESS = auto()
@@ -69,6 +74,7 @@ class ConsolidationStrategy(Enum):
 
 class MemoryEventType(Enum):
     """Types of events emitted by the memory subsystem."""
+
     STORED = auto()
     RETRIEVED = auto()
     UPDATED = auto()

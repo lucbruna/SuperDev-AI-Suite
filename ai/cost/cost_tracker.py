@@ -26,7 +26,15 @@ class CostTracker:
         self._project_costs: dict[str, float] = defaultdict(float)
         self._total_cost: float = 0.0
 
-    def track(self, provider: str, model: str, prompt_tokens: int, completion_tokens: int, session_id: str = "", project_id: str = "") -> CostEntry:
+    def track(
+        self,
+        provider: str,
+        model: str,
+        prompt_tokens: int,
+        completion_tokens: int,
+        session_id: str = "",
+        project_id: str = "",
+    ) -> CostEntry:
         cost = calculate_cost(provider, model, prompt_tokens, completion_tokens)
         entry = CostEntry(
             provider=provider,

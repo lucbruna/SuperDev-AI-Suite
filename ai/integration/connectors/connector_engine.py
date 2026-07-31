@@ -1,6 +1,7 @@
 """
 Connector Engine - Core connector logic
 """
+
 import hashlib
 from collections.abc import Callable
 from dataclasses import dataclass, field

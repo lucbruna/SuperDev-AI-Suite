@@ -1,4 +1,5 @@
 """Skill registration and management."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -42,11 +43,7 @@ class SkillManager:
         return [{"id": s["id"], "name": s["name"], "category": s["category"]} for s in self._skills.values()]
 
     def list_by_category(self, category: str) -> list[dict[str, Any]]:
-        return [
-            {"id": s["id"], "name": s["name"]}
-            for s in self._skills.values()
-            if s["category"] == category
-        ]
+        return [{"id": s["id"], "name": s["name"]} for s in self._skills.values() if s["category"] == category]
 
     def count(self) -> int:
         return len(self._skills)

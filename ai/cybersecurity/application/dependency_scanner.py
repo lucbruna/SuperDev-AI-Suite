@@ -1,6 +1,7 @@
 """
 Dependency Vulnerability Scanner
 """
+
 from dataclasses import dataclass, field
 from enum import Enum
 
@@ -63,7 +64,12 @@ class DependencyScanner:
                 if vuln.package == dep.name and vuln.version == dep.version:
                     found.append(vuln)
         risk = sum(v.cvss_score for v in found) / max(len(found), 1)
-        return ScanResult(total_dependencies=len(self.dependencies), vulnerable_count=len(found), vulnerabilities=found, risk_score=risk)
+        return ScanResult(
+            total_dependencies=len(self.dependencies),
+            vulnerable_count=len(found),
+            vulnerabilities=found,
+            risk_score=risk,
+        )
 
     def get_vulnerable(self) -> list[Vulnerability]:
         found = []

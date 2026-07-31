@@ -1,6 +1,7 @@
 """
 Post-Incident Review and Lessons Learned
 """
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -71,7 +72,9 @@ class LessonsLearnedManager:
     def add_improvement(self, review_id: str, title: str, description: str = "", owner: str = "") -> Improvement | None:
         review = self.reviews.get(review_id)
         if review:
-            improvement = Improvement(improvement_id=f"imp_{len(self.improvements)}", title=title, description=description, owner=owner)
+            improvement = Improvement(
+                improvement_id=f"imp_{len(self.improvements)}", title=title, description=description, owner=owner
+            )
             review.improvements.append(improvement)
             self.improvements[improvement.improvement_id] = improvement
             return improvement

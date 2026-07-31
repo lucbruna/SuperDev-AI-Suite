@@ -18,7 +18,7 @@ class OptimizationEngine:
         for opt in self._optimizations:
             action = opt.get("action", "")
             if action == "trim" and len(optimized) > opt.get("max_length", 0):
-                optimized = optimized[:opt.get("max_length")]
+                optimized = optimized[: opt.get("max_length")]
                 applied.append("trimmed")
             if action == "simplify":
                 redundant = opt.get("redundant", "")

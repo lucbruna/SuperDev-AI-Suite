@@ -1,4 +1,5 @@
 """Audit engine."""
+
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -55,7 +56,17 @@ class AuditEngine:
         self._retention_days = retention_days
         self._max_entries: int = 100000
 
-    def log(self, action: AuditAction, user_id: str = "", resource: str = "", details: str = "", ip_address: str = "", severity: AuditSeverity = AuditSeverity.LOW, success: bool = True, metadata: dict[str, Any] | None = None) -> AuditEntry:
+    def log(
+        self,
+        action: AuditAction,
+        user_id: str = "",
+        resource: str = "",
+        details: str = "",
+        ip_address: str = "",
+        severity: AuditSeverity = AuditSeverity.LOW,
+        success: bool = True,
+        metadata: dict[str, Any] | None = None,
+    ) -> AuditEntry:
         entry = AuditEntry(
             action=action,
             user_id=user_id,
@@ -68,7 +79,7 @@ class AuditEngine:
         )
         self._entries.append(entry)
         if len(self._entries) > self._max_entries:
-            self._entries = self._entries[-self._max_entries:]
+            self._entries = self._entries[-self._max_entries :]
         return entry
 
     def query(self, audit_query: AuditQuery) -> list[AuditEntry]:
@@ -85,7 +96,7 @@ class AuditEngine:
             results = [e for e in results if e.timestamp >= audit_query.start_time]
         if audit_query.end_time:
             results = [e for e in results if e.timestamp <= audit_query.end_time]
-        return results[-audit_query.limit:]
+        return results[-audit_query.limit :]
 
     def get_entry(self, entry_id: str) -> AuditEntry | None:
         for e in self._entries:

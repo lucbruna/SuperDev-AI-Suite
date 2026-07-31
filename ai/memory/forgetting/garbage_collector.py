@@ -20,8 +20,10 @@ class GarbageCollector:
 
     def collect(self, entries: dict[str, Any], predicate: Any = None) -> dict[str, Any]:
         if predicate is None:
+
             def predicate(k, v):
                 return v.get("active", True) is False
+
         kept: dict[str, Any] = {}
         removed: list[str] = []
         for k, v in entries.items():

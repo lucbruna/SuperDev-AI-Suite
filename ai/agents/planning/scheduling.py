@@ -1,4 +1,5 @@
 """Task scheduling with dependency resolution and priority ordering."""
+
 from __future__ import annotations
 
 import time
@@ -42,8 +43,7 @@ class Scheduler:
         result.extend(remaining)
         return result
 
-    def get_next(self, tasks: list[dict[str, Any]],
-                 completed: list[str]) -> dict[str, Any] | None:
+    def get_next(self, tasks: list[dict[str, Any]], completed: list[str]) -> dict[str, Any] | None:
         for task in tasks:
             if task.get("status") != "pending":
                 continue

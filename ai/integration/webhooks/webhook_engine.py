@@ -1,6 +1,7 @@
 """
 Webhook Engine - Core webhook management
 """
+
 import hashlib
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -65,7 +66,14 @@ class WebhookEngine:
         triggered = []
         for webhook in self.webhooks.values():
             if webhook.status == WebhookStatus.ACTIVE and (event_type in webhook.events or "*" in webhook.events):
-                event = WebhookEvent(event_id=hashlib.sha256(f"{webhook.webhook_id}{event_type}{datetime.now().isoformat()}".encode()).hexdigest()[:16], webhook_id=webhook.webhook_id, event_type=event_type, payload=payload)
+                event = WebhookEvent(
+                    event_id=hashlib.sha256(
+                        f"{webhook.webhook_id}{event_type}{datetime.now().isoformat()}".encode()
+                    ).hexdigest()[:16],
+                    webhook_id=webhook.webhook_id,
+                    event_type=event_type,
+                    payload=payload,
+                )
                 self.events.append(event)
                 webhook.last_triggered = datetime.now()
                 triggered.append(event)

@@ -14,7 +14,9 @@ class EmbeddingManager:
         raw = f"{text}:{model}"
         return hashlib.sha256(raw.encode()).hexdigest()
 
-    async def embed_texts(self, texts: list[str], provider_name: str | None = None, provider_manager: ProviderManager | None = None) -> list[list[float]]:
+    async def embed_texts(
+        self, texts: list[str], provider_name: str | None = None, provider_manager: ProviderManager | None = None
+    ) -> list[list[float]]:
         if not texts:
             return []
         provider = None
@@ -52,7 +54,9 @@ class EmbeddingManager:
 
         return results
 
-    async def embed_query(self, query: str, provider_name: str | None = None, provider_manager: ProviderManager | None = None) -> list[float]:
+    async def embed_query(
+        self, query: str, provider_name: str | None = None, provider_manager: ProviderManager | None = None
+    ) -> list[float]:
         results = await self.embed_texts([query], provider_name, provider_manager)
         return results[0] if results else [0.0] * 1536
 

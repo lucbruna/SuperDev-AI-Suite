@@ -52,9 +52,7 @@ class LLMExecutor(ILLMExecutor):
             self._logger.error(provider, f"Execution failed: {e}")
             return {"success": False, "error": str(e), "execution_id": execution_id}
 
-    async def execute_stream(
-        self, provider: str, prompt: str, **kwargs: Any
-    ) -> AsyncIterator[dict[str, Any]]:
+    async def execute_stream(self, provider: str, prompt: str, **kwargs: Any) -> AsyncIterator[dict[str, Any]]:
         prov = self._registry.get(provider)
         if prov is None:
             yield {"success": False, "error": f"Unknown provider: {provider}"}
@@ -66,9 +64,7 @@ class LLMExecutor(ILLMExecutor):
         except Exception as e:
             yield {"success": False, "error": str(e)}
 
-    async def execute_batch(
-        self, tasks: list[tuple[str, str, dict[str, Any]]]
-    ) -> list[dict[str, Any]]:
+    async def execute_batch(self, tasks: list[tuple[str, str, dict[str, Any]]]) -> list[dict[str, Any]]:
         results: list[dict[str, Any]] = []
         for provider, prompt, kwargs in tasks:
             result = await self.execute(provider, prompt, **kwargs)

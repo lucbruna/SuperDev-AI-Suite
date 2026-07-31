@@ -72,7 +72,12 @@ async def search_replace(body: dict[str, Any]) -> dict[str, Any]:
     if not body.get("dry_run"):
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(new_content)
-    return {"success": True, "filepath": filepath, "occurrences": occurrences, "preview": new_content[:500] if body.get("dry_run") else None}
+    return {
+        "success": True,
+        "filepath": filepath,
+        "occurrences": occurrences,
+        "preview": new_content[:500] if body.get("dry_run") else None,
+    }
 
 
 @router.post("/rename-symbol")
@@ -92,7 +97,13 @@ async def rename_symbol_body(body: dict[str, Any]) -> dict[str, Any]:
     with open(filepath, "w", encoding="utf-8") as f:
         f.write(new_content)
     count = content.count(old_name)
-    return {"success": True, "filepath": filepath, "old_name": old_name, "new_name": new_name, "occurrences_replaced": count}
+    return {
+        "success": True,
+        "filepath": filepath,
+        "old_name": old_name,
+        "new_name": new_name,
+        "occurrences_replaced": count,
+    }
 
 
 @router.post("/rename")
@@ -123,10 +134,19 @@ async def extract_function(body: dict[str, Any]) -> dict[str, Any]:
     with open(filepath, encoding="utf-8") as f:
         lines = f.readlines()
     if start_line < 1 or end_line > len(lines):
-        return {"success": False, "error": f"Line range {start_line}-{end_line} out of bounds (file has {len(lines)} lines)"}
+        return {
+            "success": False,
+            "error": f"Line range {start_line}-{end_line} out of bounds (file has {len(lines)} lines)",
+        }
     extracted = "".join(lines[start_line - 1 : end_line])
     new_function = f"\ndef {function_name}():\n{extracted}\n"
     lines.insert(end_line, new_function)
     with open(filepath, "w", encoding="utf-8") as f:
         f.writelines(lines)
-    return {"success": True, "filepath": filepath, "function_name": function_name, "extracted_lines": end_line - start_line + 1, "new_file_lines": len(lines)}
+    return {
+        "success": True,
+        "filepath": filepath,
+        "function_name": function_name,
+        "extracted_lines": end_line - start_line + 1,
+        "new_file_lines": len(lines),
+    }

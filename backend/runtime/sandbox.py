@@ -38,10 +38,7 @@ class SandboxManager:
         return sandbox_dir if sandbox_dir.exists() else None
 
     def list_sandboxes(self) -> list[str]:
-        return [
-            d.name for d in self.base_dir.iterdir()
-            if d.is_dir() and not d.name.startswith(".")
-        ]
+        return [d.name for d in self.base_dir.iterdir() if d.is_dir() and not d.name.startswith(".")]
 
     def get_sandbox_size(self, run_id: str) -> int:
         sandbox_dir = self.base_dir / run_id
@@ -79,12 +76,14 @@ class SandboxManager:
         files = []
         for item in sorted(sandbox_dir.iterdir()):
             stat = item.stat()
-            files.append({
-                "name": item.name,
-                "path": str(item.relative_to(self.base_dir / run_id)),
-                "is_dir": item.is_dir(),
-                "size": stat.st_size if item.is_file() else 0,
-            })
+            files.append(
+                {
+                    "name": item.name,
+                    "path": str(item.relative_to(self.base_dir / run_id)),
+                    "is_dir": item.is_dir(),
+                    "size": stat.st_size if item.is_file() else 0,
+                }
+            )
         return files
 
 

@@ -47,9 +47,7 @@ class ContextRanker:
         self._ranking_count += 1
         return result
 
-    def rank_custom(
-        self, items: list[dict[str, Any]], key_fn: Any
-    ) -> list[dict[str, Any]]:
+    def rank_custom(self, items: list[dict[str, Any]], key_fn: Any) -> list[dict[str, Any]]:
         result = sorted(items, key=key_fn, reverse=True)
         self._ranking_count += 1
         return result

@@ -57,13 +57,15 @@ class MemorySecurity:
     def audit(self, action: str, resource: str, user: str = "", details: dict[str, Any] | None = None) -> None:
         if not self._enable_audit:
             return
-        self._audit_log.append({
-            "action": action,
-            "resource": resource,
-            "user": user,
-            "details": details or {},
-            "timestamp": time.time(),
-        })
+        self._audit_log.append(
+            {
+                "action": action,
+                "resource": resource,
+                "user": user,
+                "details": details or {},
+                "timestamp": time.time(),
+            }
+        )
 
     def get_audit_log(self, limit: int = 100) -> list[dict[str, Any]]:
         return list(self._audit_log[-limit:])

@@ -55,6 +55,7 @@ class MemoryValidator:
             self._errors.append("Data must be a dictionary")
             return
         import json
+
         try:
             size = len(json.dumps(data).encode("utf-8"))
             if size > 10 * 1024 * 1024:

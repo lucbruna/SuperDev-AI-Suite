@@ -1,4 +1,5 @@
 """Recommendation engine."""
+
 import uuid
 from datetime import datetime, timedelta
 
@@ -23,7 +24,7 @@ class RecommendationEngine:
                 recommendation_id=str(uuid.uuid4())[:8],
                 customer_id=customer_id,
                 product_id=f"prod_{i}",
-                product_name=f"Recommended Product {i+1}",
+                product_name=f"Recommended Product {i + 1}",
                 score=0.9 - i * 0.1,
                 reason="Based on purchase history",
             )
@@ -38,7 +39,7 @@ class RecommendationEngine:
                 recommendation_id=str(uuid.uuid4())[:8],
                 customer_id=customer_id,
                 content_id=f"content_{i}",
-                content_title=f"Article {i+1}",
+                content_title=f"Article {i + 1}",
                 content_type="article",
                 score=0.85 - i * 0.1,
                 reason="Based on interests",

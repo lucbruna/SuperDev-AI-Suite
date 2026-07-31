@@ -11,9 +11,7 @@ class Reranker:
     def __init__(self):
         self._similarity = SimilarityEngine()
 
-    def rerank(
-        self, query_vector: list[float], results: list[Any], weight: float = 0.5
-    ) -> list[Any]:
+    def rerank(self, query_vector: list[float], results: list[Any], weight: float = 0.5) -> list[Any]:
         if not results:
             return results
         scored = []

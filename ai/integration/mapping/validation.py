@@ -1,6 +1,7 @@
 """
 Mapping Validation - Validate mappings
 """
+
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -19,7 +20,9 @@ class MappingValidator:
     def register_schema(self, name: str, schema: dict[str, Any]) -> None:
         self.schemas[name] = schema
 
-    def validate_mapping(self, source_schema: str, target_schema: str, field_mappings: dict[str, str]) -> ValidationResult:
+    def validate_mapping(
+        self, source_schema: str, target_schema: str, field_mappings: dict[str, str]
+    ) -> ValidationResult:
         errors = []
         warnings = []
         source = self.schemas.get(source_schema, {})

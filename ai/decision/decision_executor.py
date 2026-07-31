@@ -16,11 +16,13 @@ class DecisionExecutor:
 
     async def execute(self, context: DecisionContext) -> DecisionResult:
         result = await self._engine.decide(context)
-        self._executed.append({
-            "context_id": context.context_id,
-            "decision": result.decision,
-            "confidence": result.confidence,
-        })
+        self._executed.append(
+            {
+                "context_id": context.context_id,
+                "decision": result.decision,
+                "confidence": result.confidence,
+            }
+        )
         return result
 
     async def execute_batch(self, contexts: list[DecisionContext]) -> list[DecisionResult]:

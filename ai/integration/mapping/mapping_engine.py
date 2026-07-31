@@ -1,6 +1,7 @@
 """
 Mapping Engine - Core data mapping
 """
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -36,10 +37,18 @@ class MappingEngine:
         self.mappings[name] = config
         return config
 
-    def add_rule(self, mapping_name: str, source_field: str, target_field: str, transform: str = "", default_value: Any = None) -> MappingRule:
+    def add_rule(
+        self, mapping_name: str, source_field: str, target_field: str, transform: str = "", default_value: Any = None
+    ) -> MappingRule:
         config = self.mappings.get(mapping_name)
         if config:
-            rule = MappingRule(rule_id=hashlib.sha256(f"{source_field}{target_field}".encode()).hexdigest()[:16], source_field=source_field, target_field=target_field, transform=transform, default_value=default_value)
+            rule = MappingRule(
+                rule_id=hashlib.sha256(f"{source_field}{target_field}".encode()).hexdigest()[:16],
+                source_field=source_field,
+                target_field=target_field,
+                transform=transform,
+                default_value=default_value,
+            )
             config.rules.append(rule)
             return rule
         return None
@@ -54,7 +63,9 @@ class MappingEngine:
             if rule.transform:
                 value = self._apply_transform(value, rule.transform)
             result[rule.target_field] = value
-        self.transform_log.append({"mapping": mapping_name, "timestamp": datetime.now().isoformat(), "fields_mapped": len(result)})
+        self.transform_log.append(
+            {"mapping": mapping_name, "timestamp": datetime.now().isoformat(), "fields_mapped": len(result)}
+        )
         return result
 
     def _apply_transform(self, value: Any, transform: str) -> Any:

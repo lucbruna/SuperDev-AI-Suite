@@ -21,9 +21,7 @@ class KnowledgeMerger:
             key = entry.get("topic", entry.get("type", "unknown"))
             if key in merged:
                 existing = merged[key]
-                existing["sources"] = list(
-                    set(existing.get("sources", [])) | {entry.get("id", "?")}
-                )
+                existing["sources"] = list(set(existing.get("sources", [])) | {entry.get("id", "?")})
                 existing["merge_count"] = existing.get("merge_count", 1) + 1
                 content = existing.get("content", {})
                 if isinstance(content, dict) and isinstance(entry.get("content"), dict):

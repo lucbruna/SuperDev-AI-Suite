@@ -2,6 +2,7 @@
 
 Supports both PostgreSQL (production) and SQLite (testing).
 """
+
 from __future__ import annotations
 
 import asyncio

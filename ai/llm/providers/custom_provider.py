@@ -37,6 +37,7 @@ class CustomProvider(BaseLLMProvider):
     async def generate_stream(self, prompt: str, **kwargs: Any) -> AsyncIterator[dict[str, Any]]:
         async def _gen() -> AsyncIterator[dict[str, Any]]:
             yield {"content": f"Custom ({self._model}) streaming...", "finish_reason": "stop"}
+
         return _gen()
 
     async def validate(self, params: dict[str, Any]) -> bool:

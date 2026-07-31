@@ -20,11 +20,13 @@ class TimelineEstimator:
         for step in steps:
             duration = step.get("estimated_duration", 10)
             current_time += duration
-            milestones.append({
-                "step": step.get("id", "unknown"),
-                "duration": duration,
-                "cumulative_time": current_time,
-            })
+            milestones.append(
+                {
+                    "step": step.get("id", "unknown"),
+                    "duration": duration,
+                    "cumulative_time": current_time,
+                }
+            )
         return {
             "total_duration_seconds": total_duration,
             "total_duration_readable": f"{total_duration // 60}m {total_duration % 60}s",

@@ -1,6 +1,7 @@
 """
 AI Code Assistant
 """
+
 import json
 from dataclasses import dataclass, field
 from enum import Enum

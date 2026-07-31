@@ -12,10 +12,12 @@ class Metrics:
     def record(self, name: str, value: float, tags: dict[str, Any] | None = None) -> str:
         if name not in self._data:
             self._data[name] = []
-        self._data[name].append({
-            "value": value,
-            "tags": tags or {},
-        })
+        self._data[name].append(
+            {
+                "value": value,
+                "tags": tags or {},
+            }
+        )
         return name
 
     def get_metric(self, name: str) -> list[dict[str, Any]]:

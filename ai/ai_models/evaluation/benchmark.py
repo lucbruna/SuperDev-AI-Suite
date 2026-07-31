@@ -1,4 +1,5 @@
 """Benchmark system."""
+
 from __future__ import annotations
 
 import time
@@ -9,10 +10,14 @@ class BenchmarkRunner:
     def __init__(self) -> None:
         self._benchmarks: dict[str, dict[str, Any]] = {}
         self._results: list[dict[str, Any]] = []
-    def register_benchmark(self, name: str, test_cases: list[dict[str, Any]], category: str = "general") -> dict[str, Any]:
+
+    def register_benchmark(
+        self, name: str, test_cases: list[dict[str, Any]], category: str = "general"
+    ) -> dict[str, Any]:
         bench = {"name": name, "test_cases": test_cases, "category": category, "created_at": time.time()}
         self._benchmarks[name] = bench
         return bench
+
     def run(self, benchmark_name: str, model_id: str, handler) -> dict[str, Any]:
         bench = self._benchmarks.get(benchmark_name)
         if not bench:
@@ -26,9 +31,16 @@ class BenchmarkRunner:
             except Exception as e:
                 results.append({"input": tc.get("input", "")[:50], "score": 0, "error": str(e)})
         avg = sum(r["score"] for r in results) / len(results) if results else 0
-        result = {"benchmark": benchmark_name, "model_id": model_id, "avg_score": avg, "results": results, "timestamp": time.time()}
+        result = {
+            "benchmark": benchmark_name,
+            "model_id": model_id,
+            "avg_score": avg,
+            "results": results,
+            "timestamp": time.time(),
+        }
         self._results.append(result)
         return result
+
     def get_results(self, benchmark: str = "", model_id: str = "", limit: int = 20) -> list[dict[str, Any]]:
         results = self._results
         if benchmark:
@@ -36,12 +48,15 @@ class BenchmarkRunner:
         if model_id:
             results = [r for r in results if r["model_id"] == model_id]
         return results[-limit:]
+
     def list_benchmarks(self) -> list[str]:
         return list(self._benchmarks.keys())
+
     def remove_benchmark(self, name: str) -> bool:
         if name in self._benchmarks:
             del self._benchmarks[name]
             return True
         return False
+
     def count(self) -> int:
         return len(self._results)

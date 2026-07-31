@@ -1,4 +1,5 @@
 """Software Factory Engine - Core engine for autonomous software creation."""
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -85,4 +86,6 @@ class SoftwareFactoryEngine:
         return len(self.projects)
 
     def _log_phase(self, project_id: str, phase: FactoryPhase, action: str):
-        self.phase_log.append({"project_id": project_id, "phase": phase.value, "action": action, "timestamp": datetime.now().isoformat()})
+        self.phase_log.append(
+            {"project_id": project_id, "phase": phase.value, "action": action, "timestamp": datetime.now().isoformat()}
+        )

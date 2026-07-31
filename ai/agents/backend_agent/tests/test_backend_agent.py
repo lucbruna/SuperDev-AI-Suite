@@ -313,7 +313,12 @@ class TestBackendAgent:
 
     def test_generate_backend(self) -> None:
         ba = BackendAgent()
-        result = ba.generate_backend({"endpoints": [{"path": "/api", "method": "GET", "handler": "list"}], "services": [{"name": "Svc", "methods": ["exec"]}]})
+        result = ba.generate_backend(
+            {
+                "endpoints": [{"path": "/api", "method": "GET", "handler": "list"}],
+                "services": [{"name": "Svc", "methods": ["exec"]}],
+            }
+        )
         assert result["status"] == "generated"
         assert result["endpoints"] == 1
 

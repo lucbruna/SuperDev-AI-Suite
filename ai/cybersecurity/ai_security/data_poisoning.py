@@ -1,6 +1,7 @@
 """
 Training Data Poisoning Defense
 """
+
 import hashlib
 import statistics
 from dataclasses import dataclass, field
@@ -70,7 +71,9 @@ class DataPoisoningDefense:
                     is_anomalous = True
                     anomaly_score = max(anomaly_score, z_score / 10)
                     reasons.append(f"z_score_{key}_{z_score:.1f}")
-        result = AnomalyResult(data_id=data_id, is_anomalous=is_anomalous, anomaly_score=anomaly_score, reason="; ".join(reasons))
+        result = AnomalyResult(
+            data_id=data_id, is_anomalous=is_anomalous, anomaly_score=anomaly_score, reason="; ".join(reasons)
+        )
         self.anomaly_log.append(result)
         return result
 
@@ -79,7 +82,9 @@ class DataPoisoningDefense:
             self.baseline_stats[f"{feature_name}_mean"] = statistics.mean(values)
             self.baseline_stats[f"{feature_name}_std"] = statistics.stdev(values) if len(values) > 1 else 1.0
 
-    def add_lineage(self, data_id: str, source: str, transforms: list[str] = None, parent_ids: list[str] = None) -> DataLineage:
+    def add_lineage(
+        self, data_id: str, source: str, transforms: list[str] = None, parent_ids: list[str] = None
+    ) -> DataLineage:
         lineage = DataLineage(data_id=data_id, source=source, transforms=transforms or [], parent_ids=parent_ids or [])
         self.lineage[data_id] = lineage
         return lineage

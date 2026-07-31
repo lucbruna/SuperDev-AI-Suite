@@ -102,9 +102,7 @@ class OrganizationMemberRepository(BaseRepository[OrganizationMember]):
 
     async def count_members(self, org_id: str) -> int:
         """Count members in an organization."""
-        query = select(func.count()).select_from(self.model).where(
-            self.model.organization_id == org_id
-        )
+        query = select(func.count()).select_from(self.model).where(self.model.organization_id == org_id)
         result = await self.db.execute(query)
         return result.scalar() or 0
 

@@ -1,4 +1,5 @@
 """CX Runtime — Execution runtime for CX operations."""
+
 import hashlib
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -84,4 +85,11 @@ class CXRuntime:
         return len(self.tasks)
 
     def _log(self, task: CXTask) -> None:
-        self.task_log.append({"task_id": task.task_id, "name": task.name, "state": task.state.value, "timestamp": datetime.now().isoformat()})
+        self.task_log.append(
+            {
+                "task_id": task.task_id,
+                "name": task.name,
+                "state": task.state.value,
+                "timestamp": datetime.now().isoformat(),
+            }
+        )

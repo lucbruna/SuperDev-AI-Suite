@@ -21,7 +21,12 @@ class RollingDeploy:
                 batch_results.append({"instance": inst, "success": success, "version": version})
             results.extend(batch_results)
             if not all(r["success"] for r in batch_results):
-                return {"strategy": "rolling", "status": "failed", "results": results, "failed_batch": i // self.batch_size}
+                return {
+                    "strategy": "rolling",
+                    "status": "failed",
+                    "results": results,
+                    "failed_batch": i // self.batch_size,
+                }
         return {"strategy": "rolling", "status": "completed", "results": results, "total_instances": len(instances)}
 
 
@@ -51,7 +56,12 @@ class CanaryDeploy:
         await asyncio.sleep(2)
         canary_ok = random.random() > 0.08
         if not canary_ok:
-            return {"strategy": "canary", "status": "rolled_back", "canary_count": canary_count, "error": "Canary health check failed"}
+            return {
+                "strategy": "canary",
+                "status": "rolled_back",
+                "canary_count": canary_count,
+                "error": "Canary health check failed",
+            }
         await asyncio.sleep(self.promotion_minutes)
         return {
             "strategy": "canary",

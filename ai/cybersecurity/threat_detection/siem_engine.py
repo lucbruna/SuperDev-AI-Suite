@@ -1,6 +1,7 @@
 """
 Security Information and Event Management
 """
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -76,9 +77,18 @@ class SIEMEngine:
         self.rules: dict[str, CorrelationRule] = {}
         self.alerts: list[SIEMAlert] = []
 
-    def ingest_event(self, event_type: EventType, source: str, message: str, raw_data: dict[str, Any] = None) -> LogEvent:
+    def ingest_event(
+        self, event_type: EventType, source: str, message: str, raw_data: dict[str, Any] = None
+    ) -> LogEvent:
         event_id = hashlib.sha256(f"{source}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
-        event = LogEvent(event_id=event_id, event_type=event_type, source=source, message=message, raw_data=raw_data or {}, normalized=True)
+        event = LogEvent(
+            event_id=event_id,
+            event_type=event_type,
+            source=source,
+            message=message,
+            raw_data=raw_data or {},
+            normalized=True,
+        )
         self.events.append(event)
         self._check_rules(event)
         return event
@@ -89,7 +99,13 @@ class SIEMEngine:
                 continue
             matching_events = [e for e in self.events if e.event_type.value in rule.conditions.get("event_types", [])]
             if len(matching_events) >= rule.conditions.get("count", 1):
-                alert = SIEMAlert(alert_id=hashlib.sha256(rule.rule_id.encode()).hexdigest()[:16], rule_id=rule.rule_id, events=[e.event_id for e in matching_events], severity=rule.severity, message=f"Rule triggered: {rule.name}")
+                alert = SIEMAlert(
+                    alert_id=hashlib.sha256(rule.rule_id.encode()).hexdigest()[:16],
+                    rule_id=rule.rule_id,
+                    events=[e.event_id for e in matching_events],
+                    severity=rule.severity,
+                    message=f"Rule triggered: {rule.name}",
+                )
                 self.alerts.append(alert)
 
     def add_rule(self, name: str, conditions: dict[str, Any], severity: Severity = Severity.MEDIUM) -> CorrelationRule:

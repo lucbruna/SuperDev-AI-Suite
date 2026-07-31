@@ -98,9 +98,7 @@ class DataExporter:
         export_id = generate_uuid()
         try:
             if not data:
-                return ExportResult(
-                    success=True, export_id=export_id, format=ExportFormat.CSV, record_count=0
-                )
+                return ExportResult(success=True, export_id=export_id, format=ExportFormat.CSV, record_count=0)
 
             fname = filename or f"export_{export_id}.csv"
             file_path = self.export_dir / fname
@@ -202,10 +200,7 @@ class DataExporter:
     def get_stats(self) -> dict[str, Any]:
         return {
             "total_exports": len(self._exports),
-            "by_format": {
-                fmt.value: sum(1 for r in self._exports.values() if r.format == fmt)
-                for fmt in ExportFormat
-            },
+            "by_format": {fmt.value: sum(1 for r in self._exports.values() if r.format == fmt) for fmt in ExportFormat},
             "export_dir": str(self.export_dir),
         }
 
@@ -232,7 +227,9 @@ class DataImporter:
                     data = json.load(f)
             else:
                 return ImportResult(
-                    success=False, import_id=import_id, format=ImportFormat.JSON,
+                    success=False,
+                    import_id=import_id,
+                    format=ImportFormat.JSON,
                     errors=["No file path or JSON string provided"],
                 )
 
@@ -250,14 +247,18 @@ class DataImporter:
 
         except json.JSONDecodeError as e:
             result = ImportResult(
-                success=False, import_id=import_id, format=ImportFormat.JSON,
+                success=False,
+                import_id=import_id,
+                format=ImportFormat.JSON,
                 errors=[f"Invalid JSON: {e}"],
             )
             self._imports[import_id] = result
             return result
         except Exception as e:
             result = ImportResult(
-                success=False, import_id=import_id, format=ImportFormat.JSON,
+                success=False,
+                import_id=import_id,
+                format=ImportFormat.JSON,
                 errors=[str(e)],
             )
             self._imports[import_id] = result
@@ -280,7 +281,9 @@ class DataImporter:
                     data = list(reader)
             else:
                 return ImportResult(
-                    success=False, import_id=import_id, format=ImportFormat.CSV,
+                    success=False,
+                    import_id=import_id,
+                    format=ImportFormat.CSV,
                     errors=["No file path or CSV string provided"],
                 )
 
@@ -295,7 +298,9 @@ class DataImporter:
 
         except Exception as e:
             result = ImportResult(
-                success=False, import_id=import_id, format=ImportFormat.CSV,
+                success=False,
+                import_id=import_id,
+                format=ImportFormat.CSV,
                 errors=[str(e)],
             )
             self._imports[import_id] = result
@@ -310,10 +315,7 @@ class DataImporter:
     def get_stats(self) -> dict[str, Any]:
         return {
             "total_imports": len(self._imports),
-            "by_format": {
-                fmt.value: sum(1 for r in self._imports.values() if r.format == fmt)
-                for fmt in ImportFormat
-            },
+            "by_format": {fmt.value: sum(1 for r in self._imports.values() if r.format == fmt) for fmt in ImportFormat},
         }
 
 

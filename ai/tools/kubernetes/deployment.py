@@ -32,7 +32,12 @@ class KubernetesDeployment(BaseTool):
         namespace = params.get("namespace", "default")
         try:
             if action == "list":
-                return {"success": True, "deployments": self._deployments, "namespace": namespace, "count": len(self._deployments)}
+                return {
+                    "success": True,
+                    "deployments": self._deployments,
+                    "namespace": namespace,
+                    "count": len(self._deployments),
+                }
             elif action == "get":
                 name = params.get("name", "")
                 dep = next((d for d in self._deployments if d.get("name") == name), None)

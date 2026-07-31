@@ -46,6 +46,7 @@ class MemoryService:
 
     async def get_context(self, context_id: str, limit: int = 50) -> list[MemoryEntry]:
         from .memory_context import MemoryContext
+
         ctx = MemoryContext(context_id, max_length=limit)
         q = MemoryQuery(scope=MemoryScope.SESSION, max_results=limit)
         entries = await self._manager.search(q)

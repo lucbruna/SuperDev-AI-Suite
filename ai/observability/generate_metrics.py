@@ -1,15 +1,20 @@
 """Metrics subsystem generator."""
+
 import os
 
-BASE = r'C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\observability\metrics'
+BASE = r"C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\observability\metrics"
+
 
 def w(path, content):
     full = os.path.join(BASE, path)
     os.makedirs(os.path.dirname(full), exist_ok=True)
-    with open(full, 'w', encoding='utf-8') as f:
+    with open(full, "w", encoding="utf-8") as f:
         f.write(content)
 
-w('metrics_engine.py', '''"""Metrics subsystem engine."""
+
+w(
+    "metrics_engine.py",
+    '''"""Metrics subsystem engine."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time
@@ -31,9 +36,12 @@ class MetricsEngine:
         self._aggregators.append(name)
     def get_status(self) -> Dict[str, Any]:
         return {"running": self._started, "collectors": len(self._collectors), "aggregators": len(self._aggregators)}
-''')
+''',
+)
 
-w('collector.py', '''"""Metrics collector."""
+w(
+    "collector.py",
+    '''"""Metrics collector."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time
@@ -60,9 +68,12 @@ class MetricsCollector:
         return list(self._buffer)
     def total_collected(self) -> int:
         return self._total_collected
-''')
+''',
+)
 
-w('aggregator.py', '''"""Metrics aggregator."""
+w(
+    "aggregator.py",
+    '''"""Metrics aggregator."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time
@@ -99,9 +110,12 @@ class MetricsAggregator:
         n = sum(len(v) for v in self._series.values())
         self._series.clear()
         return n
-''')
+''',
+)
 
-w('calculator.py', '''"""Metrics calculator."""
+w(
+    "calculator.py",
+    '''"""Metrics calculator."""
 from __future__ import annotations
 from typing import Any, Dict, List
 
@@ -145,9 +159,12 @@ class MetricsCalculator:
         elif second_half < first_half * 0.9:
             return "decreasing"
         return "stable"
-''')
+''',
+)
 
-w('storage.py', '''"""Metrics storage."""
+w(
+    "storage.py",
+    '''"""Metrics storage."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time
@@ -183,9 +200,12 @@ class MetricsStorage:
         n = sum(len(v) for v in self._data.values())
         self._data.clear()
         return n
-''')
+''',
+)
 
-w('exporter.py', '''"""Metrics exporter."""
+w(
+    "exporter.py",
+    '''"""Metrics exporter."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import json, time
@@ -216,9 +236,12 @@ class MetricsExporter:
         return "\\n".join(lines)
     def get_export_history(self) -> List[Dict[str, Any]]:
         return list(self._exports)
-''')
+''',
+)
 
-w('threshold.py', '''"""Metrics thresholds."""
+w(
+    "threshold.py",
+    '''"""Metrics thresholds."""
 from __future__ import annotations
 from typing import Any, Callable, Dict, List, Optional
 
@@ -261,9 +284,12 @@ class MetricsThresholdManager:
         return self._violations[-limit:]
     def list_thresholds(self) -> List[Dict[str, Any]]:
         return [{"name": t.name, "warning": t.warning, "critical": t.critical, "breached": t.breached} for t in self._thresholds.values()]
-''')
+''',
+)
 
-w('__init__.py', '''"""Metrics subsystem."""
+w(
+    "__init__.py",
+    '''"""Metrics subsystem."""
 from .metrics_engine import MetricsEngine
 from .collector import MetricsCollector
 from .aggregator import MetricsAggregator
@@ -277,6 +303,7 @@ __all__ = [
     "MetricsCalculator", "MetricsStorage", "MetricsExporter",
     "MetricsThresholdManager"
 ]
-''')
+''',
+)
 
 print("metrics/: 8 files created")

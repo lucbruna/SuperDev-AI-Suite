@@ -1,6 +1,7 @@
 """
 Realtime Event Manager
 """
+
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -27,7 +28,7 @@ class EventManager:
         event = Event(id=str(uuid.uuid4()), type=event_type, data=data, source=source)
         self.events.append(event)
         if len(self.events) > self.max_history:
-            self.events = self.events[-self.max_history:]
+            self.events = self.events[-self.max_history :]
         self._dispatch(event)
         return event
 

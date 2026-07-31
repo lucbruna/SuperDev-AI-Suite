@@ -1,6 +1,7 @@
 """
 Security Protocols
 """
+
 from enum import Enum
 
 
@@ -46,5 +47,3 @@ class SecurityProtocolConfig:
             "auth_model": self.auth_model.value,
             "encryption": self.encryption.value,
         }
-
-

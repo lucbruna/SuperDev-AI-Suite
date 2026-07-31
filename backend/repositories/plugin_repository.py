@@ -51,9 +51,13 @@ class PluginRepository(BaseRepository[Plugin]):
 
     async def slug_exists(self, project_id: str, slug: str, exclude_id: str | None = None) -> bool:
         """Check if a plugin slug is already taken within a project."""
-        query = select(func.count()).select_from(self.model).where(
-            self.model.project_id == project_id,
-            self.model.slug == slug,
+        query = (
+            select(func.count())
+            .select_from(self.model)
+            .where(
+                self.model.project_id == project_id,
+                self.model.slug == slug,
+            )
         )
         if exclude_id:
             query = query.where(self.model.id != exclude_id)

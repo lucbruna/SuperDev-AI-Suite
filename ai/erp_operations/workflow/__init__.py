@@ -1,4 +1,5 @@
 """Workflow subsystem."""
+
 from .engine import WorkflowEngine
 from .models import (
     ApprovalRecord,
@@ -11,6 +12,12 @@ from .models import (
 )
 
 __all__ = [
-    "WorkflowStatus", "StepType", "StepStatus", "WorkflowDefinition", "WorkflowStep",
-    "WorkflowInstance", "ApprovalRecord", "WorkflowEngine",
+    "WorkflowStatus",
+    "StepType",
+    "StepStatus",
+    "WorkflowDefinition",
+    "WorkflowStep",
+    "WorkflowInstance",
+    "ApprovalRecord",
+    "WorkflowEngine",
 ]

@@ -1,4 +1,5 @@
 """Linter for detecting code quality issues."""
+
 import re
 
 from .models import IssueCategory, IssueSeverity, QualityIssue
@@ -23,22 +24,26 @@ class Linter:
         for line_num, line in enumerate(lines, 1):
             for pattern, severity, category, message in self._patterns:
                 if re.search(pattern, line):
-                    issues.append(QualityIssue(
-                        line_number=line_num,
-                        severity=severity,
-                        category=category,
-                        message=message,
-                    ))
+                    issues.append(
+                        QualityIssue(
+                            line_number=line_num,
+                            severity=severity,
+                            category=category,
+                            message=message,
+                        )
+                    )
         return issues
 
     def lint_line(self, line: str, line_number: int) -> list[QualityIssue]:
         issues = []
         for pattern, severity, category, message in self._patterns:
             if re.search(pattern, line):
-                issues.append(QualityIssue(
-                    line_number=line_number,
-                    severity=severity,
-                    category=category,
-                    message=message,
-                ))
+                issues.append(
+                    QualityIssue(
+                        line_number=line_number,
+                        severity=severity,
+                        category=category,
+                        message=message,
+                    )
+                )
         return issues

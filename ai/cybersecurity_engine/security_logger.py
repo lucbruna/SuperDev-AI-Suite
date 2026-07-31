@@ -1,4 +1,5 @@
 """Cybersecurity Engine Logger — Logging for security operations."""
+
 from datetime import datetime
 from enum import Enum
 from typing import Any
@@ -17,13 +18,15 @@ class SecurityLogger:
         self._entries: list[dict[str, Any]] = []
 
     def log(self, level: SecurityLogLevel, message: str, component: str = "", details: dict[str, Any] = None) -> None:
-        self._entries.append({
-            "level": level.value,
-            "message": message,
-            "component": component,
-            "timestamp": datetime.now().isoformat(),
-            "details": details or {},
-        })
+        self._entries.append(
+            {
+                "level": level.value,
+                "message": message,
+                "component": component,
+                "timestamp": datetime.now().isoformat(),
+                "details": details or {},
+            }
+        )
 
     def debug(self, message: str, component: str = "", details: dict[str, Any] = None) -> None:
         self.log(SecurityLogLevel.DEBUG, message, component, details)

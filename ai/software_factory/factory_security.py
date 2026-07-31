@@ -1,4 +1,5 @@
 """Factory Security - Security validation for factory operations."""
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -47,9 +48,13 @@ class FactorySecurity:
     def create_policy(self, name: str, rules: dict[str, Any] = None) -> None:
         self.policies[name] = rules or {}
 
-    def report_issue(self, check: SecurityCheck, severity: SecuritySeverity, description: str = "", file_path: str = "", **kwargs) -> SecurityIssue:
+    def report_issue(
+        self, check: SecurityCheck, severity: SecuritySeverity, description: str = "", file_path: str = "", **kwargs
+    ) -> SecurityIssue:
         issue_id = hashlib.sha256(f"{check.value}{description}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
-        issue = SecurityIssue(issue_id=issue_id, check=check, severity=severity, description=description, file_path=file_path, **kwargs)
+        issue = SecurityIssue(
+            issue_id=issue_id, check=check, severity=severity, description=description, file_path=file_path, **kwargs
+        )
         self.issues.append(issue)
         return issue
 
@@ -70,7 +75,7 @@ class FactorySecurity:
 
     def scan_project(self, project_id: str, files: list[str] = None) -> list[SecurityIssue]:
         found = []
-        for f in (files or []):
+        for f in files or []:
             issue = self.report_issue(SecurityCheck.CODE_INJECTION, SecuritySeverity.INFO, f"Scanned {f}", file_path=f)
             self.scan_results.setdefault(project_id, []).append(issue)
             found.append(issue)

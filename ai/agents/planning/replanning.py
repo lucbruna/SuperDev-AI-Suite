@@ -1,4 +1,5 @@
 """Adaptive replanning engine for plan modification."""
+
 from __future__ import annotations
 
 import time
@@ -13,8 +14,7 @@ class Replanner:
         self._replan_count: int = 0
         self._replan_history: list[dict[str, Any]] = []
 
-    def replan(self, plan: dict[str, Any], reason: str,
-               context: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+    def replan(self, plan: dict[str, Any], reason: str, context: dict[str, Any] | None = None) -> list[dict[str, Any]]:
         self._replan_count += 1
         original_tasks = plan.get("tasks", [])
         completed = [t for t in original_tasks if t.get("status") == "completed"]
@@ -30,14 +30,16 @@ class Replanner:
             retry["retry_reason"] = reason
             new_tasks.append(retry)
         new_tasks.extend(pending)
-        self._replan_history.append({
-            "plan_id": plan.get("plan_id", ""),
-            "reason": reason,
-            "original_count": len(original_tasks),
-            "new_count": len(new_tasks),
-            "retried": len(failed),
-            "timestamp": time.time(),
-        })
+        self._replan_history.append(
+            {
+                "plan_id": plan.get("plan_id", ""),
+                "reason": reason,
+                "original_count": len(original_tasks),
+                "new_count": len(new_tasks),
+                "retried": len(failed),
+                "timestamp": time.time(),
+            }
+        )
         return new_tasks
 
     def analyze_failure(self, task: dict[str, Any]) -> dict[str, Any]:

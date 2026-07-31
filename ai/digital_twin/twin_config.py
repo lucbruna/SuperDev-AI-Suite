@@ -1,4 +1,5 @@
 """Digital Twin configuration."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -12,11 +13,13 @@ class TwinType(Enum):
     INFRASTRUCTURE = "infrastructure"
     ORGANIZATIONAL = "organizational"
 
+
 class SyncMode(Enum):
     REALTIME = "realtime"
     NEAR_REALTIME = "near_realtime"
     BATCH = "batch"
     MANUAL = "manual"
+
 
 @dataclass
 class SimulationLimits:
@@ -26,12 +29,14 @@ class SimulationLimits:
     max_time_steps: int = 10000
     max_duration_seconds: float = 300.0
 
+
 @dataclass
 class SynchronizationConfig:
     mode: SyncMode = SyncMode.NEAR_REALTIME
     interval_seconds: float = 5.0
     batch_size: int = 100
     conflict_resolution: str = "latest_wins"
+
 
 @dataclass
 class TwinConfig:

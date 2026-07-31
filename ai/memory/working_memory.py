@@ -48,33 +48,39 @@ class WorkingMemory(BaseMemory):
     async def add_goal(self, goal: str, priority: int = 0) -> str:
         goal_id = str(uuid.uuid4())
         async with self._lock:
-            self._goals.append({
-                "id": goal_id,
-                "goal": goal,
-                "priority": priority,
-                "status": "active",
-                "created_at": time.time(),
-            })
+            self._goals.append(
+                {
+                    "id": goal_id,
+                    "goal": goal,
+                    "priority": priority,
+                    "status": "active",
+                    "created_at": time.time(),
+                }
+            )
         return goal_id
 
     async def add_sub_task(self, task: str, depends_on: list[str] | None = None) -> str:
         task_id = str(uuid.uuid4())
         async with self._lock:
-            self._sub_tasks.append({
-                "id": task_id,
-                "task": task,
-                "depends_on": depends_on or [],
-                "status": "pending",
-                "created_at": time.time(),
-            })
+            self._sub_tasks.append(
+                {
+                    "id": task_id,
+                    "task": task,
+                    "depends_on": depends_on or [],
+                    "status": "pending",
+                    "created_at": time.time(),
+                }
+            )
         return task_id
 
     async def add_result(self, result: dict[str, Any]) -> None:
         async with self._lock:
-            self._results.append({
-                **result,
-                "timestamp": time.time(),
-            })
+            self._results.append(
+                {
+                    **result,
+                    "timestamp": time.time(),
+                }
+            )
 
     def get_session_id(self) -> str:
         return self._session_id

@@ -1,6 +1,7 @@
 """
 OAuth 2.0 Provider
 """
+
 import hashlib
 import secrets
 from dataclasses import dataclass, field
@@ -38,7 +39,14 @@ class OAuthProvider:
     def register_app(self, name: str, redirect_uris: list[str] = None, scopes: list[str] = None) -> OAuthApp:
         client_id = secrets.token_urlsafe(32)
         client_secret = secrets.token_urlsafe(64)
-        app = OAuthApp(app_id=hashlib.sha256(client_id.encode()).hexdigest()[:16], name=name, client_id=client_id, client_secret=client_secret, redirect_uris=redirect_uris or [], scopes=scopes or ["read"])
+        app = OAuthApp(
+            app_id=hashlib.sha256(client_id.encode()).hexdigest()[:16],
+            name=name,
+            client_id=client_id,
+            client_secret=client_secret,
+            redirect_uris=redirect_uris or [],
+            scopes=scopes or ["read"],
+        )
         self.apps[app.app_id] = app
         return app
 
@@ -47,7 +55,12 @@ class OAuthProvider:
         if not app or not app.is_active:
             return None
         code = secrets.token_urlsafe(32)
-        self.authorization_codes[code] = {"app_id": app_id, "user_id": user_id, "scope": scope, "expires_at": (datetime.now() + timedelta(minutes=10)).isoformat()}
+        self.authorization_codes[code] = {
+            "app_id": app_id,
+            "user_id": user_id,
+            "scope": scope,
+            "expires_at": (datetime.now() + timedelta(minutes=10)).isoformat(),
+        }
         return code
 
     def exchange_code(self, code: str, client_id: str, client_secret: str) -> OAuthToken | None:

@@ -56,6 +56,7 @@ async def get_tool(tool_name: str) -> ToolDefinition:
 @router.post("/call")
 async def call_tool(req: ToolCallRequest) -> ToolCallResponse:
     import time
+
     tool = _internal_registry.get(req.tool_name)
     if not tool:
         raise HTTPException(status_code=404, detail=f"Tool '{req.tool_name}' not found")

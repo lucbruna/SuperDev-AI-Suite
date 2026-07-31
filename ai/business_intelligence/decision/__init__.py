@@ -1,4 +1,5 @@
 """Business Intelligence Decision subsystem."""
+
 from .engine import DecisionEngine
 from .models import (
     DecisionPolicy,
@@ -11,7 +12,12 @@ from .models import (
 )
 
 __all__ = [
-    "DecisionType", "DecisionStatus", "RiskLevel",
-    "Rule", "DecisionRequest", "DecisionResult", "DecisionPolicy",
+    "DecisionType",
+    "DecisionStatus",
+    "RiskLevel",
+    "Rule",
+    "DecisionRequest",
+    "DecisionResult",
+    "DecisionPolicy",
     "DecisionEngine",
 ]

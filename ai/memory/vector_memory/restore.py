@@ -39,9 +39,7 @@ class Restore:
             self._repository.clear()
         count = 0
         for item in raw:
-            self._repository.store(
-                item["vector_id"], item["vector"], item.get("metadata", {})
-            )
+            self._repository.store(item["vector_id"], item["vector"], item.get("metadata", {}))
             count += 1
         self._restore_count += 1
         return count

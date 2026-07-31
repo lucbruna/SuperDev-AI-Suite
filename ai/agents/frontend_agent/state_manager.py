@@ -36,9 +36,7 @@ class StateManager:
         store = self._stores.get(name)
         if store is None:
             return f"// Store '{name}' not found"
-        state_lines = "\n".join(
-            f"  {k}: {repr(v)}," for k, v in store["initial_state"].items()
-        )
+        state_lines = "\n".join(f"  {k}: {repr(v)}," for k, v in store["initial_state"].items())
         capitalized = name[0].upper() + name[1:]
         return (
             f"import {{ create }} from 'zustand';\n\n"

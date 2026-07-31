@@ -8,6 +8,7 @@ from typing import Any
 @dataclass
 class ToolCall:
     """Represents a single tool invocation."""
+
     tool_name: str
     params: dict[str, Any]
     result: dict[str, Any] | None = None
@@ -27,6 +28,7 @@ class ToolCall:
 @dataclass
 class ToolRegistration:
     """Represents a registered tool in the registry."""
+
     name: str
     tool_class: type
     category: str
@@ -38,6 +40,7 @@ class ToolRegistration:
 @dataclass
 class ToolContext:
     """Context passed to tools during execution."""
+
     execution_id: str
     user_id: str = ""
     session_id: str = ""

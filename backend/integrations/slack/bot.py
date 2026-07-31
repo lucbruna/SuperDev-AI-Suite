@@ -14,6 +14,7 @@ def on_command(command: str):
     def decorator(f: Callable):
         _command_handlers[command] = f
         return f
+
     return decorator
 
 

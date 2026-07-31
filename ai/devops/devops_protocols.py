@@ -1,4 +1,5 @@
 """DevOps protocols."""
+
 from __future__ import annotations
 
 from typing import Any, Protocol, runtime_checkable
@@ -9,11 +10,13 @@ class DevOpsProtocol(Protocol):
     def configure(self, config: dict[str, Any]) -> None: ...
     def execute(self, command: str) -> dict[str, Any]: ...
 
+
 @runtime_checkable
 class InfrastructureProtocol(Protocol):
     def create_resource(self, config: dict[str, Any]) -> dict[str, Any]: ...
     def delete_resource(self, resource_id: str) -> bool: ...
     def list_resources(self) -> List[dict[str, Any]]: ...
+
 
 @runtime_checkable
 class MonitoringProtocol(Protocol):

@@ -36,10 +36,7 @@ class ModelGenerator:
         model = self._models.get(name)
         if model is None:
             return f"# Model '{name}' not found"
-        field_lines = "\n".join(
-            f"    {f['name']}: {f.get('type', 'str')}"
-            for f in model["fields"]
-        )
+        field_lines = "\n".join(f"    {f['name']}: {f.get('type', 'str')}" for f in model["fields"])
         return (
             f"from __future__ import annotations\n\nfrom dataclasses import dataclass\n\n\n"
             f"@dataclass\nclass {name}:\n{field_lines}\n"

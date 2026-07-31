@@ -1,4 +1,5 @@
 """BI Engine — Core engine for business intelligence operations."""
+
 from typing import Any
 
 from .bi_models import KPI, DataPoint, DataSource, Decision, Insight, Prediction

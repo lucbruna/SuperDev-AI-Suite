@@ -6,8 +6,7 @@ from typing import Any
 from .base_provider import BaseLLMProvider
 
 _DEFAULT_RESPONSE = (
-    "This is a mock response for testing purposes. "
-    "It simulates an LLM completion with realistic length."
+    "This is a mock response for testing purposes. It simulates an LLM completion with realistic length."
 )
 
 
@@ -37,6 +36,7 @@ class MockProvider(BaseLLMProvider):
             words = self._response.split()
             for i, word in enumerate(words):
                 yield {"content": word + " ", "finish_reason": "continue" if i < len(words) - 1 else "stop"}
+
         return _gen()
 
     async def validate(self, params: dict[str, Any]) -> bool:

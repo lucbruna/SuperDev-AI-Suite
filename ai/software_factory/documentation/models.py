@@ -1,4 +1,5 @@
 """Data models for documentation."""
+
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -19,6 +20,7 @@ class DocType(Enum):
 @dataclass
 class DocSection:
     """A section in a documentation page."""
+
     section_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     title: str = ""
     content: str = ""
@@ -40,6 +42,7 @@ class DocSection:
 @dataclass
 class DocPage:
     """A documentation page."""
+
     page_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     title: str = ""
     doc_type: DocType = DocType.GUIDE
@@ -62,6 +65,7 @@ class DocPage:
 @dataclass
 class ApiParameter:
     """A parameter in an API endpoint."""
+
     name: str = ""
     location: str = "query"
     type: str = "string"
@@ -73,6 +77,7 @@ class ApiParameter:
 @dataclass
 class ApiEndpoint:
     """An API endpoint documentation entry."""
+
     endpoint_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     path: str = ""
     method: str = "GET"
@@ -86,6 +91,7 @@ class ApiEndpoint:
 @dataclass
 class ChangelogEntry:
     """An entry in the changelog."""
+
     entry_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     version: str = ""
     date: datetime = field(default_factory=datetime.utcnow)
@@ -97,6 +103,7 @@ class ChangelogEntry:
 @dataclass
 class DocumentationConfig:
     """Configuration for documentation generation."""
+
     config_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     project_name: str = ""
     output_dir: str = "docs"

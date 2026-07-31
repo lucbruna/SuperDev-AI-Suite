@@ -1,4 +1,5 @@
 """Validator for requirements quality and completeness."""
+
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -8,6 +9,7 @@ from .models import Priority, Requirement, RequirementType
 @dataclass
 class ValidationResult:
     """Result of validating a requirement."""
+
     is_valid: bool = True
     errors: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)

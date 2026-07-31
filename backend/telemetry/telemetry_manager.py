@@ -27,9 +27,11 @@ class TelemetryManager:
         point = MetricPoint(name=name, value=value, labels=labels or {})
         self._metrics.append(point)
         if len(self._metrics) > self._max_metrics:
-            self._metrics = self._metrics[-self._max_metrics:]
+            self._metrics = self._metrics[-self._max_metrics :]
 
-    def record_trace(self, name: str, duration_ms: float, status: str = "ok", metadata: dict[str, Any] | None = None) -> None:
+    def record_trace(
+        self, name: str, duration_ms: float, status: str = "ok", metadata: dict[str, Any] | None = None
+    ) -> None:
         trace = {
             "id": generate_uuid(),
             "name": name,

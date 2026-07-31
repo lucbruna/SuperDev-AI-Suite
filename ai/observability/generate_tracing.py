@@ -1,15 +1,20 @@
 """Tracing subsystem generator."""
+
 import os
 
-BASE = r'C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\observability\tracing'
+BASE = r"C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\observability\tracing"
+
 
 def w(path, content):
     full = os.path.join(BASE, path)
     os.makedirs(os.path.dirname(full), exist_ok=True)
-    with open(full, 'w', encoding='utf-8') as f:
+    with open(full, "w", encoding="utf-8") as f:
         f.write(content)
 
-w('tracing_engine.py', '''"""Tracing subsystem engine."""
+
+w(
+    "tracing_engine.py",
+    '''"""Tracing subsystem engine."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time
@@ -34,9 +39,12 @@ class TracingEngine:
         return dict(list(self._traces.items())[-limit:])
     def get_status(self) -> Dict[str, Any]:
         return {"running": self._started, "traces": len(self._traces), "sample_rate": self._sample_rate}
-''')
+''',
+)
 
-w('trace_collector.py', '''"""Trace collector."""
+w(
+    "trace_collector.py",
+    '''"""Trace collector."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time, uuid
@@ -63,9 +71,12 @@ class TraceCollector:
         return self._total_collected
     def trace_count(self) -> int:
         return len(self._traces)
-''')
+''',
+)
 
-w('span_manager.py', '''"""Span management."""
+w(
+    "span_manager.py",
+    '''"""Span management."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time, uuid
@@ -105,9 +116,12 @@ class SpanManager:
             self._active_spans[span_id]["attributes"][key] = value
             return True
         return False
-''')
+''',
+)
 
-w('transaction.py', '''"""Transaction management."""
+w(
+    "transaction.py",
+    '''"""Transaction management."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time, uuid
@@ -139,9 +153,12 @@ class TransactionManager:
         return list(self._transactions.values())
     def get_slow_transactions(self, threshold_ms: float = 1000) -> List[Dict[str, Any]]:
         return [t for t in self._transactions.values() if t.get("duration_ms", 0) > threshold_ms]
-''')
+''',
+)
 
-w('dependency_map.py', '''"""Dependency mapping."""
+w(
+    "dependency_map.py",
+    '''"""Dependency mapping."""
 from __future__ import annotations
 from typing import Any, Dict, List, Set
 
@@ -182,9 +199,12 @@ class DependencyMap:
         return any(dfs(n) for n in self._deps if n not in visited)
     def to_dict(self) -> Dict[str, List[str]]:
         return {k: list(v) for k, v in self._deps.items()}
-''')
+''',
+)
 
-w('latency_analysis.py', '''"""Latency analysis."""
+w(
+    "latency_analysis.py",
+    '''"""Latency analysis."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import statistics
@@ -225,9 +245,12 @@ class LatencyAnalyzer:
         n = sum(len(v) for v in self._latencies.values())
         self._latencies.clear()
         return n
-''')
+''',
+)
 
-w('__init__.py', '''"""Tracing subsystem."""
+w(
+    "__init__.py",
+    '''"""Tracing subsystem."""
 from .tracing_engine import TracingEngine
 from .trace_collector import TraceCollector
 from .span_manager import SpanManager
@@ -239,6 +262,7 @@ __all__ = [
     "TracingEngine", "TraceCollector", "SpanManager",
     "TransactionManager", "DependencyMap", "LatencyAnalyzer"
 ]
-''')
+''',
+)
 
 print("tracing/: 7 files created")

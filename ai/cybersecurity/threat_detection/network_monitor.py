@@ -1,6 +1,7 @@
 """
 Network Traffic Monitoring
 """
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -49,16 +50,40 @@ class NetworkMonitor:
         self.baseline: dict[str, float] = {}
         self.blocked_connections: set = set()
 
-    def record_flow(self, src_ip: str, dst_ip: str, src_port: int, dst_port: int, protocol: Protocol = Protocol.TCP, bytes_sent: int = 0, bytes_received: int = 0) -> NetworkFlow:
+    def record_flow(
+        self,
+        src_ip: str,
+        dst_ip: str,
+        src_port: int,
+        dst_port: int,
+        protocol: Protocol = Protocol.TCP,
+        bytes_sent: int = 0,
+        bytes_received: int = 0,
+    ) -> NetworkFlow:
         flow_id = hashlib.sha256(f"{src_ip}:{dst_ip}:{src_port}:{dst_port}".encode()).hexdigest()[:16]
-        flow = NetworkFlow(flow_id=flow_id, src_ip=src_ip, dst_ip=dst_ip, src_port=src_port, dst_port=dst_port, protocol=protocol, bytes_sent=bytes_sent, bytes_received=bytes_received)
+        flow = NetworkFlow(
+            flow_id=flow_id,
+            src_ip=src_ip,
+            dst_ip=dst_ip,
+            src_port=src_port,
+            dst_port=dst_port,
+            protocol=protocol,
+            bytes_sent=bytes_sent,
+            bytes_received=bytes_received,
+        )
         self.flows[flow_id] = flow
         return flow
 
     def detect_anomaly(self, flow: NetworkFlow) -> TrafficAnomaly | None:
         avg_bytes = self.baseline.get("avg_bytes", 1000)
         if flow.bytes_sent > avg_bytes * 10:
-            anomaly = TrafficAnomaly(anomaly_id=hashlib.sha256(flow.flow_id.encode()).hexdigest()[:16], flow_id=flow.flow_id, anomaly_type="high_volume", description=f"Bytes sent: {flow.bytes_sent}", severity="high")
+            anomaly = TrafficAnomaly(
+                anomaly_id=hashlib.sha256(flow.flow_id.encode()).hexdigest()[:16],
+                flow_id=flow.flow_id,
+                anomaly_type="high_volume",
+                description=f"Bytes sent: {flow.bytes_sent}",
+                severity="high",
+            )
             self.anomalies.append(anomaly)
             return anomaly
         return None

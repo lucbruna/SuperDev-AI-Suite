@@ -1,6 +1,7 @@
 """
 Security Factory
 """
+
 from typing import Any
 
 

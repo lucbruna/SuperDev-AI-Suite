@@ -15,10 +15,30 @@ _file_index: dict[str, dict[str, Any]] = {}
 def _walk_project(root: str = ".") -> None:
     _file_index.clear()
     for dirpath, _, filenames in os.walk(root):
-        if any(skip in dirpath for skip in ("node_modules", ".git", "__pycache__", ".venv", "venv", ".next", "dist", "build")):
+        if any(
+            skip in dirpath
+            for skip in ("node_modules", ".git", "__pycache__", ".venv", "venv", ".next", "dist", "build")
+        ):
             continue
         for f in filenames:
-            if f.endswith((".py", ".ts", ".tsx", ".js", ".jsx", ".go", ".rs", ".yaml", ".yml", ".json", ".md", ".css", ".html", ".sql")):
+            if f.endswith(
+                (
+                    ".py",
+                    ".ts",
+                    ".tsx",
+                    ".js",
+                    ".jsx",
+                    ".go",
+                    ".rs",
+                    ".yaml",
+                    ".yml",
+                    ".json",
+                    ".md",
+                    ".css",
+                    ".html",
+                    ".sql",
+                )
+            ):
                 path = os.path.join(dirpath, f)
                 try:
                     with open(path, encoding="utf-8", errors="ignore") as fh:
@@ -73,14 +93,16 @@ async def search(
         if matches:
             score = len(matches) * 10
             score += 5 if query in path.lower() else 0
-            results.append({
-                "file": path,
-                "ext": info.get("ext", ""),
-                "total_lines": info["lines"],
-                "matches_count": len(matches),
-                "matches": matches[:5],
-                "score": score,
-            })
+            results.append(
+                {
+                    "file": path,
+                    "ext": info.get("ext", ""),
+                    "total_lines": info["lines"],
+                    "matches_count": len(matches),
+                    "matches": matches[:5],
+                    "score": score,
+                }
+            )
 
     results.sort(key=lambda r: -r["score"])
 
@@ -106,7 +128,12 @@ async def get_file(filepath: str):
             if os.path.exists(filepath):
                 with open(filepath, encoding="utf-8", errors="ignore") as f:
                     content = f.read()
-                return {"filepath": filepath, "content": content, "size": len(content), "lines": content.count("\n") + 1}
+                return {
+                    "filepath": filepath,
+                    "content": content,
+                    "size": len(content),
+                    "lines": content.count("\n") + 1,
+                }
             raise HTTPException(status_code=404, detail=f"File not found: {filepath}")
     return {"filepath": info["path"], "content": info["content"], "size": info["size"], "lines": info["lines"]}
 

@@ -65,29 +65,25 @@ class BaseRuntime(ABC):
 
     @property
     @abstractmethod
-    def language(self) -> Language:
-        ...
+    def language(self) -> Language: ...
 
     @property
     @abstractmethod
-    def supported_extensions(self) -> list[str]:
-        ...
+    def supported_extensions(self) -> list[str]: ...
 
     @abstractmethod
     async def execute(
         self,
         config: RuntimeConfig,
         run_id: str,
-    ) -> ExecutionResult:
-        ...
+    ) -> ExecutionResult: ...
 
     @abstractmethod
     async def stream(
         self,
         config: RuntimeConfig,
         run_id: str,
-    ) -> AsyncIterator[str]:
-        ...
+    ) -> AsyncIterator[str]: ...
 
     async def health_check(self) -> bool:
         return True

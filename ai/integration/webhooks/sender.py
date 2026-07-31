@@ -1,6 +1,7 @@
 """
 Webhook Sender - Outgoing webhooks
 """
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -29,7 +30,13 @@ class WebhookSender:
 
     def send(self, url: str, event_type: str, payload: dict[str, Any], headers: dict[str, str] = None) -> SentWebhook:
         sent_id = hashlib.sha256(f"{url}{event_type}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
-        webhook = SentWebhook(sent_id=sent_id, url=url, event_type=event_type, payload=payload, headers={**self.default_headers, **(headers or {})})
+        webhook = SentWebhook(
+            sent_id=sent_id,
+            url=url,
+            event_type=event_type,
+            payload=payload,
+            headers={**self.default_headers, **(headers or {})},
+        )
         self.sent.append(webhook)
         return webhook
 

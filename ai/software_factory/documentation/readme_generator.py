@@ -1,4 +1,5 @@
 """Generator for README files."""
+
 from typing import Any
 
 

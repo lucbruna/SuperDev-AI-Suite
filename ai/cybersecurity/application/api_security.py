@@ -1,6 +1,7 @@
 """
 API Security
 """
+
 import hashlib
 import secrets
 from dataclasses import dataclass, field

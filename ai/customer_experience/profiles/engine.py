@@ -1,4 +1,5 @@
 """Profile engine."""
+
 from .models import (
     BehaviorEvent,
     BehaviorPattern,

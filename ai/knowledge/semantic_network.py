@@ -43,12 +43,14 @@ class SemanticNetwork:
         results: list[dict[str, Any]] = []
         for e in self._graph.edges:
             if e["label"] == relation_type:
-                results.append({
-                    "source": e["source"],
-                    "target": e["target"],
-                    "relation": e["label"],
-                    "properties": e.get("properties", {}),
-                })
+                results.append(
+                    {
+                        "source": e["source"],
+                        "target": e["target"],
+                        "relation": e["label"],
+                        "properties": e.get("properties", {}),
+                    }
+                )
         return results
 
     def infer_ancestors(self, concept_id: str, relation_type: str = "is_a") -> list[str]:

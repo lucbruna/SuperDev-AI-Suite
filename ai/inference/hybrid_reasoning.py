@@ -32,6 +32,7 @@ class HybridReasoning:
                 symbolic_result.get("confidence", 0)
                 + probabilistic_result.get("confidence", 0)
                 + neural_result.get("confidence", 0)
-            ) / 3,
+            )
+            / 3,
         }
         return combined

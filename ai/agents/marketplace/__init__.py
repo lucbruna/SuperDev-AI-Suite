@@ -1,4 +1,5 @@
 """Marketplace subsystem for agent marketplace ecosystem."""
+
 from __future__ import annotations
 
 from .agent_consumer import AgentConsumer

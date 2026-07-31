@@ -41,15 +41,18 @@ class QueryOptimizer:
         suggestions = []
         for pattern, advice, severity in self.SLOW_PATTERNS:
             if pattern.lower() in sql.lower():
-                suggestions.append({
-                    "pattern": pattern,
-                    "advice": advice,
-                    "severity": severity,
-                })
+                suggestions.append(
+                    {
+                        "pattern": pattern,
+                        "advice": advice,
+                        "severity": severity,
+                    }
+                )
         return suggestions
 
     def suggest_indexes(self, sql: str) -> list[str]:
         import re
+
         columns = re.findall(r"\bWHERE\s+(\w+)", sql, re.IGNORECASE)
         columns += re.findall(r"\bJOIN\s+\w+\s+ON\s+\w+\.(\w+)", sql, re.IGNORECASE)
         columns += re.findall(r"\bORDER BY\s+(\w+)", sql, re.IGNORECASE)

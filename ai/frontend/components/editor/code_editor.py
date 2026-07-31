@@ -1,6 +1,7 @@
 """
 Code Editor Component
 """
+
 from dataclasses import dataclass
 from enum import Enum
 
@@ -128,8 +129,8 @@ class CodeEditor:
 
     def insert_text(self, text):
         line = self.content[self.cursor.line]
-        before = line[:self.cursor.column]
-        after = line[self.cursor.column:]
+        before = line[: self.cursor.column]
+        after = line[self.cursor.column :]
         self.content[self.cursor.line] = before + text + after
         self.cursor.column += len(text)
         self._record_history()
@@ -146,7 +147,7 @@ class CodeEditor:
         before = self.content[start_line][:start_col]
         after = self.content[end_line][end_col:]
         self.content[start_line] = before + after
-        del self.content[start_line + 1:end_line + 1]
+        del self.content[start_line + 1 : end_line + 1]
         self.cursor.line = start_line
         self.cursor.column = start_col
         self.selection = Selection()
@@ -155,9 +156,10 @@ class CodeEditor:
 
     def select_all(self):
         self.selection = Selection(
-            start_line=0, start_column=0,
+            start_line=0,
+            start_column=0,
             end_line=len(self.content) - 1,
-            end_column=len(self.content[-1]) if self.content else 0
+            end_column=len(self.content[-1]) if self.content else 0,
         )
 
     def undo(self):
@@ -173,7 +175,7 @@ class CodeEditor:
             self._emit("content_changed", {"content": self.get_content()})
 
     def _record_history(self):
-        self.history = self.history[:self.history_index + 1]
+        self.history = self.history[: self.history_index + 1]
         self.history.append(self.content.copy())
         self.history_index = len(self.history) - 1
 
@@ -182,7 +184,7 @@ class CodeEditor:
 
     def trigger_completion(self):
         line = self.get_line(self.cursor.line)
-        prefix = line[:self.cursor.column]
+        prefix = line[: self.cursor.column]
         self._emit("completion_request", {"prefix": prefix, "line": self.cursor.line})
 
     def show_diagnostics(self, diagnostics):
@@ -199,7 +201,7 @@ class CodeEditor:
         line = self.get_line(self.cursor.line)
         if line.lstrip().startswith("#"):
             indent = len(line) - len(line.lstrip())
-            self.content[self.cursor.line] = line[:indent] + line[indent + 2:]
+            self.content[self.cursor.line] = line[:indent] + line[indent + 2 :]
         else:
             indent = len(line) - len(line.lstrip())
             self.content[self.cursor.line] = line[:indent] + "# " + line[indent:]
@@ -242,6 +244,7 @@ class CodeEditor:
 
     def find(self, query, case_sensitive=False):
         import re
+
         results = []
         flags = 0 if case_sensitive else re.IGNORECASE
         for i, line in enumerate(self.content):
@@ -251,6 +254,7 @@ class CodeEditor:
 
     def replace_all(self, find, replace, case_sensitive=False):
         import re
+
         count = 0
         flags = 0 if case_sensitive else re.IGNORECASE
         for i, line in enumerate(self.content):

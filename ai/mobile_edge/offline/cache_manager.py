@@ -1,4 +1,5 @@
 """Cache Manager - Intelligent offline caching."""
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any

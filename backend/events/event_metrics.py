@@ -23,5 +23,6 @@ class EventMetrics:
 
     def get_recent(self, event_type: str, minutes: int = 60) -> int:
         from datetime import timedelta
+
         cutoff = datetime.now(UTC) - timedelta(minutes=minutes)
         return sum(1 for t in self._timestamps.get(event_type, []) if t >= cutoff)

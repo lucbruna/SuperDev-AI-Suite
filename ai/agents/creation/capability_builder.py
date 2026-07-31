@@ -1,4 +1,5 @@
 """Fluent builder for agent capabilities."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -31,7 +32,7 @@ class CapabilityBuilder:
     def with_tools(self, tool_names: list[str] | None = None) -> CapabilityBuilder:
         if "tools" not in self._capabilities:
             self._capabilities.append("tools")
-        for name in (tool_names or []):
+        for name in tool_names or []:
             self._tools.append({"name": name, "enabled": True})
         return self
 

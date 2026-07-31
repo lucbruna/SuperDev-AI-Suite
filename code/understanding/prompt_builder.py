@@ -15,6 +15,16 @@ _TRUNCATION_MARKER = "# ... [{removed} lines / ~{tokens} tokens truncated] ..."
 #: char-slice fallback cover any residual overshoot).
 _MARKER_RESERVE = 12
 
+#: Safety margin applied by the line-based verify of :meth:`_truncate_to_budget`.
+#: ``estimate_tokens`` floors each part, so a slice that fits *budget* by its
+#: own estimate can still overshoot by 1-2 tokens once the ``### FILE``
+#: header/footer are joined in (e.g. parts sum to 29 tokens while the joined
+#: block is 120 chars -> 30). Reserving a small margin routes those
+#: boundary slices to :meth:`_char_slice` (which has its own 4-token margin),
+#: so the global re-check ``tokens(block) <= remaining`` truncates instead of
+#: dropping the file.
+_SLICE_VERIFY_MARGIN = 2
+
 #: Short marker used by the guaranteed-fit char-slice fallback.
 _CHAR_MARKER = "# ... [truncated] ..."
 
@@ -93,7 +103,15 @@ class PromptBuilder:
             if remaining > _block_overhead(path):
                 target = max(1, remaining - _block_overhead(path))
                 shrunk = self._truncate_to_budget(content, target)
-                if self.tokens(self._make_block(path, shrunk)) <= remaining:
+                # ``shrunk != content`` guarantees progress: when the slice
+                # already fits *target* the content comes back unchanged and
+                # a ``continue`` would spin forever (the joined ``assemble``
+                # estimate can exceed ``max_tokens`` by 1-2 floor remainders
+                # even when the block fits *remaining*). In that case the
+                # file is dropped instead — termination is guaranteed.
+                if (shrunk != content
+                        and self.tokens(self._make_block(path, shrunk))
+                        <= remaining):
                     files[-1] = (path, shrunk)
                     if path not in self.last_truncated:
                         self.last_truncated.append(path)
@@ -179,7 +197,10 @@ class PromptBuilder:
         marker = _TRUNCATION_MARKER.format(removed=removed,
                                            tokens=removed_tokens)
         result = "\n".join(lines[:head_end] + [marker] + lines[tail_start:])
-        if estimate_tokens(result) > budget:
+        # Verify with a margin: the slice's own estimate can pass while the
+        # enclosing ``### FILE`` block still overshoots the *remaining*
+        # budget in the global pass (see ``_SLICE_VERIFY_MARGIN``).
+        if estimate_tokens(result) > budget - _SLICE_VERIFY_MARGIN:
             # The joined slice overshot the estimate (newlines + marker
             # digits) — fall back to the guaranteed-fit char slice.
             return self._char_slice(content, budget)
@@ -196,7 +217,7 @@ class PromptBuilder:
         """
         marker_tokens = estimate_tokens(_CHAR_MARKER)
         # Reserve the marker plus a safety margin for the two newlines and
-        # floor-division remainders. The extra 2 tokens give headroom so the
+        # floor-division remainders. The extra 4 tokens give headroom so the
         # enclosing ``### FILE`` block still fits the *remaining* budget in
         # the global pass (whose re-check decides truncate vs drop).
         usable = max(1, budget - marker_tokens - 4)

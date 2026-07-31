@@ -17,10 +17,12 @@ class PlannerBridge:
         strategy_name = strategy.get("name", "default")
         if strategy_name in self._strategies:
             return await self._strategies[strategy_name](context)
-        steps.append({
-            "id": "step_1",
-            "action": "analyze",
-            "description": "Analyze context and generate plan",
-            "dependencies": [],
-        })
+        steps.append(
+            {
+                "id": "step_1",
+                "action": "analyze",
+                "description": "Analyze context and generate plan",
+                "dependencies": [],
+            }
+        )
         return {"steps": steps, "strategy": strategy_name}

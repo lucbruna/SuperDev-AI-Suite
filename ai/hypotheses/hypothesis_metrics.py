@@ -10,11 +10,13 @@ class HypothesisMetrics:
         self._records: list[dict[str, Any]] = []
 
     async def record(self, operation: str, hypothesis: dict[str, Any]) -> None:
-        self._records.append({
-            "operation": operation,
-            "hypothesis_id": hypothesis.get("id"),
-            "confidence": hypothesis.get("confidence"),
-        })
+        self._records.append(
+            {
+                "operation": operation,
+                "hypothesis_id": hypothesis.get("id"),
+                "confidence": hypothesis.get("confidence"),
+            }
+        )
 
     async def average_confidence(self) -> float:
         if not self._records:

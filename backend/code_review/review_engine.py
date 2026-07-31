@@ -58,11 +58,13 @@ class ReviewEngine:
                 issues.append(f"{filename}: {match['message']}")
                 score += rule.get("severity", 1)
                 if rule.get("severity", 1) >= 3:
-                    comments.append({
-                        "path": filename,
-                        "body": f"**{rule['name']}**: {match['message']}\n\n{match.get('suggestion', '')}",
-                        "line": match.get("line", 1),
-                    })
+                    comments.append(
+                        {
+                            "path": filename,
+                            "body": f"**{rule['name']}**: {match['message']}\n\n{match.get('suggestion', '')}",
+                            "line": match.get("line", 1),
+                        }
+                    )
 
         if filename.endswith(".py"):
             py_issues = self._analyze_python_ast(patch)
@@ -70,11 +72,13 @@ class ReviewEngine:
                 issues.append(f"{filename}: {pi['message']}")
                 score += pi.get("severity", 1)
                 if pi.get("severity", 1) >= 2:
-                    comments.append({
-                        "path": filename,
-                        "body": f"**Python**: {pi['message']}",
-                        "line": pi.get("line", 1),
-                    })
+                    comments.append(
+                        {
+                            "path": filename,
+                            "body": f"**Python**: {pi['message']}",
+                            "line": pi.get("line", 1),
+                        }
+                    )
 
         return comments, issues, min(score, 5)
 
@@ -85,11 +89,13 @@ class ReviewEngine:
             return matches
         for i, line in enumerate(patch.split("\n"), 1):
             if line.startswith("+") and re.search(pattern, line):
-                matches.append({
-                    "line": i,
-                    "message": rule.get("message", "Potential issue"),
-                    "suggestion": rule.get("suggestion", ""),
-                })
+                matches.append(
+                    {
+                        "line": i,
+                        "message": rule.get("message", "Potential issue"),
+                        "suggestion": rule.get("suggestion", ""),
+                    }
+                )
         return matches[:3]
 
     def _analyze_python_ast(self, patch: str) -> list[dict[str, Any]]:
@@ -108,13 +114,35 @@ class ReviewEngine:
             for node in ast.walk(tree):
                 if isinstance(node, ast.FunctionDef):
                     if len(node.body) > 50:
-                        issues.append({"message": f"Function '{node.name}' has {len(node.body)} lines, consider refactoring", "line": node.lineno or 1, "severity": 2})
+                        issues.append(
+                            {
+                                "message": f"Function '{node.name}' has {len(node.body)} lines, consider refactoring",
+                                "line": node.lineno or 1,
+                                "severity": 2,
+                            }
+                        )
                 if isinstance(node, ast.Try):
                     if not any(isinstance(h, ast.ExceptHandler) and h.name for h in node.handlers):
-                        issues.append({"message": "Broad exception handler, consider catching specific exceptions", "line": node.lineno or 1, "severity": 3})
+                        issues.append(
+                            {
+                                "message": "Broad exception handler, consider catching specific exceptions",
+                                "line": node.lineno or 1,
+                                "severity": 3,
+                            }
+                        )
                 if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
-                    if node.func.attr == "execute" and isinstance(node.func.value, ast.Name) and node.func.value.id in ("os", "subprocess"):
-                        issues.append({"message": "Shell execution detected, validate inputs to prevent injection", "line": node.lineno or 1, "severity": 4})
+                    if (
+                        node.func.attr == "execute"
+                        and isinstance(node.func.value, ast.Name)
+                        and node.func.value.id in ("os", "subprocess")
+                    ):
+                        issues.append(
+                            {
+                                "message": "Shell execution detected, validate inputs to prevent injection",
+                                "line": node.lineno or 1,
+                                "severity": 4,
+                            }
+                        )
         except SyntaxError:
             issues.append({"message": "Added code has syntax errors", "line": 1, "severity": 5})
 
@@ -131,7 +159,13 @@ class ReviewEngine:
                     val = line.split(":", 1)[1].strip().strip('"').strip("'")
                     if val and val != "****" and len(val) > 3:
                         issues.append(f"{filename}: Possible secret exposed in config")
-                        comments.append({"path": filename, "body": "**Security**: Possible secret/API key exposed in config file", "line": 1})
+                        comments.append(
+                            {
+                                "path": filename,
+                                "body": "**Security**: Possible secret/API key exposed in config file",
+                                "line": 1,
+                            }
+                        )
 
         return comments, issues
 

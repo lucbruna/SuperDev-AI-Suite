@@ -1,6 +1,7 @@
 """
 Digital Forensics Analyzer
 """
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -43,20 +44,32 @@ class ForensicAnalyzer:
         self.timeline: list[TimelineEntry] = []
 
     def collect_evidence(self, evidence_type: EvidenceType, source: str, data: str = "", **kwargs) -> EvidenceItem:
-        evidence_id = hashlib.sha256(f"{evidence_type.value}{source}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
+        evidence_id = hashlib.sha256(f"{evidence_type.value}{source}{datetime.now().isoformat()}".encode()).hexdigest()[
+            :16
+        ]
         data_hash = hashlib.sha256(data.encode()).hexdigest() if data else ""
-        item = EvidenceItem(evidence_id=evidence_id, evidence_type=evidence_type, source=source, hash_sha256=data_hash, chain_of_custody=[{"action": "collected", "time": datetime.now().isoformat(), "by": "system"}])
+        item = EvidenceItem(
+            evidence_id=evidence_id,
+            evidence_type=evidence_type,
+            source=source,
+            hash_sha256=data_hash,
+            chain_of_custody=[{"action": "collected", "time": datetime.now().isoformat(), "by": "system"}],
+        )
         self.evidence[evidence_id] = item
         return item
 
     def transfer_custody(self, evidence_id: str, from_party: str, to_party: str) -> bool:
         item = self.evidence.get(evidence_id)
         if item:
-            item.chain_of_custody.append({"action": "transfer", "from": from_party, "to": to_party, "time": datetime.now().isoformat()})
+            item.chain_of_custody.append(
+                {"action": "transfer", "from": from_party, "to": to_party, "time": datetime.now().isoformat()}
+            )
             return True
         return False
 
-    def add_timeline_entry(self, timestamp: datetime, event_type: str, description: str = "", source: str = "") -> TimelineEntry:
+    def add_timeline_entry(
+        self, timestamp: datetime, event_type: str, description: str = "", source: str = ""
+    ) -> TimelineEntry:
         entry = TimelineEntry(timestamp=timestamp, event_type=event_type, description=description, source=source)
         self.timeline.append(entry)
         self.timeline.sort(key=lambda e: e.timestamp)

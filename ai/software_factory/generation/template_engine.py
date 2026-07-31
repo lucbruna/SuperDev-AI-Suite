@@ -1,4 +1,5 @@
 """Template engine for managing and rendering templates."""
+
 from typing import Any
 
 from .models import Template, TemplateVariable
@@ -40,8 +41,7 @@ class TemplateEngine:
     def count(self) -> int:
         return len(self._templates)
 
-    def create_template(self, name: str, content: str,
-                        variables: list[TemplateVariable] = None) -> Template:
+    def create_template(self, name: str, content: str, variables: list[TemplateVariable] = None) -> Template:
         template = Template(
             name=name,
             content=content,

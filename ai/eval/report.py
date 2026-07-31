@@ -15,7 +15,9 @@ class EvalReport:
     async def generate_report(self, prompts: list[str], model_a: str, model_b: str) -> dict[str, Any]:
         results = await self._runner.run_batch(prompts, model_a, model_b)
         summary = self._metrics.compare(results)
-        costs = self._metrics.cost_estimate(model_a, model_b, summary["model_a"]["total_tokens"], summary["model_b"]["total_tokens"])
+        costs = self._metrics.cost_estimate(
+            model_a, model_b, summary["model_a"]["total_tokens"], summary["model_b"]["total_tokens"]
+        )
 
         winner = "tie"
         if summary["model_a"]["wins"] > summary["model_b"]["wins"]:

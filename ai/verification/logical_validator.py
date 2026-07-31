@@ -20,5 +20,7 @@ class LogicalValidator:
         return {
             "valid": len(issues) == 0,
             "issues": issues,
-            "has_logical_structure": "if" in response.lower() or "therefore" in response.lower() or "because" in response.lower(),
+            "has_logical_structure": "if" in response.lower()
+            or "therefore" in response.lower()
+            or "because" in response.lower(),
         }

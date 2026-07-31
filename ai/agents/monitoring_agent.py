@@ -57,6 +57,7 @@ class MonitoringAgent(BaseAgent):
 
         try:
             import psutil
+
             metrics["cpu_percent"] = psutil.cpu_percent(interval=0.5)
             metrics["memory_percent"] = psutil.virtual_memory().percent
             metrics["disk_percent"] = psutil.disk_usage("/").percent
@@ -86,14 +87,16 @@ class MonitoringAgent(BaseAgent):
         for key, (threshold, message) in thresholds.items():
             value = metrics.get(key, 0)
             if value is not None and value > threshold:
-                alerts.append({
-                    "type": "critical" if value > threshold + 5 else "warning",
-                    "metric": key,
-                    "value": value,
-                    "threshold": threshold,
-                    "message": message,
-                    "timestamp": time.time(),
-                })
+                alerts.append(
+                    {
+                        "type": "critical" if value > threshold + 5 else "warning",
+                        "metric": key,
+                        "value": value,
+                        "threshold": threshold,
+                        "message": message,
+                        "timestamp": time.time(),
+                    }
+                )
         return alerts
 
     def _generate_recommendations(self, metrics: dict, alerts: list) -> list[str]:

@@ -1,4 +1,5 @@
 """Data Platform Events — Event definitions for data platform operations."""
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum

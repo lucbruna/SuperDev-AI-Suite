@@ -1,4 +1,5 @@
 """Analyzer for architecture metrics and quality."""
+
 from collections import Counter
 from typing import Any
 
@@ -8,8 +9,7 @@ from .models import ArchitectureComponent, Connector
 class ArchitectureAnalyzer:
     """Analyzes architecture for metrics, complexity, and quality."""
 
-    def analyze(self, components: list[ArchitectureComponent],
-                connectors: list[Connector]) -> dict[str, Any]:
+    def analyze(self, components: list[ArchitectureComponent], connectors: list[Connector]) -> dict[str, Any]:
         if not components:
             return {"empty": True}
 
@@ -33,8 +33,9 @@ class ArchitectureAnalyzer:
             "cohesion_score": avg_interfaces / 3.0,
         }
 
-    def compute_complexity(self, components: list[ArchitectureComponent],
-                           connectors: list[Connector]) -> dict[str, Any]:
+    def compute_complexity(
+        self, components: list[ArchitectureComponent], connectors: list[Connector]
+    ) -> dict[str, Any]:
         nodes = len(components)
         edges = len(connectors)
         density = (2 * edges) / (nodes * (nodes - 1)) if nodes > 1 else 0
@@ -70,8 +71,9 @@ class ArchitectureAnalyzer:
             dfs(comp.component_id)
         return cycles
 
-    def get_quality_assessment(self, components: list[ArchitectureComponent],
-                               connectors: list[Connector]) -> dict[str, Any]:
+    def get_quality_assessment(
+        self, components: list[ArchitectureComponent], connectors: list[Connector]
+    ) -> dict[str, Any]:
         analysis = self.analyze(components, connectors)
         complexity = self.compute_complexity(components, connectors)
         cycles = self.find_circular_deps(components)

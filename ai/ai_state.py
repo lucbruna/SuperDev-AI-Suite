@@ -91,13 +91,15 @@ class AIState:
         current: dict[str, Any],
     ) -> None:
         """Record a state change in history."""
-        self._history.append({
-            "type": change_type,
-            "entity_id": entity_id,
-            "previous": previous,
-            "current": current,
-            "timestamp": datetime.now(UTC).isoformat(),
-        })
+        self._history.append(
+            {
+                "type": change_type,
+                "entity_id": entity_id,
+                "previous": previous,
+                "current": current,
+                "timestamp": datetime.now(UTC).isoformat(),
+            }
+        )
         # Keep only last 1000 history entries
         if len(self._history) > 1000:
             self._history = self._history[-1000:]

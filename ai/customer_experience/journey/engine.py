@@ -1,4 +1,5 @@
 """Journey engine."""
+
 import uuid
 from datetime import datetime
 
@@ -77,7 +78,7 @@ class JourneyEngine:
         total_stages = len(JourneyStage)
         touchpoint_score = min(1.0, len(journey.touchpoints) / 10)
         stage_score = stages_completed / total_stages
-        score = (stage_score * 0.6 + touchpoint_score * 0.4)
+        score = stage_score * 0.6 + touchpoint_score * 0.4
         journey.conversion_score = score
         return score
 
@@ -98,19 +99,23 @@ class JourneyEngine:
             return []
         opts = []
         if journey.current_stage == JourneyStage.AWARENESS:
-            opts.append(JourneyOptimization(
-                optimization_id=str(uuid.uuid4())[:8],
-                stage=JourneyStage.AWARENESS,
-                suggestion="Increase touchpoint frequency to advance to Interest stage",
-                expected_impact=0.15,
-                priority="high",
-            ))
+            opts.append(
+                JourneyOptimization(
+                    optimization_id=str(uuid.uuid4())[:8],
+                    stage=JourneyStage.AWARENESS,
+                    suggestion="Increase touchpoint frequency to advance to Interest stage",
+                    expected_impact=0.15,
+                    priority="high",
+                )
+            )
         if len(journey.touchpoints) < 3:
-            opts.append(JourneyOptimization(
-                optimization_id=str(uuid.uuid4())[:8],
-                stage=journey.current_stage,
-                suggestion="Add more engagement touchpoints",
-                expected_impact=0.1,
-                priority="medium",
-            ))
+            opts.append(
+                JourneyOptimization(
+                    optimization_id=str(uuid.uuid4())[:8],
+                    stage=journey.current_stage,
+                    suggestion="Add more engagement touchpoints",
+                    expected_impact=0.1,
+                    priority="medium",
+                )
+            )
         return opts

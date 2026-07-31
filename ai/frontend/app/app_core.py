@@ -1,6 +1,7 @@
 """
 Frontend Application Core
 """
+
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -10,6 +11,7 @@ from typing import Any
 
 class AppState(Enum):
     """Application states."""
+
     IDLE = "idle"
     LOADING = "loading"
     READY = "ready"
@@ -20,6 +22,7 @@ class AppState(Enum):
 @dataclass
 class User:
     """User model."""
+
     id: str
     email: str
     name: str
@@ -35,6 +38,7 @@ class User:
 @dataclass
 class Session:
     """User session."""
+
     token: str
     refresh_token: str
     user: User
@@ -119,9 +123,7 @@ class App:
     def off(self, event: str, callback: Callable) -> None:
         """Remove an event listener."""
         if event in self.listeners:
-            self.listeners[event] = [
-                cb for cb in self.listeners[event] if cb != callback
-            ]
+            self.listeners[event] = [cb for cb in self.listeners[event] if cb != callback]
 
     def _emit(self, event: str, data: dict[str, Any]) -> None:
         """Emit an event."""
@@ -253,12 +255,14 @@ class NotificationService:
 
     def show(self, message: str, type: str = "info", duration: int = 5000) -> None:
         """Show a notification."""
-        self.notifications.append({
-            "message": message,
-            "type": type,
-            "duration": duration,
-            "timestamp": datetime.now(),
-        })
+        self.notifications.append(
+            {
+                "message": message,
+                "type": type,
+                "duration": duration,
+                "timestamp": datetime.now(),
+            }
+        )
 
     def success(self, message: str) -> None:
         """Show success notification."""

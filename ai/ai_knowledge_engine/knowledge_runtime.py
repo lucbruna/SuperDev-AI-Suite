@@ -1,4 +1,5 @@
 """Knowledge Runtime — Runtime environment for the knowledge platform."""
+
 from datetime import datetime
 from typing import Any
 

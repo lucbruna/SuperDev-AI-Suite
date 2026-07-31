@@ -234,7 +234,10 @@ class TestConceptMerger:
         assert linked["linked"] is True
 
     def test_reset(self) -> None:
-        concepts = [{"name": "c", "attributes": {}, "relationships": []}, {"name": "c", "attributes": {}, "relationships": []}]
+        concepts = [
+            {"name": "c", "attributes": {}, "relationships": []},
+            {"name": "c", "attributes": {}, "relationships": []},
+        ]
         self.merger.merge_concepts(concepts)
         self.merger.reset()
         assert self.merger.merge_count == 0

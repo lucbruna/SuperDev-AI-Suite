@@ -1,6 +1,7 @@
 """
 Queue Engine - Core queue management
 """
+
 import collections
 import hashlib
 from dataclasses import dataclass, field

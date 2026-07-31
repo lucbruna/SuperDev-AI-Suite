@@ -1,4 +1,5 @@
 """BI Manager — Project and lifecycle management for BI operations."""
+
 import hashlib
 from datetime import datetime
 from typing import Any

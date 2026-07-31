@@ -163,13 +163,15 @@ class ComplianceEngine:
 
         for rule in rules:
             status = await self._evaluate_rule(rule, context or {})
-            results.append(ComplianceResult(
-                rule_id=rule.id,
-                rule_name=rule.name,
-                framework=framework,
-                status=status,
-                details=f"Checked: {rule.description}",
-            ))
+            results.append(
+                ComplianceResult(
+                    rule_id=rule.id,
+                    rule_name=rule.name,
+                    framework=framework,
+                    status=status,
+                    details=f"Checked: {rule.description}",
+                )
+            )
 
         compliant = sum(1 for r in results if r.status == ComplianceStatus.COMPLIANT)
         non_compliant = sum(1 for r in results if r.status == ComplianceStatus.NON_COMPLIANT)

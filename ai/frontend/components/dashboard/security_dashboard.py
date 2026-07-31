@@ -1,6 +1,7 @@
 """
 Security Dashboard
 """
+
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any
@@ -44,7 +45,10 @@ class SecurityDashboard:
 
     def render(self) -> dict[str, Any]:
         return {
-            "events": [{"title": e.title, "threatLevel": e.threat_level.value, "resolved": e.resolved} for e in self.events[:20]],
+            "events": [
+                {"title": e.title, "threatLevel": e.threat_level.value, "resolved": e.resolved}
+                for e in self.events[:20]
+            ],
             "activeThreats": len(self.get_active_threats()),
             "threatCounts": self.get_threat_count_by_level(),
             "scanStatus": self.scan_status,

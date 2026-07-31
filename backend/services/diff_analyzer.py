@@ -11,7 +11,9 @@ class DiffAnalyzer:
         new_lines = new_content.splitlines(keepends=True)
         diff = list(difflib.unified_diff(old_lines, new_lines, fromfile=f"a/{filename}", tofile=f"b/{filename}"))
         added_lines = [l[1:] for l in diff if l.startswith("+") and not l.startswith("+++") and not l.startswith("---")]
-        removed_lines = [l[1:] for l in diff if l.startswith("-") and not l.startswith("---") and not l.startswith("+++")]
+        removed_lines = [
+            l[1:] for l in diff if l.startswith("-") and not l.startswith("---") and not l.startswith("+++")
+        ]
         return {
             "filename": filename,
             "diff": "".join(diff),

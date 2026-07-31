@@ -1,6 +1,7 @@
 """
 Token Manager for Integration Auth
 """
+
 import hashlib
 import secrets
 from dataclasses import dataclass, field
@@ -30,7 +31,14 @@ class IntegrationTokenManager:
         token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
         token_id = hashlib.sha256(f"{integration_id}{token_hash}".encode()).hexdigest()[:16]
         ttl = self.access_ttl if token_type == "access" else self.refresh_ttl
-        token = IntegrationToken(token_id=token_id, integration_id=integration_id, token_type=token_type, token_hash=token_hash, scopes=scopes or [], expires_at=datetime.now() + timedelta(seconds=ttl))
+        token = IntegrationToken(
+            token_id=token_id,
+            integration_id=integration_id,
+            token_type=token_type,
+            token_hash=token_hash,
+            scopes=scopes or [],
+            expires_at=datetime.now() + timedelta(seconds=ttl),
+        )
         self.tokens[token_id] = token
         return raw_token, token
 

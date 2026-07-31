@@ -1,4 +1,5 @@
 """Factory Logger - Structured logging for factory operations."""
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -28,8 +29,18 @@ class FactoryLogger:
     def __init__(self):
         self.entries: list[LogEntry] = []
 
-    def log(self, level: LogLevel, message: str, source: str = "", project_id: str = "", phase: str = "", data: dict[str, Any] = None) -> LogEntry:
-        entry = LogEntry(level=level, message=message, source=source, project_id=project_id, phase=phase, data=data or {})
+    def log(
+        self,
+        level: LogLevel,
+        message: str,
+        source: str = "",
+        project_id: str = "",
+        phase: str = "",
+        data: dict[str, Any] = None,
+    ) -> LogEntry:
+        entry = LogEntry(
+            level=level, message=message, source=source, project_id=project_id, phase=phase, data=data or {}
+        )
         self.entries.append(entry)
         return entry
 

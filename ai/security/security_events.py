@@ -1,4 +1,5 @@
 """Security event bus for cross-cutting security concerns."""
+
 from __future__ import annotations
 
 import contextlib

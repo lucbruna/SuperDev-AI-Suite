@@ -50,7 +50,7 @@ class ComponentGenerator:
             f"}}\n\n"
             f"const {name}: React.FC<{name}Props> = ({{ {props_str} }}) => {{\n"
             f"  return (\n"
-            f"    <div className=\"{name.lower()}\">\n"
+            f'    <div className="{name.lower()}">\n'
             f"      {{/* TODO: implement */}}\n"
             f"    </div>\n"
             f"  );\n"

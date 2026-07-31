@@ -1,4 +1,5 @@
 """Response cache."""
+
 from __future__ import annotations
 
 import hashlib
@@ -11,9 +12,11 @@ class ResponseCache:
         self._cache: dict[str, dict[str, Any]] = {}
         self._max_size = max_size
         self._ttl = ttl
+
     def _make_key(self, prompt: str, model: str, params: dict[str, Any] = None) -> str:
         content = f"{prompt}:{model}:{params}"
         return hashlib.sha256(content.encode()).hexdigest()
+
     def get(self, prompt: str, model: str, params: dict[str, Any] = None) -> dict[str, Any] | None:
         key = self._make_key(prompt, model, params)
         entry = self._cache.get(key)
@@ -24,6 +27,7 @@ class ResponseCache:
             return None
         entry["access_count"] += 1
         return entry["value"]
+
     def set(self, prompt: str, model: str, response: dict[str, Any], params: dict[str, Any] = None) -> dict[str, Any]:
         key = self._make_key(prompt, model, params)
         if len(self._cache) >= self._max_size:
@@ -31,6 +35,7 @@ class ResponseCache:
             del self._cache[oldest]
         self._cache[key] = {"value": response, "created_at": time.time(), "access_count": 0}
         return {"key": key, "cached": True}
+
     def invalidate(self, model: str = "") -> int:
         if not model:
             n = len(self._cache)
@@ -45,10 +50,13 @@ class ResponseCache:
             del self._cache[k]
             removed += 1
         return removed
+
     def list_cached(self) -> list[str]:
         return list(self._cache.keys())
+
     def count(self) -> int:
         return len(self._cache)
+
     def clear(self) -> int:
         n = len(self._cache)
         self._cache.clear()

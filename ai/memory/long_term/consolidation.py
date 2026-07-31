@@ -48,7 +48,7 @@ class Consolidation:
         elif isinstance(source, dict):
             for key, value in source.items():
                 entries.append({"key": str(key), "data": value})
-        return entries[:self._batch_size]
+        return entries[: self._batch_size]
 
     def _should_consolidate(self, entry: dict[str, Any]) -> bool:
         importance = entry.get("importance", 0.0)

@@ -1,4 +1,5 @@
 """Core engine for quality analysis."""
+
 from typing import Any
 
 from .complexity_analyzer import ComplexityAnalyzer

@@ -1,6 +1,7 @@
 """
 Integration Logger - Structured logging for integrations
 """
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -35,10 +36,19 @@ class IntegrationLogger:
         self.sinks: list[str] = ["console"]
         self.filters: dict[str, Any] = {}
 
-    def log(self, level: LogLevel, message: str, integration_id: str = "", data: dict[str, Any] = None, **kwargs) -> LogEntry | None:
+    def log(
+        self, level: LogLevel, message: str, integration_id: str = "", data: dict[str, Any] = None, **kwargs
+    ) -> LogEntry | None:
         if level.value < self.min_level.value:
             return None
-        entry = LogEntry(entry_id=hashlib.sha256(f"{message}{datetime.now().isoformat()}".encode()).hexdigest()[:16], level=level, message=message, integration_id=integration_id, data=data or {}, **kwargs)
+        entry = LogEntry(
+            entry_id=hashlib.sha256(f"{message}{datetime.now().isoformat()}".encode()).hexdigest()[:16],
+            level=level,
+            message=message,
+            integration_id=integration_id,
+            data=data or {},
+            **kwargs,
+        )
         self.entries.append(entry)
         return entry
 

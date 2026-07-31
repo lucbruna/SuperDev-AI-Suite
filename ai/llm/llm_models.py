@@ -17,6 +17,7 @@ class ProviderState(Enum):
 @dataclass
 class LLMRequest:
     """Represents a single LLM request."""
+
     provider: str
     model: str
     prompt: str
@@ -30,6 +31,7 @@ class LLMRequest:
 @dataclass
 class LLMResponse:
     """Represents a single LLM response."""
+
     request_id: str
     provider: str
     model: str
@@ -45,6 +47,7 @@ class LLMResponse:
 @dataclass
 class ProviderInfo:
     """Information about a registered LLM provider."""
+
     name: str
     model: str
     state: ProviderState = ProviderState.ACTIVE
@@ -61,6 +64,7 @@ class ProviderInfo:
 @dataclass
 class LLMContext:
     """Context passed during LLM execution."""
+
     request_id: str
     user_id: str = ""
     session_id: str = ""
@@ -73,6 +77,7 @@ class LLMContext:
 @dataclass
 class TokenUsage:
     """Token usage statistics."""
+
     prompt_tokens: int = 0
     completion_tokens: int = 0
     total_tokens: int = 0
@@ -85,6 +90,7 @@ class TokenUsage:
 @dataclass
 class LLMMetrics:
     """Metrics for a single LLM operation."""
+
     provider: str = ""
     model: str = ""
     latency_ms: float = 0.0

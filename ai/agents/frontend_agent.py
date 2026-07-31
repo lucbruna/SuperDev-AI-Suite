@@ -20,8 +20,16 @@ class FrontendAgent(BaseAgent):
 
     def capabilities(self) -> list[str]:
         return [
-            "frontend", "react", "typescript", "ui", "component",
-            "css", "html", "nextjs", "tailwind", "design",
+            "frontend",
+            "react",
+            "typescript",
+            "ui",
+            "component",
+            "css",
+            "html",
+            "nextjs",
+            "tailwind",
+            "design",
         ]
 
 
@@ -40,6 +48,13 @@ class UXAgent(BaseAgent):
 
     def capabilities(self) -> list[str]:
         return [
-            "ux", "ui", "design", "usability", "accessibility",
-            "prototype", "wireframe", "responsive", "interaction",
+            "ux",
+            "ui",
+            "design",
+            "usability",
+            "accessibility",
+            "prototype",
+            "wireframe",
+            "responsive",
+            "interaction",
         ]

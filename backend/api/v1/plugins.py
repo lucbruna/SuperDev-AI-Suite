@@ -150,6 +150,7 @@ async def install_plugin(
     class SimplePlugin(BasePlugin):
         async def on_activate(self) -> None:
             pass
+
         async def on_deactivate(self) -> None:
             pass
 

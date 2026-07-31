@@ -3,8 +3,13 @@ from __future__ import annotations
 from typing import Literal, TypedDict
 
 DecisionPhase: type = Literal[
-    "pending", "analyzing", "selecting", "executing",
-    "validating", "completed", "failed",
+    "pending",
+    "analyzing",
+    "selecting",
+    "executing",
+    "validating",
+    "completed",
+    "failed",
 ]
 
 

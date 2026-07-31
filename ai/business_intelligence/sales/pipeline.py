@@ -1,4 +1,5 @@
 """Sales pipeline manager."""
+
 from .models import Activity, Deal, DealStage, SalesMetrics
 
 

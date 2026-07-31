@@ -1,4 +1,5 @@
 """Mobile Platform & Edge AI Engine - Core engine for mobile and edge computing."""
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -73,7 +74,11 @@ class MobileEngine:
         if not device:
             return None
         session_id = hashlib.sha256(f"{device_id}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
-        self.active_sessions[session_id] = {"device_id": device_id, "started_at": datetime.now().isoformat(), "data": session_data or {}}
+        self.active_sessions[session_id] = {
+            "device_id": device_id,
+            "started_at": datetime.now().isoformat(),
+            "data": session_data or {},
+        }
         self._log_event("session_started", device_id, {"session_id": session_id})
         return session_id
 
@@ -87,4 +92,11 @@ class MobileEngine:
         return len(self.devices)
 
     def _log_event(self, event_type: str, device_id: str, data: dict[str, Any] = None):
-        self.event_log.append({"event_type": event_type, "device_id": device_id, "data": data or {}, "timestamp": datetime.now().isoformat()})
+        self.event_log.append(
+            {
+                "event_type": event_type,
+                "device_id": device_id,
+                "data": data or {},
+                "timestamp": datetime.now().isoformat(),
+            }
+        )

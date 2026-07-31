@@ -1,4 +1,5 @@
 """Deployment subsystem."""
+
 from .blue_green import BlueGreenDeployer
 from .canary import CanaryDeployer
 from .deployment_engine import DeploymentEngine
@@ -7,6 +8,10 @@ from .rollback import RollbackManager
 from .version_control import VersionControl
 
 __all__ = [
-    "DeploymentEngine", "ReleaseManager", "VersionControl",
-    "RollbackManager", "BlueGreenDeployer", "CanaryDeployer"
+    "DeploymentEngine",
+    "ReleaseManager",
+    "VersionControl",
+    "RollbackManager",
+    "BlueGreenDeployer",
+    "CanaryDeployer",
 ]

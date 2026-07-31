@@ -1,4 +1,5 @@
 """Tool security and permission management."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -13,17 +14,21 @@ class ToolSecurity:
 
     def check(self, tool_id: str, args: dict[str, Any]) -> bool:
         if tool_id in self._denied_tools:
-            self._audit_log.append({
-                "tool_id": tool_id,
-                "action": "denied",
-                "reason": "Tool is in deny list",
-            })
+            self._audit_log.append(
+                {
+                    "tool_id": tool_id,
+                    "action": "denied",
+                    "reason": "Tool is in deny list",
+                }
+            )
             return False
-        self._audit_log.append({
-            "tool_id": tool_id,
-            "action": "allowed",
-            "args_count": len(args),
-        })
+        self._audit_log.append(
+            {
+                "tool_id": tool_id,
+                "action": "allowed",
+                "args_count": len(args),
+            }
+        )
         return True
 
     def deny_tool(self, tool_id: str) -> None:

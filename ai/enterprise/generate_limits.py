@@ -1,15 +1,20 @@
 """Limits subsystem generator."""
+
 import os
 
-BASE = r'C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\enterprise\limits'
+BASE = r"C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\enterprise\limits"
+
 
 def w(path, content):
     full = os.path.join(BASE, path)
     os.makedirs(os.path.dirname(full), exist_ok=True)
-    with open(full, 'w', encoding='utf-8') as f:
+    with open(full, "w", encoding="utf-8") as f:
         f.write(content)
 
-w('limit_engine.py', '''"""Limit engine."""
+
+w(
+    "limit_engine.py",
+    '''"""Limit engine."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time
@@ -52,9 +57,12 @@ class LimitEngine:
         return sum(self._usage.pop(org_id, {}).values())
     def is_running(self) -> bool:
         return self._started
-''')
+''',
+)
 
-w('quota_manager.py', '''"""Quota manager."""
+w(
+    "quota_manager.py",
+    '''"""Quota manager."""
 from __future__ import annotations
 from typing import Any, Dict
 
@@ -89,9 +97,12 @@ class QuotaManager:
         return sum(self._current.pop(org_id, {}).values())
     def list_quotas(self, org_id: str) -> Dict[str, Dict[str, float]]:
         return {"limits": dict(self._quotas.get(org_id, {})), "usage": dict(self._current.get(org_id, {}))}
-''')
+''',
+)
 
-w('enforcement.py', '''"""Limit enforcement."""
+w(
+    "enforcement.py",
+    '''"""Limit enforcement."""
 from __future__ import annotations
 from typing import Any, Callable, Dict, List
 
@@ -133,9 +144,12 @@ class LimitEnforcer:
         n = len(self._violations)
         self._violations.clear()
         return n
-''')
+''',
+)
 
-w('alerts.py', '''"""Limit alerts."""
+w(
+    "alerts.py",
+    '''"""Limit alerts."""
 from __future__ import annotations
 from typing import Any, Callable, Dict, List
 
@@ -180,9 +194,12 @@ class LimitAlerts:
         n = len(self._alerts)
         self._alerts.clear()
         return n
-''')
+''',
+)
 
-w('policies.py', '''"""Limit policies."""
+w(
+    "policies.py",
+    '''"""Limit policies."""
 from __future__ import annotations
 from typing import Any, Dict, List
 
@@ -220,9 +237,12 @@ class LimitPolicies:
                 if usage >= policy["limit"]:
                     return {"policy": policy["name"], "exceeded": True, "action": policy["action"]}
         return {"exceeded": False}
-''')
+''',
+)
 
-w('__init__.py', '''"""Limits subsystem."""
+w(
+    "__init__.py",
+    '''"""Limits subsystem."""
 from .limit_engine import LimitEngine
 from .quota_manager import QuotaManager
 from .enforcement import LimitEnforcer
@@ -232,6 +252,7 @@ from .policies import LimitPolicies
 __all__ = [
     "LimitEngine", "QuotaManager", "LimitEnforcer", "LimitAlerts", "LimitPolicies"
 ]
-''')
+''',
+)
 
 print("limits/: 6 files created")

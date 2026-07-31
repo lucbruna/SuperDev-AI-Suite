@@ -1,9 +1,10 @@
 """Comprehensive tests for Mobile Platform & Edge AI Engine (Volume 30)."""
+
 import os
 import sys
 import unittest
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 # ── Core imports ──────────────────────────────────────────────────────────
 # ── Biometrics ───────────────────────────────────────────────────────────
@@ -58,6 +59,7 @@ from mobile_edge.synchronization.sync_engine import MobileSyncEngine, SyncDirect
 # ═══════════════════════════════════════════════════════════════════════════
 # CORE TESTS
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 class TestCoreModules(unittest.TestCase):
     def test_mobile_engine(self):
@@ -376,6 +378,7 @@ class TestMobileLogger(unittest.TestCase):
 # EDGE RUNTIME TESTS
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 class TestEdgeRuntime(unittest.TestCase):
     def test_runtime_engine(self):
         e = EdgeRuntimeEngine()
@@ -432,6 +435,7 @@ class TestEdgeRuntime(unittest.TestCase):
 # OFFLINE TESTS
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 class TestOffline(unittest.TestCase):
     def test_offline_engine(self):
         e = OfflineEngine()
@@ -487,6 +491,7 @@ class TestOffline(unittest.TestCase):
 # SYNCHRONIZATION TESTS
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 class TestSynchronization(unittest.TestCase):
     def test_sync_engine(self):
         e = MobileSyncEngine()
@@ -523,6 +528,7 @@ class TestSynchronization(unittest.TestCase):
 # ═══════════════════════════════════════════════════════════════════════════
 # DEVICES TESTS
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 class TestDevices(unittest.TestCase):
     def test_device_engine(self):
@@ -569,6 +575,7 @@ class TestDevices(unittest.TestCase):
 # NOTIFICATIONS TESTS
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 class TestNotifications(unittest.TestCase):
     def test_notification_engine(self):
         e = NotificationEngine()
@@ -593,7 +600,12 @@ class TestNotifications(unittest.TestCase):
 
     def test_templates(self):
         t = TemplateManager()
-        tmpl = t.create("welcome", "Welcome User", title_template="Welcome {{name}}!", message_template="Hello {{name}}, welcome to {{app}}")
+        tmpl = t.create(
+            "welcome",
+            "Welcome User",
+            title_template="Welcome {{name}}!",
+            message_template="Hello {{name}}, welcome to {{app}}",
+        )
         self.assertIsNotNone(tmpl)
         rendered = t.render("welcome", {"name": "Alice", "app": "SuperDev"})
         self.assertEqual(rendered["title"], "Welcome Alice!")
@@ -603,6 +615,7 @@ class TestNotifications(unittest.TestCase):
 # ═══════════════════════════════════════════════════════════════════════════
 # BIOMETRICS TESTS
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 class TestBiometrics(unittest.TestCase):
     def test_biometric_engine(self):
@@ -640,6 +653,7 @@ class TestBiometrics(unittest.TestCase):
 # SUBSYSTEM IMPORT TESTS
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 class TestSubsystemImports(unittest.TestCase):
     def test_edge_runtime_imports(self):
         from mobile_edge.edge_runtime import (
@@ -650,14 +664,28 @@ class TestSubsystemImports(unittest.TestCase):
             InferenceEngine,
             LocalModelManager,
         )
-        self.assertTrue(all([EdgeRuntimeEngine, LocalModelManager, InferenceEngine, EdgeModelManager, EdgeResourceManager, AcceleratorManager]))
+
+        self.assertTrue(
+            all(
+                [
+                    EdgeRuntimeEngine,
+                    LocalModelManager,
+                    InferenceEngine,
+                    EdgeModelManager,
+                    EdgeResourceManager,
+                    AcceleratorManager,
+                ]
+            )
+        )
 
     def test_offline_imports(self):
         from mobile_edge.offline import CacheManager, LocalDatabase, OfflineEngine, OfflineQueueManager, SyncQueue
+
         self.assertTrue(all([OfflineEngine, CacheManager, LocalDatabase, OfflineQueueManager, SyncQueue]))
 
     def test_synchronization_imports(self):
         from mobile_edge.synchronization import CloudSyncManager, ConflictResolver, DataMerger, MobileSyncEngine
+
         self.assertTrue(all([MobileSyncEngine, ConflictResolver, DataMerger, CloudSyncManager]))
 
     def test_devices_imports(self):
@@ -668,10 +696,12 @@ class TestSubsystemImports(unittest.TestCase):
             DeviceRegistry,
             RemoteControlManager,
         )
+
         self.assertTrue(all([DeviceEngine, DeviceRegistry, DeviceHealthMonitor, RemoteControlManager, DeviceInventory]))
 
     def test_notifications_imports(self):
         from mobile_edge.notifications import AlertRuleManager, NotificationEngine, PushManager, TemplateManager
+
         self.assertTrue(all([NotificationEngine, PushManager, AlertRuleManager, TemplateManager]))
 
     def test_biometrics_imports(self):
@@ -681,12 +711,14 @@ class TestSubsystemImports(unittest.TestCase):
             FingerprintManager,
             VoiceRecognitionManager,
         )
+
         self.assertTrue(all([BiometricEngine, FingerprintManager, FaceRecognitionManager, VoiceRecognitionManager]))
 
 
 # ═══════════════════════════════════════════════════════════════════════════
 # CROSS-SUBSYSTEM INTEGRATION TESTS
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 class TestCrossSubsystemIntegration(unittest.TestCase):
     def test_edge_offline_pipeline(self):
@@ -769,5 +801,5 @@ class TestCrossSubsystemIntegration(unittest.TestCase):
         self.assertEqual(notif.count(), 1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

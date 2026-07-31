@@ -26,12 +26,12 @@ class OTDoc:
         elif kind == "delete":
             length = op.get("length", 0)
             deleted = self.content[pos : pos + length]
-            self.content = self.content[:pos] + self.content[pos + length:]
+            self.content = self.content[:pos] + self.content[pos + length :]
             op["deleted"] = deleted
         elif kind == "replace":
             length = op.get("length", 0)
             deleted = self.content[pos : pos + length]
-            self.content = self.content[:pos] + op["text"] + self.content[pos + length:]
+            self.content = self.content[:pos] + op["text"] + self.content[pos + length :]
             op["deleted"] = deleted
         self.revision += 1
         return op
@@ -56,7 +56,14 @@ async def collab_ws(ws: WebSocket, session_id: str, user_id: str = "anonymous"):
         _docs[session_id] = OTDoc()
     _connections[session_id].append(ws)
 
-    await ws.send_json({"type": "init", "revision": _docs[session_id].revision, "content": _docs[session_id].content, "users": len(_connections[session_id])})
+    await ws.send_json(
+        {
+            "type": "init",
+            "revision": _docs[session_id].revision,
+            "content": _docs[session_id].content,
+            "users": len(_connections[session_id]),
+        }
+    )
 
     try:
         while True:
@@ -76,7 +83,9 @@ async def collab_ws(ws: WebSocket, session_id: str, user_id: str = "anonymous"):
                 for conn in _connections[session_id]:
                     if conn != ws:
                         with contextlib.suppress(Exception):
-                            await conn.send_json({"type": "cursor", "user_id": user_id, "position": data.get("position", 0)})
+                            await conn.send_json(
+                                {"type": "cursor", "user_id": user_id, "position": data.get("position", 0)}
+                            )
     except WebSocketDisconnect:
         _connections[session_id].remove(ws)
         if not _connections[session_id]:
@@ -87,7 +96,12 @@ async def collab_ws(ws: WebSocket, session_id: str, user_id: str = "anonymous"):
 
 @router.get("/sessions")
 async def list_sessions():
-    return {"sessions": [{"id": sid, "users": len(conns), "revision": _docs.get(sid, OTDoc()).revision} for sid, conns in _connections.items()]}
+    return {
+        "sessions": [
+            {"id": sid, "users": len(conns), "revision": _docs.get(sid, OTDoc()).revision}
+            for sid, conns in _connections.items()
+        ]
+    }
 
 
 @router.get("/sessions/{session_id}/ops")

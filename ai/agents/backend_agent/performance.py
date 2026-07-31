@@ -11,6 +11,7 @@ class Performance:
 
     def profile_endpoint(self, endpoint: str, calls: int = 100) -> dict[str, Any]:
         import random
+
         avg_ms = round(random.uniform(5, 500), 2)
         return {
             "endpoint": endpoint,

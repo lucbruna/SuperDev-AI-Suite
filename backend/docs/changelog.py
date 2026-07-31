@@ -72,7 +72,12 @@ class ChangelogGenerator:
         d = data or self._commits
         if isinstance(d, list):
             d = {"total_commits": len(d), "categories": {}, "commits": {"All": d}}
-        lines = ["# Changelog", f"Generated: {d.get('generated_at', 'N/A')}", f"Total commits: {d.get('total_commits', 0)}", ""]
+        lines = [
+            "# Changelog",
+            f"Generated: {d.get('generated_at', 'N/A')}",
+            f"Total commits: {d.get('total_commits', 0)}",
+            "",
+        ]
         for category, commits in d.get("commits", {}).items():
             if not commits:
                 continue

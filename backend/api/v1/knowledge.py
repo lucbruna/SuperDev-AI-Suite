@@ -108,8 +108,6 @@ class IngestRepoRequest(BaseModel):
     exclude_patterns: list[str] | None = None
 
 
-
-
 @router.post("/knowledge-bases", response_model=KnowledgeBaseResponse, status_code=status.HTTP_201_CREATED)
 async def create_knowledge_base(
     request: KnowledgeBaseCreate,
@@ -222,7 +220,9 @@ async def add_document(
     )
 
 
-@router.post("/knowledge-bases/{kb_id}/documents/code", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/knowledge-bases/{kb_id}/documents/code", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED
+)
 async def add_code_file(
     kb_id: UUID,
     file_path: str,

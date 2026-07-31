@@ -1,4 +1,5 @@
 """Journey subsystem."""
+
 from .engine import JourneyEngine
 from .models import (
     CustomerJourney,
@@ -10,7 +11,11 @@ from .models import (
 )
 
 __all__ = [
-    "JourneyStage", "TouchpointType",
-    "Touchpoint", "LifecycleStage", "CustomerJourney", "JourneyOptimization",
+    "JourneyStage",
+    "TouchpointType",
+    "Touchpoint",
+    "LifecycleStage",
+    "CustomerJourney",
+    "JourneyOptimization",
     "JourneyEngine",
 ]

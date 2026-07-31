@@ -1,6 +1,7 @@
 """
 Sync Scheduler - Schedule sync jobs
 """
+
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
@@ -52,6 +53,7 @@ class SyncScheduler:
             schedule.last_run = datetime.now()
             schedule.run_count += 1
             from datetime import timedelta
+
             schedule.next_run = datetime.now() + timedelta(seconds=schedule.interval_seconds)
             return True
         return False

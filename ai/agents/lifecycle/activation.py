@@ -1,4 +1,5 @@
 """Agent activation and deactivation management."""
+
 from __future__ import annotations
 
 import time

@@ -9,7 +9,7 @@ class BaseValidator:
 
     @staticmethod
     def email(value: str) -> bool:
-        pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
         return bool(re.match(pattern, value))
 
     @staticmethod
@@ -17,27 +17,27 @@ class BaseValidator:
         errors = []
         if len(value) < 8:
             errors.append("Password must be at least 8 characters")
-        if not re.search(r'[A-Z]', value):
+        if not re.search(r"[A-Z]", value):
             errors.append("Password must contain at least one uppercase letter")
-        if not re.search(r'[a-z]', value):
+        if not re.search(r"[a-z]", value):
             errors.append("Password must contain at least one lowercase letter")
-        if not re.search(r'\d', value):
+        if not re.search(r"\d", value):
             errors.append("Password must contain at least one digit")
         return len(errors) == 0, errors
 
     @staticmethod
     def username(value: str) -> bool:
-        pattern = r'^[a-zA-Z0-9_-]{3,50}$'
+        pattern = r"^[a-zA-Z0-9_-]{3,50}$"
         return bool(re.match(pattern, value))
 
     @staticmethod
     def slug(value: str) -> bool:
-        pattern = r'^[a-z0-9-]+$'
+        pattern = r"^[a-z0-9-]+$"
         return bool(re.match(pattern, value))
 
     @staticmethod
     def url(value: str) -> bool:
-        pattern = r'^https?://[^\s]+$'
+        pattern = r"^https?://[^\s]+$"
         return bool(re.match(pattern, value))
 
     @staticmethod

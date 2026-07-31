@@ -36,10 +36,7 @@ class ServiceGenerator:
         svc = self._services.get(name)
         if svc is None:
             return f"# Service '{name}' not found"
-        methods_code = "\n".join(
-            f"    async def {m}(self, request: Any) -> Any:\n        ..."
-            for m in svc["methods"]
-        )
+        methods_code = "\n".join(f"    async def {m}(self, request: Any) -> Any:\n        ..." for m in svc["methods"])
         return f"from __future__ import annotations\n\nfrom typing import Any\n\n\nclass {name}:\n\n    def __init__(self) -> None:\n        ...\n\n{methods_code}\n"
 
     def to_dict(self) -> dict[str, Any]:

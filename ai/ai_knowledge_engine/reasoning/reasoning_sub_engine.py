@@ -1,4 +1,5 @@
 """Reasoning subsystem engine — Inference, hypothesis building, and conclusion generation."""
+
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -69,7 +70,11 @@ class ReasoningSubEngine:
         return self._observations.get(observation_id)
 
     def add_hypothesis(self, statement: str, reasoning_type: str = "inductive") -> Hypothesis:
-        rt = ReasoningType(reasoning_type) if reasoning_type in [e.value for e in ReasoningType] else ReasoningType.INDUCTIVE
+        rt = (
+            ReasoningType(reasoning_type)
+            if reasoning_type in [e.value for e in ReasoningType]
+            else ReasoningType.INDUCTIVE
+        )
         hyp = Hypothesis(statement=statement, reasoning_type=rt)
         self._hypotheses[hyp.hypothesis_id] = hyp
         return hyp
@@ -112,8 +117,14 @@ class ReasoningSubEngine:
                 results.append(rule["conclusion"])
         return results
 
-    def create_conclusion(self, statement: str, evidence: list[str] | None = None, reasoning_type: str = "deductive") -> Conclusion:
-        rt = ReasoningType(reasoning_type) if reasoning_type in [e.value for e in ReasoningType] else ReasoningType.DEDUCTIVE
+    def create_conclusion(
+        self, statement: str, evidence: list[str] | None = None, reasoning_type: str = "deductive"
+    ) -> Conclusion:
+        rt = (
+            ReasoningType(reasoning_type)
+            if reasoning_type in [e.value for e in ReasoningType]
+            else ReasoningType.DEDUCTIVE
+        )
         conc = Conclusion(statement=statement, reasoning_type=rt, supporting_evidence=evidence or [])
         self._conclusions[conc.conclusion_id] = conc
         return conc
@@ -139,6 +150,8 @@ class ReasoningSubEngine:
             "total_observations": len(self._observations),
             "total_hypotheses": len(self._hypotheses),
             "total_conclusions": len(self._conclusions),
-            "confirmed_hypotheses": len([h for h in self._hypotheses.values() if h.status == HypothesisStatus.CONFIRMED]),
+            "confirmed_hypotheses": len(
+                [h for h in self._hypotheses.values() if h.status == HypothesisStatus.CONFIRMED]
+            ),
             "inference_rules": len(self._inference_rules),
         }

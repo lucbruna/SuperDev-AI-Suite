@@ -16,12 +16,14 @@ class WorkflowBridge:
         steps = plan.get("steps", [])
         nodes: list[dict[str, Any]] = []
         for step in steps:
-            nodes.append({
-                "node_id": step.get("id"),
-                "type": "action",
-                "config": {"action": step.get("action")},
-                "dependencies": step.get("dependencies", []),
-            })
+            nodes.append(
+                {
+                    "node_id": step.get("id"),
+                    "type": "action",
+                    "config": {"action": step.get("action")},
+                    "dependencies": step.get("dependencies", []),
+                }
+            )
         return {"nodes": nodes, "total_nodes": len(nodes)}
 
     async def execute(self, context: dict[str, Any]) -> dict[str, Any]:

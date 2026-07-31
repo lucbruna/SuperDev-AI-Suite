@@ -50,11 +50,7 @@ class MemorySnapshot:
         return False
 
     def load_latest(self, prefix: str = "") -> dict[str, Any] | None:
-        candidates = [
-            (key, snap)
-            for key, snap in self._snapshots.items()
-            if key.startswith(prefix)
-        ]
+        candidates = [(key, snap) for key, snap in self._snapshots.items() if key.startswith(prefix)]
         if not candidates:
             return None
         candidates.sort(key=lambda x: x[1]["timestamp"], reverse=True)

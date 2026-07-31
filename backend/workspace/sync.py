@@ -36,9 +36,7 @@ class WorkspaceSync:
                 files[rel] = entry.read_text(encoding="utf-8")
         fs.set_all_files(files)
 
-    async def diff(
-        self, workspace_id: str, base_path: str
-    ) -> list[dict[str, str]]:
+    async def diff(self, workspace_id: str, base_path: str) -> list[dict[str, str]]:
         fs = self._get_fs(workspace_id)
         base = Path(base_path)
         changes: list[dict[str, str]] = []
@@ -53,13 +51,9 @@ class WorkspaceSync:
                     disk_content = entry.read_text(encoding="utf-8")
                     memory_content = await fs.read_file(rel)
                     if memory_content is None:
-                        changes.append(
-                            {"file": rel, "type": "deleted"}
-                        )
+                        changes.append({"file": rel, "type": "deleted"})
                     elif memory_content != disk_content:
-                        changes.append(
-                            {"file": rel, "type": "modified"}
-                        )
+                        changes.append({"file": rel, "type": "modified"})
 
         for f in memory_files:
             if f not in disk_files:

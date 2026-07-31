@@ -1,4 +1,5 @@
 """Unified test runner for all AI module volumes."""
+
 import os
 import sys
 import unittest
@@ -44,10 +45,10 @@ if __name__ == "__main__":
     failures = len(result.failures)
     errors = len(result.errors)
     passed = total - failures - errors
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"RESULTS: {passed}/{total} passed, {failures} failed, {errors} errors")
     if failures == 0 and errors == 0:
         print("ALL TESTS PASSED!")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
     sys.exit(0 if failures == 0 and errors == 0 else 1)

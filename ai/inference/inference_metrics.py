@@ -11,11 +11,13 @@ class InferenceMetrics:
         self._records: list[dict[str, Any]] = []
 
     async def record(self, strategy: str, result: Any) -> None:
-        self._records.append({
-            "strategy": strategy,
-            "timestamp": time.time(),
-            "result_type": type(result).__name__,
-        })
+        self._records.append(
+            {
+                "strategy": strategy,
+                "timestamp": time.time(),
+                "result_type": type(result).__name__,
+            }
+        )
 
     async def summary(self, strategy: str | None = None) -> dict[str, Any]:
         filtered = self._records

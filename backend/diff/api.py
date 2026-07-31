@@ -15,12 +15,14 @@ async def generate_diff(payload: dict[str, Any]) -> dict[str, Any]:
     new_content = payload.get("new_content", "")
     filename = payload.get("filename", "unknown")
 
-    diff_lines = list(difflib.unified_diff(
-        old_content.splitlines(keepends=True),
-        new_content.splitlines(keepends=True),
-        fromfile=f"a/{filename}",
-        tofile=f"b/{filename}",
-    ))
+    diff_lines = list(
+        difflib.unified_diff(
+            old_content.splitlines(keepends=True),
+            new_content.splitlines(keepends=True),
+            fromfile=f"a/{filename}",
+            tofile=f"b/{filename}",
+        )
+    )
 
     additions = sum(1 for l in diff_lines if l.startswith("+") and not l.startswith("+++"))
     deletions = sum(1 for l in diff_lines if l.startswith("-") and not l.startswith("---"))
@@ -28,7 +30,12 @@ async def generate_diff(payload: dict[str, Any]) -> dict[str, Any]:
     return {
         "filename": filename,
         "diff": "".join(diff_lines),
-        "stats": {"additions": additions, "deletions": deletions, "total_changes": additions + deletions, "files_changed": 1},
+        "stats": {
+            "additions": additions,
+            "deletions": deletions,
+            "total_changes": additions + deletions,
+            "files_changed": 1,
+        },
     }
 
 

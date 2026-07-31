@@ -8,8 +8,9 @@ from typing import Any
 class ScheduledTask:
     """Represents a scheduled tool execution."""
 
-    def __init__(self, task_id: str, tool_name: str, params: dict[str, Any],
-                 interval: float, repeat: bool = False) -> None:
+    def __init__(
+        self, task_id: str, tool_name: str, params: dict[str, Any], interval: float, repeat: bool = False
+    ) -> None:
         self.task_id = task_id
         self.tool_name = tool_name
         self.params = params
@@ -27,8 +28,7 @@ class ToolScheduler:
         self._tasks: dict[str, ScheduledTask] = {}
         self._results: dict[str, list[dict[str, Any]]] = {}
 
-    def schedule(self, tool_name: str, params: dict[str, Any],
-                 interval: float, repeat: bool = False) -> str:
+    def schedule(self, tool_name: str, params: dict[str, Any], interval: float, repeat: bool = False) -> str:
         task_id = str(uuid.uuid4())
         task = ScheduledTask(task_id, tool_name, params, interval, repeat)
         self._tasks[task_id] = task
@@ -66,6 +66,7 @@ class ToolScheduler:
     def to_dict(self) -> dict[str, Any]:
         return {
             "active_tasks": self.task_count,
-            "tasks": {t.task_id: {"tool": t.tool_name, "interval": t.interval, "repeat": t.repeat}
-                      for t in self.list_tasks()},
+            "tasks": {
+                t.task_id: {"tool": t.tool_name, "interval": t.interval, "repeat": t.repeat} for t in self.list_tasks()
+            },
         }

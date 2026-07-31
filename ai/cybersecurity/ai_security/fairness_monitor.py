@@ -1,6 +1,7 @@
 """
 AI Fairness & Bias Monitoring
 """
+
 import statistics
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -48,21 +49,36 @@ class FairnessMonitor:
         self.prediction_logs: list[dict[str, Any]] = []
 
     def log_prediction(self, model_id: str, prediction: Any, protected_attribute: str, true_label: Any = None) -> None:
-        self.prediction_logs.append({
-            "model_id": model_id, "prediction": prediction,
-            "protected_attribute": protected_attribute, "true_label": true_label,
-            "timestamp": datetime.now().isoformat()
-        })
+        self.prediction_logs.append(
+            {
+                "model_id": model_id,
+                "prediction": prediction,
+                "protected_attribute": protected_attribute,
+                "true_label": true_label,
+                "timestamp": datetime.now().isoformat(),
+            }
+        )
 
     def calculate_demographic_parity(self, model_id: str, protected_attr: str) -> FairnessMetric:
-        logs = [l for l in self.prediction_logs if l["model_id"] == model_id and l["protected_attribute"] == protected_attr]
+        logs = [
+            l for l in self.prediction_logs if l["model_id"] == model_id and l["protected_attribute"] == protected_attr
+        ]
         if not logs:
             return FairnessMetric("demographic_parity", 1.0, self.thresholds[BiasType.DEMOGRAPHIC_PARITY])
         positive_rate = sum(1 for l in logs if l["prediction"] == 1) / max(len(logs), 1)
-        return FairnessMetric("demographic_parity", positive_rate, self.thresholds[BiasType.DEMOGRAPHIC_PARITY], passed=0.8 <= positive_rate <= 1.2)
+        return FairnessMetric(
+            "demographic_parity",
+            positive_rate,
+            self.thresholds[BiasType.DEMOGRAPHIC_PARITY],
+            passed=0.8 <= positive_rate <= 1.2,
+        )
 
     def calculate_equal_opportunity(self, model_id: str, protected_attr: str) -> FairnessMetric:
-        logs = [l for l in self.prediction_logs if l["model_id"] == model_id and l["protected_attribute"] == protected_attr and l["true_label"] == 1]
+        logs = [
+            l
+            for l in self.prediction_logs
+            if l["model_id"] == model_id and l["protected_attribute"] == protected_attr and l["true_label"] == 1
+        ]
         if not logs:
             return FairnessMetric("equal_opportunity", 1.0, self.thresholds[BiasType.EQUAL_OPPORTUNITY])
         tpr = sum(1 for l in logs if l["prediction"] == 1) / max(len(logs), 1)
@@ -76,7 +92,14 @@ class FairnessMonitor:
         overall = statistics.mean([m.value for m in metrics]) if metrics else 1.0
         is_fair = all(m.passed for m in metrics)
         recs = ["Increase training data diversity", "Apply re-weighting"] if not is_fair else []
-        assessment = BiasAssessment(assessment_id=f"assess_{model_id}", model_id=model_id, metrics=metrics, overall_score=overall, is_fair=is_fair, recommendations=recs)
+        assessment = BiasAssessment(
+            assessment_id=f"assess_{model_id}",
+            model_id=model_id,
+            metrics=metrics,
+            overall_score=overall,
+            is_fair=is_fair,
+            recommendations=recs,
+        )
         self.assessments.append(assessment)
         return assessment
 

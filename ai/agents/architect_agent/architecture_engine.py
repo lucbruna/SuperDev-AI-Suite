@@ -85,9 +85,7 @@ class ArchitectureEngine:
             "components": components if components else self._component_modeler.list_components(),
             "technology_recommendations": tech_recommendations,
             "constraints": [],
-            "diagram": self._diagram_generator.generate_component_diagram(
-                self._component_modeler.list_components()
-            ),
+            "diagram": self._diagram_generator.generate_component_diagram(self._component_modeler.list_components()),
         }
 
         if self._constraint_validator.constraint_count > 0:

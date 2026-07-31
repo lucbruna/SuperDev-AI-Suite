@@ -27,7 +27,15 @@ class OWASPAnalyzer:
         code_lower = code_snippet.lower()
         for finding_id, name, severity, desc in OWASP_CHECKS:
             detected = False
-            if finding_id == "sql_injection" and ("execute(" in code_snippet or "raw(" in code_lower) or finding_id == "xss" and ("innerhtml" in code_lower or "dangerouslySetInnerHTML" in code_snippet) or finding_id == "broken_auth" and "password" in code_lower and "hash" not in code_lower:
+            if (
+                finding_id == "sql_injection"
+                and ("execute(" in code_snippet or "raw(" in code_lower)
+                or finding_id == "xss"
+                and ("innerhtml" in code_lower or "dangerouslySetInnerHTML" in code_snippet)
+                or finding_id == "broken_auth"
+                and "password" in code_lower
+                and "hash" not in code_lower
+            ):
                 detected = True
             elif finding_id == "sensitive_data" and "credit" in code_lower or "ssn" in code_lower:
                 detected = bool("credit" in code_lower or "ssn" in code_lower)

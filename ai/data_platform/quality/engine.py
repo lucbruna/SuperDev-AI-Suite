@@ -1,4 +1,5 @@
 """Quality engine."""
+
 import uuid
 from typing import Any
 
@@ -18,7 +19,9 @@ class QualityEngine:
     def get_rule(self, rule_id: str) -> QualityRule | None:
         return self._rules.get(rule_id)
 
-    def check_completeness(self, dataset: str, records: list[dict[str, Any]], required_fields: list[str]) -> QualityCheck:
+    def check_completeness(
+        self, dataset: str, records: list[dict[str, Any]], required_fields: list[str]
+    ) -> QualityCheck:
         total = len(records)
         issues = []
         incomplete = 0
@@ -67,7 +70,12 @@ class QualityEngine:
             for field_name, expected_type in validations.items():
                 value = r.get(field_name)
                 if value is not None:
-                    if expected_type == "string" and not isinstance(value, str) or expected_type == "number" and not isinstance(value, (int, float)):
+                    if (
+                        expected_type == "string"
+                        and not isinstance(value, str)
+                        or expected_type == "number"
+                        and not isinstance(value, (int, float))
+                    ):
                         invalid += 1
                         issues.append({"record_index": i, "field": field_name, "issue": "type_mismatch"})
         total_fields = len(records) * len(validations) if records else 1

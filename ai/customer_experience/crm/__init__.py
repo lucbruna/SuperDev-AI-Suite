@@ -1,4 +1,5 @@
 """CRM subsystem."""
+
 from .engine import CRMEngine
 from .models import (
     Account,
@@ -11,7 +12,12 @@ from .models import (
 )
 
 __all__ = [
-    "ContactType", "OpportunityStage", "ActivityType",
-    "Account", "Contact", "Opportunity", "Activity",
+    "ContactType",
+    "OpportunityStage",
+    "ActivityType",
+    "Account",
+    "Contact",
+    "Opportunity",
+    "Activity",
     "CRMEngine",
 ]

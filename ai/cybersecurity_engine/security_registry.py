@@ -1,4 +1,5 @@
 """Cybersecurity Engine Registry — Registry for security components."""
+
 from typing import Any
 
 

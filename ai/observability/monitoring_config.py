@@ -1,4 +1,5 @@
 """Observability configuration."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -12,11 +13,13 @@ class MonitoringLevel(Enum):
     ERROR = "error"
     CRITICAL = "critical"
 
+
 class MetricType(Enum):
     COUNTER = "counter"
     GAUGE = "gauge"
     HISTOGRAM = "histogram"
     TIMER = "timer"
+
 
 @dataclass
 class LoggingConfig:
@@ -28,6 +31,7 @@ class LoggingConfig:
     enable_file: bool = True
     log_dir: str = "logs"
 
+
 @dataclass
 class MetricsConfig:
     collection_interval: int = 10
@@ -35,6 +39,7 @@ class MetricsConfig:
     aggregation_window: int = 60
     export_enabled: bool = False
     export_format: str = "prometheus"
+
 
 @dataclass
 class TracingConfig:
@@ -44,6 +49,7 @@ class TracingConfig:
     max_depth: int = 10
     propagation_format: str = "w3c"
 
+
 @dataclass
 class AlertingConfig:
     enabled: bool = True
@@ -52,12 +58,14 @@ class AlertingConfig:
     escalation_enabled: bool = True
     suppression_window: int = 300
 
+
 @dataclass
 class HealthConfig:
     check_interval: int = 60
     timeout: int = 10
     retries: int = 3
     recovery_enabled: bool = True
+
 
 @dataclass
 class ObservabilityConfig:

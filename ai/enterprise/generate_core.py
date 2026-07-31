@@ -1,15 +1,20 @@
 """Core infrastructure generator for Volume 19 - Enterprise Engine."""
+
 import os
 
-BASE = r'C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\enterprise'
+BASE = r"C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\enterprise"
+
 
 def w(path, content):
     full = os.path.join(BASE, path)
     os.makedirs(os.path.dirname(full), exist_ok=True)
-    with open(full, 'w', encoding='utf-8') as f:
+    with open(full, "w", encoding="utf-8") as f:
         f.write(content)
 
-w('enterprise_config.py', '''"""Enterprise configuration."""
+
+w(
+    "enterprise_config.py",
+    '''"""Enterprise configuration."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 from enum import Enum
@@ -69,9 +74,12 @@ class EnterpriseConfig:
     trial_days: int = 14
     enabled: bool = True
     debug_mode: bool = False
-''')
+''',
+)
 
-w('enterprise_models.py', '''"""Enterprise data models."""
+w(
+    "enterprise_models.py",
+    '''"""Enterprise data models."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 from enum import Enum
@@ -198,9 +206,12 @@ class Contract:
     end_date: float = 0.0
     terms: Dict[str, Any] = field(default_factory=dict)
     sla: Dict[str, Any] = field(default_factory=dict)
-''')
+''',
+)
 
-w('enterprise_events.py', '''"""Enterprise event bus."""
+w(
+    "enterprise_events.py",
+    '''"""Enterprise event bus."""
 from __future__ import annotations
 from typing import Any, Callable, Dict, List
 import time
@@ -235,9 +246,12 @@ class EnterpriseEvents:
         n = len(self._event_log)
         self._event_log.clear()
         return n
-''')
+''',
+)
 
-w('enterprise_metrics.py', '''"""Enterprise metrics."""
+w(
+    "enterprise_metrics.py",
+    '''"""Enterprise metrics."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time
@@ -272,9 +286,12 @@ class EnterpriseMetrics:
         self._counters.clear()
         self._gauges.clear()
         self._timers.clear()
-''')
+''',
+)
 
-w('enterprise_logger.py', '''"""Enterprise logger."""
+w(
+    "enterprise_logger.py",
+    '''"""Enterprise logger."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 from enum import Enum
@@ -316,9 +333,12 @@ class EnterpriseLogger:
         n = len(self._entries)
         self._entries.clear()
         return n
-''')
+''',
+)
 
-w('enterprise_security.py', '''"""Enterprise security."""
+w(
+    "enterprise_security.py",
+    '''"""Enterprise security."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time
@@ -359,9 +379,12 @@ class EnterpriseSecurity:
         return list(self._permissions.keys())
     def get_permissions(self, role: str) -> List[str]:
         return list(self._permissions.get(role, []))
-''')
+''',
+)
 
-w('enterprise_models.py', '''"""Enterprise data models."""
+w(
+    "enterprise_models.py",
+    '''"""Enterprise data models."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 from enum import Enum
@@ -488,9 +511,12 @@ class Contract:
     end_date: float = 0.0
     terms: Dict[str, Any] = field(default_factory=dict)
     sla: Dict[str, Any] = field(default_factory=dict)
-''')
+''',
+)
 
-w('enterprise_interfaces.py', '''"""Enterprise interfaces."""
+w(
+    "enterprise_interfaces.py",
+    '''"""Enterprise interfaces."""
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
@@ -540,9 +566,12 @@ class SubscriptionInterface(ABC):
     def cancel(self, subscription_id: str) -> bool: ...
     @abstractmethod
     def upgrade(self, subscription_id: str, new_plan: str) -> Dict[str, Any]: ...
-''')
+''',
+)
 
-w('enterprise_protocols.py', '''"""Enterprise protocols."""
+w(
+    "enterprise_protocols.py",
+    '''"""Enterprise protocols."""
 from __future__ import annotations
 from typing import Any, Dict, Protocol, runtime_checkable
 
@@ -569,9 +598,12 @@ class Trackable(Protocol):
 @runtime_checkable
 class Reportable(Protocol):
     def generate_report(self, report_type: str = "") -> Dict[str, Any]: ...
-''')
+''',
+)
 
-w('enterprise_context.py', '''"""Enterprise context."""
+w(
+    "enterprise_context.py",
+    '''"""Enterprise context."""
 from __future__ import annotations
 from typing import Any, Dict, Optional
 import time, uuid
@@ -598,9 +630,12 @@ class EnterpriseContext:
         return self._session_id
     def uptime(self) -> float:
         return time.time() - self._started_at
-''')
+''',
+)
 
-w('enterprise_registry.py', '''"""Enterprise registry."""
+w(
+    "enterprise_registry.py",
+    '''"""Enterprise registry."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time
@@ -625,9 +660,12 @@ class EnterpriseRegistry:
         return list(self._components.values())
     def count(self) -> int:
         return len(self._components)
-''')
+''',
+)
 
-w('enterprise_runtime.py', '''"""Enterprise runtime."""
+w(
+    "enterprise_runtime.py",
+    '''"""Enterprise runtime."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import time
@@ -662,9 +700,12 @@ class EnterpriseRuntime:
         return list(self._tasks.values())
     def get_history(self, limit: int = 50) -> List[Dict[str, Any]]:
         return self._history[-limit:]
-''')
+''',
+)
 
-w('enterprise_factory.py', '''"""Enterprise factory."""
+w(
+    "enterprise_factory.py",
+    '''"""Enterprise factory."""
 from __future__ import annotations
 from typing import Any, Dict, Optional
 from .enterprise_config import EnterpriseConfig
@@ -716,9 +757,12 @@ class EnterpriseFactory:
         return self._security
     def get_config(self) -> EnterpriseConfig:
         return self._config
-''')
+''',
+)
 
-w('enterprise_manager.py', '''"""High-level enterprise manager."""
+w(
+    "enterprise_manager.py",
+    '''"""High-level enterprise manager."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 from .enterprise_factory import EnterpriseFactory
@@ -757,9 +801,12 @@ class EnterpriseManager:
         return self._metrics
     def get_security(self) -> Any:
         return self._security
-''')
+''',
+)
 
-w('enterprise_engine.py', '''"""Central enterprise engine."""
+w(
+    "enterprise_engine.py",
+    '''"""Central enterprise engine."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 from .enterprise_config import EnterpriseConfig
@@ -786,6 +833,7 @@ class EnterpriseEngine:
         return self._manager
     def get_config(self) -> EnterpriseConfig:
         return self._config
-''')
+''',
+)
 
 print("Core infrastructure: 14 files created")

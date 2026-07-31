@@ -70,10 +70,13 @@ class LLMManager:
                     self.logger.info(name, f"Registered provider ({provider.model()})")
                     env_registered.append(name)
 
-                    await self.events.emit(LLMEventType.PROVIDER_REGISTERED, {
-                        "provider": name,
-                        "model": provider.model(),
-                    })
+                    await self.events.emit(
+                        LLMEventType.PROVIDER_REGISTERED,
+                        {
+                            "provider": name,
+                            "model": provider.model(),
+                        },
+                    )
                 except Exception as exc:
                     self.logger.warning(name, f"Failed to register: {exc}")
 
@@ -81,6 +84,7 @@ class LLMManager:
 
     def _get_env(self, key: str) -> str:
         import os
+
         return os.getenv(key, "")
 
     # ── Properties ──────────────────────────────────────────────────

@@ -36,4 +36,5 @@ class Storage:
 
     def size_bytes(self) -> int:
         import json
+
         return len(json.dumps(self._data, default=str).encode("utf-8"))

@@ -1,4 +1,5 @@
 """Factory Config - Configuration management for factory operations."""
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any

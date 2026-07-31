@@ -1,4 +1,5 @@
 """BI Interfaces — Abstract interfaces for BI components."""
+
 from typing import Any, Protocol
 
 

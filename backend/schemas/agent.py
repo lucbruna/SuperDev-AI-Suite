@@ -11,7 +11,9 @@ class AgentBase(BaseSchema):
     """Base agent fields."""
 
     name: str = Field(..., min_length=1, max_length=255, description="Agent name")
-    type: str = Field(..., description="Agent type: planner, executor, reviewer, tester, architect, researcher, security, deployment")
+    type: str = Field(
+        ..., description="Agent type: planner, executor, reviewer, tester, architect, researcher, security, deployment"
+    )
     description: str | None = Field(None, description="Agent description")
     config: dict = Field(default_factory=dict, description="Agent configuration JSON")
     system_prompt: str | None = Field(None, description="System prompt for the agent")

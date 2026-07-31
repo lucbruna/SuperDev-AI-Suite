@@ -1,4 +1,5 @@
 """Metrics storage."""
+
 from __future__ import annotations
 
 import time
@@ -10,12 +11,14 @@ class MetricsStorage:
         self._data: dict[str, list[dict[str, Any]]] = {}
         self._max_series = max_series
         self._max_points = max_points
+
     def store(self, name: str, value: float, labels: dict[str, str] | None = None, timestamp: float = 0.0) -> bool:
         point = {"value": value, "timestamp": timestamp or time.time(), "labels": labels or {}}
         self._data.setdefault(name, []).append(point)
         if len(self._data[name]) > self._max_points:
-            self._data[name] = self._data[name][-self._max_points:]
+            self._data[name] = self._data[name][-self._max_points :]
         return True
+
     def query(self, name: str, start: float = 0, end: float = 0) -> list[dict[str, Any]]:
         points = self._data.get(name, [])
         if start:
@@ -23,11 +26,14 @@ class MetricsStorage:
         if end:
             points = [p for p in points if p["timestamp"] <= end]
         return points
+
     def get_latest(self, name: str) -> float | None:
         points = self._data.get(name, [])
         return points[-1]["value"] if points else None
+
     def list_names(self) -> list[str]:
         return list(self._data.keys())
+
     def clear(self, name: str = "") -> int:
         if name:
             n = len(self._data.get(name, []))

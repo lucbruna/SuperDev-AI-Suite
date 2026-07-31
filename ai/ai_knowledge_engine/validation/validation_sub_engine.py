@@ -1,4 +1,5 @@
 """Validation subsystem engine — Knowledge validation and fact-checking."""
+
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -61,7 +62,9 @@ class ValidationSubEngine:
         self._confidence_threshold = confidence_threshold
 
     def validate_content(self, content: str, method: str = "source_check") -> ValidationCheck:
-        vm = ValidationMethod(method) if method in [e.value for e in ValidationMethod] else ValidationMethod.SOURCE_CHECK
+        vm = (
+            ValidationMethod(method) if method in [e.value for e in ValidationMethod] else ValidationMethod.SOURCE_CHECK
+        )
         confidence = 0.7 if vm == ValidationMethod.SOURCE_CHECK else 0.5
         result = ValidationResult.VALID if confidence >= self._confidence_threshold else ValidationResult.INCONCLUSIVE
         check = ValidationCheck(content=content, method=vm, result=result, confidence=confidence)

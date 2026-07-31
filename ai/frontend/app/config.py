@@ -1,6 +1,7 @@
 """
 Frontend Configuration
 """
+
 import json
 from dataclasses import dataclass, field
 from enum import Enum
@@ -9,6 +10,7 @@ from typing import Any
 
 class Theme(Enum):
     """UI themes."""
+
     LIGHT = "light"
     DARK = "dark"
     AUTO = "auto"
@@ -17,6 +19,7 @@ class Theme(Enum):
 
 class Language(Enum):
     """Interface languages."""
+
     EN = "en"
     PT = "pt"
     ES = "es"
@@ -29,6 +32,7 @@ class Language(Enum):
 
 class LayoutMode(Enum):
     """Layout modes."""
+
     COMPACT = "compact"
     COMFORTABLE = "comfortable"
     SPACIOUS = "spacious"
@@ -37,6 +41,7 @@ class LayoutMode(Enum):
 @dataclass
 class FrontendConfig:
     """Main frontend configuration."""
+
     app_name: str = "SuperDev AI Suite"
     version: str = "5.0.0"
     theme: Theme = Theme.DARK
@@ -142,6 +147,7 @@ class FrontendConfig:
 @dataclass
 class TenantConfig:
     """Multi-tenant configuration."""
+
     tenant_id: str
     name: str
     domain: str | None = None
@@ -163,6 +169,7 @@ class TenantConfig:
 @dataclass
 class FeatureFlag:
     """Feature flag configuration."""
+
     name: str
     enabled: bool = True
     percentage: int = 100

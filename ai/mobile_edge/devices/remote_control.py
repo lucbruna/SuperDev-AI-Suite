@@ -1,4 +1,5 @@
 """Remote Control - Remote device management operations."""
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -48,13 +49,19 @@ class RemoteControlManager:
     def authorize_device(self, device_id: str, commands: list[RemoteCommand]) -> None:
         self.authorized_commands[device_id] = commands
 
-    def send_command(self, device_id: str, command: RemoteCommand, params: dict[str, Any] = None) -> RemoteCommandResult:
+    def send_command(
+        self, device_id: str, command: RemoteCommand, params: dict[str, Any] = None
+    ) -> RemoteCommandResult:
         command_id = hashlib.sha256(f"{device_id}{command.value}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
-        result = RemoteCommandResult(command_id=command_id, device_id=device_id, command=command, sent_at=datetime.now())
+        result = RemoteCommandResult(
+            command_id=command_id, device_id=device_id, command=command, sent_at=datetime.now()
+        )
         self.commands.append(result)
         return result
 
-    def update_status(self, command_id: str, status: CommandStatus, data: dict[str, Any] = None, error: str = "") -> bool:
+    def update_status(
+        self, command_id: str, status: CommandStatus, data: dict[str, Any] = None, error: str = ""
+    ) -> bool:
         for cmd in self.commands:
             if cmd.command_id == command_id:
                 cmd.status = status

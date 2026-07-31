@@ -47,13 +47,29 @@ class ArchitectAgent(BaseAgent):
         keywords = task.lower().split()
         components = []
         if any(w in keywords for w in ["api", "rest", "service", "server"]):
-            components.append({"name": "APIService", "responsibility": "Handle HTTP requests/responses", "interfaces": ["REST"]})
+            components.append(
+                {"name": "APIService", "responsibility": "Handle HTTP requests/responses", "interfaces": ["REST"]}
+            )
         if any(w in keywords for w in ["db", "database", "store", "persist"]):
-            components.append({"name": "DatabaseLayer", "responsibility": "Data persistence and retrieval", "interfaces": ["Repository"]})
+            components.append(
+                {
+                    "name": "DatabaseLayer",
+                    "responsibility": "Data persistence and retrieval",
+                    "interfaces": ["Repository"],
+                }
+            )
         if any(w in keywords for w in ["auth", "login", "user", "security"]):
-            components.append({"name": "AuthService", "responsibility": "Authentication and authorization", "interfaces": ["JWT", "OAuth"]})
+            components.append(
+                {
+                    "name": "AuthService",
+                    "responsibility": "Authentication and authorization",
+                    "interfaces": ["JWT", "OAuth"],
+                }
+            )
         if any(w in keywords for w in ["ui", "web", "frontend", "app"]):
-            components.append({"name": "WebUI", "responsibility": "User interface rendering", "interfaces": ["React/Angular"]})
+            components.append(
+                {"name": "WebUI", "responsibility": "User interface rendering", "interfaces": ["React/Angular"]}
+            )
         if not components:
             components.append({"name": "CoreModule", "responsibility": "Primary business logic", "interfaces": []})
         return components
@@ -76,7 +92,11 @@ class ArchitectAgent(BaseAgent):
 
     def _make_decisions(self, task: str, components: list[dict]) -> list[dict[str, Any]]:
         return [
-            {"decision": f"Use {c['name']} as a separate module", "rationale": "Separation of concerns", "status": "proposed"}
+            {
+                "decision": f"Use {c['name']} as a separate module",
+                "rationale": "Separation of concerns",
+                "status": "proposed",
+            }
             for c in components
         ]
 

@@ -43,6 +43,7 @@ class HTTPTool(BaseTool):
 
         try:
             import httpx
+
             async with httpx.AsyncClient(timeout=timeout) as client:
                 response = await client.request(method, url, headers=headers, content=body)
                 return {
@@ -56,6 +57,7 @@ class HTTPTool(BaseTool):
             try:
                 import urllib.error
                 import urllib.request
+
                 req = urllib.request.Request(url, data=body.encode() if body else None, headers=headers, method=method)
                 with urllib.request.urlopen(req, timeout=timeout) as resp:
                     return {

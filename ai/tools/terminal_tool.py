@@ -49,9 +49,7 @@ class TerminalTool:
                 cwd=workdir,
                 env=exec_env,
             )
-            stdout, stderr = await asyncio.wait_for(
-                proc.communicate(), timeout=timeout
-            )
+            stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
 
             result = {
                 "success": proc.returncode == 0,
@@ -81,19 +79,23 @@ class TerminalTool:
         command = last.get("command", "")
         # Terminal commands are hard to roll back automatically
         # Log for awareness
-        self._operations_log.append({
-            "operation": "rollback_attempt",
-            "original_command": command,
-            "note": "Terminal commands cannot be automatically rolled back",
-        })
+        self._operations_log.append(
+            {
+                "operation": "rollback_attempt",
+                "original_command": command,
+                "note": "Terminal commands cannot be automatically rolled back",
+            }
+        )
 
     async def cleanup(self) -> None:
         self._operations_log.clear()
 
     def _log_operation(self, command: str, workdir: str | None, **kwargs: Any) -> None:
-        self._operations_log.append({
-            "operation": "execute",
-            "command": command,
-            "workdir": workdir,
-            **kwargs,
-        })
+        self._operations_log.append(
+            {
+                "operation": "execute",
+                "command": command,
+                "workdir": workdir,
+                **kwargs,
+            }
+        )

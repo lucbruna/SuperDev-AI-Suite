@@ -46,10 +46,10 @@ class Forms:
         if not self._fields:
             return "// No fields defined"
         field_elems = "\n".join(
-            f"        <div className=\"field\">\n"
+            f'        <div className="field">\n'
             f"          <label>{f['label']}</label>\n"
-            f"          <input type=\"{f['type']}\" "
-            f"name=\"{f['name']}\" "
+            f'          <input type="{f["type"]}" '
+            f'name="{f["name"]}" '
             f"{'required ' if f['required'] else ''}/>\n"
             f"        </div>"
             for f in self._fields.values()
@@ -64,7 +64,7 @@ class Forms:
             f"  return (\n"
             f"    <form onSubmit={{handleSubmit}}>\n"
             f"{field_elems}\n"
-            f"      <button type=\"submit\">Submit</button>\n"
+            f'      <button type="submit">Submit</button>\n'
             f"    </form>\n"
             f"  );\n"
             f"}};\n\n"

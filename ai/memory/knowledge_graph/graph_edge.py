@@ -6,7 +6,9 @@ from typing import Any
 class GraphEdge:
     """A directed edge in the knowledge graph."""
 
-    def __init__(self, edge_id: str, source: str, target: str, relation: str, properties: dict[str, Any] | None = None) -> None:
+    def __init__(
+        self, edge_id: str, source: str, target: str, relation: str, properties: dict[str, Any] | None = None
+    ) -> None:
         self._edge_id = edge_id
         self._source = source
         self._target = target

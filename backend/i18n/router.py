@@ -68,9 +68,8 @@ async def load_translations(
         ts.translations.update(request.translations)
     else:
         from backend.i18n.translations import TranslationSet
-        i18n._translations[locale] = TranslationSet(
-            locale=locale, translations=request.translations
-        )
+
+        i18n._translations[locale] = TranslationSet(locale=locale, translations=request.translations)
     return {"locale": locale, "count": len(request.translations)}
 
 

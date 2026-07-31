@@ -30,6 +30,7 @@ class DocSearch:
 
     def index_markdown(self, md_text: str, doc_id: str = "readme") -> None:
         import re
+
         text = re.sub(r"[#*`\[\]()]", " ", md_text)
         self.index_document(doc_id, text)
 
@@ -44,7 +45,10 @@ class DocSearch:
                 doc_id = r["doc_id"]
                 scores[doc_id] = scores.get(doc_id, 0) + 1
         ranked = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-        return [{"doc_id": doc_id, "score": score, "preview": self._preview(doc_id, query)} for doc_id, score in ranked[:limit]]
+        return [
+            {"doc_id": doc_id, "score": score, "preview": self._preview(doc_id, query)}
+            for doc_id, score in ranked[:limit]
+        ]
 
     def _preview(self, doc_id: str, query: str) -> str:
         content = self._documents.get(doc_id, "")

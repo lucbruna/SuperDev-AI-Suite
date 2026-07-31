@@ -59,7 +59,9 @@ async def studio_websocket(websocket: WebSocket, session_id: str = "default"):
                 sid = message.get("session_id")
                 node_id = message.get("node_id")
                 bp = _backend.set_breakpoint(sid, node_id)
-                await manager.send_personal({"type": "breakpoint:set", "breakpoint": bp.to_dict() if bp else None}, websocket)
+                await manager.send_personal(
+                    {"type": "breakpoint:set", "breakpoint": bp.to_dict() if bp else None}, websocket
+                )
 
             elif msg_type == "breakpoint:remove":
                 sid = message.get("session_id")
@@ -73,14 +75,17 @@ async def studio_websocket(websocket: WebSocket, session_id: str = "default"):
                 variables = _backend.get_variables(sid)
                 events = _backend.get_event_history(sid)
                 breakpoints = _backend.list_breakpoints(sid)
-                await manager.send_personal({
-                    "type": "state:snapshot",
-                    "session_id": sid,
-                    "graph": state,
-                    "variables": variables,
-                    "events": [e.to_dict() if hasattr(e, 'to_dict') else e for e in events[-50:]],
-                    "breakpoints": [bp.to_dict() if hasattr(bp, 'to_dict') else bp for bp in (breakpoints or [])],
-                }, websocket)
+                await manager.send_personal(
+                    {
+                        "type": "state:snapshot",
+                        "session_id": sid,
+                        "graph": state,
+                        "variables": variables,
+                        "events": [e.to_dict() if hasattr(e, "to_dict") else e for e in events[-50:]],
+                        "breakpoints": [bp.to_dict() if hasattr(bp, "to_dict") else bp for bp in (breakpoints or [])],
+                    },
+                    websocket,
+                )
 
     except WebSocketDisconnect:
         await manager.disconnect(websocket, channel)
@@ -118,8 +123,8 @@ async def get_session(session_id: str):
         "session_id": session_id,
         "graph": state,
         "variables": variables,
-        "events": [e.to_dict() if hasattr(e, 'to_dict') else e for e in events[-100:]],
-        "breakpoints": [bp.to_dict() if hasattr(bp, 'to_dict') else bp for bp in (breakpoints or [])],
+        "events": [e.to_dict() if hasattr(e, "to_dict") else e for e in events[-100:]],
+        "breakpoints": [bp.to_dict() if hasattr(bp, "to_dict") else bp for bp in (breakpoints or [])],
     }
 
 
@@ -134,7 +139,7 @@ async def set_breakpoint(session_id: str, node_id: str):
     bp = _backend.set_breakpoint(session_id, node_id)
     if not bp:
         raise HTTPException(status_code=404, detail="Session or node not found")
-    return {"breakpoint": bp.to_dict() if hasattr(bp, 'to_dict') else bp}
+    return {"breakpoint": bp.to_dict() if hasattr(bp, "to_dict") else bp}
 
 
 @router.delete("/sessions/{session_id}/breakpoints/{breakpoint_id}")

@@ -55,12 +55,14 @@ class AgentManager:
         result = []
         for agent_id in self._instances:
             config = self._configs.get(agent_id)
-            result.append({
-                "agent_id": agent_id,
-                "name": config.name if config else "unknown",
-                "status": self._statuses.get(agent_id, "unknown"),
-                "description": config.description if config else "",
-            })
+            result.append(
+                {
+                    "agent_id": agent_id,
+                    "name": config.name if config else "unknown",
+                    "status": self._statuses.get(agent_id, "unknown"),
+                    "description": config.description if config else "",
+                }
+            )
         return result
 
     def get_agent_status(self, agent_id: str) -> dict[str, Any]:

@@ -1,4 +1,5 @@
 """Manager for deployment lifecycle and coordination."""
+
 from typing import Any
 
 from .models import Deployment, DeploymentConfig, DeploymentStatus, Environment
@@ -39,7 +40,6 @@ class DeploymentManager:
             "configs": len(self._configs),
             "environments": len(self._environments),
             "by_status": {
-                s.value: sum(1 for d in self._deployments.values() if d.status == s)
-                for s in DeploymentStatus
+                s.value: sum(1 for d in self._deployments.values() if d.status == s) for s in DeploymentStatus
             },
         }

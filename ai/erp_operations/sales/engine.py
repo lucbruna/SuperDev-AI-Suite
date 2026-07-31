@@ -1,4 +1,5 @@
 """Sales engine."""
+
 from .models import Commission, Quotation, QuotationStatus, SalesOrder, SalesOrderStatus, SalesTarget
 
 

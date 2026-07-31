@@ -38,6 +38,7 @@ async def execute_code(
     db: AsyncSession = Depends(get_db),
 ) -> ExecuteResponse:
     from backend.dependencies import get_current_active_user
+
     user = await get_current_active_user(db=db)
 
     try:
@@ -80,6 +81,7 @@ async def stream_code(
     db: AsyncSession = Depends(get_db),
 ):
     from backend.dependencies import get_current_active_user
+
     user = await get_current_active_user(db=db)
 
     try:

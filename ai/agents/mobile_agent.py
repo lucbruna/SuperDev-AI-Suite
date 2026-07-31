@@ -20,8 +20,15 @@ class MobileAgent(BaseAgent):
 
     def capabilities(self) -> list[str]:
         return [
-            "mobile", "flutter", "swift", "kotlin", "android",
-            "ios", "react_native", "app", "cross_platform",
+            "mobile",
+            "flutter",
+            "swift",
+            "kotlin",
+            "android",
+            "ios",
+            "react_native",
+            "app",
+            "cross_platform",
         ]
 
 
@@ -40,7 +47,15 @@ class PerformanceAgent(BaseAgent):
 
     def capabilities(self) -> list[str]:
         return [
-            "performance", "optimization", "profiling", "benchmark",
-            "latency", "throughput", "memory", "cpu", "scalability",
-            "load_testing", "bottleneck",
+            "performance",
+            "optimization",
+            "profiling",
+            "benchmark",
+            "latency",
+            "throughput",
+            "memory",
+            "cpu",
+            "scalability",
+            "load_testing",
+            "bottleneck",
         ]

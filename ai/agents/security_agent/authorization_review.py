@@ -40,15 +40,19 @@ class AuthorizationReview:
     def review_policy(self, policy: dict[str, Any]) -> list[dict[str, Any]]:
         findings = []
         if policy.get("effect", "").lower() == "allow" and policy.get("resource", "") == "*":
-            findings.append({
-                "severity": "high",
-                "message": "Wildcard resource in allow policy is dangerous",
-            })
+            findings.append(
+                {
+                    "severity": "high",
+                    "message": "Wildcard resource in allow policy is dangerous",
+                }
+            )
         if policy.get("action", "") == "*":
-            findings.append({
-                "severity": "medium",
-                "message": "Wildcard action grants excessive permissions",
-            })
+            findings.append(
+                {
+                    "severity": "medium",
+                    "message": "Wildcard action grants excessive permissions",
+                }
+            )
         return findings
 
     def evaluate_access(

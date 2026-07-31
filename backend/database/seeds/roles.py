@@ -42,9 +42,19 @@ PERM_IDS = {
 }
 
 DEFAULT_ROLES: list[dict[str, Any]] = [
-    {"id": ROLE_IDS["super_admin"], "name": "super_admin", "description": "Super administrator with full access", "is_system": True},
+    {
+        "id": ROLE_IDS["super_admin"],
+        "name": "super_admin",
+        "description": "Super administrator with full access",
+        "is_system": True,
+    },
     {"id": ROLE_IDS["admin"], "name": "admin", "description": "Administrator with most access", "is_system": True},
-    {"id": ROLE_IDS["developer"], "name": "developer", "description": "Developer with project access", "is_system": True},
+    {
+        "id": ROLE_IDS["developer"],
+        "name": "developer",
+        "description": "Developer with project access",
+        "is_system": True,
+    },
     {"id": ROLE_IDS["viewer"], "name": "viewer", "description": "Read-only access", "is_system": True},
 ]
 
@@ -73,14 +83,25 @@ ROLE_PERMISSION_MAP: dict[str, list[str]] = {
     "super_admin": [p["name"] for p in DEFAULT_PERMISSIONS],
     "admin": [p["name"] for p in DEFAULT_PERMISSIONS if p["name"] != "admin:manage"],
     "developer": [
-        "users:read", "projects:read", "projects:write",
-        "workflows:read", "workflows:write", "workflows:execute",
-        "agents:read", "agents:write", "agents:execute",
-        "plugins:read", "providers:read",
+        "users:read",
+        "projects:read",
+        "projects:write",
+        "workflows:read",
+        "workflows:write",
+        "workflows:execute",
+        "agents:read",
+        "agents:write",
+        "agents:execute",
+        "plugins:read",
+        "providers:read",
     ],
     "viewer": [
-        "users:read", "projects:read", "workflows:read",
-        "agents:read", "plugins:read", "providers:read",
+        "users:read",
+        "projects:read",
+        "workflows:read",
+        "agents:read",
+        "plugins:read",
+        "providers:read",
     ],
 }
 

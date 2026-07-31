@@ -1,6 +1,7 @@
 """
 Biometric Authentication
 """
+
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
@@ -29,11 +30,7 @@ class BiometricManager:
         self.templates: dict[str, list[BiometricTemplate]] = {}
 
     def register_template(self, user_id: str, biometric_type: BiometricType, template_data: str) -> BiometricTemplate:
-        template = BiometricTemplate(
-            user_id=user_id,
-            biometric_type=biometric_type,
-            template_data=template_data
-        )
+        template = BiometricTemplate(user_id=user_id, biometric_type=biometric_type, template_data=template_data)
         if user_id not in self.templates:
             self.templates[user_id] = []
         self.templates[user_id].append(template)

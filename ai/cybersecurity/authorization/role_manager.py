@@ -1,6 +1,7 @@
 """
 Role Manager
 """
+
 from dataclasses import dataclass, field
 
 

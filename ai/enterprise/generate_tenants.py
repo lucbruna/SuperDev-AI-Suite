@@ -1,15 +1,20 @@
 """Tenants subsystem generator."""
+
 import os
 
-BASE = r'C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\enterprise\tenants'
+BASE = r"C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\enterprise\tenants"
+
 
 def w(path, content):
     full = os.path.join(BASE, path)
     os.makedirs(os.path.dirname(full), exist_ok=True)
-    with open(full, 'w', encoding='utf-8') as f:
+    with open(full, "w", encoding="utf-8") as f:
         f.write(content)
 
-w('tenant_engine.py', '''"""Tenant engine."""
+
+w(
+    "tenant_engine.py",
+    '''"""Tenant engine."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time
@@ -45,9 +50,12 @@ class TenantEngine:
         return len(self._tenants)
     def is_running(self) -> bool:
         return self._started
-''')
+''',
+)
 
-w('tenant_manager.py', '''"""Tenant manager."""
+w(
+    "tenant_manager.py",
+    '''"""Tenant manager."""
 from __future__ import annotations
 from typing import Any, Dict, List
 
@@ -67,9 +75,12 @@ class TenantManager:
         return False
     def list_tenants(self) -> List[str]:
         return list(self._configs.keys())
-''')
+''',
+)
 
-w('isolation.py', '''"""Tenant isolation."""
+w(
+    "isolation.py",
+    '''"""Tenant isolation."""
 from __future__ import annotations
 from typing import Any, Dict
 
@@ -93,9 +104,12 @@ class TenantIsolation:
             del self._isolation[org_id]
             return True
         return False
-''')
+''',
+)
 
-w('configuration.py', '''"""Tenant configuration."""
+w(
+    "configuration.py",
+    '''"""Tenant configuration."""
 from __future__ import annotations
 from typing import Any, Dict
 
@@ -118,9 +132,12 @@ class TenantConfiguration:
         n = len(self._configs.get(org_id, {}))
         self._configs.pop(org_id, None)
         return n
-''')
+''',
+)
 
-w('storage.py', '''"""Tenant storage."""
+w(
+    "storage.py",
+    '''"""Tenant storage."""
 from __future__ import annotations
 from typing import Any, Dict
 
@@ -146,9 +163,12 @@ class TenantStorage:
         return old
     def list_usage(self) -> Dict[str, float]:
         return dict(self._usage)
-''')
+''',
+)
 
-w('database.py', '''"""Tenant database."""
+w(
+    "database.py",
+    '''"""Tenant database."""
 from __future__ import annotations
 from typing import Any, Dict, List
 
@@ -179,9 +199,12 @@ class TenantDatabase:
     def get_tables(self, org_id: str, schema_name: str) -> List[str]:
         schema = self.get_schema(org_id, schema_name)
         return list(schema.get("tables", []))
-''')
+''',
+)
 
-w('__init__.py', '''"""Tenants subsystem."""
+w(
+    "__init__.py",
+    '''"""Tenants subsystem."""
 from .tenant_engine import TenantEngine
 from .tenant_manager import TenantManager
 from .isolation import TenantIsolation
@@ -193,6 +216,7 @@ __all__ = [
     "TenantEngine", "TenantManager", "TenantIsolation",
     "TenantConfiguration", "TenantStorage", "TenantDatabase"
 ]
-''')
+''',
+)
 
 print("tenants/: 7 files created")

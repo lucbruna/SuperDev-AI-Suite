@@ -7,9 +7,9 @@ from .scheduler import SyncScheduler
 from .sync_engine import SyncEngine
 
 __all__ = [
-    'SyncEngine',
-    'DataSync',
-    'ConflictManager',
-    'SyncScheduler',
-    'IncrementalSync',
+    "SyncEngine",
+    "DataSync",
+    "ConflictManager",
+    "SyncScheduler",
+    "IncrementalSync",
 ]

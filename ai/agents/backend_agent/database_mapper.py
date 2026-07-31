@@ -47,10 +47,7 @@ class DatabaseMapper:
         if tbl is None:
             return f"# Table '{table}' not found"
         model_name = tbl["model"]
-        cols_code = "\n".join(
-            f"    {c['name']}: {c.get('type', 'str')}"
-            for c in tbl["columns"]
-        )
+        cols_code = "\n".join(f"    {c['name']}: {c.get('type', 'str')}" for c in tbl["columns"])
         return (
             f"from __future__ import annotations\n\nfrom sqlalchemy import Column, Integer, String\n"
             f"from sqlalchemy.orm import declarative_base\n\nBase = declarative_base()\n\n\n"

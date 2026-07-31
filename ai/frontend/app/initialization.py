@@ -1,6 +1,7 @@
 """
 Frontend Application Initialization
 """
+
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
@@ -8,6 +9,7 @@ from typing import Any
 
 class InitPhase(Enum):
     """Initialization phases."""
+
     PENDING = "pending"
     CONFIG = "config"
     SERVICES = "services"
@@ -24,6 +26,7 @@ class InitPhase(Enum):
 @dataclass
 class InitStep:
     """Initialization step."""
+
     name: str
     phase: InitPhase
     callback: Any
@@ -43,16 +46,11 @@ class AppInitializer:
         self.listeners: list[Any] = []
         self.config: dict[str, Any] = {}
 
-    def add_step(self, name: str, phase: InitPhase, callback: Any,
-                 required: bool = True, dependencies: list[str] | None = None) -> None:
+    def add_step(
+        self, name: str, phase: InitPhase, callback: Any, required: bool = True, dependencies: list[str] | None = None
+    ) -> None:
         """Add an initialization step."""
-        step = InitStep(
-            name=name,
-            phase=phase,
-            callback=callback,
-            required=required,
-            dependencies=dependencies or []
-        )
+        step = InitStep(name=name, phase=phase, callback=callback, required=required, dependencies=dependencies or [])
         self.steps.append(step)
 
     def remove_step(self, name: str) -> None:
@@ -99,10 +97,7 @@ class AppInitializer:
                         continue
 
                     # Check dependencies
-                    deps_met = all(
-                        self._is_step_completed(dep)
-                        for dep in step.dependencies
-                    )
+                    deps_met = all(self._is_step_completed(dep) for dep in step.dependencies)
 
                     if not deps_met:
                         if step.required:
@@ -112,7 +107,7 @@ class AppInitializer:
                     try:
                         if step.callback:
                             result = step.callback(self.config)
-                            if hasattr(result, '__await__'):
+                            if hasattr(result, "__await__"):
                                 await result
                         step.completed = True
                         self._notify("step_complete", {"step": step.name})
@@ -154,16 +149,10 @@ class AppInitializer:
         return {
             "phase": self.phase.value,
             "steps": [
-                {
-                    "name": s.name,
-                    "phase": s.phase.value,
-                    "completed": s.completed,
-                    "error": s.error
-                }
-                for s in self.steps
+                {"name": s.name, "phase": s.phase.value, "completed": s.completed, "error": s.error} for s in self.steps
             ],
             "errors": self.errors,
-            "is_ready": self.phase == InitPhase.READY
+            "is_ready": self.phase == InitPhase.READY,
         }
 
     def reset(self) -> None:

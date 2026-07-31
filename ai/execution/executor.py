@@ -47,12 +47,14 @@ class Executor:
             for step, result in zip(next_steps, results, strict=False):
                 if isinstance(result, Exception):
                     plan.mark_failed(step.id)
-                    step_results.append({
-                        "step_id": step.id,
-                        "description": step.description,
-                        "success": False,
-                        "error": str(result),
-                    })
+                    step_results.append(
+                        {
+                            "step_id": step.id,
+                            "description": step.description,
+                            "success": False,
+                            "error": str(result),
+                        }
+                    )
                     failed = True
                 elif not result.get("success", False):
                     plan.mark_failed(step.id)

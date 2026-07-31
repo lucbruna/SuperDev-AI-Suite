@@ -1,4 +1,5 @@
 """Formatter for code style enforcement."""
+
 from typing import Any
 
 
@@ -28,11 +29,13 @@ class Formatter:
         violations = []
         for i, line in enumerate(content.split("\n"), 1):
             if len(line) > max_len:
-                violations.append({
-                    "line": i,
-                    "length": len(line),
-                    "max": max_len,
-                })
+                violations.append(
+                    {
+                        "line": i,
+                        "length": len(line),
+                        "max": max_len,
+                    }
+                )
         return violations
 
     def check_indentation(self, content: str) -> list[dict[str, Any]]:

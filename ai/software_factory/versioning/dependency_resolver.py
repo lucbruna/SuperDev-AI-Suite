@@ -1,4 +1,5 @@
 """Resolver for version dependency graphs."""
+
 from .models import DependencyGraph, VersionConstraint
 
 

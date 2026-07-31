@@ -7,7 +7,14 @@ from typing import Any
 class ReasoningTrace:
     """A trace of a reasoning operation."""
 
-    def __init__(self, trace_id: str, reasoning_type: str, input_summary: str, output_summary: str, details: dict[str, Any] | None = None):
+    def __init__(
+        self,
+        trace_id: str,
+        reasoning_type: str,
+        input_summary: str,
+        output_summary: str,
+        details: dict[str, Any] | None = None,
+    ):
         self._trace_id = trace_id
         self._reasoning_type = reasoning_type
         self._input_summary = input_summary
@@ -60,7 +67,9 @@ class ReasoningHistory:
     def count(self) -> int:
         return len(self._traces)
 
-    def record(self, reasoning_type: str, input_summary: str, output_summary: str, details: dict[str, Any] | None = None) -> ReasoningTrace:
+    def record(
+        self, reasoning_type: str, input_summary: str, output_summary: str, details: dict[str, Any] | None = None
+    ) -> ReasoningTrace:
         self._counter += 1
         trace = ReasoningTrace(f"trace_{self._counter}", reasoning_type, input_summary, output_summary, details)
         self._traces.append(trace)

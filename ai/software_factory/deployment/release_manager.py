@@ -1,4 +1,5 @@
 """Manager for release lifecycle."""
+
 from typing import Any
 
 from .models import Release

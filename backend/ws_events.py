@@ -23,7 +23,14 @@ class WsEvent:
         self.timestamp = datetime.now(UTC).isoformat()
 
     def to_dict(self) -> dict[str, Any]:
-        return {"id": self.id, "type": self.type, "data": self.data, "room": self.room, "sender": self.sender, "timestamp": self.timestamp}
+        return {
+            "id": self.id,
+            "type": self.type,
+            "data": self.data,
+            "room": self.room,
+            "sender": self.sender,
+            "timestamp": self.timestamp,
+        }
 
     def to_json(self) -> str:
         return json.dumps(self.to_dict())

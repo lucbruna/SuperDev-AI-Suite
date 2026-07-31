@@ -17,14 +17,18 @@ class ConflictResolution:
         conflicts: list[dict[str, Any]] = []
         for key in set(local.keys()) & set(remote.keys()):
             if local[key] != remote[key]:
-                conflicts.append({
-                    "key": key,
-                    "local_value": local[key],
-                    "remote_value": remote[key],
-                })
+                conflicts.append(
+                    {
+                        "key": key,
+                        "local_value": local[key],
+                        "remote_value": remote[key],
+                    }
+                )
         return conflicts
 
-    def resolve(self, data: dict[str, Any], conflicts: list[dict[str, Any]], strategy: str = "last_write") -> dict[str, Any]:
+    def resolve(
+        self, data: dict[str, Any], conflicts: list[dict[str, Any]], strategy: str = "last_write"
+    ) -> dict[str, Any]:
 
         resolved = dict(data)
         for conflict in conflicts:
@@ -38,7 +42,9 @@ class ConflictResolution:
             self._conflicts_resolved += 1
         return resolved
 
-    def resolve_all(self, local: dict[str, Any], remote: dict[str, Any], strategy: str = "last_write") -> dict[str, Any]:
+    def resolve_all(
+        self, local: dict[str, Any], remote: dict[str, Any], strategy: str = "last_write"
+    ) -> dict[str, Any]:
         conflicts = self.detect(local, remote)
         return self.resolve({**local, **remote}, conflicts, strategy)
 

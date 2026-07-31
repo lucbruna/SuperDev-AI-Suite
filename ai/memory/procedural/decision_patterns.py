@@ -6,7 +6,9 @@ from typing import Any
 class DecisionPattern:
     """A pattern for making decisions."""
 
-    def __init__(self, pattern_id: str, name: str, decision_type: str, criteria: list[str], rules: dict[str, Any] | None = None):
+    def __init__(
+        self, pattern_id: str, name: str, decision_type: str, criteria: list[str], rules: dict[str, Any] | None = None
+    ):
         self._pattern_id = pattern_id
         self._name = name
         self._type = decision_type

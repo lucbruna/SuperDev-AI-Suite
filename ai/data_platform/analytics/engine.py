@@ -1,4 +1,5 @@
 """Analytics engine."""
+
 import uuid
 from datetime import datetime
 from typing import Any
@@ -43,7 +44,7 @@ class AnalyticsEngine:
                 row[f"max_{m}"] = max(values) if values else 0
             row["count"] = len(result_data)
             result_data = [row]
-        result_data = result_data[:query.limit]
+        result_data = result_data[: query.limit]
         duration = (datetime.now() - start).total_seconds() * 1000
         result = QueryResult(
             result_id=str(uuid.uuid4())[:8],
@@ -70,14 +71,22 @@ class AnalyticsEngine:
                         insight_type=InsightType.SUMMARY,
                         title=f"Summary of {field_name}",
                         description=f"Average: {avg:.2f}, Min: {min(values)}, Max: {max(values)}, Count: {len(values)}",
-                        data={"field": field_name, "avg": avg, "min": min(values), "max": max(values), "count": len(values)},
+                        data={
+                            "field": field_name,
+                            "avg": avg,
+                            "min": min(values),
+                            "max": max(values),
+                            "count": len(values),
+                        },
                         confidence=0.9,
                     )
                     insights.append(insight)
                     self._insights.append(insight)
         return insights
 
-    def detect_anomalies(self, dataset: str, records: list[dict[str, Any]], field_name: str, threshold: float = 2.0) -> list[Insight]:
+    def detect_anomalies(
+        self, dataset: str, records: list[dict[str, Any]], field_name: str, threshold: float = 2.0
+    ) -> list[Insight]:
         values = [r.get(field_name, 0) for r in records if isinstance(r.get(field_name), (int, float))]
         if not values:
             return []

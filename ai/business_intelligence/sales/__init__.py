@@ -1,4 +1,5 @@
 """Business Intelligence Sales subsystem."""
+
 from .models import (
     Activity,
     Contact,
@@ -10,7 +11,11 @@ from .models import (
 from .pipeline import SalesPipeline
 
 __all__ = [
-    "DealStage", "LeadSource",
-    "Deal", "Contact", "Activity", "SalesMetrics",
+    "DealStage",
+    "LeadSource",
+    "Deal",
+    "Contact",
+    "Activity",
+    "SalesMetrics",
     "SalesPipeline",
 ]

@@ -35,10 +35,7 @@ class DependencyScanner:
         return list(self._dependencies.values())
 
     def scan_vulnerabilities(self) -> list[dict[str, Any]]:
-        return [
-            dep for dep in self._dependencies.values()
-            if dep["known_vulns"]
-        ]
+        return [dep for dep in self._dependencies.values() if dep["known_vulns"]]
 
     @property
     def dependency_count(self) -> int:

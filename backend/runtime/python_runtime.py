@@ -85,9 +85,9 @@ class PythonRuntime(BaseRuntime):
             stderr = stderr_bytes.decode("utf-8", errors="replace")
 
             if len(stdout) > limits.max_output_size_bytes:
-                stdout = stdout[:limits.max_output_size_bytes] + "\n... (output truncated)"
+                stdout = stdout[: limits.max_output_size_bytes] + "\n... (output truncated)"
             if len(stderr) > limits.max_output_size_bytes:
-                stderr = stderr[:limits.max_output_size_bytes] + "\n... (output truncated)"
+                stderr = stderr[: limits.max_output_size_bytes] + "\n... (output truncated)"
 
             execution_time = (time.time() - start_time) * 1000
             status = RuntimeStatus.COMPLETED if proc.returncode == 0 else RuntimeStatus.FAILED
@@ -97,11 +97,13 @@ class PythonRuntime(BaseRuntime):
             if output_dir.exists():
                 for file in output_dir.rglob("*"):
                     if file.is_file():
-                        artifacts.append({
-                            "name": file.name,
-                            "path": str(file.relative_to(sandbox_dir)),
-                            "size": file.stat().st_size,
-                        })
+                        artifacts.append(
+                            {
+                                "name": file.name,
+                                "path": str(file.relative_to(sandbox_dir)),
+                                "size": file.stat().st_size,
+                            }
+                        )
 
             return ExecutionResult(
                 run_id=run_id,

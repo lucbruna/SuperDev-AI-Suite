@@ -62,18 +62,22 @@ class CodeCorrector:
         if test_result and test_result.failures:
             for failure in test_result.failures:
                 if "SyntaxError" in failure.get("error", ""):
-                    changes.append({
-                        "type": "fix_syntax",
-                        "description": f"Fixed syntax error: {failure.get('error', '')}",
-                    })
+                    changes.append(
+                        {
+                            "type": "fix_syntax",
+                            "description": f"Fixed syntax error: {failure.get('error', '')}",
+                        }
+                    )
 
         if review_result:
             for issue in review_result.security_issues:
                 if "eval" in str(issue).lower() or "exec" in str(issue).lower():
-                    changes.append({
-                        "type": "security_fix",
-                        "description": f"Removed dangerous function: {issue.get('message', '')}",
-                    })
+                    changes.append(
+                        {
+                            "type": "security_fix",
+                            "description": f"Removed dangerous function: {issue.get('message', '')}",
+                        }
+                    )
 
         return CorrectionResult(
             success=True,

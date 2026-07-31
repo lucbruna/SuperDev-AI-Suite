@@ -1,4 +1,5 @@
 """Personality subsystem for agent behavior customization."""
+
 from __future__ import annotations
 
 from .collaboration_style import CollaborationStyle

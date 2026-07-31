@@ -1,4 +1,5 @@
 """Mapper for linking requirements to implementation artifacts."""
+
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -8,6 +9,7 @@ from .models import Requirement
 @dataclass
 class RequirementMapping:
     """Maps a requirement to implementation artifacts."""
+
     requirement_id: str = ""
     mapped_artifacts: list[str] = field(default_factory=list)
     coverage: float = 0.0

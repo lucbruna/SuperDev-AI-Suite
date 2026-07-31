@@ -59,7 +59,9 @@ class PlannerHistory:
     def count(self) -> int:
         return len(self._records)
 
-    def record(self, plan_id: str, goal: str, status: str, steps: int, details: dict[str, Any] | None = None) -> PlanRecord:
+    def record(
+        self, plan_id: str, goal: str, status: str, steps: int, details: dict[str, Any] | None = None
+    ) -> PlanRecord:
         rec = PlanRecord(plan_id, goal, status, steps, details)
         self._records.append(rec)
         return rec

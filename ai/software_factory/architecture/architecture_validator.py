@@ -1,4 +1,5 @@
 """Validator for architecture designs."""
+
 from typing import Any
 
 from .models import ArchitectureComponent, Connector
@@ -7,8 +8,7 @@ from .models import ArchitectureComponent, Connector
 class ArchitectureValidator:
     """Validates architecture designs for consistency and best practices."""
 
-    def validate(self, components: list[ArchitectureComponent],
-                 connectors: list[Connector]) -> dict[str, Any]:
+    def validate(self, components: list[ArchitectureComponent], connectors: list[Connector]) -> dict[str, Any]:
         errors = []
         warnings = []
 

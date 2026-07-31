@@ -16,19 +16,23 @@ class AsyncOptimizer:
         results = []
         for keyword in self.IO_KEYWORDS:
             if keyword in desc_lower:
-                results.append({
-                    "task": task_desc[:50],
-                    "pattern": f"{keyword}_bound",
-                    "recommendation": f"Use asyncio for {keyword} operations",
-                    "estimated_speedup": "3-10x",
-                })
+                results.append(
+                    {
+                        "task": task_desc[:50],
+                        "pattern": f"{keyword}_bound",
+                        "recommendation": f"Use asyncio for {keyword} operations",
+                        "estimated_speedup": "3-10x",
+                    }
+                )
         if not results:
-            results.append({
-                "task": task_desc[:50],
-                "pattern": "cpu_bound",
-                "recommendation": "Use multiprocessing for CPU-bound tasks",
-                "estimated_speedup": "1-2x",
-            })
+            results.append(
+                {
+                    "task": task_desc[:50],
+                    "pattern": "cpu_bound",
+                    "recommendation": "Use multiprocessing for CPU-bound tasks",
+                    "estimated_speedup": "1-2x",
+                }
+            )
         return results
 
     def add_task(self, name: str, duration_ms: float, is_io_bound: bool) -> str:

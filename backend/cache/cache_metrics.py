@@ -37,9 +37,7 @@ class CacheMetrics:
 
     def get_stats(self) -> dict[str, dict[str, int]]:
         result: dict[str, dict[str, int]] = {}
-        all_prefixes = set(self._hits.keys()) | set(
-            self._misses.keys()
-        )
+        all_prefixes = set(self._hits.keys()) | set(self._misses.keys())
         for prefix in all_prefixes:
             result[prefix] = {
                 "hits": self._hits.get(prefix, 0),

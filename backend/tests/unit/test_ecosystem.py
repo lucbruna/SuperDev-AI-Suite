@@ -11,9 +11,11 @@ import pytest
 # Notification Manager Tests
 # ============================================================
 
+
 class TestNotificationManager:
     def setup_method(self):
         from backend.notifications.notification_manager import NotificationManager
+
         self.manager = NotificationManager()
 
     def test_create_notification(self):
@@ -56,15 +58,19 @@ class TestNotificationManager:
 # Email Service Tests
 # ============================================================
 
+
 class TestEmailService:
     def setup_method(self):
         from backend.notifications.email_service import EmailService
+
         self.service = EmailService(dry_run=True)
 
     def test_send_dry_run(self):
         from backend.notifications.email_service import EmailMessage
+
         msg = EmailMessage(to="test@example.com", subject="Test", body="Hello")
         import asyncio
+
         result = asyncio.get_event_loop().run_until_complete(self.service.send(msg))
         assert result.success is True
         assert result.message_id is not None
@@ -84,21 +90,22 @@ class TestEmailService:
 # Backup Manager Tests
 # ============================================================
 
+
 class TestBackupManager:
     def setup_method(self):
         from backend.backup.backup_manager import BackupManager
+
         self.tmpdir = tempfile.mkdtemp()
         self.manager = BackupManager(backup_dir=self.tmpdir)
 
     def test_backup_files(self):
         import asyncio
+
         # Create test files
         test_file = Path(self.tmpdir) / "test.txt"
         test_file.write_text("hello world")
 
-        result = asyncio.get_event_loop().run_until_complete(
-            self.manager.backup_files([str(test_file)])
-        )
+        result = asyncio.get_event_loop().run_until_complete(self.manager.backup_files([str(test_file)]))
         assert result.status.value == "completed"
         assert result.file_size > 0
 
@@ -115,9 +122,11 @@ class TestBackupManager:
 # Data Exporter Tests
 # ============================================================
 
+
 class TestDataExporter:
     def setup_method(self):
         from backend.export_import.data_exporter import DataExporter
+
         self.tmpdir = tempfile.mkdtemp()
         self.exporter = DataExporter(export_dir=self.tmpdir)
 
@@ -152,9 +161,11 @@ class TestDataExporter:
 # Data Importer Tests
 # ============================================================
 
+
 class TestDataImporter:
     def setup_method(self):
         from backend.export_import.data_exporter import DataImporter
+
         self.importer = DataImporter()
 
     def test_import_json_string(self):
@@ -183,9 +194,11 @@ class TestDataImporter:
 # I18n Tests
 # ============================================================
 
+
 class TestI18n:
     def setup_method(self):
         from backend.i18n.translations import I18nService
+
         self.i18n = I18nService()
 
     def test_default_locale(self):
@@ -234,17 +247,18 @@ class TestI18n:
 # Full-Text Search Tests
 # ============================================================
 
+
 class TestFullTextSearch:
     def setup_method(self):
         from backend.search.full_text_search import FullTextSearch, SearchableType, SearchDocument
+
         self.search = FullTextSearch()
         self.SearchDocument = SearchDocument
         self.SearchableType = SearchableType
 
     def test_add_and_search(self):
         doc = self.SearchDocument(
-            id="1", type=self.SearchableType.DOCUMENT,
-            title="Python Guide", content="Python is a programming language"
+            id="1", type=self.SearchableType.DOCUMENT, title="Python Guide", content="Python is a programming language"
         )
         self.search.add_document(doc)
         results = self.search.search("python")
@@ -253,30 +267,24 @@ class TestFullTextSearch:
 
     def test_search_no_results(self):
         doc = self.SearchDocument(
-            id="1", type=self.SearchableType.DOCUMENT,
-            title="Python Guide", content="Python is great"
+            id="1", type=self.SearchableType.DOCUMENT, title="Python Guide", content="Python is great"
         )
         self.search.add_document(doc)
         results = self.search.search("javascript")
         assert len(results) == 0
 
     def test_remove_document(self):
-        doc = self.SearchDocument(
-            id="1", type=self.SearchableType.DOCUMENT,
-            title="Test", content="Test content"
-        )
+        doc = self.SearchDocument(id="1", type=self.SearchableType.DOCUMENT, title="Test", content="Test content")
         self.search.add_document(doc)
         assert self.search.remove_document("1") is True
         assert self.search.get_document("1") is None
 
     def test_title_boost(self):
         doc1 = self.SearchDocument(
-            id="1", type=self.SearchableType.DOCUMENT,
-            title="Python Tutorial", content="Learn programming"
+            id="1", type=self.SearchableType.DOCUMENT, title="Python Tutorial", content="Learn programming"
         )
         doc2 = self.SearchDocument(
-            id="2", type=self.SearchableType.DOCUMENT,
-            title="Programming Guide", content="Python is used here"
+            id="2", type=self.SearchableType.DOCUMENT, title="Programming Guide", content="Python is used here"
         )
         self.search.add_document(doc1)
         self.search.add_document(doc2)
@@ -286,12 +294,10 @@ class TestFullTextSearch:
 
     def test_search_with_type_filter(self):
         doc1 = self.SearchDocument(
-            id="1", type=self.SearchableType.DOCUMENT,
-            title="Doc", content="Document about Python"
+            id="1", type=self.SearchableType.DOCUMENT, title="Doc", content="Document about Python"
         )
         doc2 = self.SearchDocument(
-            id="2", type=self.SearchableType.USER,
-            title="User", content="User profile with Python"
+            id="2", type=self.SearchableType.USER, title="User", content="User profile with Python"
         )
         self.search.add_document(doc1)
         self.search.add_document(doc2)
@@ -309,21 +315,25 @@ class TestFullTextSearch:
 # Rate Limiter Tests
 # ============================================================
 
+
 class TestRateLimiter:
     def test_rate_limit_basic(self):
         from backend.middleware.rate_limit import RateLimitMiddleware
+
         # Just test instantiation
         middleware = RateLimitMiddleware(app=None, max_requests=10, window_seconds=60)
         assert middleware.max_requests == 10
 
     def test_cleanup_expired(self):
         from backend.middleware.rate_limit import RateLimitMiddleware
+
         middleware = RateLimitMiddleware(app=None, max_requests=10, window_seconds=1)
         removed = middleware.cleanup_expired()
         assert isinstance(removed, int)
 
     def test_circuit_breaker(self):
         from backend.middleware.rate_limit import CircuitBreaker
+
         cb = CircuitBreaker(failure_threshold=3, recovery_timeout=1.0)
         assert cb.is_available() is True
         assert cb.state == "closed"
@@ -333,12 +343,16 @@ class TestRateLimiter:
 # Scheduler Tests
 # ============================================================
 
+
 class TestScheduler:
     def test_add_job(self):
         from backend.scheduler.scheduler import Scheduler
+
         s = Scheduler()
+
         async def dummy():
             pass
+
         job_id = s.add_job("test", dummy, interval_seconds=10)
         assert job_id is not None
         jobs = s.list_jobs()
@@ -346,18 +360,24 @@ class TestScheduler:
 
     def test_remove_job(self):
         from backend.scheduler.scheduler import Scheduler
+
         s = Scheduler()
+
         async def dummy():
             pass
+
         job_id = s.add_job("test", dummy)
         assert s.remove_job(job_id) is True
         assert len(s.list_jobs()) == 0
 
     def test_enable_disable(self):
         from backend.scheduler.scheduler import Scheduler
+
         s = Scheduler()
+
         async def dummy():
             pass
+
         job_id = s.add_job("test", dummy)
         assert s.disable_job(job_id) is True
         assert s.enable_job(job_id) is True
@@ -367,9 +387,11 @@ class TestScheduler:
 # Event Bus Tests
 # ============================================================
 
+
 class TestEventBus:
     def test_subscribe_and_publish(self):
         from backend.events.event_bus import EventBus
+
         bus = EventBus()
         received = []
 
@@ -378,16 +400,17 @@ class TestEventBus:
 
         bus.subscribe("test.event", handler)
         import asyncio
-        event = asyncio.get_event_loop().run_until_complete(
-            bus.publish("test.event", {"key": "value"})
-        )
+
+        event = asyncio.get_event_loop().run_until_complete(bus.publish("test.event", {"key": "value"}))
         assert event.type == "test.event"
         assert event.data == {"key": "value"}
 
     def test_get_history(self):
         from backend.events.event_bus import EventBus
+
         bus = EventBus()
         import asyncio
+
         asyncio.get_event_loop().run_until_complete(bus.publish("event1"))
         asyncio.get_event_loop().run_until_complete(bus.publish("event2"))
         history = bus.get_history()
@@ -398,14 +421,17 @@ class TestEventBus:
 # WebSocket Manager Tests
 # ============================================================
 
+
 class TestWebSocketManager:
     def test_connection_count(self):
         from backend.websocket.manager import ConnectionManager
+
         manager = ConnectionManager()
         assert manager.get_connection_count() == 0
 
     def test_get_connections(self):
         from backend.websocket.manager import ConnectionManager
+
         manager = ConnectionManager()
         conns = manager.get_connections("nonexistent")
         assert conns == []
@@ -415,9 +441,11 @@ class TestWebSocketManager:
 # SSO Manager Tests
 # ============================================================
 
+
 class TestSSOManager:
     def test_register_provider(self):
         from backend.security.sso import OIDCProvider, SSOConfig, SSOManager, SSOProviderType
+
         mgr = SSOManager()
         config = SSOConfig(
             provider_type=SSOProviderType.OIDC,
@@ -433,6 +461,7 @@ class TestSSOManager:
 
     def test_list_providers(self):
         from backend.security.sso import SSOManager
+
         mgr = SSOManager()
         providers = mgr.list_providers()
         assert isinstance(providers, list)
@@ -442,9 +471,11 @@ class TestSSOManager:
 # Plugin Manager Tests
 # ============================================================
 
+
 class TestPluginManager:
     def setup_method(self):
         from backend.plugins.plugin_manager import PluginManager
+
         self.tmpdir = tempfile.mkdtemp()
         self.manager = PluginManager(plugins_dir=self.tmpdir)
 
@@ -460,9 +491,11 @@ class TestPluginManager:
 # Cache Manager Tests
 # ============================================================
 
+
 class TestCacheManager:
     def setup_method(self):
         from backend.cache.cache_manager import CacheManager
+
         self.manager = CacheManager()
 
     @pytest.mark.asyncio
@@ -489,10 +522,12 @@ class TestCacheManager:
 # Auth JWT Tests
 # ============================================================
 
+
 class TestJWTManager:
     def setup_method(self):
         os.environ["JWT_SECRET_KEY"] = "test-secret-key-for-tests"
         from backend.auth.jwt import JWTManager
+
         self.manager = JWTManager(secret_key="test-secret-key-for-tests")
 
     def test_create_access_token(self):

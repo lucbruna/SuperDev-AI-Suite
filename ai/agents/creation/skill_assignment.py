@@ -1,4 +1,5 @@
 """Skill assignment system for agents."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -33,10 +34,7 @@ class SkillAssignment:
         return list(self._assignments.get(agent_id, []))
 
     def get_agents_with_skill(self, skill_name: str) -> list[str]:
-        return [
-            aid for aid, skills in self._assignments.items()
-            if skill_name in skills
-        ]
+        return [aid for aid, skills in self._assignments.items() if skill_name in skills]
 
     def match_skills_to_task(self, required_skills: list[str]) -> dict[str, int]:
         scores: dict[str, int] = {}
@@ -48,10 +46,7 @@ class SkillAssignment:
 
     def suggest_skills(self, agent_id: str) -> list[str]:
         assigned = set(self._assignments.get(agent_id, []))
-        return [
-            s for s in self._skill_registry
-            if s not in assigned
-        ]
+        return [s for s in self._skill_registry if s not in assigned]
 
     def clear(self) -> None:
         self._assignments.clear()

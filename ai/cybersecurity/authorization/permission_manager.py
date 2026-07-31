@@ -1,6 +1,7 @@
 """
 Permission Manager
 """
+
 from dataclasses import dataclass, field
 from typing import Any
 

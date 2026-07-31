@@ -1,6 +1,7 @@
 """
 Secure Vault
 """
+
 import hashlib
 import secrets
 from dataclasses import dataclass, field

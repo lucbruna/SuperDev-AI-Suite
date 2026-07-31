@@ -1,6 +1,7 @@
 """
 Integration Metrics - Performance monitoring
 """
+
 import hashlib
 import statistics
 from dataclasses import dataclass, field
@@ -56,10 +57,28 @@ class IntegrationMetrics:
         if not values:
             return {"count": 0, "mean": 0, "min": 0, "max": 0, "p50": 0, "p95": 0, "p99": 0}
         sorted_vals = sorted(values)
-        return {"count": len(values), "mean": statistics.mean(values), "min": min(values), "max": max(values), "p50": sorted_vals[len(sorted_vals) // 2], "p95": sorted_vals[int(len(sorted_vals) * 0.95)], "p99": sorted_vals[int(len(sorted_vals) * 0.99)]}
+        return {
+            "count": len(values),
+            "mean": statistics.mean(values),
+            "min": min(values),
+            "max": max(values),
+            "p50": sorted_vals[len(sorted_vals) // 2],
+            "p95": sorted_vals[int(len(sorted_vals) * 0.95)],
+            "p99": sorted_vals[int(len(sorted_vals) * 0.99)],
+        }
 
-    def record_integration_metric(self, integration_id: str, metric_name: str, value: float, unit: str = "") -> IntegrationMetric:
-        metric = IntegrationMetric(metric_id=hashlib.sha256(f"{integration_id}{metric_name}{datetime.now().isoformat()}".encode()).hexdigest()[:16], integration_id=integration_id, metric_name=metric_name, value=value, unit=unit)
+    def record_integration_metric(
+        self, integration_id: str, metric_name: str, value: float, unit: str = ""
+    ) -> IntegrationMetric:
+        metric = IntegrationMetric(
+            metric_id=hashlib.sha256(f"{integration_id}{metric_name}{datetime.now().isoformat()}".encode()).hexdigest()[
+                :16
+            ],
+            integration_id=integration_id,
+            metric_name=metric_name,
+            value=value,
+            unit=unit,
+        )
         self.integration_metrics.setdefault(integration_id, []).append(metric)
         return metric
 

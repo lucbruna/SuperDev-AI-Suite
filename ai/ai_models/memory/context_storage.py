@@ -1,4 +1,5 @@
 """Context storage."""
+
 from __future__ import annotations
 
 import time
@@ -9,15 +10,19 @@ class ContextStorage:
     def __init__(self, max_tokens: int = 4000) -> None:
         self._contexts: dict[str, list[dict[str, Any]]] = {}
         self._max_tokens = max_tokens
+
     def add(self, session_id: str, content: str, role: str = "user", metadata: dict[str, Any] = None) -> dict[str, Any]:
         entry = {"content": content, "role": role, "metadata": metadata or {}, "timestamp": time.time()}
         self._contexts.setdefault(session_id, []).append(entry)
         return entry
+
     def get_history(self, session_id: str, limit: int = 20) -> list[dict[str, Any]]:
         return self._contexts.get(session_id, [])[-limit:]
+
     def get_context_window(self, session_id: str, max_messages: int = 10) -> list[dict[str, Any]]:
         history = self._contexts.get(session_id, [])
         return history[-max_messages:]
+
     def truncate(self, session_id: str, keep_last: int = 10) -> int:
         if session_id not in self._contexts:
             return 0
@@ -25,15 +30,19 @@ class ContextStorage:
         removed = max(0, len(history) - keep_last)
         self._contexts[session_id] = history[-keep_last:]
         return removed
+
     def delete_session(self, session_id: str) -> bool:
         if session_id in self._contexts:
             del self._contexts[session_id]
             return True
         return False
+
     def list_sessions(self) -> list[str]:
         return list(self._contexts.keys())
+
     def token_estimate(self, session_id: str) -> int:
         return sum(len(str(m.get("content", ""))) // 4 for m in self._contexts.get(session_id, []))
+
     def clear(self, session_id: str = "") -> int:
         if session_id:
             n = len(self._contexts.get(session_id, []))

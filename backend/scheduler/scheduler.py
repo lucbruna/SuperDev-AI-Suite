@@ -111,6 +111,7 @@ class Scheduler:
                     except Exception:
                         pass
                     from datetime import timedelta
+
                     job.next_run = now + timedelta(seconds=job.interval_seconds)
             await asyncio.sleep(1)
 

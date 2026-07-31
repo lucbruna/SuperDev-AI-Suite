@@ -1,4 +1,5 @@
 """Factory Registry - Central registry for factory components."""
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
@@ -20,8 +21,12 @@ class FactoryRegistry:
         self.components: dict[str, FactoryComponent] = {}
         self.dependencies: dict[str, list[str]] = {}
 
-    def register(self, component_id: str, name: str, component_type: str = "", version: str = "1.0", **kwargs) -> FactoryComponent:
-        component = FactoryComponent(component_id=component_id, name=name, component_type=component_type, version=version, **kwargs)
+    def register(
+        self, component_id: str, name: str, component_type: str = "", version: str = "1.0", **kwargs
+    ) -> FactoryComponent:
+        component = FactoryComponent(
+            component_id=component_id, name=name, component_type=component_type, version=version, **kwargs
+        )
         self.components[component_id] = component
         return component
 

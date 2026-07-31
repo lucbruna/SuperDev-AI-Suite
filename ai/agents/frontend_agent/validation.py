@@ -49,11 +49,13 @@ class Validation:
                 valid = bool(re.match(rule["pattern"], value))
             except re.error:
                 valid = False
-            results.append({
-                "rule": rule_name,
-                "valid": valid,
-                "message": rule["message"] if not valid else "",
-            })
+            results.append(
+                {
+                    "rule": rule_name,
+                    "valid": valid,
+                    "message": rule["message"] if not valid else "",
+                }
+            )
         return results
 
     @property

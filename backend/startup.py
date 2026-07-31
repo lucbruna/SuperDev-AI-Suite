@@ -75,6 +75,7 @@ async def startup_handler() -> None:
         async_session = async_sessionmaker(engine, expire_on_commit=False)
         async with async_session() as session:
             from backend.auth.rbac import ensure_system_roles
+
             await ensure_system_roles(session)
         await engine.dispose()
         logger.info("RBAC system roles ensured")

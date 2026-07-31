@@ -1,4 +1,5 @@
 """AI Model configuration."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -12,6 +13,7 @@ class ModelType(Enum):
     AUDIO = "audio"
     MULTIMODAL = "multimodal"
 
+
 class ProviderType(Enum):
     OPENAI = "openai"
     ANTHROPIC = "anthropic"
@@ -20,6 +22,7 @@ class ProviderType(Enum):
     OLLAMA = "ollama"
     LOCAL = "local"
     CUSTOM = "custom"
+
 
 class TaskType(Enum):
     CODING = "coding"
@@ -31,6 +34,7 @@ class TaskType(Enum):
     TRANSLATION = "translation"
     SUMMARIZATION = "summarization"
 
+
 @dataclass
 class ModelLimits:
     max_tokens: int = 4096
@@ -39,12 +43,14 @@ class ModelLimits:
     requests_per_minute: int = 60
     tokens_per_minute: int = 100000
 
+
 @dataclass
 class CostConfig:
     input_cost_per_1k: float = 0.01
     output_cost_per_1k: float = 0.03
     currency: str = "USD"
     budget_limit: float = 1000.0
+
 
 @dataclass
 class ModelConfig:

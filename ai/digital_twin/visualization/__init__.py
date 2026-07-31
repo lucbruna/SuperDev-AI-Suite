@@ -1,4 +1,5 @@
 """Visualization subsystem."""
+
 from .dashboard import Dashboard
 from .map_view import MapView
 from .timeline import Timeline

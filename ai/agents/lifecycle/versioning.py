@@ -1,4 +1,5 @@
 """Agent versioning and upgrade management."""
+
 from __future__ import annotations
 
 import time
@@ -12,15 +13,17 @@ class VersionManager:
         self._versions: dict[str, list[dict[str, Any]]] = {}
         self._current: dict[str, str] = {}
 
-    def register_version(self, agent_id: str, version: str,
-                         changelog: str = "",
-                         metadata: dict[str, Any] | None = None) -> None:
-        self._versions.setdefault(agent_id, []).append({
-            "version": version,
-            "changelog": changelog,
-            "metadata": metadata or {},
-            "registered_at": time.time(),
-        })
+    def register_version(
+        self, agent_id: str, version: str, changelog: str = "", metadata: dict[str, Any] | None = None
+    ) -> None:
+        self._versions.setdefault(agent_id, []).append(
+            {
+                "version": version,
+                "changelog": changelog,
+                "metadata": metadata or {},
+                "registered_at": time.time(),
+            }
+        )
         self._current[agent_id] = version
 
     def get_current_version(self, agent_id: str) -> str | None:
@@ -29,8 +32,7 @@ class VersionManager:
     def get_version_history(self, agent_id: str) -> list[dict[str, Any]]:
         return list(self._versions.get(agent_id, []))
 
-    def upgrade(self, agent_id: str, new_version: str,
-                changelog: str = "") -> dict[str, Any]:
+    def upgrade(self, agent_id: str, new_version: str, changelog: str = "") -> dict[str, Any]:
         old = self._current.get(agent_id, "0.0.0")
         self.register_version(agent_id, new_version, changelog)
         return {

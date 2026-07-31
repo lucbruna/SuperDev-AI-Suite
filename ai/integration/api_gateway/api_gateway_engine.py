@@ -1,6 +1,7 @@
 """
 API Gateway Engine - Central API routing
 """
+
 import hashlib
 from collections.abc import Callable
 from dataclasses import dataclass, field

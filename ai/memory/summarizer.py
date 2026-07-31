@@ -35,11 +35,15 @@ class SessionSummarizer:
     async def _llm_summarize(self, base: str, entries: list[dict[str, Any]]) -> str:
         try:
             from openai import OpenAI
+
             client = OpenAI()
             response = client.chat.completions.create(
                 model=self._model,
                 messages=[
-                    {"role": "system", "content": "Summarize the agent session concisely. Extract: key goals, decisions made, errors encountered, and outcomes."},
+                    {
+                        "role": "system",
+                        "content": "Summarize the agent session concisely. Extract: key goals, decisions made, errors encountered, and outcomes.",
+                    },
                     {"role": "user", "content": f"Session data:\n{base}\n\nEntries: {len(entries)}"},
                 ],
                 max_tokens=300,

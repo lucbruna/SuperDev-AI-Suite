@@ -1,5 +1,3 @@
-
-
 def user_key(user_id: str | int) -> str:
     return f"superdev:user:{user_id}"
 
@@ -12,9 +10,7 @@ def session_key(session_id: str) -> str:
     return f"superdev:session:{session_id}"
 
 
-def permission_key(
-    user_id: str | int, resource: str
-) -> str:
+def permission_key(user_id: str | int, resource: str) -> str:
     return f"superdev:permission:{user_id}:{resource}"
 
 

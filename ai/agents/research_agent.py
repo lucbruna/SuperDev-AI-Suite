@@ -18,20 +18,24 @@ class ResearchAgent(BaseAgent):
             await self._check_cancelled()
             self._status = "running"
 
-            search_results = await self._search_tool.execute({
-                "pattern": context.get("search_pattern", task),
-                "path": context.get("path", "."),
-                "type": context.get("search_type", "file"),
-            })
+            search_results = await self._search_tool.execute(
+                {
+                    "pattern": context.get("search_pattern", task),
+                    "path": context.get("path", "."),
+                    "type": context.get("search_type", "file"),
+                }
+            )
 
             web_results = []
             urls = context.get("urls", [])
             for url in urls:
-                result = await self._http_tool.execute({
-                    "url": url,
-                    "method": "GET",
-                    "timeout": 30,
-                })
+                result = await self._http_tool.execute(
+                    {
+                        "url": url,
+                        "method": "GET",
+                        "timeout": 30,
+                    }
+                )
                 if result.get("success"):
                     web_results.append({"url": url, "content": result.get("body", "")[:2000]})
 

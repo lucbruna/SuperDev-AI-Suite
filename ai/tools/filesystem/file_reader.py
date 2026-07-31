@@ -38,7 +38,7 @@ class FileReader(BaseTool):
                 content = f.read()
             if offset is not None and limit is not None:
                 lines = content.splitlines()
-                content = "\n".join(lines[offset:offset + limit])
+                content = "\n".join(lines[offset : offset + limit])
             self._operations.append({"action": "read", "path": path})
             return {"success": True, "content": content, "path": path, "size": len(content)}
         except Exception as e:

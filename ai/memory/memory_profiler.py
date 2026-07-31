@@ -84,6 +84,7 @@ class MemoryProfiler:
 
     def _estimate_memory(self) -> int:
         import sys
+
         return sys.getsizeof(self._samples)
 
     def get_operation_stats(self, operation: str) -> dict[str, Any]:

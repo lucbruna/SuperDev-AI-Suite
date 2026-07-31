@@ -1,4 +1,5 @@
 """Data models for database management."""
+
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -34,6 +35,7 @@ class MigrationStatus(Enum):
 @dataclass
 class Column:
     """A column in a database table."""
+
     name: str = ""
     column_type: ColumnType = ColumnType.VARCHAR
     nullable: bool = True
@@ -48,6 +50,7 @@ class Column:
 @dataclass
 class Index:
     """A database index."""
+
     index_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     name: str = ""
     columns: list[str] = field(default_factory=list)
@@ -58,6 +61,7 @@ class Index:
 @dataclass
 class ForeignKey:
     """A foreign key constraint."""
+
     name: str = ""
     columns: list[str] = field(default_factory=list)
     reference_table: str = ""
@@ -69,6 +73,7 @@ class ForeignKey:
 @dataclass
 class Table:
     """A database table."""
+
     table_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     name: str = ""
     columns: list[Column] = field(default_factory=list)
@@ -95,6 +100,7 @@ class Table:
 @dataclass
 class DatabaseSchema:
     """A complete database schema."""
+
     schema_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     name: str = ""
     version: str = "1.0.0"
@@ -121,6 +127,7 @@ class DatabaseSchema:
 @dataclass
 class MigrationStep:
     """A single step in a migration."""
+
     step_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     operation: str = ""
     table_name: str = ""
@@ -131,6 +138,7 @@ class MigrationStep:
 @dataclass
 class Migration:
     """A database migration."""
+
     migration_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     name: str = ""
     description: str = ""
@@ -144,6 +152,7 @@ class Migration:
 @dataclass
 class DatabaseConnection:
     """Database connection configuration."""
+
     connection_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     name: str = ""
     engine: str = "sqlite"

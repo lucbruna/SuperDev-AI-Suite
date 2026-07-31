@@ -1,4 +1,5 @@
 """Profiles subsystem."""
+
 from .engine import ProfileEngine
 from .models import (
     BehaviorEvent,
@@ -10,7 +11,11 @@ from .models import (
 )
 
 __all__ = [
-    "SegmentType", "BehaviorPattern",
-    "CustomerSegment", "BehaviorEvent", "CustomerPreference", "ProfileInsight",
+    "SegmentType",
+    "BehaviorPattern",
+    "CustomerSegment",
+    "BehaviorEvent",
+    "CustomerPreference",
+    "ProfileInsight",
     "ProfileEngine",
 ]

@@ -13,7 +13,7 @@ class EventStore:
     def append(self, event: Event) -> None:
         self._events.append(event)
         if len(self._events) > self._max_size:
-            self._events = self._events[-self._max_size:]
+            self._events = self._events[-self._max_size :]
 
     def get(self, event_id: str) -> Event | None:
         for e in self._events:

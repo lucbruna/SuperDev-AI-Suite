@@ -1,4 +1,5 @@
 """DevOps data models."""
+
 from __future__ import annotations
 
 import time
@@ -14,17 +15,20 @@ class ServerState(Enum):
     TERMINATED = "terminated"
     ERROR = "error"
 
+
 class ContainerState(Enum):
     CREATED = "created"
     RUNNING = "running"
     STOPPED = "stopped"
     PAUSED = "paused"
 
+
 class PipelineState(Enum):
     IDLE = "idle"
     RUNNING = "running"
     SUCCESS = "success"
     FAILED = "failed"
+
 
 @dataclass
 class Server:
@@ -39,6 +43,7 @@ class Server:
     ip_address: str = ""
     created_at: float = field(default_factory=time.time)
 
+
 @dataclass
 class Container:
     container_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
@@ -49,6 +54,7 @@ class Container:
     env: dict[str, str] = field(default_factory=dict)
     created_at: float = field(default_factory=time.time)
 
+
 @dataclass
 class Pipeline:
     pipeline_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
@@ -57,6 +63,7 @@ class Pipeline:
     state: PipelineState = PipelineState.IDLE
     current_stage: int = 0
     created_at: float = field(default_factory=time.time)
+
 
 @dataclass
 class Deployment:
@@ -67,6 +74,7 @@ class Deployment:
     status: str = "pending"
     replicas: int = 1
     created_at: float = field(default_factory=time.time)
+
 
 @dataclass
 class BackupJob:

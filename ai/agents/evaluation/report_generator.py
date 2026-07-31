@@ -1,4 +1,5 @@
 """Report generator for evaluation results."""
+
 from __future__ import annotations
 
 import time

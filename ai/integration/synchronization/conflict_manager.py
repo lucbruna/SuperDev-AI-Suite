@@ -1,6 +1,7 @@
 """
 Conflict Manager - Sync conflict resolution
 """
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -36,7 +37,13 @@ class ConflictManager:
 
     def detect_conflict(self, record_id: str, source_data: dict[str, Any], target_data: dict[str, Any]) -> Conflict:
         conflict_id = hashlib.sha256(f"{record_id}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
-        conflict = Conflict(conflict_id=conflict_id, record_id=record_id, source_data=source_data, target_data=target_data, strategy=self.default_strategy)
+        conflict = Conflict(
+            conflict_id=conflict_id,
+            record_id=record_id,
+            source_data=source_data,
+            target_data=target_data,
+            strategy=self.default_strategy,
+        )
         self.conflicts[conflict_id] = conflict
         return conflict
 

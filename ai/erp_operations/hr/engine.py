@@ -1,4 +1,5 @@
 """HR engine."""
+
 from datetime import datetime
 
 from .models import Department, Employee, EmployeeStatus, LeaveRequest, LeaveStatus, LeaveType, PayrollRecord
@@ -41,8 +42,11 @@ class HREngine:
         return False
 
     def get_leave_balance(self, employee_id: str, leave_type: LeaveType) -> int:
-        approved = [r for r in self._leave_requests
-                    if r.employee_id == employee_id and r.leave_type == leave_type and r.status == LeaveStatus.APPROVED]
+        approved = [
+            r
+            for r in self._leave_requests
+            if r.employee_id == employee_id and r.leave_type == leave_type and r.status == LeaveStatus.APPROVED
+        ]
         total_taken = sum(r.days for r in approved)
         allowances = {LeaveType.ANNUAL: 20, LeaveType.SICK: 10, LeaveType.PERSONAL: 5}
         limit = allowances.get(leave_type, 0)

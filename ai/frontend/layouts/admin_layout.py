@@ -1,6 +1,7 @@
 """
 Admin Layout
 """
+
 from dataclasses import dataclass
 from typing import Any
 

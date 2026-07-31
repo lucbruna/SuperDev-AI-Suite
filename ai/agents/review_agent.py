@@ -28,7 +28,15 @@ class CodeReviewAgent:
         return result
 
     async def review_diff(self, diff: str, filename: str = "unknown") -> dict[str, Any]:
-        files = [{"filename": filename, "patch": diff, "status": "modified", "additions": len(diff.split("\n")), "deletions": 0}]
+        files = [
+            {
+                "filename": filename,
+                "patch": diff,
+                "status": "modified",
+                "additions": len(diff.split("\n")),
+                "deletions": 0,
+            }
+        ]
         return await self._engine.review_pr(files, diff)
 
     def get_config(self) -> list[dict[str, Any]]:

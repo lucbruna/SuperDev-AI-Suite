@@ -1,4 +1,5 @@
 """ERP Factory — Factory for creating ERP components."""
+
 from typing import Any
 
 from .erp_models import (
@@ -29,7 +30,9 @@ class ERPFactory:
     def create_order(self, customer_id: str, items: list | None = None, total: float = 0.0, **kwargs) -> Order:
         return Order(customer_id=customer_id, items=items or [], total=total, **kwargs)
 
-    def create_purchase_order(self, supplier_id: str, items: list | None = None, total: float = 0.0, **kwargs) -> PurchaseOrder:
+    def create_purchase_order(
+        self, supplier_id: str, items: list | None = None, total: float = 0.0, **kwargs
+    ) -> PurchaseOrder:
         return PurchaseOrder(supplier_id=supplier_id, items=items or [], total=total, **kwargs)
 
     def create_supplier(self, name: str, contact: str = "", **kwargs) -> Supplier:

@@ -1,6 +1,7 @@
 """
 Session Manager
 """
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
@@ -27,10 +28,9 @@ class SessionManager:
 
     def create(self, user_id: str, token: str, expires_in: int = 3600) -> SessionData:
         from datetime import timedelta
+
         self.session = SessionData(
-            user_id=user_id,
-            token=token,
-            expires_at=datetime.now() + timedelta(seconds=expires_in)
+            user_id=user_id, token=token, expires_at=datetime.now() + timedelta(seconds=expires_in)
         )
         return self.session
 

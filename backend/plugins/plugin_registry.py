@@ -48,7 +48,8 @@ class PluginRegistry:
         if search:
             search_lower = search.lower()
             plugins = [
-                p for p in plugins
+                p
+                for p in plugins
                 if search_lower in p.name.lower()
                 or search_lower in p.description.lower()
                 or search_lower in p.slug.lower()

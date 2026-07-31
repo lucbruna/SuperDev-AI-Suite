@@ -1,4 +1,5 @@
 """Accuracy evaluation."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -7,6 +8,7 @@ from typing import Any
 class AccuracyEvaluator:
     def __init__(self) -> None:
         self._evaluations: list[dict[str, Any]] = []
+
     def evaluate(self, predictions: list[str], expected: list[str]) -> dict[str, Any]:
         correct = sum(1 for p, e in zip(predictions, expected, strict=False) if p.strip().lower() == e.strip().lower())
         total = len(expected)
@@ -14,6 +16,7 @@ class AccuracyEvaluator:
         result = {"accuracy": accuracy, "correct": correct, "total": total}
         self._evaluations.append(result)
         return result
+
     def evaluate_contains(self, predictions: list[str], expected_keywords: list[list[str]]) -> dict[str, Any]:
         correct = 0
         for pred, keywords in zip(predictions, expected_keywords, strict=False):
@@ -22,14 +25,18 @@ class AccuracyEvaluator:
         total = len(expected_keywords)
         accuracy = (correct / total * 100) if total > 0 else 0
         return {"accuracy": accuracy, "correct": correct, "total": total}
+
     def get_history(self, limit: int = 20) -> list[dict[str, Any]]:
         return self._evaluations[-limit:]
+
     def average_accuracy(self) -> float:
         if not self._evaluations:
             return 0.0
         return sum(e["accuracy"] for e in self._evaluations) / len(self._evaluations)
+
     def count(self) -> int:
         return len(self._evaluations)
+
     def clear(self) -> int:
         n = len(self._evaluations)
         self._evaluations.clear()

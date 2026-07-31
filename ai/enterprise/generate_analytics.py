@@ -1,15 +1,20 @@
 """Analytics subsystem generator."""
+
 import os
 
-BASE = r'C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\enterprise\analytics'
+BASE = r"C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\enterprise\analytics"
+
 
 def w(path, content):
     full = os.path.join(BASE, path)
     os.makedirs(os.path.dirname(full), exist_ok=True)
-    with open(full, 'w', encoding='utf-8') as f:
+    with open(full, "w", encoding="utf-8") as f:
         f.write(content)
 
-w('business_analytics.py', '''"""Business analytics."""
+
+w(
+    "business_analytics.py",
+    '''"""Business analytics."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import time
@@ -41,9 +46,12 @@ class BusinessAnalytics:
         n = sum(len(v) for v in self._metrics.values())
         self._metrics.clear()
         return n
-''')
+''',
+)
 
-w('revenue.py', '''"""Revenue analytics."""
+w(
+    "revenue.py",
+    '''"""Revenue analytics."""
 from __future__ import annotations
 from typing import Any, Dict, List
 
@@ -77,9 +85,12 @@ class RevenueAnalytics:
         self._revenue.clear()
         self._breakdown.clear()
         return old
-''')
+''',
+)
 
-w('customers.py', '''"""Customer analytics."""
+w(
+    "customers.py",
+    '''"""Customer analytics."""
 from __future__ import annotations
 from typing import Any, Dict, List
 
@@ -126,9 +137,12 @@ class CustomerAnalytics:
             del self._customers[org_id]
             return True
         return False
-''')
+''',
+)
 
-w('retention.py', '''"""Retention analytics."""
+w(
+    "retention.py",
+    '''"""Retention analytics."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import time
@@ -163,9 +177,12 @@ class RetentionAnalytics:
         return len(self._churns)
     def active_count(self) -> int:
         return len(self._retentions)
-''')
+''',
+)
 
-w('usage_analysis.py', '''"""Usage analysis."""
+w(
+    "usage_analysis.py",
+    '''"""Usage analysis."""
 from __future__ import annotations
 from typing import Any, Dict, List
 
@@ -198,9 +215,12 @@ class UsageAnalysis:
         n = sum(len(v) for v in self._usage.values())
         self._usage.clear()
         return n
-''')
+''',
+)
 
-w('forecasting.py', '''"""Business forecasting."""
+w(
+    "forecasting.py",
+    '''"""Business forecasting."""
 from __future__ import annotations
 from typing import Any, Dict, List
 
@@ -238,9 +258,12 @@ class BusinessForecasting:
         n = sum(len(v) for v in self._data.values())
         self._data.clear()
         return n
-''')
+''',
+)
 
-w('__init__.py', '''"""Analytics subsystem."""
+w(
+    "__init__.py",
+    '''"""Analytics subsystem."""
 from .business_analytics import BusinessAnalytics
 from .revenue import RevenueAnalytics
 from .customers import CustomerAnalytics
@@ -252,6 +275,7 @@ __all__ = [
     "BusinessAnalytics", "RevenueAnalytics", "CustomerAnalytics",
     "RetentionAnalytics", "UsageAnalysis", "BusinessForecasting"
 ]
-''')
+''',
+)
 
 print("analytics/: 7 files created")

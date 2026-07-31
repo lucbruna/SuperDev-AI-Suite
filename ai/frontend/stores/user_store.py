@@ -1,6 +1,7 @@
 """
 User Store
 """
+
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -44,4 +45,9 @@ class UserStore:
         self.listeners.append(callback)
 
     def render(self) -> dict[str, Any]:
-        return {"name": self.state.name, "email": self.state.email, "role": self.state.role, "authenticated": self.state.is_authenticated}
+        return {
+            "name": self.state.name,
+            "email": self.state.email,
+            "role": self.state.role,
+            "authenticated": self.state.is_authenticated,
+        }

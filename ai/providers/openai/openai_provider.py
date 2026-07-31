@@ -32,6 +32,7 @@ class OpenAIProvider(BaseProvider):
         if self._aclient is None:
             try:
                 from openai import AsyncOpenAI
+
                 self._aclient = AsyncOpenAI(
                     api_key=self._get_api_key(),
                     base_url=self.config.base_url or None,
@@ -50,11 +51,41 @@ class OpenAIProvider(BaseProvider):
 
     async def list_models(self) -> list[ModelInfo]:
         supported = [
-            ModelInfo(id="gpt-4o", name="GPT-4o", provider="openai", capabilities=["chat", "vision"], context_window=128000, max_tokens=16384),
-            ModelInfo(id="gpt-4o-mini", name="GPT-4o Mini", provider="openai", capabilities=["chat", "vision"], context_window=128000, max_tokens=16384),
-            ModelInfo(id="gpt-4-turbo", name="GPT-4 Turbo", provider="openai", capabilities=["chat", "vision"], context_window=128000, max_tokens=4096),
-            ModelInfo(id="gpt-4", name="GPT-4", provider="openai", capabilities=["chat"], context_window=8192, max_tokens=4096),
-            ModelInfo(id="gpt-3.5-turbo", name="GPT-3.5 Turbo", provider="openai", capabilities=["chat"], context_window=16385, max_tokens=4096),
+            ModelInfo(
+                id="gpt-4o",
+                name="GPT-4o",
+                provider="openai",
+                capabilities=["chat", "vision"],
+                context_window=128000,
+                max_tokens=16384,
+            ),
+            ModelInfo(
+                id="gpt-4o-mini",
+                name="GPT-4o Mini",
+                provider="openai",
+                capabilities=["chat", "vision"],
+                context_window=128000,
+                max_tokens=16384,
+            ),
+            ModelInfo(
+                id="gpt-4-turbo",
+                name="GPT-4 Turbo",
+                provider="openai",
+                capabilities=["chat", "vision"],
+                context_window=128000,
+                max_tokens=4096,
+            ),
+            ModelInfo(
+                id="gpt-4", name="GPT-4", provider="openai", capabilities=["chat"], context_window=8192, max_tokens=4096
+            ),
+            ModelInfo(
+                id="gpt-3.5-turbo",
+                name="GPT-3.5 Turbo",
+                provider="openai",
+                capabilities=["chat"],
+                context_window=16385,
+                max_tokens=4096,
+            ),
         ]
         try:
             client = self._get_client()
@@ -85,7 +116,9 @@ class OpenAIProvider(BaseProvider):
             return ChatResponse(
                 id=resp.id,
                 model=resp.model,
-                choices=[Choice(index=choice.index, message=choice.message.model_dump(), finish_reason=choice.finish_reason)],
+                choices=[
+                    Choice(index=choice.index, message=choice.message.model_dump(), finish_reason=choice.finish_reason)
+                ],
                 usage=usage,
                 provider="openai",
             )

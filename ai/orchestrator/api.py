@@ -41,7 +41,9 @@ class OrchestratorAPI:
         strategy: str = "pipeline",
     ) -> dict[str, Any]:
         return await self.engine.create_orchestration(
-            project_id=project_id, name=name, strategy=strategy,
+            project_id=project_id,
+            name=name,
+            strategy=strategy,
         )
 
     async def get_session(self, session_id: str) -> dict[str, Any] | None:
@@ -51,10 +53,15 @@ class OrchestratorAPI:
         return session.model_dump(mode="json")
 
     async def list_sessions(
-        self, status: str | None = None, limit: int = 50, offset: int = 0,
+        self,
+        status: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
     ) -> list[dict[str, Any]]:
         sessions = await self.engine.state.list_sessions(
-            status=status, limit=limit, offset=offset,
+            status=status,
+            limit=limit,
+            offset=offset,
         )
         return [s.model_dump(mode="json") for s in sessions]
 
@@ -70,7 +77,9 @@ class OrchestratorAPI:
         tasks: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
         return await self.engine.run_pipeline(
-            session_id=session_id, tasks=tasks, strategy=strategy,
+            session_id=session_id,
+            tasks=tasks,
+            strategy=strategy,
         )
 
     async def run_with_prompt(
@@ -80,7 +89,9 @@ class OrchestratorAPI:
         strategy: str = "pipeline",
     ) -> dict[str, Any]:
         return await self.engine.orchestrate_with_prompt(
-            prompt=prompt, project_id=project_id, strategy=strategy,
+            prompt=prompt,
+            project_id=project_id,
+            strategy=strategy,
         )
 
     # === Agent Management ===
@@ -94,18 +105,22 @@ class OrchestratorAPI:
             return {"error": "Agent not found"}
         return {
             **status,
-            "health_report": self.health.get_report(agent_id).__dict__
-            if self.health.get_report(agent_id) else {},
+            "health_report": self.health.get_report(agent_id).__dict__ if self.health.get_report(agent_id) else {},
             "load": self.engine.router.get_agent_load(agent_id),
         }
 
     async def create_agent(
-        self, name: str, description: str = "",
-        model: str = "gpt-4", provider: str = "openai",
+        self,
+        name: str,
+        description: str = "",
+        model: str = "gpt-4",
+        provider: str = "openai",
     ) -> dict[str, Any]:
         config = AgentConfig(
-            name=name, description=description,
-            model=model, provider=provider,
+            name=name,
+            description=description,
+            model=model,
+            provider=provider,
         )
         agent_id = await self.engine.agent_manager.create_agent(config)
         self.health.register_agent(agent_id, name)

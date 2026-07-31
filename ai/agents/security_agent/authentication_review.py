@@ -49,8 +49,7 @@ class AuthenticationReview:
         if not self._findings:
             return "A"
         high_or_critical = sum(
-            1 for f in self._findings.values()
-            if f.get("severity", "").lower() in ("high", "critical")
+            1 for f in self._findings.values() if f.get("severity", "").lower() in ("high", "critical")
         )
         if high_or_critical > 3:
             return "F"

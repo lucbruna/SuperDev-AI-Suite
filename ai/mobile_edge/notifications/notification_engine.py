@@ -1,4 +1,5 @@
 """Notification Engine - Core notification system."""
+
 import hashlib
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -43,9 +44,18 @@ class NotificationEngine:
         self.handlers: dict[NotificationType, Callable] = {}
         self.rules: list[dict[str, Any]] = []
 
-    def send(self, title: str, message: str, type: NotificationType = NotificationType.PUSH, priority: NotificationPriority = NotificationPriority.NORMAL, **kwargs) -> Notification:
+    def send(
+        self,
+        title: str,
+        message: str,
+        type: NotificationType = NotificationType.PUSH,
+        priority: NotificationPriority = NotificationPriority.NORMAL,
+        **kwargs,
+    ) -> Notification:
         notif_id = hashlib.sha256(f"{title}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
-        notif = Notification(notification_id=notif_id, title=title, message=message, type=type, priority=priority, **kwargs)
+        notif = Notification(
+            notification_id=notif_id, title=title, message=message, type=type, priority=priority, **kwargs
+        )
         self.notifications.append(notif)
         handler = self.handlers.get(type)
         if handler:
@@ -75,7 +85,9 @@ class NotificationEngine:
             unread = [n for n in unread if n.target_user == user]
         return unread
 
-    def get_notifications(self, type: NotificationType = None, user: str = None, limit: int = 100) -> list[Notification]:
+    def get_notifications(
+        self, type: NotificationType = None, user: str = None, limit: int = 100
+    ) -> list[Notification]:
         notifs = self.notifications
         if type:
             notifs = [n for n in notifs if n.type == type]

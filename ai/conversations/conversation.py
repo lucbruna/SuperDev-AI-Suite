@@ -43,7 +43,9 @@ class ConversationManager:
     def get(self, conversation_id: str) -> Conversation | None:
         return self._conversations.get(conversation_id)
 
-    def add_message(self, conversation_id: str, role: str, content: str, metadata: dict | None = None) -> Message | None:
+    def add_message(
+        self, conversation_id: str, role: str, content: str, metadata: dict | None = None
+    ) -> Message | None:
         conv = self._conversations.get(conversation_id)
         if not conv:
             return None

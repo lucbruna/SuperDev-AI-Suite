@@ -1,6 +1,7 @@
 """
 Availability Monitor - Uptime tracking
 """
+
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Any
@@ -20,8 +21,15 @@ class AvailabilityMonitor:
         self.records: dict[str, list[AvailabilityRecord]] = {}
         self.sla_targets: dict[str, float] = {}
 
-    def record(self, integration_id: str, is_available: bool, response_time_ms: float = 0.0, status_code: int = 200) -> AvailabilityRecord:
-        rec = AvailabilityRecord(integration_id=integration_id, is_available=is_available, response_time_ms=response_time_ms, status_code=status_code)
+    def record(
+        self, integration_id: str, is_available: bool, response_time_ms: float = 0.0, status_code: int = 200
+    ) -> AvailabilityRecord:
+        rec = AvailabilityRecord(
+            integration_id=integration_id,
+            is_available=is_available,
+            response_time_ms=response_time_ms,
+            status_code=status_code,
+        )
         self.records.setdefault(integration_id, []).append(rec)
         return rec
 

@@ -2,24 +2,32 @@ from __future__ import annotations
 
 from typing import Any, Literal, TypeAlias, TypedDict
 
-ProviderType: TypeAlias = Literal[
-    "openai", "anthropic", "gemini", "ollama", "openrouter"
-]
-ModelCapability: TypeAlias = Literal[
-    "chat", "stream", "embeddings", "vision", "tools", "code_execution"
-]
+ProviderType: TypeAlias = Literal["openai", "anthropic", "gemini", "ollama", "openrouter"]
+ModelCapability: TypeAlias = Literal["chat", "stream", "embeddings", "vision", "tools", "code_execution"]
 AgentRole: TypeAlias = Literal[
-    "coder", "reviewer", "planner", "researcher",
-    "deployer", "tester", "security", "documentation",
+    "coder",
+    "reviewer",
+    "planner",
+    "researcher",
+    "deployer",
+    "tester",
+    "security",
+    "documentation",
 ]
-AgentStatus: TypeAlias = Literal[
-    "idle", "running", "paused", "completed", "failed", "cancelled"
-]
+AgentStatus: TypeAlias = Literal["idle", "running", "paused", "completed", "failed", "cancelled"]
 EventType: TypeAlias = Literal[
-    "model_called", "stream_started", "stream_chunk", "stream_completed",
-    "agent_started", "agent_completed", "agent_failed",
-    "tool_called", "tool_completed", "tool_failed",
-    "error_occurred", "warning_issued",
+    "model_called",
+    "stream_started",
+    "stream_chunk",
+    "stream_completed",
+    "agent_started",
+    "agent_completed",
+    "agent_failed",
+    "tool_called",
+    "tool_completed",
+    "tool_failed",
+    "error_occurred",
+    "warning_issued",
 ]
 PermissionLevel: TypeAlias = Literal["admin", "user", "viewer", "none"]
 

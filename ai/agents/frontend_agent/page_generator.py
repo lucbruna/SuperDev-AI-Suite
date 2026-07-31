@@ -43,7 +43,7 @@ class PageGenerator:
             f"import {comp} from '../components/{comp}';\n\n"
             f"const {comp}Page: React.FC = () => {{\n"
             f"  return (\n"
-            f"    <div className=\"page\">\n"
+            f'    <div className="page">\n'
             f"      <{comp} />\n"
             f"    </div>\n"
             f"  );\n"

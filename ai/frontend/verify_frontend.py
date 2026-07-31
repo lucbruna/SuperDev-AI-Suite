@@ -1,12 +1,14 @@
 """Comprehensive tests for Volume 25 — Frontend Experience & User Interface Engine."""
+
 import os
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 
 passed = 0
 failed = 0
 total = 0
+
 
 def test(name, condition):
     global passed, failed, total
@@ -17,6 +19,7 @@ def test(name, condition):
     else:
         failed += 1
         print("  FAIL: " + name)
+
 
 # === Core App ===
 print("\n=== Core App ===")

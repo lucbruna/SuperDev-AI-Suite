@@ -1,4 +1,5 @@
 """Strategy engine for selecting planning approaches."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -19,8 +20,7 @@ class StrategyEngine:
     def __init__(self) -> None:
         self._custom_strategies: dict[str, dict[str, Any]] = {}
 
-    def select_strategy(self, goal: str, tasks: list[dict[str, Any]],
-                        context: dict[str, Any] | None = None) -> str:
+    def select_strategy(self, goal: str, tasks: list[dict[str, Any]], context: dict[str, Any] | None = None) -> str:
         if not tasks:
             return "sequential"
         has_deps = any(t.get("dependencies") for t in tasks)

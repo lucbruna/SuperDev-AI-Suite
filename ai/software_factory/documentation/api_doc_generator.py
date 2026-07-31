@@ -1,4 +1,5 @@
 """Generator for API documentation."""
+
 from typing import Any
 
 from .models import ApiEndpoint, ApiParameter

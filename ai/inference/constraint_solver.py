@@ -49,7 +49,4 @@ class ConstraintSolver:
         return True
 
     def _all_satisfied(self, solution: dict[str, Any]) -> bool:
-        return all(
-            self._check(c, solution.get(c.variable, c.bound))
-            for c in self._constraints
-        )
+        return all(self._check(c, solution.get(c.variable, c.bound)) for c in self._constraints)

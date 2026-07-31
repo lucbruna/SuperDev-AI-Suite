@@ -1,4 +1,5 @@
 """Agent creation subsystem - templates, capabilities, prompts."""
+
 from __future__ import annotations
 
 from .agent_creator import AgentCreator

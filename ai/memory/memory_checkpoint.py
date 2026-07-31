@@ -37,11 +37,7 @@ class MemoryCheckpoint:
         return None
 
     def load_latest(self, prefix: str = "") -> dict[str, Any] | None:
-        candidates = [
-            (key, cp)
-            for key, cp in self._checkpoints.items()
-            if key.startswith(prefix)
-        ]
+        candidates = [(key, cp) for key, cp in self._checkpoints.items() if key.startswith(prefix)]
         if not candidates:
             return None
         candidates.sort(key=lambda x: x[1]["timestamp"], reverse=True)

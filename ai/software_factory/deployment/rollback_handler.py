@@ -1,4 +1,5 @@
 """Handler for deployment rollbacks."""
+
 from datetime import datetime
 from typing import Any
 
@@ -12,8 +13,7 @@ class RollbackHandler:
         self._plans: dict[str, RollbackPlan] = {}
         self._rollback_history: list[dict[str, Any]] = []
 
-    def create_plan(self, deployment_id: str, steps: list[str],
-                    triggers: list[str] = None) -> RollbackPlan:
+    def create_plan(self, deployment_id: str, steps: list[str], triggers: list[str] = None) -> RollbackPlan:
         plan = RollbackPlan(
             deployment_id=deployment_id,
             steps=steps,
@@ -27,11 +27,13 @@ class RollbackHandler:
             plan = self._plans.get(deployment.deployment_id)
 
         deployment.status = DeploymentStatus.ROLLED_BACK
-        self._rollback_history.append({
-            "deployment_id": deployment.deployment_id,
-            "plan_id": plan.plan_id if plan else None,
-            "timestamp": datetime.utcnow().isoformat(),
-        })
+        self._rollback_history.append(
+            {
+                "deployment_id": deployment.deployment_id,
+                "plan_id": plan.plan_id if plan else None,
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+        )
         return True
 
     def get_plan(self, plan_id: str) -> RollbackPlan | None:

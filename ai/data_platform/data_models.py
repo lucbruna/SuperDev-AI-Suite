@@ -1,4 +1,5 @@
 """Data Platform Models — Core data models for the autonomous data platform."""
+
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime

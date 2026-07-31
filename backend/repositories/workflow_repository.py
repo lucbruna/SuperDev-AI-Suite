@@ -111,11 +111,7 @@ class WorkflowStepRepository(BaseRepository[WorkflowStep]):
 
     async def get_by_run(self, run_id: str) -> list[WorkflowStep]:
         """Get all steps for a specific workflow run, ordered by creation."""
-        query = (
-            select(self.model)
-            .where(self.model.run_id == run_id)
-            .order_by(self.model.created_at)
-        )
+        query = select(self.model).where(self.model.run_id == run_id).order_by(self.model.created_at)
         result = await self.db.execute(query)
         return list(result.scalars().all())
 

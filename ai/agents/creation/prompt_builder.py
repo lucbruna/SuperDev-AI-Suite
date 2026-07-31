@@ -1,4 +1,5 @@
 """Prompt builder for agent system and task prompts."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -53,7 +54,7 @@ class PromptBuilder:
         for section in self._sections:
             parts.append(f"# {section['title']}\n{section['content']}")
         if self._constraints:
-            numbered = "\n".join(f"{i+1}. {c}" for i, c in enumerate(self._constraints))
+            numbered = "\n".join(f"{i + 1}. {c}" for i, c in enumerate(self._constraints))
             parts.append(f"# Constraints\n{numbered}")
         if self._examples:
             ex_parts: list[str] = ["# Examples"]

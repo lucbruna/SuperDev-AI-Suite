@@ -30,12 +30,14 @@ class SLAMonitor:
         for slo in self._slos.values():
             ok = slo["violations"] == 0
             slo["ok"] = ok
-            results.append({
-                "name": slo["name"],
-                "target": slo["target"],
-                "violations": slo["violations"],
-                "ok": ok,
-            })
+            results.append(
+                {
+                    "name": slo["name"],
+                    "target": slo["target"],
+                    "violations": slo["violations"],
+                    "ok": ok,
+                }
+            )
         return results
 
     def to_dict(self) -> dict[str, Any]:

@@ -1,4 +1,5 @@
 """Supplier engine."""
+
 from .models import Supplier, SupplierContract, SupplierPerformance, SupplierStatus
 
 

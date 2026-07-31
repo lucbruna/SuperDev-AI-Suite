@@ -1,4 +1,5 @@
 """Analytics engine implementation."""
+
 import uuid
 from datetime import datetime
 from typing import Any
@@ -55,25 +56,29 @@ class AnalyticsEngine(AnalyticsEngineInterface):
         insights = []
         if len(values) > 1:
             trend = "increasing" if values[-1] > values[0] else "decreasing"
-            insights.append(Insight(
-                insight_id=str(uuid.uuid4()),
-                insight_type=InsightType.TREND,
-                title=f"Data trend: {trend}",
-                description=f"Values are {trend} over the period (avg={avg:.2f})",
-                confidence=min(1.0, len(values) / 10),
-                data_points=data[:5],
-            ))
+            insights.append(
+                Insight(
+                    insight_id=str(uuid.uuid4()),
+                    insight_type=InsightType.TREND,
+                    title=f"Data trend: {trend}",
+                    description=f"Values are {trend} over the period (avg={avg:.2f})",
+                    confidence=min(1.0, len(values) / 10),
+                    data_points=data[:5],
+                )
+            )
         std = (sum((v - avg) ** 2 for v in values) / len(values)) ** 0.5
         for d in data:
             if abs(d.value - avg) > 2 * std:
-                insights.append(Insight(
-                    insight_id=str(uuid.uuid4()),
-                    insight_type=InsightType.ANOMALY,
-                    title=f"Anomaly detected: {d.value}",
-                    description=f"Value {d.value} deviates from mean {avg:.2f} by >2σ",
-                    confidence=0.85,
-                    data_points=[d],
-                ))
+                insights.append(
+                    Insight(
+                        insight_id=str(uuid.uuid4()),
+                        insight_type=InsightType.ANOMALY,
+                        title=f"Anomaly detected: {d.value}",
+                        description=f"Value {d.value} deviates from mean {avg:.2f} by >2σ",
+                        confidence=0.85,
+                        data_points=[d],
+                    )
+                )
         return insights
 
     def _compute_summary(self, data: list[DataPoint]) -> dict[str, Any]:

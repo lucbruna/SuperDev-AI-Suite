@@ -34,8 +34,20 @@ _SAFE_WATCH_OPS: dict[type, Any] = {
 # change enabled calls need to be blocked here.
 _BLOCKED_WATCH_NAMES = frozenset(
     {
-        "__import__", "eval", "exec", "compile", "open", "getattr", "setattr",
-        "delattr", "globals", "locals", "vars", "dir", "type", "super",
+        "__import__",
+        "eval",
+        "exec",
+        "compile",
+        "open",
+        "getattr",
+        "setattr",
+        "delattr",
+        "globals",
+        "locals",
+        "vars",
+        "dir",
+        "type",
+        "super",
         "breakpoint",
     }
 )

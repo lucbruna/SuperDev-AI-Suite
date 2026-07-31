@@ -25,6 +25,7 @@ async def websocket_endpoint(
 
     try:
         from backend.auth.jwt import get_jwt_manager
+
         mgr = get_jwt_manager()
         payload = await mgr.verify_token(token)
         if payload is None:

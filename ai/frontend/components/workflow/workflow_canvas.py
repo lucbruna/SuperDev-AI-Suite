@@ -1,6 +1,7 @@
 """
 Workflow Canvas Component
 """
+
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
@@ -84,7 +85,9 @@ class WorkflowCanvas:
 
     def render(self) -> dict[str, Any]:
         return {
-            "nodes": [{"id": n.id, "type": n.node_type.value, "label": n.label, "status": n.status.value} for n in self.nodes],
+            "nodes": [
+                {"id": n.id, "type": n.node_type.value, "label": n.label, "status": n.status.value} for n in self.nodes
+            ],
             "edges": [{"source": e.source, "target": e.target} for e in self.edges],
             "zoom": self.zoom,
             "selectedNode": self.selected_node_id,

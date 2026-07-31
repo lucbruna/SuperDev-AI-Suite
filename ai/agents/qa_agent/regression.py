@@ -38,6 +38,7 @@ class Regression:
         test_names: list[str] | None = None,
     ) -> dict[str, Any]:
         import random
+
         tests_to_run = [t for n, t in self._tests.items() if test_names is None or n in test_names]
         results = []
         passed = 0
@@ -45,10 +46,12 @@ class Regression:
             success = random.random() > 0.15
             if success:
                 passed += 1
-            results.append({
-                "name": t["name"],
-                "passed": success,
-            })
+            results.append(
+                {
+                    "name": t["name"],
+                    "passed": success,
+                }
+            )
         return {
             "total": len(tests_to_run),
             "passed": passed,

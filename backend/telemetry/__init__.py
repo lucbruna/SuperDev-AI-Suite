@@ -18,6 +18,7 @@ def configure_tracing(settings=None):
 
         if not settings:
             from backend.config import config
+
             settings = config.telemetry
         if not settings.enabled or not settings.traces_enabled:
             logger.info("Tracing is disabled")
@@ -25,7 +26,7 @@ def configure_tracing(settings=None):
 
         resource = Resource.create({"service.name": settings.service_name})
         provider = TracerProvider(resource=resource)
-        exporter = OTLPSpanExporter(endpoint=settings.exporter_endpoint, headers=getattr(settings, 'headers', None))
+        exporter = OTLPSpanExporter(endpoint=settings.exporter_endpoint, headers=getattr(settings, "headers", None))
         processor = BatchSpanProcessor(exporter)
         provider.add_span_processor(processor)
         trace.set_tracer_provider(provider)
@@ -45,6 +46,7 @@ def configure_metrics(settings=None):
 
         if not settings:
             from backend.config import config
+
             settings = config.telemetry
         if not settings.enabled or not settings.metrics_enabled:
             logger.info("Metrics are disabled")
@@ -52,7 +54,7 @@ def configure_metrics(settings=None):
 
         resource = Resource.create({"service.name": settings.service_name})
         reader = PeriodicExportingMetricReader(
-            OTLPMetricExporter(endpoint=settings.exporter_endpoint, headers=getattr(settings, 'headers', None))
+            OTLPMetricExporter(endpoint=settings.exporter_endpoint, headers=getattr(settings, "headers", None))
         )
         provider = MeterProvider(resource=resource, metric_readers=[reader])
         metrics.set_meter_provider(provider)
@@ -65,6 +67,7 @@ def configure_metrics(settings=None):
 def instrument_fastapi(app: Any) -> None:
     try:
         from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+
         FastAPIInstrumentor.instrument_app(app)
     except ImportError:
         pass

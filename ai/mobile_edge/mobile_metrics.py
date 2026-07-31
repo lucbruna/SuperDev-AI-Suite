@@ -1,4 +1,5 @@
 """Mobile Metrics - Performance and usage metrics for mobile/edge."""
+
 import statistics
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -30,7 +31,9 @@ class MobileMetrics:
         self.counters: dict[str, int] = {}
         self.gauges: dict[str, float] = {}
 
-    def record(self, metric_name: str, value: float, unit: str = "", device_id: str = "", tags: dict[str, str] = None) -> MetricPoint:
+    def record(
+        self, metric_name: str, value: float, unit: str = "", device_id: str = "", tags: dict[str, str] = None
+    ) -> MetricPoint:
         point = MetricPoint(metric_name=metric_name, value=value, unit=unit, device_id=device_id, tags=tags or {})
         self.metrics.setdefault(metric_name, []).append(point)
         return point

@@ -43,8 +43,7 @@ class WebSocketGenerator:
         if route is None:
             return f"# Route '{path}' not found"
         events_code = "\n".join(
-            f"    async def on_{evt}(self, **kwargs: Any) -> None:\n        ..."
-            for evt in route["events"]
+            f"    async def on_{evt}(self, **kwargs: Any) -> None:\n        ..." for evt in route["events"]
         )
         handler_name = route["handler"]
         return (

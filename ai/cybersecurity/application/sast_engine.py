@@ -1,6 +1,7 @@
 """
 Static Application Security Testing
 """
+
 from dataclasses import dataclass
 from enum import Enum
 
@@ -58,7 +59,14 @@ class SASTEngine:
                 continue
             for i, line in enumerate(lines, 1):
                 if rule.pattern.lower() in line.lower():
-                    finding = SASTFinding(rule_id=rule.rule_id, file_path=file_path, line_number=i, code_snippet=line.strip(), severity=rule.severity, message=f"Detected: {rule.name}")
+                    finding = SASTFinding(
+                        rule_id=rule.rule_id,
+                        file_path=file_path,
+                        line_number=i,
+                        code_snippet=line.strip(),
+                        severity=rule.severity,
+                        message=f"Detected: {rule.name}",
+                    )
                     findings.append(finding)
         self.findings.extend(findings)
         return findings

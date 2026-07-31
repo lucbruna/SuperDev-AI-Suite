@@ -1,4 +1,5 @@
 """Designer for creating and modifying architectures."""
+
 from typing import Any
 
 from .models import (
@@ -16,8 +17,9 @@ class ArchitectureDesigner:
     def __init__(self):
         self._templates: dict[str, dict[str, Any]] = {}
 
-    def create_component(self, name: str, component_type: ComponentType,
-                         technology: str = "", **kwargs) -> ArchitectureComponent:
+    def create_component(
+        self, name: str, component_type: ComponentType, technology: str = "", **kwargs
+    ) -> ArchitectureComponent:
         return ArchitectureComponent(
             name=name,
             component_type=component_type,
@@ -25,9 +27,9 @@ class ArchitectureDesigner:
             **kwargs,
         )
 
-    def create_connector(self, source_id: str, target_id: str,
-                         connector_type: ConnectorType = ConnectorType.SYNCHRONOUS,
-                         **kwargs) -> Connector:
+    def create_connector(
+        self, source_id: str, target_id: str, connector_type: ConnectorType = ConnectorType.SYNCHRONOUS, **kwargs
+    ) -> Connector:
         return Connector(
             source_id=source_id,
             target_id=target_id,
@@ -45,7 +47,10 @@ class ArchitectureDesigner:
             },
             PatternType.EVENT_DRIVEN: {
                 "components": ["event_producer", "event_broker", "event_consumer"],
-                "connectors": [("event_producer", "event_broker", "async"), ("event_broker", "event_consumer", "async")],
+                "connectors": [
+                    ("event_producer", "event_broker", "async"),
+                    ("event_broker", "event_consumer", "async"),
+                ],
                 "trade_offs": {"loose_coupling": "high", "debugging": "hard", "throughput": "high"},
             },
             PatternType.LAYERED: {

@@ -1,4 +1,5 @@
 """Agent memory subsystem - short-term, long-term, vector, episodic, semantic."""
+
 from __future__ import annotations
 
 from .episodic import EpisodicMemory

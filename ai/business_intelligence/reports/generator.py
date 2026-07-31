@@ -1,4 +1,5 @@
 """Report generator."""
+
 import uuid
 from datetime import datetime
 from typing import Any
@@ -27,7 +28,9 @@ class ReportGenerator:
     def list_templates(self) -> list[ReportTemplate]:
         return list(self._templates.values())
 
-    def generate_report(self, template_id: str, data: dict[str, Any], format: ReportFormat = ReportFormat.HTML) -> GeneratedReport:
+    def generate_report(
+        self, template_id: str, data: dict[str, Any], format: ReportFormat = ReportFormat.HTML
+    ) -> GeneratedReport:
         template = self._templates.get(template_id)
         if not template:
             return GeneratedReport(

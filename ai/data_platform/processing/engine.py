@@ -1,4 +1,5 @@
 """Processing engine."""
+
 import uuid
 from datetime import datetime
 from typing import Any
@@ -98,7 +99,9 @@ class ProcessingEngine:
                 result = deduped
         return result
 
-    def aggregate_records(self, records: list[dict[str, Any]], group_by: str, agg_field: str, agg_func: str = "sum") -> list[dict[str, Any]]:
+    def aggregate_records(
+        self, records: list[dict[str, Any]], group_by: str, agg_field: str, agg_func: str = "sum"
+    ) -> list[dict[str, Any]]:
         groups: dict[str, list[dict[str, Any]]] = {}
         for r in records:
             key = str(r.get(group_by, ""))

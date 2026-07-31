@@ -127,6 +127,7 @@ class OllamaProvider(BaseProvider):
                     continue
 
                 import json
+
                 data = json.loads(line)
                 message = data.get("message", {})
 

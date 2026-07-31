@@ -75,18 +75,11 @@ class AIRegistry:
 
     def list_models(self) -> list[dict[str, Any]]:
         """List all registered models with their configs."""
-        return [
-            {"name": name, **config}
-            for name, config in self._models.items()
-        ]
+        return [{"name": name, **config} for name, config in self._models.items()]
 
     def get_models_by_provider(self, provider: str) -> list[dict[str, Any]]:
         """Get all models for a specific provider."""
-        return [
-            {"name": name, **config}
-            for name, config in self._models.items()
-            if config.get("provider") == provider
-        ]
+        return [{"name": name, **config} for name, config in self._models.items() if config.get("provider") == provider]
 
     def health(self) -> dict[str, Any]:
         """Get registry health status."""

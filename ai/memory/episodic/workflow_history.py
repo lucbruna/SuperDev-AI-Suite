@@ -59,7 +59,9 @@ class WorkflowHistory:
     def count(self) -> int:
         return len(self._records)
 
-    def record(self, workflow_id: str, name: str, status: str, steps: int, details: dict[str, Any] | None = None) -> WorkflowRecord:
+    def record(
+        self, workflow_id: str, name: str, status: str, steps: int, details: dict[str, Any] | None = None
+    ) -> WorkflowRecord:
         rec = WorkflowRecord(workflow_id, name, status, steps, details)
         self._records.append(rec)
         return rec

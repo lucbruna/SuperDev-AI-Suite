@@ -1,4 +1,5 @@
 """Tool composition for multi-tool workflows."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -10,8 +11,7 @@ class ToolComposer:
     def __init__(self) -> None:
         self._pipelines: list[dict[str, Any]] = []
 
-    def compose(self, tool_ids: list[str], task: dict[str, Any],
-                registry: Any) -> dict[str, Any]:
+    def compose(self, tool_ids: list[str], task: dict[str, Any], registry: Any) -> dict[str, Any]:
         available: list[dict[str, Any]] = []
         missing: list[str] = []
         for tid in tool_ids:

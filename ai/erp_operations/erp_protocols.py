@@ -1,4 +1,5 @@
 """ERP Protocols — Protocol definitions for ERP operations."""
+
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any

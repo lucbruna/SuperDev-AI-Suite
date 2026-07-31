@@ -93,6 +93,7 @@ async def _execute_code(code: str, language: str = "python") -> dict:
 
 async def _read_file(path: str) -> str:
     from pathlib import Path
+
     file_path = Path(path)
     if not file_path.exists():
         raise FileNotFoundError(f"File not found: {path}")
@@ -101,6 +102,7 @@ async def _read_file(path: str) -> str:
 
 async def _write_file(path: str, content: str) -> dict:
     from pathlib import Path
+
     file_path = Path(path)
     file_path.parent.mkdir(parents=True, exist_ok=True)
     file_path.write_text(content, encoding="utf-8")
@@ -109,16 +111,19 @@ async def _write_file(path: str, content: str) -> dict:
 
 async def _list_files(path: str = ".") -> list[dict]:
     from pathlib import Path
+
     dir_path = Path(path)
     if not dir_path.exists():
         return []
     files = []
     for item in sorted(dir_path.iterdir()):
-        files.append({
-            "name": item.name,
-            "is_dir": item.is_dir(),
-            "size": item.stat().st_size if item.is_file() else 0,
-        })
+        files.append(
+            {
+                "name": item.name,
+                "is_dir": item.is_dir(),
+                "size": item.stat().st_size if item.is_file() else 0,
+            }
+        )
     return files
 
 
@@ -136,11 +141,13 @@ async def _search_code(pattern: str, path: str = ".") -> list[dict]:
                 content = file.read_text(encoding="utf-8")
                 for i, line in enumerate(content.splitlines(), 1):
                     if regex.search(line):
-                        results.append({
-                            "file": str(file),
-                            "line": i,
-                            "content": line.strip(),
-                        })
+                        results.append(
+                            {
+                                "file": str(file),
+                                "line": i,
+                                "content": line.strip(),
+                            }
+                        )
             except Exception:
                 continue
     return results

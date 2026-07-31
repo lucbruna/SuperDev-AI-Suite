@@ -1,15 +1,20 @@
 """Usage subsystem generator."""
+
 import os
 
-BASE = r'C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\enterprise\usage'
+BASE = r"C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\enterprise\usage"
+
 
 def w(path, content):
     full = os.path.join(BASE, path)
     os.makedirs(os.path.dirname(full), exist_ok=True)
-    with open(full, 'w', encoding='utf-8') as f:
+    with open(full, "w", encoding="utf-8") as f:
         f.write(content)
 
-w('usage_engine.py', '''"""Usage engine."""
+
+w(
+    "usage_engine.py",
+    '''"""Usage engine."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time
@@ -42,9 +47,12 @@ class UsageEngine:
         return len(self._records)
     def is_running(self) -> bool:
         return self._started
-''')
+''',
+)
 
-w('tracker.py', '''"""Usage tracker."""
+w(
+    "tracker.py",
+    '''"""Usage tracker."""
 from __future__ import annotations
 from typing import Any, Dict
 import time
@@ -71,9 +79,12 @@ class UsageTracker:
     def top_users(self, metric: str, limit: int = 10) -> list:
         usage = [(org, data.get(metric, 0)) for org, data in self._tracking.items()]
         return sorted(usage, key=lambda x: x[1], reverse=True)[:limit]
-''')
+''',
+)
 
-w('counter.py', '''"""Usage counter."""
+w(
+    "counter.py",
+    '''"""Usage counter."""
 from __future__ import annotations
 from typing import Any, Dict
 
@@ -100,9 +111,12 @@ class UsageCounter:
         return old
     def list_counters(self, org_id: str) -> list:
         return list(self._counters.get(org_id, {}).keys())
-''')
+''',
+)
 
-w('analytics.py', '''"""Usage analytics."""
+w(
+    "analytics.py",
+    '''"""Usage analytics."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import statistics
@@ -135,9 +149,12 @@ class UsageAnalytics:
         return list(self._data.get(org_id, {}).get(metric, []))
     def compare_orgs(self, metric: str) -> Dict[str, float]:
         return {org: sum(data.get(metric, [0])) for org, data in self._data.items()}
-''')
+''',
+)
 
-w('quota.py', '''"""Usage quota."""
+w(
+    "quota.py",
+    '''"""Usage quota."""
 from __future__ import annotations
 from typing import Any, Dict
 
@@ -174,9 +191,12 @@ class UsageQuota:
             self._usage.get(org_id, {}).pop(metric, None)
             return old
         return sum(self._usage.pop(org_id, {}).values())
-''')
+''',
+)
 
-w('forecasting.py', '''"""Usage forecasting."""
+w(
+    "forecasting.py",
+    '''"""Usage forecasting."""
 from __future__ import annotations
 from typing import Any, Dict, List
 
@@ -204,9 +224,12 @@ class UsageForecasting:
         return list(self._history.get(org_id, {}).keys())
     def get_history(self, org_id: str, metric: str) -> List[float]:
         return list(self._history.get(org_id, {}).get(metric, []))
-''')
+''',
+)
 
-w('__init__.py', '''"""Usage subsystem."""
+w(
+    "__init__.py",
+    '''"""Usage subsystem."""
 from .usage_engine import UsageEngine
 from .tracker import UsageTracker
 from .counter import UsageCounter
@@ -218,6 +241,7 @@ __all__ = [
     "UsageEngine", "UsageTracker", "UsageCounter",
     "UsageAnalytics", "UsageQuota", "UsageForecasting"
 ]
-''')
+''',
+)
 
 print("usage/: 7 files created")

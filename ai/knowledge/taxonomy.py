@@ -55,9 +55,7 @@ class Taxonomy:
     def nodes(self) -> dict[str, TaxonomyNode]:
         return dict(self._nodes)
 
-    def add_node(
-        self, name: str, parent: str | None = None, data: dict[str, Any] | None = None
-    ) -> TaxonomyNode:
+    def add_node(self, name: str, parent: str | None = None, data: dict[str, Any] | None = None) -> TaxonomyNode:
         node = TaxonomyNode(name, parent=parent, data=data)
         self._nodes[name] = node
         if parent and parent in self._nodes:

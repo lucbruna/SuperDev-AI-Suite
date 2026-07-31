@@ -21,11 +21,13 @@ class QualityAnalyzer:
     def analyze_code(self, code_snippet: str) -> list[dict[str, Any]]:
         results = []
         for check, suggestion in self.QUALITY_CHECKS:
-            results.append({
-                "check": check,
-                "suggestion": suggestion,
-                "passed": True,
-            })
+            results.append(
+                {
+                    "check": check,
+                    "suggestion": suggestion,
+                    "passed": True,
+                }
+            )
         return results
 
     def add_metric(self, name: str, description: str, target: float) -> str:

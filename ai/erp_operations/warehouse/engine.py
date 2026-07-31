@@ -1,4 +1,5 @@
 """Warehouse engine."""
+
 from .models import Bin, BinStatus, PickTask, PutAwayTask, WarehouseZoneModel
 
 

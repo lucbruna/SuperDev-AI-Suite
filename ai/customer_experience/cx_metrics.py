@@ -1,4 +1,5 @@
 """CX Metrics — Performance metrics for CX operations."""
+
 import statistics
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -28,7 +29,9 @@ class CXMetrics:
     def __init__(self):
         self.metrics: dict[str, list[CXMetricPoint]] = {}
 
-    def record(self, name: str, value: float, unit: str = "", project_id: str = "", tags: dict[str, str] | None = None) -> CXMetricPoint:
+    def record(
+        self, name: str, value: float, unit: str = "", project_id: str = "", tags: dict[str, str] | None = None
+    ) -> CXMetricPoint:
         point = CXMetricPoint(name=name, value=value, unit=unit, project_id=project_id, tags=tags or {})
         self.metrics.setdefault(name, []).append(point)
         return point

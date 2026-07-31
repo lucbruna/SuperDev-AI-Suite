@@ -96,11 +96,13 @@ def _get_available_providers() -> list[dict[str, Any]]:
     for name, env_map in PROVIDER_ENV_MAP.items():
         api_key_var = env_map.get("api_key", "")
         key = os.getenv(api_key_var, "")
-        available.append({
-            "name": name,
-            "api_key_configured": bool(key),
-            "env_var": api_key_var,
-        })
+        available.append(
+            {
+                "name": name,
+                "api_key_configured": bool(key),
+                "env_var": api_key_var,
+            }
+        )
     return available
 
 
@@ -147,10 +149,12 @@ async def list_providers():
     available = []
 
     for prov in _get_available_providers():
-        available.append({
-            "name": prov["name"],
-            "api_key_configured": prov["api_key_configured"],
-        })
+        available.append(
+            {
+                "name": prov["name"],
+                "api_key_configured": prov["api_key_configured"],
+            }
+        )
 
     return {"success": True, "data": {"providers": available, "count": len(available)}}
 
@@ -199,7 +203,9 @@ async def test_provider(provider_name: str):
     """Test if a provider is reachable with a health check."""
     instance = _create_provider_instance(provider_name)
     if not instance:
-        raise HTTPException(status_code=400, detail=f"Provider '{provider_name}' not configured or failed to initialize")
+        raise HTTPException(
+            status_code=400, detail=f"Provider '{provider_name}' not configured or failed to initialize"
+        )
 
     try:
         health = await instance.health()
@@ -262,7 +268,9 @@ async def chat_completion(request: ChatRequest):
     provider_name, model = _resolve_provider(request.provider, request.model)
 
     if not provider_name:
-        raise HTTPException(status_code=400, detail="No LLM provider configured. Set API keys in environment variables.")
+        raise HTTPException(
+            status_code=400, detail="No LLM provider configured. Set API keys in environment variables."
+        )
 
     instance = _create_provider_instance(provider_name, model)
     if not instance:
@@ -313,7 +321,9 @@ async def chat_stream(request: ChatRequest):
     provider_name, model = _resolve_provider(request.provider, request.model)
 
     if not provider_name:
-        raise HTTPException(status_code=400, detail="No LLM provider configured. Set API keys in environment variables.")
+        raise HTTPException(
+            status_code=400, detail="No LLM provider configured. Set API keys in environment variables."
+        )
 
     instance = _create_provider_instance(provider_name, model)
     if not instance:
@@ -346,11 +356,13 @@ async def chat_stream(request: ChatRequest):
                 else:
                     delta_content = chunk.get("content", "")
 
-                data = json.dumps({
-                    "content": chunk.get("content", ""),
-                    "finish_reason": chunk.get("finish_reason"),
-                    "delta": {"content": delta_content},
-                })
+                data = json.dumps(
+                    {
+                        "content": chunk.get("content", ""),
+                        "finish_reason": chunk.get("finish_reason"),
+                        "delta": {"content": delta_content},
+                    }
+                )
                 yield f"data: {data}\n\n"
 
                 if chunk.get("finish_reason") in ("stop", "length", "error"):

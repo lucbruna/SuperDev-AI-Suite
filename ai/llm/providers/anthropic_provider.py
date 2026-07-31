@@ -53,12 +53,17 @@ class AnthropicProvider(BaseLLMProvider):
         if self._client is None:
             try:
                 from anthropic import AsyncAnthropic
+
                 kwargs: dict[str, Any] = {"api_key": self._api_key, "max_retries": 0}
                 if self._base_url:
                     kwargs["base_url"] = self._base_url
                 self._client = AsyncAnthropic(**kwargs)
             except ImportError:
-                raise ProviderError(ProviderErrorCode.API_ERROR, "anthropic library required. pip install anthropic", provider="anthropic")
+                raise ProviderError(
+                    ProviderErrorCode.API_ERROR,
+                    "anthropic library required. pip install anthropic",
+                    provider="anthropic",
+                )
         return self._client
 
     # ── ILLMProvider ────────────────────────────────────────────────
@@ -78,7 +83,11 @@ class AnthropicProvider(BaseLLMProvider):
                 except ProviderError as e:
                     attempt += 1
                     if attempt > self._max_retries or not _is_retryable(e, self._retry_codes):
-                        yield {"content": f"[{self._name} error: {e.message}]", "finish_reason": "error", "error": e.message}
+                        yield {
+                            "content": f"[{self._name} error: {e.message}]",
+                            "finish_reason": "error",
+                            "error": e.message,
+                        }
                         break
                     retry_after = e.retry_after or _exponential_backoff(attempt - 1)
                     await asyncio.sleep(retry_after)
@@ -86,9 +95,14 @@ class AnthropicProvider(BaseLLMProvider):
                     pe = ProviderError.from_exception(e, self._name)
                     attempt += 1
                     if attempt > self._max_retries or not _is_retryable(pe, self._retry_codes):
-                        yield {"content": f"[{self._name} error: {pe.message}]", "finish_reason": "error", "error": pe.message}
+                        yield {
+                            "content": f"[{self._name} error: {pe.message}]",
+                            "finish_reason": "error",
+                            "error": pe.message,
+                        }
                         break
                     await asyncio.sleep(_exponential_backoff(attempt - 1))
+
         return _stream()
 
     async def validate(self, params: dict[str, Any]) -> bool:
@@ -126,11 +140,13 @@ class AnthropicProvider(BaseLLMProvider):
             if block.type == "text":
                 content_text += block.text
             elif block.type == "tool_use":
-                tool_calls.append({
-                    "id": block.id,
-                    "type": "function",
-                    "function": {"name": block.name, "arguments": str(block.input)},
-                })
+                tool_calls.append(
+                    {
+                        "id": block.id,
+                        "type": "function",
+                        "function": {"name": block.name, "arguments": str(block.input)},
+                    }
+                )
 
         pt = resp.usage.input_tokens if resp.usage else count_tokens(prompt)
         ct = resp.usage.output_tokens if resp.usage else count_tokens(content_text)
@@ -199,6 +215,7 @@ class AnthropicProvider(BaseLLMProvider):
 
     async def health(self) -> dict[str, Any]:
         import time as time_module
+
         start = time_module.monotonic()
         try:
             client = self._get_client()
@@ -213,12 +230,54 @@ class AnthropicProvider(BaseLLMProvider):
 
     async def list_models(self) -> list[dict[str, Any]]:
         return [
-            {"id": "claude-3-5-sonnet-20241022", "name": "Claude 3.5 Sonnet", "provider": "anthropic", "capabilities": ["chat", "vision", "tools"], "context_window": 200000, "max_tokens": 8192},
-            {"id": "claude-3-5-haiku-20241022", "name": "Claude 3.5 Haiku", "provider": "anthropic", "capabilities": ["chat", "vision", "tools"], "context_window": 200000, "max_tokens": 8192},
-            {"id": "claude-3-opus-20240229", "name": "Claude 3 Opus", "provider": "anthropic", "capabilities": ["chat", "vision", "tools"], "context_window": 200000, "max_tokens": 4096},
-            {"id": "claude-3-haiku-20240307", "name": "Claude 3 Haiku", "provider": "anthropic", "capabilities": ["chat", "vision", "tools"], "context_window": 200000, "max_tokens": 4096},
-            {"id": "claude-2.1", "name": "Claude 2.1", "provider": "anthropic", "capabilities": ["chat"], "context_window": 100000, "max_tokens": 4096},
-            {"id": "claude-3-7-sonnet-20250219", "name": "Claude 3.7 Sonnet", "provider": "anthropic", "capabilities": ["chat", "vision", "tools", "thinking"], "context_window": 200000, "max_tokens": 64000},
+            {
+                "id": "claude-3-5-sonnet-20241022",
+                "name": "Claude 3.5 Sonnet",
+                "provider": "anthropic",
+                "capabilities": ["chat", "vision", "tools"],
+                "context_window": 200000,
+                "max_tokens": 8192,
+            },
+            {
+                "id": "claude-3-5-haiku-20241022",
+                "name": "Claude 3.5 Haiku",
+                "provider": "anthropic",
+                "capabilities": ["chat", "vision", "tools"],
+                "context_window": 200000,
+                "max_tokens": 8192,
+            },
+            {
+                "id": "claude-3-opus-20240229",
+                "name": "Claude 3 Opus",
+                "provider": "anthropic",
+                "capabilities": ["chat", "vision", "tools"],
+                "context_window": 200000,
+                "max_tokens": 4096,
+            },
+            {
+                "id": "claude-3-haiku-20240307",
+                "name": "Claude 3 Haiku",
+                "provider": "anthropic",
+                "capabilities": ["chat", "vision", "tools"],
+                "context_window": 200000,
+                "max_tokens": 4096,
+            },
+            {
+                "id": "claude-2.1",
+                "name": "Claude 2.1",
+                "provider": "anthropic",
+                "capabilities": ["chat"],
+                "context_window": 100000,
+                "max_tokens": 4096,
+            },
+            {
+                "id": "claude-3-7-sonnet-20250219",
+                "name": "Claude 3.7 Sonnet",
+                "provider": "anthropic",
+                "capabilities": ["chat", "vision", "tools", "thinking"],
+                "context_window": 200000,
+                "max_tokens": 64000,
+            },
         ]
 
     # ── Vision helper ───────────────────────────────────────────────
@@ -244,6 +303,7 @@ class AnthropicProvider(BaseLLMProvider):
             import base64
 
             import httpx
+
             resp = httpx.get(image_url)
             resp.raise_for_status()
             return base64.b64encode(resp.content).decode()

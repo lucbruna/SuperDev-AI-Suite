@@ -1,4 +1,5 @@
 """Cybersecurity Engine Interfaces — Protocol interfaces for security operations."""
+
 from abc import ABC, abstractmethod
 from typing import Any
 

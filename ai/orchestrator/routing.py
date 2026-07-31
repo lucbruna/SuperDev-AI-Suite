@@ -37,10 +37,7 @@ class RoutingEngine:
 
     def register_agent(self, agent_id: str, agent: BaseAgent) -> None:
         caps = agent.capabilities()
-        self._capabilities[agent_id] = [
-            AgentCapability(name=c) if isinstance(c, str) else c
-            for c in caps
-        ]
+        self._capabilities[agent_id] = [AgentCapability(name=c) if isinstance(c, str) else c for c in caps]
         self._load_counts[agent_id] = 0
 
     def unregister_agent(self, agent_id: str) -> None:
@@ -133,14 +130,16 @@ class RoutingEngine:
 
             self._load_counts[result.agent_id] = self._load_counts.get(result.agent_id, 0) + 1
 
-            self._route_history.append({
-                "task": task[:100],
-                "task_type": task_type,
-                "routed_to": result.agent_id,
-                "confidence": result.confidence,
-                "fallback": result.fallback_used,
-                "timestamp": datetime.now(UTC).isoformat(),
-            })
+            self._route_history.append(
+                {
+                    "task": task[:100],
+                    "task_type": task_type,
+                    "routed_to": result.agent_id,
+                    "confidence": result.confidence,
+                    "fallback": result.fallback_used,
+                    "timestamp": datetime.now(UTC).isoformat(),
+                }
+            )
             if len(self._route_history) > 1000:
                 self._route_history = self._route_history[-500:]
 

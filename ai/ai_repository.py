@@ -73,10 +73,7 @@ class AIRepository:
 
     def list_model_configs(self) -> list[dict[str, Any]]:
         """List all model configurations."""
-        return [
-            {"name": name, **config}
-            for name, config in self._model_configs.items()
-        ]
+        return [{"name": name, **config} for name, config in self._model_configs.items()]
 
     def cache_get(self, key: str) -> Any | None:
         """Get a value from cache."""

@@ -1,4 +1,5 @@
 """Support engine."""
+
 from datetime import datetime
 
 from .models import (
@@ -42,7 +43,9 @@ class SupportEngine:
         ticket.updated_at = datetime.now()
         return True
 
-    def get_tickets(self, status: TicketStatus | None = None, priority: TicketPriority | None = None) -> list[SupportTicket]:
+    def get_tickets(
+        self, status: TicketStatus | None = None, priority: TicketPriority | None = None
+    ) -> list[SupportTicket]:
         tickets = list(self._tickets.values())
         if status:
             tickets = [t for t in tickets if t.status == status]
@@ -64,7 +67,8 @@ class SupportEngine:
     def search_knowledge(self, query: str) -> list[KnowledgeArticle]:
         q = query.lower()
         return [
-            a for a in self._articles.values()
+            a
+            for a in self._articles.values()
             if q in a.title.lower() or q in a.content.lower() or q in [t.lower() for t in a.tags]
         ]
 

@@ -1,4 +1,5 @@
 """Threat detection engine."""
+
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -91,7 +92,12 @@ class ThreatDetectionEngine:
         return threats
 
     def calculate_risk_score(self, threat: DetectedThreat) -> float:
-        severity_scores = {ThreatSeverity.LOW: 0.25, ThreatSeverity.MEDIUM: 0.5, ThreatSeverity.HIGH: 0.75, ThreatSeverity.CRITICAL: 1.0}
+        severity_scores = {
+            ThreatSeverity.LOW: 0.25,
+            ThreatSeverity.MEDIUM: 0.5,
+            ThreatSeverity.HIGH: 0.75,
+            ThreatSeverity.CRITICAL: 1.0,
+        }
         return severity_scores.get(threat.severity, 0.5)
 
     def get_stats(self) -> dict:

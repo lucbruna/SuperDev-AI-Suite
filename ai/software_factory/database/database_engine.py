@@ -1,4 +1,5 @@
 """Core engine for database operations."""
+
 from typing import Any
 
 from .migration_manager import MigrationManager
@@ -31,11 +32,12 @@ class DatabaseEngine:
 
     def create_migration(self, name: str, steps: list[dict[str, Any]]) -> Migration:
         from .models import MigrationStep
+
         migration_steps = [
             MigrationStep(operation=s.get("operation", ""), table_name=s.get("table", ""), sql=s.get("sql", ""))
             for s in steps
         ]
-        migration = Migration(name=name, steps=migration_steps, version=f"{len(self._migrations)+1}.0.0")
+        migration = Migration(name=name, steps=migration_steps, version=f"{len(self._migrations) + 1}.0.0")
         self._migrations.append(migration)
         return migration
 

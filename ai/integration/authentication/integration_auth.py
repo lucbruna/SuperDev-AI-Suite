@@ -1,6 +1,7 @@
 """
 Integration Authentication - Core auth for integrations
 """
+
 import hashlib
 import secrets
 from dataclasses import dataclass, field
@@ -35,10 +36,20 @@ class IntegrationAuth:
         self.credentials: dict[str, AuthCredential] = {}
         self.active_sessions: dict[str, dict[str, Any]] = {}
 
-    def create_credential(self, integration_id: str, auth_type: AuthType, secret: str = "", scopes: list[str] = None) -> AuthCredential:
-        credential_id = hashlib.sha256(f"{integration_id}{auth_type.value}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
+    def create_credential(
+        self, integration_id: str, auth_type: AuthType, secret: str = "", scopes: list[str] = None
+    ) -> AuthCredential:
+        credential_id = hashlib.sha256(
+            f"{integration_id}{auth_type.value}{datetime.now().isoformat()}".encode()
+        ).hexdigest()[:16]
         key_hash = hashlib.sha256(secret.encode()).hexdigest() if secret else ""
-        cred = AuthCredential(credential_id=credential_id, integration_id=integration_id, auth_type=auth_type, key_hash=key_hash, scopes=scopes or [])
+        cred = AuthCredential(
+            credential_id=credential_id,
+            integration_id=integration_id,
+            auth_type=auth_type,
+            key_hash=key_hash,
+            scopes=scopes or [],
+        )
         self.credentials[credential_id] = cred
         return cred
 
@@ -61,7 +72,11 @@ class IntegrationAuth:
         for cred in self.credentials.values():
             if cred.integration_id == integration_id and cred.auth_type == auth_type and cred.is_active:
                 session_token = secrets.token_urlsafe(32)
-                self.active_sessions[session_token] = {"credential_id": cred.credential_id, "integration_id": integration_id, "created_at": datetime.now().isoformat()}
+                self.active_sessions[session_token] = {
+                    "credential_id": cred.credential_id,
+                    "integration_id": integration_id,
+                    "created_at": datetime.now().isoformat(),
+                }
                 return session_token
         return None
 

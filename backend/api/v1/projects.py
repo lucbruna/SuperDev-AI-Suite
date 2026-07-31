@@ -58,9 +58,14 @@ async def create_project(
         {"id": pid, "name": data.name, "desc": data.description},
     )
     await db.commit()
-    result = await db.execute(sa_text("SELECT id, name, description, is_public, created_at, updated_at FROM projects WHERE id = :id"), {"id": pid})
+    result = await db.execute(
+        sa_text("SELECT id, name, description, is_public, created_at, updated_at FROM projects WHERE id = :id"),
+        {"id": pid},
+    )
     row = result.fetchone()
-    return ProjectResponse(id=str(row[0]), name=row[1], description=row[2], is_public=row[3], created_at=row[4], updated_at=row[5])
+    return ProjectResponse(
+        id=str(row[0]), name=row[1], description=row[2], is_public=row[3], created_at=row[4], updated_at=row[5]
+    )
 
 
 @router.get("", response_model=ProjectList)
@@ -71,7 +76,9 @@ async def list_projects(
 ) -> ProjectList:
     offset = (page - 1) * page_size
     result = await db.execute(
-        sa_text("SELECT id, name, description, is_public, created_at, updated_at FROM projects ORDER BY created_at DESC LIMIT :limit OFFSET :offset"),
+        sa_text(
+            "SELECT id, name, description, is_public, created_at, updated_at FROM projects ORDER BY created_at DESC LIMIT :limit OFFSET :offset"
+        ),
         {"limit": page_size, "offset": offset},
     )
     rows = result.fetchall()
@@ -80,7 +87,10 @@ async def list_projects(
     pages = max(1, (total + page_size - 1) // page_size)
 
     return ProjectList(
-        items=[ProjectResponse(id=str(r[0]), name=r[1], description=r[2], is_public=r[3], created_at=r[4], updated_at=r[5]) for r in rows],
+        items=[
+            ProjectResponse(id=str(r[0]), name=r[1], description=r[2], is_public=r[3], created_at=r[4], updated_at=r[5])
+            for r in rows
+        ],
         total=total,
         page=page,
         page_size=page_size,
@@ -102,7 +112,9 @@ async def get_project(
     row = result.fetchone()
     if not row:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
-    return ProjectResponse(id=str(row[0]), name=row[1], description=row[2], is_public=row[3], created_at=row[4], updated_at=row[5])
+    return ProjectResponse(
+        id=str(row[0]), name=row[1], description=row[2], is_public=row[3], created_at=row[4], updated_at=row[5]
+    )
 
 
 @router.put("/{project_id}", response_model=ProjectResponse)

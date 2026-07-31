@@ -1,4 +1,5 @@
 """Cybersecurity Engine Manager — High-level manager for security operations."""
+
 from typing import Any
 
 from .cybersecurity_engine import CybersecurityEngine
@@ -27,7 +28,11 @@ class SecurityManager:
         return self._engine.report_threat(threat)
 
     def scan_vulnerability(self, component: str, severity: str = "medium", cvss: float = 5.0) -> Vulnerability:
-        vs = VulnerabilitySeverity(severity) if severity in [e.value for e in VulnerabilitySeverity] else VulnerabilitySeverity.MEDIUM
+        vs = (
+            VulnerabilitySeverity(severity)
+            if severity in [e.value for e in VulnerabilitySeverity]
+            else VulnerabilitySeverity.MEDIUM
+        )
         vuln = Vulnerability(component=component, severity=vs, cvss_score=cvss, name=f"Vuln in {component}")
         return self._engine.add_vulnerability(vuln)
 

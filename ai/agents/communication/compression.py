@@ -18,9 +18,11 @@ class Compression:
     @staticmethod
     def compress_dict(data: dict[str, Any]) -> bytes:
         import json
+
         return zlib.compress(json.dumps(data, default=str).encode())
 
     @staticmethod
     def decompress_dict(data: bytes) -> dict[str, Any]:
         import json
+
         return json.loads(zlib.decompress(data).decode())

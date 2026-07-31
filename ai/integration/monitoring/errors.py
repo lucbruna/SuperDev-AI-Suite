@@ -1,6 +1,7 @@
 """
 Error Monitor - Error tracking
 """
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -30,9 +31,23 @@ class ErrorMonitor:
         self.errors: dict[str, list[ErrorRecord]] = {}
         self.error_counts: dict[str, int] = {}
 
-    def record_error(self, integration_id: str, error_type: str, message: str, severity: ErrorSeverity = ErrorSeverity.MEDIUM, stack_trace: str = "") -> ErrorRecord:
+    def record_error(
+        self,
+        integration_id: str,
+        error_type: str,
+        message: str,
+        severity: ErrorSeverity = ErrorSeverity.MEDIUM,
+        stack_trace: str = "",
+    ) -> ErrorRecord:
         error_id = f"err_{integration_id}_{len(self.errors.get(integration_id, []))}"
-        error = ErrorRecord(error_id=error_id, integration_id=integration_id, error_type=error_type, message=message, severity=severity, stack_trace=stack_trace)
+        error = ErrorRecord(
+            error_id=error_id,
+            integration_id=integration_id,
+            error_type=error_type,
+            message=message,
+            severity=severity,
+            stack_trace=stack_trace,
+        )
         self.errors.setdefault(integration_id, []).append(error)
         self.error_counts[integration_id] = self.error_counts.get(integration_id, 0) + 1
         return error

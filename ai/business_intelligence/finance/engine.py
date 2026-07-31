@@ -1,4 +1,5 @@
 """Finance engine."""
+
 from datetime import datetime
 
 from .models import (
@@ -77,11 +78,15 @@ class FinanceEngine:
         for t in self._transactions:
             inflow = t.amount if t.transaction_type in (TransactionType.INCOME, TransactionType.REFUND) else 0.0
             outflow = t.amount if t.transaction_type == TransactionType.EXPENSE else 0.0
-            entries.append(CashFlowEntry(date=t.date, inflow=inflow, outflow=outflow, net=inflow - outflow, category=t.category))
+            entries.append(
+                CashFlowEntry(date=t.date, inflow=inflow, outflow=outflow, net=inflow - outflow, category=t.category)
+            )
             total_in += inflow
             total_out += outflow
         return CashFlowReport(
-            period=period, entries=entries,
-            total_inflow=total_in, total_outflow=total_out,
+            period=period,
+            entries=entries,
+            total_inflow=total_in,
+            total_outflow=total_out,
             net_cash_flow=total_in - total_out,
         )

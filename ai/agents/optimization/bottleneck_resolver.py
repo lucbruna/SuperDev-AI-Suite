@@ -1,4 +1,5 @@
 """Bottleneck detection and resolution."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -21,13 +22,15 @@ class BottleneckResolver:
             value = float(metrics.get(metric_name, 0))
             if value > threshold:
                 severity = "critical" if value > threshold * 1.5 else "warning"
-                bottlenecks.append({
-                    "metric": metric_name,
-                    "current_value": value,
-                    "threshold": threshold,
-                    "severity": severity,
-                    "suggestion": self._suggest_resolution(metric_name, severity),
-                })
+                bottlenecks.append(
+                    {
+                        "metric": metric_name,
+                        "current_value": value,
+                        "threshold": threshold,
+                        "severity": severity,
+                        "suggestion": self._suggest_resolution(metric_name, severity),
+                    }
+                )
         return bottlenecks
 
     def _suggest_resolution(self, metric: str, severity: str) -> str:

@@ -81,7 +81,7 @@ CMD ["python", "{context.get("entrypoint", "main.py")}"]
     build: .
     container_name: {svc}
     ports:
-      - "{context.get('port', 8000)}:{context.get('port', 8000)}"
+      - "{context.get("port", 8000)}:{context.get("port", 8000)}"
     volumes:
       - .:/app
     restart: unless-stopped\n\n"""
@@ -90,7 +90,11 @@ CMD ["python", "{context.get("entrypoint", "main.py")}"]
     async def _build_image(self, project_path: str, project_name: str) -> dict[str, Any]:
         try:
             proc = await asyncio.create_subprocess_exec(
-                "docker", "build", "-t", project_name, project_path,
+                "docker",
+                "build",
+                "-t",
+                project_name,
+                project_path,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )

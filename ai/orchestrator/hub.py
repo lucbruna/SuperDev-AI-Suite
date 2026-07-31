@@ -30,7 +30,9 @@ class OrchestrationHub:
             raise ValueError(f"Session {session_id} not found")
         session["agents"][agent_id] = {"role": role, "status": "idle", "tasks_completed": 0}
         self._agent_sessions[agent_id] = session_id
-        await self._bus.publish("orchestrator.agent_assigned", {"session_id": session_id, "agent_id": agent_id, "role": role})
+        await self._bus.publish(
+            "orchestrator.agent_assigned", {"session_id": session_id, "agent_id": agent_id, "role": role}
+        )
 
     async def assign_task(self, session_id: str, agent_id: str, task: dict[str, Any]) -> None:
         session = self._sessions.get(session_id)

@@ -62,6 +62,7 @@ from erp_operations.workflow.models import WorkflowStatus as WfStatus
 
 # ========== Core ERPEngine Tests ==========
 
+
 class TestERPEngine:
     def test_add_product(self):
         engine = ERPEngine()
@@ -153,7 +154,13 @@ class TestERPEngine:
 
     def test_add_approval(self):
         engine = ERPEngine()
-        app = WorkflowApproval(approval_id="A001", workflow_name="order_approval", entity_type="order", entity_id="O001", requested_by="user1")
+        app = WorkflowApproval(
+            approval_id="A001",
+            workflow_name="order_approval",
+            entity_type="order",
+            entity_id="O001",
+            requested_by="user1",
+        )
         engine.add_approval(app)
         assert len(engine.get_approvals()) == 1
 
@@ -166,6 +173,7 @@ class TestERPEngine:
 
 
 # ========== Inventory Subsystem Tests ==========
+
 
 class TestInventorySubsystem:
     def test_add_item(self):
@@ -215,6 +223,7 @@ class TestInventorySubsystem:
 
 
 # ========== Sales Subsystem Tests ==========
+
 
 class TestSalesSubsystem:
     def test_create_order(self):
@@ -266,6 +275,7 @@ class TestSalesSubsystem:
 
 # ========== Purchases Subsystem Tests ==========
 
+
 class TestPurchasesSubsystem:
     def test_create_order(self):
         engine = PurchasesEngine()
@@ -296,6 +306,7 @@ class TestPurchasesSubsystem:
 
 
 # ========== Suppliers Subsystem Tests ==========
+
 
 class TestSuppliersSubsystem:
     def test_add_supplier(self):
@@ -329,7 +340,9 @@ class TestSuppliersSubsystem:
 
     def test_performance(self):
         engine = SuppliersEngine()
-        perf = SupplierPerformance(performance_id="P001", supplier_id="S001", on_time_delivery=95, quality_score=90, price_competitiveness=85)
+        perf = SupplierPerformance(
+            performance_id="P001", supplier_id="S001", on_time_delivery=95, quality_score=90, price_competitiveness=85
+        )
         result = engine.add_performance(perf)
         assert result.overall_score == 90.0
 
@@ -342,6 +355,7 @@ class TestSuppliersSubsystem:
 
 
 # ========== Production Subsystem Tests ==========
+
 
 class TestProductionSubsystem:
     def test_create_order(self):
@@ -396,6 +410,7 @@ class TestProductionSubsystem:
 
 # ========== Logistics Subsystem Tests ==========
 
+
 class TestLogisticsSubsystem:
     def test_create_shipment(self):
         engine = LogisticsEngine()
@@ -433,8 +448,26 @@ class TestLogisticsSubsystem:
 
     def test_best_carrier_by_type(self):
         engine = LogisticsEngine()
-        engine.add_carrier(Carrier(carrier_id="C001", name="Air", cost_per_km=1.0, max_weight=100, active=True, carrier_type=CarrierType.AIR))
-        engine.add_carrier(Carrier(carrier_id="C002", name="Road", cost_per_km=0.3, max_weight=100, active=True, carrier_type=CarrierType.ROAD))
+        engine.add_carrier(
+            Carrier(
+                carrier_id="C001",
+                name="Air",
+                cost_per_km=1.0,
+                max_weight=100,
+                active=True,
+                carrier_type=CarrierType.AIR,
+            )
+        )
+        engine.add_carrier(
+            Carrier(
+                carrier_id="C002",
+                name="Road",
+                cost_per_km=0.3,
+                max_weight=100,
+                active=True,
+                carrier_type=CarrierType.ROAD,
+            )
+        )
         best = engine.get_best_carrier(50, CarrierType.AIR)
         assert best.carrier_id == "C001"
 
@@ -454,6 +487,7 @@ class TestLogisticsSubsystem:
 
 
 # ========== Warehouse Subsystem Tests ==========
+
 
 class TestWarehouseSubsystem:
     def test_add_zone(self):
@@ -509,6 +543,7 @@ class TestWarehouseSubsystem:
 
 # ========== HR Subsystem Tests ==========
 
+
 class TestHRSubsystem:
     def test_add_employee(self):
         engine = HREngine()
@@ -532,7 +567,11 @@ class TestHRSubsystem:
 
     def test_leave_balance(self):
         engine = HREngine()
-        engine.submit_leave_request(LeaveRequest(request_id="LR001", employee_id="E001", leave_type=LeaveType.ANNUAL, days=5, status=LeaveStatus.APPROVED))
+        engine.submit_leave_request(
+            LeaveRequest(
+                request_id="LR001", employee_id="E001", leave_type=LeaveType.ANNUAL, days=5, status=LeaveStatus.APPROVED
+            )
+        )
         balance = engine.get_leave_balance("E001", LeaveType.ANNUAL)
         assert balance == 15
 
@@ -566,6 +605,7 @@ class TestHRSubsystem:
 
 # ========== Workflow Subsystem Tests ==========
 
+
 class TestWorkflowSubsystem:
     def test_create_definition(self):
         engine = WorkflowEngine()
@@ -582,7 +622,9 @@ class TestWorkflowSubsystem:
 
     def test_add_step(self):
         engine = WorkflowEngine()
-        step = WorkflowStep(step_id="S001", workflow_id="WF001", name="Manager Approval", step_type=StepType.APPROVAL, order=1)
+        step = WorkflowStep(
+            step_id="S001", workflow_id="WF001", name="Manager Approval", step_type=StepType.APPROVAL, order=1
+        )
         engine.add_step(step)
         steps = engine.get_workflow_steps("WF001")
         assert len(steps) == 1
@@ -627,6 +669,7 @@ class TestWorkflowSubsystem:
 
 
 # ========== Automation Subsystem Tests ==========
+
 
 class TestAutomationSubsystem:
     def test_create_rule(self):
@@ -685,6 +728,7 @@ class TestAutomationSubsystem:
 
 # ========== Integration Tests ==========
 
+
 class TestERPIntegration:
     def test_full_order_lifecycle(self):
         engine = ERPEngine()
@@ -709,7 +753,9 @@ class TestERPIntegration:
         engine = ERPEngine()
         employee = Employee(employee_id="E001", name="Alice", department="HR")
         engine.add_employee(employee)
-        app = WorkflowApproval(approval_id="A001", workflow_name="leave", entity_type="leave", entity_id="LR001", requested_by="E001")
+        app = WorkflowApproval(
+            approval_id="A001", workflow_name="leave", entity_type="leave", entity_id="LR001", requested_by="E001"
+        )
         engine.add_approval(app)
         assert len(engine.get_approvals()) == 1
 

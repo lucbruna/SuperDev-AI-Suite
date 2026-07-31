@@ -11,11 +11,13 @@ class ChainHistory:
         self._entries: list[dict[str, Any]] = []
 
     async def record(self, chain: dict[str, Any], outcome: str) -> None:
-        self._entries.append({
-            "steps": len(chain.get("steps", [])),
-            "outcome": outcome,
-            "timestamp": datetime.now().isoformat(),
-        })
+        self._entries.append(
+            {
+                "steps": len(chain.get("steps", [])),
+                "outcome": outcome,
+                "timestamp": datetime.now().isoformat(),
+            }
+        )
 
     async def summary(self) -> dict[str, Any]:
         if not self._entries:

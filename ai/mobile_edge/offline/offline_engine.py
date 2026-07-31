@@ -1,4 +1,5 @@
 """Offline Engine - Core offline mode management."""
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime

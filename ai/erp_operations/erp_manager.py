@@ -1,4 +1,5 @@
 """ERP Manager — Project management for ERP operations."""
+
 import hashlib
 from datetime import datetime
 from typing import Any

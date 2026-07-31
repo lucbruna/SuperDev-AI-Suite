@@ -26,19 +26,23 @@ class ConstraintValidator:
         results: list[dict[str, Any]] = []
         for constraint in self._constraints.values():
             passed = self._check_constraint(constraint, architecture)
-            results.append({
-                "constraint": constraint["name"],
-                "category": constraint["category"],
-                "status": "passed" if passed else "failed",
-                "description": constraint["description"],
-            })
+            results.append(
+                {
+                    "constraint": constraint["name"],
+                    "category": constraint["category"],
+                    "status": "passed" if passed else "failed",
+                    "description": constraint["description"],
+                }
+            )
         if not results:
-            results.append({
-                "constraint": "none",
-                "category": "general",
-                "status": "warning",
-                "description": "No constraints defined for validation",
-            })
+            results.append(
+                {
+                    "constraint": "none",
+                    "category": "general",
+                    "status": "warning",
+                    "description": "No constraints defined for validation",
+                }
+            )
         return results
 
     def _check_constraint(

@@ -1,4 +1,5 @@
 """Analyzer for test coverage metrics."""
+
 from typing import Any
 
 from .models import CoverageReport
@@ -15,9 +16,15 @@ class CoverageAnalyzer:
         self._reports.append(report)
         return report
 
-    def add_file_coverage(self, report: CoverageReport, file_path: str,
-                          total_lines: int, covered_lines: int,
-                          total_functions: int, covered_functions: int) -> None:
+    def add_file_coverage(
+        self,
+        report: CoverageReport,
+        file_path: str,
+        total_lines: int,
+        covered_lines: int,
+        total_functions: int,
+        covered_functions: int,
+    ) -> None:
         report.files[file_path] = {
             "total_lines": total_lines,
             "covered_lines": covered_lines,
@@ -34,11 +41,13 @@ class CoverageAnalyzer:
         for file_path, data in report.files.items():
             line_cov = data["covered_lines"] / data["total_lines"] if data["total_lines"] > 0 else 0
             if line_cov < threshold:
-                gaps.append({
-                    "file": file_path,
-                    "line_coverage": line_cov,
-                    "missing_lines": data["total_lines"] - data["covered_lines"],
-                })
+                gaps.append(
+                    {
+                        "file": file_path,
+                        "line_coverage": line_cov,
+                        "missing_lines": data["total_lines"] - data["covered_lines"],
+                    }
+                )
         return gaps
 
     def get_summary(self, report: CoverageReport) -> dict[str, Any]:

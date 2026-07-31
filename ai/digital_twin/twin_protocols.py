@@ -1,4 +1,5 @@
 """Digital Twin protocols."""
+
 from __future__ import annotations
 
 from typing import Any, Protocol, runtime_checkable
@@ -10,6 +11,7 @@ class TwinProtocol(Protocol):
     def set_state(self, state: dict[str, Any]) -> None: ...
     def reset(self) -> None: ...
 
+
 @runtime_checkable
 class SimulationProtocol(Protocol):
     def step(self) -> dict[str, Any]: ...
@@ -17,10 +19,12 @@ class SimulationProtocol(Protocol):
     def pause(self) -> None: ...
     def resume(self) -> None: ...
 
+
 @runtime_checkable
 class PredictionProtocol(Protocol):
     def train(self, data: Any) -> None: ...
     def forecast(self, horizon: int) -> dict[str, Any]: ...
+
 
 @runtime_checkable
 class OptimizationProtocol(Protocol):

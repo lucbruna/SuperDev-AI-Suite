@@ -36,7 +36,7 @@ class LoadBalancer:
         if self.strategy == LoadBalanceStrategy.LEAST_LATENCY:
             best = min(
                 self._providers,
-                key=lambda p: self._latency_map.get(getattr(p.config, 'name', str(id(p))), float("inf")),
+                key=lambda p: self._latency_map.get(getattr(p.config, "name", str(id(p))), float("inf")),
             )
             return best
 

@@ -1,4 +1,5 @@
 """Business Intelligence Metrics subsystem."""
+
 from .collector import MetricsCollector
 from .models import (
     AggregationType,
@@ -11,7 +12,12 @@ from .models import (
 )
 
 __all__ = [
-    "AggregationType", "MetricStatus",
-    "MetricDefinition", "MetricValue", "MetricThreshold", "MetricAlert", "MetricSummary",
+    "AggregationType",
+    "MetricStatus",
+    "MetricDefinition",
+    "MetricValue",
+    "MetricThreshold",
+    "MetricAlert",
+    "MetricSummary",
     "MetricsCollector",
 ]

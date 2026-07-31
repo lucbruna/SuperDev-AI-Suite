@@ -1,4 +1,5 @@
 """Semantic cache."""
+
 from __future__ import annotations
 
 import time
@@ -9,6 +10,7 @@ class SemanticCache:
     def __init__(self, similarity_threshold: float = 0.9) -> None:
         self._entries: list[dict[str, Any]] = []
         self._threshold = similarity_threshold
+
     def _similarity(self, a: str, b: str) -> float:
         a_words = set(a.lower().split())
         b_words = set(b.lower().split())
@@ -17,6 +19,7 @@ class SemanticCache:
         intersection = a_words & b_words
         union = a_words | b_words
         return len(intersection) / len(union) if union else 0.0
+
     def get(self, query: str) -> dict[str, Any] | None:
         best_match = None
         best_score = 0
@@ -29,10 +32,18 @@ class SemanticCache:
             best_match["access_count"] += 1
             return best_match["value"]
         return None
+
     def set(self, query: str, value: Any, metadata: dict[str, Any] = None) -> dict[str, Any]:
-        entry = {"query": query, "value": value, "metadata": metadata or {}, "created_at": time.time(), "access_count": 0}
+        entry = {
+            "query": query,
+            "value": value,
+            "metadata": metadata or {},
+            "created_at": time.time(),
+            "access_count": 0,
+        }
         self._entries.append(entry)
         return {"query": query, "cached": True}
+
     def invalidate(self, query: str = "") -> int:
         if not query:
             n = len(self._entries)
@@ -41,11 +52,14 @@ class SemanticCache:
         original = len(self._entries)
         self._entries = [e for e in self._entries if self._similarity(query, e["query"]) < self._threshold]
         return original - len(self._entries)
+
     def find_similar(self, query: str, top_k: int = 5) -> list[dict[str, Any]]:
         scored = [{"query": e["query"], "similarity": self._similarity(query, e["query"])} for e in self._entries]
         return sorted(scored, key=lambda x: x["similarity"], reverse=True)[:top_k]
+
     def count(self) -> int:
         return len(self._entries)
+
     def clear(self) -> int:
         n = len(self._entries)
         self._entries.clear()

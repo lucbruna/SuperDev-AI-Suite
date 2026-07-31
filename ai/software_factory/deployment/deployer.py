@@ -1,4 +1,5 @@
 """Deployer for executing deployments."""
+
 from datetime import datetime
 from typing import Any
 
@@ -50,9 +51,11 @@ class Deployer:
         return list(self._history)
 
     def _record(self, deployment: Deployment, success: bool, error: str = "") -> None:
-        self._history.append({
-            "deployment_id": deployment.deployment_id,
-            "success": success,
-            "error": error,
-            "timestamp": datetime.utcnow().isoformat(),
-        })
+        self._history.append(
+            {
+                "deployment_id": deployment.deployment_id,
+                "success": success,
+                "error": error,
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+        )

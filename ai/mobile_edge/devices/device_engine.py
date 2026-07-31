@@ -1,4 +1,5 @@
 """Device Engine - Core device management for mobile/edge."""
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -62,7 +63,11 @@ class DeviceEngine:
         return False
 
     def search(self, query: str) -> list[ManagedDevice]:
-        return [d for d in self.devices.values() if query.lower() in d.name.lower() or any(query.lower() in t.lower() for t in d.tags)]
+        return [
+            d
+            for d in self.devices.values()
+            if query.lower() in d.name.lower() or any(query.lower() in t.lower() for t in d.tags)
+        ]
 
     def list_devices(self, status: DeviceStatus = None) -> list[ManagedDevice]:
         if status:

@@ -1,4 +1,5 @@
 """Optimization solver."""
+
 import time
 
 from .models import (
@@ -72,7 +73,4 @@ class OptimizationSolver:
         solution = self._solutions.get(problem_id)
         if not solution:
             return []
-        return [
-            {"variable": name, "shadow_price": 0.0, "reduced_cost": 0.0}
-            for name in solution.values
-        ]
+        return [{"variable": name, "shadow_price": 0.0, "reduced_cost": 0.0} for name in solution.values]

@@ -61,12 +61,14 @@ class EncryptionReview:
         key_size = config.get("key_size", 0)
         results.append(self.review_algorithm(algo, key_size))
         for std in self._standards.values():
-            results.append({
-                "standard": std["name"],
-                "required": std["algorithm"],
-                "configured": algo,
-                "compliant": algo.lower() == std["algorithm"].lower() and key_size >= std["key_size"],
-            })
+            results.append(
+                {
+                    "standard": std["name"],
+                    "required": std["algorithm"],
+                    "configured": algo,
+                    "compliant": algo.lower() == std["algorithm"].lower() and key_size >= std["key_size"],
+                }
+            )
         return results
 
     def to_dict(self) -> dict[str, Any]:

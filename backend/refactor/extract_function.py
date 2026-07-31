@@ -10,22 +10,32 @@ class ExtractFunctionRefactor:
     def __init__(self, dry_run: bool = True):
         self.dry_run = dry_run
 
-    async def extract_function(self, filepath: str, start_line: int, end_line: int, new_function_name: str) -> dict[str, Any]:
+    async def extract_function(
+        self, filepath: str, start_line: int, end_line: int, new_function_name: str
+    ) -> dict[str, Any]:
         if not os.path.exists(filepath):
             return {"success": False, "error": f"File not found: {filepath}"}
         with open(filepath, encoding="utf-8") as f:
             lines = f.readlines()
         if start_line < 1 or end_line > len(lines):
-            return {"success": False, "error": f"Line range {start_line}-{end_line} out of bounds (file has {len(lines)} lines)"}
+            return {
+                "success": False,
+                "error": f"Line range {start_line}-{end_line} out of bounds (file has {len(lines)} lines)",
+            }
         extracted_lines = lines[start_line - 1 : end_line]
         extracted_code = "".join(extracted_lines)
         len(extracted_lines[0]) - len(extracted_lines[0].lstrip()) if extracted_lines else 0
         dedented = textwrap.dedent(extracted_code)
-        new_function = f"def {new_function_name}():\n    \"\"\"Extracted function.\"\"\"\n"
+        new_function = f'def {new_function_name}():\n    """Extracted function."""\n'
         for line in dedented.split("\n"):
             if line.strip():
                 new_function += f"    {line}\n"
-        new_lines = lines[: start_line - 1] + [new_function] + [f"# TODO: Replace with {new_function_name}() call\n"] + lines[end_line:]
+        new_lines = (
+            lines[: start_line - 1]
+            + [new_function]
+            + [f"# TODO: Replace with {new_function_name}() call\n"]
+            + lines[end_line:]
+        )
         if not self.dry_run:
             with open(filepath, "w", encoding="utf-8") as f:
                 f.writelines(new_lines)
@@ -52,7 +62,14 @@ class ExtractFunctionRefactor:
         if not self.dry_run:
             with open(filepath, "w", encoding="utf-8") as f:
                 f.write(new_content)
-        return {"success": True, "filepath": filepath, "variable_name": variable_name, "expression": expression, "line": line, "dry_run": self.dry_run}
+        return {
+            "success": True,
+            "filepath": filepath,
+            "variable_name": variable_name,
+            "expression": expression,
+            "line": line,
+            "dry_run": self.dry_run,
+        }
 
     async def inline_function(self, filepath: str, function_name: str) -> dict[str, Any]:
         if not os.path.exists(filepath):
@@ -76,5 +93,10 @@ class ExtractFunctionRefactor:
                     new_content = "\n".join(new_lines)
                     with open(filepath, "w", encoding="utf-8") as f:
                         f.write(new_content)
-                return {"success": True, "function": function_name, "call_occurrences": occurrences, "dry_run": self.dry_run}
+                return {
+                    "success": True,
+                    "function": function_name,
+                    "call_occurrences": occurrences,
+                    "dry_run": self.dry_run,
+                }
         return {"success": False, "error": f"Function '{function_name}' not found"}

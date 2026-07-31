@@ -1,4 +1,5 @@
 """BI Security — Security validation for BI operations."""
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -43,9 +44,13 @@ class BISecurity:
     def create_policy(self, name: str, rules: dict[str, Any] = None) -> None:
         self.policies[name] = rules or {}
 
-    def report_issue(self, check: BISecurityCheck, severity: BISeverity, description: str = "", resource: str = "", **kwargs) -> BISecurityIssue:
+    def report_issue(
+        self, check: BISecurityCheck, severity: BISeverity, description: str = "", resource: str = "", **kwargs
+    ) -> BISecurityIssue:
         issue_id = hashlib.sha256(f"{check.value}{description}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
-        issue = BISecurityIssue(issue_id=issue_id, check=check, severity=severity, description=description, resource=resource, **kwargs)
+        issue = BISecurityIssue(
+            issue_id=issue_id, check=check, severity=severity, description=description, resource=resource, **kwargs
+        )
         self.issues.append(issue)
         return issue
 

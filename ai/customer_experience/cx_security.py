@@ -1,4 +1,5 @@
 """CX Security — Security validation for CX operations."""
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -44,9 +45,13 @@ class CXSecurity:
     def create_policy(self, name: str, rules: dict[str, Any] | None = None) -> None:
         self.policies[name] = rules or {}
 
-    def report_issue(self, check: CXSecurityCheck, severity: CXSeverity, description: str = "", resource: str = "", **kwargs) -> CXSecurityIssue:
+    def report_issue(
+        self, check: CXSecurityCheck, severity: CXSeverity, description: str = "", resource: str = "", **kwargs
+    ) -> CXSecurityIssue:
         issue_id = hashlib.sha256(f"{check.value}{description}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
-        issue = CXSecurityIssue(issue_id=issue_id, check=check, severity=severity, description=description, resource=resource, **kwargs)
+        issue = CXSecurityIssue(
+            issue_id=issue_id, check=check, severity=severity, description=description, resource=resource, **kwargs
+        )
         self.issues.append(issue)
         return issue
 

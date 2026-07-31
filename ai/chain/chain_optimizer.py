@@ -21,7 +21,9 @@ class ChainOptimizer:
                 i = 0
                 while i < len(steps):
                     if i + 1 < len(steps) and steps[i].get("type") == steps[i + 1].get("type"):
-                        merged.append({**steps[i], "description": f"{steps[i]['description']}; {steps[i+1]['description']}"})
+                        merged.append(
+                            {**steps[i], "description": f"{steps[i]['description']}; {steps[i + 1]['description']}"}
+                        )
                         i += 2
                     else:
                         merged.append(steps[i])

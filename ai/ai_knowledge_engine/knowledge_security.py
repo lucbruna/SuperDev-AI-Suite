@@ -1,4 +1,5 @@
 """Knowledge Security — Security controls for the knowledge platform."""
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -38,13 +39,15 @@ class KnowledgeSecurity:
         return False
 
     def log_access(self, user_id: str, resource: str, permission: str, granted: bool) -> None:
-        self._access_log.append({
-            "user_id": user_id,
-            "resource": resource,
-            "permission": permission,
-            "granted": granted,
-            "timestamp": datetime.now().isoformat(),
-        })
+        self._access_log.append(
+            {
+                "user_id": user_id,
+                "resource": resource,
+                "permission": permission,
+                "granted": granted,
+                "timestamp": datetime.now().isoformat(),
+            }
+        )
 
     def encrypt_content(self, content: str, key_id: str = "default") -> str:
         return f"encrypted:{len(content)}"

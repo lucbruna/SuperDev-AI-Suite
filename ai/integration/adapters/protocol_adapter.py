@@ -1,6 +1,7 @@
 """
 Protocol Adapter - Protocol translation
 """
+
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
@@ -27,7 +28,9 @@ class ProtocolAdapter:
         self.translations: dict[str, ProtocolTranslation] = {}
         self.supported_pairs: list[tuple] = []
 
-    def register_translation(self, source: Protocol, target: Protocol, rules: dict[str, Any] = None) -> ProtocolTranslation:
+    def register_translation(
+        self, source: Protocol, target: Protocol, rules: dict[str, Any] = None
+    ) -> ProtocolTranslation:
         key = f"{source.value}:{target.value}"
         translation = ProtocolTranslation(source_protocol=source, target_protocol=target, rules=rules or {})
         self.translations[key] = translation

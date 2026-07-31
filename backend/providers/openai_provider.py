@@ -68,10 +68,9 @@ class OpenAIProvider(BaseProvider):
 
     def _estimate_cost(self, model: str, usage: TokenUsage) -> float:
         pricing = self.PRICING.get(model, {"input": 0.0, "output": 0.0})
-        return (
-            (usage.prompt_tokens / 1_000_000) * pricing["input"]
-            + (usage.completion_tokens / 1_000_000) * pricing["output"]
-        )
+        return (usage.prompt_tokens / 1_000_000) * pricing["input"] + (usage.completion_tokens / 1_000_000) * pricing[
+            "output"
+        ]
 
     async def complete(
         self,
@@ -138,6 +137,7 @@ class OpenAIProvider(BaseProvider):
                     break
 
                 import json
+
                 data = json.loads(data_str)
                 choice = data["choices"][0]
                 delta = choice.get("delta", {})

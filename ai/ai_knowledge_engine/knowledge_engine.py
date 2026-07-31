@@ -1,4 +1,5 @@
 """Knowledge Engine — Core knowledge management engine."""
+
 from datetime import datetime
 from typing import Any
 
@@ -94,6 +95,10 @@ class KnowledgeEngine:
             "total_experiences": len(self._experiences),
             "total_embeddings": len(self._embeddings),
             "knowledge_by_type": len(set(k.knowledge_type.value for k in self._knowledge.values())),
-            "validated": len([k for k in self._knowledge.values() if k.validation_status == ValidationStatus.VALIDATED]),
-            "pending_validation": len([k for k in self._knowledge.values() if k.validation_status == ValidationStatus.PENDING]),
+            "validated": len(
+                [k for k in self._knowledge.values() if k.validation_status == ValidationStatus.VALIDATED]
+            ),
+            "pending_validation": len(
+                [k for k in self._knowledge.values() if k.validation_status == ValidationStatus.PENDING]
+            ),
         }

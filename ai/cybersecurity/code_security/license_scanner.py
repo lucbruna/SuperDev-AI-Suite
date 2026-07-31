@@ -1,6 +1,7 @@
 """
 License Compliance Scanner
 """
+
 from dataclasses import dataclass
 from enum import Enum
 
@@ -49,7 +50,9 @@ class LicenseScanner:
     def scan_component(self, component: str, version: str, license_name: str) -> ComponentLicense:
         lic_info = self.known_licenses.get(license_name)
         compliant = license_name not in self.blocked_licenses
-        result = ComponentLicense(component=component, version=version, license=license_name, license_info=lic_info, compliant=compliant)
+        result = ComponentLicense(
+            component=component, version=version, license=license_name, license_info=lic_info, compliant=compliant
+        )
         self.scanned_components.append(result)
         return result
 

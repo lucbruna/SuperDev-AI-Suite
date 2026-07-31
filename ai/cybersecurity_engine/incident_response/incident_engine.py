@@ -1,4 +1,5 @@
 """Incident response engine."""
+
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -61,7 +62,13 @@ class IncidentResponseEngine:
         self._playbooks: dict[str, Playbook] = {}
         self._runbooks: dict[str, list[str]] = {}
 
-    def create_incident(self, title: str, description: str = "", severity: IncidentSeverity = IncidentSeverity.MEDIUM, assignee: str = "") -> Incident:
+    def create_incident(
+        self,
+        title: str,
+        description: str = "",
+        severity: IncidentSeverity = IncidentSeverity.MEDIUM,
+        assignee: str = "",
+    ) -> Incident:
         inc = Incident(title=title, description=description, severity=severity, assignee=assignee)
         self._incidents[inc.incident_id] = inc
         return inc
@@ -118,7 +125,9 @@ class IncidentResponseEngine:
                 return pb
         return None
 
-    def get_incidents(self, severity: IncidentSeverity | None = None, status: IncidentStatus | None = None) -> list[Incident]:
+    def get_incidents(
+        self, severity: IncidentSeverity | None = None, status: IncidentStatus | None = None
+    ) -> list[Incident]:
         incidents = list(self._incidents.values())
         if severity:
             incidents = [i for i in incidents if i.severity == severity]

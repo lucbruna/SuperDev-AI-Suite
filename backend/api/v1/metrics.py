@@ -3,6 +3,7 @@
 Exposes /metrics in Prometheus text exposition format so that
 Prometheus, Grafana, Datadog, etc. can scrape application metrics.
 """
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Response
@@ -46,18 +47,14 @@ def _prometheus_text(collector) -> str:
     lines.append("# TYPE superdev_endpoint_requests_total counter")
     for endpoint, count in metrics.get("requests_by_endpoint", {}).items():
         method, path = endpoint.split(" ", 1) if " " in endpoint else ("unknown", endpoint)
-        lines.append(
-            f'superdev_endpoint_requests_total{{method="{method}",path="{path}"}} {count}'
-        )
+        lines.append(f'superdev_endpoint_requests_total{{method="{method}",path="{path}"}} {count}')
 
     # Per-endpoint durations
     lines.append("# HELP superdev_endpoint_duration_ms Average endpoint duration.")
     lines.append("# TYPE superdev_endpoint_duration_ms gauge")
     for endpoint, dur in metrics.get("durations", {}).items():
         method, path = endpoint.split(" ", 1) if " " in endpoint else ("unknown", endpoint)
-        lines.append(
-            f'superdev_endpoint_duration_ms{{method="{method}",path="{path}"}} {dur["avg_ms"]}'
-        )
+        lines.append(f'superdev_endpoint_duration_ms{{method="{method}",path="{path}"}} {dur["avg_ms"]}')
 
     # Per-endpoint error counts
     lines.append("# HELP superdev_endpoint_errors_total Errors per endpoint+status.")
@@ -67,9 +64,7 @@ def _prometheus_text(collector) -> str:
         if len(parts) == 2 and parts[1].isdigit():
             endpoint, status = parts
             method, path = endpoint.split(" ", 1) if " " in endpoint else ("unknown", endpoint)
-            lines.append(
-                f'superdev_endpoint_errors_total{{method="{method}",path="{path}",status="{status}"}} {count}'
-            )
+            lines.append(f'superdev_endpoint_errors_total{{method="{method}",path="{path}",status="{status}"}} {count}')
         else:
             lines.append(f'superdev_endpoint_errors_total{{error="{key}"}} {count}')
 

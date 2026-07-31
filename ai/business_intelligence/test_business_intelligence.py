@@ -1,4 +1,5 @@
 """Comprehensive tests for business_intelligence subsystem (Volume 33)."""
+
 import os
 import sys
 import unittest
@@ -92,7 +93,9 @@ class TestBIModels(unittest.TestCase):
         self.assertEqual(ins.impact, "medium")
 
     def test_prediction(self):
-        pred = Prediction(prediction_id="p1", target_metric="revenue", predicted_value=50000, confidence_interval=(45000, 55000))
+        pred = Prediction(
+            prediction_id="p1", target_metric="revenue", predicted_value=50000, confidence_interval=(45000, 55000)
+        )
         self.assertEqual(pred.predicted_value, 50000)
 
     def test_decision(self):
@@ -538,7 +541,9 @@ class TestBISecurity(unittest.TestCase):
         self.assertEqual(BISeverity.CRITICAL.value, "critical")
 
     def test_security_issue(self):
-        issue = BISecurityIssue(issue_id="i1", check=BISecurityCheck.PERMISSION, severity=BISeverity.HIGH, description="test")
+        issue = BISecurityIssue(
+            issue_id="i1", check=BISecurityCheck.PERMISSION, severity=BISeverity.HIGH, description="test"
+        )
         self.assertEqual(issue.severity, BISeverity.HIGH)
         self.assertFalse(issue.resolved)
 

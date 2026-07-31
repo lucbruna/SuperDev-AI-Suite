@@ -142,6 +142,7 @@ class TestSerializer:
 class TestDeserializer:
     def test_deserialize(self) -> None:
         import json
+
         d = Deserializer.deserialize(json.dumps({"a": 1}))
         assert d["a"] == 1
 

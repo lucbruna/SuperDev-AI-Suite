@@ -1,15 +1,20 @@
 """Users subsystem generator."""
+
 import os
 
-BASE = r'C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\enterprise\users'
+BASE = r"C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\enterprise\users"
+
 
 def w(path, content):
     full = os.path.join(BASE, path)
     os.makedirs(os.path.dirname(full), exist_ok=True)
-    with open(full, 'w', encoding='utf-8') as f:
+    with open(full, "w", encoding="utf-8") as f:
         f.write(content)
 
-w('user_engine.py', '''"""User engine."""
+
+w(
+    "user_engine.py",
+    '''"""User engine."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time
@@ -52,9 +57,12 @@ class UserEngine:
         return [u for u in self._users.values() if u.get("org_id") == org_id]
     def count(self) -> int:
         return len(self._users)
-''')
+''',
+)
 
-w('user_manager.py', '''"""User manager."""
+w(
+    "user_manager.py",
+    '''"""User manager."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time
@@ -83,9 +91,12 @@ class UserManager:
         return False
     def list_users_by_role(self, role: str) -> List[str]:
         return [uid for uid, r in self._assignments.items() if r == role]
-''')
+''',
+)
 
-w('profile.py', '''"""User profile."""
+w(
+    "profile.py",
+    '''"""User profile."""
 from __future__ import annotations
 from typing import Any, Dict, Optional
 
@@ -110,9 +121,12 @@ class UserProfile:
         return False
     def list_all(self) -> Dict[str, Dict[str, Any]]:
         return dict(self._profiles)
-''')
+''',
+)
 
-w('invitation.py', '''"""User invitations."""
+w(
+    "invitation.py",
+    '''"""User invitations."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time, uuid
@@ -153,9 +167,12 @@ class InvitationManager:
         return results
     def list_all(self) -> List[Dict[str, Any]]:
         return list(self._invitations.values())
-''')
+''',
+)
 
-w('status.py', '''"""User status."""
+w(
+    "status.py",
+    '''"""User status."""
 from __future__ import annotations
 from typing import Any, Dict
 
@@ -183,9 +200,12 @@ class UserStatusManager:
             self._statuses[uid] = status
             count += 1
         return count
-''')
+''',
+)
 
-w('activity.py', '''"""User activity."""
+w(
+    "activity.py",
+    '''"""User activity."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import time
@@ -215,9 +235,12 @@ class UserActivity:
             if activities and activities[-1]["timestamp"] > cutoff:
                 active.append(user_id)
         return active
-''')
+''',
+)
 
-w('preferences.py', '''"""User preferences."""
+w(
+    "preferences.py",
+    '''"""User preferences."""
 from __future__ import annotations
 from typing import Any, Dict
 
@@ -242,9 +265,12 @@ class UserPreferences:
         n = len(self._prefs.get(user_id, {}))
         self._prefs.pop(user_id, None)
         return n
-''')
+''',
+)
 
-w('__init__.py', '''"""Users subsystem."""
+w(
+    "__init__.py",
+    '''"""Users subsystem."""
 from .user_engine import UserEngine
 from .user_manager import UserManager
 from .profile import UserProfile
@@ -257,6 +283,7 @@ __all__ = [
     "UserEngine", "UserManager", "UserProfile", "InvitationManager",
     "UserStatusManager", "UserActivity", "UserPreferences"
 ]
-''')
+''',
+)
 
 print("users/: 8 files created")

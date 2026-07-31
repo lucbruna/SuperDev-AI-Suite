@@ -1,4 +1,5 @@
 """CX Protocols — Protocol definitions for customer experience."""
+
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any

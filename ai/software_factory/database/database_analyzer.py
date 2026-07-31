@@ -1,4 +1,5 @@
 """Analyzer for database schemas and performance."""
+
 from typing import Any
 
 from .models import DatabaseSchema, Table

@@ -1,6 +1,7 @@
 """
 Register Page
 """
+
 from dataclasses import dataclass
 from typing import Any
 

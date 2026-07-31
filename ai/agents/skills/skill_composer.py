@@ -1,4 +1,5 @@
 """Skill composition for complex task execution."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -10,8 +11,7 @@ class SkillComposer:
     def __init__(self) -> None:
         self._compositions: list[dict[str, Any]] = []
 
-    def compose(self, skill_ids: list[str], task: dict[str, Any],
-                manager: Any) -> dict[str, Any]:
+    def compose(self, skill_ids: list[str], task: dict[str, Any], manager: Any) -> dict[str, Any]:
         available_skills = []
         missing: list[str] = []
         for sid in skill_ids:

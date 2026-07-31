@@ -44,6 +44,7 @@ class BreakpointCondition:
             return actual in self.value
         if self.operator == "regex" and isinstance(actual, str):
             import re
+
             return bool(re.search(str(self.value), actual))
         return False
 
@@ -68,6 +69,7 @@ class Breakpoint:
 
     def __post_init__(self):
         import uuid
+
         self.id = str(uuid.uuid4())[:12]
 
     def should_break(self, context: dict[str, Any]) -> bool:
@@ -94,7 +96,9 @@ class Breakpoint:
                 "field": self.condition.field,
                 "operator": self.condition.operator,
                 "value": str(self.condition.value),
-            } if self.condition else None,
+            }
+            if self.condition
+            else None,
         }
 
 

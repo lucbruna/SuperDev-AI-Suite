@@ -1,15 +1,20 @@
 """Billing subsystem generator."""
+
 import os
 
-BASE = r'C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\enterprise\billing'
+BASE = r"C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\enterprise\billing"
+
 
 def w(path, content):
     full = os.path.join(BASE, path)
     os.makedirs(os.path.dirname(full), exist_ok=True)
-    with open(full, 'w', encoding='utf-8') as f:
+    with open(full, "w", encoding="utf-8") as f:
         f.write(content)
 
-w('billing_engine.py', '''"""Billing engine."""
+
+w(
+    "billing_engine.py",
+    '''"""Billing engine."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time
@@ -37,9 +42,12 @@ class BillingEngine:
         return sum(c["amount"] for c in results)
     def is_running(self) -> bool:
         return self._started
-''')
+''',
+)
 
-w('calculator.py', '''"""Billing calculator."""
+w(
+    "calculator.py",
+    '''"""Billing calculator."""
 from __future__ import annotations
 from typing import Any, Dict, List
 
@@ -66,9 +74,12 @@ class BillingCalculator:
         if total_days == 0:
             return 0.0
         return full_price * (days_used / total_days)
-''')
+''',
+)
 
-w('pricing_rules.py', '''"""Pricing rules."""
+w(
+    "pricing_rules.py",
+    '''"""Pricing rules."""
 from __future__ import annotations
 from typing import Any, Callable, Dict, List
 
@@ -93,9 +104,12 @@ class PricingRules:
         n = len(self._rules)
         self._rules.clear()
         return n
-''')
+''',
+)
 
-w('discounts.py', '''"""Discount management."""
+w(
+    "discounts.py",
+    '''"""Discount management."""
 from __future__ import annotations
 from typing import Any, Dict, List
 
@@ -128,9 +142,12 @@ class DiscountManager:
             del self._discounts[code]
             return True
         return False
-''')
+''',
+)
 
-w('taxes.py', '''"""Tax management."""
+w(
+    "taxes.py",
+    '''"""Tax management."""
 from __future__ import annotations
 from typing import Any, Dict, List
 
@@ -164,9 +181,12 @@ class TaxManager:
             del self._taxes[name]
             return True
         return False
-''')
+''',
+)
 
-w('charges.py', '''"""Charge management."""
+w(
+    "charges.py",
+    '''"""Charge management."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import time
@@ -203,9 +223,12 @@ class ChargeManager:
         return sum(c["amount"] for c in self._charges if c["org_id"] == org_id and c["status"] == "paid")
     def count(self) -> int:
         return len(self._charges)
-''')
+''',
+)
 
-w('reconciliation.py', '''"""Billing reconciliation."""
+w(
+    "reconciliation.py",
+    '''"""Billing reconciliation."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import time
@@ -229,9 +252,12 @@ class ReconciliationManager:
         return [r for r in self._reconciliations if r["status"] == "unbalanced"]
     def count(self) -> int:
         return len(self._reconciliations)
-''')
+''',
+)
 
-w('__init__.py', '''"""Billing subsystem."""
+w(
+    "__init__.py",
+    '''"""Billing subsystem."""
 from .billing_engine import BillingEngine
 from .calculator import BillingCalculator
 from .pricing_rules import PricingRules
@@ -244,6 +270,7 @@ __all__ = [
     "BillingEngine", "BillingCalculator", "PricingRules",
     "DiscountManager", "TaxManager", "ChargeManager", "ReconciliationManager"
 ]
-''')
+''',
+)
 
 print("billing/: 8 files created")

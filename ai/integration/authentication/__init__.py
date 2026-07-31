@@ -7,16 +7,16 @@ from .oauth import OAuthApp, OAuthProvider, OAuthToken
 from .token_manager import IntegrationToken, IntegrationTokenManager
 
 __all__ = [
-    'IntegrationAuth',
-    'AuthType',
-    'AuthCredential',
-    'OAuthProvider',
-    'OAuthApp',
-    'OAuthToken',
-    'APIKeyManager',
-    'APIKey',
-    'CertificateManager',
-    'Certificate',
-    'IntegrationTokenManager',
-    'IntegrationToken',
+    "IntegrationAuth",
+    "AuthType",
+    "AuthCredential",
+    "OAuthProvider",
+    "OAuthApp",
+    "OAuthToken",
+    "APIKeyManager",
+    "APIKey",
+    "CertificateManager",
+    "Certificate",
+    "IntegrationTokenManager",
+    "IntegrationToken",
 ]

@@ -1,4 +1,5 @@
 """Planning subsystem - goal decomposition, scheduling, replanning."""
+
 from __future__ import annotations
 
 from .goal_manager import GoalManager
@@ -10,6 +11,11 @@ from .strategy import StrategyEngine
 from .task_decomposition import TaskDecomposer
 
 __all__ = [
-    "PlanningEngine", "GoalManager", "TaskDecomposer",
-    "StrategyEngine", "Scheduler", "PlanningOptimizer", "Replanner",
+    "PlanningEngine",
+    "GoalManager",
+    "TaskDecomposer",
+    "StrategyEngine",
+    "Scheduler",
+    "PlanningOptimizer",
+    "Replanner",
 ]

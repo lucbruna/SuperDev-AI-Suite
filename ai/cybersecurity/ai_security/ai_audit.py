@@ -1,6 +1,7 @@
 """
 AI Decision Audit System
 """
+
 import hashlib
 import json
 from dataclasses import dataclass, field
@@ -44,13 +45,40 @@ class AIAudit:
         self.entries: list[AuditEntry] = []
         self.immutable_log: list[str] = []
 
-    def log_decision(self, model_id: str, action: AuditAction, input_data: str = "", output: str = "", user_id: str = "", metadata: dict[str, Any] = None, explainability: dict[str, Any] = None) -> AuditEntry:
+    def log_decision(
+        self,
+        model_id: str,
+        action: AuditAction,
+        input_data: str = "",
+        output: str = "",
+        user_id: str = "",
+        metadata: dict[str, Any] = None,
+        explainability: dict[str, Any] = None,
+    ) -> AuditEntry:
         entry_id = hashlib.sha256(f"{model_id}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
         input_hash = hashlib.sha256(input_data.encode()).hexdigest() if input_data else ""
         output_hash = hashlib.sha256(output.encode()).hexdigest() if output else ""
-        entry = AuditEntry(entry_id=entry_id, model_id=model_id, action=action, input_hash=input_hash, output_hash=output_hash, user_id=user_id, metadata=metadata or {}, explainability=explainability or {})
+        entry = AuditEntry(
+            entry_id=entry_id,
+            model_id=model_id,
+            action=action,
+            input_hash=input_hash,
+            output_hash=output_hash,
+            user_id=user_id,
+            metadata=metadata or {},
+            explainability=explainability or {},
+        )
         self.entries.append(entry)
-        self.immutable_log.append(json.dumps({"entry_id": entry_id, "model_id": model_id, "action": action.value, "timestamp": entry.timestamp.isoformat()}))
+        self.immutable_log.append(
+            json.dumps(
+                {
+                    "entry_id": entry_id,
+                    "model_id": model_id,
+                    "action": action.value,
+                    "timestamp": entry.timestamp.isoformat(),
+                }
+            )
+        )
         return entry
 
     def get_entries(self, model_id: str = None, action: AuditAction = None) -> list[AuditEntry]:

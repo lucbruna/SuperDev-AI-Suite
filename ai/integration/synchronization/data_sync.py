@@ -1,6 +1,7 @@
 """
 Data Sync - Record-level synchronization
 """
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -26,7 +27,9 @@ class DataSync:
     def create_record(self, source_id: str, target_id: str, data: dict[str, Any]) -> SyncRecord:
         record_id = hashlib.sha256(f"{source_id}{target_id}{str(data)}".encode()).hexdigest()[:16]
         hash_val = hashlib.sha256(str(data).encode()).hexdigest()
-        record = SyncRecord(record_id=record_id, source_id=source_id, target_id=target_id, data=data, hash_value=hash_val)
+        record = SyncRecord(
+            record_id=record_id, source_id=source_id, target_id=target_id, data=data, hash_value=hash_val
+        )
         self.records[record_id] = record
         return record
 
@@ -43,7 +46,14 @@ class DataSync:
         if record:
             new_hash = hashlib.sha256(str(new_data).encode()).hexdigest()
             if record.hash_value != new_hash:
-                self.conflicts.append({"record_id": record_id, "old_data": record.data, "new_data": new_data, "detected_at": datetime.now().isoformat()})
+                self.conflicts.append(
+                    {
+                        "record_id": record_id,
+                        "old_data": record.data,
+                        "new_data": new_data,
+                        "detected_at": datetime.now().isoformat(),
+                    }
+                )
                 record.status = "conflict"
                 return True
         return False

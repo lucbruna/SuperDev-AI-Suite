@@ -8,10 +8,24 @@ from ..base.base_agent import AgentResult, BaseAgent
 
 # Directories to skip during security scans (avoids node_modules, .git, etc.)
 _EXCLUDED_DIRS: set[str] = {
-    "node_modules", ".git", "__pycache__", "venv", ".venv",
-    "dist", "build", ".tox", ".mypy_cache", ".pytest_cache",
-    ".eggs", "*.egg-info", ".sass-cache", "bower_components",
-    ".idea", ".vscode", "coverage", ".nyc_output",
+    "node_modules",
+    ".git",
+    "__pycache__",
+    "venv",
+    ".venv",
+    "dist",
+    "build",
+    ".tox",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".eggs",
+    "*.egg-info",
+    ".sass-cache",
+    "bower_components",
+    ".idea",
+    ".vscode",
+    "coverage",
+    ".nyc_output",
 }
 
 _MAX_FILE_SIZE = 1_000_000  # 1 MB — skip larger files
@@ -91,15 +105,17 @@ class SecurityAgent(BaseAgent):
                             content = f.read()
                             for pattern, desc, severity in secret_patterns:
                                 for m in re.finditer(pattern, content):
-                                    line_num = content[:m.start()].count("\n") + 1
-                                    findings.append({
-                                        "type": "secret",
-                                        "file": fpath,
-                                        "line": line_num,
-                                        "description": desc,
-                                        "severity": severity,
-                                        "match": m.group()[:30] + "...",
-                                    })
+                                    line_num = content[: m.start()].count("\n") + 1
+                                    findings.append(
+                                        {
+                                            "type": "secret",
+                                            "file": fpath,
+                                            "line": line_num,
+                                            "description": desc,
+                                            "severity": severity,
+                                            "match": m.group()[:30] + "...",
+                                        }
+                                    )
                     except Exception:
                         pass
         return findings
@@ -115,13 +131,15 @@ class SecurityAgent(BaseAgent):
                 if f in ("requirements.txt", "Pipfile", "poetry.lock", "yarn.lock", "package-lock.json"):
                     requirements_files.append(os.path.join(root, f))
         if not requirements_files:
-            findings.append({
-                "type": "dependency",
-                "file": "N/A",
-                "line": 0,
-                "description": "No dependency files found",
-                "severity": "medium",
-            })
+            findings.append(
+                {
+                    "type": "dependency",
+                    "file": "N/A",
+                    "line": 0,
+                    "description": "No dependency files found",
+                    "severity": "medium",
+                }
+            )
         return findings
 
     async def _check_permissions(self, path: str) -> list[dict[str, Any]]:
@@ -137,13 +155,15 @@ class SecurityAgent(BaseAgent):
                         continue
                     mode = os.stat(fpath).st_mode
                     if mode & 0o777 == 0o777:
-                        findings.append({
-                            "type": "permission",
-                            "file": fpath,
-                            "line": 0,
-                            "description": "World-writable file permissions",
-                            "severity": "medium",
-                        })
+                        findings.append(
+                            {
+                                "type": "permission",
+                                "file": fpath,
+                                "line": 0,
+                                "description": "World-writable file permissions",
+                                "severity": "medium",
+                            }
+                        )
                 except Exception:
                     pass
         return findings

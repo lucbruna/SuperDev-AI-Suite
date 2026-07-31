@@ -1,4 +1,5 @@
 """Conflict Resolution - Data conflict detection and resolution."""
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -35,7 +36,14 @@ class ConflictResolver:
 
     def detect(self, table: str, record_id: str, client_data: dict[str, Any], server_data: dict[str, Any]) -> Conflict:
         conflict_id = hashlib.sha256(f"{table}{record_id}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
-        conflict = Conflict(conflict_id=conflict_id, table=table, record_id=record_id, client_data=client_data, server_data=server_data, strategy=self.default_strategy)
+        conflict = Conflict(
+            conflict_id=conflict_id,
+            table=table,
+            record_id=record_id,
+            client_data=client_data,
+            server_data=server_data,
+            strategy=self.default_strategy,
+        )
         self.conflicts.append(conflict)
         return conflict
 

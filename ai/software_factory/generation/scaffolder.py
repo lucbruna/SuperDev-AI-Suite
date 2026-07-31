@@ -1,4 +1,5 @@
 """Scaffolder for creating project structures."""
+
 from typing import Any
 
 from .models import GeneratedFile, TemplateLanguage
@@ -36,11 +37,13 @@ class Scaffolder:
         files = []
         for path_template, content_template in structure.items():
             content = content_template.replace("{{name}}", project_name)
-            files.append(GeneratedFile(
-                path=path_template,
-                content=content,
-                language=TemplateLanguage.PYTHON,
-            ))
+            files.append(
+                GeneratedFile(
+                    path=path_template,
+                    content=content,
+                    language=TemplateLanguage.PYTHON,
+                )
+            )
         return files
 
     def register_structure(self, name: str, structure: dict[str, str]) -> None:

@@ -33,7 +33,11 @@ class BrowserPage(BaseTool):
         try:
             if action == "open":
                 url = params.get("url", "")
-                self._pages[page_id] = {"url": url, "title": "Mock Page", "content": f"<html><body><h1>{url}</h1></body></html>"}
+                self._pages[page_id] = {
+                    "url": url,
+                    "title": "Mock Page",
+                    "content": f"<html><body><h1>{url}</h1></body></html>",
+                }
                 return {"success": True, "page_id": page_id, "url": url}
             elif action == "get_content":
                 page = self._pages.get(page_id)

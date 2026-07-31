@@ -1,4 +1,5 @@
 """Execution engine for task orchestration and workflow management."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -16,9 +17,7 @@ class ExecutionEngine:
         self._config = config or {}
         self._task_executor = TaskExecutor()
         self._workflow_runner = WorkflowRunner()
-        self._parallel_executor = ParallelExecutor(
-            max_concurrent=self._config.get("max_concurrent", 10)
-        )
+        self._parallel_executor = ParallelExecutor(max_concurrent=self._config.get("max_concurrent", 10))
         self._progress = ProgressTracker()
         self._execution_count: int = 0
         self._error_count: int = 0
@@ -52,9 +51,6 @@ class ExecutionEngine:
         return {
             "total_executions": self._execution_count,
             "total_errors": self._error_count,
-            "success_rate": round(
-                (self._execution_count - self._error_count)
-                / max(self._execution_count, 1), 2
-            ),
+            "success_rate": round((self._execution_count - self._error_count) / max(self._execution_count, 1), 2),
             "parallel_queue": self._parallel_executor.get_queue_status(),
         }

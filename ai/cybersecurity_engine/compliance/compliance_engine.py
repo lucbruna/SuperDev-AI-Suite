@@ -1,4 +1,5 @@
 """Compliance engine."""
+
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -61,7 +62,9 @@ class ComplianceEngine:
     def get_control(self, control_id: str) -> ComplianceControl | None:
         return self._controls.get(control_id)
 
-    def update_control_status(self, control_id: str, status: ComplianceStatus, evidence: list[str] | None = None) -> bool:
+    def update_control_status(
+        self, control_id: str, status: ComplianceStatus, evidence: list[str] | None = None
+    ) -> bool:
         control = self._controls.get(control_id)
         if not control:
             return False
@@ -101,7 +104,11 @@ class ComplianceEngine:
         return assessments
 
     def get_gaps(self, framework: ComplianceFramework) -> list[ComplianceControl]:
-        return [c for c in self._controls.values() if c.framework == framework and c.status in (ComplianceStatus.NON_COMPLIANT, ComplianceStatus.PARTIAL)]
+        return [
+            c
+            for c in self._controls.values()
+            if c.framework == framework and c.status in (ComplianceStatus.NON_COMPLIANT, ComplianceStatus.PARTIAL)
+        ]
 
     def get_stats(self) -> dict:
         controls = list(self._controls.values())

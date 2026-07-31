@@ -1,4 +1,5 @@
 """Manager for database connections and operations."""
+
 from typing import Any
 
 from .models import DatabaseConnection, DatabaseSchema

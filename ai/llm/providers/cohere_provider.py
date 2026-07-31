@@ -91,7 +91,11 @@ class CohereProvider(BaseLLMProvider):
                 except ProviderError as e:
                     attempt += 1
                     if attempt > self._max_retries or not _is_retryable(e, self._retry_codes):
-                        yield {"content": f"[{self._name} error: {e.message}]", "finish_reason": "error", "error": e.message}
+                        yield {
+                            "content": f"[{self._name} error: {e.message}]",
+                            "finish_reason": "error",
+                            "error": e.message,
+                        }
                         break
                     retry_after = e.retry_after or _exponential_backoff(attempt - 1)
                     await asyncio.sleep(retry_after)
@@ -99,7 +103,11 @@ class CohereProvider(BaseLLMProvider):
                     pe = ProviderError.from_exception(e, self._name)
                     attempt += 1
                     if attempt > self._max_retries or not _is_retryable(pe, self._retry_codes):
-                        yield {"content": f"[{self._name} error: {pe.message}]", "finish_reason": "error", "error": pe.message}
+                        yield {
+                            "content": f"[{self._name} error: {pe.message}]",
+                            "finish_reason": "error",
+                            "error": pe.message,
+                        }
                         break
                     await asyncio.sleep(_exponential_backoff(attempt - 1))
 
@@ -180,7 +188,11 @@ class CohereProvider(BaseLLMProvider):
                             "delta": StreamDelta(content=text),
                         }
 
-            elif event_type == "ContentEndV2ChatStreamResponse" or event_type == "ToolCallStartV2ChatStreamResponse" or event_type == "ToolCallDeltaV2ChatStreamResponse":
+            elif (
+                event_type == "ContentEndV2ChatStreamResponse"
+                or event_type == "ToolCallStartV2ChatStreamResponse"
+                or event_type == "ToolCallDeltaV2ChatStreamResponse"
+            ):
                 pass
 
             elif event_type == "MessageEndV2ChatStreamResponse":
@@ -241,14 +253,16 @@ class CohereProvider(BaseLLMProvider):
         for tool in tools:
             if tool.get("type") == "function":
                 fn = tool["function"]
-                converted.append({
-                    "type": "function",
-                    "function": {
-                        "name": fn.get("name", ""),
-                        "description": fn.get("description", ""),
-                        "parameters": fn.get("parameters", {}),
-                    },
-                })
+                converted.append(
+                    {
+                        "type": "function",
+                        "function": {
+                            "name": fn.get("name", ""),
+                            "description": fn.get("description", ""),
+                            "parameters": fn.get("parameters", {}),
+                        },
+                    }
+                )
         return converted if converted else None
 
     def _parse_response(self, resp: Any, prompt: str) -> dict[str, Any]:
@@ -275,14 +289,16 @@ class CohereProvider(BaseLLMProvider):
             tool_calls = []
             for tc in message.tool_calls:
                 tc_func = tc.function
-                tool_calls.append({
-                    "id": tc.id,
-                    "type": tc.type or "function",
-                    "function": {
-                        "name": tc_func.name if tc_func else "",
-                        "arguments": json.dumps(tc_func.arguments if tc_func else {}),
-                    },
-                })
+                tool_calls.append(
+                    {
+                        "id": tc.id,
+                        "type": tc.type or "function",
+                        "function": {
+                            "name": tc_func.name if tc_func else "",
+                            "arguments": json.dumps(tc_func.arguments if tc_func else {}),
+                        },
+                    }
+                )
 
         # Extract usage
         pt = count_tokens(prompt)
@@ -330,8 +346,18 @@ class CohereProvider(BaseLLMProvider):
             result = await client.check_api_key()
             elapsed = (time_module.monotonic() - start) * 1000
             if result and result.valid:
-                return {"status": "healthy", "latency_ms": round(elapsed, 1), "provider": "cohere", "model": self._model}
-            return {"status": "unhealthy", "latency_ms": round(elapsed, 1), "error": "Invalid API key", "provider": "cohere"}
+                return {
+                    "status": "healthy",
+                    "latency_ms": round(elapsed, 1),
+                    "provider": "cohere",
+                    "model": self._model,
+                }
+            return {
+                "status": "unhealthy",
+                "latency_ms": round(elapsed, 1),
+                "error": "Invalid API key",
+                "provider": "cohere",
+            }
         except Exception as e:
             elapsed = (time_module.monotonic() - start) * 1000
             return {"status": "unhealthy", "latency_ms": round(elapsed, 1), "error": str(e), "provider": "cohere"}
@@ -346,7 +372,12 @@ class CohereProvider(BaseLLMProvider):
             {"id": "command", "name": "Command", "capabilities": ["chat"], "context_window": 4096},
             {"id": "command-light", "name": "Command Light", "capabilities": ["chat"], "context_window": 4096},
             {"id": "embed-english-v3.0", "name": "Embed English v3", "capabilities": ["embedding"], "dimensions": 1024},
-            {"id": "embed-multilingual-v3.0", "name": "Embed Multilingual v3", "capabilities": ["embedding"], "dimensions": 1024},
+            {
+                "id": "embed-multilingual-v3.0",
+                "name": "Embed Multilingual v3",
+                "capabilities": ["embedding"],
+                "dimensions": 1024,
+            },
         ]
 
     async def cleanup(self) -> None:

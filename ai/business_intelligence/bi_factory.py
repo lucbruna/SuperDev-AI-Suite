@@ -1,4 +1,5 @@
 """BI Factory — Factory for creating BI components."""
+
 from typing import Any
 
 from .bi_models import KPI, AnalysisType, DataSource, Decision, DecisionType, Insight, MetricType, Prediction
@@ -21,17 +22,24 @@ class BIFactory:
         params = {**template, **overrides}
         return KPI(**params)
 
-    def create_insight(self, title: str, description: str, analysis_type: AnalysisType = AnalysisType.DESCRIPTIVE, **kwargs) -> Insight:
+    def create_insight(
+        self, title: str, description: str, analysis_type: AnalysisType = AnalysisType.DESCRIPTIVE, **kwargs
+    ) -> Insight:
         return Insight(title=title, description=description, analysis_type=analysis_type, **kwargs)
 
-    def create_prediction(self, target_metric: str, predicted_value: float, horizon: str = "30d", **kwargs) -> Prediction:
+    def create_prediction(
+        self, target_metric: str, predicted_value: float, horizon: str = "30d", **kwargs
+    ) -> Prediction:
         return Prediction(target_metric=target_metric, predicted_value=predicted_value, horizon=horizon, **kwargs)
 
-    def create_decision(self, title: str, options: list[dict[str, Any]], decision_type: DecisionType = DecisionType.STRATEGIC, **kwargs) -> Decision:
+    def create_decision(
+        self, title: str, options: list[dict[str, Any]], decision_type: DecisionType = DecisionType.STRATEGIC, **kwargs
+    ) -> Decision:
         return Decision(title=title, options=options, decision_type=decision_type, **kwargs)
 
     def create_source(self, name: str, source_type: str = "database", **kwargs) -> DataSource:
         from .bi_models import DataSourceType
+
         try:
             st = DataSourceType(source_type)
         except ValueError:

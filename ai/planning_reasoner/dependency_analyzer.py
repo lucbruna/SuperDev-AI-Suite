@@ -30,6 +30,7 @@ class DependencyAnalyzer:
     async def _find_critical_path(self, graph: dict[str, list[str]]) -> list[str]:
         visited: set[str] = set()
         path: list[str] = []
+
         def dfs(node: str) -> None:
             if node in visited:
                 return
@@ -37,6 +38,7 @@ class DependencyAnalyzer:
             for dep in graph.get(node, []):
                 dfs(dep)
             path.append(node)
+
         for node in graph:
             dfs(node)
         return path

@@ -1,4 +1,5 @@
 """Agent template management system."""
+
 from __future__ import annotations
 
 import copy
@@ -67,8 +68,7 @@ BUILTIN_TEMPLATES: dict[str, dict[str, Any]] = {
         "capabilities": ["chat", "tools", "code_execution"],
         "max_iterations": 12,
         "instructions": (
-            "You are a QA engineer. Write comprehensive tests, analyze "
-            "coverage, detect bugs, and ensure code quality."
+            "You are a QA engineer. Write comprehensive tests, analyze coverage, detect bugs, and ensure code quality."
         ),
     },
     "devops": {
@@ -80,8 +80,7 @@ BUILTIN_TEMPLATES: dict[str, dict[str, Any]] = {
         "capabilities": ["chat", "tools"],
         "max_iterations": 10,
         "instructions": (
-            "You are a DevOps engineer. Manage CI/CD pipelines, Docker, "
-            "Kubernetes, and cloud infrastructure."
+            "You are a DevOps engineer. Manage CI/CD pipelines, Docker, Kubernetes, and cloud infrastructure."
         ),
     },
     "architect": {

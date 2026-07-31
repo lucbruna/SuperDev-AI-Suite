@@ -1,15 +1,20 @@
 """Logging subsystem generator."""
+
 import os
 
-BASE = r'C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\observability\logging'
+BASE = r"C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\observability\logging"
+
 
 def write_file(path, content):
     full = os.path.join(BASE, path)
     os.makedirs(os.path.dirname(full), exist_ok=True)
-    with open(full, 'w', encoding='utf-8') as f:
+    with open(full, "w", encoding="utf-8") as f:
         f.write(content)
 
-write_file('logging_engine.py', '''"""Logging subsystem engine."""
+
+write_file(
+    "logging_engine.py",
+    '''"""Logging subsystem engine."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time
@@ -34,9 +39,12 @@ class LoggingEngine:
         self._storage_active = True
     def get_status(self) -> Dict[str, Any]:
         return {"running": self._started, "collectors": len(self._collectors), "processors": len(self._processors), "storage": self._storage_active}
-''')
+''',
+)
 
-write_file('log_collector.py', '''"""Log collector."""
+write_file(
+    "log_collector.py",
+    '''"""Log collector."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time, uuid
@@ -64,9 +72,12 @@ class LogCollector:
         return len(self._buffer)
     def total_flushed(self) -> int:
         return self._flushed
-''')
+''',
+)
 
-write_file('log_processor.py', '''"""Log processor."""
+write_file(
+    "log_processor.py",
+    '''"""Log processor."""
 from __future__ import annotations
 from typing import Any, Callable, Dict, List, Optional
 
@@ -97,9 +108,12 @@ class LogProcessor:
         return len(self._filters)
     def transformer_count(self) -> int:
         return len(self._transformers)
-''')
+''',
+)
 
-write_file('log_storage.py', '''"""Log storage."""
+write_file(
+    "log_storage.py",
+    '''"""Log storage."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time
@@ -130,9 +144,12 @@ class LogStorage:
         return n
     def get_recent(self, limit: int = 10) -> List[Dict[str, Any]]:
         return self._entries[-limit:]
-''')
+''',
+)
 
-write_file('log_search.py', '''"""Log search."""
+write_file(
+    "log_search.py",
+    '''"""Log search."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time
@@ -157,9 +174,12 @@ class LogSearch:
         return []
     def get_search_history(self, limit: int = 20) -> List[Dict[str, Any]]:
         return self._search_history[-limit:]
-''')
+''',
+)
 
-write_file('log_filter.py', '''"""Log filters."""
+write_file(
+    "log_filter.py",
+    '''"""Log filters."""
 from __future__ import annotations
 from typing import Any, Callable, Dict, List
 
@@ -192,9 +212,12 @@ class LogFilter:
             del self._filters[name]
             return True
         return False
-''')
+''',
+)
 
-write_file('log_rotation.py', '''"""Log rotation."""
+write_file(
+    "log_rotation.py",
+    '''"""Log rotation."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import time
@@ -222,9 +245,12 @@ class LogRotation:
         return {"current_size": self._current_size, "max_size": self._max_size, "files": len(self._files), "rotations": self._rotations}
     def get_files(self) -> List[Dict[str, Any]]:
         return list(self._files)
-''')
+''',
+)
 
-write_file('log_archive.py', '''"""Log archival."""
+write_file(
+    "log_archive.py",
+    '''"""Log archival."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import time
@@ -249,9 +275,12 @@ class LogArchive:
             self._archived = self._archived[-max_archives:]
             return len(removed)
         return 0
-''')
+''',
+)
 
-write_file('__init__.py', '''"""Logging subsystem."""
+write_file(
+    "__init__.py",
+    '''"""Logging subsystem."""
 from .logging_engine import LoggingEngine
 from .log_collector import LogCollector
 from .log_processor import LogProcessor
@@ -265,6 +294,7 @@ __all__ = [
     "LoggingEngine", "LogCollector", "LogProcessor", "LogStorage",
     "LogSearch", "LogFilter", "LogRotation", "LogArchive"
 ]
-''')
+''',
+)
 
 print("logging/: 9 files created")

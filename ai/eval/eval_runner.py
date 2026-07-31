@@ -11,7 +11,9 @@ class EvalRunner:
     def __init__(self):
         self._results: list[dict[str, Any]] = []
 
-    async def run_single(self, prompt: str, model_a: str, model_b: str, system_prompt: str = "", temperature: float = 0.7) -> dict[str, Any]:
+    async def run_single(
+        self, prompt: str, model_a: str, model_b: str, system_prompt: str = "", temperature: float = 0.7
+    ) -> dict[str, Any]:
         provider_a = get_provider(model_a)
         provider_b = get_provider(model_b)
 
@@ -25,8 +27,18 @@ class EvalRunner:
 
         eval_result = {
             "prompt": prompt,
-            "model_a": {"name": model_a, "response": result_a.get("content", ""), "duration_ms": round(duration_a, 2), "tokens": result_a.get("usage", {}).get("total_tokens", 0)},
-            "model_b": {"name": model_b, "response": result_b.get("content", ""), "duration_ms": round(duration_b, 2), "tokens": result_b.get("usage", {}).get("total_tokens", 0)},
+            "model_a": {
+                "name": model_a,
+                "response": result_a.get("content", ""),
+                "duration_ms": round(duration_a, 2),
+                "tokens": result_a.get("usage", {}).get("total_tokens", 0),
+            },
+            "model_b": {
+                "name": model_b,
+                "response": result_b.get("content", ""),
+                "duration_ms": round(duration_b, 2),
+                "tokens": result_b.get("usage", {}).get("total_tokens", 0),
+            },
             "timestamp": __import__("datetime").datetime.utcnow().isoformat(),
         }
         self._results.append(eval_result)

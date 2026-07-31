@@ -1,6 +1,7 @@
 """
 Intrusion Detection System
 """
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -44,7 +45,9 @@ class IntrusionDetector:
         self.blocked_ips: set = set()
         self.threshold: int = 10
 
-    def add_signature(self, name: str, pattern: str, severity: AlertSeverity = AlertSeverity.MEDIUM) -> DetectionSignature:
+    def add_signature(
+        self, name: str, pattern: str, severity: AlertSeverity = AlertSeverity.MEDIUM
+    ) -> DetectionSignature:
         sig_id = hashlib.sha256(pattern.encode()).hexdigest()[:16]
         sig = DetectionSignature(signature_id=sig_id, name=name, pattern=pattern, severity=severity)
         self.signatures[sig_id] = sig
@@ -55,7 +58,13 @@ class IntrusionDetector:
             if not sig.enabled:
                 continue
             if sig.pattern.lower() in payload.lower():
-                alert = Alert(alert_id=hashlib.sha256(f"{source_ip}{payload}".encode()).hexdigest()[:16], signature_id=sig.signature_id, source_ip=source_ip, message=f"Detected: {sig.name}", severity=sig.severity)
+                alert = Alert(
+                    alert_id=hashlib.sha256(f"{source_ip}{payload}".encode()).hexdigest()[:16],
+                    signature_id=sig.signature_id,
+                    source_ip=source_ip,
+                    message=f"Detected: {sig.name}",
+                    severity=sig.severity,
+                )
                 self.alerts.append(alert)
                 return alert
         return None

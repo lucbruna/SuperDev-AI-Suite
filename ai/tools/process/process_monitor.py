@@ -42,8 +42,8 @@ class ProcessMonitor(BaseTool):
                             pass
                 if os.name == "nt":
                     import subprocess
-                    result = subprocess.run(["tasklist", "/FO", "CSV", "/NH"],
-                                            capture_output=True, text=True)
+
+                    result = subprocess.run(["tasklist", "/FO", "CSV", "/NH"], capture_output=True, text=True)
                     for line in result.stdout.strip().split("\n"):
                         if line:
                             parts = line.strip('"').split('","')

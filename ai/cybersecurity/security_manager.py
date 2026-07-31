@@ -1,6 +1,7 @@
 """
 Security Manager
 """
+
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -48,12 +49,14 @@ class SecurityManager:
         return self.policies.get(name)
 
     def audit(self, action: str, user: str, resource: str, details: dict[str, Any] = None) -> None:
-        self.audit_log.append({
-            "action": action,
-            "user": user,
-            "resource": resource,
-            "details": details or {},
-        })
+        self.audit_log.append(
+            {
+                "action": action,
+                "user": user,
+                "resource": resource,
+                "details": details or {},
+            }
+        )
 
     def get_audit_log(self, limit: int = 100) -> list[dict[str, Any]]:
         return self.audit_log[-limit:]

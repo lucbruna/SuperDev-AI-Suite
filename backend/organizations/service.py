@@ -129,6 +129,7 @@ class OrganizationService:
         # Emit event (best-effort)
         try:
             from backend.organizations.events import MemberInvited
+
             MemberInvited(org_id=org_id, actor_id=actor_id, email=data.email)
         except ImportError:
             pass
@@ -143,6 +144,7 @@ class OrganizationService:
 
         # Find user by email
         from backend.users.repository import UserRepository
+
         user_repo = UserRepository(self.member_repository.db)
         user = await user_repo.get_by_email(invite.email)
         if not user:
@@ -162,6 +164,7 @@ class OrganizationService:
         # Emit event (best-effort)
         try:
             from backend.organizations.events import MemberAdded
+
             MemberAdded(org_id=invite.organization_id, actor_id=invite.invited_by, user_id=user.id)
         except ImportError:
             pass

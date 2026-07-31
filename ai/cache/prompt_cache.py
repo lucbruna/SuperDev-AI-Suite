@@ -20,6 +20,7 @@ class PromptCache:
             import redis.asyncio as redis
 
             from ..core.configuration import get_platform_config
+
             config = get_platform_config()
             if config.redis_url:
                 self._redis = redis.from_url(config.redis_url, decode_responses=True)

@@ -1,6 +1,7 @@
 """
 Integration Events - Event-driven integration messaging
 """
+
 import contextlib
 import hashlib
 from collections.abc import Callable
@@ -40,7 +41,15 @@ class IntegrationEvents:
         self.event_history: dict[str, list[IntegrationEvent]] = {}
 
     def publish(self, event_type: EventType, source: str, data: dict[str, Any] = None, **kwargs) -> IntegrationEvent:
-        event = IntegrationEvent(event_id=hashlib.sha256(f"{event_type.value}{source}{datetime.now().isoformat()}".encode()).hexdigest()[:16], event_type=event_type, source=source, data=data or {}, metadata=kwargs)
+        event = IntegrationEvent(
+            event_id=hashlib.sha256(f"{event_type.value}{source}{datetime.now().isoformat()}".encode()).hexdigest()[
+                :16
+            ],
+            event_type=event_type,
+            source=source,
+            data=data or {},
+            metadata=kwargs,
+        )
         self.events.append(event)
         self.event_history.setdefault(source, []).append(event)
         self._notify_subscribers(event)

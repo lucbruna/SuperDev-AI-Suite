@@ -55,9 +55,7 @@ class TemplateManager:
     """Manages architecture templates and blueprints for common patterns."""
 
     def __init__(self) -> None:
-        self._templates: dict[str, dict[str, Any]] = {
-            k: dict(v) for k, v in DEFAULT_TEMPLATES.items()
-        }
+        self._templates: dict[str, dict[str, Any]] = {k: dict(v) for k, v in DEFAULT_TEMPLATES.items()}
 
     def get_template(self, name: str) -> dict[str, Any] | None:
         template = self._templates.get(name)
@@ -80,7 +78,9 @@ class TemplateManager:
         template = self._templates.get(name)
         if template is None:
             return {"error": f"Template '{name}' not found"}
-        result: dict[str, Any] = {k: list(v) if isinstance(v, list) else dict(v) if isinstance(v, dict) else v for k, v in template.items()}
+        result: dict[str, Any] = {
+            k: list(v) if isinstance(v, list) else dict(v) if isinstance(v, dict) else v for k, v in template.items()
+        }
         if customization:
             components: list[Any] = list(result.get("components", []))
             extra_components: list[Any] = list(customization.get("components", []))

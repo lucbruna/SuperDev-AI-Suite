@@ -57,7 +57,9 @@ class GraphTraversal:
             adj.setdefault(e.target, []).append(e.source)
         return adj
 
-    def _dfs_recursive(self, current: str, nodes: dict[str, GraphNode], adj: dict[str, list[str]], result: list[GraphNode]) -> None:
+    def _dfs_recursive(
+        self, current: str, nodes: dict[str, GraphNode], adj: dict[str, list[str]], result: list[GraphNode]
+    ) -> None:
         if current in self._visited:
             return
         self._visited.add(current)

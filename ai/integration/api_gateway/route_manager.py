@@ -1,6 +1,7 @@
 """
 Route Manager - Route configuration
 """
+
 from dataclasses import dataclass, field
 from enum import Enum
 

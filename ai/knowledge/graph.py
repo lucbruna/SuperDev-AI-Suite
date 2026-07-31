@@ -46,12 +46,14 @@ class KnowledgeGraph:
         label: str = "",
         properties: dict[str, Any] | None = None,
     ) -> None:
-        self._edges.append({
-            "source": source,
-            "target": target,
-            "label": label,
-            "properties": properties or {},
-        })
+        self._edges.append(
+            {
+                "source": source,
+                "target": target,
+                "label": label,
+                "properties": properties or {},
+            }
+        )
 
     def remove_edges(self, source: str, target: str, label: str = "") -> int:
         before = len(self._edges)

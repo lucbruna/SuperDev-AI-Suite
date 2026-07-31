@@ -1,6 +1,7 @@
 """
 Dashboard Page
 """
+
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -31,4 +32,7 @@ class DashboardPage:
         self.widgets = [widget_map[wid] for wid in widget_ids if wid in widget_map]
 
     def render(self) -> dict[str, Any]:
-        return {"widgets": [{"id": w.id, "type": w.widget_type, "title": w.title} for w in self.widgets], "layout": self.layout}
+        return {
+            "widgets": [{"id": w.id, "type": w.widget_type, "title": w.title} for w in self.widgets],
+            "layout": self.layout,
+        }

@@ -1,4 +1,5 @@
 """AI Model data models."""
+
 from __future__ import annotations
 
 import time
@@ -15,12 +16,14 @@ class ModelStatus(Enum):
     LOADING = "loading"
     ERROR = "error"
 
+
 class InferenceStatus(Enum):
     PENDING = "pending"
     PROCESSING = "processing"
     COMPLETED = "completed"
     FAILED = "failed"
     CANCELLED = "cancelled"
+
 
 @dataclass
 class AIModel:
@@ -36,6 +39,7 @@ class AIModel:
     capabilities: list[str] = field(default_factory=list)
     metadata: dict[str, Any] = field(default_factory=dict)
 
+
 @dataclass
 class InferenceRequest:
     request_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
@@ -46,6 +50,7 @@ class InferenceRequest:
     stream: bool = False
     metadata: dict[str, Any] = field(default_factory=dict)
     created_at: float = field(default_factory=time.time)
+
 
 @dataclass
 class InferenceResponse:
@@ -58,6 +63,7 @@ class InferenceResponse:
     cost: float = 0.0
     status: InferenceStatus = InferenceStatus.COMPLETED
 
+
 @dataclass
 class EvaluationResult:
     model_id: str = ""
@@ -65,6 +71,7 @@ class EvaluationResult:
     score: float = 0.0
     metrics: dict[str, float] = field(default_factory=dict)
     evaluated_at: float = field(default_factory=time.time)
+
 
 @dataclass
 class TrainingJob:

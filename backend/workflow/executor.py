@@ -53,18 +53,16 @@ class WorkflowExecutor:
 
         while len(completed_steps) < len(definition.steps):
             ready_steps = [
-                s for s in definition.steps
-                if s.id not in completed_steps
-                and all(dep in completed_steps for dep in s.depends_on)
+                s
+                for s in definition.steps
+                if s.id not in completed_steps and all(dep in completed_steps for dep in s.depends_on)
             ]
 
             if not ready_steps:
                 break
 
             for step in ready_steps:
-                step_event = EventBuilder.workflow_step(
-                    definition.id, step.id, "running"
-                )
+                step_event = EventBuilder.workflow_step(definition.id, step.id, "running")
                 step_event.user_id = user_id
                 await manager.broadcast_all(step_event.to_dict())
 
@@ -76,9 +74,7 @@ class WorkflowExecutor:
                     context[f"step_{step.id}_output"] = result.output
 
                 step_status = "completed" if result.status == StepStatus.COMPLETED else "failed"
-                step_event = EventBuilder.workflow_step(
-                    definition.id, step.id, step_status
-                )
+                step_event = EventBuilder.workflow_step(definition.id, step.id, step_status)
                 step_event.user_id = user_id
                 await manager.broadcast_all(step_event.to_dict())
 
@@ -88,7 +84,10 @@ class WorkflowExecutor:
                         "run_id": run_id,
                         "status": WorkflowStatus.FAILED.value,
                         "error": f"Step '{step.id}' failed: {result.error}",
-                        "steps": {k: {"status": v.status.value, "output": v.output, "error": v.error} for k, v in step_results.items()},
+                        "steps": {
+                            k: {"status": v.status.value, "output": v.output, "error": v.error}
+                            for k, v in step_results.items()
+                        },
                         "execution_time_ms": total_time,
                     }
 
@@ -98,7 +97,9 @@ class WorkflowExecutor:
         return {
             "run_id": run_id,
             "status": WorkflowStatus.COMPLETED.value if all_completed else WorkflowStatus.FAILED.value,
-            "steps": {k: {"status": v.status.value, "output": v.output, "error": v.error} for k, v in step_results.items()},
+            "steps": {
+                k: {"status": v.status.value, "output": v.output, "error": v.error} for k, v in step_results.items()
+            },
             "context": context,
             "execution_time_ms": total_time,
         }
@@ -134,11 +135,11 @@ class WorkflowExecutor:
                     return result
 
                 if attempt < step.max_retries:
-                    await asyncio.sleep(min(2 ** attempt, 30))
+                    await asyncio.sleep(min(2**attempt, 30))
 
             except Exception as e:
                 if attempt < step.max_retries:
-                    await asyncio.sleep(min(2 ** attempt, 30))
+                    await asyncio.sleep(min(2**attempt, 30))
                 else:
                     return StepResult(
                         step_id=step.id,
@@ -182,6 +183,7 @@ class WorkflowExecutor:
         )
 
         from backend.utils.uuid_utils import generate_uuid
+
         run_id = generate_uuid()
         result = await runtime_manager.execute(config, run_id)
 

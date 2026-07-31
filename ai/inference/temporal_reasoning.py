@@ -22,7 +22,7 @@ class TemporalReasoning:
 
     async def after(self, event_id: str) -> list[dict[str, Any]]:
         idx = next((i for i, e in enumerate(self._timeline) if e.get("id") == event_id), -1)
-        return self._timeline[idx + 1:] if idx >= 0 else []
+        return self._timeline[idx + 1 :] if idx >= 0 else []
 
     async def execute(self, context: dict[str, Any]) -> dict[str, Any]:
         mode = context.get("mode", "all")

@@ -1,4 +1,5 @@
 """BI Logger — Structured logging for BI operations."""
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -27,7 +28,9 @@ class BILogger:
     def __init__(self):
         self.entries: list[BILogEntry] = []
 
-    def log(self, level: BILogLevel, message: str, source: str = "", project_id: str = "", data: dict[str, Any] = None) -> BILogEntry:
+    def log(
+        self, level: BILogLevel, message: str, source: str = "", project_id: str = "", data: dict[str, Any] = None
+    ) -> BILogEntry:
         entry = BILogEntry(level=level, message=message, source=source, project_id=project_id, data=data or {})
         self.entries.append(entry)
         return entry

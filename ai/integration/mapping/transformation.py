@@ -1,6 +1,7 @@
 """
 Transformation - Data transformations
 """
+
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
@@ -31,7 +32,9 @@ class TransformationEngine:
         self.transforms: dict[str, TransformDef] = {}
         self.functions: dict[str, Callable] = {}
 
-    def register_transform(self, name: str, transform_type: TransformType, params: dict[str, Any] = None) -> TransformDef:
+    def register_transform(
+        self, name: str, transform_type: TransformType, params: dict[str, Any] = None
+    ) -> TransformDef:
         t = TransformDef(name=name, transform_type=transform_type, params=params or {})
         self.transforms[name] = t
         return t

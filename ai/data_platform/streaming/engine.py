@@ -1,4 +1,5 @@
 """Streaming engine."""
+
 from datetime import datetime
 
 from .models import StreamConsumer, StreamEvent, StreamPipeline, StreamStatus, StreamTopic
@@ -33,7 +34,7 @@ class StreamingEngine:
         consumer = self._consumers.get(consumer_id)
         events = self._events.get(topic_id, [])
         if consumer:
-            remaining = events[consumer.offset:]
+            remaining = events[consumer.offset :]
             batch = remaining[:max_count]
             consumer.offset += len(batch)
             consumer.last_commit = datetime.now()

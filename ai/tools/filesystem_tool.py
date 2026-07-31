@@ -124,8 +124,10 @@ class FilesystemTool(BaseTool):
         self._operations_log.clear()
 
     def _log_operation(self, operation: str, path: str, **kwargs: Any) -> None:
-        self._operations_log.append({
-            "operation": operation,
-            "path": path,
-            **kwargs,
-        })
+        self._operations_log.append(
+            {
+                "operation": operation,
+                "path": path,
+                **kwargs,
+            }
+        )

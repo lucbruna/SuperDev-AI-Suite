@@ -1,6 +1,7 @@
 """
 Web Application Security - OWASP Top 10 Mitigations
 """
+
 from dataclasses import dataclass
 from enum import Enum
 
@@ -50,7 +51,9 @@ class WebSecurity:
     def validate_input(self, input_str: str) -> ValidationResult:
         for pattern in self.blocked_patterns:
             if pattern.lower() in input_str.lower():
-                return ValidationResult(passed=False, category="XSS", message=f"Blocked pattern: {pattern}", severity="high")
+                return ValidationResult(
+                    passed=False, category="XSS", message=f"Blocked pattern: {pattern}", severity="high"
+                )
         return ValidationResult(passed=True, category="XSS", message="Input is safe")
 
     def get_security_headers(self) -> list[SecurityHeader]:
@@ -83,7 +86,9 @@ class WebSecurity:
         sql_patterns = ["'", "union select", "drop table", "insert into", "delete from"]
         for p in sql_patterns:
             if p in input_str.lower():
-                return ValidationResult(passed=False, category="Injection", message=f"SQL injection pattern: {p}", severity="critical")
+                return ValidationResult(
+                    passed=False, category="Injection", message=f"SQL injection pattern: {p}", severity="critical"
+                )
         return ValidationResult(passed=True, category="Injection", message="No injection detected")
 
     def sanitize_output(self, data: str) -> str:

@@ -81,7 +81,11 @@ class TogetherProvider(BaseLLMProvider):
                 except ProviderError as e:
                     attempt += 1
                     if attempt > self._max_retries or not _is_retryable(e, self._retry_codes):
-                        yield {"content": f"[{self._name} error: {e.message}]", "finish_reason": "error", "error": e.message}
+                        yield {
+                            "content": f"[{self._name} error: {e.message}]",
+                            "finish_reason": "error",
+                            "error": e.message,
+                        }
                         break
                     retry_after = e.retry_after or _exponential_backoff(attempt - 1)
                     await asyncio.sleep(retry_after)
@@ -89,9 +93,14 @@ class TogetherProvider(BaseLLMProvider):
                     pe = ProviderError.from_exception(e, self._name)
                     attempt += 1
                     if attempt > self._max_retries or not _is_retryable(pe, self._retry_codes):
-                        yield {"content": f"[{self._name} error: {pe.message}]", "finish_reason": "error", "error": pe.message}
+                        yield {
+                            "content": f"[{self._name} error: {pe.message}]",
+                            "finish_reason": "error",
+                            "error": pe.message,
+                        }
                         break
                     await asyncio.sleep(_exponential_backoff(attempt - 1))
+
         return _stream()
 
     async def validate(self, params: dict[str, Any]) -> bool:
@@ -114,9 +123,16 @@ class TogetherProvider(BaseLLMProvider):
         pt = data.get("usage", {}).get("prompt_tokens", count_tokens(prompt))
         ct = data.get("usage", {}).get("completion_tokens", count_tokens(content))
 
-        result = {"content": content, "success": True, "finish_reason": choice.get("finish_reason", "stop"), **self._track_usage(pt, ct)}
+        result = {
+            "content": content,
+            "success": True,
+            "finish_reason": choice.get("finish_reason", "stop"),
+            **self._track_usage(pt, ct),
+        }
         if tool_calls:
-            result["tool_calls"] = [{"id": tc["id"], "type": "function", "function": tc["function"]} for tc in tool_calls]
+            result["tool_calls"] = [
+                {"id": tc["id"], "type": "function", "function": tc["function"]} for tc in tool_calls
+            ]
         return result
 
     async def _stream_chunks(self, prompt: str, **kwargs: Any) -> AsyncIterator[dict[str, Any]]:
@@ -127,7 +143,12 @@ class TogetherProvider(BaseLLMProvider):
             async with client.stream("POST", "/chat/completions", json=body) as resp:
                 if resp.status_code != 200:
                     text = await resp.aread()
-                    raise ProviderError(ProviderErrorCode.API_ERROR, f"Together {resp.status_code}: {text.decode()[:200]}", resp.status_code, provider="together")
+                    raise ProviderError(
+                        ProviderErrorCode.API_ERROR,
+                        f"Together {resp.status_code}: {text.decode()[:200]}",
+                        resp.status_code,
+                        provider="together",
+                    )
                 async for line in resp.aiter_lines():
                     if not line.strip() or not line.startswith("data: "):
                         continue
@@ -142,8 +163,17 @@ class TogetherProvider(BaseLLMProvider):
                     finish = data.get("choices", [{}])[0].get("finish_reason")
                     content = delta.get("content", "")
                     if data.get("usage"):
-                        usage_info = {"prompt_tokens": data["usage"].get("prompt_tokens", 0), "completion_tokens": data["usage"].get("completion_tokens", 0), "total_tokens": data["usage"].get("total_tokens", 0)}
-                    yield {"content": content, "finish_reason": finish, "delta": StreamDelta(content=content, finish_reason=finish), "usage": usage_info or None}
+                        usage_info = {
+                            "prompt_tokens": data["usage"].get("prompt_tokens", 0),
+                            "completion_tokens": data["usage"].get("completion_tokens", 0),
+                            "total_tokens": data["usage"].get("total_tokens", 0),
+                        }
+                    yield {
+                        "content": content,
+                        "finish_reason": finish,
+                        "delta": StreamDelta(content=content, finish_reason=finish),
+                        "usage": usage_info or None,
+                    }
         except httpx.HTTPError as e:
             raise self._classify_error(e)
         if usage_info:
@@ -151,22 +181,75 @@ class TogetherProvider(BaseLLMProvider):
 
     async def health(self) -> dict[str, Any]:
         import time as time_module
+
         start = time_module.monotonic()
         try:
             resp = await self._get_client().get("/models")
             elapsed = (time_module.monotonic() - start) * 1000
-            return {"status": "healthy" if resp.status_code == 200 else "degraded", "latency_ms": round(elapsed, 1), "provider": "together", "model": self._model}
+            return {
+                "status": "healthy" if resp.status_code == 200 else "degraded",
+                "latency_ms": round(elapsed, 1),
+                "provider": "together",
+                "model": self._model,
+            }
         except Exception as e:
-            return {"status": "unhealthy", "latency_ms": round((time_module.monotonic() - start) * 1000, 1), "error": str(e), "provider": "together"}
+            return {
+                "status": "unhealthy",
+                "latency_ms": round((time_module.monotonic() - start) * 1000, 1),
+                "error": str(e),
+                "provider": "together",
+            }
 
     async def list_models(self) -> list[dict[str, Any]]:
         return [
-            {"id": "meta-llama/Llama-3.3-70B-Instruct-Turbo", "name": "Llama 3.3 70B", "provider": "together", "capabilities": ["chat", "tools"], "context_window": 131072, "max_tokens": 8192},
-            {"id": "meta-llama/Llama-3.1-8B-Instruct-Turbo", "name": "Llama 3.1 8B", "provider": "together", "capabilities": ["chat", "tools"], "context_window": 131072, "max_tokens": 8192},
-            {"id": "mistralai/Mixtral-8x7B-Instruct-v0.1", "name": "Mixtral 8x7B", "provider": "together", "capabilities": ["chat"], "context_window": 32768, "max_tokens": 4096},
-            {"id": "deepseek-ai/deepseek-coder-33b-instruct", "name": "DeepSeek Coder 33B", "provider": "together", "capabilities": ["chat", "tools"], "context_window": 16384, "max_tokens": 4096},
-            {"id": "Qwen/Qwen2.5-72B-Instruct-Turbo", "name": "Qwen 2.5 72B", "provider": "together", "capabilities": ["chat", "tools"], "context_window": 131072, "max_tokens": 8192},
-            {"id": "mistralai/Mistral-7B-Instruct-v0.3", "name": "Mistral 7B", "provider": "together", "capabilities": ["chat"], "context_window": 32768, "max_tokens": 4096},
+            {
+                "id": "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+                "name": "Llama 3.3 70B",
+                "provider": "together",
+                "capabilities": ["chat", "tools"],
+                "context_window": 131072,
+                "max_tokens": 8192,
+            },
+            {
+                "id": "meta-llama/Llama-3.1-8B-Instruct-Turbo",
+                "name": "Llama 3.1 8B",
+                "provider": "together",
+                "capabilities": ["chat", "tools"],
+                "context_window": 131072,
+                "max_tokens": 8192,
+            },
+            {
+                "id": "mistralai/Mixtral-8x7B-Instruct-v0.1",
+                "name": "Mixtral 8x7B",
+                "provider": "together",
+                "capabilities": ["chat"],
+                "context_window": 32768,
+                "max_tokens": 4096,
+            },
+            {
+                "id": "deepseek-ai/deepseek-coder-33b-instruct",
+                "name": "DeepSeek Coder 33B",
+                "provider": "together",
+                "capabilities": ["chat", "tools"],
+                "context_window": 16384,
+                "max_tokens": 4096,
+            },
+            {
+                "id": "Qwen/Qwen2.5-72B-Instruct-Turbo",
+                "name": "Qwen 2.5 72B",
+                "provider": "together",
+                "capabilities": ["chat", "tools"],
+                "context_window": 131072,
+                "max_tokens": 8192,
+            },
+            {
+                "id": "mistralai/Mistral-7B-Instruct-v0.3",
+                "name": "Mistral 7B",
+                "provider": "together",
+                "capabilities": ["chat"],
+                "context_window": 32768,
+                "max_tokens": 4096,
+            },
         ]
 
     def _build_body(self, prompt: str, kwargs: dict[str, Any], stream: bool = False) -> dict[str, Any]:
@@ -178,7 +261,13 @@ class TogetherProvider(BaseLLMProvider):
         if chat_history:
             messages.extend(chat_history)
         messages.append({"role": "user", "content": prompt})
-        body: dict[str, Any] = {"model": kwargs.get("model") or self._model, "messages": messages, "temperature": kwargs.get("temperature", 0.7), "max_tokens": kwargs.get("max_tokens", 4096), "stream": stream}
+        body: dict[str, Any] = {
+            "model": kwargs.get("model") or self._model,
+            "messages": messages,
+            "temperature": kwargs.get("temperature", 0.7),
+            "max_tokens": kwargs.get("max_tokens", 4096),
+            "stream": stream,
+        }
         tools = kwargs.get("tools")
         if tools:
             body["tools"] = tools
@@ -187,7 +276,12 @@ class TogetherProvider(BaseLLMProvider):
     def _handle_response(self, resp: httpx.Response) -> dict[str, Any]:
         if resp.status_code == 200:
             return resp.json()
-        raise ProviderError(ProviderErrorCode.API_ERROR, f"Together {resp.status_code}: {resp.text[:200]}", resp.status_code, provider="together")
+        raise ProviderError(
+            ProviderErrorCode.API_ERROR,
+            f"Together {resp.status_code}: {resp.text[:200]}",
+            resp.status_code,
+            provider="together",
+        )
 
     def _classify_error(self, exc: Exception) -> ProviderError:
         if isinstance(exc, ProviderError):

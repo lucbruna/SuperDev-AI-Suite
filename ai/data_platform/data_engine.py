@@ -1,4 +1,5 @@
 """Data Platform Engine — Core data platform engine."""
+
 from datetime import datetime
 from typing import Any
 
@@ -98,9 +99,11 @@ class DataPlatformEngine:
 
     def search_catalog(self, query: str) -> list[DataCatalogEntry]:
         q = query.lower()
-        return [e for e in self._catalog.values()
-                if q in e.dataset.lower() or q in e.description.lower()
-                or any(q in t.lower() for t in e.tags)]
+        return [
+            e
+            for e in self._catalog.values()
+            if q in e.dataset.lower() or q in e.description.lower() or any(q in t.lower() for t in e.tags)
+        ]
 
     def add_partition(self, partition: DataPartition) -> DataPartition:
         self._partitions[partition.partition_id] = partition

@@ -1,4 +1,5 @@
 """CRM engine."""
+
 from .models import (
     Account,
     Activity,
@@ -54,8 +55,11 @@ class CRMEngine:
         return True
 
     def get_pipeline_value(self) -> float:
-        return sum(o.weighted_value for o in self._opportunities.values()
-                   if o.stage not in (OpportunityStage.CLOSED_WON, OpportunityStage.CLOSED_LOST))
+        return sum(
+            o.weighted_value
+            for o in self._opportunities.values()
+            if o.stage not in (OpportunityStage.CLOSED_WON, OpportunityStage.CLOSED_LOST)
+        )
 
     def add_activity(self, activity: Activity) -> Activity:
         self._activities.append(activity)

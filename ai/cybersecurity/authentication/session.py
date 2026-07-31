@@ -1,6 +1,7 @@
 """
 Session Manager
 """
+
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
@@ -42,7 +43,7 @@ class SessionManager:
             session_id=str(uuid.uuid4()),
             user_id=user_id,
             expires_at=datetime.now() + timedelta(seconds=self.timeout),
-            **kwargs
+            **kwargs,
         )
         self.sessions[session.session_id] = session
         return session

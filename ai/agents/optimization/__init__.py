@@ -1,4 +1,5 @@
 """Optimization subsystem for performance tuning and resource management."""
+
 from __future__ import annotations
 
 from .bottleneck_resolver import BottleneckResolver

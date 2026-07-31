@@ -1,4 +1,5 @@
 """Security monitoring engine."""
+
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -60,11 +61,13 @@ class MonitoringEngine:
         self._rules: dict[str, MonitoringRule] = {}
         self._max_metrics: int = 10000
 
-    def record_metric(self, name: str, value: float, unit: str = "", tags: dict[str, str] | None = None) -> MetricSnapshot:
+    def record_metric(
+        self, name: str, value: float, unit: str = "", tags: dict[str, str] | None = None
+    ) -> MetricSnapshot:
         snap = MetricSnapshot(metric_name=name, value=value, unit=unit, tags=tags or {})
         self._metrics.append(snap)
         if len(self._metrics) > self._max_metrics:
-            self._metrics = self._metrics[-self._max_metrics:]
+            self._metrics = self._metrics[-self._max_metrics :]
         self._evaluate_rules(name, value)
         return snap
 
@@ -76,7 +79,18 @@ class MonitoringEngine:
             if not rule.enabled or rule.metric != metric_name:
                 continue
             triggered = False
-            if rule.operator == "gt" and value > rule.threshold or rule.operator == "lt" and value < rule.threshold or rule.operator == "eq" and value == rule.threshold or rule.operator == "gte" and value >= rule.threshold or rule.operator == "lte" and value <= rule.threshold:
+            if (
+                rule.operator == "gt"
+                and value > rule.threshold
+                or rule.operator == "lt"
+                and value < rule.threshold
+                or rule.operator == "eq"
+                and value == rule.threshold
+                or rule.operator == "gte"
+                and value >= rule.threshold
+                or rule.operator == "lte"
+                and value <= rule.threshold
+            ):
                 triggered = True
             if triggered:
                 alert = SecurityAlert(
@@ -87,7 +101,9 @@ class MonitoringEngine:
                 )
                 self._alerts[alert.alert_id] = alert
 
-    def create_alert(self, title: str, description: str = "", severity: AlertSeverity = AlertSeverity.WARNING, source: str = "") -> SecurityAlert:
+    def create_alert(
+        self, title: str, description: str = "", severity: AlertSeverity = AlertSeverity.WARNING, source: str = ""
+    ) -> SecurityAlert:
         alert = SecurityAlert(title=title, description=description, severity=severity, source=source)
         self._alerts[alert.alert_id] = alert
         return alert
@@ -108,7 +124,9 @@ class MonitoringEngine:
         alert.resolved_at = datetime.now()
         return True
 
-    def get_alerts(self, severity: AlertSeverity | None = None, status: AlertStatus | None = None) -> list[SecurityAlert]:
+    def get_alerts(
+        self, severity: AlertSeverity | None = None, status: AlertStatus | None = None
+    ) -> list[SecurityAlert]:
         alerts = list(self._alerts.values())
         if severity:
             alerts = [a for a in alerts if a.severity == severity]

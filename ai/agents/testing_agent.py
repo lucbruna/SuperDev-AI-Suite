@@ -9,9 +9,21 @@ from typing import Any
 from ..base.base_agent import AgentResult, BaseAgent
 
 _EXCLUDED_DIRS: set[str] = {
-    "node_modules", ".git", "__pycache__", "venv", ".venv",
-    "dist", "build", ".tox", ".mypy_cache", ".pytest_cache",
-    ".eggs", ".idea", ".vscode", "coverage", ".nyc_output",
+    "node_modules",
+    ".git",
+    "__pycache__",
+    "venv",
+    ".venv",
+    "dist",
+    "build",
+    ".tox",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".eggs",
+    ".idea",
+    ".vscode",
+    "coverage",
+    ".nyc_output",
 }
 
 
@@ -85,7 +97,7 @@ class TestingAgent(BaseAgent):
                         func_name = line.strip()[4:].split("(")[0]
                         funcs.append(func_name)
 
-                funcs_list = ', '.join(funcs[:5]) if funcs else module_name
+                funcs_list = ", ".join(funcs[:5]) if funcs else module_name
                 test_content = [
                     f'"""Tests for {os.path.basename(fpath)}."""',
                     "import pytest",
@@ -93,20 +105,24 @@ class TestingAgent(BaseAgent):
                     "",
                 ]
                 for func in funcs[:5]:
-                    test_content.extend([
-                        "",
-                        f"def test_{func}():",
-                        f'    """Test {func} function."""',
-                        f"    result = {func}()",
-                        "    assert result is not None",
-                        "",
-                    ])
+                    test_content.extend(
+                        [
+                            "",
+                            f"def test_{func}():",
+                            f'    """Test {func} function."""',
+                            f"    result = {func}()",
+                            "    assert result is not None",
+                            "",
+                        ]
+                    )
 
-                test_files.append({
-                    "path": fpath,
-                    "test_content": "\n".join(test_content),
-                    "module_name": module_name,
-                })
+                test_files.append(
+                    {
+                        "path": fpath,
+                        "test_content": "\n".join(test_content),
+                        "module_name": module_name,
+                    }
+                )
             except Exception:
                 pass
 
@@ -131,7 +147,9 @@ class TestingAgent(BaseAgent):
         test_dir = os.path.dirname(test_files[0])
         try:
             proc = await asyncio.create_subprocess_exec(
-                sys.executable, "-m", framework,
+                sys.executable,
+                "-m",
+                framework,
                 test_dir,
                 "-v",
                 stdout=asyncio.subprocess.PIPE,
@@ -159,12 +177,14 @@ class TestingAgent(BaseAgent):
         ]
         for f in created_files:
             lines.append(f"- {f}")
-        lines.extend([
-            "",
-            "### Results",
-            f"Passed: {results.get('passed', 0)}",
-            f"Failed: {results.get('failed', 0)}",
-        ])
+        lines.extend(
+            [
+                "",
+                "### Results",
+                f"Passed: {results.get('passed', 0)}",
+                f"Failed: {results.get('failed', 0)}",
+            ]
+        )
         if results.get("output"):
             lines.extend(["", "### Output", "```", results["output"][:1000], "```"])
         return "\n".join(lines)

@@ -1,4 +1,5 @@
 """Accelerator - Hardware acceleration management."""
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -30,7 +31,9 @@ class AcceleratorManager:
         self.accelerators: dict[str, AcceleratorInfo] = {}
 
     def register(self, name: str, type: str = "cpu", compute_units: int = 1, memory_mb: float = 0.0) -> AcceleratorInfo:
-        acc = AcceleratorInfo(accelerator_id=name, name=name, type=type, compute_units=compute_units, memory_mb=memory_mb)
+        acc = AcceleratorInfo(
+            accelerator_id=name, name=name, type=type, compute_units=compute_units, memory_mb=memory_mb
+        )
         self.accelerators[name] = acc
         return acc
 

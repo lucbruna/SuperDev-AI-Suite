@@ -1,15 +1,20 @@
 """Performance subsystem generator."""
+
 import os
 
-BASE = r'C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\observability\performance'
+BASE = r"C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\observability\performance"
+
 
 def w(path, content):
     full = os.path.join(BASE, path)
     os.makedirs(os.path.dirname(full), exist_ok=True)
-    with open(full, 'w', encoding='utf-8') as f:
+    with open(full, "w", encoding="utf-8") as f:
         f.write(content)
 
-w('performance_engine.py', '''"""Performance engine."""
+
+w(
+    "performance_engine.py",
+    '''"""Performance engine."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time
@@ -34,9 +39,12 @@ class PerformanceEngine:
         return {"min": min(values), "max": max(values), "avg": sum(values)/len(values), "count": len(values)}
     def get_status(self) -> Dict[str, Any]:
         return {"running": self._started, "benchmarks": len(self._benchmarks)}
-''')
+''',
+)
 
-w('benchmark.py', '''"""Performance benchmarks."""
+w(
+    "benchmark.py",
+    '''"""Performance benchmarks."""
 from __future__ import annotations
 from typing import Any, Callable, Dict, List
 import time
@@ -82,9 +90,12 @@ class BenchmarkSuite:
             del self._benchmarks[name]
             return True
         return False
-''')
+''',
+)
 
-w('profiler.py', '''"""Performance profiler."""
+w(
+    "profiler.py",
+    '''"""Performance profiler."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import time
@@ -116,9 +127,12 @@ class Profiler:
         return self._completed[-limit:]
     def active_sessions(self) -> int:
         return len(self._sessions)
-''')
+''',
+)
 
-w('optimization.py', '''"""Performance optimization."""
+w(
+    "optimization.py",
+    '''"""Performance optimization."""
 from __future__ import annotations
 from typing import Any, Dict, List
 
@@ -141,9 +155,12 @@ class OptimizationRecommender:
             self._rules.pop(index)
             return True
         return False
-''')
+''',
+)
 
-w('bottleneck.py', '''"""Bottleneck detection."""
+w(
+    "bottleneck.py",
+    '''"""Bottleneck detection."""
 from __future__ import annotations
 from typing import Any, Dict, List
 
@@ -172,9 +189,12 @@ class BottleneckDetector:
         n = sum(len(v) for v in self._measurements.values())
         self._measurements.clear()
         return n
-''')
+''',
+)
 
-w('recommendation.py', '''"""Performance recommendations."""
+w(
+    "recommendation.py",
+    '''"""Performance recommendations."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import time
@@ -198,9 +218,12 @@ class PerformanceRecommendation:
         n = len(self._recommendations)
         self._recommendations.clear()
         return n
-''')
+''',
+)
 
-w('__init__.py', '''"""Performance subsystem."""
+w(
+    "__init__.py",
+    '''"""Performance subsystem."""
 from .performance_engine import PerformanceEngine
 from .benchmark import Benchmark, BenchmarkSuite
 from .profiler import Profiler
@@ -212,6 +235,7 @@ __all__ = [
     "PerformanceEngine", "Benchmark", "BenchmarkSuite", "Profiler",
     "OptimizationRecommender", "BottleneckDetector", "PerformanceRecommendation"
 ]
-''')
+''',
+)
 
 print("performance/: 7 files created")

@@ -14,8 +14,9 @@ from .tool_validator import ToolValidator
 class ToolExecutor(IToolExecutor):
     """Executes tools with validation, metrics, and logging."""
 
-    def __init__(self, registry: ToolRegistry, validator: ToolValidator,
-                 metrics: ToolMetrics, logger: ToolLogger) -> None:
+    def __init__(
+        self, registry: ToolRegistry, validator: ToolValidator, metrics: ToolMetrics, logger: ToolLogger
+    ) -> None:
         self._registry = registry
         self._validator = validator
         self._metrics = metrics
@@ -44,8 +45,12 @@ class ToolExecutor(IToolExecutor):
             self._metrics.record_execution(tool_name, duration)
             result["execution_id"] = execution_id
             result["duration_ms"] = round(duration * 1000, 2)
-            self._logger.info(tool_name, f"Completed execution {execution_id}",
-                              duration_ms=result["duration_ms"], success=result.get("success"))
+            self._logger.info(
+                tool_name,
+                f"Completed execution {execution_id}",
+                duration_ms=result["duration_ms"],
+                success=result.get("success"),
+            )
             return result
         except Exception as e:
             duration = time.time() - start

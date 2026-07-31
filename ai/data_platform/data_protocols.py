@@ -1,4 +1,5 @@
 """Data Platform Protocols — Protocol definitions for data platform operations."""
+
 from dataclasses import dataclass, field
 from enum import Enum
 

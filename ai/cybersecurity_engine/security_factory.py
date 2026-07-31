@@ -1,4 +1,5 @@
 """Cybersecurity Engine Factory — Factory for creating security components."""
+
 from typing import Any
 
 from .security_models import (
@@ -18,14 +19,26 @@ from .security_models import (
 
 class SecurityFactory:
     @staticmethod
-    def create_threat(threat_type: str = "malware", severity: str = "low", source_ip: str = "", target: str = "", description: str = "") -> Threat:
+    def create_threat(
+        threat_type: str = "malware",
+        severity: str = "low",
+        source_ip: str = "",
+        target: str = "",
+        description: str = "",
+    ) -> Threat:
         tt = ThreatType(threat_type) if threat_type in [e.value for e in ThreatType] else ThreatType.MALWARE
         ts = ThreatSeverity(severity) if severity in [e.value for e in ThreatSeverity] else ThreatSeverity.LOW
         return Threat(threat_type=tt, severity=ts, source_ip=source_ip, target=target, description=description)
 
     @staticmethod
-    def create_vulnerability(name: str = "", component: str = "", severity: str = "medium", cvss: float = 5.0) -> Vulnerability:
-        vs = VulnerabilitySeverity(severity) if severity in [e.value for e in VulnerabilitySeverity] else VulnerabilitySeverity.MEDIUM
+    def create_vulnerability(
+        name: str = "", component: str = "", severity: str = "medium", cvss: float = 5.0
+    ) -> Vulnerability:
+        vs = (
+            VulnerabilitySeverity(severity)
+            if severity in [e.value for e in VulnerabilitySeverity]
+            else VulnerabilitySeverity.MEDIUM
+        )
         return Vulnerability(name=name, component=component, severity=vs, cvss_score=cvss)
 
     @staticmethod
@@ -47,7 +60,11 @@ class SecurityFactory:
 
     @staticmethod
     def create_policy(name: str = "", standard: str = "lgpd", rules: list[dict[str, Any]] = None) -> SecurityPolicy:
-        cs = ComplianceStandard(standard) if standard in [e.value for e in ComplianceStandard] else ComplianceStandard.LGPD
+        cs = (
+            ComplianceStandard(standard)
+            if standard in [e.value for e in ComplianceStandard]
+            else ComplianceStandard.LGPD
+        )
         return SecurityPolicy(name=name, standard=cs, rules=rules or [])
 
     @staticmethod

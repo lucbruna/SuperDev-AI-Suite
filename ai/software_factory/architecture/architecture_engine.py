@@ -1,4 +1,5 @@
 """Core engine for architecture design and analysis."""
+
 from typing import Any
 
 from .architecture_analyzer import ArchitectureAnalyzer

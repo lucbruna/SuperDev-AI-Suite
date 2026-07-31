@@ -1,4 +1,5 @@
 """Encryption and key management engine."""
+
 import hashlib
 import uuid
 from dataclasses import dataclass, field

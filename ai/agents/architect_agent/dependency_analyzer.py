@@ -27,10 +27,7 @@ class DependencyAnalyzer:
         return list(self._dependencies.get(component, []))
 
     def get_dependents(self, component: str) -> list[str]:
-        return [
-            c for c, deps in self._dependencies.items()
-            if component in deps
-        ]
+        return [c for c, deps in self._dependencies.items() if component in deps]
 
     def detect_cycles(self) -> list[list[str]]:
         cycles: list[list[str]] = []

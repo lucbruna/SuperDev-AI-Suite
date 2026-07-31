@@ -251,6 +251,7 @@ class TestOpenAIProviderMocked:
     async def test_generate_success(self) -> None:
         """Test that generate returns properly structured response."""
         from ..providers.openai_provider import OpenAIProvider
+
         p = OpenAIProvider(api_key="sk-test")
         # Patch the client to avoid real API calls
         mock_client = AsyncMock()
@@ -296,6 +297,7 @@ class TestAnthropicProviderMocked:
     async def test_generate_success(self) -> None:
         """Test that generate returns properly structured response."""
         from ..providers.anthropic_provider import AnthropicProvider
+
         p = AnthropicProvider(api_key="sk-ant-test")
         mock_client = AsyncMock()
         mock_response = AsyncMock()
@@ -334,20 +336,24 @@ class TestDeepSeekProviderMocked:
     async def test_generate_success(self) -> None:
         """Test that generate returns properly structured response."""
         from ..providers.deepseek_provider import DeepSeekProvider
+
         p = DeepSeekProvider(api_key="sk-ds-test")
         mock_client = AsyncMock()
 
         class FakeResponse:
             status_code = 200
+
             def json(self):
                 return {
                     "id": "ds-test",
                     "model": "deepseek-chat",
-                    "choices": [{
-                        "index": 0,
-                        "message": {"content": "DeepSeek response here!", "role": "assistant"},
-                        "finish_reason": "stop",
-                    }],
+                    "choices": [
+                        {
+                            "index": 0,
+                            "message": {"content": "DeepSeek response here!", "role": "assistant"},
+                            "finish_reason": "stop",
+                        }
+                    ],
                     "usage": {"prompt_tokens": 20, "completion_tokens": 30, "total_tokens": 50},
                 }
 

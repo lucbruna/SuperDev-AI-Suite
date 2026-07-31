@@ -1,4 +1,5 @@
 """Authorization engine for RBAC + ABAC."""
+
 from __future__ import annotations
 
 from enum import Enum
@@ -12,21 +13,25 @@ class Permission(Enum):
     EXECUTE = "execute"
     ADMIN = "admin"
 
+
 class AuthorizationEngine:
     def __init__(self) -> None:
         self._user_roles: dict[str, set[str]] = {}
         self._role_permissions: dict[str, set[Permission]] = {}
         self._resource_policies: dict[str, dict[str, Any]] = {}
+
     def assign_role(self, user_id: str, role: str) -> bool:
         if user_id not in self._user_roles:
             self._user_roles[user_id] = set()
         self._user_roles[user_id].add(role)
         return True
+
     def grant_permission(self, role: str, permission: Permission) -> bool:
         if role not in self._role_permissions:
             self._role_permissions[role] = set()
         self._role_permissions[role].add(permission)
         return True
+
     def check_permission(self, user_id: str, permission: Permission, resource: str = "") -> bool:
         roles = self._user_roles.get(user_id, set())
         for role in roles:
@@ -34,19 +39,23 @@ class AuthorizationEngine:
             if Permission.ADMIN in perms or permission in perms:
                 return True
         return False
+
     def revoke_role(self, user_id: str, role: str) -> bool:
         if user_id in self._user_roles:
             self._user_roles[user_id].discard(role)
             return True
         return False
+
     def get_user_permissions(self, user_id: str) -> list[str]:
         roles = self._user_roles.get(user_id, set())
         perms: set[Permission] = set()
         for role in roles:
             perms |= self._role_permissions.get(role, set())
         return [p.value for p in perms]
+
     def add_resource_policy(self, resource: str, policy: dict[str, Any]) -> None:
         self._resource_policies[resource] = policy
+
     def evaluate_abac(self, user_id: str, resource: str, attributes: dict[str, Any]) -> bool:
         policy = self._resource_policies.get(resource)
         if not policy:

@@ -1,6 +1,7 @@
 """
 Integration Context - Request/response context management
 """
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -67,7 +68,14 @@ class IntegrationContext:
         return child
 
     def to_dict(self) -> dict[str, Any]:
-        return {"variables": self.get_variables(), "headers": self.headers, "metadata": self.metadata, "trace_id": self.trace_id, "span_id": self.span_id, "elapsed_ms": (datetime.now() - self.start_time).total_seconds() * 1000}
+        return {
+            "variables": self.get_variables(),
+            "headers": self.headers,
+            "metadata": self.metadata,
+            "trace_id": self.trace_id,
+            "span_id": self.span_id,
+            "elapsed_ms": (datetime.now() - self.start_time).total_seconds() * 1000,
+        }
 
     def clear(self) -> None:
         self.variables.clear()

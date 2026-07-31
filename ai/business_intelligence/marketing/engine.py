@@ -1,4 +1,5 @@
 """Marketing engine."""
+
 from .models import (
     Campaign,
     CampaignStatus,

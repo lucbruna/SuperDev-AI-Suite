@@ -1,4 +1,5 @@
 """Mobile Security - Device and data security for mobile/edge."""
+
 import hashlib
 import secrets
 from dataclasses import dataclass, field
@@ -117,7 +118,9 @@ class MobileSecurityManager:
         return self.audit_log[-limit:]
 
     def _audit(self, action: str, device_id: str, data: dict[str, Any] = None):
-        self.audit_log.append({"action": action, "device_id": device_id, "data": data or {}, "timestamp": datetime.now().isoformat()})
+        self.audit_log.append(
+            {"action": action, "device_id": device_id, "data": data or {}, "timestamp": datetime.now().isoformat()}
+        )
 
     def count_policies(self) -> int:
         return len(self.policies)

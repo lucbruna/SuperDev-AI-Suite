@@ -53,7 +53,9 @@ class StreamParser:
             elif typ == "message_stop":
                 return StreamChunk(delta="", finish_reason="stop")
             elif typ == "error":
-                return StreamChunk(delta=f"[Error: {data.get('error', {}).get('message', 'unknown')}]", finish_reason="error")
+                return StreamChunk(
+                    delta=f"[Error: {data.get('error', {}).get('message', 'unknown')}]", finish_reason="error"
+                )
             return None
         except json.JSONDecodeError:
             return None

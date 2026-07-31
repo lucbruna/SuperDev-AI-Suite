@@ -42,7 +42,7 @@ class UUIDMixin:
         return mapped_column(
             PG_UUID(as_uuid=True),
             primary_key=True,
-            server_default=sa.text('uuid_generate_v4()'),
+            server_default=sa.text("uuid_generate_v4()"),
         )
 
 

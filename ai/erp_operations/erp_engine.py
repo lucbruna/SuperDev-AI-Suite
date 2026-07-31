@@ -1,4 +1,5 @@
 """ERP Engine — Core ERP engine."""
+
 from datetime import datetime
 from typing import Any
 
@@ -57,8 +58,10 @@ class ERPEngine:
                 return False
             product.stock_quantity -= quantity
         movement = StockMovement(
-            product_id=product_id, movement_type=movement_type,
-            quantity=quantity, reference=reference,
+            product_id=product_id,
+            movement_type=movement_type,
+            quantity=quantity,
+            reference=reference,
         )
         self._stock_movements.append(movement)
         return True

@@ -1,4 +1,5 @@
 """BI Metrics — Performance metrics for BI operations."""
+
 import statistics
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -28,7 +29,9 @@ class BIMetrics:
     def __init__(self):
         self.metrics: dict[str, list[MetricPoint]] = {}
 
-    def record(self, name: str, value: float, unit: str = "", project_id: str = "", tags: dict[str, str] = None) -> MetricPoint:
+    def record(
+        self, name: str, value: float, unit: str = "", project_id: str = "", tags: dict[str, str] = None
+    ) -> MetricPoint:
         point = MetricPoint(name=name, value=value, unit=unit, project_id=project_id, tags=tags or {})
         self.metrics.setdefault(name, []).append(point)
         return point

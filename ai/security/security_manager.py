@@ -1,4 +1,5 @@
 """Security Manager — orchestrates all security subsystems."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -47,13 +48,10 @@ class SecurityManager:
             self._logger.info("auth", "Session invalidated", session_id=session_id)
         return result
 
-    def log_activity(self, user_id: str, action: str, resource: str,
-                     details: dict[str, Any] | None = None) -> None:
-        self._logger.info("audit", f"{action} on {resource}",
-                          user_id=user_id, **(details or {}))
+    def log_activity(self, user_id: str, action: str, resource: str, details: dict[str, Any] | None = None) -> None:
+        self._logger.info("audit", f"{action} on {resource}", user_id=user_id, **(details or {}))
         self._metrics.increment(f"action_{action}")
-        self._events.emit("activity", {"user_id": user_id, "action": action,
-                                        "resource": resource})
+        self._events.emit("activity", {"user_id": user_id, "action": action, "resource": resource})
 
     def get_metrics(self) -> dict[str, Any]:
         return {

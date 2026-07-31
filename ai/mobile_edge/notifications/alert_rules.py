@@ -1,4 +1,5 @@
 """Alert Rules - Notification trigger rules."""
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -35,9 +36,25 @@ class AlertRuleManager:
         self.rules: dict[str, AlertRule] = {}
         self.trigger_log: list[dict[str, Any]] = []
 
-    def create_rule(self, name: str, condition: AlertCondition, metric: str = "", threshold: float = 0.0, operator: str = ">", **kwargs) -> AlertRule:
+    def create_rule(
+        self,
+        name: str,
+        condition: AlertCondition,
+        metric: str = "",
+        threshold: float = 0.0,
+        operator: str = ">",
+        **kwargs,
+    ) -> AlertRule:
         rule_id = hashlib.sha256(f"{name}{metric}".encode()).hexdigest()[:16]
-        rule = AlertRule(rule_id=rule_id, name=name, condition=condition, metric=metric, threshold=threshold, operator=operator, **kwargs)
+        rule = AlertRule(
+            rule_id=rule_id,
+            name=name,
+            condition=condition,
+            metric=metric,
+            threshold=threshold,
+            operator=operator,
+            **kwargs,
+        )
         self.rules[rule_id] = rule
         return rule
 
@@ -59,7 +76,9 @@ class AlertRuleManager:
             triggered = False
         if triggered:
             rule.last_triggered = datetime.now()
-            self.trigger_log.append({"rule_id": rule_id, "value": current_value, "timestamp": datetime.now().isoformat()})
+            self.trigger_log.append(
+                {"rule_id": rule_id, "value": current_value, "timestamp": datetime.now().isoformat()}
+            )
         return triggered
 
     def get_rule(self, rule_id: str) -> AlertRule | None:

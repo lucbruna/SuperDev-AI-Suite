@@ -1,6 +1,7 @@
 """
 Conversation Manager
 """
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
@@ -23,6 +24,7 @@ class ConversationManager:
 
     def create(self, title: str = "New Conversation") -> Conversation:
         import uuid
+
         conv = Conversation(id=str(uuid.uuid4()), title=title)
         self.conversations.append(conv)
         return conv

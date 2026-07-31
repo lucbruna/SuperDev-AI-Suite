@@ -1,4 +1,5 @@
 """Business Intelligence Optimization subsystem."""
+
 from .models import (
     Constraint,
     ConstraintType,
@@ -13,8 +14,14 @@ from .models import (
 from .solver import OptimizationSolver
 
 __all__ = [
-    "OptimizationType", "Objective", "ConstraintType",
-    "Variable", "ObjectiveFunction", "Constraint", "OptimizationProblem",
-    "Solution", "SensitivityResult",
+    "OptimizationType",
+    "Objective",
+    "ConstraintType",
+    "Variable",
+    "ObjectiveFunction",
+    "Constraint",
+    "OptimizationProblem",
+    "Solution",
+    "SensitivityResult",
     "OptimizationSolver",
 ]

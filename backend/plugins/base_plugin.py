@@ -83,12 +83,10 @@ class BasePlugin(ABC):
         await self.on_deactivate()
 
     @abstractmethod
-    async def on_activate(self) -> None:
-        ...
+    async def on_activate(self) -> None: ...
 
     @abstractmethod
-    async def on_deactivate(self) -> None:
-        ...
+    async def on_deactivate(self) -> None: ...
 
     async def on_config_change(self, config: dict[str, Any]) -> None:
         self.config.settings.update(config)

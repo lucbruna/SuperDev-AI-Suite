@@ -1,6 +1,7 @@
 """
 Diff Viewer Component
 """
+
 from dataclasses import dataclass, field
 from enum import Enum
 
@@ -91,15 +92,23 @@ class DiffViewer:
             new_line = new_lines[i] if i < len(new_lines) else None
             if old_line == new_line:
                 if current_hunk:
-                    current_hunk.lines.append(DiffLine(content=old_line or "", line_type=DiffLineType.EQUAL, old_line_num=i + 1, new_line_num=i + 1))
+                    current_hunk.lines.append(
+                        DiffLine(
+                            content=old_line or "", line_type=DiffLineType.EQUAL, old_line_num=i + 1, new_line_num=i + 1
+                        )
+                    )
             else:
                 if current_hunk is None:
-                    current_hunk = DiffHunk(header="@@ -" + str(i+1) + " +" + str(i+1) + " @")
+                    current_hunk = DiffHunk(header="@@ -" + str(i + 1) + " +" + str(i + 1) + " @")
                     hunks.append(current_hunk)
                 if old_line is not None:
-                    current_hunk.lines.append(DiffLine(content=old_line, line_type=DiffLineType.REMOVE, old_line_num=i + 1))
+                    current_hunk.lines.append(
+                        DiffLine(content=old_line, line_type=DiffLineType.REMOVE, old_line_num=i + 1)
+                    )
                 if new_line is not None:
-                    current_hunk.lines.append(DiffLine(content=new_line, line_type=DiffLineType.ADD, new_line_num=i + 1))
+                    current_hunk.lines.append(
+                        DiffLine(content=new_line, line_type=DiffLineType.ADD, new_line_num=i + 1)
+                    )
         return hunks
 
     def select_file(self, index):
@@ -114,4 +123,9 @@ class DiffViewer:
     def get_statistics(self):
         total_add = sum(f.additions for f in self.files)
         total_del = sum(f.deletions for f in self.files)
-        return {"files": len(self.files), "additions": total_add, "deletions": total_del, "changes": total_add + total_del}
+        return {
+            "files": len(self.files),
+            "additions": total_add,
+            "deletions": total_del,
+            "changes": total_add + total_del,
+        }

@@ -1,4 +1,5 @@
 """Forecasting engine."""
+
 from datetime import datetime, timedelta
 
 from .models import (
@@ -59,13 +60,16 @@ class ForecastingEngine:
         if n == 0:
             return []
         if n == 1:
-            return [ForecastPoint(
-                timestamp=datetime.now() + timedelta(days=i + 1),
-                predicted_value=data.values[0],
-                lower_bound=data.values[0] * 0.9,
-                upper_bound=data.values[0] * 1.1,
-                confidence=0.5,
-            ) for i in range(horizon)]
+            return [
+                ForecastPoint(
+                    timestamp=datetime.now() + timedelta(days=i + 1),
+                    predicted_value=data.values[0],
+                    lower_bound=data.values[0] * 0.9,
+                    upper_bound=data.values[0] * 1.1,
+                    confidence=0.5,
+                )
+                for i in range(horizon)
+            ]
 
         x_mean = (n - 1) / 2
         y_mean = sum(data.values) / n
@@ -77,18 +81,20 @@ class ForecastingEngine:
         last_ts = data.timestamps[-1] if data.timestamps else datetime.now()
         points = []
         residuals = [abs(data.values[i] - (slope * i + intercept)) for i in range(n)]
-        std = (sum(r ** 2 for r in residuals) / n) ** 0.5 if n > 1 else 1.0
+        std = (sum(r**2 for r in residuals) / n) ** 0.5 if n > 1 else 1.0
 
         for i in range(horizon):
             pred = slope * (n + i) + intercept
             spread = std * (1 + i * 0.1) * 1.96
-            points.append(ForecastPoint(
-                timestamp=last_ts + timedelta(days=i + 1),
-                predicted_value=pred,
-                lower_bound=pred - spread,
-                upper_bound=pred + spread,
-                confidence=max(0.1, 1.0 - i * 0.05),
-            ))
+            points.append(
+                ForecastPoint(
+                    timestamp=last_ts + timedelta(days=i + 1),
+                    predicted_value=pred,
+                    lower_bound=pred - spread,
+                    upper_bound=pred + spread,
+                    confidence=max(0.1, 1.0 - i * 0.05),
+                )
+            )
         return points
 
     def _moving_avg_forecast(self, data: TimeSeriesData, horizon: int, window: int = 3) -> list[ForecastPoint]:
@@ -102,13 +108,15 @@ class ForecastingEngine:
             w = min(window, len(current))
             avg = sum(current[-w:]) / w
             current.append(avg)
-            points.append(ForecastPoint(
-                timestamp=last_ts + timedelta(days=i + 1),
-                predicted_value=avg,
-                lower_bound=avg * 0.9,
-                upper_bound=avg * 1.1,
-                confidence=max(0.1, 1.0 - i * 0.08),
-            ))
+            points.append(
+                ForecastPoint(
+                    timestamp=last_ts + timedelta(days=i + 1),
+                    predicted_value=avg,
+                    lower_bound=avg * 0.9,
+                    upper_bound=avg * 1.1,
+                    confidence=max(0.1, 1.0 - i * 0.08),
+                )
+            )
         return points
 
     def _exponential_forecast(self, data: TimeSeriesData, horizon: int, alpha: float = 0.3) -> list[ForecastPoint]:
@@ -121,11 +129,13 @@ class ForecastingEngine:
             smoothed = alpha * v + (1 - alpha) * smoothed
         points = []
         for i in range(horizon):
-            points.append(ForecastPoint(
-                timestamp=last_ts + timedelta(days=i + 1),
-                predicted_value=smoothed,
-                lower_bound=smoothed * 0.92,
-                upper_bound=smoothed * 1.08,
-                confidence=max(0.1, 1.0 - i * 0.06),
-            ))
+            points.append(
+                ForecastPoint(
+                    timestamp=last_ts + timedelta(days=i + 1),
+                    predicted_value=smoothed,
+                    lower_bound=smoothed * 0.92,
+                    upper_bound=smoothed * 1.08,
+                    confidence=max(0.1, 1.0 - i * 0.06),
+                )
+            )
         return points

@@ -1,4 +1,5 @@
 """Business Intelligence Forecasting subsystem."""
+
 from .engine import ForecastingEngine
 from .models import (
     ForecastMethod,
@@ -11,7 +12,12 @@ from .models import (
 )
 
 __all__ = [
-    "ForecastMethod", "SeasonalityType",
-    "TimeSeriesData", "ForecastRequest", "ForecastPoint", "ForecastResult", "ForecastModel",
+    "ForecastMethod",
+    "SeasonalityType",
+    "TimeSeriesData",
+    "ForecastRequest",
+    "ForecastPoint",
+    "ForecastResult",
+    "ForecastModel",
     "ForecastingEngine",
 ]

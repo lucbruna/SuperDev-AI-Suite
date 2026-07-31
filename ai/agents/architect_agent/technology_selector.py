@@ -59,26 +59,23 @@ class TechnologySelector:
     """Recommends technology choices based on requirements."""
 
     def __init__(self) -> None:
-        self._catalog: dict[str, dict[str, Any]] = {
-            t["name"]: dict(t) for t in DEFAULT_TECHNOLOGIES
-        }
+        self._catalog: dict[str, dict[str, Any]] = {t["name"]: dict(t) for t in DEFAULT_TECHNOLOGIES}
 
     def recommend(self, requirements: list[str]) -> list[dict[str, Any]]:
         req_lower = [r.lower() for r in requirements]
         results: list[dict[str, Any]] = []
         for tech in self._catalog.values():
-            score = sum(
-                1 for use in tech["use_cases"]
-                if any(use in req for req in req_lower)
-            )
+            score = sum(1 for use in tech["use_cases"] if any(use in req for req in req_lower))
             if score > 0:
-                results.append({
-                    "name": tech["name"],
-                    "category": tech["category"],
-                    "score": score,
-                    "pros": tech["pros"],
-                    "cons": tech["cons"],
-                })
+                results.append(
+                    {
+                        "name": tech["name"],
+                        "category": tech["category"],
+                        "score": score,
+                        "pros": tech["pros"],
+                        "cons": tech["cons"],
+                    }
+                )
         results.sort(key=lambda x: x["score"], reverse=True)
         return results
 
@@ -101,10 +98,7 @@ class TechnologySelector:
         return self._catalog.get(name)
 
     def list_by_category(self, category: str) -> list[dict[str, Any]]:
-        return [
-            dict(t) for t in self._catalog.values()
-            if t["category"] == category
-        ]
+        return [dict(t) for t in self._catalog.values() if t["category"] == category]
 
     def to_dict(self) -> dict[str, Any]:
         return {

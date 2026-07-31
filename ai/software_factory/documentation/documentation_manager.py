@@ -1,4 +1,5 @@
 """Manager for documentation lifecycle."""
+
 from datetime import datetime
 from typing import Any
 
@@ -46,8 +47,10 @@ class DocumentationManager:
         }
 
     def _record_action(self, action: str, target: str) -> None:
-        self._history.append({
-            "action": action,
-            "target": target,
-            "timestamp": datetime.utcnow().isoformat(),
-        })
+        self._history.append(
+            {
+                "action": action,
+                "target": target,
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+        )

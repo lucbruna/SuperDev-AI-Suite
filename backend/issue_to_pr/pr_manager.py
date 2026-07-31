@@ -11,10 +11,14 @@ class PRManager:
     def __init__(self):
         self._github_token = os.getenv("GITHUB_TOKEN", "")
         self._base_url = "https://api.github.com"
-        self._headers = {
-            "Authorization": f"Bearer {self._github_token}",
-            "Accept": "application/vnd.github.v3+json",
-        } if self._github_token else {}
+        self._headers = (
+            {
+                "Authorization": f"Bearer {self._github_token}",
+                "Accept": "application/vnd.github.v3+json",
+            }
+            if self._github_token
+            else {}
+        )
 
     async def create_pr(self, repo: str, title: str, body: str, issue_number: int) -> dict[str, Any]:
         branch_name = f"auto/pr-{issue_number}-{uuid.uuid4().hex[:6]}"
@@ -58,6 +62,7 @@ class PRManager:
                 content = readme_resp.json()
                 new_content = f"# Auto-generated from issue\n\n{body}\n\n---\n\n{content.get('content', '')}"
                 import base64
+
                 try:
                     decoded = base64.b64decode(content["content"]).decode()
                     new_content = f"# Auto-generated from issue\n\n{body}\n\n---\n\n{decoded}"
@@ -74,7 +79,9 @@ class PRManager:
                     },
                 )
 
-    async def _open_pr(self, repo: str, title: str, body: str, branch: str, base: str, issue_number: int) -> dict[str, Any]:
+    async def _open_pr(
+        self, repo: str, title: str, body: str, branch: str, base: str, issue_number: int
+    ) -> dict[str, Any]:
         if not self._github_token:
             return {"html_url": f"https://github.com/{repo}/pull/new/{branch}", "number": 0}
         async with httpx.AsyncClient() as client:

@@ -1,4 +1,5 @@
 """Experience replay buffer for reinforcement learning."""
+
 from __future__ import annotations
 
 import time
@@ -20,6 +21,7 @@ class ExperienceReplay:
 
     def sample(self, count: int = 10) -> list[dict[str, Any]]:
         import random
+
         if len(self._buffer) <= count:
             return list(self._buffer)
         return random.sample(self._buffer, count)

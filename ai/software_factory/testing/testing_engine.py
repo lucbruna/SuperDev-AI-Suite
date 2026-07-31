@@ -1,4 +1,5 @@
 """Core engine for test generation and execution."""
+
 from typing import Any
 
 from .models import TestCase, TestConfiguration, TestResult, TestSuite
@@ -32,6 +33,7 @@ class TestingEngine:
 
     def generate_tests(self, module_path: str, category: str = "unit") -> TestSuite:
         from .models import TestCategory
+
         try:
             cat = TestCategory(category)
         except ValueError:

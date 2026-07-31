@@ -1,4 +1,5 @@
 """Analyzer for requirements quality metrics and insights."""
+
 from collections import Counter
 from typing import Any
 
@@ -20,9 +21,7 @@ class RequirementsAnalyzer:
 
         with_criteria = sum(1 for r in requirements if r.acceptance_criteria)
         with_deps = sum(1 for r in requirements if r.dependencies)
-        avg_criteria = (
-            sum(len(r.acceptance_criteria) for r in requirements) / len(requirements)
-        )
+        avg_criteria = sum(len(r.acceptance_criteria) for r in requirements) / len(requirements)
 
         return {
             "total": len(requirements),

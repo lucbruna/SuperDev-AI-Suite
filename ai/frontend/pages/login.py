@@ -1,6 +1,7 @@
 """
 Login Page
 """
+
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
@@ -44,4 +45,8 @@ class LoginPage:
         self.loading = False
 
     def render(self) -> dict[str, Any]:
-        return {"form": {"email": self.form.email, "rememberMe": self.form.remember_me}, "loading": self.loading, "error": self.error}
+        return {
+            "form": {"email": self.form.email, "rememberMe": self.form.remember_me},
+            "loading": self.loading,
+            "error": self.error,
+        }

@@ -10,21 +10,25 @@ class RollbackManager:
         self.max_history = max_history
         self._history: dict[str, list[dict[str, Any]]] = {}
 
-    def record_deploy(self, env: str, version: str, strategy: str, status: str, snapshot: dict[str, Any] | None = None) -> str:
+    def record_deploy(
+        self, env: str, version: str, strategy: str, status: str, snapshot: dict[str, Any] | None = None
+    ) -> str:
         entry_id = f"rb_{uuid.uuid4().hex[:12]}"
         if env not in self._history:
             self._history[env] = []
-        self._history[env].append({
-            "id": entry_id,
-            "env": env,
-            "version": version,
-            "strategy": strategy,
-            "status": status,
-            "snapshot": snapshot or {},
-            "timestamp": datetime.utcnow().isoformat(),
-        })
+        self._history[env].append(
+            {
+                "id": entry_id,
+                "env": env,
+                "version": version,
+                "strategy": strategy,
+                "status": status,
+                "snapshot": snapshot or {},
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+        )
         if len(self._history[env]) > self.max_history:
-            self._history[env] = self._history[env][-self.max_history:]
+            self._history[env] = self._history[env][-self.max_history :]
         return entry_id
 
     async def rollback(self, env: str, target_version: str | None = None) -> dict[str, Any]:
@@ -62,6 +66,7 @@ class RollbackManager:
 
     async def schedule_rollback(self, env: str, delay_seconds: int = 30) -> str:
         import asyncio
+
         task_id = f"auto_rb_{uuid.uuid4().hex[:8]}"
         asyncio.create_task(self._delayed_rollback(task_id, env, delay_seconds))
         return task_id

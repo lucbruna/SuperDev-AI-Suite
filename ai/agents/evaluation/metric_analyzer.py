@@ -1,4 +1,5 @@
 """Metric analyzer for trend detection and insights."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -28,7 +29,7 @@ class MetricAnalyzer:
                 continue
             avg = sum(values) / len(values)
             first_half = values[: len(values) // 2]
-            second_half = values[len(values) // 2:]
+            second_half = values[len(values) // 2 :]
             first_avg = sum(first_half) / max(len(first_half), 1)
             second_avg = sum(second_half) / max(len(second_half), 1)
             diff = second_avg - first_avg

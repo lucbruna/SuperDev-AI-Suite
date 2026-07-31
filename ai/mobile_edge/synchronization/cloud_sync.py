@@ -1,4 +1,5 @@
 """Cloud Sync - Cloud synchronization management."""
+
 import hashlib
 from dataclasses import dataclass
 from datetime import datetime

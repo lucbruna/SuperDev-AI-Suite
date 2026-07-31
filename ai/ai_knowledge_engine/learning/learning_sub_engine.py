@@ -1,4 +1,5 @@
 """Learning subsystem engine — Continuous learning from experiences."""
+
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -63,9 +64,22 @@ class LearningSubEngine:
         self._feedback: list[FeedbackEntry] = []
         self._patterns: list[dict[str, Any]] = []
 
-    def record_experience(self, title: str, description: str, experience_type: str = "neutral", outcome: str = "", lessons: list[str] | None = None) -> Experience:
-        et = ExperienceType(experience_type) if experience_type in [e.value for e in ExperienceType] else ExperienceType.NEUTRAL
-        exp = Experience(title=title, description=description, experience_type=et, outcome=outcome, lessons=lessons or [])
+    def record_experience(
+        self,
+        title: str,
+        description: str,
+        experience_type: str = "neutral",
+        outcome: str = "",
+        lessons: list[str] | None = None,
+    ) -> Experience:
+        et = (
+            ExperienceType(experience_type)
+            if experience_type in [e.value for e in ExperienceType]
+            else ExperienceType.NEUTRAL
+        )
+        exp = Experience(
+            title=title, description=description, experience_type=et, outcome=outcome, lessons=lessons or []
+        )
         self._experiences[exp.experience_id] = exp
         return exp
 
@@ -83,8 +97,14 @@ class LearningSubEngine:
             fb = [f for f in fb if f.category == category]
         return fb
 
-    def suggest_improvement(self, title: str, description: str, improvement_type: str = "code", priority: int = 5) -> Improvement:
-        it = ImprovementType(improvement_type) if improvement_type in [e.value for e in ImprovementType] else ImprovementType.CODE
+    def suggest_improvement(
+        self, title: str, description: str, improvement_type: str = "code", priority: int = 5
+    ) -> Improvement:
+        it = (
+            ImprovementType(improvement_type)
+            if improvement_type in [e.value for e in ImprovementType]
+            else ImprovementType.CODE
+        )
         imp = Improvement(title=title, description=description, improvement_type=it, priority=priority)
         self._improvements[imp.improvement_id] = imp
         return imp

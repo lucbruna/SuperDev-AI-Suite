@@ -1,4 +1,5 @@
 """Manager for versioning lifecycle and configuration."""
+
 from datetime import datetime
 from typing import Any
 
@@ -14,11 +15,13 @@ class VersioningManager:
 
     def register_version(self, version: Version) -> None:
         self._versions.append(version)
-        self._history.append({
-            "action": "register_version",
-            "version": str(version),
-            "timestamp": datetime.utcnow().isoformat(),
-        })
+        self._history.append(
+            {
+                "action": "register_version",
+                "version": str(version),
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+        )
 
     def get_version(self, version_str: str) -> Version | None:
         for v in self._versions:

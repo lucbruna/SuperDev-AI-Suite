@@ -38,16 +38,20 @@ class HealthChecker:
                 if isinstance(result, ComponentHealth):
                     self._results.append(result)
                 else:
-                    self._results.append(ComponentHealth(
-                        name=name,
-                        status=HealthStatus.HEALTHY if result else HealthStatus.UNHEALTHY,
-                    ))
+                    self._results.append(
+                        ComponentHealth(
+                            name=name,
+                            status=HealthStatus.HEALTHY if result else HealthStatus.UNHEALTHY,
+                        )
+                    )
             except Exception as e:
-                self._results.append(ComponentHealth(
-                    name=name,
-                    status=HealthStatus.UNHEALTHY,
-                    message=str(e),
-                ))
+                self._results.append(
+                    ComponentHealth(
+                        name=name,
+                        status=HealthStatus.UNHEALTHY,
+                        message=str(e),
+                    )
+                )
         return self._results
 
     def get_overall_status(self) -> HealthStatus:

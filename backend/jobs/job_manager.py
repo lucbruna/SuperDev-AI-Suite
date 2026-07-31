@@ -184,7 +184,7 @@ class JobManager:
 
             if job.retries < job.max_retries:
                 job.status = JobStatus.RETRYING
-                await asyncio.sleep(2 ** job.retries)  # Backoff exponencial
+                await asyncio.sleep(2**job.retries)  # Backoff exponencial
                 await self._queue.put(job_id)
                 logger.warning(f"Job {job_id} retry {job.retries}/{job.max_retries}")
             else:
@@ -224,6 +224,7 @@ class JobManager:
 
 
 # ── Handlers pré-definidos ────────────────────────────────────────
+
 
 async def handle_code_review(job: Job) -> dict[str, Any]:
     """Handler para revisão de código."""

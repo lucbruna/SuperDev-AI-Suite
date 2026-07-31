@@ -24,8 +24,7 @@ class BaseGateway(ABC):
         return headers
 
     @abstractmethod
-    async def health_check(self) -> bool:
-        ...
+    async def health_check(self) -> bool: ...
 
     async def close(self) -> None:
         await self._client.aclose()

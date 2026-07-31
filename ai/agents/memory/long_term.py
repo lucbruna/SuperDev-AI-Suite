@@ -1,4 +1,5 @@
 """Long-term persistent memory with importance decay."""
+
 from __future__ import annotations
 
 import time
@@ -47,8 +48,7 @@ class LongTermMemory:
     def keys(self) -> list[str]:
         return list(self._store.keys())
 
-    def get_by_importance(self, min_importance: float = 0.0,
-                          max_importance: float = 1.0) -> dict[str, Any]:
+    def get_by_importance(self, min_importance: float = 0.0, max_importance: float = 1.0) -> dict[str, Any]:
         result = {}
         for k, v in self._store.items():
             imp = v.get("importance", 0.5)

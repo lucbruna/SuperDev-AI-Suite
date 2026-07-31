@@ -16,9 +16,7 @@ class PermissionResolver:
         self.project_repo = project_repo
         self.member_repo = member_repo
 
-    async def get_user_permissions(
-        self, user_id: uuid.UUID, context: dict[str, Any] | None = None
-    ) -> list[str]:
+    async def get_user_permissions(self, user_id: uuid.UUID, context: dict[str, Any] | None = None) -> list[str]:
         context = context or {}
         permissions: list[str] = []
 
@@ -34,9 +32,7 @@ class PermissionResolver:
 
         return list(set(permissions))
 
-    async def resolve_project_permissions(
-        self, user_id: uuid.UUID, project_id: uuid.UUID
-    ) -> list[str]:
+    async def resolve_project_permissions(self, user_id: uuid.UUID, project_id: uuid.UUID) -> list[str]:
         permissions: list[str] = []
         member = await self.member_repo.get_member(project_id, user_id)
         if member:
@@ -54,9 +50,7 @@ class PermissionResolver:
 
         return permissions
 
-    async def resolve_org_permissions(
-        self, user_id: uuid.UUID, org_id: uuid.UUID
-    ) -> list[str]:
+    async def resolve_org_permissions(self, user_id: uuid.UUID, org_id: uuid.UUID) -> list[str]:
         permissions: list[str] = []
         return permissions
 

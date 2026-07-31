@@ -1,6 +1,7 @@
 """
 Incident Response Playbook Engine
 """
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -52,7 +53,13 @@ class PlaybookEngine:
         steps = []
         if template_name and template_name in self.templates:
             for i, step_data in enumerate(self.templates[template_name]):
-                steps.append(PlaybookStep(step_id=f"step_{i}", name=step_data.get("name", f"Step {i+1}"), description=step_data.get("description", "")))
+                steps.append(
+                    PlaybookStep(
+                        step_id=f"step_{i}",
+                        name=step_data.get("name", f"Step {i + 1}"),
+                        description=step_data.get("description", ""),
+                    )
+                )
         playbook = Playbook(playbook_id=playbook_id, name=name, incident_id=incident_id, steps=steps)
         self.playbooks[playbook_id] = playbook
         return playbook

@@ -1,4 +1,5 @@
 """Working memory for active task context and focus."""
+
 from __future__ import annotations
 
 import time

@@ -69,6 +69,7 @@ class MockProvider:
         async def _gen():
             for chunk in MOCK_STREAM_CHUNKS:
                 yield chunk
+
         return _gen()
 
     async def health(self):
@@ -166,7 +167,9 @@ async def test_chat_completion_no_key(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_chat_completion_success(client: AsyncClient):
     """POST /api/v1/llm/chat should return a completion."""
-    with patch("backend.api.v1.llm._create_provider_instance", return_value=MockProvider(name="openai", model="gpt-4o")):
+    with patch(
+        "backend.api.v1.llm._create_provider_instance", return_value=MockProvider(name="openai", model="gpt-4o")
+    ):
         response = await client.post(
             "/api/v1/llm/chat",
             json={
@@ -185,7 +188,9 @@ async def test_chat_completion_success(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_chat_completion_with_system(client: AsyncClient):
     """POST /api/v1/llm/chat with system message."""
-    with patch("backend.api.v1.llm._create_provider_instance", return_value=MockProvider(name="openai", model="gpt-4o")):
+    with patch(
+        "backend.api.v1.llm._create_provider_instance", return_value=MockProvider(name="openai", model="gpt-4o")
+    ):
         response = await client.post(
             "/api/v1/llm/chat",
             json={
@@ -203,7 +208,9 @@ async def test_chat_completion_with_system(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_chat_stream(client: AsyncClient):
     """POST /api/v1/llm/chat/stream should return SSE stream."""
-    with patch("backend.api.v1.llm._create_provider_instance", return_value=MockProvider(name="openai", model="gpt-4o")):
+    with patch(
+        "backend.api.v1.llm._create_provider_instance", return_value=MockProvider(name="openai", model="gpt-4o")
+    ):
         response = await client.post(
             "/api/v1/llm/chat/stream",
             json={
@@ -224,7 +231,9 @@ async def test_chat_stream(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_test_provider(client: AsyncClient):
     """POST /api/v1/llm/providers/{name}/test should return health."""
-    with patch("backend.api.v1.llm._create_provider_instance", return_value=MockProvider(name="openai", model="gpt-4o")):
+    with patch(
+        "backend.api.v1.llm._create_provider_instance", return_value=MockProvider(name="openai", model="gpt-4o")
+    ):
         response = await client.post("/api/v1/llm/providers/openai/test")
         assert response.status_code == 200
         data = response.json()

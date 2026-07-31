@@ -164,6 +164,7 @@ class HealthChecker:
         start = time.monotonic()
         try:
             import shutil
+
             usage = shutil.disk_usage("/")
             free_pct = (usage.free / usage.total) * 100
             latency = (time.monotonic() - start) * 1000
@@ -203,6 +204,7 @@ class HealthChecker:
         start = time.monotonic()
         try:
             import psutil
+
             mem = psutil.virtual_memory()
             latency = (time.monotonic() - start) * 1000
             if mem.percent > 90:
@@ -241,6 +243,7 @@ class HealthChecker:
         start = time.monotonic()
         try:
             from backend.registry import service_registry
+
             started_at = service_registry.get("started_at")
             if not started_at:
                 return HealthCheckResult(
@@ -250,6 +253,7 @@ class HealthChecker:
                     latency_ms=round((time.monotonic() - start) * 1000, 2),
                 )
             from datetime import UTC, datetime
+
             start_dt = datetime.fromisoformat(started_at)
             now = datetime.now(UTC)
             uptime_secs = (now - start_dt).total_seconds()

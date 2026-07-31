@@ -1,6 +1,7 @@
 """
 Integration Factory - Create integration instances
 """
+
 import hashlib
 from dataclasses import dataclass, field
 from enum import Enum
@@ -36,7 +37,12 @@ class IntegrationFactory:
 
     def _setup_defaults(self):
         defaults = {
-            FactoryType.REST: {"method": "GET", "timeout": 30, "retries": 3, "headers": {"Content-Type": "application/json"}},
+            FactoryType.REST: {
+                "method": "GET",
+                "timeout": 30,
+                "retries": 3,
+                "headers": {"Content-Type": "application/json"},
+            },
             FactoryType.SOAP: {"version": "1.2", "timeout": 60},
             FactoryType.GRAPHQL: {"timeout": 30, "batch": False},
             FactoryType.DATABASE: {"pool_size": 5, "timeout": 30},
@@ -46,11 +52,17 @@ class IntegrationFactory:
         }
         for ftype, config in defaults.items():
             template_id = hashlib.sha256(ftype.value.encode()).hexdigest()[:16]
-            self.templates[template_id] = FactoryTemplate(template_id=template_id, name=f"{ftype.value}_template", factory_type=ftype, default_config=config)
+            self.templates[template_id] = FactoryTemplate(
+                template_id=template_id, name=f"{ftype.value}_template", factory_type=ftype, default_config=config
+            )
 
-    def register_template(self, name: str, factory_type: FactoryType, default_config: dict[str, Any] = None) -> FactoryTemplate:
+    def register_template(
+        self, name: str, factory_type: FactoryType, default_config: dict[str, Any] = None
+    ) -> FactoryTemplate:
         template_id = hashlib.sha256(f"{name}{factory_type.value}".encode()).hexdigest()[:16]
-        template = FactoryTemplate(template_id=template_id, name=name, factory_type=factory_type, default_config=default_config or {})
+        template = FactoryTemplate(
+            template_id=template_id, name=name, factory_type=factory_type, default_config=default_config or {}
+        )
         self.templates[template_id] = template
         return template
 

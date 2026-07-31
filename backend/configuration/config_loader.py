@@ -22,6 +22,7 @@ class ConfigLoader:
     def load_yaml(self, filename: str) -> dict[str, Any]:
         try:
             import yaml
+
             path = self._config_dir / filename
             if path.exists():
                 with open(path) as f:

@@ -8,9 +8,21 @@ from typing import Any
 from ..base.base_tool import BaseTool
 
 _EXCLUDED_DIRS: set[str] = {
-    "node_modules", ".git", "__pycache__", "venv", ".venv",
-    "dist", "build", ".tox", ".mypy_cache", ".pytest_cache",
-    ".eggs", ".idea", ".vscode", "coverage", ".nyc_output",
+    "node_modules",
+    ".git",
+    "__pycache__",
+    "venv",
+    ".venv",
+    "dist",
+    "build",
+    ".tox",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".eggs",
+    ".idea",
+    ".vscode",
+    "coverage",
+    ".nyc_output",
 }
 
 
@@ -58,11 +70,13 @@ class SearchTool(BaseTool):
                             with open(fpath, encoding="utf-8", errors="ignore") as f:
                                 for lineno, line in enumerate(f, 1):
                                     if re.search(pattern, line, re.IGNORECASE):
-                                        results.append({
-                                            "file": fpath,
-                                            "line": lineno,
-                                            "content": line.strip(),
-                                        })
+                                        results.append(
+                                            {
+                                                "file": fpath,
+                                                "line": lineno,
+                                                "content": line.strip(),
+                                            }
+                                        )
                         except Exception:
                             pass
 
@@ -78,11 +92,13 @@ class SearchTool(BaseTool):
                                 with open(fpath, encoding="utf-8", errors="ignore") as f:
                                     for lineno, line in enumerate(f, 1):
                                         if re.search(pattern, line, re.IGNORECASE):
-                                            results.append({
-                                                "file": fpath,
-                                                "line": lineno,
-                                                "content": line.strip(),
-                                            })
+                                            results.append(
+                                                {
+                                                    "file": fpath,
+                                                    "line": lineno,
+                                                    "content": line.strip(),
+                                                }
+                                            )
                             except Exception:
                                 pass
 

@@ -1,6 +1,7 @@
 """
 Immutable Audit Logging
 """
+
 import hashlib
 import json
 from dataclasses import dataclass, field
@@ -40,10 +41,32 @@ class AuditLogger:
         self.entries: list[AuditEntry] = []
         self.last_hash: str = "genesis"
 
-    def log(self, event_type: AuditEventType, actor: str, resource: str, action: str, result: str = "success", ip_address: str = "", metadata: dict[str, Any] = None) -> AuditEntry:
+    def log(
+        self,
+        event_type: AuditEventType,
+        actor: str,
+        resource: str,
+        action: str,
+        result: str = "success",
+        ip_address: str = "",
+        metadata: dict[str, Any] = None,
+    ) -> AuditEntry:
         entry_id = hashlib.sha256(f"{actor}{resource}{action}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
-        entry = AuditEntry(entry_id=entry_id, event_type=event_type, actor=actor, resource=resource, action=action, result=result, ip_address=ip_address, metadata=metadata or {}, previous_hash=self.last_hash)
-        entry_data = json.dumps({"id": entry_id, "type": event_type.value, "actor": actor, "resource": resource, "prev": self.last_hash}, sort_keys=True)
+        entry = AuditEntry(
+            entry_id=entry_id,
+            event_type=event_type,
+            actor=actor,
+            resource=resource,
+            action=action,
+            result=result,
+            ip_address=ip_address,
+            metadata=metadata or {},
+            previous_hash=self.last_hash,
+        )
+        entry_data = json.dumps(
+            {"id": entry_id, "type": event_type.value, "actor": actor, "resource": resource, "prev": self.last_hash},
+            sort_keys=True,
+        )
         entry.entry_hash = hashlib.sha256(entry_data.encode()).hexdigest()
         self.last_hash = entry.entry_hash
         self.entries.append(entry)

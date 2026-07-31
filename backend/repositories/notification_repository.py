@@ -37,9 +37,13 @@ class NotificationRepository(BaseRepository[Notification]):
 
     async def get_unread_count(self, user_id: str) -> int:
         """Count unread notifications for a user."""
-        query = select(func.count()).select_from(self.model).where(
-            self.model.user_id == user_id,
-            not self.model.is_read,
+        query = (
+            select(func.count())
+            .select_from(self.model)
+            .where(
+                self.model.user_id == user_id,
+                not self.model.is_read,
+            )
         )
         result = await self.db.execute(query)
         return result.scalar() or 0

@@ -1,4 +1,5 @@
 """Reporter for requirements analysis and status reports."""
+
 from datetime import datetime
 from typing import Any
 

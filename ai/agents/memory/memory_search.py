@@ -1,4 +1,5 @@
 """Cross-memory search engine."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -10,8 +11,7 @@ class MemorySearch:
     def __init__(self) -> None:
         self._search_count: int = 0
 
-    def search(self, memory: Any, query: str,
-               limit: int = 10) -> list[dict[str, Any]]:
+    def search(self, memory: Any, query: str, limit: int = 10) -> list[dict[str, Any]]:
         self._search_count += 1
         results: list[dict[str, Any]] = []
         query_lower = query.lower()
@@ -20,16 +20,17 @@ class MemorySearch:
             for key, value in all_items.items():
                 score = self._score_match(query_lower, key, value)
                 if score > 0:
-                    results.append({
-                        "key": key,
-                        "value": value,
-                        "score": round(score, 4),
-                    })
+                    results.append(
+                        {
+                            "key": key,
+                            "value": value,
+                            "score": round(score, 4),
+                        }
+                    )
         results.sort(key=lambda x: x["score"], reverse=True)
         return results[:limit]
 
-    def search_multiple(self, memories: list[Any], query: str,
-                        limit: int = 10) -> list[dict[str, Any]]:
+    def search_multiple(self, memories: list[Any], query: str, limit: int = 10) -> list[dict[str, Any]]:
         combined: list[dict[str, Any]] = []
         for mem in memories:
             combined.extend(self.search(mem, query, limit * 2))

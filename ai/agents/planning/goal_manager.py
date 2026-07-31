@@ -1,4 +1,5 @@
 """Goal management for planning subsystem."""
+
 from __future__ import annotations
 
 import time
@@ -12,10 +13,9 @@ class GoalManager:
     def __init__(self) -> None:
         self._goals: dict[str, dict[str, Any]] = {}
 
-    def add_goal(self, description: str,
-                 context: dict[str, Any] | None = None,
-                 priority: int = 5,
-                 parent_id: str | None = None) -> dict[str, Any]:
+    def add_goal(
+        self, description: str, context: dict[str, Any] | None = None, priority: int = 5, parent_id: str | None = None
+    ) -> dict[str, Any]:
         goal_id = f"goal_{uuid.uuid4().hex[:12]}"
         goal = {
             "goal_id": goal_id,
@@ -58,7 +58,8 @@ class GoalManager:
     def get_by_priority(self, min_priority: int = 0) -> list[dict[str, Any]]:
         return sorted(
             [g for g in self._goals.values() if g["priority"] >= min_priority],
-            key=lambda g: g["priority"], reverse=True,
+            key=lambda g: g["priority"],
+            reverse=True,
         )
 
     def remove_goal(self, goal_id: str) -> bool:

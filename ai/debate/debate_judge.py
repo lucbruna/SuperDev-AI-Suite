@@ -21,12 +21,14 @@ class DebateJudge:
         scores = []
         for arg in arguments:
             total = sum(self._criteria.get(c, 0.5) * 0.7 for c in self._criteria)
-            scores.append({
-                "agent": arg.get("agent"),
-                "total_score": round(total / len(self._criteria), 2),
-                "confidence": arg.get("confidence", 0),
-                "criteria_scores": {c: 0.7 for c in self._criteria},
-            })
+            scores.append(
+                {
+                    "agent": arg.get("agent"),
+                    "total_score": round(total / len(self._criteria), 2),
+                    "confidence": arg.get("confidence", 0),
+                    "criteria_scores": {c: 0.7 for c in self._criteria},
+                }
+            )
         scores.sort(key=lambda s: s.get("total_score", 0), reverse=True)
         return scores
 

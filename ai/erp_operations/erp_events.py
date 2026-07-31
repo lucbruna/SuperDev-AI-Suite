@@ -1,4 +1,5 @@
 """ERP Events — Event-driven messaging for ERP operations."""
+
 import contextlib
 import hashlib
 from collections.abc import Callable
@@ -46,7 +47,9 @@ class ERPEventBus:
     def subscribe(self, event_type: ERPEventType, handler: Callable) -> None:
         self.subscribers.setdefault(event_type, []).append(handler)
 
-    def get_events(self, event_type: ERPEventType | None = None, source: str | None = None, limit: int = 100) -> list[ERPEvent]:
+    def get_events(
+        self, event_type: ERPEventType | None = None, source: str | None = None, limit: int = 100
+    ) -> list[ERPEvent]:
         events = self.events
         if event_type:
             events = [e for e in events if e.event_type == event_type]

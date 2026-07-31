@@ -26,9 +26,7 @@ class PermissionCache:
         self._cache.move_to_end(key)
         return permissions
 
-    def set_cached_permissions(
-        self, user_id: uuid.UUID, permissions: list[str], ttl: int | None = None
-    ) -> None:
+    def set_cached_permissions(self, user_id: uuid.UUID, permissions: list[str], ttl: int | None = None) -> None:
         key = self._cached_permissions_key(user_id)
         expiry = time.monotonic() + (ttl if ttl is not None else self._default_ttl)
         self._cache[key] = (permissions, expiry)
@@ -47,10 +45,7 @@ class PermissionCache:
         the resource identifier (e.g., 'project:{id}' or 'org:{id}').
         """
         resource_key = f"{resource_type}:{resource_id}"
-        keys_to_remove = [
-            key for key in self._cache
-            if resource_key in key
-        ]
+        keys_to_remove = [key for key in self._cache if resource_key in key]
         for key in keys_to_remove:
             del self._cache[key]
 

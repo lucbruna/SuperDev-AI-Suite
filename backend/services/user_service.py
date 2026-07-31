@@ -90,6 +90,7 @@ class UserService:
             raise InvalidCredentialsException()
         if not user.is_active:
             from backend.exceptions import UserInactiveException
+
             raise UserInactiveException()
         return user
 

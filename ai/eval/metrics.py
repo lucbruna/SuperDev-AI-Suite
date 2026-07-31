@@ -31,8 +31,18 @@ class EvalMetrics:
         n = len(results)
         return {
             "total_comparisons": n,
-            "model_a": {"wins": wins_a, "win_rate": round(wins_a / n * 100, 1) if n else 0, "avg_duration_ms": round(total_duration_a / n, 1) if n else 0, "total_tokens": total_tokens_a},
-            "model_b": {"wins": wins_b, "win_rate": round(wins_b / n * 100, 1) if n else 0, "avg_duration_ms": round(total_duration_b / n, 1) if n else 0, "total_tokens": total_tokens_b},
+            "model_a": {
+                "wins": wins_a,
+                "win_rate": round(wins_a / n * 100, 1) if n else 0,
+                "avg_duration_ms": round(total_duration_a / n, 1) if n else 0,
+                "total_tokens": total_tokens_a,
+            },
+            "model_b": {
+                "wins": wins_b,
+                "win_rate": round(wins_b / n * 100, 1) if n else 0,
+                "avg_duration_ms": round(total_duration_b / n, 1) if n else 0,
+                "total_tokens": total_tokens_b,
+            },
             "ties": ties,
             "tie_rate": round(ties / n * 100, 1) if n else 0,
         }
@@ -51,4 +61,8 @@ class EvalMetrics:
         rate_b = rates.get(model_b, rates["gpt-4o"])
         cost_a = tokens_a * rate_a["output"]
         cost_b = tokens_b * rate_b["output"]
-        return {"model_a_cost": round(cost_a, 6), "model_b_cost": round(cost_b, 6), "savings": round(cost_a - cost_b, 6)}
+        return {
+            "model_a_cost": round(cost_a, 6),
+            "model_b_cost": round(cost_b, 6),
+            "savings": round(cost_a - cost_b, 6),
+        }

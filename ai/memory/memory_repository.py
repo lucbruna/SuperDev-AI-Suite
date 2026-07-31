@@ -85,7 +85,7 @@ class MemoryRepository:
                         continue
             results.append(entry)
         results.sort(key=lambda e: e.priority, reverse=True)
-        return results[:query.max_results]
+        return results[: query.max_results]
 
     async def clear(self, scope: MemoryScope | None = None) -> None:
         if scope is None:

@@ -1,6 +1,7 @@
 """
 Incremental Sync - Delta-based synchronization
 """
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -24,7 +25,9 @@ class IncrementalSync:
         self.last_sync_cursor: str | None = None
 
     def record_delta(self, entity_type: str, operation: str, data: dict[str, Any]) -> Delta:
-        delta_id = hashlib.sha256(f"{entity_type}{operation}{str(data)}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
+        delta_id = hashlib.sha256(
+            f"{entity_type}{operation}{str(data)}{datetime.now().isoformat()}".encode()
+        ).hexdigest()[:16]
         delta = Delta(delta_id=delta_id, entity_type=entity_type, operation=operation, data=data)
         self.deltas.append(delta)
         return delta

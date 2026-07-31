@@ -1,9 +1,10 @@
 """Comprehensive tests for Integration Hub & API Ecosystem Engine (Volume 29)."""
+
 import os
 import sys
 import unittest
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 # ── Core imports ──────────────────────────────────────────────────────────
 # ── Adapters ──────────────────────────────────────────────────────────────
@@ -79,6 +80,7 @@ from integration.webhooks.webhook_engine import WebhookEngine, WebhookStatus
 # CORE TESTS
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 class TestCoreModules(unittest.TestCase):
     def test_integration_engine_init(self):
         engine = IntegrationEngine()
@@ -105,7 +107,9 @@ class TestCoreModules(unittest.TestCase):
         self.assertIsNotNone(ctx)
 
     def test_event_creation(self):
-        event = IntegrationEvent(event_id="evt_1", event_type=EventType.INTEGRATION_CREATED, source="unit_test", data={"key": "value"})
+        event = IntegrationEvent(
+            event_id="evt_1", event_type=EventType.INTEGRATION_CREATED, source="unit_test", data={"key": "value"}
+        )
         self.assertEqual(event.event_type, EventType.INTEGRATION_CREATED)
 
     def test_event_bus_init(self):
@@ -160,6 +164,7 @@ class TestCoreModules(unittest.TestCase):
 # API GATEWAY TESTS
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 class TestAPIGatewayEngine(unittest.TestCase):
     def setUp(self):
         self.engine = APIGatewayEngine()
@@ -185,14 +190,17 @@ class TestAPIGatewayEngine(unittest.TestCase):
 
     def test_register_handler(self):
         route = self.engine.add_route("/api/v1/data", GWHttpMethod.GET, "data_service")
+
         def handler(req):
             return {"status": 200}
+
         self.engine.register_handler(route.route_id, handler)
         self.assertIn(route.route_id, self.engine.handlers)
 
     def test_add_middleware(self):
         def mw(req, next_fn):
             return next_fn(req)
+
         self.engine.add_middleware(mw)
         self.assertEqual(len(self.engine.middleware), 1)
 
@@ -280,6 +288,7 @@ class TestVersionManager(unittest.TestCase):
 # CONNECTORS TESTS
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 class TestConnectorEngine(unittest.TestCase):
     def setUp(self):
         self.engine = ConnectorEngine()
@@ -305,8 +314,10 @@ class TestConnectorEngine(unittest.TestCase):
     def test_connect_with_handler(self):
         config = ConnectorConfig(name="test", connector_type=ConnectorType.REST_API)
         instance = self.engine.create_connector(config)
+
         def handler(action, cfg):
             return None
+
         self.engine.register_handler(instance.instance_id, handler)
         result = self.engine.connect(instance.instance_id)
         self.assertTrue(result)
@@ -314,8 +325,10 @@ class TestConnectorEngine(unittest.TestCase):
     def test_connect_with_failing_handler(self):
         config = ConnectorConfig(name="fail", connector_type=ConnectorType.REST_API)
         instance = self.engine.create_connector(config)
+
         def bad_handler(action, cfg):
             raise Exception("Connection refused")
+
         self.engine.register_handler(instance.instance_id, bad_handler)
         result = self.engine.connect(instance.instance_id)
         self.assertFalse(result)
@@ -343,12 +356,15 @@ class TestConnectorEngine(unittest.TestCase):
 # ADAPTERS TESTS
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 class TestAdapterEngine(unittest.TestCase):
     def setUp(self):
         self.engine = AdapterEngine()
 
     def test_register_adapter(self):
-        config = AdapterConfig(name="json_to_xml", adapter_type=AdapterType.FORMAT, source_format="json", target_format="xml")
+        config = AdapterConfig(
+            name="json_to_xml", adapter_type=AdapterType.FORMAT, source_format="json", target_format="xml"
+        )
         adapter_id = self.engine.register_adapter(config)
         self.assertIsNotNone(adapter_id)
         self.assertEqual(self.engine.count(), 1)
@@ -367,8 +383,10 @@ class TestAdapterEngine(unittest.TestCase):
     def test_translate_with_handler(self):
         config = AdapterConfig(name="upper", adapter_type=AdapterType.FORMAT)
         adapter_id = self.engine.register_adapter(config)
+
         def handler(data, rules):
             return data.upper() if isinstance(data, str) else data
+
         self.engine.register_handler(adapter_id, handler)
         result = self.engine.translate(adapter_id, "hello")
         self.assertTrue(result.success)
@@ -377,8 +395,10 @@ class TestAdapterEngine(unittest.TestCase):
     def test_translate_with_failing_handler(self):
         config = AdapterConfig(name="fail", adapter_type=AdapterType.CUSTOM)
         adapter_id = self.engine.register_adapter(config)
+
         def bad_handler(data, rules):
             raise ValueError("Bad data")
+
         self.engine.register_handler(adapter_id, bad_handler)
         result = self.engine.translate(adapter_id, "test")
         self.assertFalse(result.success)
@@ -406,6 +426,7 @@ class TestAdapterEngine(unittest.TestCase):
 # ═══════════════════════════════════════════════════════════════════════════
 # AUTHENTICATION TESTS
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 class TestIntegrationAuth(unittest.TestCase):
     def setUp(self):
@@ -461,15 +482,18 @@ class TestOAuthProvider(unittest.TestCase):
         p = OAuthProvider()
         self.assertIsNotNone(p)
 
+
 class TestAPIKeyManager(unittest.TestCase):
     def test_init(self):
         m = APIKeyManager()
         self.assertIsNotNone(m)
 
+
 class TestCertificateManager(unittest.TestCase):
     def test_init(self):
         m = CertificateManager()
         self.assertIsNotNone(m)
+
 
 class TestIntegrationTokenManager(unittest.TestCase):
     def test_init(self):
@@ -480,6 +504,7 @@ class TestIntegrationTokenManager(unittest.TestCase):
 # ═══════════════════════════════════════════════════════════════════════════
 # WEBHOOKS TESTS
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 class TestWebhookEngine(unittest.TestCase):
     def setUp(self):
@@ -542,6 +567,7 @@ class TestWebhookSubModules(unittest.TestCase):
 # SYNCHRONIZATION TESTS
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 class TestSyncEngine(unittest.TestCase):
     def setUp(self):
         self.engine = SyncEngine()
@@ -602,6 +628,7 @@ class TestSyncSubModules(unittest.TestCase):
 # ═══════════════════════════════════════════════════════════════════════════
 # MAPPING TESTS
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 class TestMappingEngine(unittest.TestCase):
     def setUp(self):
@@ -690,6 +717,7 @@ class TestMappingSubModules(unittest.TestCase):
 # QUEUES TESTS
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 class TestQueueEngine(unittest.TestCase):
     def setUp(self):
         self.engine = QueueEngine()
@@ -757,6 +785,7 @@ class TestQueueSubModules(unittest.TestCase):
 # ═══════════════════════════════════════════════════════════════════════════
 # MONITORING TESTS
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 class TestIntegrationMonitor(unittest.TestCase):
     def setUp(self):
@@ -826,6 +855,7 @@ class TestMonitoringSubModules(unittest.TestCase):
 # SUBSYSTEM IMPORT TESTS
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 class TestSubsystemImports(unittest.TestCase):
     def test_api_gateway_imports(self):
         from integration.api_gateway import (
@@ -836,7 +866,10 @@ class TestSubsystemImports(unittest.TestCase):
             RouteManager,
             VersionManager,
         )
-        self.assertTrue(all([APIGatewayEngine, RouteManager, RequestHandler, ResponseManager, RateLimiter, VersionManager]))
+
+        self.assertTrue(
+            all([APIGatewayEngine, RouteManager, RequestHandler, ResponseManager, RateLimiter, VersionManager])
+        )
 
     def test_connectors_imports(self):
         from integration.connectors import (
@@ -846,10 +879,14 @@ class TestSubsystemImports(unittest.TestCase):
             ConnectorRegistry,
             ConnectorValidator,
         )
-        self.assertTrue(all([ConnectorEngine, ConnectorManager, ConnectorRegistry, ConnectorLoader, ConnectorValidator]))
+
+        self.assertTrue(
+            all([ConnectorEngine, ConnectorManager, ConnectorRegistry, ConnectorLoader, ConnectorValidator])
+        )
 
     def test_adapters_imports(self):
         from integration.adapters import AdapterEngine, AdapterManager, FormatAdapter, LegacyAdapter, ProtocolAdapter
+
         self.assertTrue(all([AdapterEngine, AdapterManager, ProtocolAdapter, FormatAdapter, LegacyAdapter]))
 
     def test_authentication_imports(self):
@@ -860,22 +897,29 @@ class TestSubsystemImports(unittest.TestCase):
             IntegrationTokenManager,
             OAuthProvider,
         )
-        self.assertTrue(all([IntegrationAuth, OAuthProvider, APIKeyManager, CertificateManager, IntegrationTokenManager]))
+
+        self.assertTrue(
+            all([IntegrationAuth, OAuthProvider, APIKeyManager, CertificateManager, IntegrationTokenManager])
+        )
 
     def test_webhooks_imports(self):
         from integration.webhooks import RetryManager, WebhookEngine, WebhookReceiver, WebhookSender, WebhookValidator
+
         self.assertTrue(all([WebhookEngine, WebhookReceiver, WebhookSender, WebhookValidator, RetryManager]))
 
     def test_synchronization_imports(self):
         from integration.synchronization import ConflictManager, DataSync, IncrementalSync, SyncEngine, SyncScheduler
+
         self.assertTrue(all([SyncEngine, DataSync, ConflictManager, SyncScheduler, IncrementalSync]))
 
     def test_mapping_imports(self):
         from integration.mapping import FieldMapper, MappingEngine, MappingValidator, SchemaMapper, TransformationEngine
+
         self.assertTrue(all([MappingEngine, SchemaMapper, FieldMapper, TransformationEngine, MappingValidator]))
 
     def test_queues_imports(self):
         from integration.queues import DeadLetterQueue, MessageQueue, PriorityQueue, QueueEngine, RetryQueue
+
         self.assertTrue(all([QueueEngine, MessageQueue, PriorityQueue, RetryQueue, DeadLetterQueue]))
 
     def test_monitoring_imports(self):
@@ -886,12 +930,16 @@ class TestSubsystemImports(unittest.TestCase):
             IntegrationReporter,
             LatencyMonitor,
         )
-        self.assertTrue(all([IntegrationMonitor, LatencyMonitor, ErrorMonitor, AvailabilityMonitor, IntegrationReporter]))
+
+        self.assertTrue(
+            all([IntegrationMonitor, LatencyMonitor, ErrorMonitor, AvailabilityMonitor, IntegrationReporter])
+        )
 
 
 # ═══════════════════════════════════════════════════════════════════════════
 # CROSS-SUBSYSTEM INTEGRATION TESTS
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 class TestCrossSubsystemIntegration(unittest.TestCase):
     def test_gateway_rate_limit_and_auth(self):
@@ -915,7 +963,9 @@ class TestCrossSubsystemIntegration(unittest.TestCase):
         instance = engine.create_connector(config)
         engine.connect(instance.instance_id)
 
-        adapter_config = AdapterConfig(name="db_to_json", adapter_type=AdapterType.FORMAT, source_format="csv", target_format="json")
+        adapter_config = AdapterConfig(
+            name="db_to_json", adapter_type=AdapterType.FORMAT, source_format="csv", target_format="json"
+        )
         adapter_id = adapter.register_adapter(adapter_config)
         result = adapter.translate(adapter_id, "col1,col2\nval1,val2")
         self.assertTrue(result.success)
@@ -967,7 +1017,9 @@ class TestCrossSubsystemIntegration(unittest.TestCase):
         token = auth.authenticate("ext_api", AuthType.OAUTH2, {})
         route = gw.add_route("/api/v1/sync", GWHttpMethod.POST, "sync_service")
 
-        config = ConnectorConfig(name="ext_api", connector_type=ConnectorType.REST_API, endpoint="https://api.external.com")
+        config = ConnectorConfig(
+            name="ext_api", connector_type=ConnectorType.REST_API, endpoint="https://api.external.com"
+        )
         instance = connector.create_connector(config)
         connector.connect(instance.instance_id)
 
@@ -990,5 +1042,5 @@ class TestCrossSubsystemIntegration(unittest.TestCase):
 
 # ═══════════════════════════════════════════════════════════════════════════
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

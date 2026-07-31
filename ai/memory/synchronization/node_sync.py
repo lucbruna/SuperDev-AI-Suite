@@ -22,12 +22,14 @@ class NodeSync:
         return self._nodes.pop(node_id, None) is not None
 
     def record_sync(self, source: str, target: str, status: str = "ok") -> None:
-        self._sync_log.append({
-            "source": source,
-            "target": target,
-            "status": status,
-            "timestamp": time.time(),
-        })
+        self._sync_log.append(
+            {
+                "source": source,
+                "target": target,
+                "status": status,
+                "timestamp": time.time(),
+            }
+        )
         if source in self._nodes:
             self._nodes[source]["last_sync"] = time.time()
         if target in self._nodes:

@@ -1,4 +1,5 @@
 """Data models for deployment management."""
+
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -26,6 +27,7 @@ class EnvironmentType(Enum):
 @dataclass
 class Deployment:
     """A deployment record."""
+
     deployment_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     name: str = ""
     version: str = ""
@@ -40,6 +42,7 @@ class Deployment:
 @dataclass
 class Environment:
     """A deployment environment."""
+
     env_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     name: str = ""
     environment_type: EnvironmentType = EnvironmentType.DEVELOPMENT
@@ -51,6 +54,7 @@ class Environment:
 @dataclass
 class Release:
     """A release record."""
+
     release_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     version: str = ""
     name: str = ""
@@ -63,6 +67,7 @@ class Release:
 @dataclass
 class RollbackPlan:
     """A rollback plan for a deployment."""
+
     plan_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     deployment_id: str = ""
     steps: list[str] = field(default_factory=list)
@@ -73,6 +78,7 @@ class RollbackPlan:
 @dataclass
 class DeploymentConfig:
     """Configuration for a deployment."""
+
     config_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     name: str = ""
     auto_rollback: bool = True

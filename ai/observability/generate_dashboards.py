@@ -1,15 +1,20 @@
 """Dashboards subsystem generator."""
+
 import os
 
-BASE = r'C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\observability\dashboards'
+BASE = r"C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\observability\dashboards"
+
 
 def w(path, content):
     full = os.path.join(BASE, path)
     os.makedirs(os.path.dirname(full), exist_ok=True)
-    with open(full, 'w', encoding='utf-8') as f:
+    with open(full, "w", encoding="utf-8") as f:
         f.write(content)
 
-w('dashboard_engine.py', '''"""Dashboard engine."""
+
+w(
+    "dashboard_engine.py",
+    '''"""Dashboard engine."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time
@@ -43,9 +48,12 @@ class DashboardEngine:
         return False
     def get_status(self) -> Dict[str, Any]:
         return {"running": self._started, "dashboards": len(self._dashboards)}
-''')
+''',
+)
 
-w('system_dashboard.py', '''"""System dashboard."""
+w(
+    "system_dashboard.py",
+    '''"""System dashboard."""
 from __future__ import annotations
 from typing import Any, Dict, List
 
@@ -68,9 +76,12 @@ class SystemDashboard:
         return self._metrics.get("uptime", 0.0)
     def get_summary(self) -> Dict[str, Any]:
         return {"cpu": self.get_cpu_usage(), "memory": self.get_memory_usage(), "disk": self.get_disk_usage(), "processes": self.get_process_count()}
-''')
+''',
+)
 
-w('ai_dashboard.py', '''"""AI dashboard."""
+w(
+    "ai_dashboard.py",
+    '''"""AI dashboard."""
 from __future__ import annotations
 from typing import Any, Dict, List
 
@@ -92,9 +103,12 @@ class AIDashboard:
         return {k: v.get("calls", 0) for k, v in self._model_metrics.items()}
     def get_summary(self) -> Dict[str, Any]:
         return {"agents": len(self._agent_metrics), "models": len(self._model_metrics), "active": len(self.get_active_agents())}
-''')
+''',
+)
 
-w('security_dashboard.py', '''"""Security dashboard."""
+w(
+    "security_dashboard.py",
+    '''"""Security dashboard."""
 from __future__ import annotations
 from typing import Any, Dict, List
 
@@ -116,9 +130,12 @@ class SecurityDashboard:
         return sum(1 for t in self._threats if t.get("type") == "failed_login")
     def get_summary(self) -> Dict[str, Any]:
         return {"threats": self.get_threat_count(), "compliance": len(self._compliance)}
-''')
+''',
+)
 
-w('project_dashboard.py', '''"""Project dashboard."""
+w(
+    "project_dashboard.py",
+    '''"""Project dashboard."""
 from __future__ import annotations
 from typing import Any, Dict, List
 
@@ -137,9 +154,12 @@ class ProjectDashboard:
         return self._projects.get(project_id, {}).get("test_coverage", 0.0)
     def get_summary(self) -> Dict[str, Any]:
         return {"projects": len(self._projects), "building": sum(1 for p in self._projects.values() if p.get("build_status") == "building")}
-''')
+''',
+)
 
-w('cloud_dashboard.py', '''"""Cloud dashboard."""
+w(
+    "cloud_dashboard.py",
+    '''"""Cloud dashboard."""
 from __future__ import annotations
 from typing import Any, Dict, List
 
@@ -159,9 +179,12 @@ class CloudDashboard:
         return dict(self._costs)
     def get_summary(self) -> Dict[str, Any]:
         return {"resources": len(self._resources), "total_cost": self.get_total_cost()}
-''')
+''',
+)
 
-w('custom_dashboard.py', '''"""Custom dashboard."""
+w(
+    "custom_dashboard.py",
+    '''"""Custom dashboard."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import time
@@ -189,9 +212,12 @@ class CustomDashboard:
         return False
     def to_dict(self) -> Dict[str, Any]:
         return {"name": self.name, "widgets": self._widgets, "created_at": self._created_at}
-''')
+''',
+)
 
-w('__init__.py', '''"""Dashboards subsystem."""
+w(
+    "__init__.py",
+    '''"""Dashboards subsystem."""
 from .dashboard_engine import DashboardEngine
 from .system_dashboard import SystemDashboard
 from .ai_dashboard import AIDashboard
@@ -204,6 +230,7 @@ __all__ = [
     "DashboardEngine", "SystemDashboard", "AIDashboard", "SecurityDashboard",
     "ProjectDashboard", "CloudDashboard", "CustomDashboard"
 ]
-''')
+''',
+)
 
 print("dashboards/: 8 files created")

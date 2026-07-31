@@ -63,7 +63,9 @@ class GitTool(BaseTool):
             if action == "commit" and workdir:
                 # Stage all changes
                 stage_proc = await asyncio.create_subprocess_exec(
-                    "git", "add", "-A",
+                    "git",
+                    "add",
+                    "-A",
                     stdout=asyncio.subprocess.PIPE,
                     stderr=asyncio.subprocess.PIPE,
                     cwd=workdir or None,
@@ -72,7 +74,10 @@ class GitTool(BaseTool):
 
                 # Commit
                 proc = await asyncio.create_subprocess_exec(
-                    "git", "commit", "-m", message,
+                    "git",
+                    "commit",
+                    "-m",
+                    message,
                     stdout=asyncio.subprocess.PIPE,
                     stderr=asyncio.subprocess.PIPE,
                     cwd=workdir or None,
@@ -113,7 +118,9 @@ class GitTool(BaseTool):
         """Get current HEAD commit hash for rollback."""
         try:
             proc = await asyncio.create_subprocess_exec(
-                "git", "rev-parse", "HEAD",
+                "git",
+                "rev-parse",
+                "HEAD",
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
                 cwd=workdir,
@@ -142,7 +149,10 @@ class GitTool(BaseTool):
             if op == "commit" and rollback_info:
                 # Reset to previous commit
                 proc = await asyncio.create_subprocess_exec(
-                    "git", "reset", "--hard", rollback_info,
+                    "git",
+                    "reset",
+                    "--hard",
+                    rollback_info,
                     stdout=asyncio.subprocess.PIPE,
                     stderr=asyncio.subprocess.PIPE,
                     cwd=workdir,
@@ -156,8 +166,10 @@ class GitTool(BaseTool):
         self._operations_log.clear()
 
     def _log_operation(self, operation: str, workdir: str, **kwargs: Any) -> None:
-        self._operations_log.append({
-            "operation": operation,
-            "workdir": workdir,
-            **kwargs,
-        })
+        self._operations_log.append(
+            {
+                "operation": operation,
+                "workdir": workdir,
+                **kwargs,
+            }
+        )

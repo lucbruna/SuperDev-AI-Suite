@@ -28,7 +28,12 @@ class ContextFilter:
         content = context.get("content", {})
         filtered: dict[str, Any] = {}
         for k, v in content.items():
-            if isinstance(v, dict) and v.get("type") in include_types or isinstance(v, str) and "type" not in include_types:
+            if (
+                isinstance(v, dict)
+                and v.get("type") in include_types
+                or isinstance(v, str)
+                and "type" not in include_types
+            ):
                 filtered[k] = v
         result = dict(context)
         result["content"] = filtered
@@ -37,9 +42,7 @@ class ContextFilter:
         self._filter_count += 1
         return result
 
-    def filter_by_predicate(
-        self, context: dict[str, Any], predicate: Callable[[str, Any], bool]
-    ) -> dict[str, Any]:
+    def filter_by_predicate(self, context: dict[str, Any], predicate: Callable[[str, Any], bool]) -> dict[str, Any]:
         content = context.get("content", {})
         filtered = {k: v for k, v in content.items() if predicate(k, v)}
         result = dict(context)
@@ -49,9 +52,7 @@ class ContextFilter:
         self._filter_count += 1
         return result
 
-    def filter_items(
-        self, items: list[dict[str, Any]], key: str, value: Any
-    ) -> list[dict[str, Any]]:
+    def filter_items(self, items: list[dict[str, Any]], key: str, value: Any) -> list[dict[str, Any]]:
         self._filter_count += 1
         return [item for item in items if item.get(key) == value]
 

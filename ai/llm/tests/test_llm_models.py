@@ -14,8 +14,11 @@ class TestLLMRequest:
 
     def test_custom_params(self) -> None:
         req = LLMRequest(
-            provider="anthropic", model="claude-3",
-            prompt="Test", max_tokens=512, temperature=0.5,
+            provider="anthropic",
+            model="claude-3",
+            prompt="Test",
+            max_tokens=512,
+            temperature=0.5,
         )
         assert req.max_tokens == 512
         assert req.temperature == 0.5
@@ -30,9 +33,15 @@ class TestLLMResponse:
 
     def test_full_response(self) -> None:
         resp = LLMResponse(
-            request_id="r2", provider="anthropic", model="claude-3",
-            content="Hello world", tokens_prompt=10, tokens_completion=20,
-            latency_ms=150.0, cost_usd=0.001, finish_reason="stop",
+            request_id="r2",
+            provider="anthropic",
+            model="claude-3",
+            content="Hello world",
+            tokens_prompt=10,
+            tokens_completion=20,
+            latency_ms=150.0,
+            cost_usd=0.001,
+            finish_reason="stop",
         )
         assert resp.tokens_prompt == 10
         assert resp.latency_ms == 150.0
@@ -47,8 +56,11 @@ class TestProviderInfo:
 
     def test_custom(self) -> None:
         info = ProviderInfo(
-            name="test", model="m", state=ProviderState.ERROR,
-            capabilities=["chat", "vision"], cost_per_token=0.01,
+            name="test",
+            model="m",
+            state=ProviderState.ERROR,
+            capabilities=["chat", "vision"],
+            cost_per_token=0.01,
         )
         assert info.state == ProviderState.ERROR
         assert "vision" in info.capabilities

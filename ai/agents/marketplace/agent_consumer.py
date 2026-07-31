@@ -1,4 +1,5 @@
 """Agent consumption and installation."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -10,8 +11,7 @@ class AgentConsumer:
     def __init__(self) -> None:
         self._installed: list[str] = []
 
-    def search(self, query: dict[str, Any],
-               listings: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
+    def search(self, query: dict[str, Any], listings: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
         category = query.get("category")
         keyword = query.get("keyword", "").lower()
         results: list[dict[str, Any]] = []
@@ -23,8 +23,7 @@ class AgentConsumer:
             results.append({"id": agent_id, **spec})
         return results
 
-    def install(self, agent_id: str,
-                listings: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    def install(self, agent_id: str, listings: dict[str, dict[str, Any]]) -> dict[str, Any]:
         if agent_id not in listings:
             return {"error": "Agent not found"}
         if agent_id in self._installed:

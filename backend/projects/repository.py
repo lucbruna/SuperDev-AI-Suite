@@ -59,8 +59,12 @@ class ProjectRepository:
         return True
 
     def _apply_filters(
-        self, stmt: Select, org_id: uuid.UUID | None, user_id: uuid.UUID | None,
-        is_archived: bool | None, search: str | None
+        self,
+        stmt: Select,
+        org_id: uuid.UUID | None,
+        user_id: uuid.UUID | None,
+        is_archived: bool | None,
+        search: str | None,
     ) -> Select:
         conditions = []
         if org_id is not None:
@@ -71,17 +75,19 @@ class ProjectRepository:
             conditions.append(Project.is_archived == is_archived)
         if search:
             pattern = f"%{search}%"
-            conditions.append(
-                or_(Project.name.ilike(pattern), Project.description.ilike(pattern))
-            )
+            conditions.append(or_(Project.name.ilike(pattern), Project.description.ilike(pattern)))
         if conditions:
             stmt = stmt.where(and_(*conditions))
         return stmt
 
     async def list(
-        self, org_id: uuid.UUID | None = None, user_id: uuid.UUID | None = None,
-        is_archived: bool | None = None, search: str | None = None,
-        offset: int = 0, limit: int = 20
+        self,
+        org_id: uuid.UUID | None = None,
+        user_id: uuid.UUID | None = None,
+        is_archived: bool | None = None,
+        search: str | None = None,
+        offset: int = 0,
+        limit: int = 20,
     ) -> tuple[list[Project], int]:
         base_stmt = select(Project)
         count_stmt = select(func.count(Project.id))
@@ -135,9 +141,9 @@ class ProjectMemberRepository:
         return member
 
     async def get_members(self, project_id: uuid.UUID) -> list[ProjectMember]:
-        stmt = select(ProjectMember).where(
-            ProjectMember.project_id == project_id
-        ).order_by(ProjectMember.created_at.asc())
+        stmt = (
+            select(ProjectMember).where(ProjectMember.project_id == project_id).order_by(ProjectMember.created_at.asc())
+        )
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 

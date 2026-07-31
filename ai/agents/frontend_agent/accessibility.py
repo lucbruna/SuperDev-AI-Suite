@@ -26,12 +26,14 @@ class Accessibility:
         issues = []
         for name, check, level in A11Y_CHECKS:
             if check not in component_code and name not in component_code:
-                issues.append({
-                    "rule": name,
-                    "description": check,
-                    "wcag_level": level,
-                    "present": False,
-                })
+                issues.append(
+                    {
+                        "rule": name,
+                        "description": check,
+                        "wcag_level": level,
+                        "present": False,
+                    }
+                )
         return issues
 
     def add_rule(self, name: str, check: str, wcag_level: str = "A") -> str:

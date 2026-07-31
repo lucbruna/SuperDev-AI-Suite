@@ -1,4 +1,5 @@
 """AI Module API Router — REST endpoints for all AI subsystem stats."""
+
 from __future__ import annotations
 
 import logging
@@ -23,6 +24,7 @@ def _safe_import(module_path: str, class_name: str) -> Any:
     """Safely import a class from a module."""
     try:
         import importlib
+
         mod = importlib.import_module(module_path)
         return getattr(mod, class_name)
     except (ImportError, AttributeError) as e:
@@ -52,10 +54,67 @@ async def ai_health() -> dict[str, Any]:
 async def list_modules() -> dict[str, Any]:
     """List all AI modules and their status."""
     modules_info = [
-        {"name": "cybersecurity_engine", "description": "Autonomous Cybersecurity & Digital Defense Engine", "volumes": ["threat_detection", "vulnerability", "identity", "encryption", "monitoring", "incident_response", "compliance", "penetration", "audit"]},
-        {"name": "data_platform", "description": "Enterprise Data Platform & Analytics Engine", "volumes": ["ingestion", "storage", "processing", "streaming", "etl", "quality", "governance", "analytics", "machine_learning", "knowledge_graph"]},
-        {"name": "erp_operations", "description": "Enterprise Resource Planning & Operations Engine", "volumes": ["inventory", "sales", "purchases", "suppliers", "production", "logistics", "warehouse", "hr", "workflow", "automation"]},
-        {"name": "ai_knowledge_engine", "description": "Autonomous AI Research & Knowledge Engine", "volumes": ["research", "documents", "vector_memory", "embeddings", "reasoning", "learning", "validation", "knowledge_graph"]},
+        {
+            "name": "cybersecurity_engine",
+            "description": "Autonomous Cybersecurity & Digital Defense Engine",
+            "volumes": [
+                "threat_detection",
+                "vulnerability",
+                "identity",
+                "encryption",
+                "monitoring",
+                "incident_response",
+                "compliance",
+                "penetration",
+                "audit",
+            ],
+        },
+        {
+            "name": "data_platform",
+            "description": "Enterprise Data Platform & Analytics Engine",
+            "volumes": [
+                "ingestion",
+                "storage",
+                "processing",
+                "streaming",
+                "etl",
+                "quality",
+                "governance",
+                "analytics",
+                "machine_learning",
+                "knowledge_graph",
+            ],
+        },
+        {
+            "name": "erp_operations",
+            "description": "Enterprise Resource Planning & Operations Engine",
+            "volumes": [
+                "inventory",
+                "sales",
+                "purchases",
+                "suppliers",
+                "production",
+                "logistics",
+                "warehouse",
+                "hr",
+                "workflow",
+                "automation",
+            ],
+        },
+        {
+            "name": "ai_knowledge_engine",
+            "description": "Autonomous AI Research & Knowledge Engine",
+            "volumes": [
+                "research",
+                "documents",
+                "vector_memory",
+                "embeddings",
+                "reasoning",
+                "learning",
+                "validation",
+                "knowledge_graph",
+            ],
+        },
     ]
     return {"modules": modules_info, "total": len(modules_info)}
 
@@ -130,7 +189,18 @@ async def cybersecurity_threats() -> dict[str, Any]:
         raise HTTPException(status_code=503, detail="Cybersecurity engine not available")
     engine = cls()
     threats = engine.get_threats()
-    return {"threats": [{"id": t.threat_id, "type": t.threat_type.value, "severity": t.severity.value, "source_ip": t.source_ip, "target": t.target} for t in threats]}
+    return {
+        "threats": [
+            {
+                "id": t.threat_id,
+                "type": t.threat_type.value,
+                "severity": t.severity.value,
+                "source_ip": t.source_ip,
+                "target": t.target,
+            }
+            for t in threats
+        ]
+    }
 
 
 # ── Data Platform Endpoints ────────────────────────────────────────────

@@ -1,4 +1,5 @@
 """Knowledge Engine Configuration."""
+
 from dataclasses import dataclass, field
 
 

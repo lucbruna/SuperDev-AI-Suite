@@ -1,15 +1,20 @@
 """Licenses subsystem generator."""
+
 import os
 
-BASE = r'C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\enterprise\licenses'
+BASE = r"C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\enterprise\licenses"
+
 
 def w(path, content):
     full = os.path.join(BASE, path)
     os.makedirs(os.path.dirname(full), exist_ok=True)
-    with open(full, 'w', encoding='utf-8') as f:
+    with open(full, "w", encoding="utf-8") as f:
         f.write(content)
 
-w('license_engine.py', '''"""License engine."""
+
+w(
+    "license_engine.py",
+    '''"""License engine."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time
@@ -47,9 +52,12 @@ class LicenseEngine:
         return len(self._licenses)
     def is_running(self) -> bool:
         return self._started
-''')
+''',
+)
 
-w('license_manager.py', '''"""License manager."""
+w(
+    "license_manager.py",
+    '''"""License manager."""
 from __future__ import annotations
 from typing import Any, Dict, List
 
@@ -74,9 +82,12 @@ class LicenseManager:
         return org_id in self._assignments.values()
     def list_all(self) -> Dict[str, str]:
         return dict(self._assignments)
-''')
+''',
+)
 
-w('key_generator.py', '''"""License key generator."""
+w(
+    "key_generator.py",
+    '''"""License key generator."""
 from __future__ import annotations
 import random, string
 
@@ -100,9 +111,12 @@ class LicenseKeyGenerator:
         return len(self._generated)
     def list_keys(self) -> list:
         return list(self._generated)
-''')
+''',
+)
 
-w('activation.py', '''"""License activation."""
+w(
+    "activation.py",
+    '''"""License activation."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import time
@@ -129,9 +143,12 @@ class LicenseActivation:
         return self.activation_count(license_id) > 0
     def list_all(self) -> Dict[str, List[Dict[str, Any]]]:
         return dict(self._activations)
-''')
+''',
+)
 
-w('validation.py', '''"""License validation."""
+w(
+    "validation.py",
+    '''"""License validation."""
 from __future__ import annotations
 from typing import Any, Dict
 import time
@@ -160,9 +177,12 @@ class LicenseValidator:
             del self._rules[license_id]
             return True
         return False
-''')
+''',
+)
 
-w('expiration.py', '''"""License expiration."""
+w(
+    "expiration.py",
+    '''"""License expiration."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import time
@@ -192,9 +212,12 @@ class LicenseExpiration:
         return [lid for lid, exp in self._expirations.items() if 0 < exp <= cutoff]
     def list_all(self) -> Dict[str, float]:
         return dict(self._expirations)
-''')
+''',
+)
 
-w('transfer.py', '''"""License transfer."""
+w(
+    "transfer.py",
+    '''"""License transfer."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import time
@@ -219,9 +242,12 @@ class LicenseTransfer:
         return self._allow_transfer
     def set_allow_transfer(self, allowed: bool) -> None:
         self._allow_transfer = allowed
-''')
+''',
+)
 
-w('__init__.py', '''"""Licenses subsystem."""
+w(
+    "__init__.py",
+    '''"""Licenses subsystem."""
 from .license_engine import LicenseEngine
 from .license_manager import LicenseManager
 from .key_generator import LicenseKeyGenerator
@@ -234,6 +260,7 @@ __all__ = [
     "LicenseEngine", "LicenseManager", "LicenseKeyGenerator",
     "LicenseActivation", "LicenseValidator", "LicenseExpiration", "LicenseTransfer"
 ]
-''')
+''',
+)
 
 print("licenses/: 8 files created")

@@ -32,6 +32,7 @@ class ProviderRegistry:
                 models = instance.list_models()
                 if callable(models):
                     import asyncio
+
                     models = asyncio.run(models)
             except Exception:
                 continue

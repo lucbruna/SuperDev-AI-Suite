@@ -76,6 +76,7 @@ class PluginManager:
         plugin_dir = self._plugins_dir / slug
         if plugin_dir.exists():
             import shutil
+
             shutil.rmtree(plugin_dir)
 
         return True

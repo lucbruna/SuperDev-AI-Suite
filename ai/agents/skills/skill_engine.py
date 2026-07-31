@@ -1,4 +1,5 @@
 """Skill engine for agent capability management."""
+
 from __future__ import annotations
 
 from typing import Any

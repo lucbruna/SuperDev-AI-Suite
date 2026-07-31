@@ -18,10 +18,12 @@ class DecisionState:
 
     def transition(self, phase: str) -> None:
         self.phase = phase
-        self._history.append({
-            "phase": phase,
-            "timestamp": datetime.now(UTC).isoformat(),
-        })
+        self._history.append(
+            {
+                "phase": phase,
+                "timestamp": datetime.now(UTC).isoformat(),
+            }
+        )
 
     def snapshot(self) -> dict[str, Any]:
         return {

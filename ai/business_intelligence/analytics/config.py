@@ -1,4 +1,5 @@
 """Analytics configuration."""
+
 from dataclasses import dataclass, field
 
 

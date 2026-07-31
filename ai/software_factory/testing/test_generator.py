@@ -1,4 +1,5 @@
 """Generator for test cases and test code."""
+
 from .models import TestCase, TestCategory
 
 
@@ -8,29 +9,34 @@ class TestGenerator:
     def __init__(self):
         self._templates: dict[str, str] = {}
 
-    def generate_for_module(self, module_path: str,
-                            category: TestCategory = TestCategory.UNIT) -> list[TestCase]:
+    def generate_for_module(self, module_path: str, category: TestCategory = TestCategory.UNIT) -> list[TestCase]:
         """Generate test cases for a module."""
         tests = []
         # Generate standard test patterns
-        tests.append(TestCase(
-            name=f"test_{module_path}_instantiation",
-            description=f"Test that {module_path} can be instantiated",
-            category=category,
-            module=module_path,
-        ))
-        tests.append(TestCase(
-            name=f"test_{module_path}_basic_functionality",
-            description=f"Test basic functionality of {module_path}",
-            category=category,
-            module=module_path,
-        ))
-        tests.append(TestCase(
-            name=f"test_{module_path}_edge_cases",
-            description=f"Test edge cases for {module_path}",
-            category=category,
-            module=module_path,
-        ))
+        tests.append(
+            TestCase(
+                name=f"test_{module_path}_instantiation",
+                description=f"Test that {module_path} can be instantiated",
+                category=category,
+                module=module_path,
+            )
+        )
+        tests.append(
+            TestCase(
+                name=f"test_{module_path}_basic_functionality",
+                description=f"Test basic functionality of {module_path}",
+                category=category,
+                module=module_path,
+            )
+        )
+        tests.append(
+            TestCase(
+                name=f"test_{module_path}_edge_cases",
+                description=f"Test edge cases for {module_path}",
+                category=category,
+                module=module_path,
+            )
+        )
         return tests
 
     def generate_unit_test(self, class_name: str, method_name: str) -> TestCase:

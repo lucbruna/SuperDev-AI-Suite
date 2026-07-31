@@ -1,6 +1,7 @@
 """
 Evidence Collection and Management
 """
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -37,11 +38,27 @@ class EvidenceCollector:
         self.storage_path: str = "/evidence/"
         self.hash_log: list[dict[str, str]] = []
 
-    def collect(self, name: str, data: str, evidence_format: EvidenceFormat = EvidenceFormat.RAW, source: str = "", collector: str = "") -> CollectedEvidence:
+    def collect(
+        self,
+        name: str,
+        data: str,
+        evidence_format: EvidenceFormat = EvidenceFormat.RAW,
+        source: str = "",
+        collector: str = "",
+    ) -> CollectedEvidence:
         evidence_id = hashlib.sha256(f"{name}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
         data_hash = hashlib.sha256(data.encode()).hexdigest()
         size_bytes = len(data.encode())
-        evidence = CollectedEvidence(evidence_id=evidence_id, name=name, evidence_format=evidence_format, data_hash=data_hash, size_bytes=size_bytes, source=source, collector=collector, storage_path=f"{self.storage_path}{evidence_id}")
+        evidence = CollectedEvidence(
+            evidence_id=evidence_id,
+            name=name,
+            evidence_format=evidence_format,
+            data_hash=data_hash,
+            size_bytes=size_bytes,
+            source=source,
+            collector=collector,
+            storage_path=f"{self.storage_path}{evidence_id}",
+        )
         self.evidence[evidence_id] = evidence
         self.hash_log.append({"evidence_id": evidence_id, "hash": data_hash, "time": datetime.now().isoformat()})
         return evidence

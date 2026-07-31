@@ -1,4 +1,5 @@
 """Skill recommendation engine."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -34,10 +35,12 @@ class SkillRecommender:
             scored.append({**skill, "relevance_score": round(score, 2)})
         scored.sort(key=lambda x: x["relevance_score"], reverse=True)
         top = scored[:5]
-        self._recommendation_history.append({
-            "task_type": task_type,
-            "recommendations": len(top),
-        })
+        self._recommendation_history.append(
+            {
+                "task_type": task_type,
+                "recommendations": len(top),
+            }
+        )
         return top
 
     def get_history(self, limit: int = 20) -> list[dict[str, Any]]:

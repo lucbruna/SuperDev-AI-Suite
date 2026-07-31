@@ -75,4 +75,6 @@ class BackgroundScheduler:
             task["progress"] = min(100, max(0, progress))
             if message:
                 task["progress_message"] = message
-            await self._bus.publish("background.task.progress", {"task_id": task_id, "progress": progress, "message": message})
+            await self._bus.publish(
+                "background.task.progress", {"task_id": task_id, "progress": progress, "message": message}
+            )

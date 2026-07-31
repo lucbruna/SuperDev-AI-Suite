@@ -1,15 +1,20 @@
 """Subscriptions subsystem generator."""
+
 import os
 
-BASE = r'C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\enterprise\subscriptions'
+BASE = r"C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\enterprise\subscriptions"
+
 
 def w(path, content):
     full = os.path.join(BASE, path)
     os.makedirs(os.path.dirname(full), exist_ok=True)
-    with open(full, 'w', encoding='utf-8') as f:
+    with open(full, "w", encoding="utf-8") as f:
         f.write(content)
 
-w('subscription_engine.py', '''"""Subscription engine."""
+
+w(
+    "subscription_engine.py",
+    '''"""Subscription engine."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time
@@ -43,9 +48,12 @@ class SubscriptionEngine:
         return len(self._subscriptions)
     def is_running(self) -> bool:
         return self._started
-''')
+''',
+)
 
-w('subscription_manager.py', '''"""Subscription manager."""
+w(
+    "subscription_manager.py",
+    '''"""Subscription manager."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
@@ -67,9 +75,12 @@ class SubscriptionManager:
         return len(self._active)
     def has_active(self, org_id: str) -> bool:
         return org_id in self._active
-''')
+''',
+)
 
-w('activation.py', '''"""Subscription activation."""
+w(
+    "activation.py",
+    '''"""Subscription activation."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import time
@@ -95,9 +106,12 @@ class ActivationManager:
         return self._activations.get(subscription_id, {}).get("status") == "active"
     def list_all(self) -> List[Dict[str, Any]]:
         return list(self._activations.values())
-''')
+''',
+)
 
-w('renewal.py', '''"""Subscription renewal."""
+w(
+    "renewal.py",
+    '''"""Subscription renewal."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import time
@@ -129,9 +143,12 @@ class RenewalManager:
         return self._history[-limit:]
     def get_pending(self) -> List[Dict[str, Any]]:
         return [r for r in self._renewals.values() if r["status"] == "scheduled"]
-''')
+''',
+)
 
-w('cancellation.py', '''"""Subscription cancellation."""
+w(
+    "cancellation.py",
+    '''"""Subscription cancellation."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import time
@@ -156,9 +173,12 @@ class CancellationManager:
         return self._cancellations[-limit:]
     def get_by_reason(self, reason: str) -> List[Dict[str, Any]]:
         return [c for c in self._cancellations if c["reason"] == reason]
-''')
+''',
+)
 
-w('upgrade.py', '''"""Subscription upgrade."""
+w(
+    "upgrade.py",
+    '''"""Subscription upgrade."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import time
@@ -178,9 +198,12 @@ class UpgradeManager:
         return len(self._upgrades)
     def get_recent(self, limit: int = 20) -> List[Dict[str, Any]]:
         return self._upgrades[-limit:]
-''')
+''',
+)
 
-w('downgrade.py', '''"""Subscription downgrade."""
+w(
+    "downgrade.py",
+    '''"""Subscription downgrade."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import time
@@ -200,9 +223,12 @@ class DowngradeManager:
         return len(self._downgrades)
     def get_recent(self, limit: int = 20) -> List[Dict[str, Any]]:
         return self._downgrades[-limit:]
-''')
+''',
+)
 
-w('__init__.py', '''"""Subscriptions subsystem."""
+w(
+    "__init__.py",
+    '''"""Subscriptions subsystem."""
 from .subscription_engine import SubscriptionEngine
 from .subscription_manager import SubscriptionManager
 from .activation import ActivationManager
@@ -215,6 +241,7 @@ __all__ = [
     "SubscriptionEngine", "SubscriptionManager", "ActivationManager",
     "RenewalManager", "CancellationManager", "UpgradeManager", "DowngradeManager"
 ]
-''')
+''',
+)
 
 print("subscriptions/: 8 files created")

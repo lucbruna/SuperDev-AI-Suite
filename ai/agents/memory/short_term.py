@@ -1,4 +1,5 @@
 """Short-term memory with FIFO eviction and importance scoring."""
+
 from __future__ import annotations
 
 import time

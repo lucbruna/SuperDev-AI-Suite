@@ -1,15 +1,20 @@
 """Anomaly subsystem generator."""
+
 import os
 
-BASE = r'C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\observability\anomaly'
+BASE = r"C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\observability\anomaly"
+
 
 def w(path, content):
     full = os.path.join(BASE, path)
     os.makedirs(os.path.dirname(full), exist_ok=True)
-    with open(full, 'w', encoding='utf-8') as f:
+    with open(full, "w", encoding="utf-8") as f:
         f.write(content)
 
-w('anomaly_engine.py', '''"""Anomaly detection engine."""
+
+w(
+    "anomaly_engine.py",
+    '''"""Anomaly detection engine."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time
@@ -42,9 +47,12 @@ class AnomalyEngine:
         return self._anomalies[-limit:]
     def get_status(self) -> Dict[str, Any]:
         return {"running": self._started, "detectors": len(self._detectors), "anomalies_detected": len(self._anomalies)}
-''')
+''',
+)
 
-w('detector.py', '''"""Anomaly detector."""
+w(
+    "detector.py",
+    '''"""Anomaly detector."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import statistics
@@ -82,9 +90,12 @@ class StatisticalDetector:
         n = sum(len(v) for v in self._history.values())
         self._history.clear()
         return n
-''')
+''',
+)
 
-w('baseline.py', '''"""Baseline management."""
+w(
+    "baseline.py",
+    '''"""Baseline management."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time
@@ -119,9 +130,12 @@ class BaselineManager:
             del self._baselines[metric_name]
             return True
         return False
-''')
+''',
+)
 
-w('pattern_analysis.py', '''"""Pattern analysis."""
+w(
+    "pattern_analysis.py",
+    '''"""Pattern analysis."""
 from __future__ import annotations
 from typing import Any, Dict, List
 
@@ -155,9 +169,12 @@ class PatternAnalyzer:
         return list(self._patterns.keys())
     def get_values(self, metric_name: str) -> List[float]:
         return list(self._patterns.get(metric_name, []))
-''')
+''',
+)
 
-w('prediction.py', '''"""Anomaly prediction."""
+w(
+    "prediction.py",
+    '''"""Anomaly prediction."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import statistics
@@ -191,9 +208,12 @@ class AnomalyPredictor:
         return min(z / 4.0, 1.0)
     def list_metrics(self) -> List[str]:
         return list(self._history.keys())
-''')
+''',
+)
 
-w('scoring.py', '''"""Anomaly scoring."""
+w(
+    "scoring.py",
+    '''"""Anomaly scoring."""
 from __future__ import annotations
 from typing import Any, Dict, List
 
@@ -230,9 +250,12 @@ class AnomalyScorer:
         n = len(self._scores)
         self._scores.clear()
         return n
-''')
+''',
+)
 
-w('__init__.py', '''"""Anomaly subsystem."""
+w(
+    "__init__.py",
+    '''"""Anomaly subsystem."""
 from .anomaly_engine import AnomalyEngine
 from .detector import StatisticalDetector
 from .baseline import BaselineManager
@@ -244,6 +267,7 @@ __all__ = [
     "AnomalyEngine", "StatisticalDetector", "BaselineManager",
     "PatternAnalyzer", "AnomalyPredictor", "AnomalyScorer"
 ]
-''')
+''',
+)
 
 print("anomaly/: 7 files created")

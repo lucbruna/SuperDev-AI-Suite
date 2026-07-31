@@ -1,4 +1,5 @@
 """Factory Manager - Project lifecycle management."""
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -22,9 +23,18 @@ class FactoryManager:
         self.artifacts: dict[str, list[ProjectArtifact]] = {}
         self.approvals: dict[str, dict[str, Any]] = {}
 
-    def add_artifact(self, project_id: str, name: str, artifact_type: str = "", content: Any = None, path: str = "") -> ProjectArtifact:
+    def add_artifact(
+        self, project_id: str, name: str, artifact_type: str = "", content: Any = None, path: str = ""
+    ) -> ProjectArtifact:
         artifact_id = hashlib.sha256(f"{project_id}{name}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
-        artifact = ProjectArtifact(artifact_id=artifact_id, project_id=project_id, name=name, artifact_type=artifact_type, content=content, path=path)
+        artifact = ProjectArtifact(
+            artifact_id=artifact_id,
+            project_id=project_id,
+            name=name,
+            artifact_type=artifact_type,
+            content=content,
+            path=path,
+        )
         self.artifacts.setdefault(project_id, []).append(artifact)
         return artifact
 
@@ -33,7 +43,13 @@ class FactoryManager:
 
     def request_approval(self, project_id: str, reviewer: str, notes: str = "") -> str:
         approval_id = hashlib.sha256(f"{project_id}{reviewer}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
-        self.approvals[approval_id] = {"project_id": project_id, "reviewer": reviewer, "notes": notes, "status": "pending", "timestamp": datetime.now().isoformat()}
+        self.approvals[approval_id] = {
+            "project_id": project_id,
+            "reviewer": reviewer,
+            "notes": notes,
+            "status": "pending",
+            "timestamp": datetime.now().isoformat(),
+        }
         return approval_id
 
     def approve(self, approval_id: str, approved: bool = True, comment: str = "") -> bool:

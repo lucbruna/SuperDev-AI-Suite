@@ -1,6 +1,7 @@
 """
 Latency Monitor - Response time tracking
 """
+
 import statistics
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -33,7 +34,14 @@ class LatencyMonitor:
         if not records:
             return {"count": 0, "mean": 0, "min": 0, "max": 0, "p50": 0, "p95": 0}
         latencies = sorted([r.latency_ms for r in records])
-        return {"count": len(latencies), "mean": statistics.mean(latencies), "min": min(latencies), "max": max(latencies), "p50": latencies[len(latencies) // 2], "p95": latencies[int(len(latencies) * 0.95)] if len(latencies) > 1 else latencies[0]}
+        return {
+            "count": len(latencies),
+            "mean": statistics.mean(latencies),
+            "min": min(latencies),
+            "max": max(latencies),
+            "p50": latencies[len(latencies) // 2],
+            "p95": latencies[int(len(latencies) * 0.95)] if len(latencies) > 1 else latencies[0],
+        }
 
     def get_slow(self, integration_id: str) -> list[LatencyRecord]:
         threshold = self.thresholds.get(integration_id, 1000)

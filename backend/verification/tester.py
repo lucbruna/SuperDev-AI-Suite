@@ -61,7 +61,13 @@ class CodeTester:
             }
 
             process = await asyncio.create_subprocess_exec(
-                "python", "-m", "pytest", str(test_dir), "-v", "--tb=short", "--json-report",
+                "python",
+                "-m",
+                "pytest",
+                str(test_dir),
+                "-v",
+                "--tb=short",
+                "--json-report",
                 cwd=tmpdir,
                 env=env,
                 stdout=asyncio.subprocess.PIPE,
@@ -138,12 +144,16 @@ class CodeTester:
         with tempfile.TemporaryDirectory() as tmpdir:
             tmpdir_path = Path(tmpdir)
 
-            (tmpdir_path / "package.json").write_text(json.dumps({
-                "name": "test-project",
-                "version": "1.0.0",
-                "scripts": {"test": "jest --json --outputFile=.report.json"},
-                "devDependencies": {"jest": "^29.0.0", "ts-jest": "^29.0.0"},
-            }))
+            (tmpdir_path / "package.json").write_text(
+                json.dumps(
+                    {
+                        "name": "test-project",
+                        "version": "1.0.0",
+                        "scripts": {"test": "jest --json --outputFile=.report.json"},
+                        "devDependencies": {"jest": "^29.0.0", "ts-jest": "^29.0.0"},
+                    }
+                )
+            )
 
             src_dir = tmpdir_path / "src"
             src_dir.mkdir()
@@ -159,7 +169,8 @@ class CodeTester:
                 (test_dir / "index.test.js").write_text(self._generate_js_tests(code))
 
             process = await asyncio.create_subprocess_exec(
-                "npm", "install",
+                "npm",
+                "install",
                 cwd=tmpdir,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
@@ -167,7 +178,8 @@ class CodeTester:
             await process.communicate()
 
             process = await asyncio.create_subprocess_exec(
-                "npm", "test",
+                "npm",
+                "test",
                 cwd=tmpdir,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,

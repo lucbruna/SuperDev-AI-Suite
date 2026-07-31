@@ -1,6 +1,7 @@
 """
 Identity Verification
 """
+
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
@@ -34,7 +35,7 @@ class IdentityVerifier:
             method=method,
             verified=True,
             verified_at=kwargs.get("verified_at"),
-            metadata=kwargs.get("metadata", {})
+            metadata=kwargs.get("metadata", {}),
         )
         key = f"{identity_id}:{method.value}"
         self.verifications[key] = record

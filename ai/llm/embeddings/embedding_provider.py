@@ -8,16 +8,13 @@ class EmbeddingProviderInterface(ABC):
     """Interface for embedding providers."""
 
     @abstractmethod
-    async def embed(self, text: str) -> list[float]:
-        ...
+    async def embed(self, text: str) -> list[float]: ...
 
     @abstractmethod
-    async def embed_batch(self, texts: list[str]) -> list[list[float]]:
-        ...
+    async def embed_batch(self, texts: list[str]) -> list[list[float]]: ...
 
     @abstractmethod
-    def dimensions(self) -> int:
-        ...
+    def dimensions(self) -> int: ...
 
     def to_dict(self) -> dict[str, Any]:
         return {"dimensions": self.dimensions()}
@@ -31,6 +28,7 @@ class MockEmbeddingProvider(EmbeddingProviderInterface):
 
     async def embed(self, text: str) -> list[float]:
         import hashlib
+
         h = hashlib.sha256(text.encode()).hexdigest()
         seed = int(h[:8], 16)
         rng = _SimpleRNG(seed)

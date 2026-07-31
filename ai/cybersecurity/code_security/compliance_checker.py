@@ -1,6 +1,7 @@
 """
 Compliance Framework Checker
 """
+
 from dataclasses import dataclass, field
 from enum import Enum
 
@@ -64,7 +65,15 @@ class ComplianceChecker:
         partial = sum(1 for c in framework_controls if c.status == ComplianceStatus.PARTIAL)
         total = len(framework_controls)
         score = (compliant / max(total, 1)) * 100
-        report = ComplianceReport(framework=framework, total_controls=total, compliant=compliant, non_compliant=non_compliant, partial=partial, score=score, controls=framework_controls)
+        report = ComplianceReport(
+            framework=framework,
+            total_controls=total,
+            compliant=compliant,
+            non_compliant=non_compliant,
+            partial=partial,
+            score=score,
+            controls=framework_controls,
+        )
         self.reports.append(report)
         return report
 

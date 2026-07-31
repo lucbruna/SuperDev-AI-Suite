@@ -92,9 +92,7 @@ async def backup_full(
     request: FullBackupRequest,
     current_user: dict[str, Any] = Depends(get_current_active_user),
 ) -> dict[str, Any]:
-    manifest = await backup_manager.backup_full(
-        request.db_url, request.source_paths, request.metadata
-    )
+    manifest = await backup_manager.backup_full(request.db_url, request.source_paths, request.metadata)
     return {
         "id": manifest.id,
         "status": manifest.status.value,

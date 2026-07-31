@@ -1,4 +1,5 @@
 """Security Engine — central orchestrator for all security operations."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -36,21 +37,18 @@ class SecurityEngine:
             self._logger.warn("auth", "Access denied", user_id=user_id, resource=resource)
         else:
             self._events.emit("access_granted", {"user_id": user_id, "resource": resource})
-        return {"allowed": allowed, "user_id": user_id, "resource": resource,
-                "permission": permission}
+        return {"allowed": allowed, "user_id": user_id, "resource": resource, "permission": permission}
 
-    def protect_agent_action(self, agent_id: str, action: str,
-                             context: dict[str, Any] | None = None) -> dict[str, Any]:
+    def protect_agent_action(self, agent_id: str, action: str, context: dict[str, Any] | None = None) -> dict[str, Any]:
         self._check_count += 1
         risk_level = self._assess_risk(action, context or {})
         approved = risk_level != "critical"
-        self._events.emit("agent_action", {"agent_id": agent_id, "action": action,
-                                            "risk": risk_level, "approved": approved})
-        self._logger.info("agent_security",
-                          f"Agent {agent_id} action {action}: risk={risk_level}")
+        self._events.emit(
+            "agent_action", {"agent_id": agent_id, "action": action, "risk": risk_level, "approved": approved}
+        )
+        self._logger.info("agent_security", f"Agent {agent_id} action {action}: risk={risk_level}")
         self._metrics.increment(f"agent_action_{risk_level}")
-        return {"approved": approved, "risk_level": risk_level, "agent_id": agent_id,
-                "action": action}
+        return {"approved": approved, "risk_level": risk_level, "agent_id": agent_id, "action": action}
 
     def _assess_risk(self, action: str, context: dict[str, Any]) -> str:
         dangerous_actions = {"delete", "drop", "execute", "deploy", "destroy", "modify_security"}

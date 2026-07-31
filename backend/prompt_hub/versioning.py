@@ -9,7 +9,9 @@ class PromptVersionManager:
     def __init__(self):
         self._versions: dict[str, list[dict[str, Any]]] = {}
 
-    def add_version(self, prompt_id: str, content: str, model: str, author: str = "", tags: list[str] | None = None) -> dict[str, Any]:
+    def add_version(
+        self, prompt_id: str, content: str, model: str, author: str = "", tags: list[str] | None = None
+    ) -> dict[str, Any]:
         if prompt_id not in self._versions:
             self._versions[prompt_id] = []
         history = self._versions[prompt_id]
@@ -55,8 +57,22 @@ class PromptVersionManager:
         if not a or not b:
             return None
         import difflib
-        diff = list(difflib.unified_diff(a["content"].splitlines(keepends=True), b["content"].splitlines(keepends=True), fromfile=f"v{v1}", tofile=f"v{v2}"))
-        return {"prompt_id": prompt_id, "version_a": v1, "version_b": v2, "diff": "".join(diff), "lines_changed": len([l for l in diff if l.startswith(("+", "-")) and not l.startswith(("+++", "---"))])}
+
+        diff = list(
+            difflib.unified_diff(
+                a["content"].splitlines(keepends=True),
+                b["content"].splitlines(keepends=True),
+                fromfile=f"v{v1}",
+                tofile=f"v{v2}",
+            )
+        )
+        return {
+            "prompt_id": prompt_id,
+            "version_a": v1,
+            "version_b": v2,
+            "diff": "".join(diff),
+            "lines_changed": len([l for l in diff if l.startswith(("+", "-")) and not l.startswith(("+++", "---"))]),
+        }
 
     def get_stats(self, prompt_id: str) -> dict[str, Any]:
         history = self._versions.get(prompt_id, [])

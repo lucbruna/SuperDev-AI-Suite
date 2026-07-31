@@ -1,6 +1,7 @@
 """
 Identity Engine
 """
+
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -25,13 +26,7 @@ class IdentityEngine:
         self.listeners = []
 
     def create_identity(self, name: str, email: str, identity_type: str = "user", **kwargs) -> Identity:
-        identity = Identity(
-            id=str(uuid.uuid4()),
-            name=name,
-            email=email,
-            identity_type=identity_type,
-            **kwargs
-        )
+        identity = Identity(id=str(uuid.uuid4()), name=name, email=email, identity_type=identity_type, **kwargs)
         self.identities[identity.id] = identity
         return identity
 

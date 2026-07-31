@@ -1,6 +1,7 @@
 """
 Multi-Factor Authentication
 """
+
 import secrets
 from dataclasses import dataclass, field
 from enum import Enum
@@ -66,12 +67,7 @@ class MFAManager:
             raise ValueError("MFA not configured for user")
         mfa_method = method or config.primary_method
         code = secrets.token_hex(4).upper()
-        challenge = MFAChallenge(
-            challenge_id=secrets.token_hex(16),
-            user_id=user_id,
-            method=mfa_method,
-            code=code
-        )
+        challenge = MFAChallenge(challenge_id=secrets.token_hex(16), user_id=user_id, method=mfa_method, code=code)
         self.challenges[challenge.challenge_id] = challenge
         return challenge
 

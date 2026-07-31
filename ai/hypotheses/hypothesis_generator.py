@@ -16,14 +16,18 @@ class HypothesisGenerator:
         hypotheses: list[dict[str, Any]] = []
         evidence = context.get("evidence", [])
         for i, piece in enumerate(evidence):
-            hypotheses.append({
-                "id": f"hyp_{i}",
-                "statement": f"If {piece} then ...",
-                "confidence": 0.5,
-                "source": piece,
-            })
+            hypotheses.append(
+                {
+                    "id": f"hyp_{i}",
+                    "statement": f"If {piece} then ...",
+                    "confidence": 0.5,
+                    "source": piece,
+                }
+            )
         if not hypotheses:
-            hypotheses.append({"id": "hyp_0", "statement": "No hypothesis generated", "confidence": 0.0, "source": None})
+            hypotheses.append(
+                {"id": "hyp_0", "statement": "No hypothesis generated", "confidence": 0.0, "source": None}
+            )
         return hypotheses
 
     async def execute(self, context: dict[str, Any]) -> dict[str, Any]:

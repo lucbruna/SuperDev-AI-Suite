@@ -60,11 +60,13 @@ class StreamMetrics:
         for key, tm in self._tokens.items():
             if key not in result:
                 result[key] = {}
-            result[key].update({
-                "prompt_tokens": tm.prompt_tokens,
-                "completion_tokens": tm.completion_tokens,
-                "total_tokens": tm.total_tokens,
-            })
+            result[key].update(
+                {
+                    "prompt_tokens": tm.prompt_tokens,
+                    "completion_tokens": tm.completion_tokens,
+                    "total_tokens": tm.total_tokens,
+                }
+            )
         return result
 
     def get_provider_metrics(self, provider: str) -> dict[str, dict]:

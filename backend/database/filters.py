@@ -22,7 +22,6 @@ class FilterSet:
         self.filters[name] = FilterField(field_name=field_name)
 
 
-
 def apply_filters(query: Select, filters: dict[str, Any], model: type) -> Select:
     for field_name, value in filters.items():
         if value is None:

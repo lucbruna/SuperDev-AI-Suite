@@ -1,4 +1,5 @@
 """Business Intelligence Dashboards subsystem."""
+
 from .builder import DashboardBuilder
 from .interfaces import (
     DashboardBuilderInterface,
@@ -17,8 +18,16 @@ from .models import (
 from .renderer import WidgetRenderer
 
 __all__ = [
-    "WidgetType", "ChartType", "RefreshMode",
-    "Widget", "Dashboard", "DashboardFilter", "WidgetData",
-    "DashboardBuilderInterface", "WidgetRendererInterface", "DashboardShareInterface",
-    "DashboardBuilder", "WidgetRenderer",
+    "WidgetType",
+    "ChartType",
+    "RefreshMode",
+    "Widget",
+    "Dashboard",
+    "DashboardFilter",
+    "WidgetData",
+    "DashboardBuilderInterface",
+    "WidgetRendererInterface",
+    "DashboardShareInterface",
+    "DashboardBuilder",
+    "WidgetRenderer",
 ]

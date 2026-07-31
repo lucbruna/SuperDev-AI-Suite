@@ -1,4 +1,5 @@
 """Cybersecurity Engine Config — Configuration for the cybersecurity platform."""
+
 from dataclasses import dataclass, field
 
 

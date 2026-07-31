@@ -1,6 +1,7 @@
 """
 Main Layout
 """
+
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -33,4 +34,8 @@ class MainLayout:
         self.menu_items.append(item)
 
     def render(self) -> dict[str, Any]:
-        return {"sidebarCollapsed": self.sidebar_collapsed, "headerVisible": self.header_visible, "menuItems": len(self.menu_items)}
+        return {
+            "sidebarCollapsed": self.sidebar_collapsed,
+            "headerVisible": self.header_visible,
+            "menuItems": len(self.menu_items),
+        }

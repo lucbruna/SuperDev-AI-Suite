@@ -13,12 +13,14 @@ class ReasoningHistory:
         self._entries: list[dict[str, Any]] = []
 
     def record(self, result: ReasoningResult) -> None:
-        self._entries.append({
-            "timestamp": datetime.now(UTC).isoformat(),
-            "context_id": result.context_id,
-            "decision": result.decision,
-            "confidence": result.confidence,
-        })
+        self._entries.append(
+            {
+                "timestamp": datetime.now(UTC).isoformat(),
+                "context_id": result.context_id,
+                "decision": result.decision,
+                "confidence": result.confidence,
+            }
+        )
 
     def search(self, query: str) -> list[dict[str, Any]]:
         q = query.lower()

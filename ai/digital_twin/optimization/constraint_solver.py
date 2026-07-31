@@ -1,4 +1,5 @@
 """Constraint solver."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -8,10 +9,12 @@ class ConstraintSolver:
     def __init__(self) -> None:
         self._constraints: list[dict[str, Any]] = []
         self._solutions: list[dict[str, Any]] = []
+
     def add_constraint(self, name: str, constraint_type: str, parameters: dict[str, Any]) -> dict[str, Any]:
         constraint = {"name": name, "type": constraint_type, "parameters": parameters}
         self._constraints.append(constraint)
         return constraint
+
     def solve(self, variables: dict[str, Any], objective: str = "satisfy") -> dict[str, Any]:
         feasible = True
         violations = []
@@ -33,13 +36,17 @@ class ConstraintSolver:
         solution = {"variables": variables, "feasible": feasible, "violations": violations}
         self._solutions.append(solution)
         return solution
+
     def get_solutions(self, limit: int = 20) -> list[dict[str, Any]]:
         return self._solutions[-limit:]
+
     def list_constraints(self) -> list[dict[str, Any]]:
         return self._constraints
+
     def clear_constraints(self) -> int:
         n = len(self._constraints)
         self._constraints.clear()
         return n
+
     def count(self) -> int:
         return len(self._constraints)

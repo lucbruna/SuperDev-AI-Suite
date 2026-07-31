@@ -24,9 +24,7 @@ class FunctionCallProvider(Protocol):
 class VisionProvider(Protocol):
     """Protocol for providers that support vision/image inputs."""
 
-    async def generate_with_vision(
-        self, prompt: str, images: list[bytes], **kwargs: Any
-    ) -> dict[str, Any]: ...
+    async def generate_with_vision(self, prompt: str, images: list[bytes], **kwargs: Any) -> dict[str, Any]: ...
 
 
 @runtime_checkable

@@ -36,10 +36,7 @@ class RepositoryGenerator:
         repo = self._repositories.get(name)
         if repo is None:
             return f"# Repository '{name}' not found"
-        methods_code = "\n".join(
-            f"    async def {m}(self) -> Any:\n        ..."
-            for m in repo["methods"]
-        )
+        methods_code = "\n".join(f"    async def {m}(self) -> Any:\n        ..." for m in repo["methods"])
         return (
             f"from __future__ import annotations\n\nfrom typing import Any\n\n\n"
             f"class {name}:\n\n    def __init__(self) -> None:\n"

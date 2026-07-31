@@ -1,4 +1,5 @@
 """Knowledge graph subsystem engine — Entity-relationship knowledge graph."""
+
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -58,7 +59,9 @@ class GraphSubEngine:
                 return e
         return None
 
-    def add_relationship(self, source_id: str, target_id: str, relationship_type: str = "related_to", weight: float = 1.0) -> Relationship | None:
+    def add_relationship(
+        self, source_id: str, target_id: str, relationship_type: str = "related_to", weight: float = 1.0
+    ) -> Relationship | None:
         if source_id not in self._entities or target_id not in self._entities:
             return None
         rel = Relationship(source_id=source_id, target_id=target_id, relationship_type=relationship_type, weight=weight)
@@ -149,7 +152,9 @@ class GraphSubEngine:
             for rel_id in self._adjacency.get(current, []):
                 rel = self._relationships.get(rel_id)
                 if rel:
-                    relationships.append({"source": rel.source_id, "target": rel.target_id, "type": rel.relationship_type})
+                    relationships.append(
+                        {"source": rel.source_id, "target": rel.target_id, "type": rel.relationship_type}
+                    )
                     if rel.target_id not in visited:
                         visited.add(rel.target_id)
                         queue.append((rel.target_id, d + 1))

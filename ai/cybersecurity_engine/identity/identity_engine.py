@@ -1,4 +1,5 @@
 """Identity and access management engine."""
+
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -88,11 +89,16 @@ class IdentityEngine:
         user.failed_attempts += 1
         if user.failed_attempts >= self._max_attempts:
             from datetime import timedelta
+
             user.locked_until = datetime.now() + timedelta(minutes=self._lockout_minutes)
-            self._auth_log.append(AuthLog(user_id=user.user_id, username=username, status=AuthStatus.LOCKED, ip_address=ip_address))
+            self._auth_log.append(
+                AuthLog(user_id=user.user_id, username=username, status=AuthStatus.LOCKED, ip_address=ip_address)
+            )
             return AuthStatus.LOCKED
         user.last_login = datetime.now()
-        self._auth_log.append(AuthLog(user_id=user.user_id, username=username, status=AuthStatus.SUCCESS, ip_address=ip_address))
+        self._auth_log.append(
+            AuthLog(user_id=user.user_id, username=username, status=AuthStatus.SUCCESS, ip_address=ip_address)
+        )
         if user.mfa_enabled:
             return AuthStatus.MFA_REQUIRED
         return AuthStatus.SUCCESS
@@ -114,6 +120,7 @@ class IdentityEngine:
         if not user:
             return False
         from datetime import timedelta
+
         user.locked_until = datetime.now() + timedelta(minutes=self._lockout_minutes)
         return True
 

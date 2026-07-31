@@ -73,20 +73,20 @@ class AIMetrics:
         lines.append("# TYPE ai_engine_metrics counter")
         for name, value in self._counters.items():
             safe_name = name.replace("-", "_").replace(" ", "_")
-            lines.append(f'ai_{safe_name}_total {value}')
+            lines.append(f"ai_{safe_name}_total {value}")
 
         for name, values in self._histograms.items():
             safe_name = name.replace("-", "_").replace(" ", "_")
             if values:
-                lines.append(f'# TYPE ai_{safe_name}_duration_seconds histogram')
+                lines.append(f"# TYPE ai_{safe_name}_duration_seconds histogram")
                 for v in values[-10:]:  # Last 10 values
-                    lines.append(f'ai_{safe_name}_duration_seconds {v}')
+                    lines.append(f"ai_{safe_name}_duration_seconds {v}")
 
         for name, value in self._gauges.items():
             safe_name = name.replace("-", "_").replace(" ", "_")
-            lines.append(f'ai_{safe_name} {value}')
+            lines.append(f"ai_{safe_name} {value}")
 
-        lines.append(f'ai_uptime_seconds {time.time() - self._start_time}')
+        lines.append(f"ai_uptime_seconds {time.time() - self._start_time}")
         return "\n".join(lines) + "\n"
 
     def snapshot(self) -> dict[str, Any]:

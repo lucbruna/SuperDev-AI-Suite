@@ -1,4 +1,5 @@
 """Authentication subsystem."""
+
 from .authentication_engine import AuthenticationEngine
 from .biometric import BiometricAuth
 from .multi_factor import MultiFactorAuth
@@ -8,6 +9,11 @@ from .session_manager import SessionManager
 from .token_service import TokenService
 
 __all__ = [
-    "AuthenticationEngine", "SessionManager", "PasswordManager",
-    "BiometricAuth", "MultiFactorAuth", "OAuthManager", "TokenService",
+    "AuthenticationEngine",
+    "SessionManager",
+    "PasswordManager",
+    "BiometricAuth",
+    "MultiFactorAuth",
+    "OAuthManager",
+    "TokenService",
 ]

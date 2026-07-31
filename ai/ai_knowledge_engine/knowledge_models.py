@@ -1,4 +1,5 @@
 """Knowledge Engine Models — Core data models for the knowledge platform."""
+
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime

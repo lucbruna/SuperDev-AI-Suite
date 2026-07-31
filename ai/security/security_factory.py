@@ -1,4 +1,5 @@
 """Security factory for creating security components."""
+
 from __future__ import annotations
 
 from typing import Any

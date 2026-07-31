@@ -1,6 +1,7 @@
 """
 Endpoint Detection and Response
 """
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -59,15 +60,31 @@ class EndpointDefense:
     def monitor_process(self, pid: int, name: str, path: str, command_line: str = "") -> ProcessInfo:
         file_hash = hashlib.sha256(f"{name}{path}".encode()).hexdigest()
         is_suspicious = file_hash in self.blocked_hashes
-        proc = ProcessInfo(pid=pid, name=name, path=path, command_line=command_line, hash_sha256=file_hash, is_suspicious=is_suspicious)
+        proc = ProcessInfo(
+            pid=pid, name=name, path=path, command_line=command_line, hash_sha256=file_hash, is_suspicious=is_suspicious
+        )
         self.processes[pid] = proc
         if is_suspicious:
-            alert = EndpointAlert(alert_id=hashlib.sha256(f"alert_{pid}".encode()).hexdigest()[:16], endpoint_id="local", threat_category=ThreatCategory.MALWARE, process=proc, message=f"Suspicious process: {name}")
+            alert = EndpointAlert(
+                alert_id=hashlib.sha256(f"alert_{pid}".encode()).hexdigest()[:16],
+                endpoint_id="local",
+                threat_category=ThreatCategory.MALWARE,
+                process=proc,
+                message=f"Suspicious process: {name}",
+            )
             self.alerts.append(alert)
         return proc
 
-    def record_file_event(self, file_path: str, event_type: str, old_hash: str = "", new_hash: str = "") -> FileIntegrityEvent:
-        event = FileIntegrityEvent(event_id=hashlib.sha256(f"{file_path}{event_type}".encode()).hexdigest()[:16], file_path=file_path, event_type=event_type, old_hash=old_hash, new_hash=new_hash)
+    def record_file_event(
+        self, file_path: str, event_type: str, old_hash: str = "", new_hash: str = ""
+    ) -> FileIntegrityEvent:
+        event = FileIntegrityEvent(
+            event_id=hashlib.sha256(f"{file_path}{event_type}".encode()).hexdigest()[:16],
+            file_path=file_path,
+            event_type=event_type,
+            old_hash=old_hash,
+            new_hash=new_hash,
+        )
         self.file_events.append(event)
         return event
 

@@ -1,4 +1,5 @@
 """Central memory engine coordinating all memory subsystems."""
+
 from __future__ import annotations
 
 import time
@@ -61,8 +62,9 @@ class MemoryEngine:
     def vector(self) -> VectorMemory:
         return self._vector
 
-    def store(self, key: str, value: Any, memory_type: str = "short_term",
-              metadata: dict[str, Any] | None = None) -> bool:
+    def store(
+        self, key: str, value: Any, memory_type: str = "short_term", metadata: dict[str, Any] | None = None
+    ) -> bool:
         entry = {
             "key": key,
             "value": value,
@@ -103,12 +105,18 @@ class MemoryEngine:
             return self._vector.retrieve(key)
         return None
 
-    def recall(self, query: str, memory_type: str | None = None,
-               limit: int = 10) -> list[dict[str, Any]]:
+    def recall(self, query: str, memory_type: str | None = None, limit: int = 10) -> list[dict[str, Any]]:
         results: list[dict[str, Any]] = []
-        types = [memory_type] if memory_type else [
-            "short_term", "long_term", "episodic", "semantic",
-        ]
+        types = (
+            [memory_type]
+            if memory_type
+            else [
+                "short_term",
+                "long_term",
+                "episodic",
+                "semantic",
+            ]
+        )
         for mt in types:
             found = self._search.search(self._get_memory_ref(mt), query, limit)
             results.extend(found)

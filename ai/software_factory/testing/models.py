@@ -1,4 +1,5 @@
 """Data models for test management."""
+
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -28,6 +29,7 @@ class TestCategory(Enum):
 @dataclass
 class TestCase:
     """A single test case."""
+
     test_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     name: str = ""
     description: str = ""
@@ -51,6 +53,7 @@ class TestCase:
 @dataclass
 class TestSuite:
     """A collection of test cases."""
+
     suite_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     name: str = ""
     description: str = ""
@@ -71,6 +74,7 @@ class TestSuite:
 @dataclass
 class TestResult:
     """Result of running a test."""
+
     result_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     test_id: str = ""
     test_name: str = ""
@@ -89,6 +93,7 @@ class TestResult:
 @dataclass
 class CoverageReport:
     """Test coverage report."""
+
     report_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     total_lines: int = 0
     covered_lines: int = 0
@@ -108,6 +113,7 @@ class CoverageReport:
 @dataclass
 class TestConfiguration:
     """Test execution configuration."""
+
     config_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     test_dir: str = "tests"
     pattern: str = "test_*.py"

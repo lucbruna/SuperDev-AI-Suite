@@ -1,4 +1,5 @@
 """Reporter for quality analysis results."""
+
 from typing import Any
 
 from .models import IssueSeverity, QualityIssue, QualityMetric
@@ -15,8 +16,7 @@ class QualityReporter:
             IssueSeverity.CRITICAL: 10,
         }
 
-    def compute_score(self, issues: list[QualityIssue],
-                      metrics: list[QualityMetric]) -> float:
+    def compute_score(self, issues: list[QualityIssue], metrics: list[QualityMetric]) -> float:
         if not issues and not metrics:
             return 100.0
 

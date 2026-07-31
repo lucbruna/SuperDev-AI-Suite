@@ -1,15 +1,20 @@
 """Payments subsystem generator."""
+
 import os
 
-BASE = r'C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\enterprise\payments'
+BASE = r"C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\enterprise\payments"
+
 
 def w(path, content):
     full = os.path.join(BASE, path)
     os.makedirs(os.path.dirname(full), exist_ok=True)
-    with open(full, 'w', encoding='utf-8') as f:
+    with open(full, "w", encoding="utf-8") as f:
         f.write(content)
 
-w('payment_engine.py', '''"""Payment engine."""
+
+w(
+    "payment_engine.py",
+    '''"""Payment engine."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time
@@ -52,9 +57,12 @@ class PaymentEngine:
         return len(self._payments)
     def is_running(self) -> bool:
         return self._started
-''')
+''',
+)
 
-w('gateway.py', '''"""Payment gateway."""
+w(
+    "gateway.py",
+    '''"""Payment gateway."""
 from __future__ import annotations
 from typing import Any, Callable, Dict, List
 
@@ -80,9 +88,12 @@ class PaymentGateway:
         return False
     def is_registered(self, name: str) -> bool:
         return name in self._gateways
-''')
+''',
+)
 
-w('transaction.py', '''"""Payment transactions."""
+w(
+    "transaction.py",
+    '''"""Payment transactions."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import time
@@ -115,9 +126,12 @@ class TransactionManager:
         return len(self._transactions)
     def total_amount(self) -> float:
         return sum(tx["amount"] for tx in self._transactions if tx["status"] == "completed")
-''')
+''',
+)
 
-w('authorization.py', '''"""Payment authorization."""
+w(
+    "authorization.py",
+    '''"""Payment authorization."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import time
@@ -154,9 +168,12 @@ class PaymentAuthorization:
         return self._authorizations.get(payment_id, {})
     def list_all(self) -> List[Dict[str, Any]]:
         return list(self._authorizations.values())
-''')
+''',
+)
 
-w('refund.py', '''"""Payment refunds."""
+w(
+    "refund.py",
+    '''"""Payment refunds."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import time
@@ -195,9 +212,12 @@ class RefundManager:
         return sum(r["amount"] for r in self._refunds if r["status"] == "processed")
     def count(self) -> int:
         return len(self._refunds)
-''')
+''',
+)
 
-w('webhook.py', '''"""Payment webhooks."""
+w(
+    "webhook.py",
+    '''"""Payment webhooks."""
 from __future__ import annotations
 from typing import Any, Callable, Dict, List
 
@@ -242,9 +262,12 @@ class WebhookManager:
             del self._webhooks[key]
             return True
         return False
-''')
+''',
+)
 
-w('history.py', '''"""Payment history."""
+w(
+    "history.py",
+    '''"""Payment history."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import time
@@ -270,9 +293,12 @@ class PaymentHistory:
         return n
     def search(self, keyword: str, limit: int = 50) -> List[Dict[str, Any]]:
         return [h for h in self._history if keyword.lower() in str(h).lower()][-limit:]
-''')
+''',
+)
 
-w('__init__.py', '''"""Payments subsystem."""
+w(
+    "__init__.py",
+    '''"""Payments subsystem."""
 from .payment_engine import PaymentEngine
 from .gateway import PaymentGateway
 from .transaction import TransactionManager
@@ -285,6 +311,7 @@ __all__ = [
     "PaymentEngine", "PaymentGateway", "TransactionManager",
     "PaymentAuthorization", "RefundManager", "WebhookManager", "PaymentHistory"
 ]
-''')
+''',
+)
 
 print("payments/: 8 files created")

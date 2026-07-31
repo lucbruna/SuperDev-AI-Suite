@@ -1,6 +1,7 @@
 """
 Metrics Panel Component
 """
+
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
@@ -47,6 +48,8 @@ class MetricsPanel:
 
     def render(self) -> dict[str, Any]:
         return {
-            "metrics": [{"name": m.name, "value": m.value, "type": m.metric_type.value, "unit": m.unit} for m in self.metrics],
+            "metrics": [
+                {"name": m.name, "value": m.value, "type": m.metric_type.value, "unit": m.unit} for m in self.metrics
+            ],
             "refreshInterval": self.refresh_interval,
         }

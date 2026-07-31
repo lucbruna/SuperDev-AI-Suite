@@ -102,8 +102,7 @@ class SessionManager:
         """Lazily create and return a Redis client, or None if unavailable."""
         try:
             import redis.asyncio as aioredis
-            return aioredis.from_url(
-                _get_redis_url(), decode_responses=True, socket_connect_timeout=2
-            )
+
+            return aioredis.from_url(_get_redis_url(), decode_responses=True, socket_connect_timeout=2)
         except Exception:
             return None

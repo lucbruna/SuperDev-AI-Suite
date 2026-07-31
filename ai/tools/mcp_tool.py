@@ -25,8 +25,10 @@ class MCPTool:
 
     async def batch_execute(self, calls: list[dict[str, Any]]) -> list[dict[str, Any]]:
         import asyncio
+
         async def single(call: dict[str, Any]) -> dict[str, Any]:
             return await self.execute(call["tool_name"], call.get("arguments", {}))
+
         return await asyncio.gather(*[single(c) for c in calls])
 
     def find_tool(self, query: str) -> list[dict[str, Any]]:

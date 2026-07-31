@@ -7,6 +7,7 @@ from typing import Any
 
 class AgentTier(Enum):
     """Agent hierarchy tiers."""
+
     SUPER_ORCHESTRATOR = 0
     DOMAIN_MANAGER = 1
     SPECIALIST = 2
@@ -16,6 +17,7 @@ class AgentTier(Enum):
 
 class AgentCapability(Enum):
     """Standard agent capabilities."""
+
     CHAT = "chat"
     STREAM = "stream"
     EMBEDDINGS = "embeddings"
@@ -31,6 +33,7 @@ class AgentCapability(Enum):
 @dataclass
 class ModelConfig:
     """Model configuration for an agent."""
+
     provider: str = "openai"
     model: str = "gpt-4o"
     temperature: float = 0.7
@@ -45,6 +48,7 @@ class ModelConfig:
 @dataclass
 class ToolConfig:
     """Tool configuration for an agent."""
+
     name: str
     enabled: bool = True
     config: dict[str, Any] = field(default_factory=dict)
@@ -54,6 +58,7 @@ class ToolConfig:
 @dataclass
 class MemoryConfig:
     """Memory configuration for an agent."""
+
     short_term_size: int = 100
     long_term_enabled: bool = True
     vector_memory_enabled: bool = False
@@ -64,6 +69,7 @@ class MemoryConfig:
 @dataclass
 class LearningConfig:
     """Learning configuration for an agent."""
+
     enabled: bool = False
     feedback_enabled: bool = True
     reinforcement_enabled: bool = False
@@ -74,6 +80,7 @@ class LearningConfig:
 @dataclass
 class AgentConfig:
     """Complete configuration for an agent."""
+
     # Identity
     agent_id: str
     name: str
@@ -211,9 +218,7 @@ class AgentConfig:
         )
 
         # Capabilities
-        config.capabilities = [
-            AgentCapability(c) for c in data.get("capabilities", [])
-        ]
+        config.capabilities = [AgentCapability(c) for c in data.get("capabilities", [])]
 
         # Tools
         config.tools = [
@@ -280,6 +285,7 @@ class AgentConfig:
 @dataclass
 class TeamConfig:
     """Configuration for an agent team."""
+
     team_id: str
     name: str
     description: str = ""
@@ -294,6 +300,7 @@ class TeamConfig:
 @dataclass
 class OrchestrationConfig:
     """Global orchestration configuration."""
+
     max_agents: int = 100
     max_teams: int = 20
     default_timeout: int = 300

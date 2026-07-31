@@ -1,4 +1,5 @@
 """Data models for requirements management."""
+
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -8,6 +9,7 @@ from typing import Any
 
 class RequirementType(Enum):
     """Types of requirements."""
+
     FUNCTIONAL = "functional"
     NON_FUNCTIONAL = "non_functional"
     TECHNICAL = "technical"
@@ -22,6 +24,7 @@ class RequirementType(Enum):
 
 class Priority(Enum):
     """Requirement priority levels."""
+
     CRITICAL = "critical"
     HIGH = "high"
     MEDIUM = "medium"
@@ -31,6 +34,7 @@ class Priority(Enum):
 
 class RequirementStatus(Enum):
     """Requirement lifecycle status."""
+
     DRAFT = "draft"
     PROPOSED = "proposed"
     APPROVED = "approved"
@@ -44,6 +48,7 @@ class RequirementStatus(Enum):
 @dataclass
 class Requirement:
     """Represents a single requirement."""
+
     requirement_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     title: str = ""
     description: str = ""
@@ -73,6 +78,7 @@ class Requirement:
 @dataclass
 class RequirementSet:
     """Collection of related requirements."""
+
     set_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     name: str = ""
     description: str = ""
@@ -99,6 +105,7 @@ class RequirementSet:
 @dataclass
 class RequirementLink:
     """Link between two requirements."""
+
     link_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     source_id: str = ""
     target_id: str = ""
@@ -109,6 +116,7 @@ class RequirementLink:
 @dataclass
 class RequirementChange:
     """Record of a requirement change."""
+
     change_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     requirement_id: str = ""
     field_name: str = ""

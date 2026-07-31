@@ -1,4 +1,5 @@
 """Resource optimizer for memory, CPU, and network."""
+
 from __future__ import annotations
 
 from typing import Any

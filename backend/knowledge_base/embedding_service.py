@@ -27,6 +27,7 @@ class EmbeddingService:
     def _try_load_local(self) -> None:
         try:
             from sentence_transformers import SentenceTransformer
+
             model_name = os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
             self._local_model = SentenceTransformer(model_name)
             self._model_name = model_name

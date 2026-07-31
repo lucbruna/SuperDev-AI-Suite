@@ -1,4 +1,5 @@
 """Manager for requirement sets and lifecycle operations."""
+
 from typing import Any
 
 from .models import (
@@ -49,12 +50,14 @@ class RequirementsManager:
     def approve_requirement(self, req: Requirement) -> None:
         old_status = req.status
         req.approve()
-        self.record_change(RequirementChange(
-            requirement_id=req.requirement_id,
-            field_name="status",
-            old_value=old_status.value,
-            new_value=req.status.value,
-        ))
+        self.record_change(
+            RequirementChange(
+                requirement_id=req.requirement_id,
+                field_name="status",
+                old_value=old_status.value,
+                new_value=req.status.value,
+            )
+        )
 
     def get_all_sets(self) -> list[RequirementSet]:
         return list(self._sets.values())

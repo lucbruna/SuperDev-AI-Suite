@@ -39,6 +39,7 @@ class Acceptance:
 
     def verify(self, criteria_names: list[str]) -> list[dict[str, Any]]:
         import random
+
         results = []
         for name in criteria_names:
             c = self._criteria.get(name)
@@ -46,11 +47,13 @@ class Acceptance:
                 results.append({"name": name, "passed": False, "reason": "Criteria not found"})
             else:
                 passed = random.random() > 0.2
-                results.append({
-                    "name": name,
-                    "passed": passed,
-                    "reason": "" if passed else "Does not meet acceptance threshold",
-                })
+                results.append(
+                    {
+                        "name": name,
+                        "passed": passed,
+                        "reason": "" if passed else "Does not meet acceptance threshold",
+                    }
+                )
         return results
 
     @property

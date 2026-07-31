@@ -56,7 +56,7 @@ class WorkspaceFilesystem:
         )
 
         for file_path in relevant:
-            relative = file_path[len(prefix):] if prefix else file_path
+            relative = file_path[len(prefix) :] if prefix else file_path
             parts = relative.split("/")
             current = root
             for i, part in enumerate(parts):

@@ -1,6 +1,7 @@
 """
 Connector Registry - Connector discovery
 """
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
@@ -23,8 +24,12 @@ class ConnectorRegistry:
         self.definitions: dict[str, ConnectorDefinition] = {}
         self.categories: dict[str, list[str]] = {}
 
-    def register(self, name: str, connector_type: str, description: str = "", capabilities: list[str] = None, **kwargs) -> ConnectorDefinition:
-        definition = ConnectorDefinition(name=name, connector_type=connector_type, description=description, capabilities=capabilities or [], **kwargs)
+    def register(
+        self, name: str, connector_type: str, description: str = "", capabilities: list[str] = None, **kwargs
+    ) -> ConnectorDefinition:
+        definition = ConnectorDefinition(
+            name=name, connector_type=connector_type, description=description, capabilities=capabilities or [], **kwargs
+        )
         self.definitions[name] = definition
         self.categories.setdefault(connector_type, []).append(name)
         return definition
@@ -39,7 +44,11 @@ class ConnectorRegistry:
         return self.definitions.get(name)
 
     def search(self, query: str) -> list[ConnectorDefinition]:
-        return [d for d in self.definitions.values() if query.lower() in d.name.lower() or query.lower() in d.description.lower()]
+        return [
+            d
+            for d in self.definitions.values()
+            if query.lower() in d.name.lower() or query.lower() in d.description.lower()
+        ]
 
     def get_by_type(self, connector_type: str) -> list[ConnectorDefinition]:
         names = self.categories.get(connector_type, [])

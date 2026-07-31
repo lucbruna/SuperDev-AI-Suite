@@ -45,9 +45,7 @@ def setup_logging(settings: LoggingSettings) -> logging.Logger:
         if settings.format == "json":
             console_handler.setFormatter(JsonFormatter())
         else:
-            console_handler.setFormatter(
-                logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-            )
+            console_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s"))
         logger.addHandler(console_handler)
 
     if settings.file_path:

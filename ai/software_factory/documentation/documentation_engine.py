@@ -1,4 +1,5 @@
 """Core engine for documentation generation."""
+
 from typing import Any
 
 from .api_doc_generator import ApiDocGenerator

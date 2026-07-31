@@ -45,7 +45,7 @@ class Settings(BaseSettings):
 """,
             "requirements.txt": "fastapi\nuvicorn[standard]\npydantic\npydantic-settings\nsqlalchemy\nasyncpg\n",
             ".env": f"APP_NAME={name}\nDEBUG=false\n",
-            "Dockerfile": f"FROM python:3.12-slim\n\nWORKDIR /app\nCOPY . .\nRUN pip install -r requirements.txt\nCMD [\"uvicorn\", \"{name}.main:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8000\"]\n",
+            "Dockerfile": f'FROM python:3.12-slim\n\nWORKDIR /app\nCOPY . .\nRUN pip install -r requirements.txt\nCMD ["uvicorn", "{name}.main:app", "--host", "0.0.0.0", "--port", "8000"]\n',
         }
 
     def generate_react(self, project_data: dict[str, Any]) -> dict[str, str]:
@@ -69,13 +69,15 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   </React.StrictMode>
 );
 """,
-            "src/vite-env.d.ts": "/// <reference types=\"vite/client\" />",
+            "src/vite-env.d.ts": '/// <reference types="vite/client" />',
             "index.html": """<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>""" + name + """</title>
+    <title>"""
+            + name
+            + """</title>
   </head>
   <body>
     <div id="root"></div>

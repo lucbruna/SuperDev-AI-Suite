@@ -1,4 +1,5 @@
 """Data Platform Interfaces — Protocol interfaces for data platform operations."""
+
 from abc import ABC, abstractmethod
 from typing import Any
 

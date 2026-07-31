@@ -1,4 +1,5 @@
 """Digital Twin data models."""
+
 from __future__ import annotations
 
 import time
@@ -14,6 +15,7 @@ class EntityState(Enum):
     SYNCHRONIZING = "synchronizing"
     ERROR = "error"
 
+
 class SimulationState(Enum):
     IDLE = "idle"
     RUNNING = "running"
@@ -21,11 +23,13 @@ class SimulationState(Enum):
     COMPLETED = "completed"
     FAILED = "failed"
 
+
 class ScenarioState(Enum):
     DRAFT = "draft"
     READY = "ready"
     RUNNING = "running"
     COMPLETED = "completed"
+
 
 @dataclass
 class DigitalEntity:
@@ -38,6 +42,7 @@ class DigitalEntity:
     created_at: float = field(default_factory=time.time)
     updated_at: float = field(default_factory=time.time)
 
+
 @dataclass
 class SimulationConfig:
     simulation_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
@@ -46,6 +51,7 @@ class SimulationConfig:
     dt: float = 1.0
     seed: int | None = None
     state: SimulationState = SimulationState.IDLE
+
 
 @dataclass
 class SimulationResult:
@@ -56,6 +62,7 @@ class SimulationResult:
     events: list[dict[str, Any]] = field(default_factory=list)
     duration_seconds: float = 0.0
 
+
 @dataclass
 class ScenarioConfig:
     scenario_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
@@ -65,6 +72,7 @@ class ScenarioConfig:
     state: ScenarioState = ScenarioState.DRAFT
     parent_scenario: str = ""
 
+
 @dataclass
 class PredictionResult:
     prediction_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
@@ -73,6 +81,7 @@ class PredictionResult:
     confidence: float = 0.0
     horizon: int = 0
     metadata: dict[str, Any] = field(default_factory=dict)
+
 
 @dataclass
 class OptimizationResult:

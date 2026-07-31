@@ -25,7 +25,14 @@ class SessionManager:
     def __init__(self):
         self._sessions: dict[str, AISession] = {}
 
-    def create(self, user_id: str, provider: str = "", model: str = "", context_window: int = 4096, metadata: dict | None = None) -> AISession:
+    def create(
+        self,
+        user_id: str,
+        provider: str = "",
+        model: str = "",
+        context_window: int = 4096,
+        metadata: dict | None = None,
+    ) -> AISession:
         now = time.time()
         session = AISession(
             id=str(uuid.uuid4()),

@@ -1,4 +1,5 @@
 """Manager for quality configurations and history."""
+
 from datetime import datetime
 from typing import Any
 
@@ -35,12 +36,14 @@ class QualityManager:
 
     def add_report(self, report: QualityReport) -> None:
         self._reports.append(report)
-        self._history.append({
-            "report_id": report.report_id,
-            "score": report.score,
-            "issues": report.issue_count,
-            "timestamp": datetime.utcnow().isoformat(),
-        })
+        self._history.append(
+            {
+                "report_id": report.report_id,
+                "score": report.score,
+                "issues": report.issue_count,
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+        )
 
     def get_reports(self) -> list[QualityReport]:
         return list(self._reports)

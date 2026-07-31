@@ -1,4 +1,5 @@
 """Tool registration and lifecycle management."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -45,10 +46,7 @@ class ToolRegistry:
         return False
 
     def list_all(self) -> list[dict[str, Any]]:
-        return [
-            {"id": t["id"], "name": t["name"], "category": t["category"]}
-            for t in self._tools.values()
-        ]
+        return [{"id": t["id"], "name": t["name"], "category": t["category"]} for t in self._tools.values()]
 
     def count(self) -> int:
         return len(self._tools)

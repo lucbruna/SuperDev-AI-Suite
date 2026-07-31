@@ -1,6 +1,7 @@
 """
 Audit Log
 """
+
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -24,18 +25,20 @@ class AuditLog:
         self.entries: list[AuditEntry] = []
         self.max_entries: int = 10000
 
-    def log(self, action: str, user_id: str, resource: str = "", details: dict | None = None, success: bool = True) -> AuditEntry:
+    def log(
+        self, action: str, user_id: str, resource: str = "", details: dict | None = None, success: bool = True
+    ) -> AuditEntry:
         entry = AuditEntry(
             id=str(uuid.uuid4()),
             action=action,
             user_id=user_id,
             resource=resource,
             details=details or {},
-            success=success
+            success=success,
         )
         self.entries.append(entry)
         if len(self.entries) > self.max_entries:
-            self.entries = self.entries[-self.max_entries:]
+            self.entries = self.entries[-self.max_entries :]
         return entry
 
     def get_by_user(self, user_id: str) -> list[AuditEntry]:
@@ -48,4 +51,7 @@ class AuditLog:
         return self.entries[-count:]
 
     def render(self) -> dict[str, Any]:
-        return {"totalEntries": len(self.entries), "recent": [{"action": e.action, "userId": e.user_id} for e in self.entries[-10:]]}
+        return {
+            "totalEntries": len(self.entries),
+            "recent": [{"action": e.action, "userId": e.user_id} for e in self.entries[-10:]],
+        }

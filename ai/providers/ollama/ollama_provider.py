@@ -57,27 +57,92 @@ class OllamaProvider(BaseProvider):
                 models = []
                 for model in data.get("models", []):
                     name = model.get("name", "unknown")
-                    models.append(ModelInfo(
-                        id=name,
-                        name=name,
-                        provider="ollama",
-                        capabilities=["chat"],
-                        context_window=8192,
-                        max_tokens=4096,
-                    ))
+                    models.append(
+                        ModelInfo(
+                            id=name,
+                            name=name,
+                            provider="ollama",
+                            capabilities=["chat"],
+                            context_window=8192,
+                            max_tokens=4096,
+                        )
+                    )
                 return models
         except Exception:
             pass
         return [
-            ModelInfo(id="llama3", name="Llama 3", provider="ollama", capabilities=["chat"], context_window=8192, max_tokens=4096),
-            ModelInfo(id="llama3.1", name="Llama 3.1", provider="ollama", capabilities=["chat"], context_window=131072, max_tokens=8192),
-            ModelInfo(id="mistral", name="Mistral", provider="ollama", capabilities=["chat"], context_window=8192, max_tokens=4096),
-            ModelInfo(id="codestral", name="Codestral", provider="ollama", capabilities=["chat"], context_window=32768, max_tokens=8192),
-            ModelInfo(id="deepseek-coder", name="DeepSeek Coder", provider="ollama", capabilities=["chat"], context_window=16384, max_tokens=4096),
-            ModelInfo(id="mixtral", name="Mixtral", provider="ollama", capabilities=["chat"], context_window=32768, max_tokens=4096),
-            ModelInfo(id="phi3", name="Phi-3", provider="ollama", capabilities=["chat"], context_window=128000, max_tokens=4096),
-            ModelInfo(id="gemma2", name="Gemma 2", provider="ollama", capabilities=["chat"], context_window=8192, max_tokens=4096),
-            ModelInfo(id="qwen2", name="Qwen 2", provider="ollama", capabilities=["chat"], context_window=32768, max_tokens=8192),
+            ModelInfo(
+                id="llama3",
+                name="Llama 3",
+                provider="ollama",
+                capabilities=["chat"],
+                context_window=8192,
+                max_tokens=4096,
+            ),
+            ModelInfo(
+                id="llama3.1",
+                name="Llama 3.1",
+                provider="ollama",
+                capabilities=["chat"],
+                context_window=131072,
+                max_tokens=8192,
+            ),
+            ModelInfo(
+                id="mistral",
+                name="Mistral",
+                provider="ollama",
+                capabilities=["chat"],
+                context_window=8192,
+                max_tokens=4096,
+            ),
+            ModelInfo(
+                id="codestral",
+                name="Codestral",
+                provider="ollama",
+                capabilities=["chat"],
+                context_window=32768,
+                max_tokens=8192,
+            ),
+            ModelInfo(
+                id="deepseek-coder",
+                name="DeepSeek Coder",
+                provider="ollama",
+                capabilities=["chat"],
+                context_window=16384,
+                max_tokens=4096,
+            ),
+            ModelInfo(
+                id="mixtral",
+                name="Mixtral",
+                provider="ollama",
+                capabilities=["chat"],
+                context_window=32768,
+                max_tokens=4096,
+            ),
+            ModelInfo(
+                id="phi3",
+                name="Phi-3",
+                provider="ollama",
+                capabilities=["chat"],
+                context_window=128000,
+                max_tokens=4096,
+            ),
+            ModelInfo(
+                id="gemma2",
+                name="Gemma 2",
+                provider="ollama",
+                capabilities=["chat"],
+                context_window=8192,
+                max_tokens=4096,
+            ),
+            ModelInfo(
+                id="qwen2",
+                name="Qwen 2",
+                provider="ollama",
+                capabilities=["chat"],
+                context_window=32768,
+                max_tokens=8192,
+            ),
         ]
 
     async def chat(self, messages: list[dict], config: dict[str, Any]) -> ChatResponse:
@@ -175,7 +240,9 @@ class OllamaProvider(BaseProvider):
             elapsed = (time.monotonic() - start) * 1000
             if resp.status_code == 200:
                 return HealthStatus(status="healthy", latency_ms=elapsed, last_check=datetime.now(UTC))
-            return HealthStatus(status="degraded", latency_ms=elapsed, last_check=datetime.now(UTC), error=f"Status {resp.status_code}")
+            return HealthStatus(
+                status="degraded", latency_ms=elapsed, last_check=datetime.now(UTC), error=f"Status {resp.status_code}"
+            )
         except Exception as e:
             elapsed = (time.monotonic() - start) * 1000
             return HealthStatus(status="unhealthy", latency_ms=elapsed, last_check=datetime.now(UTC), error=str(e))

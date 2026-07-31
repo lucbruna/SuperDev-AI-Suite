@@ -1,4 +1,5 @@
 """Mobile Logger - Structured logging for mobile/edge platform."""
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -30,8 +31,18 @@ class MobileLogger:
         self.min_level: LogLevel = LogLevel.DEBUG
         self.filters: dict[str, Any] = {}
 
-    def log(self, level: LogLevel, message: str, source: str = "", device_id: str = "", module: str = "", data: dict[str, Any] = None) -> LogEntry:
-        entry = LogEntry(level=level, message=message, source=source, device_id=device_id, module=module, data=data or {})
+    def log(
+        self,
+        level: LogLevel,
+        message: str,
+        source: str = "",
+        device_id: str = "",
+        module: str = "",
+        data: dict[str, Any] = None,
+    ) -> LogEntry:
+        entry = LogEntry(
+            level=level, message=message, source=source, device_id=device_id, module=module, data=data or {}
+        )
         self.entries.append(entry)
         return entry
 
@@ -50,7 +61,9 @@ class MobileLogger:
     def critical(self, message: str, **kwargs) -> LogEntry:
         return self.log(LogLevel.CRITICAL, message, **kwargs)
 
-    def get_entries(self, level: LogLevel = None, device_id: str = "", module: str = "", limit: int = 100) -> list[LogEntry]:
+    def get_entries(
+        self, level: LogLevel = None, device_id: str = "", module: str = "", limit: int = 100
+    ) -> list[LogEntry]:
         entries = self.entries
         if level:
             entries = [e for e in entries if e.level == level]

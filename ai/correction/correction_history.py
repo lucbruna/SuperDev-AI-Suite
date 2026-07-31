@@ -11,12 +11,14 @@ class CorrectionHistory:
         self._entries: list[dict[str, Any]] = []
 
     async def record(self, operation: str, error: dict[str, Any], success: bool) -> None:
-        self._entries.append({
-            "operation": operation,
-            "error_type": error.get("type"),
-            "success": success,
-            "timestamp": datetime.now().isoformat(),
-        })
+        self._entries.append(
+            {
+                "operation": operation,
+                "error_type": error.get("type"),
+                "success": success,
+                "timestamp": datetime.now().isoformat(),
+            }
+        )
 
     async def success_rate(self) -> float:
         if not self._entries:

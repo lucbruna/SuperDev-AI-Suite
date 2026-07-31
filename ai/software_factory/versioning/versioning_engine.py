@@ -1,4 +1,5 @@
 """Core engine for version management operations."""
+
 from typing import Any
 
 from .branch_manager import BranchManager

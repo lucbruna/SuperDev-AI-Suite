@@ -7,9 +7,21 @@ from typing import Any
 from ...base.base_tool import BaseTool
 
 _EXCLUDED_DIRS: set[str] = {
-    "node_modules", ".git", "__pycache__", "venv", ".venv",
-    "dist", "build", ".tox", ".mypy_cache", ".pytest_cache",
-    ".eggs", ".idea", ".vscode", "coverage", ".nyc_output",
+    "node_modules",
+    ".git",
+    "__pycache__",
+    "venv",
+    ".venv",
+    "dist",
+    "build",
+    ".tox",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".eggs",
+    ".idea",
+    ".vscode",
+    "coverage",
+    ".nyc_output",
 }
 
 

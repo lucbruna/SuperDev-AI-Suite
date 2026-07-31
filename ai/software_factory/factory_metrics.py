@@ -1,4 +1,5 @@
 """Factory Metrics - Performance metrics for factory operations."""
+
 import statistics
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -30,7 +31,9 @@ class FactoryMetrics:
         self.counters: dict[str, int] = {}
         self.gauges: dict[str, float] = {}
 
-    def record(self, name: str, value: float, unit: str = "", project_id: str = "", tags: dict[str, str] = None) -> MetricPoint:
+    def record(
+        self, name: str, value: float, unit: str = "", project_id: str = "", tags: dict[str, str] = None
+    ) -> MetricPoint:
         point = MetricPoint(name=name, value=value, unit=unit, project_id=project_id, tags=tags or {})
         self.metrics.setdefault(name, []).append(point)
         return point
@@ -53,7 +56,14 @@ class FactoryMetrics:
         if not points:
             return MetricSummary(name=name)
         values = [p.value for p in points]
-        return MetricSummary(name=name, count=len(values), min_val=min(values), max_val=max(values), avg_val=statistics.mean(values), latest=values[-1])
+        return MetricSummary(
+            name=name,
+            count=len(values),
+            min_val=min(values),
+            max_val=max(values),
+            avg_val=statistics.mean(values),
+            latest=values[-1],
+        )
 
     def get_points(self, name: str, limit: int = 100) -> list[MetricPoint]:
         return self.metrics.get(name, [])[-limit:]

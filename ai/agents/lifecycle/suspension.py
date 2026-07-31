@@ -1,4 +1,5 @@
 """Agent suspension and resumption management."""
+
 from __future__ import annotations
 
 import time
@@ -12,8 +13,7 @@ class SuspensionManager:
         self._suspended: dict[str, dict[str, Any]] = {}
         self._suspension_count: int = 0
 
-    def suspend(self, agent_id: str, reason: str = "",
-                preserve_state: bool = True) -> dict[str, Any]:
+    def suspend(self, agent_id: str, reason: str = "", preserve_state: bool = True) -> dict[str, Any]:
         self._suspended[agent_id] = {
             "reason": reason,
             "preserve_state": preserve_state,

@@ -1,6 +1,7 @@
 """
 Integration Reports - Reporting
 """
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -47,7 +48,11 @@ class IntegrationReporter:
 
     def get_summary(self, integration_id: str) -> dict[str, Any]:
         reports = [r for r in self.reports if r.integration_id == integration_id]
-        return {"integration_id": integration_id, "total_reports": len(reports), "last_report": reports[-1].generated_at.isoformat() if reports else None}
+        return {
+            "integration_id": integration_id,
+            "total_reports": len(reports),
+            "last_report": reports[-1].generated_at.isoformat() if reports else None,
+        }
 
     def count(self) -> int:
         return len(self.reports)

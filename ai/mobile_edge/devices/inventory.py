@@ -1,4 +1,5 @@
 """Inventory - Device inventory management."""
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any

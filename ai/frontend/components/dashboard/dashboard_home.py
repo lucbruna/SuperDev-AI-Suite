@@ -1,6 +1,7 @@
 """
 Dashboard Home Component
 """
+
 from dataclasses import dataclass
 from typing import Any
 

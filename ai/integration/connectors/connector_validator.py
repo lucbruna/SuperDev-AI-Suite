@@ -1,6 +1,7 @@
 """
 Connector Validator - Validate connector configs
 """
+
 from dataclasses import dataclass, field
 from typing import Any
 

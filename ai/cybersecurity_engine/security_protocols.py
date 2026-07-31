@@ -1,4 +1,5 @@
 """Cybersecurity Engine Protocols — Protocol definitions for security operations."""
+
 from dataclasses import dataclass, field
 from enum import Enum
 

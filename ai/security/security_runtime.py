@@ -1,4 +1,5 @@
 """Security runtime for managing active security sessions."""
+
 from __future__ import annotations
 
 import time
@@ -12,9 +13,9 @@ class SecurityRuntime:
         self._sessions: dict[str, dict[str, Any]] = {}
         self._active_tokens: dict[str, str] = {}
 
-    def create_session(self, user_id: str, ip_address: str = "",
-                       extra: dict[str, Any] | None = None) -> dict[str, Any]:
+    def create_session(self, user_id: str, ip_address: str = "", extra: dict[str, Any] | None = None) -> dict[str, Any]:
         import uuid
+
         session_id = str(uuid.uuid4())[:12]
         session = {
             "session_id": session_id,

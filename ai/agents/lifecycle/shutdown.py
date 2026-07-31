@@ -1,4 +1,5 @@
 """Agent shutdown management with graceful cleanup."""
+
 from __future__ import annotations
 
 import time

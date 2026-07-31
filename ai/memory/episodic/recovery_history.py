@@ -7,7 +7,14 @@ from typing import Any
 class RecoveryRecord:
     """A record of a recovery operation."""
 
-    def __init__(self, recovery_id: str, trigger: str, status: str, actions_taken: list[str], details: dict[str, Any] | None = None):
+    def __init__(
+        self,
+        recovery_id: str,
+        trigger: str,
+        status: str,
+        actions_taken: list[str],
+        details: dict[str, Any] | None = None,
+    ):
         self._recovery_id = recovery_id
         self._trigger = trigger
         self._status = status
@@ -60,7 +67,9 @@ class RecoveryHistory:
     def count(self) -> int:
         return len(self._records)
 
-    def record(self, trigger: str, status: str, actions_taken: list[str], details: dict[str, Any] | None = None) -> RecoveryRecord:
+    def record(
+        self, trigger: str, status: str, actions_taken: list[str], details: dict[str, Any] | None = None
+    ) -> RecoveryRecord:
         self._counter += 1
         rec = RecoveryRecord(f"rec_{self._counter}", trigger, status, actions_taken, details)
         self._records.append(rec)

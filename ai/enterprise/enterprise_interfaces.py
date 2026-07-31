@@ -1,4 +1,5 @@
 """Enterprise interfaces."""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -17,6 +18,7 @@ class OrganizationInterface(ABC):
     @abstractmethod
     def list_all(self) -> list[dict[str, Any]]: ...
 
+
 class BillingInterface(ABC):
     @abstractmethod
     def calculate(self, org_id: str, items: list[dict[str, Any]]) -> dict[str, Any]: ...
@@ -24,6 +26,7 @@ class BillingInterface(ABC):
     def charge(self, org_id: str, amount: float) -> dict[str, Any]: ...
     @abstractmethod
     def get_history(self, org_id: str) -> list[dict[str, Any]]: ...
+
 
 class LicenseInterface(ABC):
     @abstractmethod
@@ -35,6 +38,7 @@ class LicenseInterface(ABC):
     @abstractmethod
     def revoke(self, key: str) -> bool: ...
 
+
 class UsageInterface(ABC):
     @abstractmethod
     def track(self, org_id: str, metric: str, quantity: float) -> bool: ...
@@ -42,6 +46,7 @@ class UsageInterface(ABC):
     def get_usage(self, org_id: str, metric: str = "") -> dict[str, Any]: ...
     @abstractmethod
     def get_quota(self, org_id: str) -> dict[str, Any]: ...
+
 
 class SubscriptionInterface(ABC):
     @abstractmethod

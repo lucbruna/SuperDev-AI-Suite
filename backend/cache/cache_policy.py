@@ -12,9 +12,7 @@ DEFAULT_TTLS: dict[str, int] = {
 
 
 class CachePolicy:
-    def __init__(
-        self, custom_ttls: dict[str, int] | None = None
-    ) -> None:
+    def __init__(self, custom_ttls: dict[str, int] | None = None) -> None:
         self._ttls = dict(DEFAULT_TTLS)
         if custom_ttls:
             self._ttls.update(custom_ttls)

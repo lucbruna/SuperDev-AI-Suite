@@ -3,6 +3,7 @@
 Provides role definitions, permission checking, and FastAPI dependency
 factories for enforcing authorization across the application.
 """
+
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -20,6 +21,7 @@ from backend.database.models.user import User
 # ---------------------------------------------------------------------------
 # System constants
 # ---------------------------------------------------------------------------
+
 
 class RoleName(StrEnum):
     SUPER_ADMIN = "super_admin"
@@ -64,26 +66,42 @@ _ALL_ACTIONS = [a.value for a in Action]
 _DEFAULT_ROLE_PERMISSIONS: dict[RoleName, set[tuple[str, str]]] = {
     RoleName.SUPER_ADMIN: {(r, a) for r in _ALL_RESOURCES for a in _ALL_ACTIONS},
     RoleName.ADMIN: {
-        *{(r, a) for r in _ALL_RESOURCES for a in (Action.CREATE, Action.READ, Action.UPDATE, Action.DELETE, Action.MANAGE)},
+        *{
+            (r, a)
+            for r in _ALL_RESOURCES
+            for a in (Action.CREATE, Action.READ, Action.UPDATE, Action.DELETE, Action.MANAGE)
+        },
         ("users", "admin"),
         ("organizations", "admin"),
     },
     RoleName.MANAGER: {
         *{(r, Action.READ) for r in _ALL_RESOURCES},
-        ("projects", Action.CREATE), ("projects", Action.UPDATE), ("projects", Action.DELETE),
-        ("workflows", Action.CREATE), ("workflows", Action.UPDATE), ("workflows", Action.EXECUTE),
-        ("agents", Action.CREATE), ("agents", Action.UPDATE),
-        ("knowledge", Action.CREATE), ("knowledge", Action.UPDATE),
+        ("projects", Action.CREATE),
+        ("projects", Action.UPDATE),
+        ("projects", Action.DELETE),
+        ("workflows", Action.CREATE),
+        ("workflows", Action.UPDATE),
+        ("workflows", Action.EXECUTE),
+        ("agents", Action.CREATE),
+        ("agents", Action.UPDATE),
+        ("knowledge", Action.CREATE),
+        ("knowledge", Action.UPDATE),
         ("plugins", Action.READ),
         ("providers", Action.READ),
-        ("notifications", Action.READ), ("notifications", Action.UPDATE),
+        ("notifications", Action.READ),
+        ("notifications", Action.UPDATE),
     },
     RoleName.DEVELOPER: {
         *{(r, Action.READ) for r in _ALL_RESOURCES},
-        ("projects", Action.CREATE), ("projects", Action.UPDATE),
-        ("workflows", Action.CREATE), ("workflows", Action.UPDATE), ("workflows", Action.EXECUTE),
-        ("agents", Action.CREATE), ("agents", Action.UPDATE),
-        ("knowledge", Action.CREATE), ("knowledge", Action.UPDATE),
+        ("projects", Action.CREATE),
+        ("projects", Action.UPDATE),
+        ("workflows", Action.CREATE),
+        ("workflows", Action.UPDATE),
+        ("workflows", Action.EXECUTE),
+        ("agents", Action.CREATE),
+        ("agents", Action.UPDATE),
+        ("knowledge", Action.CREATE),
+        ("knowledge", Action.UPDATE),
         ("plugins", Action.READ),
         ("providers", Action.READ),
         ("notifications", Action.READ),
@@ -100,6 +118,7 @@ _DEFAULT_ROLE_PERMISSIONS: dict[RoleName, set[tuple[str, str]]] = {
 # ---------------------------------------------------------------------------
 # PermissionChecker
 # ---------------------------------------------------------------------------
+
 
 class PermissionChecker:
     """Check whether a user holds a specific permission via any of their roles."""
@@ -146,10 +165,7 @@ class PermissionChecker:
 
         # Filter by organization if provided
         if organization_id is not None:
-            stmt = stmt.where(
-                (UserRole.organization_id.is_(None))
-                | (UserRole.organization_id == organization_id)
-            )
+            stmt = stmt.where((UserRole.organization_id.is_(None)) | (UserRole.organization_id == organization_id))
 
         result = await session.execute(stmt)
         return result.first() is not None
@@ -158,6 +174,7 @@ class PermissionChecker:
 # ---------------------------------------------------------------------------
 # FastAPI dependency factory
 # ---------------------------------------------------------------------------
+
 
 def require_permission(
     resource: Resource | str,
@@ -217,15 +234,14 @@ def require_permission(
 # Database seeding helpers
 # ---------------------------------------------------------------------------
 
+
 async def ensure_system_roles(session: AsyncSession) -> None:
     """Create system roles and permissions if they do not already exist.
 
     This function is idempotent — safe to call on every startup.
     """
     for role_name in RoleName:
-        existing = await session.execute(
-            select(Role).where(Role.name == role_name.value)
-        )
+        existing = await session.execute(select(Role).where(Role.name == role_name.value))
         if existing.scalar_one_or_none() is not None:
             continue
 
@@ -241,9 +257,7 @@ async def ensure_system_roles(session: AsyncSession) -> None:
         perm_tuples = _DEFAULT_ROLE_PERMISSIONS.get(role_name, set())
         for res, act in perm_tuples:
             perm_result = await session.execute(
-                select(Permission).where(
-                    and_(Permission.resource == res, Permission.action == act)
-                )
+                select(Permission).where(and_(Permission.resource == res, Permission.action == act))
             )
             perm = perm_result.scalar_one_or_none()
             if perm is None:
@@ -326,9 +340,6 @@ async def get_user_permissions(
         .distinct()
     )
     if organization_id is not None:
-        stmt = stmt.where(
-            (UserRole.organization_id.is_(None))
-            | (UserRole.organization_id == organization_id)
-        )
+        stmt = stmt.where((UserRole.organization_id.is_(None)) | (UserRole.organization_id == organization_id))
     result = await session.execute(stmt)
     return {(row[0], row[1]) for row in result.all()}

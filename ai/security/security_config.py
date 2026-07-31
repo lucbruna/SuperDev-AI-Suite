@@ -1,4 +1,5 @@
 """Security & Compliance Engine — Volume 17 core configuration."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

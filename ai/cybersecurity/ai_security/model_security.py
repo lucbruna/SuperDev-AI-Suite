@@ -1,6 +1,7 @@
 """
 AI Model Security
 """
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -66,12 +67,16 @@ class ModelSecurity:
         self.watermarks[model_id] = wm
         return wm
 
-    def detect_adversarial(self, input_id: str, input_data: str, expected_output: str, actual_output: str) -> AdversarialDetection:
+    def detect_adversarial(
+        self, input_id: str, input_data: str, expected_output: str, actual_output: str
+    ) -> AdversarialDetection:
         is_adv = expected_output != actual_output
         confidence = 0.9 if is_adv else 0.1
         detection = AdversarialDetection(input_id=input_id, is_adversarial=is_adv, confidence=confidence)
         if is_adv:
-            self.threat_log.append({"type": ThreatType.ADVERSARIAL_INPUT.value, "input_id": input_id, "time": datetime.now().isoformat()})
+            self.threat_log.append(
+                {"type": ThreatType.ADVERSARIAL_INPUT.value, "input_id": input_id, "time": datetime.now().isoformat()}
+            )
         return detection
 
     def log_threat(self, threat_type: ThreatType, details: dict[str, Any]) -> None:

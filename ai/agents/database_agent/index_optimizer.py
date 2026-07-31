@@ -57,12 +57,14 @@ class IndexOptimizer:
                         used = True
                         break
             if not used:
-                unused.append({
-                    "index": idx["name"],
-                    "table": idx["table"],
-                    "suggestion": "Consider removing unused index",
-                    "impact": "Dropping may improve write performance",
-                })
+                unused.append(
+                    {
+                        "index": idx["name"],
+                        "table": idx["table"],
+                        "suggestion": "Consider removing unused index",
+                        "impact": "Dropping may improve write performance",
+                    }
+                )
         return unused
 
     def to_dict(self) -> dict[str, Any]:

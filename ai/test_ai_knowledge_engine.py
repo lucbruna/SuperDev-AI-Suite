@@ -1,4 +1,5 @@
 """Comprehensive tests for ai_knowledge_engine (Volume 40)."""
+
 import os
 import sys
 
@@ -326,7 +327,9 @@ class TestLearningSubEngine(unittest.TestCase):
         self.engine = LearningSubEngine()
 
     def test_record_experience(self):
-        exp = self.engine.record_experience("Cache improved perf", "Added Redis cache", "success", "2x faster", ["Use caching"])
+        exp = self.engine.record_experience(
+            "Cache improved perf", "Added Redis cache", "success", "2x faster", ["Use caching"]
+        )
         self.assertIsNotNone(exp)
 
     def test_add_feedback(self):
@@ -490,7 +493,13 @@ class TestInfrastructure(unittest.TestCase):
     def test_security(self):
         sec = KnowledgeSecurity()
         from ai_knowledge_engine.knowledge_security import AccessPermission, AccessPolicy
-        policy = AccessPolicy(policy_id="p1", user_role="admin", resource_type="knowledge", permissions=[AccessPermission.READ, AccessPermission.WRITE])
+
+        policy = AccessPolicy(
+            policy_id="p1",
+            user_role="admin",
+            resource_type="knowledge",
+            permissions=[AccessPermission.READ, AccessPermission.WRITE],
+        )
         sec.add_policy(policy)
         self.assertTrue(sec.check_access("admin", "knowledge", AccessPermission.READ))
         self.assertFalse(sec.check_access("viewer", "knowledge", AccessPermission.WRITE))

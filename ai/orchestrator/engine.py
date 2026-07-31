@@ -61,9 +61,12 @@ class OrchestratorEngine:
         self.registry.discover(agents_init)
         # Start health checker
         self._health_task = asyncio.create_task(self._health_loop())
-        await self.hub._bus.publish("orchestrator.started", {
-            "timestamp": datetime.now(UTC).isoformat(),
-        })
+        await self.hub._bus.publish(
+            "orchestrator.started",
+            {
+                "timestamp": datetime.now(UTC).isoformat(),
+            },
+        )
 
     async def stop(self) -> None:
         """Stop the orchestrator engine."""
@@ -72,9 +75,12 @@ class OrchestratorEngine:
             self._health_task.cancel()
             with contextlib.suppress(asyncio.CancelledError):
                 await self._health_task
-        await self.hub._bus.publish("orchestrator.stopped", {
-            "timestamp": datetime.now(UTC).isoformat(),
-        })
+        await self.hub._bus.publish(
+            "orchestrator.stopped",
+            {
+                "timestamp": datetime.now(UTC).isoformat(),
+            },
+        )
 
     async def create_orchestration(
         self,
@@ -126,10 +132,7 @@ class OrchestratorEngine:
         await self.state.update_session(session_id, status="running")
         start_time = time.time()
 
-        available_agents = [
-            {"id": aid, "role": a.role, "name": a.agent_name}
-            for aid, a in session.agents.items()
-        ]
+        available_agents = [{"id": aid, "role": a.role, "name": a.agent_name} for aid, a in session.agents.items()]
 
         if tasks is None:
             tasks = await self.planner.plan(
@@ -162,10 +165,7 @@ class OrchestratorEngine:
                 if task_state.status != "pending":
                     continue
                 deps_met = all(
-                    any(
-                        t.task_id == dep_id and t.status == "completed"
-                        for t in session.tasks
-                    )
+                    any(t.task_id == dep_id and t.status == "completed" for t in session.tasks)
                     for dep_id in task_state.depends_on
                 )
                 if deps_met:
@@ -176,12 +176,10 @@ class OrchestratorEngine:
 
             if failed:
                 ready_tasks = [
-                    t for t in ready_tasks
+                    t
+                    for t in ready_tasks
                     if not any(
-                        any(
-                            td.task_id == dep_id and td.status == "failed"
-                            for td in session.tasks
-                        )
+                        any(td.task_id == dep_id and td.status == "failed" for td in session.tasks)
                         for dep_id in t.depends_on
                     )
                 ]
@@ -196,17 +194,21 @@ class OrchestratorEngine:
             for task_state, result in zip(ready_tasks, batch_results, strict=False):
                 if isinstance(result, Exception):
                     await self.state.update_task(
-                        session_id, task_state.task_id,
-                        status="failed", error=str(result),
+                        session_id,
+                        task_state.task_id,
+                        status="failed",
+                        error=str(result),
                     )
                     self._metrics["total_tasks_failed"] += 1
                     failed = True
-                    results.append({
-                        "task_id": task_state.task_id,
-                        "description": task_state.description,
-                        "success": False,
-                        "error": str(result),
-                    })
+                    results.append(
+                        {
+                            "task_id": task_state.task_id,
+                            "description": task_state.description,
+                            "success": False,
+                            "error": str(result),
+                        }
+                    )
                 else:
                     results.append(result)
                     if not result.get("success", False):
@@ -259,8 +261,10 @@ class OrchestratorEngine:
             )
         except RuntimeError:
             await self.state.update_task(
-                session_id, task_state.task_id,
-                status="failed", error="No agent available",
+                session_id,
+                task_state.task_id,
+                status="failed",
+                error="No agent available",
             )
             return {
                 "task_id": task_state.task_id,
@@ -275,8 +279,10 @@ class OrchestratorEngine:
         agent = self.agent_manager._instances.get(route.agent_id)
         if not agent:
             await self.state.update_task(
-                session_id, task_state.task_id,
-                status="failed", error=f"Agent {route.agent_id} not found",
+                session_id,
+                task_state.task_id,
+                status="failed",
+                error=f"Agent {route.agent_id} not found",
             )
             return {
                 "task_id": task_state.task_id,
@@ -296,7 +302,8 @@ class OrchestratorEngine:
                 if result.success:
                     await self.router.complete_task(route.agent_id)
                     await self.state.update_task(
-                        session_id, task_state.task_id,
+                        session_id,
+                        task_state.task_id,
                         status="completed",
                         agent_id=route.agent_id,
                         agent_name=route.agent_name,
@@ -317,19 +324,21 @@ class OrchestratorEngine:
                 else:
                     last_error = result.error
                     if attempt < task_state.max_retries:
-                        await asyncio.sleep(2 ** attempt)
+                        await asyncio.sleep(2**attempt)
                         continue
             except Exception as e:
                 last_error = str(e)
                 if attempt < task_state.max_retries:
-                    await asyncio.sleep(2 ** attempt)
+                    await asyncio.sleep(2**attempt)
                     continue
                 break
 
         await self.router.complete_task(route.agent_id)
         await self.state.update_task(
-            session_id, task_state.task_id,
-            status="failed", error=last_error,
+            session_id,
+            task_state.task_id,
+            status="failed",
+            error=last_error,
             retry_count=task_state.max_retries,
         )
         self._metrics["total_tasks_failed"] += 1
@@ -394,9 +403,20 @@ class OrchestratorEngine:
     def _extract_modules(self, prompt: str) -> list[str]:
         """Extract module names from a prompt."""
         known_modules = [
-            "backend", "frontend", "mobile", "desktop", "api",
-            "database", "auth", "cli", "docker", "kubernetes",
-            "infra", "config", "docs", "tests",
+            "backend",
+            "frontend",
+            "mobile",
+            "desktop",
+            "api",
+            "database",
+            "auth",
+            "cli",
+            "docker",
+            "kubernetes",
+            "infra",
+            "config",
+            "docs",
+            "tests",
         ]
         prompt_lower = prompt.lower()
         return [m for m in known_modules if m in prompt_lower] or ["backend"]

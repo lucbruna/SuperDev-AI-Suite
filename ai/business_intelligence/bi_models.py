@@ -1,4 +1,5 @@
 """BI Models — Core data models for business intelligence."""
+
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime

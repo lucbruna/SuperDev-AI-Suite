@@ -1,4 +1,5 @@
 """Push Manager - Push notification management."""
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -48,7 +49,15 @@ class PushManager:
         msg_id = hashlib.sha256(f"{title}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
         if not token_ids:
             token_ids = [t.token_id for t in self.tokens.values() if t.active]
-        msg = PushMessage(message_id=msg_id, title=title, body=body, data=data or {}, token_ids=token_ids, sent_at=datetime.now(), success_count=len(token_ids))
+        msg = PushMessage(
+            message_id=msg_id,
+            title=title,
+            body=body,
+            data=data or {},
+            token_ids=token_ids,
+            sent_at=datetime.now(),
+            success_count=len(token_ids),
+        )
         self.messages.append(msg)
         return msg
 

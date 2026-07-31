@@ -1,6 +1,7 @@
 """
 Security-Focused Code Quality Analysis
 """
+
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any
@@ -40,8 +41,11 @@ class CodeQualityAnalyzer:
         self.rules_config: dict[QualityRule, dict[str, Any]] = {
             QualityRule.NO_EVAL: {"patterns": ["eval(", "exec("], "severity": Severity.CRITICAL},
             QualityRule.VALIDATE_INPUT: {"patterns": ["request.args", "request.form"], "severity": Severity.HIGH},
-            QualityRule.LOG_SENSITIVE: {"patterns": ["print(password", "log(password", "print(token"], "severity": Severity.HIGH},
-            QualityRule.AVOID_HARDcoded: {"patterns": ["password = \"", "api_key = \""], "severity": Severity.CRITICAL},
+            QualityRule.LOG_SENSITIVE: {
+                "patterns": ["print(password", "log(password", "print(token"],
+                "severity": Severity.HIGH,
+            },
+            QualityRule.AVOID_HARDcoded: {"patterns": ['password = "', 'api_key = "'], "severity": Severity.CRITICAL},
         }
 
     def analyze_file(self, file_path: str, content: str) -> list[QualityFinding]:
@@ -51,7 +55,14 @@ class CodeQualityAnalyzer:
             for rule, config in self.rules_config.items():
                 for pattern in config["patterns"]:
                     if pattern in line:
-                        finding = QualityFinding(rule=rule, file_path=file_path, line_number=line_num, snippet=line.strip()[:100], severity=config["severity"], suggestion=f"Avoid: {rule.value}")
+                        finding = QualityFinding(
+                            rule=rule,
+                            file_path=file_path,
+                            line_number=line_num,
+                            snippet=line.strip()[:100],
+                            severity=config["severity"],
+                            suggestion=f"Avoid: {rule.value}",
+                        )
                         findings.append(finding)
         self.findings.extend(findings)
         return findings
@@ -67,7 +78,9 @@ class CodeQualityAnalyzer:
     def get_score(self) -> float:
         if not self.findings:
             return 100.0
-        penalties = sum(10 if f.severity == Severity.CRITICAL else 5 if f.severity == Severity.HIGH else 2 for f in self.findings)
+        penalties = sum(
+            10 if f.severity == Severity.CRITICAL else 5 if f.severity == Severity.HIGH else 2 for f in self.findings
+        )
         return max(0, 100.0 - penalties)
 
     def clear(self) -> None:

@@ -1,4 +1,5 @@
 """Runner for executing test suites."""
+
 from datetime import datetime
 from typing import Any
 
@@ -21,11 +22,13 @@ class TestRunner:
                 result = self._run_single(test)
                 results.append(result)
         self._running = False
-        self._execution_history.append({
-            "suite": suite.name,
-            "tests_run": len(results),
-            "timestamp": datetime.utcnow().isoformat(),
-        })
+        self._execution_history.append(
+            {
+                "suite": suite.name,
+                "tests_run": len(results),
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+        )
         return results
 
     def _run_single(self, test: TestCase) -> TestResult:

@@ -1,6 +1,7 @@
 """
 Request Handler - Process incoming requests
 """
+
 import hashlib
 import json
 from dataclasses import dataclass, field

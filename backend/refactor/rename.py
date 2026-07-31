@@ -8,7 +8,9 @@ class RenameRefactor:
     def __init__(self, dry_run: bool = True):
         self.dry_run = dry_run
 
-    async def rename_symbol(self, filepath: str, old_name: str, new_name: str, language: str = "python") -> dict[str, Any]:
+    async def rename_symbol(
+        self, filepath: str, old_name: str, new_name: str, language: str = "python"
+    ) -> dict[str, Any]:
         if not os.path.exists(filepath):
             return {"success": False, "error": f"File not found: {filepath}"}
         with open(filepath, encoding="utf-8") as f:
@@ -21,6 +23,7 @@ class RenameRefactor:
             "rust": f"\\b{old_name}\\b",
         }
         import re
+
         pattern = scope_patterns.get(language, f"\\b{old_name}\\b")
         matches = list(re.finditer(pattern, content))
         if not matches:
@@ -48,7 +51,9 @@ class RenameRefactor:
             os.renames(old_path, new_path)
         return {"success": True, "from": old_path, "to": new_path, "dry_run": self.dry_run}
 
-    async def batch_rename_symbol(self, files: list[str], old_name: str, new_name: str, language: str = "python") -> list[dict[str, Any]]:
+    async def batch_rename_symbol(
+        self, files: list[str], old_name: str, new_name: str, language: str = "python"
+    ) -> list[dict[str, Any]]:
         results = []
         for fp in files:
             result = await self.rename_symbol(fp, old_name, new_name, language)

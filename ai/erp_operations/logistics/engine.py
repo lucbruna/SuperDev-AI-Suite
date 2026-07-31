@@ -1,4 +1,5 @@
 """Logistics engine."""
+
 from datetime import datetime
 
 from .models import Carrier, CarrierType, DeliveryProof, Route, Shipment, ShipmentStatus

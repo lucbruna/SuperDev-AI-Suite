@@ -3,6 +3,7 @@
 Configures OTLP exporters for traces and metrics. Gracefully degrades
 if opentelemetry packages are not installed.
 """
+
 from __future__ import annotations
 
 import logging
@@ -34,15 +35,18 @@ def configure_telemetry() -> None:
         from opentelemetry.sdk.trace import TracerProvider
         from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
-        resource = Resource.create({
-            SERVICE_NAME: _service_name,
-            "deployment.environment": _environment,
-        })
+        resource = Resource.create(
+            {
+                SERVICE_NAME: _service_name,
+                "deployment.environment": _environment,
+            }
+        )
 
         provider = TracerProvider(resource=resource)
 
         try:
             from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+
             exporter = OTLPSpanExporter(endpoint=_endpoint, insecure=True)
             provider.add_span_processor(BatchSpanProcessor(exporter))
             logger.info("OTLP trace exporter configured → %s", _endpoint)
@@ -66,7 +70,9 @@ def get_tracer(name: str = "superdev"):
     """Get a tracer instance. Returns a no-op tracer if OTEL is unavailable."""
     try:
         from opentelemetry import trace
+
         return trace.get_tracer(name)
     except Exception:
         from opentelemetry.trace import NoOpTracer
+
         return NoOpTracer()

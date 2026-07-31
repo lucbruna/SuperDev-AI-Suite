@@ -117,6 +117,7 @@ class MemoryEntry:
     @property
     def size_bytes(self) -> int:
         import json
+
         return len(json.dumps(self._data).encode("utf-8"))
 
     def touch(self) -> None:

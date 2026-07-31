@@ -1,4 +1,5 @@
 """CX Engine — Core customer experience engine."""
+
 from datetime import datetime
 from typing import Any
 
@@ -45,8 +46,7 @@ class CXEngine:
     def search_customers(self, query: str) -> list[Customer]:
         q = query.lower()
         return [
-            c for c in self._customers.values()
-            if q in c.name.lower() or q in c.email.lower() or q in c.company.lower()
+            c for c in self._customers.values() if q in c.name.lower() or q in c.email.lower() or q in c.company.lower()
         ]
 
     def list_customers(self, status: CustomerStatus | None = None, tier: CustomerTier | None = None) -> list[Customer]:

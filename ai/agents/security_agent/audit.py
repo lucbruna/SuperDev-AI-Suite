@@ -44,7 +44,8 @@ class Audit:
     def search(self, query: str) -> list[dict[str, Any]]:
         q = query.lower()
         return [
-            e for e in self._events.values()
+            e
+            for e in self._events.values()
             if q in e["type"].lower() or q in e["actor"].lower() or q in e["resource"].lower()
         ]
 

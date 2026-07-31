@@ -55,9 +55,7 @@ class AccountLockout:
                 self._failures[email] = []
 
         # Clean old failures
-        self._failures[email] = [
-            t for t in self._failures[email] if now - t < _LOCKOUT_DURATION_SECONDS
-        ]
+        self._failures[email] = [t for t in self._failures[email] if now - t < _LOCKOUT_DURATION_SECONDS]
         self._failures[email].append(now)
 
         # Check if should lock

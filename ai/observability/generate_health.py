@@ -1,15 +1,20 @@
 """Health subsystem generator."""
+
 import os
 
-BASE = r'C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\observability\health'
+BASE = r"C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\observability\health"
+
 
 def w(path, content):
     full = os.path.join(BASE, path)
     os.makedirs(os.path.dirname(full), exist_ok=True)
-    with open(full, 'w', encoding='utf-8') as f:
+    with open(full, "w", encoding="utf-8") as f:
         f.write(content)
 
-w('health_engine.py', '''"""Health check engine."""
+
+w(
+    "health_engine.py",
+    '''"""Health check engine."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time
@@ -55,9 +60,12 @@ class HealthEngine:
         if any(s == "unhealthy" for s in statuses):
             return "unhealthy"
         return "degraded"
-''')
+''',
+)
 
-w('service_check.py', '''"""Service health checks."""
+w(
+    "service_check.py",
+    '''"""Service health checks."""
 from __future__ import annotations
 from typing import Any, Callable, Dict, List
 import time
@@ -89,9 +97,12 @@ class ServiceCheck:
         return list(self._services.keys())
     def get_result(self, name: str) -> Dict[str, Any]:
         return self._results.get(name, {})
-''')
+''',
+)
 
-w('database_check.py', '''"""Database health checks."""
+w(
+    "database_check.py",
+    '''"""Database health checks."""
 from __future__ import annotations
 from typing import Any, Dict, List
 
@@ -114,9 +125,12 @@ class DatabaseCheck:
             del self._connections[name]
             return True
         return False
-''')
+''',
+)
 
-w('api_check.py', '''"""API health checks."""
+w(
+    "api_check.py",
+    '''"""API health checks."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import time
@@ -143,9 +157,12 @@ class APICheck:
         if name:
             results = [r for r in results if r.get("endpoint") == name]
         return results[-limit:]
-''')
+''',
+)
 
-w('agent_check.py', '''"""AI agent health checks."""
+w(
+    "agent_check.py",
+    '''"""AI agent health checks."""
 from __future__ import annotations
 from typing import Any, Dict, List
 
@@ -168,9 +185,12 @@ class AgentCheck:
             del self._agents[agent_id]
             return True
         return False
-''')
+''',
+)
 
-w('dependency_check.py', '''"""Dependency health checks."""
+w(
+    "dependency_check.py",
+    '''"""Dependency health checks."""
 from __future__ import annotations
 from typing import Any, Dict, List
 
@@ -193,9 +213,12 @@ class DependencyCheck:
             del self._dependencies[name]
             return True
         return False
-''')
+''',
+)
 
-w('recovery.py', '''"""Health recovery."""
+w(
+    "recovery.py",
+    '''"""Health recovery."""
 from __future__ import annotations
 from typing import Any, Callable, Dict, List
 import time
@@ -229,9 +252,12 @@ class RecoveryManager:
             del self._strategies[component]
             return True
         return False
-''')
+''',
+)
 
-w('__init__.py', '''"""Health subsystem."""
+w(
+    "__init__.py",
+    '''"""Health subsystem."""
 from .health_engine import HealthEngine
 from .service_check import ServiceCheck
 from .database_check import DatabaseCheck
@@ -244,6 +270,7 @@ __all__ = [
     "HealthEngine", "ServiceCheck", "DatabaseCheck", "APICheck",
     "AgentCheck", "DependencyCheck", "RecoveryManager"
 ]
-''')
+''',
+)
 
 print("health/: 8 files created")

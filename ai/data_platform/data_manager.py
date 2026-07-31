@@ -1,4 +1,5 @@
 """Data Platform Manager — High-level manager for data platform operations."""
+
 from typing import Any
 
 from .data_config import DataPlatformConfig
@@ -12,7 +13,10 @@ class DataPlatformManager:
 
     def register_source(self, name: str, source_type: str, connection: str = "") -> DataSource:
         from .data_models import DataSourceType
-        st = DataSourceType(source_type) if source_type in [e.value for e in DataSourceType] else DataSourceType.DATABASE
+
+        st = (
+            DataSourceType(source_type) if source_type in [e.value for e in DataSourceType] else DataSourceType.DATABASE
+        )
         source = DataSource(name=name, source_type=st, connection_string=connection)
         return self._engine.register_source(source)
 

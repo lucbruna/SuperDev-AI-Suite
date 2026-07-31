@@ -10,11 +10,13 @@ class ChainMemory:
         self._store: list[dict[str, Any]] = []
 
     async def save(self, chain: dict[str, Any], result: dict[str, Any]) -> None:
-        self._store.append({
-            "chain": chain,
-            "result": result,
-            "steps": len(chain.get("steps", [])),
-        })
+        self._store.append(
+            {
+                "chain": chain,
+                "result": result,
+                "steps": len(chain.get("steps", [])),
+            }
+        )
 
     async def recall(self, query: str) -> list[dict[str, Any]]:
         return [s for s in self._store if query.lower() in str(s).lower()]

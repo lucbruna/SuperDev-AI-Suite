@@ -101,7 +101,11 @@ class AzureOpenAIProvider(BaseLLMProvider):
                 except ProviderError as e:
                     attempt += 1
                     if attempt > self._max_retries or not _is_retryable(e, self._retry_codes):
-                        yield {"content": f"[{self._name} error: {e.message}]", "finish_reason": "error", "error": e.message}
+                        yield {
+                            "content": f"[{self._name} error: {e.message}]",
+                            "finish_reason": "error",
+                            "error": e.message,
+                        }
                         break
                     retry_after = e.retry_after or _exponential_backoff(attempt - 1)
                     await asyncio.sleep(retry_after)
@@ -109,7 +113,11 @@ class AzureOpenAIProvider(BaseLLMProvider):
                     pe = ProviderError.from_exception(e, self._name)
                     attempt += 1
                     if attempt > self._max_retries or not _is_retryable(pe, self._retry_codes):
-                        yield {"content": f"[{self._name} error: {pe.message}]", "finish_reason": "error", "error": pe.message}
+                        yield {
+                            "content": f"[{self._name} error: {pe.message}]",
+                            "finish_reason": "error",
+                            "error": pe.message,
+                        }
                         break
                     await asyncio.sleep(_exponential_backoff(attempt - 1))
 
@@ -264,13 +272,38 @@ class AzureOpenAIProvider(BaseLLMProvider):
 
     async def list_models(self) -> list[dict[str, Any]]:
         return [
-            {"id": "gpt-4o", "name": "GPT-4o", "capabilities": ["chat", "vision", "tools", "json"], "context_window": 128000},
-            {"id": "gpt-4o-mini", "name": "GPT-4o Mini", "capabilities": ["chat", "vision", "tools", "json"], "context_window": 128000},
-            {"id": "gpt-4-turbo", "name": "GPT-4 Turbo", "capabilities": ["chat", "vision", "tools", "json"], "context_window": 128000},
+            {
+                "id": "gpt-4o",
+                "name": "GPT-4o",
+                "capabilities": ["chat", "vision", "tools", "json"],
+                "context_window": 128000,
+            },
+            {
+                "id": "gpt-4o-mini",
+                "name": "GPT-4o Mini",
+                "capabilities": ["chat", "vision", "tools", "json"],
+                "context_window": 128000,
+            },
+            {
+                "id": "gpt-4-turbo",
+                "name": "GPT-4 Turbo",
+                "capabilities": ["chat", "vision", "tools", "json"],
+                "context_window": 128000,
+            },
             {"id": "gpt-4", "name": "GPT-4", "capabilities": ["chat", "tools"], "context_window": 8192},
             {"id": "gpt-35-turbo", "name": "GPT-3.5 Turbo", "capabilities": ["chat", "tools"], "context_window": 16385},
-            {"id": "text-embedding-3-small", "name": "Embedding 3 Small", "capabilities": ["embedding"], "dimensions": 1536},
-            {"id": "text-embedding-3-large", "name": "Embedding 3 Large", "capabilities": ["embedding"], "dimensions": 3072},
+            {
+                "id": "text-embedding-3-small",
+                "name": "Embedding 3 Small",
+                "capabilities": ["embedding"],
+                "dimensions": 1536,
+            },
+            {
+                "id": "text-embedding-3-large",
+                "name": "Embedding 3 Large",
+                "capabilities": ["embedding"],
+                "dimensions": 3072,
+            },
         ]
 
     # ── Vision ───────────────────────────────────────────────────────

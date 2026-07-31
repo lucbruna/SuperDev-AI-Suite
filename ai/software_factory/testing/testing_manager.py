@@ -1,4 +1,5 @@
 """Manager for test configurations and lifecycle."""
+
 from typing import Any
 
 from .models import TestConfiguration, TestResult, TestSuite

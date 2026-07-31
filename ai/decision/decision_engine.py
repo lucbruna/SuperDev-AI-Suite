@@ -25,7 +25,4 @@ class DecisionEngine:
         )
 
     async def evaluate(self, context: DecisionContext) -> list[dict[str, Any]]:
-        return [
-            {"option": opt, "score": 0.5, "confidence": 0.5}
-            for opt in context.options
-        ]
+        return [{"option": opt, "score": 0.5, "confidence": 0.5} for opt in context.options]

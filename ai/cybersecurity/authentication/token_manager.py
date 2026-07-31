@@ -1,6 +1,7 @@
 """
 Token Manager
 """
+
 import secrets
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
@@ -37,7 +38,7 @@ class TokenManager:
             user_id=user_id,
             token_type="access",
             expires_at=datetime.now() + timedelta(seconds=self.access_ttl),
-            scopes=scopes or []
+            scopes=scopes or [],
         )
         self.tokens[token.token_id] = token
         return token
@@ -47,7 +48,7 @@ class TokenManager:
             token_id=secrets.token_hex(32),
             user_id=user_id,
             token_type="refresh",
-            expires_at=datetime.now() + timedelta(seconds=self.refresh_ttl)
+            expires_at=datetime.now() + timedelta(seconds=self.refresh_ttl),
         )
         self.tokens[token.token_id] = token
         return token

@@ -21,6 +21,7 @@ def _safe_include(app: FastAPI, module_path: str, attr: str = "router", prefix: 
     """Safely import a router and include it in the app, logging if the module is unavailable."""
     try:
         import importlib
+
         module = importlib.import_module(module_path)
         router = getattr(module, attr)
         if prefix:
@@ -45,10 +46,7 @@ def create_app() -> FastAPI:
     # Security: reject wildcard origins combined with credentials
     cors_origins = config.cors.allow_origins
     if "*" in cors_origins and config.cors.allow_credentials:
-        logger.warning(
-            "CORS: wildcard origin with credentials is insecure. "
-            "Setting allow_credentials=False."
-        )
+        logger.warning("CORS: wildcard origin with credentials is insecure. Setting allow_credentials=False.")
         config.cors.allow_credentials = False
 
     app.add_middleware(
@@ -66,6 +64,7 @@ def create_app() -> FastAPI:
     allowed_hosts = config.cors.allow_origins
     if allowed_hosts != ["*"]:
         from urllib.parse import urlparse
+
         allowed_hosts = list({urlparse(o).hostname or o for o in allowed_hosts})
     # Add common test hosts for dev/test environments
     if config.app.environment != "production":
@@ -78,6 +77,7 @@ def create_app() -> FastAPI:
     # Authentication middleware
     try:
         from backend.middleware.authentication import AuthMiddleware
+
         app.add_middleware(AuthMiddleware)
     except ImportError:
         logger.warning("Auth middleware not available")
@@ -85,6 +85,7 @@ def create_app() -> FastAPI:
     # Security headers
     try:
         from backend.middleware.security import SecurityHeadersMiddleware
+
         app.add_middleware(SecurityHeadersMiddleware)
     except ImportError:
         logger.warning("Security headers middleware not available")
@@ -92,6 +93,7 @@ def create_app() -> FastAPI:
     # Request size limiting (10MB max)
     try:
         from backend.middleware.request_size_limit import RequestSizeLimitMiddleware
+
         app.add_middleware(RequestSizeLimitMiddleware, max_body_size=10 * 1024 * 1024)
     except ImportError:
         logger.warning("Request size limit middleware not available")
@@ -101,6 +103,7 @@ def create_app() -> FastAPI:
     # Rate limiting middleware
     try:
         from backend.middleware.rate_limit import RateLimitMiddleware
+
         app.add_middleware(RateLimitMiddleware, max_requests=100, window_seconds=60)
     except ImportError:
         logger.warning("Rate limit middleware not available")
@@ -108,6 +111,7 @@ def create_app() -> FastAPI:
     # Endpoint-specific rate limiting
     try:
         from backend.middleware.endpoint_rate_limit import EndpointRateLimitMiddleware
+
         app.add_middleware(
             EndpointRateLimitMiddleware,
             endpoint_limits={
@@ -128,12 +132,14 @@ def create_app() -> FastAPI:
 
     # Core API router
     from backend.api.router import router as api_router
+
     app.include_router(api_router)
 
     # Initialize orchestrator and register with system API
     try:
         from backend.api.v1.system import set_orchestrator
         from core.orchestrator import Orchestrator
+
         orchestrator = Orchestrator()
         set_orchestrator(orchestrator)
         logger.info("Orchestrator initialized")

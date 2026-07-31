@@ -35,9 +35,7 @@ async def lifespan(app):
     if env == Environment.PRODUCTION:
         log.info(f"Starting SuperDev AI Suite in production mode [version={VERSION}]")
     else:
-        log.info(
-            f"Starting SuperDev AI Suite [version={VERSION}, environment={env.value}]"
-        )
+        log.info(f"Starting SuperDev AI Suite [version={VERSION}, environment={env.value}]")
 
     try:
         await startup_handler()
@@ -56,6 +54,7 @@ async def lifespan(app):
     except TimeoutError:
         log.warning("Shutdown timed out after 30s — forcing exit")
         import os
+
         os._exit(1)  # noqa: SLF001
 
     log.info("SuperDev AI Suite shutdown complete")

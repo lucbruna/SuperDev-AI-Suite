@@ -1,6 +1,7 @@
 """
 Security Models
 """
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -105,11 +106,7 @@ class Incident:
     resolved_at: datetime | None = None
 
     def add_timeline_entry(self, entry: str, user: str = "system") -> None:
-        self.timeline.append({
-            "entry": entry,
-            "user": user,
-            "timestamp": datetime.now().isoformat()
-        })
+        self.timeline.append({"entry": entry, "user": user, "timestamp": datetime.now().isoformat()})
 
     def assign(self, assignee: str) -> None:
         self.assignee = assignee

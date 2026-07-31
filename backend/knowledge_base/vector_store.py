@@ -82,7 +82,7 @@ class VectorStore:
                 content=content,
                 token_count=len(content.split()),
                 embedding=embedding,
-extra_metadata=metadata or {},
+                extra_metadata=metadata or {},
             )
             knowledge_chunks.append(chunk)
 
@@ -183,12 +183,14 @@ extra_metadata=metadata or {},
                 updated_at=row["kb_updated_at"],
             )
 
-            search_results.append(SearchResult(
-                chunk=chunk,
-                entry=entry,
-                knowledge_base=kb,
-                score=row["similarity"],
-            ))
+            search_results.append(
+                SearchResult(
+                    chunk=chunk,
+                    entry=entry,
+                    knowledge_base=kb,
+                    score=row["similarity"],
+                )
+            )
 
         return search_results
 
@@ -274,12 +276,14 @@ extra_metadata=metadata or {},
                 updated_at=row["kb_updated_at"],
             )
 
-            search_results.append(SearchResult(
-                chunk=chunk,
-                entry=entry,
-                knowledge_base=kb,
-                score=row["similarity"],
-            ))
+            search_results.append(
+                SearchResult(
+                    chunk=chunk,
+                    entry=entry,
+                    knowledge_base=kb,
+                    score=row["similarity"],
+                )
+            )
 
         return search_results
 

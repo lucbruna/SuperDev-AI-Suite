@@ -31,6 +31,7 @@ class AnthropicProvider(BaseProvider):
         if self._client is None:
             try:
                 from anthropic import AsyncAnthropic
+
                 self._client = AsyncAnthropic(
                     api_key=self._get_api_key(),
                     base_url=self.config.base_url or None,
@@ -49,10 +50,38 @@ class AnthropicProvider(BaseProvider):
 
     async def list_models(self) -> list[ModelInfo]:
         return [
-            ModelInfo(id="claude-3-5-sonnet-20241022", name="Claude 3.5 Sonnet", provider="anthropic", capabilities=["chat", "vision"], context_window=200000, max_tokens=8192),
-            ModelInfo(id="claude-3-opus-20240229", name="Claude 3 Opus", provider="anthropic", capabilities=["chat", "vision"], context_window=200000, max_tokens=4096),
-            ModelInfo(id="claude-3-haiku-20240307", name="Claude 3 Haiku", provider="anthropic", capabilities=["chat", "vision"], context_window=200000, max_tokens=4096),
-            ModelInfo(id="claude-2.1", name="Claude 2.1", provider="anthropic", capabilities=["chat"], context_window=100000, max_tokens=4096),
+            ModelInfo(
+                id="claude-3-5-sonnet-20241022",
+                name="Claude 3.5 Sonnet",
+                provider="anthropic",
+                capabilities=["chat", "vision"],
+                context_window=200000,
+                max_tokens=8192,
+            ),
+            ModelInfo(
+                id="claude-3-opus-20240229",
+                name="Claude 3 Opus",
+                provider="anthropic",
+                capabilities=["chat", "vision"],
+                context_window=200000,
+                max_tokens=4096,
+            ),
+            ModelInfo(
+                id="claude-3-haiku-20240307",
+                name="Claude 3 Haiku",
+                provider="anthropic",
+                capabilities=["chat", "vision"],
+                context_window=200000,
+                max_tokens=4096,
+            ),
+            ModelInfo(
+                id="claude-2.1",
+                name="Claude 2.1",
+                provider="anthropic",
+                capabilities=["chat"],
+                context_window=100000,
+                max_tokens=4096,
+            ),
         ]
 
     async def chat(self, messages: list[dict], config: dict[str, Any]) -> ChatResponse:

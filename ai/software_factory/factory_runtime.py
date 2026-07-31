@@ -1,4 +1,5 @@
 """Factory Runtime - Execution runtime for factory operations."""
+
 import hashlib
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -87,4 +88,12 @@ class FactoryRuntime:
         return len(self.tasks)
 
     def _log(self, task: FactoryTask):
-        self.task_log.append({"task_id": task.task_id, "project_id": task.project_id, "name": task.name, "state": task.state.value, "timestamp": datetime.now().isoformat()})
+        self.task_log.append(
+            {
+                "task_id": task.task_id,
+                "project_id": task.project_id,
+                "name": task.name,
+                "state": task.state.value,
+                "timestamp": datetime.now().isoformat(),
+            }
+        )

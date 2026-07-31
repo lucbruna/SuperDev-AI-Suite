@@ -1,4 +1,5 @@
 """Tool argument validation."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -24,8 +25,5 @@ class ToolValidator:
         return {
             "total_validations": self._validation_count,
             "errors": self._error_count,
-            "success_rate": round(
-                (self._validation_count - self._error_count)
-                / max(self._validation_count, 1), 2
-            ),
+            "success_rate": round((self._validation_count - self._error_count) / max(self._validation_count, 1), 2),
         }

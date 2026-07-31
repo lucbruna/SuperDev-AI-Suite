@@ -15,10 +15,9 @@ class HypothesisRanker:
     async def rank(self, hypotheses: list[dict[str, Any]]) -> list[dict[str, Any]]:
         scored = []
         for h in hypotheses:
-            score = (
-                h.get("confidence", 0) * self._weights.get("confidence", 1)
-                + h.get("relevance", 0) * self._weights.get("relevance", 0.5)
-            )
+            score = h.get("confidence", 0) * self._weights.get("confidence", 1) + h.get(
+                "relevance", 0
+            ) * self._weights.get("relevance", 0.5)
             scored.append({**h, "score": score})
         scored.sort(key=lambda x: x.get("score", 0), reverse=True)
         return scored

@@ -1,4 +1,5 @@
 """Data Platform Security — Security for data platform operations."""
+
 from datetime import datetime
 from enum import Enum
 from typing import Any
@@ -25,17 +26,24 @@ class DataPlatformSecurity:
     def check_access(self, user_id: str, dataset: str, required_level: DataAccessLevel = DataAccessLevel.READ) -> bool:
         policies = self._access_policies.get(user_id, {})
         level = policies.get(dataset, DataAccessLevel.NONE)
-        hierarchy = {DataAccessLevel.NONE: 0, DataAccessLevel.READ: 1, DataAccessLevel.WRITE: 2, DataAccessLevel.ADMIN: 3}
+        hierarchy = {
+            DataAccessLevel.NONE: 0,
+            DataAccessLevel.READ: 1,
+            DataAccessLevel.WRITE: 2,
+            DataAccessLevel.ADMIN: 3,
+        }
         return hierarchy.get(level, 0) >= hierarchy.get(required_level, 0)
 
     def log_access(self, user_id: str, dataset: str, action: str, success: bool = True) -> None:
-        self._audit_log.append({
-            "user_id": user_id,
-            "dataset": dataset,
-            "action": action,
-            "success": success,
-            "timestamp": datetime.now().isoformat(),
-        })
+        self._audit_log.append(
+            {
+                "user_id": user_id,
+                "dataset": dataset,
+                "action": action,
+                "success": success,
+                "timestamp": datetime.now().isoformat(),
+            }
+        )
 
     def get_audit_log(self, user_id: str | None = None, dataset: str | None = None) -> list[dict[str, Any]]:
         log = list(self._audit_log)

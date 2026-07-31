@@ -1,4 +1,5 @@
 """Document subsystem engine — Intelligent document processing and analysis."""
+
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -90,7 +91,7 @@ class DocumentSubEngine:
             value = doc.metadata.get(field_name, "")
             if not value and field_name.lower() in doc.content.lower():
                 idx = doc.content.lower().index(field_name.lower())
-                value = doc.content[max(0, idx-50):idx+100]
+                value = doc.content[max(0, idx - 50) : idx + 100]
             result = ExtractionResult(
                 doc_id=doc_id,
                 field_name=field_name,
@@ -103,7 +104,9 @@ class DocumentSubEngine:
 
     def search_documents(self, query: str) -> list[ProcessedDocument]:
         query_lower = query.lower()
-        return [d for d in self._documents.values() if query_lower in d.title.lower() or query_lower in d.content.lower()]
+        return [
+            d for d in self._documents.values() if query_lower in d.title.lower() or query_lower in d.content.lower()
+        ]
 
     def add_template(self, name: str, fields: list[str]) -> None:
         self._templates[name] = fields
@@ -114,7 +117,7 @@ class DocumentSubEngine:
     def _chunk_text(self, text: str) -> list[str]:
         chunks = []
         for i in range(0, len(text), self._chunk_size - self._chunk_overlap):
-            chunk = text[i:i + self._chunk_size]
+            chunk = text[i : i + self._chunk_size]
             if chunk:
                 chunks.append(chunk)
         return chunks

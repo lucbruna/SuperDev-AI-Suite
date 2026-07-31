@@ -1,15 +1,20 @@
 """Organizations subsystem generator."""
+
 import os
 
-BASE = r'C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\enterprise\organizations'
+BASE = r"C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\enterprise\organizations"
+
 
 def w(path, content):
     full = os.path.join(BASE, path)
     os.makedirs(os.path.dirname(full), exist_ok=True)
-    with open(full, 'w', encoding='utf-8') as f:
+    with open(full, "w", encoding="utf-8") as f:
         f.write(content)
 
-w('organization_engine.py', '''"""Organization engine."""
+
+w(
+    "organization_engine.py",
+    '''"""Organization engine."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time
@@ -47,9 +52,12 @@ class OrganizationEngine:
         return len(self._organizations)
     def is_running(self) -> bool:
         return self._started
-''')
+''',
+)
 
-w('organization_manager.py', '''"""Organization manager."""
+w(
+    "organization_manager.py",
+    '''"""Organization manager."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time
@@ -79,9 +87,12 @@ class OrganizationManager:
         return self._settings.get(org_id, {}).get(key, default)
     def get_all_settings(self, org_id: str) -> Dict[str, Any]:
         return dict(self._settings.get(org_id, {}))
-''')
+''',
+)
 
-w('company_profile.py', '''"""Company profile."""
+w(
+    "company_profile.py",
+    '''"""Company profile."""
 from __future__ import annotations
 from typing import Any, Dict, Optional
 
@@ -106,9 +117,12 @@ class CompanyProfile:
         return False
     def list_all(self) -> Dict[str, Dict[str, Any]]:
         return dict(self._profiles)
-''')
+''',
+)
 
-w('settings.py', '''"""Organization settings."""
+w(
+    "settings.py",
+    '''"""Organization settings."""
 from __future__ import annotations
 from typing import Any, Dict
 
@@ -133,9 +147,12 @@ class OrganizationSettings:
         n = len(self._settings.get(org_id, {}))
         self._settings.pop(org_id, None)
         return n
-''')
+''',
+)
 
-w('hierarchy.py', '''"""Organization hierarchy."""
+w(
+    "hierarchy.py",
+    '''"""Organization hierarchy."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
@@ -169,9 +186,12 @@ class OrganizationHierarchy:
         return current
     def list_all(self) -> Dict[str, Dict[str, Any]]:
         return dict(self._tree)
-''')
+''',
+)
 
-w('departments.py', '''"""Departments."""
+w(
+    "departments.py",
+    '''"""Departments."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time
@@ -206,9 +226,12 @@ class DepartmentManager:
             del self._departments[dept_id]
             return True
         return False
-''')
+''',
+)
 
-w('members.py', '''"""Organization members."""
+w(
+    "members.py",
+    '''"""Organization members."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time
@@ -239,9 +262,12 @@ class MemberManager:
         return False
     def list_by_role(self, org_id: str, role: str) -> List[Dict[str, Any]]:
         return [m for m in self._memberships.get(org_id, {}).values() if m["role"] == role]
-''')
+''',
+)
 
-w('branding.py', '''"""Organization branding."""
+w(
+    "branding.py",
+    '''"""Organization branding."""
 from __future__ import annotations
 from typing import Any, Dict, Optional
 
@@ -266,9 +292,12 @@ class BrandingManager:
         return False
     def list_all(self) -> Dict[str, Dict[str, Any]]:
         return dict(self._branding)
-''')
+''',
+)
 
-w('__init__.py', '''"""Organizations subsystem."""
+w(
+    "__init__.py",
+    '''"""Organizations subsystem."""
 from .organization_engine import OrganizationEngine
 from .organization_manager import OrganizationManager
 from .company_profile import CompanyProfile
@@ -283,6 +312,7 @@ __all__ = [
     "OrganizationSettings", "OrganizationHierarchy", "DepartmentManager",
     "MemberManager", "BrandingManager"
 ]
-''')
+''',
+)
 
 print("organizations/: 9 files created")

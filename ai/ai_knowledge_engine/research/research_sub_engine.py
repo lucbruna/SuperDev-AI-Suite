@@ -1,4 +1,5 @@
 """Research subsystem engine — Intelligent research and information collection."""
+
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -86,7 +87,9 @@ class ResearchSubEngine:
     def get_information(self, info_id: str) -> Information | None:
         return self._information.get(info_id)
 
-    def collect_information(self, session_id: str, title: str, content: str, source_id: str = "", relevance: float = 0.5) -> Information | None:
+    def collect_information(
+        self, session_id: str, title: str, content: str, source_id: str = "", relevance: float = 0.5
+    ) -> Information | None:
         session = self._sessions.get(session_id)
         if not session:
             return None
@@ -111,7 +114,9 @@ class ResearchSubEngine:
 
     def search_information(self, query: str) -> list[Information]:
         query_lower = query.lower()
-        return [i for i in self._information.values() if query_lower in i.title.lower() or query_lower in i.content.lower()]
+        return [
+            i for i in self._information.values() if query_lower in i.title.lower() or query_lower in i.content.lower()
+        ]
 
     def get_top_findings(self, session_id: str, limit: int = 5) -> list[Information]:
         session = self._sessions.get(session_id)

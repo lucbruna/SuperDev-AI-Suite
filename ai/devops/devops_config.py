@@ -1,4 +1,5 @@
 """DevOps configuration."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -12,11 +13,13 @@ class CloudProvider(Enum):
     PRIVATE = "private"
     HYBRID = "hybrid"
 
+
 class DeployStrategy(Enum):
     BLUE_GREEN = "blue_green"
     CANARY = "canary"
     ROLLING = "rolling"
     RECREATE = "recreate"
+
 
 @dataclass
 class InfrastructureLimits:
@@ -25,6 +28,7 @@ class InfrastructureLimits:
     max_clusters: int = 50
     max_nodes: int = 500
     max_pods: int = 10000
+
 
 @dataclass
 class DevOpsConfig:

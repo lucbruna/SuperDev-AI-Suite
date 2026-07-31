@@ -67,45 +67,33 @@ class LLMRouter(ILLMRouter):
                 candidates.append(info)
         return candidates
 
-    async def _select_by_capability(
-        self, providers: list[ProviderInfo], requirements: dict[str, Any]
-    ) -> str | None:
+    async def _select_by_capability(self, providers: list[ProviderInfo], requirements: dict[str, Any]) -> str | None:
         needed = requirements.get("capabilities", [])
         for p in providers:
             if all(cap in p.capabilities for cap in needed):
                 return p.name
         return providers[0].name if providers else None
 
-    async def _select_by_latency(
-        self, providers: list[ProviderInfo], requirements: dict[str, Any]
-    ) -> str | None:
+    async def _select_by_latency(self, providers: list[ProviderInfo], requirements: dict[str, Any]) -> str | None:
         if not providers:
             return None
         return min(providers, key=lambda p: p.latency_p50).name
 
-    async def _select_by_cost(
-        self, providers: list[ProviderInfo], requirements: dict[str, Any]
-    ) -> str | None:
+    async def _select_by_cost(self, providers: list[ProviderInfo], requirements: dict[str, Any]) -> str | None:
         if not providers:
             return None
         return min(providers, key=lambda p: p.cost_per_token).name
 
-    async def _select_by_quality(
-        self, providers: list[ProviderInfo], requirements: dict[str, Any]
-    ) -> str | None:
+    async def _select_by_quality(self, providers: list[ProviderInfo], requirements: dict[str, Any]) -> str | None:
         for p in providers:
             if "quality" in p.capabilities:
                 return p.name
         return providers[0].name if providers else None
 
-    async def _select_by_availability(
-        self, providers: list[ProviderInfo], requirements: dict[str, Any]
-    ) -> str | None:
+    async def _select_by_availability(self, providers: list[ProviderInfo], requirements: dict[str, Any]) -> str | None:
         return providers[0].name if providers else None
 
-    async def _select_by_weighted(
-        self, providers: list[ProviderInfo], requirements: dict[str, Any]
-    ) -> str | None:
+    async def _select_by_weighted(self, providers: list[ProviderInfo], requirements: dict[str, Any]) -> str | None:
         if not providers:
             return None
         weights = [self._weights.get(p.name, 1.0) for p in providers]
@@ -120,16 +108,12 @@ class LLMRouter(ILLMRouter):
                 return p.name
         return providers[-1].name
 
-    async def _select_by_priority(
-        self, providers: list[ProviderInfo], requirements: dict[str, Any]
-    ) -> str | None:
+    async def _select_by_priority(self, providers: list[ProviderInfo], requirements: dict[str, Any]) -> str | None:
         if not providers:
             return None
         return max(providers, key=lambda p: self._priorities.get(p.name, 0)).name
 
-    async def _select_smart(
-        self, providers: list[ProviderInfo], requirements: dict[str, Any]
-    ) -> str | None:
+    async def _select_smart(self, providers: list[ProviderInfo], requirements: dict[str, Any]) -> str | None:
         needed = requirements.get("capabilities", [])
         for p in providers:
             if all(cap in p.capabilities for cap in needed):
@@ -137,9 +121,7 @@ class LLMRouter(ILLMRouter):
                     return p.name
         return providers[0].name if providers else None
 
-    async def _select_fallback(
-        self, providers: list[ProviderInfo], requirements: dict[str, Any]
-    ) -> str | None:
+    async def _select_fallback(self, providers: list[ProviderInfo], requirements: dict[str, Any]) -> str | None:
         return providers[0].name if providers else None
 
     async def select(self, prompt: str, **kwargs: Any) -> str:

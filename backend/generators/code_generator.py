@@ -26,5 +26,5 @@ class CodeGenerator:
     ) -> str:
         decorator = f'@router.{method}("{path}")'
         if response_model:
-            decorator += f', response_model={response_model}'
+            decorator += f", response_model={response_model}"
         return f"{decorator}\nasync def {function_name}() -> dict:\n    pass\n"

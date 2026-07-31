@@ -1,6 +1,7 @@
 """
 Cryptographic Hashing Engine
 """
+
 import hashlib
 import hmac
 import secrets
@@ -77,13 +78,13 @@ class HashEngine:
 
     def password_hash(self, password: str, iterations: int = 100000) -> str:
         salt = secrets.token_bytes(16)
-        h = hashlib.pbkdf2_hmac('sha256', password.encode(), salt, iterations)
+        h = hashlib.pbkdf2_hmac("sha256", password.encode(), salt, iterations)
         return salt.hex() + ":" + h.hex()
 
     def password_verify(self, password: str, stored: str) -> bool:
         salt_hex, hash_hex = stored.split(":")
         salt = bytes.fromhex(salt_hex)
-        h = hashlib.pbkdf2_hmac('sha256', password.encode(), salt, 100000)
+        h = hashlib.pbkdf2_hmac("sha256", password.encode(), salt, 100000)
         return h.hex() == hash_hex
 
     def count(self) -> int:

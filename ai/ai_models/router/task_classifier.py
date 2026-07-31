@@ -1,4 +1,5 @@
 """Task classifier for routing."""
+
 from __future__ import annotations
 
 
@@ -12,8 +13,9 @@ class TaskClassifier:
             "data": ["data", "csv", "database", "sql", "statistics", "chart", "graph"],
             "translation": ["translate", "traduzir", "localize", "i18n"],
             "summarization": ["summarize", "resumo", "summary", "brief", "overview"],
-            "conversation": ["chat", "talk", "discuss", "conversation", "assist"]
+            "conversation": ["chat", "talk", "discuss", "conversation", "assist"],
         }
+
     def classify(self, prompt: str) -> str:
         prompt_lower = prompt.lower()
         scores: dict[str, int] = {}
@@ -22,12 +24,16 @@ class TaskClassifier:
         if max(scores.values()) == 0:
             return "conversation"
         return max(scores, key=scores.get)
+
     def add_keywords(self, task_type: str, keywords: list[str]) -> None:
         self._keywords.setdefault(task_type, []).extend(keywords)
+
     def list_task_types(self) -> list[str]:
         return list(self._keywords.keys())
+
     def get_keywords(self, task_type: str) -> list[str]:
         return list(self._keywords.get(task_type, []))
+
     def confidence(self, prompt: str) -> float:
         task = self.classify(prompt)
         prompt_lower = prompt.lower()

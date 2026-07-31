@@ -1,4 +1,5 @@
 """CX Registry — Central registry for CX components."""
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
@@ -20,8 +21,12 @@ class CXRegistry:
         self.components: dict[str, CXComponent] = {}
         self.dependencies: dict[str, list[str]] = {}
 
-    def register(self, component_id: str, name: str, component_type: str = "", version: str = "1.0", **kwargs) -> CXComponent:
-        component = CXComponent(component_id=component_id, name=name, component_type=component_type, version=version, **kwargs)
+    def register(
+        self, component_id: str, name: str, component_type: str = "", version: str = "1.0", **kwargs
+    ) -> CXComponent:
+        component = CXComponent(
+            component_id=component_id, name=name, component_type=component_type, version=version, **kwargs
+        )
         self.components[component_id] = component
         return component
 

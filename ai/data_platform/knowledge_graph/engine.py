@@ -1,4 +1,5 @@
 """Knowledge Graph engine."""
+
 import uuid
 
 from .models import Entity, GraphQuery, KnowledgePath, Relation
@@ -74,7 +75,7 @@ class KnowledgeGraphEngine:
         entities = list(self._entities.values())
         if query.entity_type:
             entities = [e for e in entities if e.entity_type == query.entity_type]
-        return entities[:query.limit]
+        return entities[: query.limit]
 
     def get_all_entities(self) -> list[Entity]:
         return list(self._entities.values())

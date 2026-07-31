@@ -1,4 +1,5 @@
 """Individual task execution handler."""
+
 from __future__ import annotations
 
 import time
@@ -29,11 +30,13 @@ class TaskExecutor:
             "output": f"Executed {task_type} task with {len(payload)} payload items",
             "completed_at": time.time(),
         }
-        self._tasks[task_id].update({
-            "status": "completed",
-            "result": result,
-            "completed_at": time.time(),
-        })
+        self._tasks[task_id].update(
+            {
+                "status": "completed",
+                "result": result,
+                "completed_at": time.time(),
+            }
+        )
         return result
 
     def cancel(self, task_id: str) -> bool:
@@ -56,7 +59,4 @@ class TaskExecutor:
         return None
 
     def get_all_tasks(self) -> dict[str, dict[str, Any]]:
-        return {
-            tid: {"id": t["id"], "status": t["status"]}
-            for tid, t in self._tasks.items()
-        }
+        return {tid: {"id": t["id"], "status": t["status"]} for tid, t in self._tasks.items()}

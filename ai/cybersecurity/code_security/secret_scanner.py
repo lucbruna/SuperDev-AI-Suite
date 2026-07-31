@@ -1,6 +1,7 @@
 """
 Hardcoded Secret Scanner
 """
+
 import re
 from dataclasses import dataclass
 from enum import Enum
@@ -32,9 +33,9 @@ class SecretScanner:
             SecretType.API_KEY: [r'api[_-]?key\s*=\s*["\']([\w-]+)', r'API_KEY\s*=\s*["\']([\w-]+)'],
             SecretType.PASSWORD: [r'password\s*=\s*["\']([^"\']+)', r'passwd\s*=\s*["\']([^"\']+)'],
             SecretType.TOKEN: [r'token\s*=\s*["\']([\w.-]+)', r'access_token\s*=\s*["\']([\w.-]+)'],
-            SecretType.PRIVATE_KEY: [r'-----BEGIN\s+(RSA\s+)?PRIVATE\s+KEY-----'],
-            SecretType.AWS_KEY: [r'AKIA[0-9A-Z]{16}'],
-            SecretType.DATABASE_URL: [r'(mysql|postgresql|mongodb)://[^\s]+:[^\s]+@'],
+            SecretType.PRIVATE_KEY: [r"-----BEGIN\s+(RSA\s+)?PRIVATE\s+KEY-----"],
+            SecretType.AWS_KEY: [r"AKIA[0-9A-Z]{16}"],
+            SecretType.DATABASE_URL: [r"(mysql|postgresql|mongodb)://[^\s]+:[^\s]+@"],
         }
         self.findings: list[SecretFinding] = []
         self.excluded_files: set = {".env.example", "test_mock.py"}
@@ -50,7 +51,14 @@ class SecretScanner:
                     if re.search(pattern, line, re.IGNORECASE):
                         entropy = self._calculate_entropy(line)
                         confidence = min(1.0, entropy / 4.0)
-                        finding = SecretFinding(secret_type=secret_type, file_path=file_path, line_number=line_num, snippet=line.strip()[:100], confidence=confidence, entropy=entropy)
+                        finding = SecretFinding(
+                            secret_type=secret_type,
+                            file_path=file_path,
+                            line_number=line_num,
+                            snippet=line.strip()[:100],
+                            confidence=confidence,
+                            entropy=entropy,
+                        )
                         findings.append(finding)
         self.findings.extend(findings)
         return findings
@@ -62,6 +70,7 @@ class SecretScanner:
         for c in text:
             freq[c] = freq.get(c, 0) + 1
         import math
+
         length = len(text)
         entropy = -sum((count / length) * math.log2(count / length) for count in freq.values())
         return entropy

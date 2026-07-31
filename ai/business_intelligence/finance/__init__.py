@@ -1,4 +1,5 @@
 """Business Intelligence Finance subsystem."""
+
 from .engine import FinanceEngine
 from .models import (
     Account,
@@ -13,7 +14,14 @@ from .models import (
 )
 
 __all__ = [
-    "TransactionType", "AccountType", "BudgetStatus",
-    "Transaction", "Account", "Budget", "PnLReport", "CashFlowEntry", "CashFlowReport",
+    "TransactionType",
+    "AccountType",
+    "BudgetStatus",
+    "Transaction",
+    "Account",
+    "Budget",
+    "PnLReport",
+    "CashFlowEntry",
+    "CashFlowReport",
     "FinanceEngine",
 ]

@@ -1,4 +1,5 @@
 """Resource Manager - Edge device resource management."""
+
 from dataclasses import dataclass, field
 from datetime import datetime
 

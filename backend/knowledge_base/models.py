@@ -26,7 +26,9 @@ KBBase = declarative_base()
 
 class KBTimestampMixin:
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
 
 
 class KnowledgeBaseType(enum.StrEnum):
@@ -53,9 +55,7 @@ class KnowledgeBase(KBBase, KBTimestampMixin):
         lazy="dynamic",
     )
 
-    __table_args__ = (
-        Index("ix_knowledge_bases_type_public", "type", "is_public"),
-    )
+    __table_args__ = (Index("ix_knowledge_bases_type_public", "type", "is_public"),)
 
 
 class KnowledgeEntry(KBBase, KBTimestampMixin):
@@ -76,9 +76,7 @@ class KnowledgeEntry(KBBase, KBTimestampMixin):
     tags: Mapped[list[str]] = mapped_column(ARRAY(String), default=list, nullable=False)
     extra_metadata: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
 
-    knowledge_base: Mapped[KnowledgeBase] = relationship(
-        "KnowledgeBase", back_populates="entries"
-    )
+    knowledge_base: Mapped[KnowledgeBase] = relationship("KnowledgeBase", back_populates="entries")
     chunks: Mapped[list[KnowledgeChunk]] = relationship(
         "KnowledgeChunk",
         back_populates="entry",
@@ -86,9 +84,7 @@ class KnowledgeEntry(KBBase, KBTimestampMixin):
         lazy="dynamic",
     )
 
-    __table_args__ = (
-        Index("ix_knowledge_entries_kb_created", "knowledge_base_id", "created_at"),
-    )
+    __table_args__ = (Index("ix_knowledge_entries_kb_created", "knowledge_base_id", "created_at"),)
 
 
 class KnowledgeChunk(KBBase):
@@ -106,9 +102,7 @@ class KnowledgeChunk(KBBase):
     token_count: Mapped[int] = mapped_column(Integer, default=0)
     embedding: Mapped[list[float] | None] = mapped_column(Vector(384), nullable=True)
     extra_metadata: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     entry: Mapped[KnowledgeEntry] = relationship("KnowledgeEntry", back_populates="chunks")
 

@@ -64,24 +64,68 @@ class OpenRouterProvider(BaseProvider):
                 models = []
                 for model in data.get("data", []):
                     name = model.get("id", "unknown")
-                    models.append(ModelInfo(
-                        id=name,
-                        name=name,
-                        provider="openrouter",
-                        capabilities=["chat"],
-                        context_window=model.get("context_length", 8192),
-                        max_tokens=model.get("max_tokens", 4096),
-                    ))
+                    models.append(
+                        ModelInfo(
+                            id=name,
+                            name=name,
+                            provider="openrouter",
+                            capabilities=["chat"],
+                            context_window=model.get("context_length", 8192),
+                            max_tokens=model.get("max_tokens", 4096),
+                        )
+                    )
                 return models
         except Exception:
             pass
         return [
-            ModelInfo(id="openai/gpt-4o", name="GPT-4o (OpenRouter)", provider="openrouter", capabilities=["chat"], context_window=128000, max_tokens=16384),
-            ModelInfo(id="anthropic/claude-3.5-sonnet", name="Claude 3.5 Sonnet (OpenRouter)", provider="openrouter", capabilities=["chat"], context_window=200000, max_tokens=8192),
-            ModelInfo(id="google/gemini-pro-1.5", name="Gemini Pro 1.5 (OpenRouter)", provider="openrouter", capabilities=["chat"], context_window=1000000, max_tokens=8192),
-            ModelInfo(id="meta-llama/llama-3.1-405b", name="Llama 3.1 405B (OpenRouter)", provider="openrouter", capabilities=["chat"], context_window=131072, max_tokens=8192),
-            ModelInfo(id="mistral/mistral-large", name="Mistral Large (OpenRouter)", provider="openrouter", capabilities=["chat"], context_window=32768, max_tokens=8192),
-            ModelInfo(id="deepseek/deepseek-coder", name="DeepSeek Coder (OpenRouter)", provider="openrouter", capabilities=["chat"], context_window=16384, max_tokens=4096),
+            ModelInfo(
+                id="openai/gpt-4o",
+                name="GPT-4o (OpenRouter)",
+                provider="openrouter",
+                capabilities=["chat"],
+                context_window=128000,
+                max_tokens=16384,
+            ),
+            ModelInfo(
+                id="anthropic/claude-3.5-sonnet",
+                name="Claude 3.5 Sonnet (OpenRouter)",
+                provider="openrouter",
+                capabilities=["chat"],
+                context_window=200000,
+                max_tokens=8192,
+            ),
+            ModelInfo(
+                id="google/gemini-pro-1.5",
+                name="Gemini Pro 1.5 (OpenRouter)",
+                provider="openrouter",
+                capabilities=["chat"],
+                context_window=1000000,
+                max_tokens=8192,
+            ),
+            ModelInfo(
+                id="meta-llama/llama-3.1-405b",
+                name="Llama 3.1 405B (OpenRouter)",
+                provider="openrouter",
+                capabilities=["chat"],
+                context_window=131072,
+                max_tokens=8192,
+            ),
+            ModelInfo(
+                id="mistral/mistral-large",
+                name="Mistral Large (OpenRouter)",
+                provider="openrouter",
+                capabilities=["chat"],
+                context_window=32768,
+                max_tokens=8192,
+            ),
+            ModelInfo(
+                id="deepseek/deepseek-coder",
+                name="DeepSeek Coder (OpenRouter)",
+                provider="openrouter",
+                capabilities=["chat"],
+                context_window=16384,
+                max_tokens=4096,
+            ),
         ]
 
     async def chat(self, messages: list[dict], config: dict[str, Any]) -> ChatResponse:
@@ -108,7 +152,13 @@ class OpenRouterProvider(BaseProvider):
             return ChatResponse(
                 id=data.get("id", f"openrouter-{int(time.time())}"),
                 model=data.get("model", model),
-                choices=[Choice(index=0, message={"role": "assistant", "content": content}, finish_reason=choice.get("finish_reason", "stop"))],
+                choices=[
+                    Choice(
+                        index=0,
+                        message={"role": "assistant", "content": content},
+                        finish_reason=choice.get("finish_reason", "stop"),
+                    )
+                ],
                 usage=usage,
                 provider="openrouter",
             )
@@ -142,6 +192,7 @@ class OpenRouterProvider(BaseProvider):
                             continue
                         try:
                             import json
+
                             data = json.loads(line)
                             delta = data["choices"][0]["delta"].get("content", "")
                             finish_reason = data["choices"][0].get("finish_reason")
@@ -163,7 +214,9 @@ class OpenRouterProvider(BaseProvider):
             elapsed = (time.monotonic() - start) * 1000
             if resp.status_code == 200:
                 return HealthStatus(status="healthy", latency_ms=elapsed, last_check=datetime.now(UTC))
-            return HealthStatus(status="degraded", latency_ms=elapsed, last_check=datetime.now(UTC), error=f"Status {resp.status_code}")
+            return HealthStatus(
+                status="degraded", latency_ms=elapsed, last_check=datetime.now(UTC), error=f"Status {resp.status_code}"
+            )
         except Exception as e:
             elapsed = (time.monotonic() - start) * 1000
             return HealthStatus(status="unhealthy", latency_ms=elapsed, last_check=datetime.now(UTC), error=str(e))

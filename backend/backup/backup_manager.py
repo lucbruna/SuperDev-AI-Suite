@@ -91,7 +91,8 @@ class BackupManager:
                     "pg_dump",
                     "--no-owner",
                     "--no-acl",
-                    "-f", str(file_path),
+                    "-f",
+                    str(file_path),
                     db_url.replace("+asyncpg", "").replace("+psycopg2", ""),
                 ]
                 proc = await asyncio.create_subprocess_exec(
@@ -106,6 +107,7 @@ class BackupManager:
                 # For SQLite, just copy the file
                 if "sqlite" in db_url:
                     import re
+
                     match = re.search(r"///(.+)", db_url)
                     if match:
                         src = Path(match.group(1))
@@ -268,8 +270,10 @@ class BackupManager:
 
                 cmd = [
                     "psql",
-                    "-d", db_url.replace("+asyncpg", "").replace("+psycopg2", ""),
-                    "-f", str(file_path),
+                    "-d",
+                    db_url.replace("+asyncpg", "").replace("+psycopg2", ""),
+                    "-f",
+                    str(file_path),
                 ]
                 proc = await asyncio.create_subprocess_exec(
                     *cmd,
@@ -280,6 +284,7 @@ class BackupManager:
                 return proc.returncode == 0
             elif "sqlite" in db_url:
                 import re
+
                 match = re.search(r"///(.+)", db_url)
                 if match:
                     dest = Path(match.group(1))
@@ -293,14 +298,8 @@ class BackupManager:
     def get_stats(self) -> dict[str, Any]:
         return {
             "total_backups": len(self._manifests),
-            "by_type": {
-                bt.value: sum(1 for m in self._manifests.values() if m.backup_type == bt)
-                for bt in BackupType
-            },
-            "by_status": {
-                bs.value: sum(1 for m in self._manifests.values() if m.status == bs)
-                for bs in BackupStatus
-            },
+            "by_type": {bt.value: sum(1 for m in self._manifests.values() if m.backup_type == bt) for bt in BackupType},
+            "by_status": {bs.value: sum(1 for m in self._manifests.values() if m.status == bs) for bs in BackupStatus},
             "backup_dir": str(self.backup_dir),
         }
 

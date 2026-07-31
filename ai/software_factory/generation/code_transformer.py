@@ -1,4 +1,5 @@
 """Code transformer for modifying generated code."""
+
 import re
 
 from .models import TemplateLanguage, TransformRule
@@ -21,7 +22,7 @@ class CodeTransformer:
         return result
 
     def rename_variable(self, code: str, old_name: str, new_name: str) -> str:
-        return re.sub(r'\b' + old_name + r'\b', new_name, code)
+        return re.sub(r"\b" + old_name + r"\b", new_name, code)
 
     def add_import(self, code: str, import_statement: str) -> str:
         lines = code.split("\n")

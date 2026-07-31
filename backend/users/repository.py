@@ -1,4 +1,3 @@
-
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -44,6 +43,7 @@ class UserRepository:
         update_data = data.model_dump(exclude_unset=True)
         if "password" in update_data:
             from backend.auth.passwords import hash_password
+
             update_data["hashed_password"] = hash_password(update_data.pop("password"))
         for key, value in update_data.items():
             setattr(user, key, value)

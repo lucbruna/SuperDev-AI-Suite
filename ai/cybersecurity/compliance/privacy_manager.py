@@ -1,6 +1,7 @@
 """
 Privacy Compliance Manager (GDPR/CCPA)
 """
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -59,10 +60,14 @@ class PrivacyManager:
         self.dsar_records: dict[str, DataSubjectRequestRecord] = {}
         self.data_processing: list[dict[str, Any]] = []
 
-    def record_consent(self, user_id: str, consent_type: ConsentType, granted: bool = True, ip_address: str = "") -> Consent:
+    def record_consent(
+        self, user_id: str, consent_type: ConsentType, granted: bool = True, ip_address: str = ""
+    ) -> Consent:
         consent_id = f"consent_{user_id}_{consent_type.value}"
         status = ConsentStatus.GRANTED if granted else ConsentStatus.DENIED
-        consent = Consent(consent_id=consent_id, user_id=user_id, consent_type=consent_type, status=status, ip_address=ip_address)
+        consent = Consent(
+            consent_id=consent_id, user_id=user_id, consent_type=consent_type, status=status, ip_address=ip_address
+        )
         self.consents[consent_id] = consent
         return consent
 
@@ -100,7 +105,14 @@ class PrivacyManager:
         return [r for r in self.dsar_records.values() if r.status == "pending"]
 
     def log_processing(self, purpose: str, data_categories: list[str], legal_basis: str = "") -> None:
-        self.data_processing.append({"purpose": purpose, "categories": data_categories, "legal_basis": legal_basis, "timestamp": datetime.now().isoformat()})
+        self.data_processing.append(
+            {
+                "purpose": purpose,
+                "categories": data_categories,
+                "legal_basis": legal_basis,
+                "timestamp": datetime.now().isoformat(),
+            }
+        )
 
     def count(self) -> int:
         return len(self.consents)

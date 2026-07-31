@@ -1,4 +1,5 @@
 """Knowledge Engine Protocols — Protocol definitions for the knowledge platform."""
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum

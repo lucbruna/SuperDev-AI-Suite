@@ -32,13 +32,15 @@ class Verifier:
         hallucination = await self._hallucination.detect(response, context)
         facts = await self._fact_checker.check(response, context)
         validation = await self._validation.validate(response, context)
-        passed = all([
-            consistency.get("consistent", False),
-            not contradiction.get("has_contradiction", True),
-            not hallucination.get("has_hallucination", True),
-            facts.get("verified", False),
-            validation.get("valid", False),
-        ])
+        passed = all(
+            [
+                consistency.get("consistent", False),
+                not contradiction.get("has_contradiction", True),
+                not hallucination.get("has_hallucination", True),
+                facts.get("verified", False),
+                validation.get("valid", False),
+            ]
+        )
         return {
             "passed": passed,
             "checks": {

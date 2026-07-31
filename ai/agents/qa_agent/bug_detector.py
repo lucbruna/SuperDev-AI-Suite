@@ -24,11 +24,17 @@ class BugDetector:
         results = []
         code_lower = code_snippet.lower()
         if "== none" in code_lower or "!= none" in code_lower:
-            results.append({"pattern": "none_check", "severity": "medium", "description": "Use 'is None' instead of '== None'"})
+            results.append(
+                {"pattern": "none_check", "severity": "medium", "description": "Use 'is None' instead of '== None'"}
+            )
         if "except:" in code_snippet and "except Exception" not in code_snippet:
-            results.append({"pattern": "empty_except", "severity": "high", "description": "Bare except catches all exceptions"})
+            results.append(
+                {"pattern": "empty_except", "severity": "high", "description": "Bare except catches all exceptions"}
+            )
         if "def " in code_lower and "=[]" in code_snippet or "={}" in code_snippet:
-            results.append({"pattern": "mutable_default", "severity": "medium", "description": "Mutable default argument"})
+            results.append(
+                {"pattern": "mutable_default", "severity": "medium", "description": "Mutable default argument"}
+            )
         return results
 
     def add_bug_pattern(self, name: str, pattern: str, severity: str = "medium") -> str:

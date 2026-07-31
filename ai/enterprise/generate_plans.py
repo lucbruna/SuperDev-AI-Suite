@@ -1,15 +1,20 @@
 """Plans subsystem generator."""
+
 import os
 
-BASE = r'C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\enterprise\plans'
+BASE = r"C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\enterprise\plans"
+
 
 def w(path, content):
     full = os.path.join(BASE, path)
     os.makedirs(os.path.dirname(full), exist_ok=True)
-    with open(full, 'w', encoding='utf-8') as f:
+    with open(full, "w", encoding="utf-8") as f:
         f.write(content)
 
-w('plan_engine.py', '''"""Plan engine."""
+
+w(
+    "plan_engine.py",
+    '''"""Plan engine."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time
@@ -43,9 +48,12 @@ class PlanEngine:
         return [p for p in self._plans.values() if p.get("active")]
     def count(self) -> int:
         return len(self._plans)
-''')
+''',
+)
 
-w('plan_manager.py', '''"""Plan manager."""
+w(
+    "plan_manager.py",
+    '''"""Plan manager."""
 from __future__ import annotations
 from typing import Any, Dict, List
 
@@ -75,9 +83,12 @@ class PlanManager:
             del self._plans[slug]
             return True
         return False
-''')
+''',
+)
 
-w('catalog.py', '''"""Plan catalog."""
+w(
+    "catalog.py",
+    '''"""Plan catalog."""
 from __future__ import annotations
 from typing import Any, Dict, List
 
@@ -115,9 +126,12 @@ class PlanCatalog:
         return len(self._catalog) < before
     def count(self) -> int:
         return len(self._catalog)
-''')
+''',
+)
 
-w('features.py', '''"""Plan features."""
+w(
+    "features.py",
+    '''"""Plan features."""
 from __future__ import annotations
 from typing import Any, Dict, List
 
@@ -139,9 +153,12 @@ class FeatureManager:
         return False
     def is_enabled(self, plan_features: List[str], feature_id: str) -> bool:
         return feature_id in plan_features
-''')
+''',
+)
 
-w('pricing.py', '''"""Plan pricing."""
+w(
+    "pricing.py",
+    '''"""Plan pricing."""
 from __future__ import annotations
 from typing import Any, Dict, List
 
@@ -169,9 +186,12 @@ class PricingManager:
             del self._pricing[plan_id]
             return True
         return False
-''')
+''',
+)
 
-w('availability.py', '''"""Plan availability."""
+w(
+    "availability.py",
+    '''"""Plan availability."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import time
@@ -197,9 +217,12 @@ class PlanAvailability:
             del self._availability[plan_id]
             return True
         return False
-''')
+''',
+)
 
-w('comparison.py', '''"""Plan comparison."""
+w(
+    "comparison.py",
+    '''"""Plan comparison."""
 from __future__ import annotations
 from typing import Any, Dict, List
 
@@ -228,9 +251,12 @@ class PlanComparison:
             del self._plans[plan_id]
             return True
         return False
-''')
+''',
+)
 
-w('__init__.py', '''"""Plans subsystem."""
+w(
+    "__init__.py",
+    '''"""Plans subsystem."""
 from .plan_engine import PlanEngine
 from .plan_manager import PlanManager
 from .catalog import PlanCatalog
@@ -243,6 +269,7 @@ __all__ = [
     "PlanEngine", "PlanManager", "PlanCatalog", "FeatureManager",
     "PricingManager", "PlanAvailability", "PlanComparison"
 ]
-''')
+''',
+)
 
 print("plans/: 8 files created")

@@ -1,4 +1,5 @@
 """Dashboard builder."""
+
 from datetime import datetime
 
 from .interfaces import DashboardBuilderInterface

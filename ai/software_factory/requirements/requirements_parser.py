@@ -1,4 +1,5 @@
 """Parser for requirements data from various formats."""
+
 from typing import Any
 
 from .models import Priority, Requirement, RequirementType

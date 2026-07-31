@@ -1,4 +1,5 @@
 """Model Manager - Edge model lifecycle management."""
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime

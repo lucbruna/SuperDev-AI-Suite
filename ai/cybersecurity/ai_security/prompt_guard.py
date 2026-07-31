@@ -1,6 +1,7 @@
 """
 Prompt Injection Defense
 """
+
 import re
 from dataclasses import dataclass, field
 from enum import Enum
@@ -56,7 +57,13 @@ class PromptGuard:
 
     def analyze(self, input_text: str) -> PromptAnalysis:
         if len(input_text) > self.max_input_length:
-            return PromptAnalysis(input_text=input_text[:100], is_safe=False, injection_type=InjectionType.DIRECT_INJECTION, confidence=1.0, detected_patterns=["exceeds_max_length"])
+            return PromptAnalysis(
+                input_text=input_text[:100],
+                is_safe=False,
+                injection_type=InjectionType.DIRECT_INJECTION,
+                confidence=1.0,
+                detected_patterns=["exceeds_max_length"],
+            )
 
         detected = []
         inj_type = None
@@ -69,7 +76,14 @@ class PromptGuard:
         is_safe = len(detected) == 0
         confidence = min(1.0, len(detected) * 0.3) if detected else 0.0
         sanitized = self.sanitize(input_text)
-        analysis = PromptAnalysis(input_text=input_text[:100], is_safe=is_safe, injection_type=inj_type, confidence=confidence, detected_patterns=detected, sanitized_text=sanitized)
+        analysis = PromptAnalysis(
+            input_text=input_text[:100],
+            is_safe=is_safe,
+            injection_type=inj_type,
+            confidence=confidence,
+            detected_patterns=detected,
+            sanitized_text=sanitized,
+        )
         self.analysis_log.append(analysis)
         return analysis
 

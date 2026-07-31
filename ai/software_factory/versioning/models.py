@@ -1,4 +1,5 @@
 """Data models for version management."""
+
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime

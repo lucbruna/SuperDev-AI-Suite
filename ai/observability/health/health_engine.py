@@ -1,4 +1,5 @@
 """Health check engine."""
+
 from __future__ import annotations
 
 import time
@@ -10,12 +11,16 @@ class HealthEngine:
         self._checks: dict[str, Any] = {}
         self._results: dict[str, dict[str, Any]] = {}
         self._started = False
+
     def start(self) -> None:
         self._started = True
+
     def stop(self) -> None:
         self._started = False
+
     def register_check(self, name: str, check_func: Any) -> None:
         self._checks[name] = check_func
+
     def run_check(self, name: str) -> dict[str, Any]:
         check = self._checks.get(name)
         if not check:
@@ -29,14 +34,18 @@ class HealthEngine:
         except Exception as e:
             self._results[name] = {"status": "unhealthy", "error": str(e), "timestamp": time.time()}
             return self._results[name]
+
     def run_all(self) -> dict[str, dict[str, Any]]:
         for name in self._checks:
             self.run_check(name)
         return dict(self._results)
+
     def get_status(self) -> dict[str, Any]:
         return {"running": self._started, "checks": len(self._checks), "last_results": len(self._results)}
+
     def get_result(self, name: str) -> dict[str, Any] | None:
         return self._results.get(name)
+
     def get_overall_health(self) -> str:
         if not self._results:
             return "unknown"

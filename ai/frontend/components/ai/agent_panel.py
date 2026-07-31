@@ -1,6 +1,7 @@
 """
 AI Agent Panel
 """
+
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
@@ -84,6 +85,9 @@ class AgentPanel:
 
     def render(self) -> dict[str, Any]:
         return {
-            "agents": [{"id": a.id, "name": a.name, "type": a.type.value, "status": a.status.value, "progress": a.progress} for a in self.agents],
+            "agents": [
+                {"id": a.id, "name": a.name, "type": a.type.value, "status": a.status.value, "progress": a.progress}
+                for a in self.agents
+            ],
             "selectedId": self.selected_agent.id if self.selected_agent else None,
         }

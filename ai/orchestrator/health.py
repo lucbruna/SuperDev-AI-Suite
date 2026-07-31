@@ -112,10 +112,7 @@ class AgentHealthMonitor:
 
     def get_unhealthy_agents(self) -> list[dict[str, Any]]:
         """Get list of unhealthy agents."""
-        return [
-            r for r in self.get_all_reports()
-            if not r["is_healthy"]
-        ]
+        return [r for r in self.get_all_reports() if not r["is_healthy"]]
 
     def get_summary(self) -> dict[str, Any]:
         """Get a summary of overall system health."""
@@ -130,9 +127,9 @@ class AgentHealthMonitor:
             "health_rate": round(healthy / total, 3) if total > 0 else 1.0,
             "total_errors": sum(r["error_count"] for r in reports),
             "total_tasks": sum(r["tasks_completed"] for r in reports),
-            "avg_response_time_ms": round(
-                sum(r["avg_response_time_ms"] for r in reports) / total, 1
-            ) if total > 0 else 0,
+            "avg_response_time_ms": round(sum(r["avg_response_time_ms"] for r in reports) / total, 1)
+            if total > 0
+            else 0,
         }
 
     async def start_monitoring(self, health_check_fn: Any = None) -> None:
@@ -173,11 +170,13 @@ class AgentHealthMonitor:
                         pass
 
                 # Record history snapshot
-                self._history.append({
-                    "timestamp": time.time(),
-                    "healthy_count": sum(1 for r in self._reports.values() if r.is_healthy),
-                    "total_count": len(self._reports),
-                })
+                self._history.append(
+                    {
+                        "timestamp": time.time(),
+                        "healthy_count": sum(1 for r in self._reports.values() if r.is_healthy),
+                        "total_count": len(self._reports),
+                    }
+                )
                 if len(self._history) > 100:
                     self._history = self._history[-50:]
 

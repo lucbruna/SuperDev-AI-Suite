@@ -193,7 +193,9 @@ class KnowledgeBaseService:
                     chunks.append((chunk_index, chunk_content, {"lines": len(current_chunk)}))
                     chunk_index += 1
 
-                overlap_lines = max(1, self.chunk_config.chunk_overlap // (current_size // len(current_chunk)) if current_chunk else 1)
+                overlap_lines = max(
+                    1, self.chunk_config.chunk_overlap // (current_size // len(current_chunk)) if current_chunk else 1
+                )
                 current_chunk = current_chunk[-overlap_lines:] if overlap_lines < len(current_chunk) else current_chunk
                 current_size = sum(len(l) + 1 for l in current_chunk)
 
@@ -277,10 +279,34 @@ class KnowledgeBaseService:
         exclude_patterns: list[str] | None = None,
     ) -> int:
         if file_patterns is None:
-            file_patterns = ["*.py", "*.js", "*.ts", "*.java", "*.go", "*.rs", "*.cpp", "*.h", "*.cs", "*.php", "*.rb", "*.swift", "*.kt"]
+            file_patterns = [
+                "*.py",
+                "*.js",
+                "*.ts",
+                "*.java",
+                "*.go",
+                "*.rs",
+                "*.cpp",
+                "*.h",
+                "*.cs",
+                "*.php",
+                "*.rb",
+                "*.swift",
+                "*.kt",
+            ]
 
         if exclude_patterns is None:
-            exclude_patterns = [".git", "__pycache__", "node_modules", "dist", "build", "*.pyc", ".venv", "venv", "target"]
+            exclude_patterns = [
+                ".git",
+                "__pycache__",
+                "node_modules",
+                "dist",
+                "build",
+                "*.pyc",
+                ".venv",
+                "venv",
+                "target",
+            ]
 
         spec = pathspec.PathSpec.from_lines("gitwildmatch", exclude_patterns)
         pattern_specs = [pathspec.PathSpec.from_lines("gitwildmatch", [p]) for p in file_patterns]

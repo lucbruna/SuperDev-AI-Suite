@@ -1,6 +1,7 @@
 """
 Webhook Validator - Validate webhook payloads
 """
+
 import hashlib
 import hmac
 from dataclasses import dataclass, field

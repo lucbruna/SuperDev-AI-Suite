@@ -1,4 +1,5 @@
 """Research Engine — Intelligent research and information collection."""
+
 from datetime import datetime
 from typing import Any
 

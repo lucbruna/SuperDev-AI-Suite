@@ -1,4 +1,5 @@
 """Knowledge Engine Interfaces — Abstract interfaces for the knowledge platform."""
+
 from abc import ABC, abstractmethod
 from typing import Any
 

@@ -88,7 +88,11 @@ class DeepSeekProvider(BaseLLMProvider):
                 except ProviderError as e:
                     attempt += 1
                     if attempt > self._max_retries or not _is_retryable(e, self._retry_codes):
-                        yield {"content": f"[{self._name} error: {e.message}]", "finish_reason": "error", "error": e.message}
+                        yield {
+                            "content": f"[{self._name} error: {e.message}]",
+                            "finish_reason": "error",
+                            "error": e.message,
+                        }
                         break
                     retry_after = e.retry_after or _exponential_backoff(attempt - 1)
                     await asyncio.sleep(retry_after)
@@ -96,9 +100,14 @@ class DeepSeekProvider(BaseLLMProvider):
                     pe = ProviderError.from_exception(e, self._name)
                     attempt += 1
                     if attempt > self._max_retries or not _is_retryable(pe, self._retry_codes):
-                        yield {"content": f"[{self._name} error: {pe.message}]", "finish_reason": "error", "error": pe.message}
+                        yield {
+                            "content": f"[{self._name} error: {pe.message}]",
+                            "finish_reason": "error",
+                            "error": pe.message,
+                        }
                         break
                     await asyncio.sleep(_exponential_backoff(attempt - 1))
+
         return _stream()
 
     async def validate(self, params: dict[str, Any]) -> bool:
@@ -135,8 +144,7 @@ class DeepSeekProvider(BaseLLMProvider):
         }
         if tool_calls:
             result["tool_calls"] = [
-                {"id": tc.get("id", ""), "type": "function", "function": tc.get("function", {})}
-                for tc in tool_calls
+                {"id": tc.get("id", ""), "type": "function", "function": tc.get("function", {})} for tc in tool_calls
             ]
         if reasoning:
             result["reasoning"] = reasoning
@@ -205,14 +213,25 @@ class DeepSeekProvider(BaseLLMProvider):
 
     async def health(self) -> dict[str, Any]:
         import time as time_module
+
         start = time_module.monotonic()
         try:
             client = self._get_client()
             resp = await client.get("/models")
             elapsed = (time_module.monotonic() - start) * 1000
             if resp.status_code == 200:
-                return {"status": "healthy", "latency_ms": round(elapsed, 1), "provider": "deepseek", "model": self._model}
-            return {"status": "degraded", "latency_ms": round(elapsed, 1), "error": f"Status {resp.status_code}", "provider": "deepseek"}
+                return {
+                    "status": "healthy",
+                    "latency_ms": round(elapsed, 1),
+                    "provider": "deepseek",
+                    "model": self._model,
+                }
+            return {
+                "status": "degraded",
+                "latency_ms": round(elapsed, 1),
+                "error": f"Status {resp.status_code}",
+                "provider": "deepseek",
+            }
         except Exception as e:
             elapsed = (time_module.monotonic() - start) * 1000
             return {"status": "unhealthy", "latency_ms": round(elapsed, 1), "error": str(e), "provider": "deepseek"}
@@ -221,9 +240,30 @@ class DeepSeekProvider(BaseLLMProvider):
 
     async def list_models(self) -> list[dict[str, Any]]:
         models = [
-            {"id": "deepseek-chat", "name": "DeepSeek V3", "provider": "deepseek", "capabilities": ["chat", "tools"], "context_window": 65536, "max_tokens": 8192},
-            {"id": "deepseek-coder", "name": "DeepSeek Coder", "provider": "deepseek", "capabilities": ["chat", "tools", "fim"], "context_window": 16384, "max_tokens": 4096},
-            {"id": "deepseek-reasoner", "name": "DeepSeek R1", "provider": "deepseek", "capabilities": ["chat", "reasoning"], "context_window": 65536, "max_tokens": 8192},
+            {
+                "id": "deepseek-chat",
+                "name": "DeepSeek V3",
+                "provider": "deepseek",
+                "capabilities": ["chat", "tools"],
+                "context_window": 65536,
+                "max_tokens": 8192,
+            },
+            {
+                "id": "deepseek-coder",
+                "name": "DeepSeek Coder",
+                "provider": "deepseek",
+                "capabilities": ["chat", "tools", "fim"],
+                "context_window": 16384,
+                "max_tokens": 4096,
+            },
+            {
+                "id": "deepseek-reasoner",
+                "name": "DeepSeek R1",
+                "provider": "deepseek",
+                "capabilities": ["chat", "reasoning"],
+                "context_window": 65536,
+                "max_tokens": 8192,
+            },
         ]
         return models
 

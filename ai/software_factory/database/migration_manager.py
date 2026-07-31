@@ -1,4 +1,5 @@
 """Manager for database migrations."""
+
 from datetime import datetime
 from typing import Any
 
@@ -24,7 +25,7 @@ class MigrationManager:
         migration = Migration(
             name=name,
             steps=migration_steps,
-            version=f"{len(self._migrations)+1}.0.0",
+            version=f"{len(self._migrations) + 1}.0.0",
         )
         self._migrations.append(migration)
         return migration
@@ -34,12 +35,14 @@ class MigrationManager:
         migration.executed_at = datetime.utcnow()
         try:
             for step in migration.steps:
-                self._executed.append({
-                    "migration_id": migration.migration_id,
-                    "step_id": step.step_id,
-                    "operation": step.operation,
-                    "timestamp": datetime.utcnow().isoformat(),
-                })
+                self._executed.append(
+                    {
+                        "migration_id": migration.migration_id,
+                        "step_id": step.step_id,
+                        "operation": step.operation,
+                        "timestamp": datetime.utcnow().isoformat(),
+                    }
+                )
             migration.status = MigrationStatus.COMPLETED
             return True
         except Exception:

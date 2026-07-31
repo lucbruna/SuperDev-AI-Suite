@@ -1,4 +1,5 @@
 """Adaptation engine for dynamic behavior adjustment."""
+
 from __future__ import annotations
 
 import time

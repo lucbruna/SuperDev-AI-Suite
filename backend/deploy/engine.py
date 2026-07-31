@@ -57,7 +57,9 @@ class DeployEngine:
             steps.append({"name": "canary", "description": "Canary deploy (10% traffic)", "estimated_seconds": 120})
             steps.append({"name": "health_check", "description": "Health check verification", "estimated_seconds": 30})
         if strategy == "blue-green":
-            steps.append({"name": "blue_green_switch", "description": "Switch traffic to new version", "estimated_seconds": 10})
+            steps.append(
+                {"name": "blue_green_switch", "description": "Switch traffic to new version", "estimated_seconds": 10}
+            )
         steps.append({"name": "smoke_test", "description": "Smoke tests on live environment", "estimated_seconds": 30})
         if env == "production":
             steps.append({"name": "monitor", "description": "Monitoring window (5min)", "estimated_seconds": 300})

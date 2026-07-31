@@ -1,4 +1,5 @@
 """Templates - Notification templates."""
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
@@ -19,8 +20,21 @@ class TemplateManager:
     def __init__(self):
         self.templates: dict[str, NotificationTemplate] = {}
 
-    def create(self, template_id: str, name: str, title_template: str = "", message_template: str = "", variables: list[str] = None) -> NotificationTemplate:
-        template = NotificationTemplate(template_id=template_id, name=name, title_template=title_template, message_template=message_template, variables=variables or [])
+    def create(
+        self,
+        template_id: str,
+        name: str,
+        title_template: str = "",
+        message_template: str = "",
+        variables: list[str] = None,
+    ) -> NotificationTemplate:
+        template = NotificationTemplate(
+            template_id=template_id,
+            name=name,
+            title_template=title_template,
+            message_template=message_template,
+            variables=variables or [],
+        )
         self.templates[template_id] = template
         return template
 

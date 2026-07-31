@@ -1,4 +1,5 @@
 """Data models for code quality."""
+
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -27,6 +28,7 @@ class IssueCategory(Enum):
 @dataclass
 class QualityIssue:
     """A code quality issue."""
+
     issue_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     file_path: str = ""
     line_number: int = 0
@@ -41,6 +43,7 @@ class QualityIssue:
 @dataclass
 class QualityRule:
     """A quality rule definition."""
+
     rule_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     name: str = ""
     description: str = ""
@@ -60,6 +63,7 @@ class QualityRule:
 @dataclass
 class QualityMetric:
     """A quality metric measurement."""
+
     metric_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     name: str = ""
     value: float = 0.0
@@ -74,6 +78,7 @@ class QualityMetric:
 @dataclass
 class QualityReport:
     """A comprehensive quality analysis report."""
+
     report_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     file_path: str = ""
     issues: list[QualityIssue] = field(default_factory=list)

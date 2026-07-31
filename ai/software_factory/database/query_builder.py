@@ -1,4 +1,5 @@
 """Query builder for constructing SQL queries."""
+
 from typing import Any
 
 

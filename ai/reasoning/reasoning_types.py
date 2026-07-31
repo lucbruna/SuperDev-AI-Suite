@@ -3,8 +3,14 @@ from __future__ import annotations
 from typing import Literal, TypedDict
 
 ReasoningPhase: type = Literal[
-    "idle", "analyzing", "generating", "evaluating",
-    "deciding", "validating", "completed", "failed",
+    "idle",
+    "analyzing",
+    "generating",
+    "evaluating",
+    "deciding",
+    "validating",
+    "completed",
+    "failed",
 ]
 ConfidenceLevel: type = Literal["low", "medium", "high", "certain"]
 

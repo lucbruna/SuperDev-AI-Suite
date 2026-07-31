@@ -1,4 +1,5 @@
 """Cybersecurity Engine Models — Core data models for the cybersecurity platform."""
+
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime

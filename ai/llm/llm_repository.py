@@ -32,12 +32,14 @@ class LLMRepository:
             info = self._registry.get_info(name)
             config = self._configs.get(name, {})
             metadata = self._metadata.get(name, {})
-            result.append({
-                "name": name,
-                "info": asdict(info) if info else {},
-                "config": config,
-                "metadata": metadata,
-            })
+            result.append(
+                {
+                    "name": name,
+                    "info": asdict(info) if info else {},
+                    "config": config,
+                    "metadata": metadata,
+                }
+            )
         return result
 
     def to_dict(self) -> dict[str, Any]:

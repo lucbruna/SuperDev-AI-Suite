@@ -1,4 +1,5 @@
 """Cybersecurity Engine Events — Event definitions for security operations."""
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum

@@ -5,9 +5,7 @@ _workspaces: dict[str, dict] = {}
 
 
 class WorkspaceManager:
-    async def create_workspace(
-        self, name: str, project_id: str, template: str | None = None
-    ) -> str:
+    async def create_workspace(self, name: str, project_id: str, template: str | None = None) -> str:
         workspace_id = str(uuid.uuid4())
         _workspaces[workspace_id] = {
             "id": workspace_id,
@@ -23,9 +21,7 @@ class WorkspaceManager:
         return _workspaces.get(workspace_id)
 
     async def list_workspaces(self, project_id: str) -> list[dict]:
-        return [
-            w for w in _workspaces.values() if w["project_id"] == project_id
-        ]
+        return [w for w in _workspaces.values() if w["project_id"] == project_id]
 
     async def delete_workspace(self, workspace_id: str) -> bool:
         return _workspaces.pop(workspace_id, None) is not None

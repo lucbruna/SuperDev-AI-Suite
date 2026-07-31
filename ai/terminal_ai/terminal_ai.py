@@ -24,15 +24,36 @@ def _parse_known_patterns(prompt: str) -> dict[str, Any] | None:
     prompt_lower = prompt.lower()
 
     patterns = {
-        r"install\s+(\S+)": lambda m: {"command": f"pip install {m.group(1)}", "explanation": f"Installing {m.group(1)} package"},
-        r"create\s+(?:a\s+)?agent\s+(\S+)": lambda m: {"command": f"superdev agent create --name {m.group(1)}", "explanation": f"Creating agent '{m.group(1)}'"},
-        r"deploy\s+to\s+(\S+)": lambda m: {"command": f"superdev deploy --env {m.group(1)}", "explanation": f"Deploying to {m.group(1)} environment"},
+        r"install\s+(\S+)": lambda m: {
+            "command": f"pip install {m.group(1)}",
+            "explanation": f"Installing {m.group(1)} package",
+        },
+        r"create\s+(?:a\s+)?agent\s+(\S+)": lambda m: {
+            "command": f"superdev agent create --name {m.group(1)}",
+            "explanation": f"Creating agent '{m.group(1)}'",
+        },
+        r"deploy\s+to\s+(\S+)": lambda m: {
+            "command": f"superdev deploy --env {m.group(1)}",
+            "explanation": f"Deploying to {m.group(1)} environment",
+        },
         r"run\s+tests": lambda m: {"command": "superdev test run", "explanation": "Running all tests"},
         r"generate\s+docs": lambda m: {"command": "superdev docs generate", "explanation": "Generating documentation"},
-        r"backup\s+(\S+)": lambda m: {"command": f"superdev backup create --name {m.group(1)}", "explanation": f"Creating backup '{m.group(1)}'"},
-        r"cost\s+report": lambda m: {"command": "superdev cost report --period week", "explanation": "Generating weekly cost report"},
-        r"audit\s+(\S+)": lambda m: {"command": f"superdev audit trail --days {m.group(1)}", "explanation": f"Audit trail for {m.group(1)} days"},
-        r"git\s+commit": lambda m: {"command": "git add . && git commit -m \"update\"", "explanation": "Staging and committing all changes"},
+        r"backup\s+(\S+)": lambda m: {
+            "command": f"superdev backup create --name {m.group(1)}",
+            "explanation": f"Creating backup '{m.group(1)}'",
+        },
+        r"cost\s+report": lambda m: {
+            "command": "superdev cost report --period week",
+            "explanation": "Generating weekly cost report",
+        },
+        r"audit\s+(\S+)": lambda m: {
+            "command": f"superdev audit trail --days {m.group(1)}",
+            "explanation": f"Audit trail for {m.group(1)} days",
+        },
+        r"git\s+commit": lambda m: {
+            "command": 'git add . && git commit -m "update"',
+            "explanation": "Staging and committing all changes",
+        },
         r"list\s+agents": lambda m: {"command": "superdev agent list", "explanation": "Listing all agents"},
     }
 
@@ -42,7 +63,10 @@ def _parse_known_patterns(prompt: str) -> dict[str, Any] | None:
             return handler(match)
 
     if "error" in prompt_lower or "failed" in prompt_lower:
-        return {"explanation": "I detected an error context. Try running the command again with --verbose to get more details.", "command": None}
+        return {
+            "explanation": "I detected an error context. Try running the command again with --verbose to get more details.",
+            "command": None,
+        }
 
     return None
 

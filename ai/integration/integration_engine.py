@@ -1,6 +1,7 @@
 """
 Integration Engine - Core orchestration
 """
+
 import hashlib
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -64,14 +65,19 @@ class IntegrationEngine:
         self.middleware: list[Callable] = []
         self.event_handlers: dict[str, list[Callable]] = {}
         self._hooks: dict[str, list[Callable]] = {
-            "before_connect": [], "after_connect": [],
-            "before_sync": [], "after_sync": [],
-            "on_error": [], "on_success": [],
+            "before_connect": [],
+            "after_connect": [],
+            "before_sync": [],
+            "after_sync": [],
+            "on_error": [],
+            "on_success": [],
         }
 
     def register_integration(self, name: str, integration_type: IntegrationType, **kwargs) -> IntegrationDefinition:
         integration_id = hashlib.sha256(f"{name}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
-        definition = IntegrationDefinition(integration_id=integration_id, name=name, integration_type=integration_type, **kwargs)
+        definition = IntegrationDefinition(
+            integration_id=integration_id, name=name, integration_type=integration_type, **kwargs
+        )
         self.integrations[integration_id] = definition
         return definition
 
@@ -114,7 +120,9 @@ class IntegrationEngine:
             result_data = handler(data) if handler else data
             duration = (datetime.now() - start).total_seconds() * 1000
             integration.last_sync = datetime.now()
-            return IntegrationResult(success=True, integration_id=integration_id, data=result_data, duration_ms=duration)
+            return IntegrationResult(
+                success=True, integration_id=integration_id, data=result_data, duration_ms=duration
+            )
         except Exception as e:
             integration.error_count += 1
             return IntegrationResult(success=False, integration_id=integration_id, error=str(e))

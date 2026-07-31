@@ -1,4 +1,5 @@
 """Inventory engine."""
+
 import uuid
 from datetime import datetime
 

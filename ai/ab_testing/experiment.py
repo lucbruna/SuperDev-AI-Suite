@@ -36,15 +36,17 @@ class Experiment:
         duration_b: float,
         winner: str | None = None,
     ) -> None:
-        self.results.append({
-            "prompt": prompt,
-            "model_a_response": response_a,
-            "model_b_response": response_b,
-            "duration_a_ms": duration_a,
-            "duration_b_ms": duration_b,
-            "winner": winner or "tie",
-            "timestamp": datetime.utcnow().isoformat(),
-        })
+        self.results.append(
+            {
+                "prompt": prompt,
+                "model_a_response": response_a,
+                "model_b_response": response_b,
+                "duration_a_ms": duration_a,
+                "duration_b_ms": duration_b,
+                "winner": winner or "tie",
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+        )
 
     def get_report(self) -> dict[str, Any]:
         total = len(self.results)
@@ -97,6 +99,7 @@ def route_by_experiment(experiment_id: str) -> SmartRouter | None:
     if not exp or exp.status != "running":
         return None
     import random
+
     router = SmartRouter()
     router.set_fixed_model(exp.model_a if random.random() < exp.traffic_split else exp.model_b)
     return router

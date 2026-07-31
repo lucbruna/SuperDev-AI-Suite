@@ -55,6 +55,7 @@ class GoogleProvider(BaseLLMProvider):
         if self._model_instance is None:
             try:
                 import google.generativeai as genai
+
                 genai.configure(api_key=self._api_key)
                 self._genai = genai
                 self._model_instance = genai.GenerativeModel(
@@ -63,7 +64,11 @@ class GoogleProvider(BaseLLMProvider):
                     safety_settings=self.SAFETY_SETTINGS,
                 )
             except ImportError:
-                raise ProviderError(ProviderErrorCode.API_ERROR, "google-generativeai library required. pip install google-generativeai", provider="google")
+                raise ProviderError(
+                    ProviderErrorCode.API_ERROR,
+                    "google-generativeai library required. pip install google-generativeai",
+                    provider="google",
+                )
             except Exception as e:
                 raise self._classify_error(e)
         return self._model_instance
@@ -104,7 +109,11 @@ class GoogleProvider(BaseLLMProvider):
                 except ProviderError as e:
                     attempt += 1
                     if attempt > self._max_retries or not _is_retryable(e, self._retry_codes):
-                        yield {"content": f"[{self._name} error: {e.message}]", "finish_reason": "error", "error": e.message}
+                        yield {
+                            "content": f"[{self._name} error: {e.message}]",
+                            "finish_reason": "error",
+                            "error": e.message,
+                        }
                         break
                     retry_after = e.retry_after or _exponential_backoff(attempt - 1)
                     await asyncio.sleep(retry_after)
@@ -112,9 +121,14 @@ class GoogleProvider(BaseLLMProvider):
                     pe = ProviderError.from_exception(e, self._name)
                     attempt += 1
                     if attempt > self._max_retries or not _is_retryable(pe, self._retry_codes):
-                        yield {"content": f"[{self._name} error: {pe.message}]", "finish_reason": "error", "error": pe.message}
+                        yield {
+                            "content": f"[{self._name} error: {pe.message}]",
+                            "finish_reason": "error",
+                            "error": pe.message,
+                        }
                         break
                     await asyncio.sleep(_exponential_backoff(attempt - 1))
+
         return _stream()
 
     async def validate(self, params: dict[str, Any]) -> bool:
@@ -132,6 +146,7 @@ class GoogleProvider(BaseLLMProvider):
         try:
             # Google's SDK is primarily synchronous; run in executor for async
             import functools
+
             fn = functools.partial(
                 model.generate_content,
                 contents=contents,
@@ -158,14 +173,19 @@ class GoogleProvider(BaseLLMProvider):
                 if hasattr(part, "function_call") and part.function_call:
                     fc = part.function_call
                     import json
-                    tool_calls.append({
-                        "id": fc.name,
-                        "type": "function",
-                        "function": {
-                            "name": fc.name,
-                            "arguments": json.dumps(dict(fc.args.items()) if hasattr(fc.args, "items") else fc.args),
-                        },
-                    })
+
+                    tool_calls.append(
+                        {
+                            "id": fc.name,
+                            "type": "function",
+                            "function": {
+                                "name": fc.name,
+                                "arguments": json.dumps(
+                                    dict(fc.args.items()) if hasattr(fc.args, "items") else fc.args
+                                ),
+                            },
+                        }
+                    )
 
         # Track usage
         pt = count_tokens(prompt)
@@ -194,6 +214,7 @@ class GoogleProvider(BaseLLMProvider):
 
         try:
             import functools
+
             fn = functools.partial(
                 model.generate_content,
                 contents=contents,
@@ -244,11 +265,13 @@ class GoogleProvider(BaseLLMProvider):
 
     async def health(self) -> dict[str, Any]:
         import time as time_module
+
         start = time_module.monotonic()
         try:
             self._get_model()
             # Simple test - list models via SDK
             import functools
+
             fn = functools.partial(self._genai.list_models)
             loop = asyncio.get_running_loop()
             await loop.run_in_executor(None, fn)
@@ -262,12 +285,54 @@ class GoogleProvider(BaseLLMProvider):
 
     async def list_models(self) -> list[dict[str, Any]]:
         return [
-            {"id": "gemini-2.0-flash", "name": "Gemini 2.0 Flash", "provider": "google", "capabilities": ["chat", "vision", "tools", "json"], "context_window": 1000000, "max_tokens": 8192},
-            {"id": "gemini-2.0-flash-lite", "name": "Gemini 2.0 Flash Lite", "provider": "google", "capabilities": ["chat", "vision", "tools"], "context_window": 1000000, "max_tokens": 8192},
-            {"id": "gemini-1.5-pro", "name": "Gemini 1.5 Pro", "provider": "google", "capabilities": ["chat", "vision", "tools", "json"], "context_window": 2000000, "max_tokens": 8192},
-            {"id": "gemini-1.5-flash", "name": "Gemini 1.5 Flash", "provider": "google", "capabilities": ["chat", "vision", "tools"], "context_window": 1000000, "max_tokens": 8192},
-            {"id": "gemini-pro", "name": "Gemini Pro", "provider": "google", "capabilities": ["chat", "tools"], "context_window": 32768, "max_tokens": 4096},
-            {"id": "gemini-pro-vision", "name": "Gemini Pro Vision", "provider": "google", "capabilities": ["chat", "vision"], "context_window": 32768, "max_tokens": 4096},
+            {
+                "id": "gemini-2.0-flash",
+                "name": "Gemini 2.0 Flash",
+                "provider": "google",
+                "capabilities": ["chat", "vision", "tools", "json"],
+                "context_window": 1000000,
+                "max_tokens": 8192,
+            },
+            {
+                "id": "gemini-2.0-flash-lite",
+                "name": "Gemini 2.0 Flash Lite",
+                "provider": "google",
+                "capabilities": ["chat", "vision", "tools"],
+                "context_window": 1000000,
+                "max_tokens": 8192,
+            },
+            {
+                "id": "gemini-1.5-pro",
+                "name": "Gemini 1.5 Pro",
+                "provider": "google",
+                "capabilities": ["chat", "vision", "tools", "json"],
+                "context_window": 2000000,
+                "max_tokens": 8192,
+            },
+            {
+                "id": "gemini-1.5-flash",
+                "name": "Gemini 1.5 Flash",
+                "provider": "google",
+                "capabilities": ["chat", "vision", "tools"],
+                "context_window": 1000000,
+                "max_tokens": 8192,
+            },
+            {
+                "id": "gemini-pro",
+                "name": "Gemini Pro",
+                "provider": "google",
+                "capabilities": ["chat", "tools"],
+                "context_window": 32768,
+                "max_tokens": 4096,
+            },
+            {
+                "id": "gemini-pro-vision",
+                "name": "Gemini Pro Vision",
+                "provider": "google",
+                "capabilities": ["chat", "vision"],
+                "context_window": 32768,
+                "max_tokens": 4096,
+            },
         ]
 
     # ── Vision helper ───────────────────────────────────────────────
@@ -275,9 +340,12 @@ class GoogleProvider(BaseLLMProvider):
     def build_vision_contents(self, text: str, image_data: str, mime_type: str = "image/png") -> list[Any]:
         """Build contents with image for vision requests."""
         import google.generativeai as genai
+
         return [
             text,
-            genai.upload_file_from_bytes(image_data, mime_type=mime_type) if not image_data.startswith("http") else genai.upload_file(image_data),
+            genai.upload_file_from_bytes(image_data, mime_type=mime_type)
+            if not image_data.startswith("http")
+            else genai.upload_file(image_data),
         ]
 
     # ── Helpers ─────────────────────────────────────────────────────

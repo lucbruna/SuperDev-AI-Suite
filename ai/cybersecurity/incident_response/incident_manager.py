@@ -1,6 +1,7 @@
 """
 Incident Lifecycle Management
 """
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -46,10 +47,19 @@ class IncidentManager:
     def __init__(self):
         self.incidents: dict[str, Incident] = {}
 
-    def create_incident(self, title: str, severity: Severity = Severity.P3, description: str = "", reporter: str = "") -> Incident:
+    def create_incident(
+        self, title: str, severity: Severity = Severity.P3, description: str = "", reporter: str = ""
+    ) -> Incident:
         incident_id = hashlib.sha256(f"{title}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
         sla_map = {Severity.P1: 4, Severity.P2: 24, Severity.P3: 72, Severity.P4: 168}
-        incident = Incident(incident_id=incident_id, title=title, severity=severity, description=description, reporter=reporter, sla_hours=sla_map.get(severity, 72))
+        incident = Incident(
+            incident_id=incident_id,
+            title=title,
+            severity=severity,
+            description=description,
+            reporter=reporter,
+            sla_hours=sla_map.get(severity, 72),
+        )
         self.incidents[incident_id] = incident
         return incident
 
@@ -88,7 +98,11 @@ class IncidentManager:
         if not incident:
             return {"breached": False}
         elapsed = (datetime.now() - incident.created_at).total_seconds() / 3600
-        return {"breached": elapsed > incident.sla_hours, "elapsed_hours": round(elapsed, 1), "sla_hours": incident.sla_hours}
+        return {
+            "breached": elapsed > incident.sla_hours,
+            "elapsed_hours": round(elapsed, 1),
+            "sla_hours": incident.sla_hours,
+        }
 
     def count(self) -> int:
         return len(self.incidents)

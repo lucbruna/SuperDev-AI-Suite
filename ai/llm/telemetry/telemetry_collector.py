@@ -11,11 +11,13 @@ class TelemetryCollector:
         self._events: list[dict[str, Any]] = []
 
     def record_event(self, event_type: str, data: dict[str, Any] | None = None) -> None:
-        self._events.append({
-            "event_type": event_type,
-            "data": data or {},
-            "timestamp": time.time(),
-        })
+        self._events.append(
+            {
+                "event_type": event_type,
+                "data": data or {},
+                "timestamp": time.time(),
+            }
+        )
 
     def get_events(
         self,

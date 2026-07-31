@@ -1,4 +1,5 @@
 """Generic documentation generator."""
+
 from typing import Any
 
 from .models import DocPage, DocSection, DocType
@@ -10,8 +11,7 @@ class DocGenerator:
     def __init__(self):
         self._templates: dict[str, str] = {}
 
-    def generate_page(self, title: str, sections: list[dict[str, Any]],
-                      doc_type: DocType = DocType.GUIDE) -> DocPage:
+    def generate_page(self, title: str, sections: list[dict[str, Any]], doc_type: DocType = DocType.GUIDE) -> DocPage:
         page = DocPage(title=title, doc_type=doc_type)
         for sec_data in sections:
             section = DocSection(

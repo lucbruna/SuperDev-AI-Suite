@@ -89,8 +89,21 @@ async def compare_prompt(prompt_id: str, v1: int, v2: int):
     b = next((v for v in versions if v["version"] == v2), None)
     if not a or not b:
         raise HTTPException(status_code=404, detail="Version not found")
-    diff = list(difflib.unified_diff(a["content"].splitlines(keepends=True), b["content"].splitlines(keepends=True), fromfile=f"v{v1}", tofile=f"v{v2}"))
-    return {"version_a": v1, "version_b": v2, "diff": "".join(diff), "additions": sum(1 for l in diff if l.startswith("+") and not l.startswith("+++")), "deletions": sum(1 for l in diff if l.startswith("-") and not l.startswith("---"))}
+    diff = list(
+        difflib.unified_diff(
+            a["content"].splitlines(keepends=True),
+            b["content"].splitlines(keepends=True),
+            fromfile=f"v{v1}",
+            tofile=f"v{v2}",
+        )
+    )
+    return {
+        "version_a": v1,
+        "version_b": v2,
+        "diff": "".join(diff),
+        "additions": sum(1 for l in diff if l.startswith("+") and not l.startswith("+++")),
+        "deletions": sum(1 for l in diff if l.startswith("-") and not l.startswith("---")),
+    }
 
 
 @router.post("/prompts/{prompt_id}/promote")
@@ -110,8 +123,22 @@ async def diff_prompt(prompt_id: str, v1: int, v2: int):
     b = next((v for v in versions if v["version"] == v2), None)
     if not a or not b:
         raise HTTPException(status_code=404, detail="Version not found")
-    diff = list(difflib.unified_diff(a["content"].splitlines(keepends=True), b["content"].splitlines(keepends=True), fromfile=f"v{v1}", tofile=f"v{v2}"))
-    return {"prompt_id": prompt_id, "from_version": v1, "to_version": v2, "diff": "".join(diff), "additions": sum(1 for l in diff if l.startswith("+") and not l.startswith("+++")), "deletions": sum(1 for l in diff if l.startswith("-") and not l.startswith("---"))}
+    diff = list(
+        difflib.unified_diff(
+            a["content"].splitlines(keepends=True),
+            b["content"].splitlines(keepends=True),
+            fromfile=f"v{v1}",
+            tofile=f"v{v2}",
+        )
+    )
+    return {
+        "prompt_id": prompt_id,
+        "from_version": v1,
+        "to_version": v2,
+        "diff": "".join(diff),
+        "additions": sum(1 for l in diff if l.startswith("+") and not l.startswith("+++")),
+        "deletions": sum(1 for l in diff if l.startswith("-") and not l.startswith("---")),
+    }
 
 
 @router.get("/tags")

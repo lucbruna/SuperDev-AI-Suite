@@ -1,4 +1,5 @@
 """Knowledge Engine Events — Event definitions for knowledge operations."""
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum

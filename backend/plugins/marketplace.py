@@ -341,7 +341,7 @@ class MarketplaceClient:
         elif sort_by == "name":
             results.sort(key=lambda p: p.name)
 
-        return results[offset:offset + limit]
+        return results[offset : offset + limit]
 
     async def get_details(self, plugin_id: str) -> PluginInfo:
         try:
@@ -388,12 +388,14 @@ class MarketplaceClient:
         except Exception:
             pass
 
-        simulated_content = json.dumps({
-            "plugin_id": plugin_id,
-            "version": version,
-            "simulated": True,
-            "content": "UEsDBBQAAAAIAAAAA",
-        }).encode("utf-8")
+        simulated_content = json.dumps(
+            {
+                "plugin_id": plugin_id,
+                "version": version,
+                "simulated": True,
+                "content": "UEsDBBQAAAAIAAAAA",
+            }
+        ).encode("utf-8")
 
         async with aiofiles.open(cache_file, "wb") as f:
             await f.write(simulated_content)

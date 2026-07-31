@@ -1,4 +1,5 @@
 """Sync Queue - Data synchronization queue for offline-to-online."""
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime

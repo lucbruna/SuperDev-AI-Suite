@@ -1,6 +1,7 @@
 """
 Adversarial Attack Defense
 """
+
 import hashlib
 from dataclasses import dataclass
 from enum import Enum
@@ -39,7 +40,12 @@ class DefenseResult:
 class AdversarialDefense:
     def __init__(self):
         self.detected_inputs: list[AdversarialInput] = []
-        self.defense_methods: list[str] = ["input_validation", "feature_squeezing", "randomized_smoothing", "adversarial_training"]
+        self.defense_methods: list[str] = [
+            "input_validation",
+            "feature_squeezing",
+            "randomized_smoothing",
+            "adversarial_training",
+        ]
         self.active_method: str = "input_validation"
         self.perturbation_threshold: float = 0.1
 
@@ -48,7 +54,13 @@ class AdversarialDefense:
         pert_hash = hashlib.sha256(perturbed.encode()).hexdigest()
         mag = self._calculate_magnitude(original, perturbed)
         detected = mag > self.perturbation_threshold
-        result = AdversarialInput(input_id=input_id, original_hash=orig_hash, perturbed_hash=pert_hash, perturbation_magnitude=mag, detected=detected)
+        result = AdversarialInput(
+            input_id=input_id,
+            original_hash=orig_hash,
+            perturbed_hash=pert_hash,
+            perturbation_magnitude=mag,
+            detected=detected,
+        )
         self.detected_inputs.append(result)
         return result
 
@@ -56,7 +68,9 @@ class AdversarialDefense:
         if original == perturbed:
             return 0.0
         max_len = max(len(original), len(perturbed))
-        diff_count = sum(1 for a, b in zip(original, perturbed, strict=False) if a != b) + abs(len(original) - len(perturbed))
+        diff_count = sum(1 for a, b in zip(original, perturbed, strict=False) if a != b) + abs(
+            len(original) - len(perturbed)
+        )
         return diff_count / max_len
 
     def defend(self, input_id: str, input_data: str) -> DefenseResult:

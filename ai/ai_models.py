@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 
 class AIModel(BaseModel):
     """AI model descriptor."""
+
     name: str
     provider: str
     capabilities: list[str] = []
@@ -20,6 +21,7 @@ class AIModel(BaseModel):
 
 class AgentConfig(BaseModel):
     """Configuration for an AI agent."""
+
     name: str
     role: str = "coder"
     model: str = "gpt-4o"
@@ -34,6 +36,7 @@ class AgentConfig(BaseModel):
 
 class SessionConfig(BaseModel):
     """Configuration for an AI session."""
+
     session_id: str
     provider: str = "openai"
     model: str = "gpt-4o"
@@ -45,6 +48,7 @@ class SessionConfig(BaseModel):
 
 class RoutingConfig(BaseModel):
     """Configuration for AI request routing."""
+
     preferred_provider: str | None = None
     fallback_providers: list[str] = Field(default_factory=lambda: ["openai", "anthropic", "gemini"])
     cost_optimize: bool = False
@@ -54,6 +58,7 @@ class RoutingConfig(BaseModel):
 
 class Message(BaseModel):
     """A chat message."""
+
     role: str
     content: str
     name: str | None = None
@@ -64,6 +69,7 @@ class Message(BaseModel):
 
 class Conversation(BaseModel):
     """A conversation thread."""
+
     id: str
     messages: list[Message] = Field(default_factory=list)
     session_id: str | None = None
@@ -74,6 +80,7 @@ class Conversation(BaseModel):
 
 class ModelResponse(BaseModel):
     """Response from a model invocation."""
+
     content: str
     model: str
     provider: str
@@ -86,6 +93,7 @@ class ModelResponse(BaseModel):
 
 class ProviderStatus(BaseModel):
     """Status of an AI provider."""
+
     name: str
     available: bool = False
     latency_ms: float = 0.0
@@ -96,6 +104,7 @@ class ProviderStatus(BaseModel):
 
 class EngineHealth(BaseModel):
     """Health status of the AI engine."""
+
     status: str = "healthy"
     initialized: bool = False
     providers: list[ProviderStatus] = Field(default_factory=list)

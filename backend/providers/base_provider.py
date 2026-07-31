@@ -59,13 +59,11 @@ class BaseProvider(ABC):
 
     @property
     @abstractmethod
-    def name(self) -> str:
-        ...
+    def name(self) -> str: ...
 
     @property
     @abstractmethod
-    def supported_models(self) -> list[str]:
-        ...
+    def supported_models(self) -> list[str]: ...
 
     @abstractmethod
     async def complete(
@@ -75,8 +73,7 @@ class BaseProvider(ABC):
         temperature: float = 0.7,
         max_tokens: int | None = None,
         **kwargs,
-    ) -> CompletionResponse:
-        ...
+    ) -> CompletionResponse: ...
 
     @abstractmethod
     async def stream(
@@ -86,16 +83,14 @@ class BaseProvider(ABC):
         temperature: float = 0.7,
         max_tokens: int | None = None,
         **kwargs,
-    ) -> AsyncIterator[StreamChunk]:
-        ...
+    ) -> AsyncIterator[StreamChunk]: ...
 
     @abstractmethod
     async def embed(
         self,
         texts: list[str],
         model: str | None = None,
-    ) -> EmbeddingResponse:
-        ...
+    ) -> EmbeddingResponse: ...
 
     async def health_check(self) -> bool:
         try:

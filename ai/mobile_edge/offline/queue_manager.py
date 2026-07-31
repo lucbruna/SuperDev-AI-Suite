@@ -1,4 +1,5 @@
 """Queue Manager - Offline action queue management."""
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -38,7 +39,9 @@ class OfflineQueueManager:
         self.items: dict[str, QueueItem] = {}
         self.order: list[str] = []
 
-    def enqueue(self, action: str, payload: dict[str, Any] = None, priority: QueuePriority = QueuePriority.NORMAL) -> QueueItem:
+    def enqueue(
+        self, action: str, payload: dict[str, Any] = None, priority: QueuePriority = QueuePriority.NORMAL
+    ) -> QueueItem:
         item_id = hashlib.sha256(f"{action}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
         item = QueueItem(item_id=item_id, action=action, payload=payload or {}, priority=priority)
         self.items[item_id] = item
@@ -74,7 +77,11 @@ class OfflineQueueManager:
         return False
 
     def get_pending(self) -> list[QueueItem]:
-        return [self.items[iid] for iid in self.order if self.items.get(iid) and self.items[iid].status == QueueItemStatus.PENDING]
+        return [
+            self.items[iid]
+            for iid in self.order
+            if self.items.get(iid) and self.items[iid].status == QueueItemStatus.PENDING
+        ]
 
     def count(self) -> int:
         return len(self.items)

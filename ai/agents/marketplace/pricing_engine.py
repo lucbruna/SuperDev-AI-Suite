@@ -1,4 +1,5 @@
 """Pricing engine for marketplace agents."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -16,8 +17,7 @@ class PricingEngine:
         }
         self._default_tier = "basic"
 
-    def get_price(self, agent_id: str,
-                  listings: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    def get_price(self, agent_id: str, listings: dict[str, dict[str, Any]]) -> dict[str, Any]:
         listing = listings.get(agent_id, {})
         tier = listing.get("tier", self._default_tier)
         price = self._base_prices.get(tier, self._base_prices[self._default_tier])

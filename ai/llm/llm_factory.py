@@ -27,7 +27,12 @@ class LLMFactory(ILLMFactory):
         for name, cls in class_map.items():
             self._provider_classes[name] = cls  # type: ignore[assignment]
 
-    def auto_register(self, class_map: dict[str, type[ILLMProvider]], env_map: dict[str, dict[str, str]], default_models: dict[str, str]) -> list[str]:
+    def auto_register(
+        self,
+        class_map: dict[str, type[ILLMProvider]],
+        env_map: dict[str, dict[str, str]],
+        default_models: dict[str, str],
+    ) -> list[str]:
         """Auto-register providers whose API key env vars are set.
 
         Returns the list of successfully registered provider names.
@@ -48,12 +53,13 @@ class LLMFactory(ILLMFactory):
         cls = self._provider_classes.get(provider_type)
         if cls is None:
             raise ValueError(
-                f"Unknown provider type: {provider_type}. "
-                f"Available: {', '.join(sorted(self._provider_classes))}"
+                f"Unknown provider type: {provider_type}. Available: {', '.join(sorted(self._provider_classes))}"
             )
         return cls(**kwargs)
 
-    def create_with_defaults(self, provider_type: str, env_map: dict[str, dict[str, str]], default_models: dict[str, str]) -> ILLMProvider:
+    def create_with_defaults(
+        self, provider_type: str, env_map: dict[str, dict[str, str]], default_models: dict[str, str]
+    ) -> ILLMProvider:
         """Create a provider instance reading config from environment."""
         cls = self._provider_classes.get(provider_type)
         if cls is None:

@@ -31,7 +31,7 @@ class ChainVisualizer:
             label = step.get("type", "?").replace('"', "'")
             lines.append(f'  {node_id}["{label}: {step.get("description", "")}"]')
             if i > 0:
-                prev = steps[i - 1].get("id", f"s{i-1}")
+                prev = steps[i - 1].get("id", f"s{i - 1}")
                 lines.append(f"  {prev} --> {node_id}")
         return "\n".join(lines)
 

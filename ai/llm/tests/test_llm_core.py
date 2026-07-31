@@ -92,10 +92,12 @@ class TestLLMExecutor:
     @pytest.mark.asyncio
     async def test_execute_batch(self, registry: LLMRegistry) -> None:
         executor = LLMExecutor(registry, LLMMetricsCollector(), LLMLogger())
-        results = await executor.execute_batch([
-            ("mock", "Hi", {}),
-            ("mock", "Hello", {}),
-        ])
+        results = await executor.execute_batch(
+            [
+                ("mock", "Hi", {}),
+                ("mock", "Hello", {}),
+            ]
+        )
         assert len(results) == 2
         assert all(r["success"] for r in results)
 
@@ -188,9 +190,7 @@ class TestLLMEngine:
     async def test_execute(self) -> None:
         engine = LLMEngine()
         engine._registry.register(MockProvider("Engine test"))
-        response = await engine.execute(
-            prompt="Hello", provider="mock", strategy=LLMRouter.STRATEGY_FALLBACK
-        )
+        response = await engine.execute(prompt="Hello", provider="mock", strategy=LLMRouter.STRATEGY_FALLBACK)
         assert isinstance(response.content, str)
         assert response.provider == "mock"
 
@@ -198,9 +198,7 @@ class TestLLMEngine:
     async def test_execute_without_provider(self) -> None:
         engine = LLMEngine()
         engine._registry.register(MockProvider("Auto select"))
-        response = await engine.execute(
-            prompt="Hello", strategy=LLMRouter.STRATEGY_FALLBACK
-        )
+        response = await engine.execute(prompt="Hello", strategy=LLMRouter.STRATEGY_FALLBACK)
         assert response.provider == "mock"
 
     def test_get_cache_info(self) -> None:

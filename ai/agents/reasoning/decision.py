@@ -1,4 +1,5 @@
 """Decision engine for selecting best course of action."""
+
 from __future__ import annotations
 
 import time
@@ -26,8 +27,7 @@ class DecisionEngine:
         self._history.append(decision)
         return decision
 
-    def decide_from_list(self, choices: list[dict[str, Any]],
-                         criteria: list[str] | None = None) -> dict[str, Any]:
+    def decide_from_list(self, choices: list[dict[str, Any]], criteria: list[str] | None = None) -> dict[str, Any]:
         self._decision_count += 1
         if not choices:
             return {"chosen": None, "error": "No choices provided"}

@@ -10,11 +10,13 @@ class CorrectionMetrics:
         self._records: list[dict[str, Any]] = []
 
     async def record(self, operation: str, duration: float, success: bool) -> None:
-        self._records.append({
-            "operation": operation,
-            "duration": duration,
-            "success": success,
-        })
+        self._records.append(
+            {
+                "operation": operation,
+                "duration": duration,
+                "success": success,
+            }
+        )
 
     async def average_duration(self) -> float:
         if not self._records:

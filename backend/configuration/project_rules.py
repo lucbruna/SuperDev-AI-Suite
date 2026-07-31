@@ -31,9 +31,11 @@ class ProjectRules:
         ext = os.path.splitext(path)[1]
         if ext in (".yaml", ".yml"):
             import yaml
+
             data = yaml.safe_load(content) or {}
         elif ext == ".json":
             import json
+
             data = json.loads(content)
         else:
             data = {"raw": content}
@@ -44,16 +46,25 @@ class ProjectRules:
         filepath = os.path.join(self._rules_dir, "rules.json")
         with open(filepath, "w", encoding="utf-8") as f:
             import json
+
             json.dump({"rules": rules, "updated_at": datetime.utcnow().isoformat(), "version": 2}, f, indent=2)
         return {"path": filepath, "count": len(rules)}
 
     def get_default_rules(self) -> list[dict[str, Any]]:
         return [
-            {"id": "lang-python", "pattern": "*.py", "instruction": "Use type hints, follow PEP 8, max line length 120"},
+            {
+                "id": "lang-python",
+                "pattern": "*.py",
+                "instruction": "Use type hints, follow PEP 8, max line length 120",
+            },
             {"id": "lang-ts", "pattern": "*.ts", "instruction": "Use strict TypeScript, prefer interfaces over types"},
             {"id": "lang-tsx", "pattern": "*.tsx", "instruction": "Use React functional components with hooks"},
             {"id": "testing", "pattern": "test_*", "instruction": "Write tests first (TDD), aim for >80% coverage"},
-            {"id": "security", "pattern": "*", "instruction": "Never hardcode secrets, validate all user input, use parameterized queries"},
+            {
+                "id": "security",
+                "pattern": "*",
+                "instruction": "Never hardcode secrets, validate all user input, use parameterized queries",
+            },
             {"id": "docs", "pattern": "*.py", "instruction": "Write docstrings for all public functions and classes"},
         ]
 

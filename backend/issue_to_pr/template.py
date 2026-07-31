@@ -68,6 +68,7 @@ Closes #{description.get("issue_number", "0")}
 
     def generate_branch_name(self, title: str, issue_number: int) -> str:
         import re
+
         slug = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")[:40]
         return f"auto/issue-{issue_number}-{slug}"
 

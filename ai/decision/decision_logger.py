@@ -20,12 +20,14 @@ class DecisionLogger:
         self._log("ERROR", message, **kwargs)
 
     def _log(self, level: str, message: str, **kwargs: Any) -> None:
-        self._logs.append({
-            "timestamp": datetime.now(UTC).isoformat(),
-            "level": level,
-            "message": message,
-            **kwargs,
-        })
+        self._logs.append(
+            {
+                "timestamp": datetime.now(UTC).isoformat(),
+                "level": level,
+                "message": message,
+                **kwargs,
+            }
+        )
 
     def get_logs(self, level: str | None = None) -> list[dict[str, Any]]:
         if level:

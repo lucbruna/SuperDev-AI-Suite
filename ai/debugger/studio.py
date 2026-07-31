@@ -41,6 +41,7 @@ class AgentStudioBackend:
 
     async def create_session(self, agent_id: str) -> str:
         import uuid
+
         session_id = str(uuid.uuid4())
         self._active_sessions[session_id] = {
             "agent_id": agent_id,
@@ -83,11 +84,14 @@ class AgentStudioBackend:
 
     async def record_event(self, session_id: str, event: DebuggerEvent) -> None:
         import time
+
         event.timestamp = time.time()
         if session_id in self._event_history:
             self._event_history[session_id].append(event)
             self._active_sessions[session_id]["current_node"] = event.node_id
-            self._active_sessions[session_id]["status"] = "paused" if event.type == DebuggerEventType.BREAKPOINT_HIT else "running"
+            self._active_sessions[session_id]["status"] = (
+                "paused" if event.type == DebuggerEventType.BREAKPOINT_HIT else "running"
+            )
 
     async def get_session_state(self, session_id: str) -> dict[str, Any] | None:
         return self._active_sessions.get(session_id)
@@ -140,15 +144,17 @@ class AgentStudioBackend:
     async def list_sessions(self) -> list[dict[str, Any]]:
         result = []
         for sid, session in self._active_sessions.items():
-            result.append({
-                "session_id": sid,
-                "agent_id": session["agent_id"],
-                "status": session["status"],
-                "current_node": session["current_node"],
-                "created_at": session["created_at"],
-                "breakpoints": self._breakpoints.get(sid, []),
-                "events_count": len(self._event_history.get(sid, [])),
-            })
+            result.append(
+                {
+                    "session_id": sid,
+                    "agent_id": session["agent_id"],
+                    "status": session["status"],
+                    "current_node": session["current_node"],
+                    "created_at": session["created_at"],
+                    "breakpoints": self._breakpoints.get(sid, []),
+                    "events_count": len(self._event_history.get(sid, [])),
+                }
+            )
         return result
 
     async def get_graph_state(self, session_id: str) -> dict[str, Any]:

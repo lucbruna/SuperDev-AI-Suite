@@ -1,4 +1,5 @@
 """Dashboard interfaces."""
+
 from abc import ABC, abstractmethod
 
 from .models import Dashboard, Widget, WidgetData

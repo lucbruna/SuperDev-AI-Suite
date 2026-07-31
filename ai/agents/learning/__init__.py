@@ -1,4 +1,5 @@
 """Learning subsystem for adaptive improvement and knowledge transfer."""
+
 from __future__ import annotations
 
 from .adaptation import AdaptationEngine

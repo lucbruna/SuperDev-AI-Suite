@@ -55,10 +55,7 @@ class EmbeddingService:
             scored.append((sim, i, text))
 
         scored.sort(key=lambda x: x[0], reverse=True)
-        return [
-            {"score": round(s, 4), "index": i, "text": t}
-            for s, i, t in scored[:top_k]
-        ]
+        return [{"score": round(s, 4), "index": i, "text": t} for s, i, t in scored[:top_k]]
 
     def to_dict(self) -> dict[str, Any]:
         return {

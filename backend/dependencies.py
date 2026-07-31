@@ -81,6 +81,7 @@ async def get_current_admin_user(
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
     from backend.users.service import UserService
+
     service = UserService(db)
     user = await service.get_user(current_user["id"])
     if not user or not getattr(user, "is_superuser", False):

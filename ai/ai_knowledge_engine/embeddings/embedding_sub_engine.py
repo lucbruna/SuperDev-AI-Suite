@@ -1,4 +1,5 @@
 """Embedding subsystem engine — Text embedding and similarity computation."""
+
 import hashlib
 import math
 import uuid
@@ -63,11 +64,11 @@ class EmbeddingSubEngine:
         h = hashlib.sha256(text.encode()).hexdigest()
         vector = []
         for i in range(0, min(len(h), self._dimensions * 2), 2):
-            val = int(h[i:i+2], 16) / 255.0
+            val = int(h[i : i + 2], 16) / 255.0
             vector.append(val)
         while len(vector) < self._dimensions:
             vector.append(0.0)
-        return vector[:self._dimensions]
+        return vector[: self._dimensions]
 
     def _cosine_similarity(self, a: list[float], b: list[float]) -> float:
         if len(a) != len(b) or not a:

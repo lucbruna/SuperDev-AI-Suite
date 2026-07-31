@@ -1,4 +1,5 @@
 """Local Database - Offline local data storage."""
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any

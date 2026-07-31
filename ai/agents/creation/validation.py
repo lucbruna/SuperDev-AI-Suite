@@ -1,18 +1,41 @@
 """Validation utilities for agent creation."""
+
 from __future__ import annotations
 
 from typing import Any
 
 VALID_AGENT_TYPES = {
-    "supervisor", "planner", "coder", "security", "qa",
-    "devops", "architect", "database", "frontend", "backend",
-    "mobile", "monitoring", "documentation", "deployment",
-    "testing", "research", "review", "custom",
+    "supervisor",
+    "planner",
+    "coder",
+    "security",
+    "qa",
+    "devops",
+    "architect",
+    "database",
+    "frontend",
+    "backend",
+    "mobile",
+    "monitoring",
+    "documentation",
+    "deployment",
+    "testing",
+    "research",
+    "review",
+    "custom",
 }
 
 VALID_CAPABILITIES = {
-    "chat", "stream", "embeddings", "vision", "tools",
-    "code_execution", "planning", "reasoning", "memory", "learning",
+    "chat",
+    "stream",
+    "embeddings",
+    "vision",
+    "tools",
+    "code_execution",
+    "planning",
+    "reasoning",
+    "memory",
+    "learning",
 }
 
 VALID_TIERS = {0, 1, 2, 3, 4}

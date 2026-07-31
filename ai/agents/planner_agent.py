@@ -17,10 +17,7 @@ class PlannerAgent(BaseAgent):
             self._status = "running"
             steps = await self._planner.plan(task, context)
 
-            plan_output = "\n".join(
-                f"[{s.id[:8]}] {s.description} (agent: {s.assigned_agent})"
-                for s in steps
-            )
+            plan_output = "\n".join(f"[{s.id[:8]}] {s.description} (agent: {s.assigned_agent})" for s in steps)
 
             return AgentResult(
                 success=True,

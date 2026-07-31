@@ -1,4 +1,5 @@
 """Inference - Local inference engine."""
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -33,7 +34,9 @@ class InferenceEngine:
 
     def submit(self, model_id: str, input_data: Any, parameters: dict[str, Any] = None) -> InferenceRequest:
         request_id = hashlib.sha256(f"{model_id}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
-        request = InferenceRequest(request_id=request_id, model_id=model_id, input_data=input_data, parameters=parameters or {})
+        request = InferenceRequest(
+            request_id=request_id, model_id=model_id, input_data=input_data, parameters=parameters or {}
+        )
         self.requests.append(request)
         return request
 
@@ -42,11 +45,21 @@ class InferenceEngine:
         if handler:
             try:
                 output = handler(request.input_data)
-                response = InferenceResponse(request_id=request.request_id, model_id=request.model_id, output_data=output, confidence=0.95, latency_ms=5.0)
+                response = InferenceResponse(
+                    request_id=request.request_id,
+                    model_id=request.model_id,
+                    output_data=output,
+                    confidence=0.95,
+                    latency_ms=5.0,
+                )
             except Exception as e:
-                response = InferenceResponse(request_id=request.request_id, model_id=request.model_id, success=False, error=str(e))
+                response = InferenceResponse(
+                    request_id=request.request_id, model_id=request.model_id, success=False, error=str(e)
+                )
         else:
-            response = InferenceResponse(request_id=request.request_id, model_id=request.model_id, output_data=request.input_data, confidence=0.0)
+            response = InferenceResponse(
+                request_id=request.request_id, model_id=request.model_id, output_data=request.input_data, confidence=0.0
+            )
         self.responses.append(response)
         return response
 

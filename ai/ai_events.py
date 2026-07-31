@@ -29,9 +29,7 @@ class AIEvents:
     def off(self, event_type: str | EventType, listener: EventListener) -> None:
         """Remove a listener for an event type."""
         if event_type in self._listeners:
-            self._listeners[event_type] = [
-                l for l in self._listeners[event_type] if l is not listener
-            ]
+            self._listeners[event_type] = [l for l in self._listeners[event_type] if l is not listener]
 
     def once(self, event_type: str | EventType, listener: EventListener) -> None:
         """Register a one-time listener."""
@@ -62,7 +60,7 @@ class AIEvents:
         # Record history
         self._history.append(event_data)
         if len(self._history) > self._max_history:
-            self._history = self._history[-self._max_history:]
+            self._history = self._history[-self._max_history :]
 
     async def emit_async(self, event_type: str | EventType, data: dict[str, Any] | None = None) -> None:
         """Emit an event asynchronously."""
@@ -91,7 +89,7 @@ class AIEvents:
         # Record history
         self._history.append(event_data)
         if len(self._history) > self._max_history:
-            self._history = self._history[-self._max_history:]
+            self._history = self._history[-self._max_history :]
 
     async def _safe_call_async(self, listener: EventListener, event_data: dict[str, Any]) -> None:
         """Safely call an async listener."""

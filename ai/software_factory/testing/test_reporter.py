@@ -1,4 +1,5 @@
 """Reporter for test results and coverage."""
+
 from collections import Counter
 from typing import Any
 
@@ -31,8 +32,7 @@ class TestReporter:
             "total_assertions": total_assertions,
             "status_distribution": dict(status_counts),
             "failed_tests": [
-                {"name": r.test_name, "message": r.message}
-                for r in results if r.status == TestStatus.FAILED
+                {"name": r.test_name, "message": r.message} for r in results if r.status == TestStatus.FAILED
             ],
         }
         self._reports.append(report)
@@ -59,8 +59,8 @@ class TestReporter:
             f"Pass Rate: {report['pass_rate']:.1%}",
             f"Duration: {report['total_duration']:.3f}s",
         ]
-        if report['failed_tests']:
+        if report["failed_tests"]:
             lines.append("\nFailed Tests:")
-            for ft in report['failed_tests']:
+            for ft in report["failed_tests"]:
                 lines.append(f"  - {ft['name']}: {ft['message']}")
         return "\n".join(lines)

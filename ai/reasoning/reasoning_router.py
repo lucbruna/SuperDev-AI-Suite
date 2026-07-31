@@ -12,7 +12,9 @@ class ReasoningRouter:
     def __init__(self):
         self._routes: list[tuple[Callable[[ReasoningContext], bool], Callable[[ReasoningContext], Any]]] = []
 
-    def add_route(self, matcher: Callable[[ReasoningContext], bool], handler: Callable[[ReasoningContext], Any]) -> None:
+    def add_route(
+        self, matcher: Callable[[ReasoningContext], bool], handler: Callable[[ReasoningContext], Any]
+    ) -> None:
         self._routes.append((matcher, handler))
 
     async def route(self, context: ReasoningContext) -> Any:

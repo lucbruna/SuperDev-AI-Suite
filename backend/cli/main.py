@@ -16,8 +16,14 @@ def cmd_init(args):
 
     # Create standard directories
     dirs = [
-        "backend", "frontend", "ai", "plugins",
-        "tests", "docs", "infrastructure", "scripts",
+        "backend",
+        "frontend",
+        "ai",
+        "plugins",
+        "tests",
+        "docs",
+        "infrastructure",
+        "scripts",
     ]
     for d in dirs:
         (project_dir / d).mkdir(exist_ok=True)
@@ -138,6 +144,7 @@ def cmd_status(args):
     # Check database connectivity
     try:
         from backend.config import config
+
         print(f"  📦 Database: {config.database.url.split('@')[-1] if '@' in config.database.url else 'configured'}")
         print(f"  🔴 Redis: {config.redis.host}:{config.redis.port}")
     except Exception:
@@ -183,10 +190,11 @@ def cmd_i18n(args):
     print("🌍 Internationalization")
     try:
         from backend.i18n.translations import i18n
+
         stats = i18n.get_stats()
         print(f"  Current locale: {stats['current_locale']}")
         print(f"  Supported: {', '.join(stats['supported_locales'])}")
-        for locale, count in stats['translation_counts'].items():
+        for locale, count in stats["translation_counts"].items():
             print(f"  {locale}: {count} translations")
     except Exception as e:
         print(f"  Error loading i18n: {e}")
@@ -197,10 +205,11 @@ def cmd_search(args):
     print("🔍 Full-Text Search")
     try:
         from backend.search.full_text_search import full_text_search
+
         stats = full_text_search.get_stats()
         print(f"  Documents indexed: {stats['total_documents']}")
         print(f"  Terms in index: {stats['total_terms']}")
-        for dtype, count in stats['by_type'].items():
+        for dtype, count in stats["by_type"].items():
             if count > 0:
                 print(f"  {dtype}: {count}")
     except Exception as e:

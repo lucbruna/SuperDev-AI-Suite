@@ -1,15 +1,20 @@
 """Invoices subsystem generator."""
+
 import os
 
-BASE = r'C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\enterprise\invoices'
+BASE = r"C:\Users\tomga\OneDrive\Desktop\super_dev_suite\SuperDev\ai\enterprise\invoices"
+
 
 def w(path, content):
     full = os.path.join(BASE, path)
     os.makedirs(os.path.dirname(full), exist_ok=True)
-    with open(full, 'w', encoding='utf-8') as f:
+    with open(full, "w", encoding="utf-8") as f:
         f.write(content)
 
-w('invoice_engine.py', '''"""Invoice engine."""
+
+w(
+    "invoice_engine.py",
+    '''"""Invoice engine."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import time
@@ -61,9 +66,12 @@ class InvoiceEngine:
         return len(self._invoices)
     def is_running(self) -> bool:
         return self._started
-''')
+''',
+)
 
-w('generator.py', '''"""Invoice generator."""
+w(
+    "generator.py",
+    '''"""Invoice generator."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import time
@@ -90,9 +98,12 @@ class InvoiceGenerator:
             del self._templates[name]
             return True
         return False
-''')
+''',
+)
 
-w('numbering.py', '''"""Invoice numbering."""
+w(
+    "numbering.py",
+    '''"""Invoice numbering."""
 from __future__ import annotations
 import time
 
@@ -122,9 +133,12 @@ class InvoiceNumbering:
         self._counter = 0
         self._used.clear()
         return n
-''')
+''',
+)
 
-w('calculation.py', '''"""Invoice calculation."""
+w(
+    "calculation.py",
+    '''"""Invoice calculation."""
 from __future__ import annotations
 from typing import Any, Dict, List
 
@@ -147,9 +161,12 @@ class InvoiceCalculator:
         self._discount = discount
     def calculate_line_total(self, amount: float, quantity: int) -> float:
         return amount * quantity
-''')
+''',
+)
 
-w('export.py', '''"""Invoice export."""
+w(
+    "export.py",
+    '''"""Invoice export."""
 from __future__ import annotations
 from typing import Any, Dict
 import json
@@ -181,9 +198,12 @@ class InvoiceExporter:
         return result
     def get_export_history(self) -> list:
         return list(self._exports)
-''')
+''',
+)
 
-w('delivery.py', '''"""Invoice delivery."""
+w(
+    "delivery.py",
+    '''"""Invoice delivery."""
 from __future__ import annotations
 from typing import Any, Dict, List
 import time
@@ -214,9 +234,12 @@ class InvoiceDelivery:
             if d["invoice_id"] == invoice_id:
                 return d["status"]
         return "not_sent"
-''')
+''',
+)
 
-w('__init__.py', '''"""Invoices subsystem."""
+w(
+    "__init__.py",
+    '''"""Invoices subsystem."""
 from .invoice_engine import InvoiceEngine
 from .generator import InvoiceGenerator
 from .numbering import InvoiceNumbering
@@ -228,6 +251,7 @@ __all__ = [
     "InvoiceEngine", "InvoiceGenerator", "InvoiceNumbering",
     "InvoiceCalculator", "InvoiceExporter", "InvoiceDelivery"
 ]
-''')
+''',
+)
 
 print("invoices/: 7 files created")

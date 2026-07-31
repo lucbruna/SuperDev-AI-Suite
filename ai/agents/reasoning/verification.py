@@ -1,4 +1,5 @@
 """Verification engine for validating reasoning conclusions."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -11,16 +12,16 @@ class VerificationEngine:
         self._verification_count: int = 0
         self._results: list[dict[str, Any]] = []
 
-    def verify(self, conclusion: str, evidence: dict[str, Any],
-               rules: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+    def verify(
+        self, conclusion: str, evidence: dict[str, Any], rules: list[dict[str, Any]] | None = None
+    ) -> dict[str, Any]:
         self._verification_count += 1
         confidence = 0.5
         issues: list[str] = []
         if evidence:
             confidence += min(len(evidence) * 0.05, 0.25)
         if rules:
-            matched = sum(1 for r in rules if any(
-                k in evidence for k in r.get("if", [])))
+            matched = sum(1 for r in rules if any(k in evidence for k in r.get("if", [])))
             confidence += min(matched / max(len(rules), 1) * 0.2, 0.2)
         if len(conclusion) < 10:
             issues.append("Conclusion too short for meaningful verification")

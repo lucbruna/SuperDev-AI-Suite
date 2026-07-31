@@ -1,6 +1,7 @@
 """
 Frontend Application Providers
 """
+
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
@@ -9,6 +10,7 @@ from typing import Any
 
 class ThemeMode(Enum):
     """Theme modes."""
+
     LIGHT = "light"
     DARK = "dark"
     AUTO = "auto"
@@ -17,6 +19,7 @@ class ThemeMode(Enum):
 @dataclass
 class ThemeColors:
     """Theme color palette."""
+
     primary: str = "#3B82F6"
     secondary: str = "#6B7280"
     success: str = "#10B981"
@@ -32,6 +35,7 @@ class ThemeColors:
 @dataclass
 class Theme:
     """Theme configuration."""
+
     name: str
     mode: ThemeMode
     colors: ThemeColors
@@ -72,7 +76,7 @@ class Theme:
                 "md": "0 4px 6px rgba(0,0,0,0.3)",
                 "lg": "0 10px 15px rgba(0,0,0,0.3)",
                 "xl": "0 20px 25px rgba(0,0,0,0.3)",
-            }
+            },
         )
 
     @classmethod
@@ -92,7 +96,7 @@ class Theme:
                 "body": "'Inter', sans-serif",
                 "heading": "'Inter', sans-serif",
                 "mono": "'JetBrains Mono', monospace",
-            }
+            },
         )
 
 
@@ -298,7 +302,7 @@ class I18nProvider:
 
         if params:
             for k, v in params.items():
-                text = text.replace(f'{{{{{k}}}}}', v)
+                text = text.replace(f"{{{{{k}}}}}", v)
         return text
 
     def add_translations(self, locale: str, translations: dict[str, str]) -> None:

@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy import func, or_, select
@@ -56,7 +55,6 @@ async def get_audit_statistics(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
 
-
     return audit_logger.get_statistics()
 
 
@@ -65,7 +63,6 @@ async def get_security_events(
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-
 
     events = audit_logger.get_security_events(limit)
     return {
@@ -80,13 +77,14 @@ async def export_audit_logs(
     db: AsyncSession = Depends(get_db),
 ):
 
-
     data = audit_logger.export(format=format)
     if format == "json":
         from fastapi.responses import JSONResponse
+
         return JSONResponse(content=data if isinstance(data, list) else {"data": data})
     elif format == "csv":
         from fastapi.responses import PlainTextResponse
+
         return PlainTextResponse(content=data)
     return data
 
@@ -96,7 +94,6 @@ async def check_compliance(
     request: ComplianceCheckRequest,
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-
 
     try:
         framework = ComplianceFramework(request.framework)
@@ -115,20 +112,13 @@ async def list_compliance_frameworks(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
 
-
-    return {
-        "frameworks": [
-            {"id": f.value, "name": f.value.upper()}
-            for f in ComplianceFramework
-        ]
-    }
+    return {"frameworks": [{"id": f.value, "name": f.value.upper()} for f in ComplianceFramework]}
 
 
 @router.get("/tenants")
 async def list_tenants(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-
 
     tenants = tenant_manager.list_tenants()
     return {
@@ -143,6 +133,7 @@ async def create_tenant(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     from backend.dependencies import get_current_admin_user
+
     user = await get_current_admin_user(db=db)
 
     try:
@@ -176,7 +167,6 @@ async def upgrade_tenant_plan(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
 
-
     try:
         new_plan = TenantPlan(plan)
     except ValueError:
@@ -208,9 +198,7 @@ async def admin_list_users(
 ):
     query = select(User)
     if search:
-        query = query.where(
-            or_(User.email.ilike(f"%{search}%"), User.full_name.ilike(f"%{search}%"))
-        )
+        query = query.where(or_(User.email.ilike(f"%{search}%"), User.full_name.ilike(f"%{search}%")))
     if isActive is not None:
         query = query.where(User.is_active == isActive)
 
@@ -231,18 +219,20 @@ async def admin_list_users(
 
     items = []
     for u in users:
-        items.append({
-            "id": str(u.id),
-            "email": u.email,
-            "fullName": u.full_name,
-            "username": u.username,
-            "role": "admin" if u.is_superuser else "user",
-            "isActive": u.is_active,
-            "isVerified": u.is_verified,
-            "lastLogin": u.last_login.isoformat() if u.last_login else None,
-            "createdAt": u.created_at.isoformat() if u.created_at else None,
-            "updatedAt": u.updated_at.isoformat() if u.updated_at else None,
-        })
+        items.append(
+            {
+                "id": str(u.id),
+                "email": u.email,
+                "fullName": u.full_name,
+                "username": u.username,
+                "role": "admin" if u.is_superuser else "user",
+                "isActive": u.is_active,
+                "isVerified": u.is_verified,
+                "lastLogin": u.last_login.isoformat() if u.last_login else None,
+                "createdAt": u.created_at.isoformat() if u.created_at else None,
+                "updatedAt": u.updated_at.isoformat() if u.updated_at else None,
+            }
+        )
 
     return {
         "items": items,
@@ -339,16 +329,18 @@ async def admin_list_organizations(
         mc_result = await db.execute(member_count_q)
         member_count = mc_result.scalar() or 0
 
-        items.append({
-            "id": str(org.id),
-            "name": org.name,
-            "slug": org.slug,
-            "description": org.description,
-            "plan": org.plan,
-            "memberCount": member_count,
-            "createdAt": org.created_at.isoformat() if org.created_at else None,
-            "updatedAt": org.updated_at.isoformat() if org.updated_at else None,
-        })
+        items.append(
+            {
+                "id": str(org.id),
+                "name": org.name,
+                "slug": org.slug,
+                "description": org.description,
+                "plan": org.plan,
+                "memberCount": member_count,
+                "createdAt": org.created_at.isoformat() if org.created_at else None,
+                "updatedAt": org.updated_at.isoformat() if org.updated_at else None,
+            }
+        )
 
     return {
         "items": items,

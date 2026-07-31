@@ -20,9 +20,7 @@ class AILogger:
         # Console handler
         console = logging.StreamHandler(sys.stdout)
         console.setLevel(getattr(logging, level.upper(), logging.INFO))
-        console.setFormatter(logging.Formatter(
-            "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
-        ))
+        console.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s"))
         self._logger.addHandler(console)
 
         self._enable_json: bool = False

@@ -1,4 +1,5 @@
 """Knowledge Context — Context management for the knowledge platform."""
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
@@ -16,11 +17,13 @@ class KnowledgeContext:
     created_at: datetime = field(default_factory=datetime.now)
 
     def add_to_history(self, role: str, content: str) -> None:
-        self.conversation_history.append({
-            "role": role,
-            "content": content,
-            "timestamp": datetime.now().isoformat(),
-        })
+        self.conversation_history.append(
+            {
+                "role": role,
+                "content": content,
+                "timestamp": datetime.now().isoformat(),
+            }
+        )
 
     def set_topic(self, topic: str) -> None:
         self.current_topic = topic

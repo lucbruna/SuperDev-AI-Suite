@@ -21,9 +21,12 @@ from .app.providers import AppProvider, ThemeProvider
 from .app.router import Route, Router
 
 __all__ = [
-    "App", "create_app",
-    "Router", "Route",
-    "AppProvider", "ThemeProvider",
+    "App",
+    "create_app",
+    "Router",
+    "Route",
+    "AppProvider",
+    "ThemeProvider",
     "FrontendConfig",
     "PermissionManager",
     "AppInitializer",

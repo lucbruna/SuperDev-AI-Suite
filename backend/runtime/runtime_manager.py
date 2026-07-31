@@ -71,7 +71,9 @@ class RuntimeManager:
         if result.status == RuntimeStatus.COMPLETED:
             complete_event = EventBuilder.runtime_log(run_id, "Execution completed successfully")
         else:
-            complete_event = EventBuilder.runtime_log(run_id, f"Execution failed: {result.error or result.stderr[:200]}")
+            complete_event = EventBuilder.runtime_log(
+                run_id, f"Execution failed: {result.error or result.stderr[:200]}"
+            )
         complete_event.user_id = user_id
         await manager.broadcast_all(complete_event.to_dict())
 

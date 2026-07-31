@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 # Error classification
 # ---------------------------------------------------------------------------
 
+
 class ProviderErrorCode(Enum):
     AUTH = "auth_error"
     RATE_LIMIT = "rate_limit"
@@ -60,13 +61,20 @@ class ProviderError(Exception):
         if "content_filter" in msg or "content_policy" in msg or "safety" in msg:
             return cls(ProviderErrorCode.CONTENT_FILTER, str(exc), 400, provider=provider, raw=exc)
         if "500" in msg or "502" in msg or "503" in msg or "server" in msg:
-            return cls(ProviderErrorCode.SERVER_ERROR, str(exc), int(getattr(exc, 'status_code', 503)), provider=provider, raw=exc)
-        return cls(ProviderErrorCode.API_ERROR, str(exc), getattr(exc, 'status_code', 0), provider=provider, raw=exc)
+            return cls(
+                ProviderErrorCode.SERVER_ERROR,
+                str(exc),
+                int(getattr(exc, "status_code", 503)),
+                provider=provider,
+                raw=exc,
+            )
+        return cls(ProviderErrorCode.API_ERROR, str(exc), getattr(exc, "status_code", 0), provider=provider, raw=exc)
 
 
 # ---------------------------------------------------------------------------
 # Streaming types
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class StreamDelta:
@@ -80,6 +88,7 @@ class StreamDelta:
 # ---------------------------------------------------------------------------
 # Rate Limiter (token bucket)
 # ---------------------------------------------------------------------------
+
 
 class TokenBucket:
     """Simple token bucket rate limiter."""
@@ -118,19 +127,24 @@ MAX_DELAY = 60.0
 
 
 def _exponential_backoff(attempt: int, base_delay: float = BASE_DELAY, max_delay: float = MAX_DELAY) -> float:
-    delay = base_delay * (2 ** attempt)
+    delay = base_delay * (2**attempt)
     jitter = random.uniform(0, delay * 0.1)
     return min(delay + jitter, max_delay)
 
 
 def _is_retryable(error: ProviderError, retry_codes: set[int] | None = None) -> bool:
     codes = retry_codes or DEFAULT_RETRY_CODES
-    return error.status_code in codes or error.code in (ProviderErrorCode.RATE_LIMIT, ProviderErrorCode.TIMEOUT, ProviderErrorCode.SERVER_ERROR)
+    return error.status_code in codes or error.code in (
+        ProviderErrorCode.RATE_LIMIT,
+        ProviderErrorCode.TIMEOUT,
+        ProviderErrorCode.SERVER_ERROR,
+    )
 
 
 # ---------------------------------------------------------------------------
 # Cost helpers (per-provider overrides)
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class PricingRow:
@@ -178,6 +192,7 @@ def estimate_cost(provider_name: str, model: str, prompt_tokens: int, completion
 # Message format helpers
 # ---------------------------------------------------------------------------
 
+
 def convert_messages(messages: list[dict[str, Any]]) -> tuple[str | None, list[dict[str, Any]]]:
     """Extract system message and return (system_prompt, chat_messages)."""
     system = None
@@ -196,6 +211,7 @@ def count_tokens(text: str, model: str = "") -> int:
 # ---------------------------------------------------------------------------
 # BaseLLMProvider
 # ---------------------------------------------------------------------------
+
 
 class BaseLLMProvider(ILLMProvider):
     """Base class for all LLM provider implementations.
@@ -235,6 +251,7 @@ class BaseLLMProvider(ILLMProvider):
     async def generate_stream(self, prompt: str, **kwargs: Any) -> AsyncIterator[dict[str, Any]]:
         async def _empty() -> AsyncIterator[dict[str, Any]]:
             yield {"content": "", "finish_reason": "stop"}
+
         return _empty()
 
     async def validate(self, params: dict[str, Any]) -> bool:
@@ -276,7 +293,14 @@ class BaseLLMProvider(ILLMProvider):
                 last_error = e
                 if attempt < self._max_retries and _is_retryable(e, self._retry_codes):
                     retry_after = e.retry_after or _exponential_backoff(attempt)
-                    logger.warning("Provider %s: retry %d/%d after %.1fs: %s", self._name, attempt + 1, self._max_retries, retry_after, e.message)
+                    logger.warning(
+                        "Provider %s: retry %d/%d after %.1fs: %s",
+                        self._name,
+                        attempt + 1,
+                        self._max_retries,
+                        retry_after,
+                        e.message,
+                    )
                     await asyncio.sleep(retry_after)
                 else:
                     raise

@@ -51,16 +51,92 @@ class FullTextSearch:
         self._index: dict[str, set[str]] = defaultdict(set)  # term -> doc_ids
         self._doc_lengths: dict[str, int] = {}
         self._stop_words: set[str] = {
-            "the", "a", "an", "is", "are", "was", "were", "be", "been", "being",
-            "have", "has", "had", "do", "does", "did", "will", "would", "could",
-            "should", "may", "might", "shall", "can", "need", "dare", "ought",
-            "used", "to", "of", "in", "for", "on", "with", "at", "by", "from",
-            "as", "into", "through", "during", "before", "after", "above", "below",
-            "between", "out", "off", "over", "under", "again", "further", "then",
-            "once", "and", "but", "or", "nor", "not", "so", "yet", "both",
-            "either", "neither", "each", "every", "all", "any", "few", "more",
-            "most", "other", "some", "such", "no", "only", "own", "same",
-            "than", "too", "very", "just", "because", "if", "when", "while",
+            "the",
+            "a",
+            "an",
+            "is",
+            "are",
+            "was",
+            "were",
+            "be",
+            "been",
+            "being",
+            "have",
+            "has",
+            "had",
+            "do",
+            "does",
+            "did",
+            "will",
+            "would",
+            "could",
+            "should",
+            "may",
+            "might",
+            "shall",
+            "can",
+            "need",
+            "dare",
+            "ought",
+            "used",
+            "to",
+            "of",
+            "in",
+            "for",
+            "on",
+            "with",
+            "at",
+            "by",
+            "from",
+            "as",
+            "into",
+            "through",
+            "during",
+            "before",
+            "after",
+            "above",
+            "below",
+            "between",
+            "out",
+            "off",
+            "over",
+            "under",
+            "again",
+            "further",
+            "then",
+            "once",
+            "and",
+            "but",
+            "or",
+            "nor",
+            "not",
+            "so",
+            "yet",
+            "both",
+            "either",
+            "neither",
+            "each",
+            "every",
+            "all",
+            "any",
+            "few",
+            "more",
+            "most",
+            "other",
+            "some",
+            "such",
+            "no",
+            "only",
+            "own",
+            "same",
+            "than",
+            "too",
+            "very",
+            "just",
+            "because",
+            "if",
+            "when",
+            "while",
         }
 
     def _tokenize(self, text: str) -> list[str]:
@@ -151,7 +227,7 @@ class FullTextSearch:
         scores.sort(key=lambda x: x[1], reverse=True)
         results = []
 
-        for doc_id, score in scores[offset: offset + limit]:
+        for doc_id, score in scores[offset : offset + limit]:
             document = self._documents[doc_id]
             snippet = self._generate_snippet(document.content, query_tokens)
             results.append(
@@ -175,13 +251,13 @@ class FullTextSearch:
         best_start = 0
         best_score = 0
         for i in range(len(words)):
-            window = words[i: i + 10]
+            window = words[i : i + 10]
             score = sum(1 for w in window if w.lower() in query_tokens)
             if score > best_score:
                 best_score = score
                 best_start = i
 
-        snippet_words = words[max(0, best_start - 5): best_start + 15]
+        snippet_words = words[max(0, best_start - 5) : best_start + 15]
         snippet = " ".join(snippet_words)
         if len(snippet) > max_length:
             snippet = snippet[:max_length] + "..."
@@ -219,14 +295,8 @@ class FullTextSearch:
         return {
             "total_documents": len(self._documents),
             "total_terms": len(self._index),
-            "by_type": {
-                dt.value: sum(1 for d in self._documents.values() if d.type == dt)
-                for dt in SearchableType
-            },
-            "avg_doc_length": (
-                sum(self._doc_lengths.values()) / len(self._doc_lengths)
-                if self._doc_lengths else 0
-            ),
+            "by_type": {dt.value: sum(1 for d in self._documents.values() if d.type == dt) for dt in SearchableType},
+            "avg_doc_length": (sum(self._doc_lengths.values()) / len(self._doc_lengths) if self._doc_lengths else 0),
         }
 
 

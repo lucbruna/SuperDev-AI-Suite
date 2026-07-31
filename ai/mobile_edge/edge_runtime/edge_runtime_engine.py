@@ -1,4 +1,5 @@
 """Edge Runtime Engine - Core edge AI runtime management."""
+
 from dataclasses import dataclass
 from enum import Enum
 

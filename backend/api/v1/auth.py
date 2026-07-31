@@ -167,8 +167,12 @@ async def login(
                 "avatarUrl": getattr(user, "avatar_url", ""),
                 "role": getattr(user, "role", "user"),
                 "isEmailVerified": getattr(user, "is_verified", False),
-                "createdAt": getattr(user, "created_at", datetime.now(UTC)).isoformat() if hasattr(user, "created_at") else datetime.now(UTC).isoformat(),
-                "updatedAt": getattr(user, "updated_at", datetime.now(UTC)).isoformat() if hasattr(user, "updated_at") else datetime.now(UTC).isoformat(),
+                "createdAt": getattr(user, "created_at", datetime.now(UTC)).isoformat()
+                if hasattr(user, "created_at")
+                else datetime.now(UTC).isoformat(),
+                "updatedAt": getattr(user, "updated_at", datetime.now(UTC)).isoformat()
+                if hasattr(user, "updated_at")
+                else datetime.now(UTC).isoformat(),
             },
             "accessToken": tokens["access_token"],
             "refreshToken": tokens["refresh_token"],
@@ -224,8 +228,12 @@ async def register(
                 "avatarUrl": getattr(user, "avatar_url", ""),
                 "role": getattr(user, "role", "user"),
                 "isEmailVerified": getattr(user, "is_verified", False),
-                "createdAt": getattr(user, "created_at", datetime.now(UTC)).isoformat() if hasattr(user, "created_at") else datetime.now(UTC).isoformat(),
-                "updatedAt": getattr(user, "updated_at", datetime.now(UTC)).isoformat() if hasattr(user, "updated_at") else datetime.now(UTC).isoformat(),
+                "createdAt": getattr(user, "created_at", datetime.now(UTC)).isoformat()
+                if hasattr(user, "created_at")
+                else datetime.now(UTC).isoformat(),
+                "updatedAt": getattr(user, "updated_at", datetime.now(UTC)).isoformat()
+                if hasattr(user, "updated_at")
+                else datetime.now(UTC).isoformat(),
             },
             "accessToken": tokens["access_token"],
             "refreshToken": tokens["refresh_token"],

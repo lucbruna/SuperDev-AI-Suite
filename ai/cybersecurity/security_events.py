@@ -1,6 +1,7 @@
 """
 Security Events System
 """
+
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -26,15 +27,11 @@ class SecurityEvents:
 
     def emit(self, event_type: str, severity: str, source: str, data: dict[str, Any] = None) -> SecurityEventData:
         event = SecurityEventData(
-            event_id=str(uuid.uuid4()),
-            event_type=event_type,
-            severity=severity,
-            source=source,
-            data=data or {}
+            event_id=str(uuid.uuid4()), event_type=event_type, severity=severity, source=source, data=data or {}
         )
         self.events.append(event)
         if len(self.events) > self.max_events:
-            self.events = self.events[-self.max_events:]
+            self.events = self.events[-self.max_events :]
         self._dispatch(event)
         return event
 

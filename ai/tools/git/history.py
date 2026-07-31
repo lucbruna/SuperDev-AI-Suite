@@ -36,7 +36,15 @@ class GitHistory(BaseTool):
             for line in r.stdout.strip().split("\n"):
                 if line and "|" in line:
                     parts = line.split("|", 4)
-                    commits.append({"hash": parts[0], "author": parts[1], "email": parts[2], "date": parts[3], "message": parts[4] if len(parts) > 4 else ""})
+                    commits.append(
+                        {
+                            "hash": parts[0],
+                            "author": parts[1],
+                            "email": parts[2],
+                            "date": parts[3],
+                            "message": parts[4] if len(parts) > 4 else "",
+                        }
+                    )
             return {"success": r.returncode == 0, "commits": commits, "count": len(commits)}
         except Exception as e:
             return {"success": False, "error": str(e)}
