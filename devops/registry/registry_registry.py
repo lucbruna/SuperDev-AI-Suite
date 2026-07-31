@@ -6,7 +6,6 @@ from .registry_engine import RegistryEngine
 from .registry_mirror import RegistryMirror
 from .registry_quota import RegistryQuota
 
-
 __all__ = [
     "RegistryAuth",
     "RegistryCleanup",

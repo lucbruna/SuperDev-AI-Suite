@@ -19,8 +19,10 @@ class EmbeddingService:
         return cls._instance
 
     def __init__(self):
-        if self._local_model is None:
-            self._try_load_local()
+        # NOTE: model loading is deferred to first use (lazy) so importing this
+        # module (and therefore backend.app) does not pull in torch / download
+        # model weights at import time.
+        pass
 
     def _try_load_local(self) -> None:
         try:
@@ -28,7 +30,9 @@ class EmbeddingService:
             model_name = os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
             self._local_model = SentenceTransformer(model_name)
             self._model_name = model_name
-            self._embedding_dim = self._local_model.get_sentence_embedding_dimension()
+            dim = self._local_model.get_sentence_embedding_dimension()
+            if dim is not None:
+                self._embedding_dim = dim
         except ImportError:
             pass
 
@@ -59,6 +63,8 @@ class EmbeddingService:
     def embed_texts(self, texts: list[str]) -> list[list[float]]:
         if not texts:
             return []
+        if self._local_model is None:
+            self._try_load_local()
         if self._local_model is not None:
             valid = [(i, t) for i, t in enumerate(texts) if t and t.strip()]
             if not valid:

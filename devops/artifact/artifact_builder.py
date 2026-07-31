@@ -12,7 +12,7 @@ class ArtifactBuilder:
         self.name = name
         self._steps: list[dict[str, Any]] = []
 
-    def add_step(self, action: str, **kwargs: Any) -> "ArtifactBuilder":
+    def add_step(self, action: str, **kwargs: Any) -> ArtifactBuilder:
         raise NotImplementedError
 
     def build(self, version: str, **kwargs: Any) -> dict[str, Any]:

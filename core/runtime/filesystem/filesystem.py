@@ -1,10 +1,6 @@
 from __future__ import annotations
 
-import os
-import shutil
-import tempfile
 from pathlib import Path
-from typing import AsyncIterator
 
 
 class RuntimeFilesystem:
@@ -17,7 +13,13 @@ class RuntimeFilesystem:
         return session_dir
 
     def _resolve_path(self, session_id: str, path: str) -> Path:
-        return (self._base_dir / session_id / path).resolve()
+        session_root = (self._base_dir / session_id).resolve()
+        full_path = (session_root / path).resolve()
+        if not full_path.is_relative_to(session_root):
+            raise ValueError(
+                f"path escapes the sandbox for session {session_id!r}: "
+                f"{path!r}")
+        return full_path
 
     async def write_file(self, session_id: str, path: str, content: str) -> Path:
         full_path = self._resolve_path(session_id, path)

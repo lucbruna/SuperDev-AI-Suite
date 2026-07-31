@@ -6,6 +6,12 @@ from typing import Any
 
 from ...base.base_tool import BaseTool
 
+_EXCLUDED_DIRS: set[str] = {
+    "node_modules", ".git", "__pycache__", "venv", ".venv",
+    "dist", "build", ".tox", ".mypy_cache", ".pytest_cache",
+    ".eggs", ".idea", ".vscode", "coverage", ".nyc_output",
+}
+
 
 class FileSearch(BaseTool):
     _name = "file_search"
@@ -32,7 +38,8 @@ class FileSearch(BaseTool):
         root = params.get("root", ".")
         content_pattern = params.get("content")
         results: list[str] = []
-        for dirpath, _dirnames, filenames in os.walk(root):
+        for dirpath, dirnames, filenames in os.walk(root):
+            dirnames[:] = [d for d in dirnames if d not in _EXCLUDED_DIRS and not d.endswith(".egg-info")]
             for filename in filenames:
                 if fnmatch.fnmatch(filename, pattern):
                     full = os.path.join(dirpath, filename)

@@ -8,6 +8,8 @@ from typing import Any
 from workflow_engine.graph.node import NodeType
 from workflow_engine.nodes.base_node import BaseNode, NodeResult
 
+from core.safe_exec import safe_builtins, safe_exec, validate_import_statement
+
 
 class PythonNode(BaseNode):
     node_type: NodeType = NodeType.PYTHON
@@ -16,10 +18,14 @@ class PythonNode(BaseNode):
         code = self.config.get("code", "")
         imports = self.config.get("imports", [])
 
-        exec_globals: dict[str, Any] = {"context": context, "__builtins__": __builtins__}
+        # Restricted execution namespace — no full builtins (OWASP A03).
+        exec_globals: dict[str, Any] = {"context": context,
+                                        "__builtins__": safe_builtins()}
         for import_stmt in imports:
             try:
-                exec(import_stmt, exec_globals)
+                validate_import_statement(import_stmt)
+                exec(compile(import_stmt, "<safe-import>", "exec"),
+                     exec_globals)
             except Exception as e:
                 return NodeResult(
                     node_id=self.config.get("node_id", ""),
@@ -30,8 +36,8 @@ class PythonNode(BaseNode):
         old_stdout = sys.stdout
         sys.stdout = io.StringIO()
         try:
-            exec(code, exec_globals)
-            output = exec_globals.get("result", sys.stdout.getvalue())
+            ns = safe_exec(code, exec_globals)
+            output = ns.get("result", sys.stdout.getvalue())
         except Exception:
             return NodeResult(
                 node_id=self.config.get("node_id", ""),
@@ -44,5 +50,7 @@ class PythonNode(BaseNode):
         return NodeResult(
             node_id=self.config.get("node_id", ""),
             status="success",
-            output={"result": output, "stdout": sys.stdout.getvalue() if hasattr(sys.stdout, "getvalue") else ""},
+            output={"result": output,
+                    "stdout": (sys.stdout.getvalue()
+                               if hasattr(sys.stdout, "getvalue") else "")},
         )

@@ -3,7 +3,6 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any
 
 
 class CodeLanguage(Enum):
@@ -24,6 +23,7 @@ class CodeLanguage(Enum):
 
 
 class CodeIssueSeverity(Enum):
+    CRITICAL = "critical"
     ERROR = "error"
     WARNING = "warning"
     INFO = "info"

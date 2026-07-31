@@ -14,7 +14,15 @@ class Autoscaler:
         self._log = logging.getLogger("superdev.devops.kubernetes.autoscaler")
         self._engine = engine
 
-    def create(self, name: str, deployment: str, min_replicas: int, max_replicas: int, cpu_target: int = 80, **kwargs: Any) -> dict[str, Any]:
+    def create(
+        self,
+        name: str,
+        deployment: str,
+        min_replicas: int,
+        max_replicas: int,
+        cpu_target: int = 80,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
         raise NotImplementedError
 
     def update(self, name: str, min_replicas: int, max_replicas: int, namespace: str = "default") -> dict[str, Any]:

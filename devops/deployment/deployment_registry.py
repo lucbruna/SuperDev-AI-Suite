@@ -9,7 +9,6 @@ from .deployment_spec import DeploymentSpec
 from .deployment_target import DeploymentTarget
 from .rolling_deployment import RollingDeployment
 
-
 __all__ = [
     "BlueGreenDeployment",
     "CanaryDeployment",

@@ -11,22 +11,22 @@ class TerraformConfig:
         self._log = logging.getLogger("superdev.devops.terraform.config")
         self._blocks: list[dict[str, Any]] = []
 
-    def provider(self, name: str, **kwargs: Any) -> "TerraformConfig":
+    def provider(self, name: str, **kwargs: Any) -> TerraformConfig:
         raise NotImplementedError
 
-    def resource(self, type_: str, name: str, **kwargs: Any) -> "TerraformConfig":
+    def resource(self, type_: str, name: str, **kwargs: Any) -> TerraformConfig:
         raise NotImplementedError
 
-    def data(self, type_: str, name: str, **kwargs: Any) -> "TerraformConfig":
+    def data(self, type_: str, name: str, **kwargs: Any) -> TerraformConfig:
         raise NotImplementedError
 
-    def variable(self, name: str, **kwargs: Any) -> "TerraformConfig":
+    def variable(self, name: str, **kwargs: Any) -> TerraformConfig:
         raise NotImplementedError
 
-    def output(self, name: str, value: str) -> "TerraformConfig":
+    def output(self, name: str, value: str) -> TerraformConfig:
         raise NotImplementedError
 
-    def module(self, name: str, source: str, **kwargs: Any) -> "TerraformConfig":
+    def module(self, name: str, source: str, **kwargs: Any) -> TerraformConfig:
         raise NotImplementedError
 
     def render(self) -> str:

@@ -6,7 +6,6 @@ from .rollback_manager import RollbackManager
 from .rollback_point import RollbackPoint
 from .rollback_strategy import RollbackStrategy
 
-
 __all__ = [
     "RollbackAudit",
     "RollbackEngine",

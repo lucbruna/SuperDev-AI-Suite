@@ -13,13 +13,13 @@ class RollbackPoint:
         self.version = version
         self._snapshot: dict[str, Any] = {}
 
-    def capture(self, state: dict[str, Any]) -> "RollbackPoint":
+    def capture(self, state: dict[str, Any]) -> RollbackPoint:
         raise NotImplementedError
 
     def restore(self) -> dict[str, Any]:
         raise NotImplementedError
 
-    def diff(self, other: "RollbackPoint") -> dict[str, Any]:
+    def diff(self, other: RollbackPoint) -> dict[str, Any]:
         raise NotImplementedError
 
     def to_dict(self) -> dict[str, Any]:

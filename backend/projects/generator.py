@@ -44,7 +44,7 @@ class Settings(BaseSettings):
         env_file = ".env"
 """,
             "requirements.txt": "fastapi\nuvicorn[standard]\npydantic\npydantic-settings\nsqlalchemy\nasyncpg\n",
-            ".env": f"APP_NAME={name}\nDEBUG=true\n",
+            ".env": f"APP_NAME={name}\nDEBUG=false\n",
             "Dockerfile": f"FROM python:3.12-slim\n\nWORKDIR /app\nCOPY . .\nRUN pip install -r requirements.txt\nCMD [\"uvicorn\", \"{name}.main:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8000\"]\n",
         }
 

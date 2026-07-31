@@ -2,28 +2,24 @@
 Test configuration
 """
 
-import pytest
 import asyncio
 from uuid import UUID
+
+import pytest
 
 from enterprise_ai_core.config import Config
 from enterprise_ai_core.models import (
     Agent,
-    AgentStatus,
     AgentType,
-    Task,
-    TaskStatus,
-    TaskPriority,
-    Workflow,
-    WorkflowStatus,
-    Policy,
-    PolicyScope,
-    PolicyAction,
     Event,
     EventType,
     MemoryEntry,
     MemoryType,
-    SecurityContext,
+    PolicyAction,
+    TaskPriority,
+    TaskStatus,
+    Workflow,
+    WorkflowStatus,
 )
 from enterprise_ai_core.orchestrator import EnterpriseOrchestrator
 
@@ -198,7 +194,7 @@ async def test_decision_making(orchestrator):
 async def test_security_authentication(orchestrator):
     await orchestrator.initialize()
 
-    context = await orchestrator.security_manager.authenticate(
+    await orchestrator.security_manager.authenticate(
         credentials={"username": "admin", "password": "admin"},
     )
 

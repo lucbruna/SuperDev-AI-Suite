@@ -8,6 +8,12 @@ from typing import Any
 
 from ..base.base_agent import AgentResult, BaseAgent
 
+_EXCLUDED_DIRS: set[str] = {
+    "node_modules", ".git", "__pycache__", "venv", ".venv",
+    "dist", "build", ".tox", ".mypy_cache", ".pytest_cache",
+    ".eggs", ".idea", ".vscode", "coverage", ".nyc_output",
+}
+
 
 class TestingAgent(BaseAgent):
     async def initialize(self) -> None:
@@ -61,7 +67,8 @@ class TestingAgent(BaseAgent):
         if os.path.isfile(path):
             files_to_test.append(path)
         else:
-            for root, _dirs, fnames in os.walk(path):
+            for root, dirs, fnames in os.walk(path):
+                dirs[:] = [d for d in dirs if d not in _EXCLUDED_DIRS and not d.endswith(".egg-info")]
                 for fname in fnames:
                     if fname.endswith(".py") and not fname.startswith("test_"):
                         files_to_test.append(os.path.join(root, fname))

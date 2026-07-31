@@ -1,0 +1,45 @@
+"""Policy engine for authorization rules."""
+from __future__ import annotations
+from typing import Any, Callable, Dict, List, Optional
+from enum import Enum
+
+class Effect(Enum):
+    ALLOW = "allow"
+    DENY = "deny"
+    CONDITIONAL = "conditional"
+
+class PolicyRule:
+    def __init__(self, name: str, effect: Effect, conditions: Optional[Callable[..., bool]] = None) -> None:
+        self.name = name
+        self.effect = effect
+        self.conditions = conditions
+    def evaluate(self, context: Dict[str, Any]) -> Effect:
+        if self.conditions and not self.conditions(context):
+            return Effect.DENY
+        return self.effect
+
+class PolicyEngine:
+    def __init__(self) -> None:
+        self._policies: Dict[str, PolicyRule] = {}
+        self._policy_order: List[str] = []
+    def add_policy(self, name: str, effect: Effect, conditions: Optional[Callable[..., bool]] = None) -> None:
+        self._policies[name] = PolicyRule(name, effect, conditions)
+        self._policy_order.append(name)
+    def remove_policy(self, name: str) -> bool:
+        if name in self._policies:
+            del self._policies[name]
+            self._policy_order.remove(name)
+            return True
+        return False
+    def evaluate(self, context: Dict[str, Any]) -> Effect:
+        for name in self._policy_order:
+            rule = self._policies[name]
+            result = rule.evaluate(context)
+            if result == Effect.DENY:
+                return Effect.DENY
+        return Effect.ALLOW
+    def list_policies(self) -> List[str]:
+        return list(self._policy_order)
+    def clear(self) -> None:
+        self._policies.clear()
+        self._policy_order.clear()

@@ -31,7 +31,7 @@ class MockEmbeddingProvider(EmbeddingProviderInterface):
 
     async def embed(self, text: str) -> list[float]:
         import hashlib
-        h = hashlib.md5(text.encode()).hexdigest()
+        h = hashlib.sha256(text.encode()).hexdigest()
         seed = int(h[:8], 16)
         rng = _SimpleRNG(seed)
         vec = [rng.random() for _ in range(self._dims)]

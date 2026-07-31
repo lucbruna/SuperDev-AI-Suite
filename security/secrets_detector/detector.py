@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-import hashlib
 import os
 import re
 import time
+from pathlib import Path
 from typing import Any
 
 from ..base import BaseCheck, SecurityFinding, SecurityReport, Severity
@@ -34,7 +34,7 @@ class SecretsDetector(BaseCheck):
             "group": "aws_credentials",
             "severity": Severity.CRITICAL,
             "patterns": [
-                (r"(?i)aws[\s_=:]*secret[\s_=:]*access[\s_=:]*key[\s_=:]*['\"]?([A-Za-z0-9/+=]{40})['\"]?", "AWS Secret Access Key"),
+                (r"(?i)aws[\s_=:]*secret[\s_=:]*access[\s_=:]*key[\s_=:]*['\"]?([A-Za-z0-9/+=]{40})['\"]?", "AWS Secret Access Key"),  # noqa: E501
                 (r"(?:AKIA|ASIA|ABIA|ACCA)[0-9A-Z]{16}", "AWS Access Key ID"),
             ],
         },
@@ -42,7 +42,7 @@ class SecretsDetector(BaseCheck):
             "group": "private_keys",
             "severity": Severity.CRITICAL,
             "patterns": [
-                (r"-----BEGIN\s+(?:RSA|DSA|EC|OPENSSH|PGP)\s+PRIVATE\s+(?:KEY|BLOCK)-----", "Private Cryptographic Key"),
+                (r"-----BEGIN\s+(?:RSA|DSA|EC|OPENSSH|PGP)\s+PRIVATE\s+(?:KEY|BLOCK)-----", "Private Cryptographic Key"),  # noqa: E501
             ],
         },
         {
@@ -60,7 +60,7 @@ class SecretsDetector(BaseCheck):
             "group": "database_urls",
             "severity": Severity.CRITICAL,
             "patterns": [
-                (r"(?:postgres(?:ql)?|mysql|mongodb(?:\+srv)?|redis|rediss)\://[^:]+:[^@]+@", "Database URL with Credentials"),
+                (r"(?:postgres(?:ql)?|mysql|mongodb(?:\+srv)?|redis|rediss)\://[^:]+:[^@]+@", "Database URL with Credentials"),  # noqa: E501
             ],
         },
         {
@@ -69,15 +69,15 @@ class SecretsDetector(BaseCheck):
             "patterns": [
                 (r'(?i)(?:password|passwd|pwd|secret)\s*[=:]\s*["\']([^"\'\s]{8,})["\']', "Hardcoded Password/Secret"),
                 (r'(?i)(?:api[_-]?key|apikey)\s*[=:]\s*["\']?([A-Za-z0-9_\-=]{16,})["\']?', "API Key"),
-                (r'(?i)(?:auth[\s_=:]*token|access[\s_=:]*token)\s*[=:]\s*["\']([A-Za-z0-9_\-\.]{16,})["\']', "Auth/Access Token"),
+                (r'(?i)(?:auth[\s_=:]*token|access[\s_=:]*token)\s*[=:]\s*["\']([A-Za-z0-9_\-\.]{16,})["\']', "Auth/Access Token"),  # noqa: E501
             ],
         },
         {
             "group": "cloud_secrets",
             "severity": Severity.HIGH,
             "patterns": [
-                (r'(?i)(?:google.*key|gcp.*key|service.*account|gcp_.*credential).*["\']?([A-Za-z0-9_\-]{30,})["\']?', "GCP Service Account"),
-                (r'(?i)(?:azure.*key|azure.*conn|azure.*cred).*["\']?([A-Za-z0-9_\-+=/]{20,})["\']?', "Azure Credential"),
+                (r'(?i)(?:google.*key|gcp.*key|service.*account|gcp_.*credential).*["\']?([A-Za-z0-9_\-]{30,})["\']?', "GCP Service Account"),  # noqa: E501
+                (r'(?i)(?:azure.*key|azure.*conn|azure.*cred).*["\']?([A-Za-z0-9_\-+=/]{20,})["\']?', "Azure Credential"),  # noqa: E501
                 (r'(?i)(?:heroku.*api|heroku.*key).*["\']?([A-Za-z0-9_\-]{20,})["\']?', "Heroku API Key"),
             ],
         },
@@ -86,24 +86,47 @@ class SecretsDetector(BaseCheck):
             "group": "potential_secrets",
             "severity": Severity.MEDIUM,
             "patterns": [
-                (r'(?i)(?:token|secret|key|credential)\s*[=:]\s*["\']([A-Za-z0-9_\-]{16,})["\']', "Potential Secret String"),
-                (r'(?i)(?:connection[\s_]?string|conn[\s_]?string)\s*[=:]\s*["\']([^"\']{20,})["\']', "Connection String"),
-                (r'(?i)(?:private[\s_]?key|secret[\s_]?key)\s*[=:]\s*["\']?([A-Za-z0-9_\-+=/]{20,})["\']?', "Potential Private Key"),
+                (r'(?i)(?:token|secret|key|credential)\s*[=:]\s*["\']([A-Za-z0-9_\-]{16,})["\']', "Potential Secret String"),  # noqa: E501
+                (r'(?i)(?:connection[\s_]?string|conn[\s_]?string)\s*[=:]\s*["\']([^"\']{20,})["\']', "Connection String"),  # noqa: E501
+                (r'(?i)(?:private[\s_]?key|secret[\s_]?key)\s*[=:]\s*["\']?([A-Za-z0-9_\-+=/]{20,})["\']?', "Potential Private Key"),  # noqa: E501
             ],
         },
     ]
 
-    # Contextual whitelist for false positive reduction
+    # Contextual whitelist for false positive reduction (file paths are
+    # normalized to forward slashes before matching, so these work on Windows).
     WHITELIST_PATHS = [
         r"__pycache__",
-        r"\.git/",
-        r"node_modules/",
-        r"\.venv/",
-        r"\.tox/",
-        r"test.*/fixtures/",
-        r"test.*/samples/",
-        r"test.*/mocks/",
+        r"/\.git/",
+        r"/node_modules/",
+        r"/\.venv/",
+        r"/\.tox/",
+        r"/test.*/fixtures/",
+        r"/test.*/samples/",
+        r"/test.*/mocks/",
     ]
+
+    # Directories skipped during tree traversal, matched against the directory
+    # basename before descending. Prevents scanning vendored/VCS/venv dirs.
+    SKIP_DIR_NAMES: frozenset[str] = frozenset(
+        {
+            "__pycache__",
+            ".git",
+            ".hg",
+            ".svn",
+            "node_modules",
+            ".venv",
+            ".tox",
+            ".pytest_cache",
+            ".mypy_cache",
+            ".ruff_cache",
+            "dist",
+            "build",
+            ".next",
+            ".nuxt",
+            ".cache",
+        }
+    )
 
     # Entropy threshold for additional scanning
     ENTROPY_THRESHOLD = 4.2
@@ -112,17 +135,15 @@ class SecretsDetector(BaseCheck):
         start = time.time()
         all_findings: list[SecurityFinding] = []
 
-        path = os.path.abspath(target)
-        if os.path.isfile(path):
-            findings = await self._scan_file(path)
+        path = Path(target).resolve()
+        if path.is_file():
+            findings = await self._scan_file(str(path))
             all_findings.extend(findings)
-        elif os.path.isdir(path):
+        elif path.is_dir():
             for root, dirs, files in os.walk(path):
-                dirs[:] = [d for d in dirs if not any(
-                    re.match(p, d) for p in self.WHITELIST_PATHS
-                )]
+                dirs[:] = [d for d in dirs if d not in self.SKIP_DIR_NAMES]
                 for fname in files:
-                    fpath = os.path.join(root, fname)
+                    fpath = str(Path(root) / fname)
                     findings = await self._scan_file(fpath)
                     all_findings.extend(findings)
 
@@ -138,19 +159,21 @@ class SecretsDetector(BaseCheck):
     async def _scan_file(self, file_path: str) -> list[SecurityFinding]:
         findings: list[SecurityFinding] = []
 
-        # Skip whitelisted paths
+        # Skip whitelisted paths (normalized to forward slashes so the patterns
+        # match on every platform, including Windows).
+        normalized = file_path.replace("\\", "/")
         for pattern in self.WHITELIST_PATHS:
-            if re.search(pattern, file_path):
+            if re.search(pattern, normalized):
                 return findings
 
         try:
-            with open(file_path, encoding="utf-8", errors="ignore") as f:
+            with Path(file_path).open(encoding="utf-8", errors="ignore") as f:
                 content = f.read()
         except Exception:
             return findings
 
         lines = content.split("\n")
-        fname = os.path.basename(file_path)
+        fname = Path(file_path).name
 
         # Skip known test/example files
         if fname in (
@@ -178,16 +201,6 @@ class SecretsDetector(BaseCheck):
                     context = self._get_context(lines, line_no)
                     confidence = self._calculate_confidence(match, context, group["group"])
 
-                    snippet_start = max(0, match.start() - 15)
-                    snippet_end = min(len(line), match.end() + 15)
-                    snippet = line[snippet_start:snippet_end].strip()
-
-                    # Mask the actual secret value
-                    if match.lastindex and match.group(match.lastindex):
-                        masked = self._mask_value(snippet, match)
-                    else:
-                        masked = snippet
-
                     findings.append(SecurityFinding(
                         rule_id=f"SD-{group['group'].upper()}-001",
                         title=title,
@@ -212,10 +225,7 @@ class SecretsDetector(BaseCheck):
 
     def _is_example_value(self, line: str) -> bool:
         """Check if the value appears to be an example or placeholder."""
-        for pattern in self.EXAMPLE_PATTERNS:
-            if re.search(pattern, line, re.IGNORECASE):
-                return True
-        return False
+        return any(re.search(pattern, line, re.IGNORECASE) for pattern in self.EXAMPLE_PATTERNS)
 
     def _get_context(self, lines: list[str], line_no: int, window: int = 3) -> str:
         """Get surrounding context lines for analysis."""
@@ -244,18 +254,6 @@ class SecretsDetector(BaseCheck):
             confidence += 0.1
 
         return min(max(confidence, 0.0), 1.0)
-
-    def _mask_value(self, snippet: str, match: re.Match) -> str:
-        """Mask the secret value in the snippet."""
-        if match.lastindex:
-            start, end = match.start(match.lastindex), match.end(match.lastindex)
-            value = match.group(match.lastindex)
-            if len(value) > 8:
-                masked = value[:4] + "****" + value[-4:]
-            else:
-                masked = "****"
-            return snippet[:start - match.start()] + masked + snippet[end - match.start():]
-        return snippet
 
     def _check_entropy(self, content: str, file_path: str) -> list[SecurityFinding]:
         """Check for high-entropy strings that may be undiscovered secrets."""

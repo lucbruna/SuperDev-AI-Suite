@@ -7,10 +7,10 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql+asyncpg://superdev:superdev@postgres:5432/superdev
+      - DATABASE_URL=postgresql+asyncpg://superdev:${POSTGRES_PASSWORD:-superdev}@postgres:5432/superdev
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - SECRET_KEY=dev-secret-key-change-in-production
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
       - CORS_ORIGINS=["http://localhost:3000"]
       - LOG_LEVEL=INFO
     depends_on:
@@ -49,9 +49,9 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: superdev
-      POSTGRES_PASSWORD: superdev
-      POSTGRES_DB: superdev
+      POSTGRES_USER: ${POSTGRES_USER:-superdev}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-superdev}
+      POSTGRES_DB: ${POSTGRES_DB:-superdev}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./infrastructure/database/init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -80,7 +80,7 @@ services:
     ports:
       - "9187:9187"
     environment:
-      DATA_SOURCE_NAME: "postgresql://superdev:superdev@postgres:5432/superdev?sslmode=disable"
+      DATA_SOURCE_NAME: "postgresql://superdev:${POSTGRES_PASSWORD:-superdev}@postgres:5432/superdev?sslmode=disable"
     depends_on:
       postgres:
         condition: service_healthy
@@ -99,7 +99,7 @@ services:
     ports:
       - "3001:3000"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-changeme}
     volumes:
       - ./infrastructure/monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
       - grafana_data:/var/lib/grafana

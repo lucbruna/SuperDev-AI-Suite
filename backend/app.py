@@ -98,6 +98,7 @@ def create_app() -> FastAPI:
     _safe_include(app, "backend.prompt_hub.api", prefix="/api")
     _safe_include(app, "backend.refactor.engine", prefix="/api")
     _safe_include(app, "backend.api.external")
+    _safe_include(app, "backend.ai_api")
 
     from backend.health import HealthChecker, HealthStatus
 

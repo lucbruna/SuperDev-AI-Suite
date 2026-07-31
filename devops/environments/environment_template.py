@@ -12,7 +12,7 @@ class EnvironmentTemplate:
         self.name = name
         self._blocks: list[dict[str, Any]] = []
 
-    def add_block(self, block_type: str, **kwargs: Any) -> "EnvironmentTemplate":
+    def add_block(self, block_type: str, **kwargs: Any) -> EnvironmentTemplate:
         raise NotImplementedError
 
     def instantiate(self, environment: str, **kwargs: Any) -> dict[str, Any]:

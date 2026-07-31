@@ -13,7 +13,7 @@ class EnvironmentDefinition:
         self.environment_type = environment_type
         self._spec: dict[str, Any] = {}
 
-    def from_dict(self, spec: dict[str, Any]) -> "EnvironmentDefinition":
+    def from_dict(self, spec: dict[str, Any]) -> EnvironmentDefinition:
         raise NotImplementedError
 
     def to_dict(self) -> dict[str, Any]:
@@ -22,5 +22,5 @@ class EnvironmentDefinition:
     def validate(self) -> list[str]:
         raise NotImplementedError
 
-    def merge(self, other: "EnvironmentDefinition") -> "EnvironmentDefinition":
+    def merge(self, other: EnvironmentDefinition) -> EnvironmentDefinition:
         raise NotImplementedError

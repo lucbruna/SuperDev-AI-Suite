@@ -14,5 +14,5 @@ class SemanticIndex:
     def index(self, key: str, data: dict[str, Any]) -> None:
         self._index[key] = data
 
-    def search(self, query: str) -> list[dict[str, Any]]:
+    def search(self, _query: str) -> list[dict[str, Any]]:
         return []

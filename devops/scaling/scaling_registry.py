@@ -7,7 +7,6 @@ from .scaling_engine import ScalingEngine
 from .scaling_policy import ScalingPolicy
 from .vertical_scaler import VerticalScaler
 
-
 __all__ = [
     "CapacityPlanner",
     "MetricMonitor",

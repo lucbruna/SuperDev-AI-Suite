@@ -12,10 +12,10 @@ class Firewall:
         self.name = name
         self._rules: list[dict[str, Any]] = []
 
-    def allow(self, protocol: str, port: int | str, source: str = "0.0.0.0/0", **kwargs: Any) -> "Firewall":
+    def allow(self, protocol: str, port: int | str, source: str = "0.0.0.0/0", **kwargs: Any) -> Firewall:
         raise NotImplementedError
 
-    def deny(self, protocol: str, port: int | str, source: str = "0.0.0.0/0", **kwargs: Any) -> "Firewall":
+    def deny(self, protocol: str, port: int | str, source: str = "0.0.0.0/0", **kwargs: Any) -> Firewall:
         raise NotImplementedError
 
     def remove_rule(self, rule_id: str) -> bool:

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Executive Dashboard — SuperDev</title>
+<style>
+    body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; background: #f4f6f9; color: #1f2933; }
+    .header { background: linear-gradient(135deg, #1e3a8a, #3b82f6); color: white; padding: 24px 32px; }
+    .header h1 { margin: 0; font-size: 24px; }
+    .header p { margin: 4px 0 0; opacity: 0.85; }
+    .content { padding: 24px 32px; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px; margin-bottom: 24px; }
+    .kpi-card { background: white; border-radius: 10px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .kpi-label { font-size: 12px; color: #52606d; text-transform: uppercase; letter-spacing: 0.5px; }
+    .kpi-value { font-size: 28px; font-weight: 700; margin: 6px 0; }
+    .kpi-unit { font-size: 14px; font-weight: 400; color: #7b8794; }
+    .kpi-status { font-size: 11px; color: #7b8794; }
+    .chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+    .chart-card { background: white; border-radius: 10px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .chart-card h3 { margin: 0 0 12px; font-size: 14px; color: #3e4c59; }
+    svg { width: 100%; height: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid #e4e7eb; }
+</style>
+</head>
+<body>
+    <div class="header">
+        <h1>Executive Dashboard</h1>
+        <p>SuperDev AI Suite — Volume 12 · Data & Analytics Engine</p>
+    </div>
+    <div class="content">
+        <div class="kpi-grid">
+                <div class="kpi-card" style="border-left: 4px solid #2ecc71">
+                    <div class="kpi-label">Projetos Concluídos</div>
+                    <div class="kpi-value">2
+                        <span class="kpi-unit">projetos</span></div>
+                    <div class="kpi-status">on_track</div>
+                </div>
+                
+                <div class="kpi-card" style="border-left: 4px solid #e74c3c">
+                    <div class="kpi-label">Tempo Médio de Dev</div>
+                    <div class="kpi-value">0.6
+                        <span class="kpi-unit">min</span></div>
+                    <div class="kpi-status">behind</div>
+                </div>
+                
+                <div class="kpi-card" style="border-left: 4px solid #e74c3c">
+                    <div class="kpi-label">Erros</div>
+                    <div class="kpi-value">11
+                        <span class="kpi-unit">erros</span></div>
+                    <div class="kpi-status">behind</div>
+                </div>
+                
+                <div class="kpi-card" style="border-left: 4px solid #e74c3c">
+                    <div class="kpi-label">Custos</div>
+                    <div class="kpi-value">0.29
+                        <span class="kpi-unit">USD</span></div>
+                    <div class="kpi-status">behind</div>
+                </div>
+                
+                <div class="kpi-card" style="border-left: 4px solid #f39c12">
+                    <div class="kpi-label">Performance dos Agentes</div>
+                    <div class="kpi-value">75.0
+                        <span class="kpi-unit">%</span></div>
+                    <div class="kpi-status">warning</div>
+                </div>
+                </div>
+        <div class="chart-grid"><div class="chart-card"><h3>Custo por Projeto (USD)</h3><svg viewBox="0 0 100 100" preserveAspectRatio="none" style="height:180px"><rect x="3.0%" y="0.0%" width="14.0%" height="100.0%" fill="#3b82f6"><title>superdev core: 240.00</title></rect><rect x="23.0%" y="25.0%" width="14.0%" height="75.0%" fill="#3b82f6"><title>mobile app: 180.00</title></rect><rect x="43.0%" y="62.5%" width="14.0%" height="37.5%" fill="#3b82f6"><title>marketing site: 90.00</title></rect><rect x="63.0%" y="45.8%" width="14.0%" height="54.2%" fill="#3b82f6"><title>api gateway: 130.00</title></rect><rect x="83.0%" y="83.3%" width="14.0%" height="16.7%" fill="#3b82f6"><title>data platform: 40.00</title></rect></svg></div>
+<div class="chart-card"><h3>Tarefas Concluídas por Projeto</h3><svg viewBox="0 0 100 100" preserveAspectRatio="none" style="height:180px"><polyline points="0.0,0.0 25.0,33.3 50.0,50.0 75.0,66.7 100.0,100.0" fill="none" stroke="#3b82f6" stroke-width="1.5"/></svg></div>
+<div class="chart-card"><h3>Distribuição de Status dos Projetos</h3><table><tr><td><span style="display:inline-block;width:10px;height:10px;background:#3b82f6;border-radius:2px"></span> completed</td><td>2 (40%)</td></tr><tr><td><span style="display:inline-block;width:10px;height:10px;background:#10b981;border-radius:2px"></span> active</td><td>2 (40%)</td></tr><tr><td><span style="display:inline-block;width:10px;height:10px;background:#f59e0b;border-radius:2px"></span> planning</td><td>1 (20%)</td></tr></table></div>
+<div class="chart-card"><h3>Performance dos Agentes</h3><svg viewBox="0 0 100 20" preserveAspectRatio="none" style="height:30px"><rect x="0" y="5" width="100" height="10" rx="5" fill="#e5e7eb"/><rect x="0" y="5" width="75.0" height="10" rx="5" fill="#f59e0b"/><text x="50" y="4" text-anchor="middle" font-size="7" fill="#1f2933">75.0%</text></svg></div></div>
+    </div>
+</body>
+</html>

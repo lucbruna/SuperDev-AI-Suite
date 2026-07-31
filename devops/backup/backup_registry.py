@@ -7,7 +7,6 @@ from .backup_restore import BackupRestore
 from .backup_schedule import BackupSchedule
 from .backup_storage import BackupStorage
 
-
 __all__ = [
     "BackupEncryption",
     "BackupEngine",

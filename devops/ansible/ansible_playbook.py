@@ -12,16 +12,16 @@ class AnsiblePlaybook:
         self.name = name
         self._plays: list[dict[str, Any]] = []
 
-    def add_play(self, hosts: str, tasks: list[dict[str, Any]], **kwargs: Any) -> "AnsiblePlaybook":
+    def add_play(self, hosts: str, tasks: list[dict[str, Any]], **kwargs: Any) -> AnsiblePlaybook:
         raise NotImplementedError
 
-    def add_task(self, name: str, module: str, **kwargs: Any) -> "AnsiblePlaybook":
+    def add_task(self, name: str, module: str, **kwargs: Any) -> AnsiblePlaybook:
         raise NotImplementedError
 
-    def add_role(self, role: str, **kwargs: Any) -> "AnsiblePlaybook":
+    def add_role(self, role: str, **kwargs: Any) -> AnsiblePlaybook:
         raise NotImplementedError
 
-    def add_handler(self, name: str, module: str, **kwargs: Any) -> "AnsiblePlaybook":
+    def add_handler(self, name: str, module: str, **kwargs: Any) -> AnsiblePlaybook:
         raise NotImplementedError
 
     def render(self) -> str:

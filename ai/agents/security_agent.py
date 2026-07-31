@@ -6,6 +6,16 @@ from typing import Any
 
 from ..base.base_agent import AgentResult, BaseAgent
 
+# Directories to skip during security scans (avoids node_modules, .git, etc.)
+_EXCLUDED_DIRS: set[str] = {
+    "node_modules", ".git", "__pycache__", "venv", ".venv",
+    "dist", "build", ".tox", ".mypy_cache", ".pytest_cache",
+    ".eggs", "*.egg-info", ".sass-cache", "bower_components",
+    ".idea", ".vscode", "coverage", ".nyc_output",
+}
+
+_MAX_FILE_SIZE = 1_000_000  # 1 MB — skip larger files
+
 
 class SecurityAgent(BaseAgent):
     async def initialize(self) -> None:
@@ -48,6 +58,11 @@ class SecurityAgent(BaseAgent):
         finally:
             self._status = "idle"
 
+    @staticmethod
+    def _should_skip_dir(dirname: str) -> bool:
+        """Return True if this directory should be excluded from scanning."""
+        return dirname in _EXCLUDED_DIRS or dirname.endswith(".egg-info")
+
     async def _scan_secrets(self, path: str) -> list[dict[str, Any]]:
         findings = []
         if not os.path.exists(path):
@@ -62,11 +77,16 @@ class SecurityAgent(BaseAgent):
             (r"(?i)sk-[a-zA-Z0-9]{32,}", "OpenAI API Key", "critical"),
         ]
 
-        for root, _dirs, files in os.walk(path):
+        for root, dirs, files in os.walk(path):
+            # Prune excluded directories in-place so os.walk won't descend
+            dirs[:] = [d for d in dirs if not self._should_skip_dir(d)]
+
             for fname in files:
                 if fname.endswith((".py", ".js", ".ts", ".env", ".yml", ".yaml", ".json", ".toml", ".cfg")):
                     try:
                         fpath = os.path.join(root, fname)
+                        if os.path.getsize(fpath) > _MAX_FILE_SIZE:
+                            continue
                         with open(fpath, encoding="utf-8", errors="ignore") as f:
                             content = f.read()
                             for pattern, desc, severity in secret_patterns:
@@ -89,7 +109,8 @@ class SecurityAgent(BaseAgent):
         if not os.path.exists(path):
             return findings
         requirements_files = []
-        for root, _dirs, files in os.walk(path):
+        for root, dirs, files in os.walk(path):
+            dirs[:] = [d for d in dirs if not self._should_skip_dir(d)]
             for f in files:
                 if f in ("requirements.txt", "Pipfile", "poetry.lock", "yarn.lock", "package-lock.json"):
                     requirements_files.append(os.path.join(root, f))
@@ -107,10 +128,13 @@ class SecurityAgent(BaseAgent):
         findings = []
         if not os.path.exists(path):
             return findings
-        for root, _dirs, files in os.walk(path):
+        for root, dirs, files in os.walk(path):
+            dirs[:] = [d for d in dirs if not self._should_skip_dir(d)]
             for fname in files:
                 fpath = os.path.join(root, fname)
                 try:
+                    if os.path.getsize(fpath) > _MAX_FILE_SIZE:
+                        continue
                     mode = os.stat(fpath).st_mode
                     if mode & 0o777 == 0o777:
                         findings.append({

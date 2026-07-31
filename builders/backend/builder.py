@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import time
-from typing import Any
 
 from ..base import (
-    ApiType, BaseBuilder, BuildConfig, BuildResult, DatabaseType,
-    FrameworkType, GeneratedFile,
+    BaseBuilder,
+    BuildConfig,
+    BuildResult,
+    DatabaseType,
+    FrameworkType,
+    GeneratedFile,
 )
 
 
@@ -64,6 +67,8 @@ class BackendBuilder(BaseBuilder):
 
 from __future__ import annotations
 
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -75,7 +80,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[o.strip() for o in os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -292,7 +297,7 @@ def test_health() -> None:
         if config.include_ci:
             files.append(self._make_file(
                 f"{slug}/.github/workflows/ci.yml",
-                f'''name: CI
+                '''name: CI
 
 on: [push, pull_request]
 
@@ -390,10 +395,12 @@ if __name__ == "__main__":
             f'''"""Django settings."""
 from pathlib import Path
 
+import os
+
 BASE_DIR = Path(__file__).resolve().parent.parent
-SECRET_KEY = "change-me-in-production"
-DEBUG = True
-ALLOWED_HOSTS = ["*"]
+SECRET_KEY = os.getenv("SECRET_KEY", "change-me-in-production")
+DEBUG = os.getenv("DEBUG", "false").lower() == "true"
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "*").split(",")
 DATABASES = {{
     "default": {{
         "ENGINE": "django.db.backends.postgresql",
@@ -418,7 +425,7 @@ ROOT_URLCONF = "{slug}.urls"
         # urls.py
         files.append(self._make_file(
             f"{slug}/{slug}/urls.py",
-            f'''"""URL configuration."""
+            '''"""URL configuration."""
 
 from django.contrib import admin
 from django.urls import path
@@ -439,7 +446,7 @@ urlpatterns = [
         if config.include_docker:
             files.append(self._make_file(
                 f"{slug}/Dockerfile",
-                f'''FROM python:3.12-slim
+                '''FROM python:3.12-slim
 
 WORKDIR /app
 COPY requirements.txt .
@@ -466,10 +473,12 @@ CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
         files.append(self._make_file(
             f"{slug}/app.py",
             f'''"""Flask application entry point."""
+import os
+
 from flask import Flask, jsonify
 
 app = Flask(__name__)
-app.config["SECRET_KEY"] = "change-me-in-production"
+app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "change-me-in-production")
 
 
 @app.route("/")
@@ -483,7 +492,7 @@ def health():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=os.getenv("DEBUG", "false").lower() == "true")
 ''',
             language="python",
         ))
@@ -497,7 +506,7 @@ if __name__ == "__main__":
         if config.include_docker:
             files.append(self._make_file(
                 f"{slug}/Dockerfile",
-                f'''FROM python:3.12-slim
+                '''FROM python:3.12-slim
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt

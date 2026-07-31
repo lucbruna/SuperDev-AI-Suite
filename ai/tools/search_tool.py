@@ -7,6 +7,12 @@ from typing import Any
 
 from ..base.base_tool import BaseTool
 
+_EXCLUDED_DIRS: set[str] = {
+    "node_modules", ".git", "__pycache__", "venv", ".venv",
+    "dist", "build", ".tox", ".mypy_cache", ".pytest_cache",
+    ".eggs", ".idea", ".vscode", "coverage", ".nyc_output",
+}
+
 
 class SearchTool(BaseTool):
     _name = "search"
@@ -37,13 +43,15 @@ class SearchTool(BaseTool):
             results = []
 
             if search_type == "file":
-                for root, _dirs, files in os.walk(path):
+                for root, dirs, files in os.walk(path):
+                    dirs[:] = [d for d in dirs if d not in _EXCLUDED_DIRS and not d.endswith(".egg-info")]
                     for fname in files:
                         if fnmatch.fnmatch(fname, pattern):
                             results.append(os.path.join(root, fname))
 
             elif search_type == "grep":
-                for root, _dirs, files in os.walk(path):
+                for root, dirs, files in os.walk(path):
+                    dirs[:] = [d for d in dirs if d not in _EXCLUDED_DIRS and not d.endswith(".egg-info")]
                     for fname in files:
                         try:
                             fpath = os.path.join(root, fname)
@@ -60,7 +68,8 @@ class SearchTool(BaseTool):
 
             elif search_type == "code":
                 code_extensions = {".py", ".js", ".ts", ".java", ".cpp", ".c", ".h", ".cs", ".go", ".rs", ".rb", ".php"}
-                for root, _dirs, files in os.walk(path):
+                for root, dirs, files in os.walk(path):
+                    dirs[:] = [d for d in dirs if d not in _EXCLUDED_DIRS and not d.endswith(".egg-info")]
                     for fname in files:
                         ext = os.path.splitext(fname)[1]
                         if ext in code_extensions:

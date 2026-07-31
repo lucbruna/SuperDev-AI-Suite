@@ -7,6 +7,7 @@ from backend.auth.sessions import SessionManager
 from backend.config import config
 from backend.database.session import get_db
 from backend.dependencies import get_current_active_user
+from backend.middleware.auth_rate_limit import login_limiter
 from backend.users.service import UserService
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
@@ -52,6 +53,7 @@ session_manager = SessionManager()
 async def login(
     request: LoginRequest,
     db: AsyncSession = Depends(get_db),
+    _rate: None = Depends(login_limiter),
 ) -> dict[str, Any]:
     user_service = UserService(db)
     user = await user_service.get_user_by_email(request.email)
@@ -87,6 +89,7 @@ async def login(
 async def register(
     request: RegisterRequest,
     db: AsyncSession = Depends(get_db),
+    _rate: None = Depends(login_limiter),
 ) -> dict[str, Any]:
     user_service = UserService(db)
     existing = await user_service.get_user_by_email(request.email)

@@ -8,7 +8,6 @@ from .networking_engine import NetworkingEngine
 from .traffic_shaping import TrafficShaping
 from .vpn_manager import VpnManager
 
-
 __all__ = [
     "DnsManager",
     "Firewall",

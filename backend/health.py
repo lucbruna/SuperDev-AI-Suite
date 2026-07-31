@@ -34,6 +34,9 @@ class HealthChecker:
             "redis": self._check_redis,
             "cache": self._check_cache,
             "providers": self._check_providers,
+            "disk": self._check_disk_space,
+            "memory": self._check_memory,
+            "uptime": self._check_uptime,
         }
 
     async def check_all(self) -> dict[str, HealthCheckResult]:
@@ -152,6 +155,117 @@ class HealthChecker:
             return HealthCheckResult(
                 status=HealthStatus.UNHEALTHY,
                 component="cache",
+                message=str(e),
+                latency_ms=round(latency, 2),
+            )
+
+    async def _check_disk_space(self) -> HealthCheckResult:
+        start = time.monotonic()
+        try:
+            import shutil
+            usage = shutil.disk_usage("/")
+            free_pct = (usage.free / usage.total) * 100
+            latency = (time.monotonic() - start) * 1000
+            if free_pct < 10:
+                return HealthCheckResult(
+                    status=HealthStatus.DEGRADED,
+                    component="disk",
+                    message=f"Low disk space: {free_pct:.1f}% free",
+                    latency_ms=round(latency, 2),
+                    details={
+                        "total_gb": round(usage.total / (1024**3), 2),
+                        "free_gb": round(usage.free / (1024**3), 2),
+                        "free_percent": round(free_pct, 1),
+                    },
+                )
+            return HealthCheckResult(
+                status=HealthStatus.HEALTHY,
+                component="disk",
+                message=f"Disk OK: {free_pct:.1f}% free",
+                latency_ms=round(latency, 2),
+                details={
+                    "total_gb": round(usage.total / (1024**3), 2),
+                    "free_gb": round(usage.free / (1024**3), 2),
+                    "free_percent": round(free_pct, 1),
+                },
+            )
+        except Exception as e:
+            latency = (time.monotonic() - start) * 1000
+            return HealthCheckResult(
+                status=HealthStatus.DEGRADED,
+                component="disk",
+                message=str(e),
+                latency_ms=round(latency, 2),
+            )
+
+    async def _check_memory(self) -> HealthCheckResult:
+        start = time.monotonic()
+        try:
+            import psutil
+            mem = psutil.virtual_memory()
+            latency = (time.monotonic() - start) * 1000
+            if mem.percent > 90:
+                return HealthCheckResult(
+                    status=HealthStatus.DEGRADED,
+                    component="memory",
+                    message=f"High memory usage: {mem.percent}%",
+                    latency_ms=round(latency, 2),
+                    details={
+                        "total_gb": round(mem.total / (1024**3), 2),
+                        "available_gb": round(mem.available / (1024**3), 2),
+                        "used_percent": mem.percent,
+                    },
+                )
+            return HealthCheckResult(
+                status=HealthStatus.HEALTHY,
+                component="memory",
+                message=f"Memory OK: {mem.percent}% used",
+                latency_ms=round(latency, 2),
+                details={
+                    "total_gb": round(mem.total / (1024**3), 2),
+                    "available_gb": round(mem.available / (1024**3), 2),
+                    "used_percent": mem.percent,
+                },
+            )
+        except Exception as e:
+            latency = (time.monotonic() - start) * 1000
+            return HealthCheckResult(
+                status=HealthStatus.DEGRADED,
+                component="memory",
+                message=str(e),
+                latency_ms=round(latency, 2),
+            )
+
+    async def _check_uptime(self) -> HealthCheckResult:
+        start = time.monotonic()
+        try:
+            from backend.registry import service_registry
+            started_at = service_registry.get("started_at")
+            if not started_at:
+                return HealthCheckResult(
+                    status=HealthStatus.DEGRADED,
+                    component="uptime",
+                    message="Start time not recorded",
+                    latency_ms=round((time.monotonic() - start) * 1000, 2),
+                )
+            from datetime import UTC, datetime
+            start_dt = datetime.fromisoformat(started_at)
+            now = datetime.now(UTC)
+            uptime_secs = (now - start_dt).total_seconds()
+            hours = int(uptime_secs // 3600)
+            minutes = int((uptime_secs % 3600) // 60)
+            return HealthCheckResult(
+                status=HealthStatus.HEALTHY,
+                component="uptime",
+                message=f"Uptime: {hours}h {minutes}m",
+                latency_ms=round((time.monotonic() - start) * 1000, 2),
+                details={"seconds": int(uptime_secs), "started_at": started_at},
+            )
+        except Exception as e:
+            latency = (time.monotonic() - start) * 1000
+            return HealthCheckResult(
+                status=HealthStatus.DEGRADED,
+                component="uptime",
                 message=str(e),
                 latency_ms=round(latency, 2),
             )

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import base64
 import time
 import urllib.error
 import urllib.parse
@@ -17,7 +18,7 @@ class ClickHouseDriver(BaseDriver):
     def __init__(self, logger: Any = None) -> None:
         super().__init__(logger)
         self._base_url: str = ""
-        self._auth: str = ""
+        self._auth: str = ""  # HTTP Basic credentials (base64 user:password)
 
     async def connect(self, config: ConnectionConfig) -> None:
         self._config = config
@@ -25,21 +26,23 @@ class ClickHouseDriver(BaseDriver):
         port = config.port or 8123
         self._base_url = f"{scheme}://{config.host}:{port}"
         if config.username:
-            self._auth = f"user={config.username}"
-            if config.password:
-                self._auth += f"&password={config.password}"
+            # Credentials via HTTP Basic auth header — never in the URL query
+            # string (would leak into logs/proxies).
+            userpass = f"{config.username}:{config.password or ''}".encode()
+            self._auth = base64.b64encode(userpass).decode("ascii")
         self._connected = True
         self._logger.info(f"ClickHouse connected at {self._base_url}")
 
     async def disconnect(self) -> None:
         self._connected = False
 
-    async def execute(self, query: str, params: list[Any] | None = None) -> QueryResult:
+    async def execute(self, query: str, _params: list[Any] | None = None) -> QueryResult:
         self._require_connection()
         start = time.monotonic()
         try:
-            url = f"{self._base_url}/?{self._auth}&query={urllib.parse.quote(query)}"
-            req = urllib.request.Request(url)
+            url = f"{self._base_url}/?query={urllib.parse.quote(query)}"
+            headers = {"Authorization": f"Basic {self._auth}"} if self._auth else {}
+            req = urllib.request.Request(url, headers=headers)
             loop = asyncio.get_event_loop()
             result = await loop.run_in_executor(None, lambda: urllib.request.urlopen(req, timeout=30))
             body = result.read().decode()

@@ -7,6 +7,9 @@ select = ["E", "F", "I", "N", "W", "UP", "B", "SIM", "ARG", "PTH"]
 [lint.per-file-ignores]
 # SQLAlchemy string-based relationship() references resolve at runtime
 "backend/database/models/*.py" = ["F821"]
+# N999 fires on package __init__.py files because the project root folder
+# name "SuperDev" is not snake_case (environmental, project-wide)
+"**/__init__.py" = ["N999"]
 
 [format]
 quote-style = "double"

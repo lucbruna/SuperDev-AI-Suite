@@ -1,0 +1,60 @@
+"""Factory Logger - Structured logging for factory operations."""
+from typing import Dict, Any, Optional, List
+from dataclasses import dataclass, field
+from enum import Enum
+from datetime import datetime
+
+
+class LogLevel(Enum):
+    DEBUG = "debug"
+    INFO = "info"
+    WARNING = "warning"
+    ERROR = "error"
+    CRITICAL = "critical"
+
+
+@dataclass
+class LogEntry:
+    level: LogLevel
+    message: str
+    source: str = ""
+    project_id: str = ""
+    phase: str = ""
+    data: Dict[str, Any] = field(default_factory=dict)
+    timestamp: datetime = field(default_factory=datetime.now)
+
+
+class FactoryLogger:
+    def __init__(self):
+        self.entries: List[LogEntry] = []
+
+    def log(self, level: LogLevel, message: str, source: str = "", project_id: str = "", phase: str = "", data: Dict[str, Any] = None) -> LogEntry:
+        entry = LogEntry(level=level, message=message, source=source, project_id=project_id, phase=phase, data=data or {})
+        self.entries.append(entry)
+        return entry
+
+    def debug(self, message: str, **kwargs) -> LogEntry:
+        return self.log(LogLevel.DEBUG, message, **kwargs)
+
+    def info(self, message: str, **kwargs) -> LogEntry:
+        return self.log(LogLevel.INFO, message, **kwargs)
+
+    def warning(self, message: str, **kwargs) -> LogEntry:
+        return self.log(LogLevel.WARNING, message, **kwargs)
+
+    def error(self, message: str, **kwargs) -> LogEntry:
+        return self.log(LogLevel.ERROR, message, **kwargs)
+
+    def critical(self, message: str, **kwargs) -> LogEntry:
+        return self.log(LogLevel.CRITICAL, message, **kwargs)
+
+    def get_entries(self, level: LogLevel = None, project_id: str = "", limit: int = 100) -> List[LogEntry]:
+        entries = self.entries
+        if level:
+            entries = [e for e in entries if e.level == level]
+        if project_id:
+            entries = [e for e in entries if e.project_id == project_id]
+        return entries[-limit:]
+
+    def count(self) -> int:
+        return len(self.entries)

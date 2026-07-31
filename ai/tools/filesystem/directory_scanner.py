@@ -5,6 +5,12 @@ from typing import Any
 
 from ...base.base_tool import BaseTool
 
+_EXCLUDED_DIRS: set[str] = {
+    "node_modules", ".git", "__pycache__", "venv", ".venv",
+    "dist", "build", ".tox", ".mypy_cache", ".pytest_cache",
+    ".eggs", ".idea", ".vscode", "coverage", ".nyc_output",
+}
+
 
 class DirectoryScanner(BaseTool):
     _name = "directory_scanner"
@@ -35,6 +41,7 @@ class DirectoryScanner(BaseTool):
             if recursive:
                 entries: list[dict[str, Any]] = []
                 for dirpath, dirnames, filenames in os.walk(path):
+                    dirnames[:] = [d for d in dirnames if d not in _EXCLUDED_DIRS and not d.endswith(".egg-info")]
                     for d in dirnames:
                         entries.append({"name": d, "path": os.path.join(dirpath, d), "type": "directory"})
                     for f in filenames:

@@ -15,16 +15,21 @@ class DevOpsManager:
         self._engine = engine
 
     def create_environment(self, name: str, config: dict[str, Any] | None = None) -> dict[str, Any]:
-        raise NotImplementedError
+        """Provision a new environment through the engine."""
+        return self._engine.provision(name, **(config or {}))
 
     def deploy_service(self, service: str, environment: str, **kwargs: Any) -> dict[str, Any]:
-        raise NotImplementedError
+        """Deploy a service through the engine (real DeploymentEngine)."""
+        return self._engine.deploy(service, environment, **kwargs)
 
     def get_status(self, environment: str | None = None) -> dict[str, Any]:
-        raise NotImplementedError
+        """Return the aggregated engine status."""
+        return self._engine.status(environment)
 
     def list_environments(self) -> list[str]:
-        raise NotImplementedError
+        """List known environment names."""
+        return list(self._engine.status()["environments"])
 
     def list_services(self) -> list[dict[str, Any]]:
-        raise NotImplementedError
+        """List registered services."""
+        return [s.__dict__ for s in self._engine.services]

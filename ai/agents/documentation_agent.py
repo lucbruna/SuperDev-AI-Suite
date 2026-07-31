@@ -5,6 +5,12 @@ from typing import Any
 
 from ..base.base_agent import AgentResult, BaseAgent
 
+_EXCLUDED_DIRS: set[str] = {
+    "node_modules", ".git", "__pycache__", "venv", ".venv",
+    "dist", "build", ".tox", ".mypy_cache", ".pytest_cache",
+    ".eggs", ".idea", ".vscode", "coverage", ".nyc_output",
+}
+
 
 class DocumentationAgent(BaseAgent):
     async def initialize(self) -> None:
@@ -48,7 +54,8 @@ class DocumentationAgent(BaseAgent):
             except Exception:
                 pass
         else:
-            for root, _dirs, fnames in os.walk(path):
+            for root, dirs, fnames in os.walk(path):
+                dirs[:] = [d for d in dirs if d not in _EXCLUDED_DIRS and not d.endswith(".egg-info")]
                 for fname in fnames[:20]:
                     if fname.endswith((".py", ".js", ".ts", ".md", ".json", ".yaml", ".yml", ".toml")):
                         fpath = os.path.join(root, fname)

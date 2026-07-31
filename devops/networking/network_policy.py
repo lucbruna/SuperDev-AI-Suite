@@ -12,13 +12,13 @@ class NetworkPolicy:
         self.name = name
         self._spec: dict[str, Any] = {}
 
-    def allow_ingress(self, namespace: str, ports: list[int]) -> "NetworkPolicy":
+    def allow_ingress(self, namespace: str, ports: list[int]) -> NetworkPolicy:
         raise NotImplementedError
 
-    def allow_egress(self, namespace: str, ports: list[int]) -> "NetworkPolicy":
+    def allow_egress(self, namespace: str, ports: list[int]) -> NetworkPolicy:
         raise NotImplementedError
 
-    def deny_all(self) -> "NetworkPolicy":
+    def deny_all(self) -> NetworkPolicy:
         raise NotImplementedError
 
     def to_dict(self) -> dict[str, Any]:

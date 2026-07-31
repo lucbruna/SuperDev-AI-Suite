@@ -1,5 +1,8 @@
 """SuperDev AI Suite - Backend Simplificado para demonstração."""
 
+import hmac
+import os
+import secrets
 import time
 from contextlib import asynccontextmanager
 
@@ -210,8 +213,7 @@ async def list_plugins():
 
 
 # ── Admin User (apenas para dev) ──────────────────────────────────
-
-import os
+# ⚠️ Demo-only: os endpoints /users/me e /users não exigem autenticação real.
 
 ADMIN_USER = {
     "id": "usr_admin_001",
@@ -245,11 +247,12 @@ async def login(credentials: dict):
     email = credentials.get("email", "")
     password = credentials.get("password", "")
 
-    if email == ADMIN_USER["email"] and password == ADMIN_USER["password"]:
+    # Comparação em tempo constante + token aleatório (nunca estático).
+    if email == ADMIN_USER["email"] and hmac.compare_digest(password, ADMIN_USER["password"]):
         return {
             "success": True,
             "data": {
-                "access_token": "admin-token-superdev-2025",
+                "access_token": secrets.token_urlsafe(32),
                 "token_type": "Bearer",
                 "expires_in": 86400,
                 "user": {
@@ -291,7 +294,7 @@ async def register(data: dict):
     return {
         "success": True,
         "data": {
-            "access_token": f"token-{new_user['id']}",
+            "access_token": secrets.token_urlsafe(32),
             "user": new_user,
         },
     }

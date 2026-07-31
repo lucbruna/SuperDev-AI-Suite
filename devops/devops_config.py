@@ -29,7 +29,7 @@ class DevOpsConfig:
 
     def _load(self) -> None:
         if self.config_path and self.config_path.exists():
-            with open(self.config_path) as f:
+            with self.config_path.open() as f:
                 loaded = yaml.safe_load(f) or {}
                 self._data.update(loaded)
 

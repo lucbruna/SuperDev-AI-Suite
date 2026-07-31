@@ -9,5 +9,5 @@ class ProjectScanner:
     def __init__(self) -> None:
         self._log = logging.getLogger("superdev.code.understanding.scanner")
 
-    def scan(self, path: str) -> list[dict]:
+    def scan(self, _path: str) -> list[dict]:
         return []

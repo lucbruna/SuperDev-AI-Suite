@@ -12,10 +12,10 @@ class BackupPolicy:
         self.name = name
         self._spec: dict[str, Any] = {}
 
-    def set_retention(self, daily: int = 7, weekly: int = 4, monthly: int = 12) -> "BackupPolicy":
+    def set_retention(self, daily: int = 7, weekly: int = 4, monthly: int = 12) -> BackupPolicy:
         raise NotImplementedError
 
-    def set_schedule(self, cron: str) -> "BackupPolicy":
+    def set_schedule(self, cron: str) -> BackupPolicy:
         raise NotImplementedError
 
     def to_dict(self) -> dict[str, Any]:

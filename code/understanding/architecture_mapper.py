@@ -10,5 +10,5 @@ class ArchitectureMapper:
     def __init__(self) -> None:
         self._log = logging.getLogger("superdev.code.understanding.arch")
 
-    def map(self, files: list[dict[str, Any]]) -> dict[str, Any]:
+    def map(self, _files: list[dict[str, Any]]) -> dict[str, Any]:
         return {"components": [], "layers": []}

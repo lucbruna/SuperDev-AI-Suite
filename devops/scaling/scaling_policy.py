@@ -13,10 +13,10 @@ class ScalingPolicy:
         self.metric = metric
         self._rules: list[dict[str, Any]] = []
 
-    def add_rule(self, condition: str, threshold: float, action: str, amount: int) -> "ScalingPolicy":
+    def add_rule(self, condition: str, threshold: float, action: str, amount: int) -> ScalingPolicy:
         raise NotImplementedError
 
-    def set_limits(self, min_replicas: int, max_replicas: int) -> "ScalingPolicy":
+    def set_limits(self, min_replicas: int, max_replicas: int) -> ScalingPolicy:
         raise NotImplementedError
 
     def to_dict(self) -> dict[str, Any]:

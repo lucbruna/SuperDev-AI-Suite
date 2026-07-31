@@ -7,7 +7,6 @@ from .ansible_playbook import AnsiblePlaybook
 from .ansible_role import AnsibleRole
 from .ansible_vault import AnsibleVault
 
-
 __all__ = [
     "AnsibleCollection",
     "AnsibleEngine",

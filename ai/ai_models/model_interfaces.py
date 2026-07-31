@@ -1,0 +1,36 @@
+"""AI Model interfaces."""
+from __future__ import annotations
+from abc import ABC, abstractmethod
+from typing import Any, Dict, List, Optional
+
+class ProviderInterface(ABC):
+    @abstractmethod
+    def complete(self, prompt: str, **kwargs: Any) -> Dict[str, Any]: ...
+    @abstractmethod
+    def stream(self, prompt: str, **kwargs: Any): ...
+    @abstractmethod
+    def get_models(self) -> List[Dict[str, Any]]: ...
+
+class RouterInterface(ABC):
+    @abstractmethod
+    def select_model(self, task_type: str, requirements: Dict[str, Any] = None) -> str: ...
+    @abstractmethod
+    def route_request(self, request: Dict[str, Any]) -> Dict[str, Any]: ...
+
+class EvaluationInterface(ABC):
+    @abstractmethod
+    def evaluate(self, model_id: str, test_cases: List[Dict[str, Any]]) -> Dict[str, Any]: ...
+    @abstractmethod
+    def compare(self, model_ids: List[str], test_cases: List[Dict[str, Any]]) -> Dict[str, Any]: ...
+
+class InferenceInterface(ABC):
+    @abstractmethod
+    def infer(self, model_id: str, prompt: str, **kwargs: Any) -> Dict[str, Any]: ...
+    @abstractmethod
+    def batch_infer(self, model_id: str, prompts: List[str], **kwargs: Any) -> List[Dict[str, Any]]: ...
+
+class TrainingInterface(ABC):
+    @abstractmethod
+    def train(self, model_id: str, dataset: List[Dict[str, Any]], config: Dict[str, Any]) -> Dict[str, Any]: ...
+    @abstractmethod
+    def finetune(self, model_id: str, dataset: List[Dict[str, Any]], config: Dict[str, Any]) -> Dict[str, Any]: ...

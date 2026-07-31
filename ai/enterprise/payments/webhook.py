@@ -1,0 +1,45 @@
+"""Payment webhooks."""
+from __future__ import annotations
+from typing import Any, Callable, Dict, List
+
+class WebhookManager:
+    def __init__(self) -> None:
+        self._webhooks: Dict[str, Dict[str, Any]] = {}
+        self._handlers: Dict[str, Callable[[Dict[str, Any]], Any]] = {}
+        self._log: List[Dict[str, Any]] = []
+    def register(self, event: str, url: str, secret: str = "") -> Dict[str, Any]:
+        webhook = {"event": event, "url": url, "secret": secret, "active": True}
+        self._webhooks[f"{event}:{url}"] = webhook
+        return webhook
+    def add_handler(self, event: str, handler: Callable[[Dict[str, Any]], Any]) -> None:
+        self._handlers[event] = handler
+    def trigger(self, event: str, data: Dict[str, Any]) -> List[Dict[str, Any]]:
+        results = []
+        for key, wh in self._webhooks.items():
+            if wh["event"] == event and wh["active"]:
+                self._log.append({"event": event, "url": wh["url"], "timestamp": __import__("time").time()})
+                results.append({"url": wh["url"], "status": "sent"})
+        handler = self._handlers.get(event)
+        if handler:
+            try:
+                handler(data)
+                results.append({"handler": event, "status": "executed"})
+            except Exception as e:
+                results.append({"handler": event, "status": "error", "error": str(e)})
+        return results
+    def list_webhooks(self) -> List[Dict[str, Any]]:
+        return list(self._webhooks.values())
+    def deactivate(self, event: str, url: str) -> bool:
+        key = f"{event}:{url}"
+        if key in self._webhooks:
+            self._webhooks[key]["active"] = False
+            return True
+        return False
+    def get_log(self, limit: int = 50) -> List[Dict[str, Any]]:
+        return self._log[-limit:]
+    def remove(self, event: str, url: str) -> bool:
+        key = f"{event}:{url}"
+        if key in self._webhooks:
+            del self._webhooks[key]
+            return True
+        return False

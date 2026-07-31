@@ -1,6 +1,105 @@
 from __future__ import annotations
 
+import ast
+import operator
 from typing import Any
+
+# Safe watch-expression evaluation — AST allowlist instead of eval() (OWASP A03).
+# Read-only: names, constants, operators, and non-underscore attribute paths.
+# Blocked: calls, imports, assignments, collections, dunder access.
+_SAFE_WATCH_OPS: dict[type, Any] = {
+    ast.Add: operator.add,
+    ast.Sub: operator.sub,
+    ast.Mult: operator.mul,
+    ast.Div: operator.truediv,
+    ast.FloorDiv: operator.floordiv,
+    ast.Mod: operator.mod,
+    ast.Pow: operator.pow,
+    ast.Eq: operator.eq,
+    ast.NotEq: operator.ne,
+    ast.Lt: operator.lt,
+    ast.LtE: operator.le,
+    ast.Gt: operator.gt,
+    ast.GtE: operator.ge,
+    ast.Is: operator.is_,
+    ast.IsNot: operator.is_not,
+    ast.In: lambda a, b: a in b,
+    ast.NotIn: lambda a, b: a not in b,
+    ast.Not: operator.not_,
+    ast.USub: operator.neg,
+    ast.UAdd: operator.pos,
+}
+
+# Calls are fully blocked, so only names that would be dangerous if a future
+# change enabled calls need to be blocked here.
+_BLOCKED_WATCH_NAMES = frozenset(
+    {
+        "__import__", "eval", "exec", "compile", "open", "getattr", "setattr",
+        "delattr", "globals", "locals", "vars", "dir", "type", "super",
+        "breakpoint",
+    }
+)
+
+
+def _safe_eval_watch_node(node: ast.AST, context: dict[str, Any]) -> Any:
+    """Evaluate a watch-expression AST node against the allowlist (read-only)."""
+    if isinstance(node, ast.Expression):
+        return _safe_eval_watch_node(node.body, context)
+    if isinstance(node, ast.Constant):
+        return node.value
+    if isinstance(node, ast.Name):
+        if node.id in _BLOCKED_WATCH_NAMES:
+            raise ValueError(f"access to '{node.id}' is blocked")
+        if node.id in context:
+            return context[node.id]
+        if node.id in ("True", "False", "None"):
+            return {"True": True, "False": False, "None": None}[node.id]
+        raise NameError(f"name '{node.id}' is not defined")
+    if isinstance(node, ast.Attribute):
+        if node.attr.startswith("_"):
+            raise ValueError(f"attribute '{node.attr}' is not allowed")
+        return getattr(_safe_eval_watch_node(node.value, context), node.attr)
+    if isinstance(node, ast.BinOp):
+        if type(node.op) not in _SAFE_WATCH_OPS:
+            raise ValueError("binary operator not allowed")
+        return _SAFE_WATCH_OPS[type(node.op)](
+            _safe_eval_watch_node(node.left, context),
+            _safe_eval_watch_node(node.right, context),
+        )
+    if isinstance(node, ast.UnaryOp):
+        if type(node.op) not in _SAFE_WATCH_OPS:
+            raise ValueError("unary operator not allowed")
+        return _SAFE_WATCH_OPS[type(node.op)](_safe_eval_watch_node(node.operand, context))
+    if isinstance(node, ast.BoolOp):
+        values = [_safe_eval_watch_node(v, context) for v in node.values]
+        return all(values) if isinstance(node.op, ast.And) else any(values)
+    if isinstance(node, ast.Compare):
+        left = _safe_eval_watch_node(node.left, context)
+        for op, comparator in zip(node.ops, node.comparators, strict=False):
+            if type(op) not in _SAFE_WATCH_OPS:
+                raise ValueError("comparison not allowed")
+            right = _safe_eval_watch_node(comparator, context)
+            if not _SAFE_WATCH_OPS[type(op)](left, right):
+                return False
+            left = right
+        return True
+    if isinstance(node, ast.Subscript):
+        # Only constant indexes are allowed (e.g. rows[0]), no slicing tricks.
+        if not isinstance(node.slice, ast.Constant):
+            raise ValueError("only constant indexes are allowed")
+        return _safe_eval_watch_node(node.value, context)[node.slice.value]
+    if isinstance(node, (ast.List, ast.Tuple, ast.Set)):
+        # Constant-only collection literals (e.g. ``role in ['admin', 'x']``).
+        # Elementos passam pelo mesmo allowlist — calls/imports seguem bloqueados.
+        return [_safe_eval_watch_node(el, context) for el in node.elts]
+    if isinstance(node, ast.Dict):
+        result: dict[Any, Any] = {}
+        for key, value in zip(node.keys, node.values, strict=False):
+            if key is None:
+                raise ValueError("dict unpacking is not allowed")
+            result[_safe_eval_watch_node(key, context)] = _safe_eval_watch_node(value, context)
+        return result
+    raise ValueError(f"expression type not allowed: {type(node).__name__}")
 
 
 class AgentInspector:
@@ -90,17 +189,16 @@ class AgentInspector:
             self._watch_expressions[session_id].append(expression)
 
     async def remove_watch_expression(self, session_id: str, expression: str) -> None:
-        if session_id in self._watch_expressions:
-            if expression in self._watch_expressions[session_id]:
-                self._watch_expressions[session_id].remove(expression)
+        if session_id in self._watch_expressions and expression in self._watch_expressions[session_id]:
+            self._watch_expressions[session_id].remove(expression)
 
     async def get_watch_expressions(self, session_id: str) -> list[str]:
         return self._watch_expressions.get(session_id, [])
 
     async def evaluate_watch(self, expression: str, variables: dict[str, Any]) -> str:
         try:
-            local_vars = dict(variables)
-            result = eval(expression, {"__builtins__": {}}, local_vars)
+            tree = ast.parse(expression, mode="eval")
+            result = _safe_eval_watch_node(tree, dict(variables))
             return str(result)
         except Exception as e:
             return f"<error: {e}>"

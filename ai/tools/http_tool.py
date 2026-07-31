@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from security.ssrf import validate_public_url
+
 from ..base.base_tool import BaseTool
 
 
@@ -33,9 +35,15 @@ class HTTPTool(BaseTool):
         body = params.get("body")
         timeout = params.get("timeout", 30)
 
+        # SSRF guard (CWE-918): refuse private/loopback/metadata targets.
+        try:
+            validate_public_url(url)
+        except ValueError as exc:
+            return {"success": False, "error": str(exc)}
+
         try:
             import httpx
-            async with httpx.AsyncClient(timeout=timeout, verify=False) as client:
+            async with httpx.AsyncClient(timeout=timeout) as client:
                 response = await client.request(method, url, headers=headers, content=body)
                 return {
                     "success": response.is_success,

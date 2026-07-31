@@ -1,0 +1,40 @@
+{
+  "dashboard": "c758992490bf",
+  "kpis": {
+    "completed_projects": {
+      "label": "Projetos Concluídos",
+      "value": 2,
+      "unit": "projetos",
+      "target": 1.0,
+      "status": "on_track"
+    },
+    "avg_dev_time_min": {
+      "label": "Tempo Médio de Dev",
+      "value": 0.6,
+      "unit": "min",
+      "target": 30.0,
+      "status": "behind"
+    },
+    "total_errors": {
+      "label": "Erros",
+      "value": 11,
+      "unit": "erros",
+      "target": 5.0,
+      "status": "behind"
+    },
+    "total_cost": {
+      "label": "Custos",
+      "value": 0.29,
+      "unit": "USD",
+      "target": 100.0,
+      "status": "behind"
+    },
+    "agent_performance_pct": {
+      "label": "Performance dos Agentes",
+      "value": 75.0,
+      "unit": "%",
+      "target": 95.0,
+      "status": "warning"
+    }
+  }
+}

@@ -7,7 +7,6 @@ from .terraform_providers import TerraformProviderRegistry
 from .terraform_state import TerraformState
 from .terraform_workspace import TerraformWorkspace
 
-
 __all__ = [
     "TerraformConfig",
     "TerraformEngine",

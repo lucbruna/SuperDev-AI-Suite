@@ -1,0 +1,28 @@
+{
+  "counters": {
+    "ingestion.batches": 2.0,
+    "records.total": 6.0,
+    "analytics.analyses": 3.0,
+    "quality.profiling_runs{asset=agents}": 1.0,
+    "quality.profiling_runs{asset=projects}": 1.0,
+    "forecasting.analyses": 1.0,
+    "forecasting.forecasts": 1.0,
+    "flows.forecast": 1.0,
+    "streaming.published{stream=agent.activity}": 3.0,
+    "reporting.reports{kind=executive}": 1.0
+  },
+  "gauges": {},
+  "histograms": {
+    "ingestion.records_per_batch": {
+      "count": 2,
+      "sum": 6,
+      "avg": 3.0
+    }
+  },
+  "quality": {
+    "unknown": 6,
+    "good": 0,
+    "warning": 0,
+    "bad": 0
+  }
+}

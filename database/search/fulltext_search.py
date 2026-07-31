@@ -5,6 +5,19 @@ from typing import Any
 
 from ..database_interfaces import IDatabaseDriver
 
+_IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+
+def _validate_identifier(name: str) -> str:
+    """Validate a table/column identifier to prevent SQL injection.
+
+    Identifiers cannot be bound as parameters, so they are validated against a
+    strict allowlist pattern instead of being interpolated verbatim.
+    """
+    if not _IDENTIFIER_RE.match(name):
+        raise ValueError(f"Invalid SQL identifier: {name!r}")
+    return name
+
 
 class FullTextSearch:
     """Cross-database full-text search helper.
@@ -26,6 +39,13 @@ class FullTextSearch:
         terms = self._tokenize(query)
         if not terms:
             return []
+        if not columns:
+            return []
+        # Identifiers are interpolated into SQL (they cannot be parameterized),
+        # so they must pass the strict allowlist before reaching any query.
+        table = _validate_identifier(table)
+        columns = [_validate_identifier(c) for c in columns]
+        limit = max(1, min(int(limit), 1000))
 
         if dialect == "postgresql":
             return await self._search_pg(table, columns, terms, limit)

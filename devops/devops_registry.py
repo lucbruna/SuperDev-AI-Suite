@@ -20,6 +20,10 @@ class DevOpsRegistry:
     def register_resource(self, name: str, resource: Any) -> None:
         self._resources[name] = resource
 
+    def unregister_resource(self, name: str) -> bool:
+        """Remove a resource by id. Returns True when it existed."""
+        return self._resources.pop(name, None) is not None
+
     def get_service(self, name: str) -> Any:
         return self._services.get(name)
 
