@@ -67,6 +67,28 @@ def create_app() -> FastAPI:
 
     app.add_middleware(MetricsMiddleware)
 
+    # Rate limiting middleware
+    try:
+        from backend.middleware.rate_limit import RateLimitMiddleware
+        app.add_middleware(RateLimitMiddleware, max_requests=100, window_seconds=60)
+    except ImportError:
+        logger.warning("Rate limit middleware not available")
+
+    # Endpoint-specific rate limiting
+    try:
+        from backend.middleware.endpoint_rate_limit import EndpointRateLimitMiddleware
+        app.add_middleware(
+            EndpointRateLimitMiddleware,
+            endpoint_limits={
+                "/api/v1/auth/*": 20,
+                "/api/v1/ai/*": 10,
+                "default": 100,
+            },
+            window_seconds=60,
+        )
+    except ImportError:
+        logger.warning("Endpoint rate limit middleware not available")
+
     register_error_handlers(app)
 
     configure_tracing()
@@ -99,6 +121,15 @@ def create_app() -> FastAPI:
     _safe_include(app, "backend.refactor.engine", prefix="/api")
     _safe_include(app, "backend.api.external")
     _safe_include(app, "backend.ai_api")
+
+    # Ecosystem modules
+    _safe_include(app, "backend.notifications.router", prefix="/api/v1/notifications", tags=["notifications"])
+    _safe_include(app, "backend.notifications.email_router", prefix="/api/v1/email", tags=["email"])
+    _safe_include(app, "backend.security.router", prefix="/api/v1/sso", tags=["sso"])
+    _safe_include(app, "backend.backup.router", prefix="/api/v1/backup", tags=["backup"])
+    _safe_include(app, "backend.export_import.router", prefix="/api/v1/data", tags=["export-import"])
+    _safe_include(app, "backend.i18n.router", prefix="/api/v1/i18n", tags=["i18n"])
+    _safe_include(app, "backend.search.router", prefix="/api/v1/search", tags=["search"])
 
     from backend.health import HealthChecker, HealthStatus
 
