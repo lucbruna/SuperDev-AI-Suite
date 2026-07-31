@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from typing import Any, Generic, TypeVar
 
+from backend.database.base import Base
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from backend.database.base import Base
 
 T = TypeVar("T", bound=Base)
 

@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import json
 
-from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
-
 from agents.debugger.studio import AgentStudioBackend
 from backend.websocket.events import EventType, WSEvent
 from backend.websocket.manager import manager
+from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 
 router = APIRouter(prefix="/studio")
 _backend = AgentStudioBackend()

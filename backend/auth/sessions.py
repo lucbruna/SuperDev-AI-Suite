@@ -1,10 +1,9 @@
 from datetime import timedelta
 from typing import Any
 
-from redis.asyncio import Redis
-
 from backend.utils.datetime import utc_now
 from backend.utils.uuid_utils import generate_uuid
+from redis.asyncio import Redis
 
 SESSION_PREFIX = "session:"
 SESSION_TTL = timedelta(hours=24)

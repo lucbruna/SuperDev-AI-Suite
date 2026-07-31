@@ -3,13 +3,12 @@ from __future__ import annotations
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
-from pydantic import BaseModel
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from backend.database.session import get_db
 from backend.dependencies import get_current_active_user
 from backend.verification.verification_loop import VerificationLoop
+from fastapi import APIRouter, Depends, status
+from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(dependencies=[Depends(get_current_active_user)])
 
@@ -165,7 +164,6 @@ async def review_code(
     db: AsyncSession = Depends(get_db),
 ) -> CodeReviewResponse:
     from backend.providers.provider_registry import ProviderRegistry
-
     from backend.verification.reviewer import CodeReviewer
     
     registry = ProviderRegistry()

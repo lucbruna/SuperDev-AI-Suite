@@ -4,9 +4,8 @@ import os
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import DateTime, func
+from sqlalchemy import DateTime, MetaData, func
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
-from sqlalchemy import MetaData
 from sqlalchemy.orm import DeclarativeBase, Mapped, declared_attr, mapped_column
 
 # Use schema only for PostgreSQL (not SQLite in tests)

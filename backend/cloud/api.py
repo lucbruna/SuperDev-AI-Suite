@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-from typing import Any
+import logging
 
 from fastapi import APIRouter, HTTPException
-
-import logging
 
 logger = logging.getLogger(__name__)
 

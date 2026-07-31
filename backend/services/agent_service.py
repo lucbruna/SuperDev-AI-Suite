@@ -3,11 +3,10 @@ from __future__ import annotations
 import time
 from typing import Any
 
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from backend.database.models.agent import Agent, AgentExecution
-from backend.exceptions import AgentNotFoundException, AgentExecutionException
+from backend.exceptions import AgentExecutionException, AgentNotFoundException
 from backend.repositories.agent_repository import AgentExecutionRepository, AgentRepository
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class AgentService:

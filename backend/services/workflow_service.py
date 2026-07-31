@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from backend.database.models.workflow import Workflow, WorkflowRun
 from backend.exceptions import WorkflowNotFoundException, WorkflowValidationException
 from backend.repositories.workflow_repository import (
@@ -11,6 +9,7 @@ from backend.repositories.workflow_repository import (
     WorkflowRunRepository,
     WorkflowStepRepository,
 )
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class WorkflowService:

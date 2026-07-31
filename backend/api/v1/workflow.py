@@ -3,14 +3,13 @@ from __future__ import annotations
 from typing import Any
 from uuid import UUID
 
+from backend.auth.rbac import Action, Resource, require_permission
+from backend.database.session import get_db
+from backend.dependencies import get_current_active_user
+from backend.workflow_integration.service import WorkflowIntegrationService, get_workflow_integration_service
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from backend.database.session import get_db
-from backend.dependencies import get_current_active_user
-from backend.auth.rbac import Action, Resource, require_permission
-from backend.workflow_integration.service import WorkflowIntegrationService, get_workflow_integration_service
 
 router = APIRouter(dependencies=[Depends(get_current_active_user)])
 

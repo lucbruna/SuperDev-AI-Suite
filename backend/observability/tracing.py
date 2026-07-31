@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import uuid
 import time
+import uuid
 from collections import deque
 from contextvars import ContextVar
 from dataclasses import dataclass, field

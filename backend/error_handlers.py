@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
+from backend.exceptions import AppException
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
-
-from backend.exceptions import AppException
 
 
 def error_response(code: str, message: str, details: dict[str, Any] | None = None) -> dict[str, Any]:

@@ -7,8 +7,6 @@ listening on the configured port.
 
 from __future__ import annotations
 
-import logging
-
 from backend.config import config
 from backend.constants import VERSION
 from backend.environment import Environment, get_environment

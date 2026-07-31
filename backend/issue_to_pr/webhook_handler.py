@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import os
-from typing import Any, Callable
+from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request
 

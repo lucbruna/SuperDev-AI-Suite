@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 import sqlalchemy as sa
+from backend.database.base import Base, TimestampMixin
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy import ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-from backend.database.base import Base, TimestampMixin
 
 
 class Project(Base, TimestampMixin):

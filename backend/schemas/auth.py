@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, Field, field_validator
-
 from backend.schemas.base import BaseSchema
+from pydantic import BaseModel, Field, field_validator
 
 
 class LoginRequest(BaseModel):

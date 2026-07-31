@@ -3,9 +3,8 @@ from __future__ import annotations
 import os
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query
-
 from backend.dependencies import get_current_active_user
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 router = APIRouter(prefix="/api/code-search", tags=["code_search"], dependencies=[Depends(get_current_active_user)])
 

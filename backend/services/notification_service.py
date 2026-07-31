@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from backend.database.models.notification import Notification
 from backend.exceptions import AppException
 from backend.repositories.notification_repository import NotificationRepository
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class NotificationService:

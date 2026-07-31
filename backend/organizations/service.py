@@ -1,5 +1,3 @@
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from backend.organizations.events import (
     MemberAdded,
     MemberRemoved,
@@ -21,6 +19,7 @@ from backend.organizations.schema import (
     OrganizationResponse,
     OrganizationUpdate,
 )
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class OrganizationService:

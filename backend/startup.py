@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from datetime import UTC
 
 from backend.config import config
 from backend.health import HealthChecker
@@ -41,6 +42,7 @@ async def startup_handler() -> None:
     logger.info("Running database seed")
     try:
         import asyncio
+
         from sqlalchemy import create_engine
         from sqlalchemy.orm import Session
 
@@ -99,9 +101,9 @@ async def startup_handler() -> None:
     logger.info("Registering default data")
     service_registry.register("config", config)
 
-    from datetime import datetime, timezone
+    from datetime import datetime
 
-    service_registry.register("started_at", datetime.now(timezone.utc).isoformat())
+    service_registry.register("started_at", datetime.now(UTC).isoformat())
 
     logger.info("Running health check")
     health = HealthChecker()

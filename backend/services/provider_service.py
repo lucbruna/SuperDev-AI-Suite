@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from backend.database.models.provider import Provider
 from backend.exceptions import ProviderNotFoundException, ProviderUnavailableException
 from backend.repositories.provider_repository import ProviderRepository
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class ProviderService:

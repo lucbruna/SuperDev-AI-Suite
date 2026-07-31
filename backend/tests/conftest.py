@@ -2,10 +2,9 @@
 from __future__ import annotations
 
 import pytest
+from backend.app import create_app
 from fastapi.testclient import TestClient
 from httpx import ASGITransport, AsyncClient
-
-from backend.app import create_app
 
 
 @pytest.fixture

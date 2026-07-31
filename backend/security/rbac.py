@@ -4,11 +4,10 @@ from collections.abc import Callable
 from enum import StrEnum
 from functools import wraps
 
+from backend.database.models.role import Permission, Role, UserRole, role_permissions
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from backend.database.models.role import Permission, Role, UserRole, role_permissions
 
 
 class Resource(StrEnum):

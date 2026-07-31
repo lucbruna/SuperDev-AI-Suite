@@ -7,12 +7,12 @@ agents, workflows, plugins, and scheduling.
 
 from __future__ import annotations
 
+from datetime import UTC
 from typing import Any
 
+from backend.dependencies import get_current_active_user
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
-
-from backend.dependencies import get_current_active_user
 
 router = APIRouter(
     tags=["system"],
@@ -243,7 +243,8 @@ async def get_metrics() -> dict[str, Any]:
 async def self_test() -> dict[str, Any]:
     """Run system self-diagnostics: scanner resolution, scan execution, error handling."""
     import time
-    from backend.api.v1.scanners import _resolve_scanner_class, SCANNER_REGISTRY, run_scanner, run_security
+
+    from backend.api.v1.scanners import SCANNER_REGISTRY, _resolve_scanner_class, run_scanner, run_security
 
     results: list[dict[str, Any]] = []
     failures = 0
@@ -339,7 +340,7 @@ async def self_test() -> dict[str, Any]:
     )
 
     # ── Test 6: Builder resolution ────────────────────────────────────
-    from backend.api.v1.builders import _resolve_builder_class, BUILDER_REGISTRY
+    from backend.api.v1.builders import BUILDER_REGISTRY, _resolve_builder_class
 
     b_available = 0
     b_unavailable = 0
@@ -360,7 +361,7 @@ async def self_test() -> dict[str, Any]:
     try:
         cls = _resolve_builder_class("backend")
         if cls:
-            from backend.api.v1.builders import run_builder, BuildRequest
+            from backend.api.v1.builders import BuildRequest, run_builder
             t0 = time.time()
             result = await run_builder("backend", cls, BuildRequest(project_name="TestProj", include_docker=False, include_tests=False, include_ci=False))
             elapsed = round((time.time() - t0) * 1000, 2)
@@ -376,11 +377,11 @@ async def self_test() -> dict[str, Any]:
         add_result("backend_builder", passed=False, detail=str(e)[:200])
 
     # ── Summary ────────────────────────────────────────────────────────
-    from datetime import datetime, timezone
+    from datetime import datetime
     passed_count = sum(1 for r in results if r["passed"])
     return {
         "success": failures == 0,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "summary": {
             "total": len(results),
             "passed": passed_count,

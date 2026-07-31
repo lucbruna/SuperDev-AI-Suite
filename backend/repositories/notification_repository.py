@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from datetime import datetime, UTC
-
-from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import UTC, datetime
 
 from backend.database.models.notification import Notification
 from backend.repositories.base_repository import BaseRepository
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class NotificationRepository(BaseRepository[Notification]):

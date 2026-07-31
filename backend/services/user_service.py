@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from backend.auth.passwords import hash_password, verify_password
 from backend.database.models.user import User
 from backend.exceptions import (
@@ -12,6 +10,7 @@ from backend.exceptions import (
     UserNotFoundException,
 )
 from backend.repositories.user_repository import UserRepository
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class UserService:

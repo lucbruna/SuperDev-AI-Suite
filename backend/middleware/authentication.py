@@ -1,14 +1,13 @@
 from typing import Any
 
-from fastapi import Depends, HTTPException, Request, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from backend.auth.jwt import JWTManager
 from backend.config import config
 from backend.database.models.user import User
 from backend.database.session import get_db
 from backend.users.repository import UserRepository
+from fastapi import Depends, HTTPException, Request, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy.ext.asyncio import AsyncSession
 
 security = HTTPBearer(auto_error=False)
 

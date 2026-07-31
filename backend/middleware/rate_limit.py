@@ -56,7 +56,6 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
     async def _check_redis(self, client_ip: str) -> bool:
         """Redis-based sliding window rate check using sorted sets."""
-        import redis.asyncio as aioredis
 
         now = time.time()
         window_start = now - self.window_seconds

@@ -3,11 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from uuid import UUID
 
-from sqlalchemy import select, text
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from backend.knowledge_base.embedding_service import embedding_service
 from backend.knowledge_base.models import KnowledgeBase, KnowledgeChunk, KnowledgeEntry
+from sqlalchemy import select, text
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 @dataclass

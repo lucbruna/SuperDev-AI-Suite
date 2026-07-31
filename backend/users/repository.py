@@ -1,9 +1,8 @@
 
-from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from backend.database.models.user import User
 from backend.users.schema import UserCreate, UserUpdate
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class UserRepository:

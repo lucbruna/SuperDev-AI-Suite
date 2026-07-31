@@ -14,10 +14,9 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
+from backend.dependencies import get_current_active_user
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
-
-from backend.dependencies import get_current_active_user
 
 router = APIRouter(
     tags=["builders"],
@@ -147,7 +146,8 @@ async def run_builder(
 ) -> dict[str, Any]:
     """Instantiate and run a builder, returning structured results."""
     import time
-    from builders.base import BuildConfig, FrameworkType, DatabaseType, ApiType
+
+    from builders.base import ApiType, BuildConfig, DatabaseType, FrameworkType
 
     start = time.time()
     try:

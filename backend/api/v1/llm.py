@@ -5,14 +5,12 @@ from __future__ import annotations
 import json
 import logging
 import os
-import time
 import uuid
-from collections.abc import AsyncIterator
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -66,35 +64,28 @@ _llm_manager: Any = None
 _llm_factory: Any = None
 
 
-def _get_llm_manager():
-    """Lazy-init and return the LLMManager singleton."""
-    global _llm_manager, _llm_factory
-    if _llm_manager is not None:
-        return _llm_manager, _llm_factory
+def _get_llm_factory():
+    """Lazy-init and return the LLMFactory singleton (sync)."""
+    global _llm_factory
+    if _llm_factory is not None:
+        return _llm_factory
 
     try:
-        from ai.llm import LLMManager, LLMFactory, PROVIDER_CLASSES
+        from ai.llm import PROVIDER_CLASSES, LLMFactory
 
         factory = LLMFactory()
         factory.register_all(PROVIDER_CLASSES)
-
-        manager = LLMManager()
-        registered = manager.auto_register_providers()
-
-        _llm_manager = manager
         _llm_factory = factory
-        logger.info("LLMManager initialized with %d providers", len(registered))
-        return manager, factory
+        logger.info("LLMFactory initialized with %d provider types", factory.type_count)
+        return factory
     except ImportError as e:
         logger.warning("LLM module not available: %s", e)
-        _llm_manager = None
         _llm_factory = None
-        return None, None
+        return None
     except Exception as e:
-        logger.error("Failed to initialize LLMManager: %s", e)
-        _llm_manager = None
+        logger.error("Failed to initialize LLMFactory: %s", e)
         _llm_factory = None
-        return None, None
+        return None
 
 
 def _get_available_providers() -> list[dict[str, Any]]:
@@ -105,19 +96,11 @@ def _get_available_providers() -> list[dict[str, Any]]:
     for name, env_map in PROVIDER_ENV_MAP.items():
         api_key_var = env_map.get("api_key", "")
         key = os.getenv(api_key_var, "")
-        if key:
-            available.append({
-                "name": name,
-                "api_key_configured": bool(key),
-                "env_var": api_key_var,
-            })
-        else:
-            # Still list but not configured
-            available.append({
-                "name": name,
-                "api_key_configured": False,
-                "env_var": api_key_var,
-            })
+        available.append({
+            "name": name,
+            "api_key_configured": bool(key),
+            "env_var": api_key_var,
+        })
     return available
 
 
@@ -127,7 +110,7 @@ def _resolve_provider(provider_name: str | None = None, model: str | None = None
         return provider_name, model or ""
 
     # Auto-detect from env vars using first available
-    from ai.llm.providers import PROVIDER_ENV_MAP, PROVIDER_DEFAULT_MODELS
+    from ai.llm.providers import PROVIDER_DEFAULT_MODELS, PROVIDER_ENV_MAP
 
     for name, env_map in PROVIDER_ENV_MAP.items():
         api_key_var = env_map.get("api_key", "")
@@ -139,7 +122,7 @@ def _resolve_provider(provider_name: str | None = None, model: str | None = None
 
 def _create_provider_instance(provider_name: str, model: str | None = None) -> Any | None:
     """Create a provider instance from the factory."""
-    _, factory = _get_llm_manager()
+    factory = _get_llm_factory()
     if not factory:
         return None
 
@@ -161,25 +144,13 @@ def _create_provider_instance(provider_name: str, model: str | None = None) -> A
 @router.get("/providers", summary="List all LLM providers")
 async def list_providers():
     """List all available LLM providers and their configuration status."""
-    manager, _ = _get_llm_manager()
     available = []
 
     for prov in _get_available_providers():
-        info: dict[str, Any] = {
+        available.append({
             "name": prov["name"],
             "api_key_configured": prov["api_key_configured"],
-            "available": False,
-            "last_health": None,
-        }
-
-        # Check manager for runtime status
-        if manager:
-            status = manager.get_provider_status(prov["name"])
-            if status:
-                info["available"] = status.get("healthy", False)
-                info["last_health"] = status.get("last_check")
-
-        available.append(info)
+        })
 
     return {"success": True, "data": {"providers": available, "count": len(available)}}
 
@@ -187,9 +158,7 @@ async def list_providers():
 @router.get("/providers/{provider_name}", summary="Get provider details")
 async def get_provider(provider_name: str):
     """Get detailed information about a specific provider."""
-    manager, factory = _get_llm_manager()
-
-    from ai.llm.providers import PROVIDER_ENV_MAP, PROVIDER_DEFAULT_MODELS, PROVIDER_CLASSES
+    from ai.llm.providers import PROVIDER_CLASSES, PROVIDER_DEFAULT_MODELS, PROVIDER_ENV_MAP
 
     if provider_name not in PROVIDER_CLASSES:
         raise HTTPException(status_code=404, detail=f"Provider '{provider_name}' not found")
@@ -367,12 +336,20 @@ async def chat_stream(request: ChatRequest):
         try:
             stream = await instance.generate_stream(prompt, **kwargs)
             async for chunk in stream:
+                delta = chunk.get("delta")
+                delta_content = ""
+                if delta is not None:
+                    if hasattr(delta, "content"):
+                        delta_content = delta.content
+                    elif isinstance(delta, dict):
+                        delta_content = delta.get("content", "")
+                else:
+                    delta_content = chunk.get("content", "")
+
                 data = json.dumps({
                     "content": chunk.get("content", ""),
                     "finish_reason": chunk.get("finish_reason"),
-                    "delta": {
-                        "content": chunk.get("delta").content if chunk.get("delta") else chunk.get("content", ""),
-                    },
+                    "delta": {"content": delta_content},
                 })
                 yield f"data: {data}\n\n"
 

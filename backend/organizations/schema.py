@@ -1,8 +1,7 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field
-
 from backend.organizations.model import OrganizationRole
+from pydantic import BaseModel, Field
 
 
 class OrganizationCreate(BaseModel):

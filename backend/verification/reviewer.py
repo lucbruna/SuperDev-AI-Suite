@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 
 from backend.providers.base_provider import BaseProvider
-
 from backend.verification.models import ReviewResult, VerificationStage
 
 

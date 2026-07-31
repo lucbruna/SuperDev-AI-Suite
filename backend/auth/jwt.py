@@ -1,9 +1,8 @@
 from datetime import timedelta
 
+from backend.utils.datetime import utc_now
 from jose import JWTError, jwt
 from pydantic import SecretStr
-
-from backend.utils.datetime import utc_now
 
 
 class JWTManager:

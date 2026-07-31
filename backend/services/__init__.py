@@ -1,5 +1,5 @@
-from .audit_service import AuditService
 from .agent_service import AgentService
+from .audit_service import AuditService
 from .base_service import BaseService
 from .diff_analyzer import DiffAnalyzer
 from .knowledge_service import KnowledgeService

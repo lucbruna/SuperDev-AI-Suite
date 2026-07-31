@@ -6,9 +6,8 @@ from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
 
-from pydantic import BaseModel, Field
-
 from backend.config import config
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger("superdev")
 

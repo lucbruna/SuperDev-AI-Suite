@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from backend.providers.base_provider import BaseProvider
-
 from backend.verification.models import GenerationResult
 
 

@@ -8,14 +8,25 @@ import asyncio
 from logging.config import fileConfig
 
 from alembic import context
-from sqlalchemy import pool
-from sqlalchemy.engine import Connection
-from sqlalchemy.ext.asyncio import async_engine_from_config
-
 from backend.database.base import Base
 
 # Import all models so Alembic can detect them
-from backend.database.models import user, project, workflow, agent, plugin, provider, knowledge, notification, audit, organization, role  # noqa: F401
+from backend.database.models import (  # noqa: F401
+    agent,
+    audit,
+    knowledge,
+    notification,
+    organization,
+    plugin,
+    project,
+    provider,
+    role,
+    user,
+    workflow,
+)
+from sqlalchemy import pool
+from sqlalchemy.engine import Connection
+from sqlalchemy.ext.asyncio import async_engine_from_config
 
 config = context.config
 if config.config_file_name is not None:
@@ -25,6 +36,7 @@ target_metadata = Base.metadata
 
 # Override sqlalchemy.url from environment if available
 import os
+
 db_url = os.getenv("DATABASE_URL") or os.getenv("ALEMBIC_DATABASE_URL")
 if db_url:
     config.set_main_option("sqlalchemy.url", db_url)

@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from backend.database.models.audit_log import AuditLog
 from backend.repositories.audit_repository import AuditLogRepository
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class AuditService:

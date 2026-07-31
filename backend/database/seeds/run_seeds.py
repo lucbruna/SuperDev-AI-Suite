@@ -12,15 +12,12 @@ Requer:
 
 from __future__ import annotations
 
-import sys
+# ── Configuração da conexão ──────────────────────────────────────
+# Tenta ler DATABASE_URL do ambiente, fallback para default local
+import os
 import time
 
 from sqlalchemy import create_engine, text
-
-# ── Configuração da conexão ──────────────────────────────────────
-
-# Tenta ler DATABASE_URL do ambiente, fallback para default local
-import os
 
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://superdev:superdev@localhost:5432/superdev")
 

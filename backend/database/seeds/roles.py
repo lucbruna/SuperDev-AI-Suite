@@ -5,12 +5,10 @@ Usa session sync (sqlalchemy.orm.Session) para compatibilidade com seed_data.py.
 
 from __future__ import annotations
 
-import uuid
 from typing import Any
 
-from sqlalchemy import select, text
-
 from backend.database.models.role import Permission, Role, role_permissions
+from sqlalchemy import select
 
 # ── UUIDs determinísticos ─────────────────────────────────────────
 

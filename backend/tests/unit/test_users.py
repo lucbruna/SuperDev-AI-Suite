@@ -3,10 +3,9 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 import pytest
-from pydantic import ValidationError
-
 from backend.database.models.user import User
 from backend.users.schema import UserCreate, UserResponse
+from pydantic import ValidationError
 
 
 class TestUserModel:

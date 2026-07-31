@@ -1,12 +1,9 @@
 from __future__ import annotations
 
-from typing import Any
-
-from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from backend.database.models.user import User
 from backend.repositories.base_repository import BaseRepository
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class UserRepository(BaseRepository[User]):

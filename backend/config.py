@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from pydantic_settings import BaseSettings, SettingsConfigDict
-
 from backend.settings import (
     AppSettings,
     AuthSettings,
@@ -17,6 +15,7 @@ from backend.settings import (
     VerificationSettings,
     WorkflowSettings,
 )
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class AppConfig(BaseSettings):

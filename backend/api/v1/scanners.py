@@ -12,10 +12,9 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
+from backend.dependencies import get_current_active_user
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
-
-from backend.dependencies import get_current_active_user
 
 router = APIRouter(
     tags=["scanners"],
@@ -139,7 +138,7 @@ async def run_scanner(name: str, scanner_class, target: str, timeout: int = 30) 
             "duration_ms": round((time.time() - start) * 1000, 2),
             "error": getattr(result, "error", ""),
         }
-    except asyncio.TimeoutError:
+    except TimeoutError:
         return {
             "scanner": name,
             "target": target,
@@ -181,7 +180,7 @@ async def run_security(name: str, analyzer_class, target: str, timeout: int = 30
             "error": getattr(result, "error", ""),
             "metadata": metadata,
         }
-    except asyncio.TimeoutError:
+    except TimeoutError:
         return {
             "analyzer": name,
             "target": target,

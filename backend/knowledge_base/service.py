@@ -5,13 +5,12 @@ from dataclasses import dataclass
 from uuid import UUID
 
 import pathspec
-from fastapi import Depends
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from backend.database.session import get_db
 from backend.knowledge_base.embedding_service import EmbeddingService
 from backend.knowledge_base.models import KnowledgeBase, KnowledgeBaseType, KnowledgeChunk, KnowledgeEntry
+from fastapi import Depends
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 async def get_knowledge_base_service(db: AsyncSession = Depends(get_db)) -> KnowledgeBaseService:

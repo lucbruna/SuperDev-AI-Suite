@@ -55,5 +55,5 @@ class ReviewConfig:
         return self._rules
 
     @classmethod
-    def from_dict(cls, rules: list[dict[str, Any]]) -> "ReviewConfig":
+    def from_dict(cls, rules: list[dict[str, Any]]) -> ReviewConfig:
         return cls(rules=rules)

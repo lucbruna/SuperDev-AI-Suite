@@ -5,10 +5,8 @@ Prometheus, Grafana, Datadog, etc. can scrape application metrics.
 """
 from __future__ import annotations
 
-import time
-from fastapi import APIRouter, Response
-
 from backend.observability.metrics import get_metrics_collector
+from fastapi import APIRouter, Response
 
 router = APIRouter(tags=["metrics"])
 

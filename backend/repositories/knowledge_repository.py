@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from backend.database.models.knowledge import KnowledgeBase, KnowledgeChunk, KnowledgeEntry
 from backend.repositories.base_repository import BaseRepository
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class KnowledgeBaseRepository(BaseRepository[KnowledgeBase]):

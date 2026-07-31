@@ -5,7 +5,6 @@ Alinhado com os modelos ORM atuais (users, organizations, projects, agents, work
 
 from __future__ import annotations
 
-import uuid
 from typing import Any
 
 # UUIDs determinísticos para referência entre tabelas
@@ -440,15 +439,15 @@ def seed_database(session: Any) -> None:
 
     Idempotente: se ja existirem usuarios no banco, pula o seed.
     """
-    from sqlalchemy import select
-    from backend.database.models.user import User
-    from backend.database.models.organization import Organization, OrganizationMember
-    from backend.database.models.project import Project, ProjectMember
     from backend.database.models.agent import Agent
-    from backend.database.models.workflow import Workflow
-    from backend.database.models.provider import Provider
+    from backend.database.models.organization import Organization, OrganizationMember
     from backend.database.models.plugin import Plugin
+    from backend.database.models.project import Project, ProjectMember
+    from backend.database.models.provider import Provider
     from backend.database.models.role import UserRole
+    from backend.database.models.user import User
+    from backend.database.models.workflow import Workflow
+    from sqlalchemy import select
 
     # Verificar se ja existem dados
     existing = session.execute(select(User).limit(1)).scalar_one_or_none()

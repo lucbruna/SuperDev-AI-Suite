@@ -5,18 +5,16 @@ factories for enforcing authorization across the application.
 """
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import UTC, datetime
 from enum import Enum
-from typing import Any, Callable
-
-from fastapi import Depends, HTTPException, Request, status
-from sqlalchemy import and_, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.auth.deps import get_current_user
 from backend.database.models.role import Permission, Role, UserRole, role_permissions
 from backend.database.models.user import User
-
+from fastapi import Depends, HTTPException, Request, status
+from sqlalchemy import and_, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 # ---------------------------------------------------------------------------
 # System constants

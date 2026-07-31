@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import subprocess
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -61,7 +61,7 @@ class ChangelogGenerator:
                 categorized[cat] = []
             categorized[cat].append(c)
         return {
-            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "generated_at": datetime.now(UTC).isoformat(),
             "total_commits": len(self._commits),
             "since": since or "all time",
             "categories": {k: len(v) for k, v in categorized.items()},
@@ -72,7 +72,7 @@ class ChangelogGenerator:
         d = data or self._commits
         if isinstance(d, list):
             d = {"total_commits": len(d), "categories": {}, "commits": {"All": d}}
-        lines = [f"# Changelog", f"Generated: {d.get('generated_at', 'N/A')}", f"Total commits: {d.get('total_commits', 0)}", ""]
+        lines = ["# Changelog", f"Generated: {d.get('generated_at', 'N/A')}", f"Total commits: {d.get('total_commits', 0)}", ""]
         for category, commits in d.get("commits", {}).items():
             if not commits:
                 continue

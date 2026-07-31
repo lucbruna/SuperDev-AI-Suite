@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from backend.database.models.provider import Provider
 from backend.repositories.base_repository import BaseRepository
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class ProviderRepository(BaseRepository[Provider]):

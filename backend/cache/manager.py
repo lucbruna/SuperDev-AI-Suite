@@ -8,13 +8,12 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from typing import Any
 
+from backend.config import config
 from redis.asyncio import Redis
 from redis.asyncio.connection import ConnectionPool
 from redis.asyncio.retry import Retry
 from redis.backoff import ExponentialBackoff
 from redis.exceptions import ConnectionError, TimeoutError
-
-from backend.config import config
 
 logger = logging.getLogger(__name__)
 

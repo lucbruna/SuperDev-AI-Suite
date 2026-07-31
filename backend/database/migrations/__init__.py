@@ -23,8 +23,8 @@ async def run_migrations(upgrade: bool = True) -> None:
     upgrade:
         If *True* runs ``upgrade head``, otherwise ``downgrade base``.
     """
-    from alembic.config import Config
     from alembic import command
+    from alembic.config import Config
 
     alembic_cfg = Config(str(_ALEMBIC_DIR.parent / "alembic.ini"))
     alembic_cfg.set_main_option("script_location", str(_ALEMBIC_DIR))
@@ -69,8 +69,8 @@ async def drop_tables(session: AsyncSession) -> None:
 async def get_current_revision() -> str | None:
     """Return the current Alembic migration revision, or *None* if no migrations exist."""
     try:
-        from alembic.config import Config
         from alembic import command
+        from alembic.config import Config
 
         alembic_cfg = Config(str(_ALEMBIC_DIR.parent / "alembic.ini"))
         alembic_cfg.set_main_option("script_location", str(_ALEMBIC_DIR))
@@ -86,8 +86,8 @@ async def get_current_revision() -> str | None:
 
 async def stamp_head() -> None:
     """Stamp the current state as head (for existing databases without migration history)."""
-    from alembic.config import Config
     from alembic import command
+    from alembic.config import Config
 
     alembic_cfg = Config(str(_ALEMBIC_DIR.parent / "alembic.ini"))
     alembic_cfg.set_main_option("script_location", str(_ALEMBIC_DIR))
