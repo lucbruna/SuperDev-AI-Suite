@@ -33,6 +33,15 @@ export const API_ENDPOINTS = {
     SESSIONS: "/workspace/sessions",
     SESSION: (id: string) => `/workspace/sessions/${id}`,
   },
+  LLM: {
+    PROVIDERS: "/llm/providers",
+    PROVIDER_DETAIL: (name: string) => `/llm/providers/${name}`,
+    PROVIDER_TEST: (name: string) => `/llm/providers/${name}/test`,
+    MODELS: "/llm/models",
+    CHAT: "/llm/chat",
+    CHAT_STREAM: "/llm/chat/stream",
+    HEALTH: "/llm/health",
+  },
 } as const;
 
 export const API_TIMEOUT = 30000;

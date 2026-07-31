@@ -13,6 +13,8 @@ export const ROUTES = {
   PROFILE: "/profile",
   USERS: "/admin/users",
   API_KEYS: "/settings/api-keys",
+  LLM_PROVIDERS: "/llm/providers",
+  LLM_CHAT: "/llm/chat",
   NOT_FOUND: "/404",
   SERVER_ERROR: "/500",
 } as const;

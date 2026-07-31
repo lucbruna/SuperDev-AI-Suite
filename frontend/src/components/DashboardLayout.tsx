@@ -12,6 +12,8 @@ const navItems = [
   { href: "/workflows", label: "Workflows", icon: "⚡" },
   { href: "/studio", label: "Studio", icon: "🎨" },
   { href: "/chat", label: "Chat", icon: "💬" },
+  { href: "/llm/providers", label: "LLM Providers", icon: "🧠" },
+  { href: "/llm/chat", label: "LLM Chat", icon: "🤖" },
   { href: "/settings", label: "Configurações", icon: "⚙️" },
 ];
 
