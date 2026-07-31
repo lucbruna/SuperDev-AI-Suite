@@ -61,7 +61,7 @@ class ComplianceEngine:
     """Enterprise compliance checking engine."""
 
     def __init__(self, audit_logger: AuditLogger | None = None):
-        self._audit_logger = audit_logger or audit_logger
+        self._audit_logger = audit_logger or AuditLogger()
         self._rules: dict[str, ComplianceRule] = {}
         self._register_default_rules()
 
@@ -217,34 +217,122 @@ class ComplianceEngine:
         return ComplianceStatus.UNKNOWN
 
     async def _check_access_logging(self, context: dict[str, Any]) -> ComplianceStatus:
+        """Verify access attempts are being logged."""
         stats = self._audit_logger.get_statistics()
-        if stats.get("total", 0) > 0:
+        total = stats.get("total", 0)
+        if total == 0:
+            return ComplianceStatus.NON_COMPLIANT
+        # Check that login/logout events are actually present
+        actions = stats.get("by_action", {})
+        has_access_events = any(action in actions for action in ("login", "logout", "login_failed"))
+        if has_access_events and total > 0:
             return ComplianceStatus.COMPLIANT
+        if total > 0:
+            return ComplianceStatus.PARTIAL
         return ComplianceStatus.NON_COMPLIANT
 
     async def _check_password_policy(self, context: dict[str, Any]) -> ComplianceStatus:
-        return ComplianceStatus.COMPLIANT
+        """Verify password policy is enforced.
+
+        Checks context for ``password_min_length`` (default 8) and
+        ``password_require_special`` (default True).
+        """
+        min_length = context.get("password_min_length", 8)
+        require_special = context.get("password_require_special", True)
+
+        if min_length >= 8 and require_special:
+            return ComplianceStatus.COMPLIANT
+        if min_length >= 6:
+            return ComplianceStatus.PARTIAL
+        return ComplianceStatus.NON_COMPLIANT
 
     async def _check_session_management(self, context: dict[str, Any]) -> ComplianceStatus:
-        return ComplianceStatus.COMPLIANT
+        """Verify sessions have appropriate timeouts and cookie flags."""
+        session_ttl = context.get("session_ttl_seconds", 3600)
+        cookie_secure = context.get("session_cookie_secure", True)
+        cookie_httponly = context.get("session_cookie_httponly", True)
+
+        compliant = True
+        if session_ttl > 86400:  # more than 24h is excessive
+            compliant = False
+        if not cookie_secure:
+            compliant = False
+        if not cookie_httponly:
+            compliant = False
+
+        if compliant:
+            return ComplianceStatus.COMPLIANT
+        # Partial if at least some controls are in place
+        if session_ttl <= 86400:
+            return ComplianceStatus.PARTIAL
+        return ComplianceStatus.NON_COMPLIANT
 
     async def _check_data_access_rights(self, context: dict[str, Any]) -> ComplianceStatus:
-        return ComplianceStatus.COMPLIANT
+        """Verify data export capability exists.
+
+        Context keys: ``has_data_export`` (bool), ``export_formats`` (list[str]).
+        """
+        has_export = context.get("has_data_export", False)
+        formats = context.get("export_formats", [])
+
+        if has_export and len(formats) >= 1:
+            return ComplianceStatus.COMPLIANT
+        if has_export:
+            return ComplianceStatus.PARTIAL
+        return ComplianceStatus.NON_COMPLIANT
 
     async def _check_data_deletion_rights(self, context: dict[str, Any]) -> ComplianceStatus:
-        return ComplianceStatus.COMPLIANT
+        """Verify data deletion capability exists (right to erasure).
+
+        Context keys: ``has_data_deletion`` (bool), ``soft_delete`` (bool).
+        """
+        has_deletion = context.get("has_data_deletion", False)
+        soft_delete = context.get("soft_delete", True)
+
+        if has_deletion:
+            if soft_delete:
+                return ComplianceStatus.PARTIAL  # soft delete is acceptable but not ideal
+            return ComplianceStatus.COMPLIANT
+        return ComplianceStatus.NON_COMPLIANT
 
     async def _check_consent_management(self, context: dict[str, Any]) -> ComplianceStatus:
-        return ComplianceStatus.COMPLIANT
+        """Verify consent tracking exists.
+
+        Context keys: ``has_consent_tracking`` (bool), ``consent_version`` (str).
+        """
+        has_consent = context.get("has_consent_tracking", False)
+        consent_version = context.get("consent_version", "")
+
+        if has_consent and consent_version:
+            return ComplianceStatus.COMPLIANT
+        if has_consent:
+            return ComplianceStatus.PARTIAL
+        return ComplianceStatus.NON_COMPLIANT
 
     async def _check_audit_logging(self, context: dict[str, Any]) -> ComplianceStatus:
+        """Verify audit logging is active and has sufficient coverage."""
         stats = self._audit_logger.get_statistics()
-        if stats.get("total", 0) > 10:
+        total = stats.get("total", 0)
+        if total > 10:
             return ComplianceStatus.COMPLIANT
-        return ComplianceStatus.PARTIAL
+        if total > 0:
+            return ComplianceStatus.PARTIAL
+        return ComplianceStatus.NON_COMPLIANT
 
     async def _check_access_review(self, context: dict[str, Any]) -> ComplianceStatus:
-        return ComplianceStatus.PARTIAL
+        """Verify access review cadence.
+
+        Context keys: ``last_access_review_days`` (int — days since last review).
+        """
+        days_since_review = context.get("last_access_review_days")
+
+        if days_since_review is None:
+            return ComplianceStatus.UNKNOWN
+        if days_since_review <= 90:
+            return ComplianceStatus.COMPLIANT
+        if days_since_review <= 180:
+            return ComplianceStatus.PARTIAL
+        return ComplianceStatus.NON_COMPLIANT
 
     def generate_report(self, report: ComplianceReport) -> dict[str, Any]:
         return {

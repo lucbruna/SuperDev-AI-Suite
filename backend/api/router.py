@@ -5,6 +5,7 @@ router = APIRouter()
 from backend.api.v1 import (
     admin,
     agents,
+    api_keys,
     auth,
     builders,
     chat,
@@ -25,6 +26,7 @@ from backend.api.v1 import (
 v1_router = APIRouter(prefix="/api/v1")
 v1_router.include_router(health.router, tags=["health"])
 v1_router.include_router(auth.router, prefix="/auth", tags=["auth"])
+v1_router.include_router(api_keys.router, prefix="/api-keys", tags=["api-keys"])
 v1_router.include_router(users.router, prefix="/users", tags=["users"])
 v1_router.include_router(projects.router, prefix="/projects", tags=["projects"])
 v1_router.include_router(agents.router, prefix="/agents", tags=["agents"])

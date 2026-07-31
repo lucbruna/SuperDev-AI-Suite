@@ -1,19 +1,33 @@
+"""Multi-tenant management backed by PostgreSQL via Organization model.
+
+The Organization table already stores: id, name, slug, plan, settings.
+This module wraps it with tenant-aware limit checks and usage tracking.
+
+TenantPlan maps to Organization.plan.
+TenantManager delegates persistence to SQLAlchemy / Organization model.
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from enum import StrEnum
 from typing import Any
 
-from backend.utils.uuid_utils import generate_uuid
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
-class TenantPlan(StrEnum):
+# ------------------------------------------------------------------
+# Plan definitions (kept here as business-logic constants)
+# ------------------------------------------------------------------
+
+
+class TenantPlan:
     FREE = "free"
     PRO = "pro"
     ENTERPRISE = "enterprise"
 
 
-@dataclass
+@dataclass(frozen=True)
 class TenantLimits:
     max_users: int = 5
     max_projects: int = 3
@@ -29,7 +43,7 @@ class TenantLimits:
     priority_support: bool = False
 
 
-PLAN_LIMITS = {
+PLAN_LIMITS: dict[str, TenantLimits] = {
     TenantPlan.FREE: TenantLimits(),
     TenantPlan.PRO: TenantLimits(
         max_users=25,
@@ -62,12 +76,23 @@ PLAN_LIMITS = {
 }
 
 
+def get_limits_for_plan(plan: str) -> TenantLimits:
+    return PLAN_LIMITS.get(plan, PLAN_LIMITS[TenantPlan.FREE])
+
+
+# ------------------------------------------------------------------
+# Tenant data object (read from DB, not stored separately)
+# ------------------------------------------------------------------
+
+
 @dataclass
-class Tenant:
+class TenantView:
+    """Read-only view of an Organization as a tenant."""
+
     id: str
     name: str
     slug: str
-    plan: TenantPlan = TenantPlan.FREE
+    plan: str = TenantPlan.FREE
     owner_id: str = ""
     is_active: bool = True
     settings: dict[str, Any] = field(default_factory=dict)
@@ -75,15 +100,15 @@ class Tenant:
 
     @property
     def limits(self) -> TenantLimits:
-        return PLAN_LIMITS[self.plan]
+        return get_limits_for_plan(self.plan)
 
     def check_limit(self, resource: str) -> bool:
         current = self.usage.get(resource, 0)
         limit_attr = f"max_{resource}"
-        limit = getattr(self.limits, limit_attr, None)
-        if limit is None:
+        limit_val = getattr(self.limits, limit_attr, None)
+        if limit_val is None:
             return True
-        return current < limit
+        return current < limit_val
 
     def increment_usage(self, resource: str, amount: int = 1) -> None:
         self.usage[resource] = self.usage.get(resource, 0) + amount
@@ -93,7 +118,7 @@ class Tenant:
             "id": self.id,
             "name": self.name,
             "slug": self.slug,
-            "plan": self.plan.value,
+            "plan": self.plan,
             "owner_id": self.owner_id,
             "is_active": self.is_active,
             "settings": self.settings,
@@ -109,119 +134,230 @@ class Tenant:
         }
 
 
+# ------------------------------------------------------------------
+# Database-backed TenantManager
+# ------------------------------------------------------------------
+
+
 class TenantManager:
-    """Multi-tenant management system."""
+    """Multi-tenant management backed by PostgreSQL.
 
-    def __init__(self):
-        self._tenants: dict[str, Tenant] = {}
-        self._user_tenants: dict[str, list[str]] = {}
+    Uses Organization + OrganizationMember tables for persistence.
+    """
 
-    def create_tenant(
+    async def create_tenant(
         self,
+        db: AsyncSession,
         name: str,
         slug: str,
         owner_id: str,
-        plan: TenantPlan = TenantPlan.FREE,
+        plan: str = TenantPlan.FREE,
         settings: dict[str, Any] | None = None,
-    ) -> Tenant:
-        if any(t.slug == slug for t in self._tenants.values()):
+    ) -> TenantView:
+        from backend.database.models.organization import Organization, OrganizationMember
+
+        # Check slug uniqueness
+        existing = await db.execute(select(Organization).where(Organization.slug == slug))
+        if existing.scalar_one_or_none():
             raise ValueError(f"Tenant slug already exists: {slug}")
 
-        tenant = Tenant(
-            id=generate_uuid(),
+        org = Organization(
             name=name,
             slug=slug,
             plan=plan,
-            owner_id=owner_id,
             settings=settings or {},
         )
+        db.add(org)
+        await db.flush()
 
-        self._tenants[tenant.id] = tenant
+        # Add owner as a member
+        member = OrganizationMember(
+            organization_id=org.id,
+            user_id=owner_id,
+            role="owner",
+        )
+        db.add(member)
+        await db.commit()
+        await db.refresh(org)
 
-        if owner_id not in self._user_tenants:
-            self._user_tenants[owner_id] = []
-        self._user_tenants[owner_id].append(tenant.id)
+        return TenantView(
+            id=str(org.id),
+            name=org.name,
+            slug=org.slug,
+            plan=org.plan,
+            owner_id=owner_id,
+            is_active=True,
+            settings=org.settings or {},
+        )
 
-        return tenant
+    async def get_tenant(self, db: AsyncSession, tenant_id: str) -> TenantView | None:
+        from backend.database.models.organization import Organization
 
-    def get_tenant(self, tenant_id: str) -> Tenant | None:
-        return self._tenants.get(tenant_id)
+        org = await db.get(Organization, tenant_id)
+        if not org:
+            return None
+        return self._org_to_view(org)
 
-    def get_tenant_by_slug(self, slug: str) -> Tenant | None:
-        for tenant in self._tenants.values():
-            if tenant.slug == slug:
-                return tenant
-        return None
+    async def get_tenant_by_slug(self, db: AsyncSession, slug: str) -> TenantView | None:
+        from backend.database.models.organization import Organization
 
-    def list_tenants(self, owner_id: str | None = None) -> list[Tenant]:
+        result = await db.execute(select(Organization).where(Organization.slug == slug))
+        org = result.scalar_one_or_none()
+        if not org:
+            return None
+        return self._org_to_view(org)
+
+    async def list_tenants(
+        self,
+        db: AsyncSession,
+        owner_id: str | None = None,
+    ) -> list[TenantView]:
+        from backend.database.models.organization import Organization, OrganizationMember
+
         if owner_id:
-            tenant_ids = self._user_tenants.get(owner_id, [])
-            return [self._tenants[tid] for tid in tenant_ids if tid in self._tenants]
-        return list(self._tenants.values())
+            # Get org IDs where user is owner
+            member_result = await db.execute(
+                select(OrganizationMember.organization_id).where(OrganizationMember.user_id == owner_id)
+            )
+            org_ids = [row[0] for row in member_result.all()]
+            if not org_ids:
+                return []
+            result = await db.execute(select(Organization).where(Organization.id.in_(org_ids)))
+        else:
+            result = await db.execute(select(Organization))
 
-    def update_tenant(self, tenant_id: str, **kwargs) -> Tenant | None:
-        tenant = self._tenants.get(tenant_id)
-        if not tenant:
+        return [self._org_to_view(org) for org in result.scalars().all()]
+
+    async def upgrade_plan(
+        self,
+        db: AsyncSession,
+        tenant_id: str,
+        new_plan: str,
+    ) -> TenantView | None:
+        from backend.database.models.organization import Organization
+
+        org = await db.get(Organization, tenant_id)
+        if not org:
             return None
-        for key, value in kwargs.items():
-            if hasattr(tenant, key):
-                setattr(tenant, key, value)
-        return tenant
+        org.plan = new_plan
+        db.add(org)
+        await db.commit()
+        await db.refresh(org)
+        return self._org_to_view(org)
 
-    def upgrade_plan(self, tenant_id: str, new_plan: TenantPlan) -> Tenant | None:
-        tenant = self._tenants.get(tenant_id)
-        if not tenant:
-            return None
-        tenant.plan = new_plan
-        return tenant
+    async def add_user(
+        self,
+        db: AsyncSession,
+        tenant_id: str,
+        user_id: str,
+    ) -> bool:
+        from backend.database.models.organization import Organization, OrganizationMember
 
-    def add_user(self, tenant_id: str, user_id: str) -> bool:
-        tenant = self._tenants.get(tenant_id)
-        if not tenant:
+        org = await db.get(Organization, tenant_id)
+        if not org or not org.is_active:
             return False
 
-        if not tenant.check_limit("users"):
+        # Check limit
+        tenant_view = self._org_to_view(org)
+        if not tenant_view.check_limit("users"):
             return False
 
-        if user_id not in self._user_tenants:
-            self._user_tenants[user_id] = []
-        if tenant_id not in self._user_tenants[user_id]:
-            self._user_tenants[user_id].append(tenant_id)
-            tenant.increment_usage("users")
+        # Check if already a member
+        existing = await db.execute(
+            select(OrganizationMember).where(
+                OrganizationMember.organization_id == tenant_id,
+                OrganizationMember.user_id == user_id,
+            )
+        )
+        if existing.scalar_one_or_none():
+            return True
 
+        member = OrganizationMember(
+            organization_id=tenant_id,
+            user_id=user_id,
+            role="member",
+        )
+        db.add(member)
+        await db.commit()
         return True
 
-    def remove_user(self, tenant_id: str, user_id: str) -> bool:
-        if user_id in self._user_tenants:
-            if tenant_id in self._user_tenants[user_id]:
-                self._user_tenants[user_id].remove(tenant_id)
-                tenant = self._tenants.get(tenant_id)
-                if tenant and tenant.usage.get("users", 0) > 0:
-                    tenant.usage["users"] -= 1
-                return True
-        return False
+    async def remove_user(
+        self,
+        db: AsyncSession,
+        tenant_id: str,
+        user_id: str,
+    ) -> bool:
+        from backend.database.models.organization import OrganizationMember
 
-    def get_user_tenants(self, user_id: str) -> list[Tenant]:
-        tenant_ids = self._user_tenants.get(user_id, [])
-        return [self._tenants[tid] for tid in tenant_ids if tid in self._tenants]
+        result = await db.execute(
+            select(OrganizationMember).where(
+                OrganizationMember.organization_id == tenant_id,
+                OrganizationMember.user_id == user_id,
+            )
+        )
+        member = result.scalar_one_or_none()
+        if not member:
+            return False
+        if member.role == "owner":
+            return False  # Cannot remove the owner
+        await db.delete(member)
+        await db.commit()
+        return True
 
-    def check_tenant_limit(self, tenant_id: str, resource: str) -> bool:
-        tenant = self._tenants.get(tenant_id)
+    async def get_user_tenants(
+        self,
+        db: AsyncSession,
+        user_id: str,
+    ) -> list[TenantView]:
+        from backend.database.models.organization import Organization, OrganizationMember
+
+        member_result = await db.execute(
+            select(OrganizationMember.organization_id).where(OrganizationMember.user_id == user_id)
+        )
+        org_ids = [row[0] for row in member_result.all()]
+        if not org_ids:
+            return []
+
+        result = await db.execute(select(Organization).where(Organization.id.in_(org_ids)))
+        return [self._org_to_view(org) for org in result.scalars().all()]
+
+    async def check_tenant_limit(
+        self,
+        db: AsyncSession,
+        tenant_id: str,
+        resource: str,
+    ) -> bool:
+        tenant = await self.get_tenant(db, tenant_id)
         if not tenant:
             return False
         return tenant.check_limit(resource)
 
-    def delete_tenant(self, tenant_id: str) -> bool:
-        tenant = self._tenants.get(tenant_id)
-        if not tenant:
+    async def delete_tenant(
+        self,
+        db: AsyncSession,
+        tenant_id: str,
+    ) -> bool:
+        from backend.database.models.organization import Organization
+
+        org = await db.get(Organization, tenant_id)
+        if not org:
             return False
-
-        for user_id in list(self._user_tenants.keys()):
-            if tenant_id in self._user_tenants[user_id]:
-                self._user_tenants[user_id].remove(tenant_id)
-
-        del self._tenants[tenant_id]
+        await db.delete(org)
+        await db.commit()
         return True
 
+    @staticmethod
+    def _org_to_view(org: Any) -> TenantView:
+        return TenantView(
+            id=str(org.id),
+            name=org.name,
+            slug=org.slug,
+            plan=org.plan,
+            owner_id="",
+            is_active=org.is_active if hasattr(org, "is_active") else True,
+            settings=org.settings or {},
+        )
 
+
+# Global instance (no state — state lives in DB)
 tenant_manager = TenantManager()

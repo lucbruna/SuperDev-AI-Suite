@@ -9,10 +9,6 @@ import httpx
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2AuthorizationCodeBearer, OAuth2PasswordBearer
 from jose import JWTError, jwt
-from passlib.context import CryptContext
-from sqlalchemy import and_, select
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from backend.config import config
 from backend.database.models.organization import Organization, OrganizationMember
 from backend.database.models.project import Project, ProjectMember
@@ -20,8 +16,10 @@ from backend.database.models.role import Permission, Role, UserRole
 from backend.database.models.user import User
 from backend.database.session import get_db
 
-# Password hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Password hashing — single source of truth is passwords.py
+from backend.auth.passwords import hash_password, verify_password
+from sqlalchemy import and_, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 # OAuth2 schemes
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
@@ -68,10 +66,10 @@ class AuthManager:
         self.audience = config.auth.audience
 
     def hash_password(self, password: str) -> str:
-        return pwd_context.hash(password)
+        return hash_password(password)
 
     def verify_password(self, plain: str, hashed: str) -> bool:
-        return pwd_context.verify(plain, hashed)
+        return verify_password(plain, hashed)
 
     def create_access_token(
         self,
