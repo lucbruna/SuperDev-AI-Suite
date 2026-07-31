@@ -27,7 +27,15 @@ class Experiment:
         self.completed_at = datetime.utcnow().isoformat()
         return self.get_report()
 
-    def record_result(self, prompt: str, response_a: str, response_b: str, duration_a: float, duration_b: float, winner: str | None = None) -> None:
+    def record_result(
+        self,
+        prompt: str,
+        response_a: str,
+        response_b: str,
+        duration_a: float,
+        duration_b: float,
+        winner: str | None = None,
+    ) -> None:
         self.results.append({
             "prompt": prompt,
             "model_a_response": response_a,
