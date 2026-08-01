@@ -327,6 +327,8 @@ The hook itself (`.githooks/post-commit`) is shebang `#!/usr/bin/env bash` and i
 - **Remove:** `make mantis-hook-remove` (or `bash scripts/install_mantis_hooks.sh --remove`) — unsets `core.hooksPath` and cleans up any legacy `.git/hooks/` copy.
 - **Why versioned:** `.git/hooks/` is per-clone and not tracked; putting the hook in `.githooks/` + `core.hooksPath` means the automation ships with the repo and every clone gets it with one command. (The installer even warns if `core.hooksPath` would silently disable other personal hooks you keep in `.git/hooks/`.)
 - **Troubleshooting:** if the hook does not fire, run `bash scripts/install_mantis_hooks.sh --status` — it reports each precondition (hooksPath, tracked hook, executable bit, runner, harness). The hook also no-ops safely when `run_mantis.py`/`scripts/mantis_pipeline.py` are absent or Python is missing, so commits are never blocked.
+- **Installer exit code:** the installer exits `0` on success, `1` when the runner/harness are missing (fail loudly — the hook itself would still no-op safely). `make mantis-hook` surfaces that as a failure so a non-functional install is never silently accepted.
+- **Line endings:** `.gitattributes` forces `eol=lf` on `.githooks/*` and `scripts/*.sh`, so hooks and the installer never break with CRLF `$'\r'` errors on Windows clones.
 - Pending stage prompts are written to `workspace/runbook/`; execute them anytime with `python run_mantis.py run --auto`.
 
 ### Running the tests
