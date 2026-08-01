@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# post-commit — Mantis fast security check, run automatically after every commit.
+#
+# This hook ships VERSIONED with the repo and is enabled per-clone with:
+#   make mantis-hook        (runs: git config core.hooksPath .githooks)
+#   or:  bash scripts/install_mantis_hooks.sh
+#
+# Scope (fast — no slow Mode-A plan crawl):
+#   1. Bootstraps the workspace when missing (init: mkdirs + state)
+#   2. Refreshes the runbook of pending stage prompts (workspace/runbook/)
+#   3. Validates state/plan/findings against schema.json
+#   4. Reports per-stage status
+#
+# Opt out on a per-commit basis with:  SKIP_MANTIS=1 git commit
+
+set -u
+
+# Always run from the repository root (git hooks can be invoked from subdirs).
+repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
+cd "$repo_root" || exit 0
+
+# Explicit opt-out per commit (also handy during rebases/amends).
+if [ "${SKIP_MANTIS:-}" = "1" ]; then
+  exit 0
+fi
+
+# Only act when the Mantis runner + harness are present.
+if [ ! -f "run_mantis.py" ] || [ ! -f "scripts/mantis_pipeline.py" ]; then
+  exit 0
+fi
+
+# Guard against a missing/invalid Python on the PATH — never fail the hook.
+if ! command -v python >/dev/null 2>&1; then
+  exit 0
+fi
+
+echo ""
+echo "  [mantis] fast security check after commit (runbook + validate + status)"
+
+# init runs (cheap: mkdirs + state) so fresh clones self-bootstrap;
+# --skip-plan: skip the slow Mode-A crawl; --no-archive: never archive from a
+# commit hook.
+python run_mantis.py run --auto --skip-plan --no-archive 2>&1 | sed 's/^/    /'
+
+echo "  [mantis] check complete — pending stages can be executed with: python run_mantis.py run --auto"
+exit 0
