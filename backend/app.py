@@ -160,6 +160,15 @@ def create_app() -> FastAPI:
     _safe_include(app, "backend.api.external")
     _safe_include(app, "backend.ai_api")
 
+    # AI Video Studio module (native module — router mounted under /api/v1/video-studio)
+    _safe_include(
+        app,
+        "modules.ai_video_studio.api.router",
+        attr="api_router",
+        prefix="/api/v1/video-studio",
+        tags=["video-studio"],
+    )
+
     # Ecosystem modules
     _safe_include(app, "backend.notifications.router", prefix="/api/v1/notifications", tags=["notifications"])
     _safe_include(app, "backend.notifications.email_router", prefix="/api/v1/email", tags=["email"])

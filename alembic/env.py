@@ -30,6 +30,16 @@ import backend.database.models.organization  # noqa: F401
 import backend.database.models.role  # noqa: F401
 import backend.database.models.api_key  # noqa: F401
 
+# AI Video Studio models (native module — shares the backend Base/metadata)
+import modules.ai_video_studio.database.models.video_project  # noqa: F401
+import modules.ai_video_studio.database.models.scene  # noqa: F401
+import modules.ai_video_studio.database.models.timeline  # noqa: F401
+import modules.ai_video_studio.database.models.asset  # noqa: F401
+import modules.ai_video_studio.database.models.render_job  # noqa: F401
+import modules.ai_video_studio.database.models.audio_track  # noqa: F401
+import modules.ai_video_studio.database.models.subtitle  # noqa: F401
+import modules.ai_video_studio.database.models.export_history  # noqa: F401
+
 config = context.config
 
 if config.config_file_name is not None:
