@@ -151,9 +151,11 @@ export default function LLMChatPage() {
         const providerModels = data[selectedProvider]?.models || [];
         const modelIds = providerModels.map((m: any) => m.id);
         setModels(modelIds);
-        if (modelIds.length > 0 && !modelIds.includes(selectedModel)) {
-          setSelectedModel(modelIds[0]);
-        }
+        setSelectedModel((current) =>
+          modelIds.length > 0 && !modelIds.includes(current)
+            ? modelIds[0]
+            : current
+        );
       })
       .catch(() => {
         setModels([`${selectedProvider}-default`]);
