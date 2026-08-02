@@ -53,6 +53,12 @@ docker compose up -d postgres redis
 
 ### 6. Run Database Migrations
 
+> ⚠️ **REQUIRED.** The schema is managed exclusively by Alembic
+> (`backend/database/migrations/`). Docker's `init.sql` only bootstraps
+> extensions, a legacy 4-table scaffold and the admin seed user — it does
+> **not** create the real application schema (agents, workflows, executions,
+> providers, ...). The API will fail at runtime if migrations are skipped.
+
 ```bash
 alembic upgrade head
 ```

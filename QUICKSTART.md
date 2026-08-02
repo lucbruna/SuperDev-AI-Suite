@@ -15,11 +15,18 @@ cd superdev-ai-suite
 
 # Copy environment configuration
 cp .env.example .env
+# ⚠️ SECRET_KEY, JWT_SECRET_KEY, POSTGRES_PASSWORD and GRAFANA_ADMIN_PASSWORD
+# are required — generate them with `openssl rand -hex 32` (or -hex 16 for the
+# passwords) and fill them into .env before starting.
 
 # Start all services
 docker compose up -d --build
 
-# Run database migrations
+# ⚠️ Run database migrations — REQUIRED.
+# The Docker init.sql only bootstraps extensions, the legacy 4-table scaffold
+# and the admin seed user. The real schema (agents, workflows, executions,
+# providers, ...) is managed exclusively by Alembic. Skipping this step leaves
+# the API with a broken schema.
 docker compose exec api alembic upgrade head
 
 # Done! Open in browser
@@ -43,6 +50,15 @@ pnpm install
 
 # Configure environment
 cp .env.example .env
+# ⚠️ SECRET_KEY, JWT_SECRET_KEY, POSTGRES_PASSWORD and GRAFANA_ADMIN_PASSWORD
+# are required — generate them with `openssl rand -hex 32` (or -hex 16 for the
+# passwords) and fill them into .env before starting.
+
+# Start Postgres + Redis (if not already running)
+docker compose up -d postgres redis
+
+# ⚠️ Run database migrations — REQUIRED (see note above).
+alembic upgrade head
 
 # Start dev servers
 make dev

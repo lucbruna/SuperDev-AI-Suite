@@ -1,5 +1,11 @@
 -- SuperDev Suite Database Initialization
--- This script runs on PostgreSQL container startup
+-- This script runs on PostgreSQL container startup.
+--
+-- NOTE: This file is BOOTSTRAP ONLY. It creates the extensions, a legacy
+-- 4-table scaffold and the admin seed user. The real application schema
+-- (agents, workflows, executions, providers, ...) is managed exclusively by
+-- Alembic — you MUST run `alembic upgrade head` after the container starts.
+-- Skipping the migration leaves the API with a broken/incomplete schema.
 
 -- Create extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
