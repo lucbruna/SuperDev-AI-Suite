@@ -152,6 +152,14 @@ from modules.aios.python import (
     render_requirements,
     write_file,
 )
+from modules.aios.powershell import (
+    PowerShellClient,
+    PowerShellRuntime,
+    PowerShellUnavailableError,
+    Pwsh,
+    WindowsTerminal,
+    get_powershell_runtime,
+)
 from modules.aios.rust import (
     CargoClient,
     CargoCommands,
@@ -290,6 +298,12 @@ __all__ = [
     "ShellUnavailableError",
     "Zsh",
     "get_shell_runtime",
+    "PowerShellClient",
+    "PowerShellRuntime",
+    "PowerShellUnavailableError",
+    "Pwsh",
+    "WindowsTerminal",
+    "get_powershell_runtime",
     "PipManager",
     "PoetryManager",
     "PoetryUnavailableError",
