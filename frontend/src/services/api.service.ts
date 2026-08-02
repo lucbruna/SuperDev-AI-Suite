@@ -1,4 +1,13 @@
+/**
+ * @deprecated Use the axios-based `apiClient` from `@/api/client` instead.
+ * It is the unified API client for the app: it attaches the JWT from the
+ * auth store, auto-refreshes expired tokens, and retries failed requests.
+ * This fetch-based service is kept only for backwards compatibility with
+ * external consumers of this package and no longer reads a stale
+ * `localStorage` key — it reads the live session from the auth store.
+ */
 import { ENV } from "../config/environment";
+import { useAuthStore } from "../stores/authStore";
 
 export class ApiService {
   private baseUrl: string;
@@ -44,7 +53,7 @@ export class ApiService {
   }
 
   private getHeaders(): Record<string, string> {
-    const token = localStorage.getItem("token");
+    const token = useAuthStore.getState().accessToken;
     return {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),

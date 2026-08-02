@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { useAuthStore } from "@/stores/authStore";
-import { API_BASE_URL } from "@/constants/api";
+import { refreshAccessToken } from "@/api/client";
 
 type MessageHandler = (data: unknown) => void;
 
@@ -29,6 +29,10 @@ interface WebSocketProviderProps {
   url?: string;
 }
 
+const MAX_RECONNECT_ATTEMPTS = 5;
+const BASE_RECONNECT_DELAY_MS = 3000;
+const MAX_RECONNECT_DELAY_MS = 30000;
+
 export function WebSocketProvider({ children, url }: WebSocketProviderProps) {
   const [isConnected, setIsConnected] = useState(false);
   const [lastMessage, setLastMessage] = useState<unknown | null>(null);
@@ -36,40 +40,34 @@ export function WebSocketProvider({ children, url }: WebSocketProviderProps) {
   const handlersRef = useRef<Map<string, Set<MessageHandler>>>(new Map());
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const reconnectAttemptsRef = useRef(0);
-  const maxReconnectAttempts = 5;
   const accessToken = useAuthStore((s) => s.accessToken);
-  const refreshToken = useAuthStore((s) => s.refreshToken);
-  const setTokens = useAuthStore((s) => s.setTokens);
   const wsUrl = url ?? process.env.NEXT_PUBLIC_WS_URL ?? "ws://localhost:8000/ws";
 
-  const refreshAccessToken = useCallback(async () => {
-    if (!refreshToken) return false;
-    try {
-      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refresh_token: refreshToken }),
-      });
-      if (!response.ok) return false;
-      const data = await response.json();
-      const access_token = data.access_token || data.accessToken;
-      const new_refresh_token = data.refresh_token || data.refreshToken;
-      if (access_token && new_refresh_token) {
-        setTokens(access_token, new_refresh_token);
-        return true;
-      }
-    } catch {
-      // refresh failed
-    }
-    return false;
-  }, [refreshToken, setTokens]);
+  // Always points at the latest `connect` so scheduled retries never use a
+  // stale closure (avoids a circular dependency between the two callbacks).
+  const connectRef = useRef<() => void>(() => {});
 
   const connect = useCallback(() => {
+    const scheduleRetry = () => {
+      if (reconnectAttemptsRef.current >= MAX_RECONNECT_ATTEMPTS) return;
+      reconnectAttemptsRef.current++;
+      const delay = Math.min(
+        BASE_RECONNECT_DELAY_MS * Math.pow(2, reconnectAttemptsRef.current - 1),
+        MAX_RECONNECT_DELAY_MS,
+      );
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = setTimeout(() => connectRef.current(), delay);
+    };
+
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
-    if (!accessToken) return;
+    // Read the token from the store at call time (not from a closure): after
+    // a successful refresh the scheduled reconnect must use the NEW token,
+    // otherwise it would keep reconnecting with the expired one forever.
+    const token = useAuthStore.getState().accessToken;
+    if (!token) return;
 
     try {
-      const ws = new WebSocket(`${wsUrl}?token=${accessToken}`);
+      const ws = new WebSocket(`${wsUrl}?token=${token}`);
 
       ws.onopen = () => {
         setIsConnected(true);
@@ -80,27 +78,25 @@ export function WebSocketProvider({ children, url }: WebSocketProviderProps) {
         setIsConnected(false);
         wsRef.current = null;
 
-        // Auth failure (4003) or policy violation (4001) — try refreshing token first
+        // Auth failure (4003) or policy violation (4001) — try refreshing the
+        // token first, then reconnect once with the fresh session.
         const isAuthError = event.code === 4001 || event.code === 4003;
 
-        if (isAuthError && reconnectAttemptsRef.current < maxReconnectAttempts) {
+        if (isAuthError && reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
           const refreshed = await refreshAccessToken();
           if (refreshed) {
             reconnectAttemptsRef.current++;
-            reconnectTimeoutRef.current = setTimeout(connect, 1000);
+            clearTimeout(reconnectTimeoutRef.current);
+            reconnectTimeoutRef.current = setTimeout(() => connectRef.current(), 1000);
             return;
           }
-          // Refresh token also expired - logout user
+          // Refresh token also expired — end the session.
           useAuthStore.getState().logout();
           return;
         }
 
-        // Non-auth error or auth refresh failed — reconnect with backoff
-        if (reconnectAttemptsRef.current < maxReconnectAttempts) {
-          reconnectAttemptsRef.current++;
-          const delay = Math.min(3000 * Math.pow(2, reconnectAttemptsRef.current - 1), 30000);
-          reconnectTimeoutRef.current = setTimeout(connect, delay);
-        }
+        // Non-auth error — reconnect with exponential backoff.
+        scheduleRetry();
       };
 
       ws.onerror = () => {
@@ -129,21 +125,42 @@ export function WebSocketProvider({ children, url }: WebSocketProviderProps) {
 
       wsRef.current = ws;
     } catch {
-      if (reconnectAttemptsRef.current < maxReconnectAttempts) {
-        reconnectAttemptsRef.current++;
-        const delay = Math.min(3000 * Math.pow(2, reconnectAttemptsRef.current - 1), 30000);
-        reconnectTimeoutRef.current = setTimeout(connect, delay);
-      }
+      scheduleRetry();
     }
-  }, [wsUrl, refreshAccessToken]);
+  }, [wsUrl]);
 
+  // Keep the ref in sync with the latest `connect`.
   useEffect(() => {
-    connect();
+    connectRef.current = connect;
+  }, [connect]);
+
+  // Connect once a session exists (e.g. right after login) and stop
+  // reconnecting when the user logs out.
+  useEffect(() => {
+    if (!accessToken) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectAttemptsRef.current = 0;
+      wsRef.current?.close();
+      return;
+    }
+    // Cancel any pending scheduled reconnect — this effect-driven connect
+    // supersedes it, otherwise both could fire while the first socket is
+    // still CONNECTING and create a duplicate connection.
+    clearTimeout(reconnectTimeoutRef.current);
+    const state = wsRef.current?.readyState;
+    if (state !== WebSocket.OPEN && state !== WebSocket.CONNECTING) {
+      connect();
+    }
+  }, [accessToken, connect]);
+
+  // Cleanup on unmount only — never on token changes (that would drop the
+  // live socket on every refresh).
+  useEffect(() => {
     return () => {
       clearTimeout(reconnectTimeoutRef.current);
       wsRef.current?.close();
     };
-  }, [connect]);
+  }, []);
 
   const send = useCallback((message: string | Record<string, unknown>) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {

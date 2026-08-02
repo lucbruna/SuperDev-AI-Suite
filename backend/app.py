@@ -124,6 +124,16 @@ def create_app() -> FastAPI:
     except ImportError:
         logger.warning("Endpoint rate limit middleware not available")
 
+    # Request/response logging — registered last so it is the outermost
+    # middleware and captures every request, including ones rejected by
+    # authentication or rate limiting.
+    try:
+        from backend.middleware.logging import LoggingMiddleware
+
+        app.add_middleware(LoggingMiddleware)
+    except ImportError:
+        logger.warning("Logging middleware not available")
+
     register_error_handlers(app)
 
     configure_tracing()

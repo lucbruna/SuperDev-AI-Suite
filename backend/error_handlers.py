@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from backend.exceptions import AppException
+
+logger = logging.getLogger(__name__)
 
 
 def error_response(code: str, message: str, details: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -41,10 +45,12 @@ def register_error_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(Exception)
     async def unhandled_exception_handler(request: Request, exc: Exception):
+        logger.exception(
+            "Unhandled exception while processing %s %s",
+            request.method,
+            request.url.path,
+        )
         return JSONResponse(
             status_code=500,
             content=error_response(code="INTERNAL_ERROR", message="An unexpected error occurred"),
         )
-
-
-from fastapi.responses import JSONResponse

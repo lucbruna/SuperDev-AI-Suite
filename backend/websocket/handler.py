@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import json
+import logging
 
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 
 from backend.websocket.events import EventType, WSEvent
 from backend.websocket.manager import manager
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -36,6 +39,7 @@ async def websocket_endpoint(
             await websocket.close(code=4003, reason="Invalid token payload")
             return
     except Exception:
+        logger.exception("WebSocket authentication failed")
         await websocket.close(code=4003, reason="Authentication failed")
         return
 
@@ -62,8 +66,14 @@ async def websocket_endpoint(
                         websocket,
                     )
                 elif msg_type == "broadcast":
+                    raw_type = message.get("event_type", "notification")
+                    event_type = (
+                        EventType[raw_type]
+                        if isinstance(raw_type, str) and raw_type in EventType.__members__
+                        else EventType.LOG_MESSAGE
+                    )
                     event = WSEvent(
-                        type=EventType(message.get("event_type", "notification")),
+                        type=event_type,
                         channel=channel,
                         data=message.get("data", {}),
                     )
@@ -78,5 +88,20 @@ async def websocket_endpoint(
                     {"type": "error", "message": "Invalid JSON"},
                     websocket,
                 )
+            except Exception:
+                # Malformed/unexpected message — notify the client and keep the
+                # connection alive instead of tearing down the whole session.
+                logger.warning("Unexpected message error on channel %s", channel, exc_info=True)
+                await manager.send_personal(
+                    {"type": "error", "message": "Invalid message"},
+                    websocket,
+                )
     except WebSocketDisconnect:
+        # Normal client disconnect — nothing else to log.
+        pass
+    except Exception:
+        logger.exception("Unexpected WebSocket error on channel %s", channel)
+    finally:
+        # Always remove the socket from the manager, even on unexpected
+        # errors, so no dead connections leak into broadcasts.
         await manager.disconnect(websocket, channel)

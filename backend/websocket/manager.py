@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 from typing import Any
 
 from fastapi import WebSocket
 from starlette.websockets import WebSocketState
+
+logger = logging.getLogger(__name__)
 
 
 class ConnectionManager:
@@ -30,8 +33,13 @@ class ConnectionManager:
                     del self.active_connections[channel]
 
     async def send_personal(self, data: dict[str, Any], websocket: WebSocket) -> None:
-        if websocket.client_state == WebSocketState.CONNECTED:
-            await websocket.send_text(json.dumps(data))
+        try:
+            if websocket.client_state == WebSocketState.CONNECTED:
+                await websocket.send_text(json.dumps(data))
+        except Exception:
+            # Socket may have been closed concurrently; the disconnect path
+            # removes it from the registry.
+            logger.debug("send_personal failed — socket likely closed", exc_info=True)
 
     async def broadcast(self, channel: str, data: dict[str, Any]) -> None:
         connections = self.active_connections.get(channel, [])

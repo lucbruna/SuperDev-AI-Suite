@@ -1,5 +1,6 @@
-import apiClient from "./client";
+import apiClient, { refreshAccessToken } from "./client";
 import { API_ENDPOINTS } from "@/constants/api";
+import { useAuthStore } from "@/stores/authStore";
 import type {
   LoginRequest,
   RegisterRequest,
@@ -31,17 +32,16 @@ export const authApi = {
   },
 
   refreshToken: async (refreshToken: string): Promise<RefreshTokenResponse> => {
-    const response = await apiClient.post<{
-      access_token: string;
-      refresh_token: string;
-      token_type: string;
-    }>(
-      API_ENDPOINTS.AUTH.REFRESH,
-      { refresh_token: refreshToken },
-    );
+    // Uses the shared raw-axios helper (not apiClient) on purpose: going
+    // through apiClient would re-enter its response interceptor and loop
+    // forever when the refresh endpoint itself answers 401.
+    const accessToken = await refreshAccessToken();
+    if (!accessToken) {
+      throw new Error("Failed to refresh session");
+    }
     return {
-      accessToken: response.data.access_token,
-      refreshToken: response.data.refresh_token,
+      accessToken,
+      refreshToken: useAuthStore.getState().refreshToken ?? refreshToken,
       expiresIn: 0,
     };
   },
