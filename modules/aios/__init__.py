@@ -58,6 +58,16 @@ from modules.aios.docker import (
     DockerVolume,
     get_docker_runtime,
 )
+from modules.aios.java import (
+    GradleManager,
+    GradleUnavailableError,
+    JavaClient,
+    JavaRuntime,
+    JavaUnavailableError,
+    MavenManager,
+    MavenUnavailableError,
+    get_java_runtime,
+)
 from modules.aios.kubernetes import (
     KubernetesClient,
     KubernetesCluster,
@@ -212,6 +222,14 @@ __all__ = [
     "YarnManager",
     "YarnUnavailableError",
     "get_node_runtime",
+    "GradleManager",
+    "GradleUnavailableError",
+    "JavaClient",
+    "JavaRuntime",
+    "JavaUnavailableError",
+    "MavenManager",
+    "MavenUnavailableError",
+    "get_java_runtime",
     "PipManager",
     "PoetryManager",
     "PoetryUnavailableError",
