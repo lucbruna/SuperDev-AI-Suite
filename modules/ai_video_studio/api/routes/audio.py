@@ -4,6 +4,8 @@ import uuid
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
+from modules.ai_video_studio.core.exceptions import AIError
+
 router = APIRouter()
 
 
@@ -94,6 +96,14 @@ async def list_audio_tracks(project_id: str = Query(...), track_type: str | None
     return [AudioTrackResponse(**t) for t in items]
 
 
+@router.get("/voices", summary="List available narrator voices")
+async def list_voices():
+    """List the narrator catalog used by TTS synthesis."""
+    from modules.ai_video_studio.services.voice_studio import VoiceStudioService
+
+    return {"success": True, "data": {"voices": VoiceStudioService().list_voices()}}
+
+
 @router.get("/{track_id}", response_model=AudioTrackResponse)
 async def get_audio_track(track_id: str):
     if track_id not in _audio:
@@ -118,13 +128,34 @@ async def delete_audio_track(track_id: str):
 
 @router.post("/synthesize", response_model=AudioTrackResponse, status_code=201)
 async def synthesize_voice(req: VoiceSynthesizeRequest):
-    """Generate a voice-over from text using AI TTS."""
+    """Generate a real voice-over from text using AI TTS.
+
+    Uses edge-tts (primary) with gTTS/pyttsx3 fallback via
+    ``VoiceStudioService``. Returns the audio track metadata, including the
+    generated file path and probed duration.
+    """
+    from modules.ai_video_studio.services.voice_studio import VoiceStudioService
+
+    service = VoiceStudioService()
+    try:
+        synth = await service.synthesize(
+            req.text,
+            voice_id=req.voice_id,
+            language=req.language,
+            speed=req.speed,
+            pitch=req.pitch,
+            emotion=req.emotion,
+        )
+    except AIError as e:
+        raise HTTPException(status_code=e.status_code, detail=e.to_dict()) from e
+
     aid = str(uuid.uuid4())
     track = {
         "id": aid, "project_id": req.project_id, "scene_id": req.scene_id,
         "name": f"Voice: {req.text[:40]}...", "track_type": "voice_over",
-        "file_path": None, "duration": len(req.text) * 0.06, "start_time": 0.0,
-        "volume": 1.0, "fade_in": 0.0, "fade_out": 0.0, "is_muted": False, "is_loop": False,
+        "file_path": synth["file_path"], "duration": synth["duration"] or len(req.text) * 0.06,
+        "start_time": 0.0, "volume": 1.0, "fade_in": 0.0, "fade_out": 0.0,
+        "is_muted": False, "is_loop": False,
         "voice_id": req.voice_id, "voice_speed": req.speed, "voice_pitch": req.pitch,
         "emotion": req.emotion,
     }

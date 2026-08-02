@@ -69,12 +69,15 @@ class TextToVideoPipeline(BasePipeline):
     name = "text_to_video"
 
     async def plan(self, **kwargs: Any) -> list[str]:
-        return [
+        steps = [
             "plan_scenes",
             "generate_scene_videos",
             "concatenate_scenes",
-            "generate_thumbnail",
         ]
+        if kwargs.get("voice_over"):
+            steps.append("add_voiceover")
+        steps.append("generate_thumbnail")
+        return steps
 
     async def execute_step(self, step_name: str, plan: list[str], **kwargs: Any) -> Any:
         prompt = kwargs.get("prompt", "Hello World")
@@ -120,7 +123,44 @@ class TextToVideoPipeline(BasePipeline):
                 return thumb_path
             return None
 
+        if step_name == "add_voiceover":
+            return await self._add_voiceover()
+
         raise ValueError(f"Unknown step: {step_name}")
+
+    async def _add_voiceover(self) -> dict[str, Any] | None:
+        """Synthesize a narration track and mux it onto the concatenated video.
+
+        Fails soft (returns None, logs a warning) so missing TTS engines never
+        break the pipeline — consistent with the AI-planning fallback pattern.
+        """
+        if not self.result.output_path:
+            return None
+        try:
+            from modules.ai_video_studio.services.voice_studio import VoiceStudioService
+
+            text = " ".join(s.get("text", "") for s in getattr(self, "_scenes", []) if s.get("text"))
+            if not text.strip():
+                return None
+
+            synth = await VoiceStudioService().synthesize(text)
+            out_path = self.result.output_path.rsplit(".", 1)[0] + "_voiced.mp4"
+            engine = RenderEngine()
+            muxed = await engine.mux_audio(
+                self.result.output_path, synth["file_path"], out_path,
+                volume=1.0,
+            )
+            self.result.output_path = muxed["output_path"]
+            self.result.metadata["voiceover"] = {
+                "engine": synth["engine"],
+                "file_path": synth["file_path"],
+                "duration": synth["duration"],
+            }
+            logger.info("Voiceover muxed into %s", muxed["output_path"])
+            return muxed
+        except Exception as e:  # noqa: BLE001 — never let TTS break the pipeline
+            logger.warning("Voiceover skipped: %s", e)
+            return None
 
     async def _plan_scenes_ai(self, prompt: str, num_scenes: int, duration: float, style: str) -> list[dict]:
         """Plan scenes via the AI studio (director) with deterministic fallback.

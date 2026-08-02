@@ -127,11 +127,11 @@ class RenderEngine:
             cmd.extend(["-hwaccel", c.hardware_accel, "-hwaccel_output_format", "cuda"])
 
         if c.concat_inputs:
-            concat_file = tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False)
-            for inp in c.concat_inputs:
-                concat_file.write(f"file '{inp}'\n")
-            concat_file.close()
-            cmd.extend(["-f", "concat", "-safe", "0", "-i", concat_file.name])
+            with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as concat_file:
+                for inp in c.concat_inputs:
+                    concat_file.write(f"file '{inp}'\n")
+                concat_name = concat_file.name
+            cmd.extend(["-f", "concat", "-safe", "0", "-i", concat_name])
         else:
             cmd.extend(["-i", c.input_path])
 
@@ -207,7 +207,7 @@ class RenderEngine:
         )
         await proc.communicate()
         if proc.returncode != 0:
-            raise RuntimeError(f"Thumbnail generation failed")
+            raise RuntimeError("Thumbnail generation failed")
         return output_path
 
     async def extract_audio(self, input_path: str, output_path: str, codec: str = "aac") -> str:
@@ -222,12 +222,12 @@ class RenderEngine:
         return output_path
 
     async def concat_videos(self, input_paths: list[str], output_path: str) -> dict[str, Any]:
-        concat_file = tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False)
-        for p in input_paths:
-            concat_file.write(f"file '{p}'\n")
-        concat_file.close()
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as concat_file:
+            for p in input_paths:
+                concat_file.write(f"file '{p}'\n")
+            concat_name = concat_file.name
         cmd = [
-            self.ffmpeg, "-y", "-f", "concat", "-safe", "0", "-i", concat_file.name,
+            self.ffmpeg, "-y", "-f", "concat", "-safe", "0", "-i", concat_name,
             "-c", "copy", output_path,
         ]
         proc = await asyncio.create_subprocess_exec(
@@ -237,6 +237,32 @@ class RenderEngine:
         os.unlink(concat_file.name)
         if proc.returncode != 0:
             raise RuntimeError("Video concatenation failed")
+        return {"output_path": output_path, "success": True}
+
+    async def mux_audio(
+        self, video_path: str, audio_path: str, output_path: str,
+        volume: float = 1.0,
+    ) -> dict[str, Any]:
+        """Mix an audio track onto a video, replacing its original audio."""
+        os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
+        cmd = [
+            self.ffmpeg, "-y",
+            "-i", video_path,
+            "-i", audio_path,
+            "-map", "0:v:0",
+            "-map", "1:a:0",
+            "-c:v", "copy",
+            "-c:a", "aac", "-b:a", "192k",
+        ]
+        if volume != 1.0:
+            cmd.extend(["-af", f"volume={volume}"])
+        cmd.extend(["-shortest", output_path])
+        proc = await asyncio.create_subprocess_exec(
+            *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+        )
+        _, stderr = await proc.communicate()
+        if proc.returncode != 0:
+            raise RuntimeError(f"Audio muxing failed: {stderr.decode()[:500]}")
         return {"output_path": output_path, "success": True}
 
     async def add_subtitles(
