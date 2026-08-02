@@ -5,14 +5,24 @@ import logging
 import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from enum import Enum
+from datetime import UTC, datetime
+from enum import StrEnum
 from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-class PipelineStatus(str, Enum):
+async def _publish_event(event_type: str, **payload: Any) -> None:
+    """Best-effort integration event emission (never breaks the pipeline)."""
+    try:
+        from modules.ai_video_studio.integration.event_bus import get_event_bus
+
+        await get_event_bus().publish(event_type, **payload)
+    except Exception:  # noqa: BLE001
+        logger.debug("integration event bus unavailable for %s", event_type)
+
+
+class PipelineStatus(StrEnum):
     QUEUED = "queued"
     PLANNING = "planning"
     GENERATING = "generating"
@@ -45,7 +55,7 @@ class PipelineResult:
     steps: list[PipelineStep] = field(default_factory=list)
     metadata: dict = field(default_factory=dict)
     error: str | None = None
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     completed_at: datetime | None = None
 
     @property
@@ -87,6 +97,9 @@ class BasePipeline(ABC):
         """Run the full pipeline: plan → execute → post-process → finalize."""
         try:
             self.result.status = PipelineStatus.PLANNING
+            await _publish_event(
+                "pipeline.started", pipeline_id=self.pipeline_id, pipeline=self.name
+            )
             plan = await self.plan(**kwargs)
             self.result.steps = [PipelineStep(name=s) for s in plan]
 
@@ -95,29 +108,54 @@ class BasePipeline(ABC):
                     self.result.status = PipelineStatus.CANCELLED
                     return self.result.to_dict()
                 step.status = PipelineStatus.GENERATING
-                step.started_at = datetime.now(timezone.utc)
+                step.started_at = datetime.now(UTC)
                 try:
                     step.result = await self.execute_step(step.name, plan, **kwargs)
                     step.status = PipelineStatus.COMPLETED
                     step.progress = 1.0
-                    step.completed_at = datetime.now(timezone.utc)
+                    step.completed_at = datetime.now(UTC)
+                    await _publish_event(
+                        "pipeline.step.completed",
+                        pipeline_id=self.pipeline_id,
+                        pipeline=self.name,
+                        step=step.name,
+                    )
                 except Exception as e:
                     step.status = PipelineStatus.FAILED
                     step.error = str(e)
                     self.result.status = PipelineStatus.FAILED
                     self.result.error = str(e)
                     logger.error(f"Pipeline {self.name} step '{step.name}' failed: {e}")
+                    await _publish_event(
+                        "pipeline.failed",
+                        pipeline_id=self.pipeline_id,
+                        pipeline=self.name,
+                        step=step.name,
+                        error=str(e),
+                    )
                     return self.result.to_dict()
 
             self.result.status = PipelineStatus.COMPLETED
-            self.result.completed_at = datetime.now(timezone.utc)
+            self.result.completed_at = datetime.now(UTC)
+            await _publish_event(
+                "pipeline.completed",
+                pipeline_id=self.pipeline_id,
+                pipeline=self.name,
+                duration=self.result.duration,
+            )
             return self.result.to_dict()
 
         except Exception as e:
             self.result.status = PipelineStatus.FAILED
             self.result.error = str(e)
-            self.result.completed_at = datetime.now(timezone.utc)
+            self.result.completed_at = datetime.now(UTC)
             logger.error(f"Pipeline {self.name} failed: {e}")
+            await _publish_event(
+                "pipeline.failed",
+                pipeline_id=self.pipeline_id,
+                pipeline=self.name,
+                error=str(e),
+            )
             return self.result.to_dict()
 
     def cancel(self) -> None:

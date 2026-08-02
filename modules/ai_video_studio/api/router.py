@@ -11,6 +11,7 @@ from modules.ai_video_studio.api.routes import (
     audio,
     avatar,
     export,
+    integration,
     project,
     render,
     scene,
@@ -34,6 +35,7 @@ api_router.include_router(audio.router, prefix="/audio", tags=["Audio"])
 api_router.include_router(avatar.router, prefix="/avatars", tags=["Avatars"])
 api_router.include_router(export.router, prefix="/export", tags=["Export"])
 api_router.include_router(subtitles.router, prefix="/subtitles", tags=["Subtitles"])
+api_router.include_router(integration.router, prefix="/integration", tags=["Integration"])
 
 
 @api_router.get("/health", tags=["Health"])
