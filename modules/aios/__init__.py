@@ -168,6 +168,17 @@ from modules.aios.rust import (
     RustUnavailableError,
     get_rust_runtime,
 )
+from modules.aios.terminal import (
+    Terminal,
+    TerminalCommand,
+    TerminalCommands,
+    TerminalHistory,
+    TerminalSession,
+    TerminalSessionError,
+    TerminalStream,
+    TerminalTabs,
+    get_terminal_runtime,
+)
 from modules.aios.sandbox import (
     NetworkAccess,
     Sandbox,
@@ -304,6 +315,15 @@ __all__ = [
     "Pwsh",
     "WindowsTerminal",
     "get_powershell_runtime",
+    "Terminal",
+    "TerminalCommand",
+    "TerminalCommands",
+    "TerminalHistory",
+    "TerminalSession",
+    "TerminalSessionError",
+    "TerminalStream",
+    "TerminalTabs",
+    "get_terminal_runtime",
     "PipManager",
     "PoetryManager",
     "PoetryUnavailableError",
