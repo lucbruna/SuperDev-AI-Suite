@@ -130,10 +130,15 @@ npm run dev
 
 ## Project Structure
 
+> **Official frontend:** `frontend/` (Next.js 14 App Router) — the main web app.
+> `admin-dashboard/` is a **separate** legacy Vite + React SPA (administrative
+> panel) and is not part of the main app; new UI work belongs in `frontend/`.
+
 ```
 SuperDev/
 ├── backend/          # REST API, WebSocket, Auth, AI
-├── frontend/         # Web Dashboard, IDE, Editor
+├── frontend/         # ★ OFFICIAL WEB APP — Next.js 14 App Router (dashboard, IDE, agents, settings)
+├── admin-dashboard/  # Legacy separate Vite + React admin SPA (not the main app)
 ├── desktop/          # Desktop Application
 ├── mobile/           # Mobile Clients
 ├── cli/              # Command Line Interface
