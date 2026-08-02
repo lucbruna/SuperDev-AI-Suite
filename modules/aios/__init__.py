@@ -135,6 +135,14 @@ from modules.aios.python import (
     render_requirements,
     write_file,
 )
+from modules.aios.rust import (
+    CargoClient,
+    CargoCommands,
+    Clippy,
+    RustRuntime,
+    RustUnavailableError,
+    get_rust_runtime,
+)
 from modules.aios.sandbox import (
     NetworkAccess,
     Sandbox,
@@ -246,6 +254,12 @@ __all__ = [
     "GoTest",
     "GoUnavailableError",
     "get_go_runtime",
+    "CargoClient",
+    "CargoCommands",
+    "Clippy",
+    "RustRuntime",
+    "RustUnavailableError",
+    "get_rust_runtime",
     "PipManager",
     "PoetryManager",
     "PoetryUnavailableError",
