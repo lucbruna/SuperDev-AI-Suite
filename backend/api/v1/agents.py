@@ -7,7 +7,6 @@ from pydantic import BaseModel
 from sqlalchemy import text as sa_text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.agents.react_agent import ReActAgent
 from backend.agents.tool_registry import tool_registry
 from backend.auth.rbac import Action, Resource, require_permission
 from backend.database.session import get_db
@@ -487,53 +486,20 @@ async def execute_agent(
     if not agent.is_active:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Agent is not active")
 
-    execution = await service.execute_agent(
-        agent_id=agent_id,
-        task=request.input,
-        context=request.context,
-    )
+    # Shared DB-backed execution flow (also used by /system/agents/execute and
+    # the workflow integration service) so every entry point behaves identically.
+    from backend.agents.execution import run_persisted_agent
 
-    config = agent.config or {}
-    react_agent = ReActAgent(
-        name=agent.name,
-        description=agent.description or "",
-        model=agent.model_name,
-        provider=agent.model_provider,
-        max_steps=config.get("max_steps", 10),
-        temperature=config.get("temperature", 0.7),
-        db=db,
-    )
-    if agent.tools:
-        enabled = set(agent.tools)
-        react_agent._tools = [t for t in react_agent._tools if t["name"] in enabled]
-
-    result = await react_agent.run(request.input, request.context)
-
-    tokens_used = 0
-    if result.token_usage:
-        tokens_used = int(result.token_usage.get("total_tokens", 0) or 0)
-
-    await service.complete_execution(
-        str(execution.id),
-        result={"output": result.output, "steps": len(result.steps), "tool_calls": len(result.tool_calls)},
-        error=result.error,
-        tokens_used=tokens_used,
-    )
+    result = await run_persisted_agent(db, agent, request.input, request.context)
 
     return AgentExecuteResponse(
-        execution_id=str(execution.id),
-        agent_id=agent_id,
-        output=result.output,
-        steps=[
-            {"thought": s.thought, "action": s.action, "observation": s.observation}
-            for s in result.steps
-        ],
-        tool_calls=[
-            {"name": tc.name, "arguments": tc.arguments, "result": tc.result, "error": tc.error}
-            for tc in result.tool_calls
-        ],
-        execution_time_ms=result.execution_time_ms,
-        error=result.error,
+        execution_id=result["execution_id"],
+        agent_id=result["agent_id"],
+        output=result["output"],
+        steps=result["steps"],
+        tool_calls=result["tool_calls"],
+        execution_time_ms=result["execution_time_ms"],
+        error=result["error"],
     )
 
 

@@ -57,7 +57,7 @@ async def executions_stats_today(
     except Exception as exc:  # pragma: no cover - defensive
         logger.debug("workflow_runs today failed: %s", exc)
 
-    # agent_executions
+    # agent_executions (DB-backed, matches /api/v1/agents executions)
     try:
         result = await db.execute(
             sa_text(
@@ -76,29 +76,6 @@ async def executions_stats_today(
             today += count
     except Exception as exc:  # pragma: no cover - defensive
         logger.debug("agent_executions today failed: %s", exc)
-
-    # In-memory agent manager may track runs too
-    try:
-        from backend.agents.agent_manager import agent_manager
-
-        runs = getattr(agent_manager, "_executions", None) or []
-        for run in runs:
-            created = run.get("created_at") or run.get("started_at")
-            if created:
-                try:
-                    if isinstance(created, datetime):
-                        dt = created
-                    else:
-                        dt = datetime.fromisoformat(str(created))
-                    if dt.replace(tzinfo=UTC) < start:
-                        continue
-                except (TypeError, ValueError):
-                    pass
-            status = str(run.get("status", "unknown"))
-            by_status[status] = by_status.get(status, 0) + 1
-            today += 1
-    except Exception as exc:  # pragma: no cover - defensive
-        logger.debug("agent_manager executions failed: %s", exc)
 
     failed = by_status.get("failed", 0)
     running = by_status.get("running", 0)
@@ -124,7 +101,7 @@ async def list_executions(
     limit: int = 25,
     offset: int = 0,
 ) -> dict[str, Any]:
-    """Recent executions merged from DB runs and the in-memory manager."""
+    """Recent executions from DB: workflow runs + agent executions."""
     items: list[dict[str, Any]] = []
     limit = max(1, min(limit, 100))
     offset = max(0, offset)
@@ -156,22 +133,29 @@ async def list_executions(
     except Exception as exc:  # pragma: no cover - defensive
         logger.debug("workflow runs list failed: %s", exc)
 
-    # In-memory agent executions (fills gap when DB is empty)
+    # DB agent executions (matches /api/v1/agents executions)
     try:
-        from backend.agents.agent_manager import agent_manager
-
-        runs = getattr(agent_manager, "_executions", None) or []
-        for run in runs[: max(1, limit - len(items))]:
-            created = run.get("created_at") or run.get("started_at")
+        result = await db.execute(
+            sa_text(
+                """
+                SELECT id, agent_id, status, created_at
+                FROM agent_executions
+                ORDER BY created_at DESC
+                LIMIT :limit OFFSET :offset
+                """
+            ),
+            {"limit": limit, "offset": offset},
+        )
+        for row in result.fetchall():
             items.append(
                 {
-                    "id": str(run.get("id", "")),
+                    "id": str(row[0]),
                     "workflow_id": None,
-                    "agent_id": str(run.get("agent_id", "")),
-                    "status": str(run.get("status", "unknown")),
+                    "agent_id": str(row[1]) if row[1] else None,
+                    "status": str(row[2]),
                     "trigger": "manual",
-                    "triggered_by": str(run.get("user_id", "")) or None,
-                    "created_at": created.isoformat() if isinstance(created, datetime) else created,
+                    "triggered_by": None,
+                    "created_at": row[3].isoformat() if row[3] else None,
                 }
             )
     except Exception as exc:  # pragma: no cover - defensive

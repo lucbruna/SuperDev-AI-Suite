@@ -268,15 +268,16 @@ async def system_dashboard(
     current_user: dict[str, Any] = Depends(get_current_active_user),
 ) -> dict[str, Any]:
     """Aggregate dashboard data: KPIs, health, metrics, activity, metadata."""
-    # Agent count: prefer in-memory agent_manager (matches /api/v1/agents)
+    # Agent count: DB-backed via AgentService (matches /api/v1/agents)
     agents_total = 0
     agents_active = 0
     try:
-        from backend.agents.agent_manager import agent_manager
+        from backend.services.agent_service import AgentService
 
-        agents = agent_manager.list_agents()
+        service = AgentService(db)
+        agents, _ = await service.list_agents(page=1, page_size=1000)
         agents_total = len(agents)
-        agents_active = sum(1 for a in agents if a.get("status") == "running")
+        agents_active = sum(1 for a in agents if a.is_active)
     except Exception as exc:  # pragma: no cover - defensive
         logger.debug("agent count failed: %s", exc)
         agents_total = await _count(db, "agents")

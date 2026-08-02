@@ -12,8 +12,16 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.database.session import get_db
 from backend.dependencies import get_current_active_user
+from backend.exceptions import AgentNotFoundException
+from backend.services.agent_service import AgentService
+
+# Shared serializer so /system/agents returns the exact same shape as
+# /api/v1/agents (single source of truth for the agent contract).
+from backend.api.v1.agents import _agent_response
 
 router = APIRouter(
     tags=["system"],
@@ -123,57 +131,85 @@ async def system_health() -> dict[str, Any]:
 
 
 # ─── Agents ──────────────────────────────────────────────────────────────────
+#
+# Agent endpoints are DB-backed through AgentService — the same source of
+# truth as /api/v1/agents — instead of the orchestrator's in-memory registry.
 
 
 @router.get("/agents")
-async def list_agents() -> dict[str, Any]:
-    """List all registered AI agents."""
-    orch = get_orchestrator()
+async def list_agents(db: AsyncSession = Depends(get_db)) -> dict[str, Any]:
+    """List all registered AI agents (DB-backed)."""
+    service = AgentService(db)
+    agents, total = await service.list_agents(page=1, page_size=1000)
     return {
-        "agents": orch.agent_manager.list_agents(),
-        "statistics": orch.agent_manager.get_statistics(),
+        "agents": [_agent_response(a) for a in agents],
+        "statistics": {
+            "total": total,
+            "active": sum(1 for a in agents if a.is_active),
+        },
     }
 
 
 @router.get("/agents/{agent_id}")
-async def get_agent(agent_id: str) -> dict[str, Any]:
+async def get_agent(
+    agent_id: str,
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
     """Get details for a specific agent."""
-    orch = get_orchestrator()
-    agent = orch.agent_manager.get_agent(agent_id)
-    if not agent:
+    service = AgentService(db)
+    try:
+        agent = await service.get_agent(agent_id)
+    except AgentNotFoundException:
         raise HTTPException(status_code=404, detail=f"Agent '{agent_id}' not found")
-    return agent
+    return _agent_response(agent)
 
 
 @router.post("/agents/{agent_id}/start")
-async def start_agent(agent_id: str) -> dict[str, Any]:
-    """Start a specific agent."""
-    orch = get_orchestrator()
+async def start_agent(
+    agent_id: str,
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """Start a specific agent (mark as active)."""
+    service = AgentService(db)
     try:
-        return await orch.agent_manager.start_agent(agent_id)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        updated = await service.update_agent(agent_id, is_active=True)
+    except AgentNotFoundException:
+        raise HTTPException(status_code=404, detail=f"Agent '{agent_id}' not found")
+    return _agent_response(updated)
 
 
 @router.post("/agents/{agent_id}/stop")
-async def stop_agent(agent_id: str) -> dict[str, Any]:
-    """Stop a specific agent."""
-    orch = get_orchestrator()
+async def stop_agent(
+    agent_id: str,
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """Stop a specific agent (mark as inactive)."""
+    service = AgentService(db)
     try:
-        return await orch.agent_manager.stop_agent(agent_id)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        updated = await service.update_agent(agent_id, is_active=False)
+    except AgentNotFoundException:
+        raise HTTPException(status_code=404, detail=f"Agent '{agent_id}' not found")
+    return _agent_response(updated)
 
 
 @router.post("/agents/execute")
-async def execute_agent(request: ExecuteRequest) -> dict[str, Any]:
+async def execute_agent(
+    request: ExecuteRequest,
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
     """Execute a task using a specific agent."""
-    orch = get_orchestrator()
-    return await orch.agent_manager.execute(
-        agent_id=request.agent_id,
-        task=request.task,
-        context=request.context,
-    )
+    from backend.agents.execution import run_persisted_agent
+
+    service = AgentService(db)
+    try:
+        agent = await service.get_agent(request.agent_id)
+    except AgentNotFoundException:
+        raise HTTPException(status_code=404, detail=f"Agent '{request.agent_id}' not found")
+
+    if not agent.is_active:
+        raise HTTPException(status_code=400, detail="Agent is not active")
+
+    return await run_persisted_agent(db, agent, request.task, request.context)
 
 
 # ─── Workflows ───────────────────────────────────────────────────────────────

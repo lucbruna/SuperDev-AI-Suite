@@ -198,20 +198,32 @@ language = {language!r}
         task: str,
         context: dict[str, Any],
     ) -> dict[str, Any]:
-        from backend.agents.agent_manager import agent_manager
+        """Run a persisted agent by name through the DB-backed execution flow."""
+        from backend.agents.execution import run_persisted_agent
+        from backend.database.session import async_session_factory
+        from backend.repositories.agent_repository import AgentRepository
 
-        system = agent_manager
-        await system.initialize()
+        async with async_session_factory() as db:
+            agent = await AgentRepository(db).get_by_name(agent_name)
+            if not agent:
+                return {
+                    "success": False,
+                    "output": "",
+                    "error": f"Agent '{agent_name}' not found",
+                }
+            if not agent.is_active:
+                return {
+                    "success": False,
+                    "output": "",
+                    "error": f"Agent '{agent_name}' is not active",
+                }
 
-        result = await system.execute_task(agent_name, task, context)
-
-        await system.shutdown()
-
-        return {
-            "success": result.success,
-            "output": result.output,
-            "error": result.error,
-        }
+            result = await run_persisted_agent(db, agent, task, context)
+            return {
+                "success": result["success"],
+                "output": result["output"],
+                "error": result["error"],
+            }
 
 
 async def get_workflow_integration_service() -> WorkflowIntegrationService:

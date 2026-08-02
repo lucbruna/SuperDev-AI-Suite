@@ -31,6 +31,12 @@ class AgentRepository(BaseRepository[Agent]):
         """List agents of a specific type."""
         return await self.list(page=page, page_size=page_size, filters={"type": agent_type})
 
+    async def get_by_name(self, name: str) -> Agent | None:
+        """Get a single agent by exact name (first match)."""
+        query = select(self.model).where(self.model.name == name).limit(1)
+        result = await self.db.execute(query)
+        return result.scalar_one_or_none()
+
     async def get_active_by_project(self, project_id: str) -> list[Agent]:
         """Get all active agents for a project."""
         query = select(self.model).where(
