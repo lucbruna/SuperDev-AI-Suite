@@ -9,6 +9,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      # ./VERSION is the single source of truth — a deploy with drifted
+      # metadata is a broken state, so fail fast before building.
+      - name: Verify version metadata (single source)
+        run: make version-check
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:

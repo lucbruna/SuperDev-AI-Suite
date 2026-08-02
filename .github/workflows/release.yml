@@ -4,10 +4,10 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version tag (e.g. v5.1.0)"
+        description: "Version tag (e.g. v6.0.0)"
         required: true
       dry_run:
-        description: "Dry run (no publish)"
+        description: "Dry run (verify only — no commit/publish)"
         required: false
         type: boolean
         default: false
@@ -25,12 +25,46 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
       - name: Validate version format
         run: |
           if [[ ! "${{ github.event.inputs.version }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "Invalid version format. Expected: vX.Y.Z"
             exit 1
           fi
+          if git rev-parse "${{ github.event.inputs.version }}" >/dev/null 2>&1; then
+            echo "Tag ${{ github.event.inputs.version }} already exists — refusing to re-release"
+            exit 1
+          fi
+
+      # ./VERSION is the single source of truth. Guard the current state before
+      # bumping so a release never ships with drifted metadata.
+      - name: Verify version metadata (single source)
+        run: make version-check
+
+      # Write the input version into ./VERSION and propagate it to every
+      # pyproject.toml / package.json via the sync script.
+      - name: Bump version and sync metadata
+        if: ${{ !github.event.inputs.dry_run }}
+        run: |
+          echo "${VERSION_INPUT#v}" > VERSION
+          make version
+          make version-check
+        env:
+          VERSION_INPUT: ${{ github.event.inputs.version }}
+
+      # The tag must point at the commit that carries the bumped metadata.
+      - name: Commit version bump
+        if: ${{ !github.event.inputs.dry_run }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add VERSION pyproject.toml backend/pyproject.toml package.json frontend/package.json
+          git commit -m "chore: release ${{ github.event.inputs.version }} — bump de versao" || echo "no metadata changes to commit"
+          git push origin main
 
       - name: Create Git tag
         if: ${{ !github.event.inputs.dry_run }}
@@ -52,5 +86,8 @@ jobs:
         if: ${{ github.event.inputs.dry_run }}
         run: |
           echo "=== DRY RUN ==="
-          echo "Would create release: ${{ github.event.inputs.version }}"
-          echo "Tag: ${{ github.event.inputs.version }}"
+          echo "Version metadata verified against ./VERSION (make version-check passed)."
+          echo "Would set VERSION to ${VERSION_INPUT#v} and run: make version && make version-check"
+          echo "Would commit the metadata, tag ${{ github.event.inputs.version }}, and create a GitHub Release."
+        env:
+          VERSION_INPUT: ${{ github.event.inputs.version }}
