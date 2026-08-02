@@ -76,6 +76,23 @@ class TranslateRequest(BaseModel):
     target_language: str
 
 
+class GenerateSrtScene(BaseModel):
+    text: str = ""
+    duration: float = 3.0
+
+
+class GenerateSrtRequest(BaseModel):
+    scenes: list[GenerateSrtScene] = Field(..., min_length=1)
+    max_chars_per_line: int = 42
+
+
+class GenerateSrtResponse(BaseModel):
+    file_path: str
+    content: str
+    cue_count: int
+    duration: float
+
+
 _subtitles: dict[str, dict] = {}
 
 
@@ -155,20 +172,58 @@ async def auto_generate_subtitles(req: AutoSubtitleRequest):
 
 @router.post("/translate", response_model=SubtitleResponse, status_code=201)
 async def translate_subtitle(req: TranslateRequest):
-    """Create a translated copy of a subtitle."""
+    """Create a translated copy of a subtitle.
+
+    Uses the platform LLM when a provider is configured; falls back to a
+    deterministic copy otherwise (never fails).
+    """
     if req.subtitle_id not in _subtitles:
         raise HTTPException(status_code=404, detail=f"Subtitle {req.subtitle_id} not found")
     orig = _subtitles[req.subtitle_id]
+
+    from modules.ai_video_studio.services.subtitle_studio import SubtitleStudioService
+
+    translated_text = orig["text"]
+    try:
+        translated = await SubtitleStudioService().translate(
+            orig["text"], req.target_language
+        )
+        if translated["engine"] == "llm":
+            translated_text = translated["text"]
+    except Exception:  # noqa: BLE001 — translation is best-effort
+        pass
+
     sid = str(uuid.uuid4())
     translated = {
         "id": sid, "project_id": orig["project_id"], "scene_id": orig["scene_id"],
-        "text": f"[{req.target_language}] {orig['text']}", "language": req.target_language,
+        "text": translated_text, "language": req.target_language,
         "start_time": orig["start_time"], "end_time": orig["end_time"], "duration": orig["duration"],
         "font_name": orig["font_name"], "font_size": orig["font_size"],
         "font_color": orig["font_color"], "background_color": orig["background_color"],
         "position_x": orig["position_x"], "position_y": orig["position_y"],
         "alignment": orig["alignment"], "border_width": orig["border_width"],
-        "is_translation": True, "word_count": len(orig["text"].split()) + 1,
+        "is_translation": True, "word_count": len(translated_text.split()),
     }
     _subtitles[sid] = translated
     return SubtitleResponse(**translated)
+
+
+@router.post("/generate-srt", response_model=GenerateSrtResponse, status_code=201)
+async def generate_srt(req: GenerateSrtRequest):
+    """Generate a timed SRT subtitle file from scene narration.
+
+    Timing is computed per scene using a reading-speed model, so cues align
+    with the rendered video duration.
+    """
+    from modules.ai_video_studio.services.subtitle_studio import SubtitleStudioService
+
+    scenes = [s.model_dump() for s in req.scenes]
+    result = SubtitleStudioService().generate_srt(
+        scenes, max_chars=req.max_chars_per_line
+    )
+    return GenerateSrtResponse(
+        file_path=result["file_path"],
+        content=SubtitleStudioService.read_srt(result["file_path"]),
+        cue_count=result["cue_count"],
+        duration=result["duration"],
+    )

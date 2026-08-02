@@ -271,7 +271,11 @@ class RenderEngine:
     ) -> str:
         os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
         if style == "burn":
-            cmd = [self.ffmpeg, "-y", "-i", input_path, "-vf", f"subtitles={subtitle_path}", output_path]
+            # FFmpeg filter filenames need `\`, `:` and `'` escaped (Windows paths).
+            escaped = (
+                subtitle_path.replace("\\", "\\\\").replace(":", "\\:").replace("'", "\\'")
+            )
+            cmd = [self.ffmpeg, "-y", "-i", input_path, "-vf", f"subtitles={escaped}", "-c:a", "copy", output_path]
         else:
             cmd = [self.ffmpeg, "-y", "-i", input_path, "-i", subtitle_path, "-c", "copy", "-c:s", "mov_text", output_path]
         proc = await asyncio.create_subprocess_exec(

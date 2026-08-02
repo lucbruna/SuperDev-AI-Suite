@@ -76,6 +76,8 @@ class TextToVideoPipeline(BasePipeline):
         ]
         if kwargs.get("voice_over"):
             steps.append("add_voiceover")
+        if kwargs.get("subtitles"):
+            steps.append("add_subtitles")
         steps.append("generate_thumbnail")
         return steps
 
@@ -126,7 +128,39 @@ class TextToVideoPipeline(BasePipeline):
         if step_name == "add_voiceover":
             return await self._add_voiceover()
 
+        if step_name == "add_subtitles":
+            return await self._add_subtitles()
+
         raise ValueError(f"Unknown step: {step_name}")
+
+    async def _add_subtitles(self) -> dict[str, Any] | None:
+        """Generate an SRT file from scene narration and burn it in.
+
+        Fails soft (returns None, logs a warning) so subtitle issues never
+        break the pipeline — consistent with the voiceover fallback pattern.
+        """
+        if not self.result.output_path or not getattr(self, "_scenes", None):
+            return None
+        try:
+            from modules.ai_video_studio.services.subtitle_studio import SubtitleStudioService
+
+            subtitle_service = SubtitleStudioService()
+            srt = subtitle_service.generate_srt(self._scenes)
+            out_path = self.result.output_path.rsplit(".", 1)[0] + "_subbed.mp4"
+            engine = RenderEngine()
+            burned = await engine.add_subtitles(
+                self.result.output_path, srt["file_path"], out_path, style="burn"
+            )
+            self.result.output_path = burned
+            self.result.metadata["subtitles"] = {
+                "file_path": srt["file_path"],
+                "cue_count": srt["cue_count"],
+            }
+            logger.info("Subtitles burned into %s (%d cues)", burned, srt["cue_count"])
+            return srt
+        except Exception as e:  # noqa: BLE001 — never let subtitles break the pipeline
+            logger.warning("Subtitles skipped: %s", e)
+            return None
 
     async def _add_voiceover(self) -> dict[str, Any] | None:
         """Synthesize a narration track and mux it onto the concatenated video.
