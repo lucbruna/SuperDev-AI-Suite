@@ -10,6 +10,7 @@ from modules.ai_video_studio.api.routes import (
     assets,
     audio,
     avatar,
+    export,
     project,
     render,
     scene,
@@ -31,6 +32,7 @@ api_router.include_router(timeline.router, prefix="/timelines", tags=["Timelines
 api_router.include_router(assets.router, prefix="/assets", tags=["Assets"])
 api_router.include_router(audio.router, prefix="/audio", tags=["Audio"])
 api_router.include_router(avatar.router, prefix="/avatars", tags=["Avatars"])
+api_router.include_router(export.router, prefix="/export", tags=["Export"])
 api_router.include_router(subtitles.router, prefix="/subtitles", tags=["Subtitles"])
 
 

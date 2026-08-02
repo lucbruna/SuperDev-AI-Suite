@@ -265,6 +265,53 @@ class RenderEngine:
             raise RuntimeError(f"Audio muxing failed: {stderr.decode()[:500]}")
         return {"output_path": output_path, "success": True}
 
+    async def transcode(
+        self,
+        input_path: str,
+        output_path: str,
+        *,
+        video_codec: str = "libx264",
+        audio_codec: str | None = "aac",
+        preset: str = "medium",
+        crf: int = 23,
+        scale: str | None = None,
+        extra_flags: list[str] | None = None,
+    ) -> dict[str, Any]:
+        """Transcode a media file to a different container/codec.
+
+        Returns ``{"output_path", "file_size_bytes", "duration", "success"}``.
+        """
+        os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
+        cmd = [self.ffmpeg, "-y", "-i", input_path]
+        cmd.extend(["-c:v", video_codec])
+        if audio_codec:
+            cmd.extend(["-c:a", audio_codec])
+        else:
+            cmd.extend(["-an"])
+        if video_codec in ("libx264", "libx265", "libvpx-vp9"):
+            cmd.extend(["-crf", str(crf), "-preset", preset])
+        if scale:
+            cmd.extend(["-vf", f"scale={scale}"])
+        if extra_flags:
+            cmd.extend(extra_flags)
+        if output_path.endswith((".mp4", ".mov")):
+            cmd.extend(["-movflags", "+faststart"])
+        cmd.append(output_path)
+
+        proc = await asyncio.create_subprocess_exec(
+            *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+        )
+        _, stderr = await proc.communicate()
+        if proc.returncode != 0:
+            raise RuntimeError(f"Transcode failed: {stderr.decode()[:500]}")
+        probe = await self.probe(output_path)
+        return {
+            "output_path": output_path,
+            "file_size_bytes": os.path.getsize(output_path),
+            "duration": probe.duration,
+            "success": True,
+        }
+
     async def add_subtitles(
         self, input_path: str, subtitle_path: str, output_path: str,
         style: str = "burn",
