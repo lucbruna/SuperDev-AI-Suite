@@ -125,10 +125,19 @@ class BasePipeline(ABC):
 
     @abstractmethod
     async def plan(self, **kwargs: Any) -> list[str]:
-        """Return ordered step names for this pipeline."""
-        ...
+        """Return ordered step names for this pipeline.
+
+        Must be implemented by subclasses. Return a list of step name strings
+        that will be executed in order by ``execute()``.
+        """
+        raise NotImplementedError("Subclasses must implement plan()")
 
     @abstractmethod
     async def execute_step(self, step_name: str, plan: list[str], **kwargs: Any) -> Any:
-        """Execute a single named step and return its result."""
-        ...
+        """Execute a single named step and return its result.
+
+        Must be implemented by subclasses. Receives the step name from the
+        list returned by ``plan()`` and must return a result that will be
+        stored in ``PipelineStep.result``.
+        """
+        raise NotImplementedError("Subclasses must implement execute_step()")

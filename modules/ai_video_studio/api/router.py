@@ -6,6 +6,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.ai_video_studio.api.routes import (
+    ai,
     assets,
     audio,
     project,
@@ -20,6 +21,7 @@ from modules.ai_video_studio.database.models import ExportHistory, RenderJob, Vi
 
 api_router = APIRouter()
 
+api_router.include_router(ai.router, prefix="/ai", tags=["AI Studio"])
 api_router.include_router(video.router, prefix="/videos", tags=["Videos"])
 api_router.include_router(project.router, prefix="/projects", tags=["Projects"])
 api_router.include_router(scene.router, prefix="/scenes", tags=["Scenes"])

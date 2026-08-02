@@ -9,13 +9,12 @@ This pipeline:
 from __future__ import annotations
 import asyncio
 import logging
-import os
 import tempfile
 from pathlib import Path
 from typing import Any
 
 from modules.ai_video_studio.pipelines import BasePipeline
-from modules.ai_video_studio.render_engine import RenderEngine, RenderConfig
+from modules.ai_video_studio.render_engine import RenderEngine
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +84,7 @@ class TextToVideoPipeline(BasePipeline):
         style = kwargs.get("style", "cinematic")
 
         if step_name == "plan_scenes":
-            scenes = _plan_scenes(prompt, num_scenes, duration, style)
+            scenes = await self._plan_scenes_ai(prompt, num_scenes, duration, style)
             self._scenes = scenes
             self._resolution = resolution
             self._style = style
@@ -123,6 +122,40 @@ class TextToVideoPipeline(BasePipeline):
 
         raise ValueError(f"Unknown step: {step_name}")
 
+    async def _plan_scenes_ai(self, prompt: str, num_scenes: int, duration: float, style: str) -> list[dict]:
+        """Plan scenes via the AI studio (director) with deterministic fallback.
+
+        Uses env-var provider resolution (no DB session available inside the
+        pipeline). When no provider is configured the deterministic planner is
+        used, keeping the pipeline fully functional offline.
+        """
+        try:
+            from modules.ai_video_studio.services.ai_studio import AIStudioService
+
+            service = AIStudioService()
+            if await service.has_provider(db=None):
+                result = await service.generate_project(
+                    prompt, num_scenes=num_scenes, duration=duration, style=style,
+                )
+                ai_scenes = result["scenes"]
+                # Adapt rich AI scenes to the renderer's expected shape.
+                return [
+                    {
+                        "index": s["index"],
+                        "text": s.get("script") or s.get("description") or s.get("name") or f"Scene {s['index'] + 1}",
+                        "duration": s["duration"],
+                        "background_color": s.get("background_color") or "#1a1a2e",
+                        "text_color": s.get("text_color") or "#FFFFFF",
+                        "font_size": s.get("font_size", 36),
+                        "transition": "fade" if s["index"] > 0 else "none",
+                    }
+                    for s in ai_scenes
+                ]
+            logger.info("No LLM provider configured; using deterministic scene planner")
+        except Exception as e:  # noqa: BLE001 — never let AI planning break the pipeline
+            logger.warning("AI scene planning failed, falling back to deterministic: %s", e)
+        return _plan_scenes(prompt, num_scenes, duration, style)
+
     async def _render_scene(self, engine: RenderEngine, scene: dict, resolution: str) -> str:
         """Render a single scene: solid background + text overlay via FFmpeg."""
         w, h = resolution.split("x")
@@ -147,7 +180,7 @@ class TextToVideoPipeline(BasePipeline):
             "-f", "lavfi", "-i",
             f"color=c={bg}:s={resolution}:d={scene['duration']}:r=30",
             "-f", "lavfi", "-i",
-            f"anullsrc=r=44100:cl=stereo",
+            "anullsrc=r=44100:cl=stereo",
             "-vf", drawtext_filter,
             "-c:v", "libx264", "-crf", "23", "-preset", "fast",
             "-c:a", "aac", "-b:a", "128k",
