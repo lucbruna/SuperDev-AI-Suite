@@ -81,7 +81,7 @@ Always think step by step. Use tools when needed to accomplish the task."""
                 timeout=STEP_TIMEOUT_SECONDS,
             )
             return response.content
-        except asyncio.TimeoutError:
+        except TimeoutError:
             return json.dumps({
                 "thought": "LLM call timed out, finishing with current progress",
                 "action": "finish",

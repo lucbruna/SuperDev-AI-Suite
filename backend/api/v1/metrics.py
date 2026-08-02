@@ -77,7 +77,7 @@ def _prometheus_text(collector) -> str:
     # Process info
     lines.append("# HELP superdev_info Application metadata.")
     lines.append("# TYPE superdev_info gauge")
-    lines.append('superdev_info{version="5.0.0",name="SuperDev"} 1')
+    lines.append('superdev_info{version="6.0.0",name="SuperDev"} 1')
 
     lines.append("")
     return "\n".join(lines)

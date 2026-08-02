@@ -117,6 +117,24 @@ async def startup_handler() -> None:
 
     service_registry.register("started_at", datetime.now(UTC).isoformat())
 
+    # Feature initializers that previously used the deprecated
+    # ``router.on_event("startup")`` hook (code_search + cloud pool).
+    try:
+        from backend.code_search.api import init_code_search_index
+
+        await init_code_search_index()
+        logger.info("Code-search index initialized")
+    except Exception as e:
+        logger.warning("Code-search index init skipped: %s", e)
+
+    try:
+        from backend.cloud.api import init_cloud_pool
+
+        await init_cloud_pool()
+        logger.info("Cloud pool initialized")
+    except Exception as e:
+        logger.warning("Cloud pool init skipped: %s", e)
+
     logger.info("Running health check")
     health = HealthChecker()
     results = await health.check_all()

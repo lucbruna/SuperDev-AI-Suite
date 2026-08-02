@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from typing import Annotated, Any
 
-from pydantic import BeforeValidator, Field
+from pydantic import BeforeValidator, Field, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
@@ -44,7 +44,7 @@ class AppSettings(BaseSettings):
     )
 
     name: str = "SuperDev AI Suite"
-    version: str = "5.0.0"
+    version: str = "6.0.0"
     environment: str = "development"
     debug: bool = True
     host: str = "0.0.0.0"
@@ -119,13 +119,26 @@ class RedisSettings(BaseSettings):
     replica_hosts: StrList = []
 
 
+# Known placeholder secrets that must never be used in real environments.
+# jwt.py independently rejects these at token-manager creation time; this
+# validator is defense-in-depth at the settings layer.
+_INSECURE_SECRET_KEYS = {
+    "change-me-in-production",
+    "change-me-to-a-random-256-bit-secret",
+    "super-dev-secret-key-change-in-production",
+    "change-me",
+}
+
+
 class AuthSettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="JWT_",
         extra="ignore",
     )
 
-    secret_key: str = Field(default="change-me-in-production", exclude=True)
+    # Empty by default on purpose: no known-insecure fallback. Auth endpoints
+    # fail fast via jwt.py when the key is missing/placeholder.
+    secret_key: str = Field(default="", exclude=True)
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
     refresh_token_expire_days: int = 7
@@ -154,6 +167,16 @@ class AuthSettings(BaseSettings):
     session_cookie_secure: bool = True
     session_cookie_httponly: bool = True
     session_cookie_samesite: str = "lax"
+
+    @field_validator("secret_key")
+    @classmethod
+    def _reject_insecure_secret_key(cls, v: str) -> str:
+        if v and v in _INSECURE_SECRET_KEYS:
+            raise ValueError(
+                "JWT_SECRET_KEY must be set to a strong, unique value. "
+                "Known placeholder keys are rejected for security."
+            )
+        return v
 
 
 class CorsSettings(BaseSettings):

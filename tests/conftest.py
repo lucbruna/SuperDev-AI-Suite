@@ -15,6 +15,11 @@ import uuid
 from collections.abc import AsyncGenerator, Generator
 from typing import Any
 
+# Real-looking secrets so app bootstrapping works regardless of local .env,
+# and telemetry stays off during tests.
+os.environ.setdefault("JWT_SECRET_KEY", "test-only-secret-key-superdev-e2e")
+os.environ.setdefault("OTEL_ENABLED", "false")
+
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient

@@ -40,7 +40,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="SuperDev AI Suite",
-    version="5.0.0",
+    version="6.0.0",
     description="Plataforma de desenvolvimento impulsionada por IA",
     lifespan=lifespan,
 )
@@ -61,7 +61,7 @@ app.add_middleware(
 async def root():
     return {
         "name": "SuperDev AI Suite",
-        "version": "5.0.0",
+        "version": "6.0.0",
         "status": "online",
         "docs": "/docs",
     }
@@ -82,7 +82,7 @@ async def status():
     return {
         "success": True,
         "data": {
-            "version": "5.0.0",
+            "version": "6.0.0",
             "name": "SuperDev AI Suite",
             "environment": "development",
             "uptime": time.time() - start_time,
@@ -217,11 +217,26 @@ async def list_plugins():
 # ── Admin User (apenas para dev) ──────────────────────────────────
 # ⚠️ Demo-only: os endpoints /users/me e /users não exigem autenticação real.
 
+
+def _demo_admin_password() -> str:
+    """Return the admin password from env, or a random one when unset.
+
+    Never falls back to a known constant — an attacker would trivially
+    guess the default credentials of a demo deployment.
+    """
+    configured = os.getenv("ADMIN_PASSWORD")
+    if configured:
+        return configured
+    generated = secrets.token_urlsafe(16)
+    print(f"⚠️  ADMIN_PASSWORD not set — generated random demo password: {generated}")
+    return generated
+
+
 ADMIN_USER = {
     "id": "usr_admin_001",
     "email": os.getenv("ADMIN_EMAIL", "admin@superdev.com"),
     "name": "Administrador Master",
-    "password": os.getenv("ADMIN_PASSWORD", "change-me-in-production"),
+    "password": _demo_admin_password(),
     "is_active": True,
     "is_superuser": True,
     "role": "admin",

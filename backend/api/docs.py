@@ -61,7 +61,7 @@ OPENAPI_TAGS = [
 def setup_docs(app: Starlette) -> None:
     """Configure OpenAPI metadata, Swagger UI, and ReDoc on a Starlette/FastAPI app."""
     app.title = "SuperDev AI Suite"
-    app.version = "5.0.0"
+    app.version = "6.0.0"
     app.description = (
         "Enterprise-grade AI-powered development platform with autonomous "
         "workflows, multi-model agent orchestration, RAG knowledge base, "

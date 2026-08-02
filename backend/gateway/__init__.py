@@ -20,7 +20,7 @@ class GatewayMiddleware(BaseHTTPMiddleware):
 
 
 def create_gateway() -> FastAPI:
-    app = FastAPI(title="SuperDev Gateway", version="5.0.0")
+    app = FastAPI(title="SuperDev Gateway", version="6.0.0")
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["http://localhost:3000", "http://localhost:8000"],

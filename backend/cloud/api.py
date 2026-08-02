@@ -45,8 +45,12 @@ except ImportError:
 router = APIRouter(prefix="/cloud", tags=["cloud"])
 
 
-@router.on_event("startup")
-async def _init_pool():
+async def init_cloud_pool() -> None:
+    """Start the container pool at application startup.
+
+    Called from the central lifespan (backend/lifespan.py → startup_handler)
+    — replaces the deprecated ``router.on_event("startup")`` hook.
+    """
     if _has_pool and _pool is not None:
         await _pool.start()
 

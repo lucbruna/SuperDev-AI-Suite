@@ -55,8 +55,12 @@ def _walk_project(root: str = ".") -> None:
                     pass
 
 
-@router.on_event("startup")
-async def _init_index():
+async def init_code_search_index() -> None:
+    """Build the in-memory file index at application startup.
+
+    Called from the central lifespan (backend/lifespan.py → startup_handler)
+    — replaces the deprecated ``router.on_event("startup")`` hook.
+    """
     _walk_project()
 
 

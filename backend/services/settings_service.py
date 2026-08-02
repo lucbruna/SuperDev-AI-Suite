@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import json
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import text as sa_text
@@ -120,7 +120,7 @@ async def load_setting(db: AsyncSession, key: str) -> Any | None:
 
 async def save_setting(db: AsyncSession, key: str, value: Any, category: str = "general") -> None:
     """Upsert a setting (JSON-encoded value)."""
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(UTC).isoformat()
     value_json = json.dumps(value, default=str)
     await db.execute(
         sa_text(
@@ -210,10 +210,13 @@ async def get_runtime_provider_config(
     try:
         from ai.llm.providers import PROVIDER_ENV_MAP, PROVIDER_DEFAULT_MODELS
     except Exception:  # ai.llm not importable in isolation
-        PROVIDER_ENV_MAP = {}
-        PROVIDER_DEFAULT_MODELS = {}
+        provider_env_map = {}
+        provider_default_models = {}
+    else:
+        provider_env_map = PROVIDER_ENV_MAP
+        provider_default_models = PROVIDER_DEFAULT_MODELS
 
-    env_map = PROVIDER_ENV_MAP.get(provider_name, {})
+    env_map = provider_env_map.get(provider_name, {})
     api_key_var = env_map.get("api_key", "")
     base_url_var = env_map.get("base_url", "")
 
@@ -236,6 +239,6 @@ async def get_runtime_provider_config(
     if not result["base_url"] and base_url_var:
         result["base_url"] = os.getenv(base_url_var, "")
     if not result["model"]:
-        result["model"] = PROVIDER_DEFAULT_MODELS.get(provider_name, "")
+        result["model"] = provider_default_models.get(provider_name, "")
 
     return result

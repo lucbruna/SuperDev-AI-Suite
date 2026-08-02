@@ -290,7 +290,7 @@ async def system_dashboard(
 
         system_meta = {"version": VERSION, "name": PROJECT_NAME, "api_prefix": "/api/v1"}
     except Exception:  # pragma: no cover - defensive
-        system_meta = {"version": "5.0.0", "name": "SuperDev", "api_prefix": "/api/v1"}
+        system_meta = {"version": "6.0.0", "name": "SuperDev", "api_prefix": "/api/v1"}
 
     return {
         "success": True,

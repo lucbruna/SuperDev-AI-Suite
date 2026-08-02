@@ -1,7 +1,7 @@
 from typing import Final
 
 PROJECT_NAME: Final[str] = "SuperDev AI Suite"
-VERSION: Final[str] = "5.0.0"
+VERSION: Final[str] = "6.0.0"
 API_V1_PREFIX: Final[str] = "/api/v1"
 
 DEFAULT_PAGE_SIZE: Final[int] = 20

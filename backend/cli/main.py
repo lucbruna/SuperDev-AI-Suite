@@ -29,12 +29,15 @@ def cmd_init(args):
         (project_dir / d).mkdir(exist_ok=True)
         (project_dir / d / "__init__.py").touch(exist_ok=True)
 
-    # Create .env template
+    # Create .env template — with a freshly generated JWT secret so the
+    # scaffold never ships with a known/guessable key.
+    import secrets
+
     env_file = project_dir / ".env.example"
-    env_file.write_text("""# SuperDev AI Suite Configuration
+    env_file.write_text(f"""# SuperDev AI Suite Configuration
 APP_ENVIRONMENT=development
 APP_DEBUG=true
-JWT_SECRET_KEY=change-me-in-production
+JWT_SECRET_KEY={secrets.token_hex(32)}
 DATABASE_URL=postgresql+asyncpg://superdev:superdev@localhost:5432/superdev
 REDIS_HOST=localhost
 REDIS_PORT=6379
@@ -45,7 +48,7 @@ CORS_ALLOW_ORIGINS=["http://localhost:3000"]
     pyproject = project_dir / "pyproject.toml"
     pyproject.write_text("""[project]
 name = "superdev-ai-suite"
-version = "5.0.0"
+version = "6.0.0"
 description = "Enterprise AI Suite"
 requires-python = ">=3.11"
 dependencies = [
@@ -131,7 +134,7 @@ def cmd_doctor(args):
 
 def cmd_status(args):
     """Show system status."""
-    print("📊 SuperDev AI Suite v5.0.0")
+    print("📊 SuperDev AI Suite v6.0.0")
     print("=" * 40)
 
     # Check config
@@ -221,7 +224,7 @@ def main():
         prog="superdev",
         description="SuperDev AI Suite CLI",
     )
-    parser.add_argument("--version", action="version", version="5.0.0")
+    parser.add_argument("--version", action="version", version="6.0.0")
 
     subparsers = parser.add_subparsers(dest="command")
 
