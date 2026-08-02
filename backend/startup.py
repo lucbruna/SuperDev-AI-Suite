@@ -30,10 +30,10 @@ async def startup_handler() -> None:
 
     logger.info("Running database migrations")
     try:
+        import asyncio
         from pathlib import Path
 
         from alembic.config import Config as AlembicConfig
-
         from alembic import command
 
         repo_root = Path(__file__).resolve().parent.parent
@@ -42,7 +42,10 @@ async def startup_handler() -> None:
             "script_location",
             str((repo_root / config.database.migration_dir).resolve()),
         )
-        command.upgrade(alembic_cfg, "head")
+        # Run alembic in a thread — command.upgrade() calls asyncio.run()
+        # internally, which fails when an event loop is already running
+        # (startup_handler is async).
+        await asyncio.to_thread(command.upgrade, alembic_cfg, "head")
         logger.info("Migrations complete")
     except Exception as e:
         logger.warning("Migrations skipped or failed", extra={"error": str(e)})
