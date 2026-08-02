@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import text as sa_text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,82 +11,18 @@ from backend.auth.rbac import Action, Resource, require_permission
 from backend.database.session import get_db
 from backend.dependencies import get_current_active_user
 from backend.exceptions import AgentExecutionException, AgentNotFoundException
+from backend.schemas.agent import (
+    AgentCreateRequest,
+    AgentExecuteRequest,
+    AgentExecuteResponse,
+    AgentResponse,
+    AgentTemplateResponse,
+    AgentUpdateRequest,
+)
 from backend.services.agent_service import AgentService
 from backend.utils.uuid_utils import generate_uuid
 
 router = APIRouter(dependencies=[Depends(get_current_active_user)])
-
-
-# ── Request / Response Models ────────────────────────────────────────────────
-
-
-class AgentCreateRequest(BaseModel):
-    name: str
-    description: str = ""
-    agent_type: str = "react"
-    model: str | None = None
-    provider: str | None = None
-    max_steps: int = 10
-    temperature: float = 0.7
-    system_prompt: str | None = None
-    tools_enabled: list[str] | None = None
-    template_id: str | None = None
-
-
-class AgentUpdateRequest(BaseModel):
-    name: str | None = None
-    description: str | None = None
-    model: str | None = None
-    provider: str | None = None
-    max_steps: int | None = None
-    temperature: float | None = None
-    system_prompt: str | None = None
-    tools_enabled: list[str] | None = None
-
-
-class AgentExecuteRequest(BaseModel):
-    input: str
-    context: dict | None = None
-
-
-class AgentResponse(BaseModel):
-    id: str
-    name: str
-    description: str
-    agent_type: str
-    status: str
-    tools: list[dict]
-    model: str | None = None
-    provider: str | None = None
-    max_steps: int = 10
-    temperature: float = 0.7
-    system_prompt: str | None = None
-    template_id: str | None = None
-
-
-class AgentTemplateResponse(BaseModel):
-    id: str
-    name: str
-    description: str
-    agent_type: str
-    model: str
-    provider: str
-    max_steps: int
-    temperature: float
-    system_prompt: str
-    tools_enabled: list[str]
-    category: str
-    icon: str
-
-
-class AgentExecuteResponse(BaseModel):
-    execution_id: str
-    agent_id: str
-    output: str
-    steps: list[dict]
-    tool_calls: list[dict]
-    execution_time_ms: float
-    error: str | None = None
 
 
 # ── Type / Schema Helpers ────────────────────────────────────────────────────
@@ -364,9 +299,11 @@ async def create_agent(
 @router.get("", response_model=list[AgentResponse])
 async def list_agents(
     db: AsyncSession = Depends(get_db),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=500),
 ) -> list[AgentResponse]:
     service = AgentService(db)
-    agents, _ = await service.list_agents(page=1, page_size=1000)
+    agents, _ = await service.list_agents(page=page, page_size=page_size)
     return [_agent_response(a) for a in agents]
 
 
@@ -490,7 +427,7 @@ async def execute_agent(
     # the workflow integration service) so every entry point behaves identically.
     from backend.agents.execution import run_persisted_agent
 
-    result = await run_persisted_agent(db, agent, request.input, request.context)
+    result = await run_persisted_agent(db, agent, request.task, request.context)
 
     return AgentExecuteResponse(
         execution_id=result["execution_id"],

@@ -1,9 +1,13 @@
 from backend.schemas.agent import (
     AgentCreate,
+    AgentCreateRequest,
     AgentExecuteRequest,
+    AgentExecuteResponse,
     AgentExecutionResponse,
     AgentResponse,
+    AgentTemplateResponse,
     AgentUpdate,
+    AgentUpdateRequest,
 )
 from backend.schemas.audit import (
     AuditLogFilter,
@@ -122,9 +126,13 @@ __all__ = [
     "WorkflowStepResponse",
     # Agent
     "AgentCreate",
+    "AgentCreateRequest",
     "AgentUpdate",
+    "AgentUpdateRequest",
     "AgentResponse",
     "AgentExecuteRequest",
+    "AgentExecuteResponse",
+    "AgentTemplateResponse",
     "AgentExecutionResponse",
     # Plugin
     "PluginBase",

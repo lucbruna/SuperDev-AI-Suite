@@ -17,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.database.session import get_db
 from backend.dependencies import get_current_active_user
 from backend.exceptions import AgentNotFoundException
+from backend.schemas.agent import AgentExecuteRequest
 from backend.services.agent_service import AgentService
 
 # Shared serializer so /system/agents returns the exact same shape as
@@ -66,10 +67,10 @@ class BootResponse(BaseModel):
     total_time: float
 
 
-class ExecuteRequest(BaseModel):
+class ExecuteRequest(AgentExecuteRequest):
+    """Execute an agent task (shares the canonical AgentExecuteRequest contract)."""
+
     agent_id: str
-    task: str
-    context: dict[str, Any] | None = None
 
 
 class ScheduleRequest(BaseModel):
