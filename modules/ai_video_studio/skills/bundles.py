@@ -9,6 +9,15 @@ from typing import Any
 
 from modules.ai_video_studio.skills.skill_loader import load
 from modules.ai_video_studio.skills.skill_registry import SkillDefinition
+from modules.ai_video_studio.skills.avatar import (
+    DoctorSkill,
+    EngineerSkill,
+    FarmerSkill,
+    LawyerSkill,
+    PresenterSkill,
+    SalespersonSkill,
+    TeacherSkill,
+)
 from modules.ai_video_studio.skills.video import (
     CinematicSkill,
     TikTokSkill,
@@ -28,6 +37,13 @@ CONCRETE_SKILL_CLASSES: list[type] = [
     NarratorSkill,
     DubbingSkill,
     TranslatorSkill,
+    PresenterSkill,
+    TeacherSkill,
+    DoctorSkill,
+    LawyerSkill,
+    FarmerSkill,
+    EngineerSkill,
+    SalespersonSkill,
 ]
 
 
