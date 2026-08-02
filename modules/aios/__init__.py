@@ -33,6 +33,19 @@ from modules.aios.kernel import (
     get_kernel_security,
     version_info,
 )
+from modules.aios.runtime import (
+    RuntimeCleanup,
+    RuntimeContext,
+    RuntimeEngine,
+    RuntimeExecutor,
+    RuntimeMetrics,
+    RuntimeSession,
+    RuntimeState,
+    get_runtime_cleanup,
+    get_runtime_engine,
+    get_runtime_executor,
+    get_runtime_metrics,
+)
 
 __all__ = [
     "KERNEL_NAME",
@@ -59,4 +72,15 @@ __all__ = [
     "get_kernel_scheduler",
     "get_kernel_security",
     "version_info",
+    "RuntimeCleanup",
+    "RuntimeContext",
+    "RuntimeEngine",
+    "RuntimeExecutor",
+    "RuntimeMetrics",
+    "RuntimeSession",
+    "RuntimeState",
+    "get_runtime_cleanup",
+    "get_runtime_engine",
+    "get_runtime_executor",
+    "get_runtime_metrics",
 ]
