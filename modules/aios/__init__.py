@@ -46,6 +46,20 @@ from modules.aios.runtime import (
     get_runtime_executor,
     get_runtime_metrics,
 )
+from modules.aios.sandbox import (
+    NetworkAccess,
+    Sandbox,
+    SandboxLimitError,
+    SandboxLimits,
+    SandboxManager,
+    SandboxNetwork,
+    SandboxPermissionDeniedError,
+    SandboxPermissions,
+    SandboxPolicy,
+    SandboxStorage,
+    get_sandbox_manager,
+    restrictive_policy,
+)
 
 __all__ = [
     "KERNEL_NAME",
@@ -83,4 +97,16 @@ __all__ = [
     "get_runtime_engine",
     "get_runtime_executor",
     "get_runtime_metrics",
+    "NetworkAccess",
+    "Sandbox",
+    "SandboxLimitError",
+    "SandboxLimits",
+    "SandboxManager",
+    "SandboxNetwork",
+    "SandboxPermissionDeniedError",
+    "SandboxPermissions",
+    "SandboxPolicy",
+    "SandboxStorage",
+    "get_sandbox_manager",
+    "restrictive_policy",
 ]
