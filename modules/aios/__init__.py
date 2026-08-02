@@ -58,6 +58,12 @@ from modules.aios.docker import (
     DockerVolume,
     get_docker_runtime,
 )
+from modules.aios.podman import (
+    PodmanClient,
+    PodmanRuntime,
+    PodmanUnavailableError,
+    get_podman_runtime,
+)
 from modules.aios.sandbox import (
     NetworkAccess,
     Sandbox,
@@ -119,6 +125,10 @@ __all__ = [
     "DockerUnavailableError",
     "DockerVolume",
     "get_docker_runtime",
+    "PodmanClient",
+    "PodmanRuntime",
+    "PodmanUnavailableError",
+    "get_podman_runtime",
     "NetworkAccess",
     "Sandbox",
     "SandboxLimitError",
