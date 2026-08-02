@@ -7,11 +7,11 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql+asyncpg://superdev:${POSTGRES_PASSWORD:-superdev}@postgres:5432/superdev
+      - DATABASE_URL=postgresql+asyncpg://superdev:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}@postgres:5432/superdev
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-change-me-to-a-random-256-bit-secret}
+      - SECRET_KEY=${SECRET_KEY:?SECRET_KEY must be set in .env (openssl rand -hex 32)}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:?JWT_SECRET_KEY must be set in .env (openssl rand -hex 32)}
       - JWT_ALGORITHM=${JWT_ALGORITHM:-HS256}
       - JWT_ISSUER=${JWT_ISSUER:-superdev}
       - JWT_AUDIENCE=${JWT_AUDIENCE:-superdev-api}
@@ -56,7 +56,7 @@ services:
       - "5432:5432"
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-superdev}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-superdev}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env (openssl rand -hex 16)}
       POSTGRES_DB: ${POSTGRES_DB:-superdev}
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -86,7 +86,7 @@ services:
     ports:
       - "9187:9187"
     environment:
-      DATA_SOURCE_NAME: "postgresql://superdev:${POSTGRES_PASSWORD:-superdev}@postgres:5432/superdev?sslmode=disable"
+      DATA_SOURCE_NAME: "postgresql://superdev:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}@postgres:5432/superdev?sslmode=disable"
     depends_on:
       postgres:
         condition: service_healthy
@@ -105,7 +105,7 @@ services:
     ports:
       - "3001:3000"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-changeme}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD must be set in .env (openssl rand -hex 16)}
     volumes:
       - ./infrastructure/monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
       - grafana_data:/var/lib/grafana

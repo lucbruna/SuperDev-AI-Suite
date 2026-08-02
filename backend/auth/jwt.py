@@ -47,6 +47,8 @@ class JWTManager:
         if not secret_key or secret_key in (
             "super-dev-secret-key-change-in-production",
             "change-me-in-production",
+            "dev-secret-key-change-in-production",
+            "change-me-to-a-random-256-bit-secret",
             "",
         ):
             raise ValueError(
