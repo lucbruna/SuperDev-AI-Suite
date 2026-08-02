@@ -153,7 +153,8 @@ def create_app() -> FastAPI:
     _safe_include(app, "backend.collab.api", prefix="/api")
     _safe_include(app, "backend.deploy.engine")
     _safe_include(app, "backend.websocket.handler")
-    _safe_include(app, "backend.websocket.studio_handler")
+    # Studio WebSocket is intentionally not included: the studio handler depends on
+    # agents.debugger.studio, which is not implemented yet. Included once that module exists.
     _safe_include(app, "backend.prompt_hub.api", prefix="/api")
     _safe_include(app, "backend.refactor.engine", prefix="/api")
     _safe_include(app, "backend.api.external")
