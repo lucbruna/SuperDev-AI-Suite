@@ -58,6 +58,14 @@ from modules.aios.docker import (
     DockerVolume,
     get_docker_runtime,
 )
+from modules.aios.dotnet import (
+    DotnetBuild,
+    DotnetClient,
+    DotnetRuntime,
+    DotnetUnavailableError,
+    NugetManager,
+    get_dotnet_runtime,
+)
 from modules.aios.go import (
     GoBuild,
     GoClient,
@@ -260,6 +268,12 @@ __all__ = [
     "RustRuntime",
     "RustUnavailableError",
     "get_rust_runtime",
+    "DotnetBuild",
+    "DotnetClient",
+    "DotnetRuntime",
+    "DotnetUnavailableError",
+    "NugetManager",
+    "get_dotnet_runtime",
     "PipManager",
     "PoetryManager",
     "PoetryUnavailableError",
