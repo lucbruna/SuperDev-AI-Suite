@@ -90,6 +90,9 @@ export function WebSocketProvider({ children, url }: WebSocketProviderProps) {
             reconnectTimeoutRef.current = setTimeout(connect, 1000);
             return;
           }
+          // Refresh token also expired - logout user
+          useAuthStore.getState().logout();
+          return;
         }
 
         // Non-auth error or auth refresh failed — reconnect with backoff
@@ -132,7 +135,7 @@ export function WebSocketProvider({ children, url }: WebSocketProviderProps) {
         reconnectTimeoutRef.current = setTimeout(connect, delay);
       }
     }
-  }, [accessToken, wsUrl, refreshAccessToken]);
+  }, [wsUrl, refreshAccessToken]);
 
   useEffect(() => {
     connect();
@@ -162,6 +165,7 @@ export function WebSocketProvider({ children, url }: WebSocketProviderProps) {
   const reconnect = useCallback(() => {
     wsRef.current?.close();
     clearTimeout(reconnectTimeoutRef.current);
+    reconnectAttemptsRef.current = 0;
     connect();
   }, [connect]);
 

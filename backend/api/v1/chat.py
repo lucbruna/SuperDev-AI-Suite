@@ -1,4 +1,5 @@
 import json
+import logging
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -12,6 +13,8 @@ from backend.ai_router.token_counter import token_counter
 from backend.database.session import get_db
 from backend.dependencies import get_current_active_user
 from backend.providers.base_provider import Message
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -58,6 +61,12 @@ async def chat_completions(
     db: AsyncSession = Depends(get_db),
     user: dict[str, Any] = Depends(get_current_active_user),
 ) -> ChatCompletionResponse:
+    if not request.messages:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Messages list cannot be empty",
+        )
+
     messages = [Message(role=m.role, content=m.content) for m in request.messages]
 
     try:
@@ -69,10 +78,23 @@ async def chat_completions(
             max_tokens=request.max_tokens,
             db=db,
         )
+    except ValueError as e:
+        logger.warning(f"Validation error in chat_completions: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid request: {str(e)}",
+        )
+    except ConnectionError as e:
+        logger.error(f"AI provider connection error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="AI service temporarily unavailable",
+        )
     except Exception as e:
+        logger.exception(f"Unexpected error in chat_completions: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"AI request failed: {str(e)}",
+            detail="Internal server error processing chat request",
         )
 
     if response.usage:
@@ -106,6 +128,12 @@ async def agent_chat(
     user: dict[str, Any] = Depends(get_current_active_user),
 ) -> AgentChatResponse:
     """Run a workspace-enabled coding agent for a chat request."""
+    if not request.message or not request.message.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Message cannot be empty",
+        )
+
     try:
         agent = ReActAgent(
             name="Workspace Code Assistant",
@@ -125,10 +153,29 @@ async def agent_chat(
             ],
             error=result.error,
         )
+    except ValueError as e:
+        logger.warning(f"Validation error in agent_chat: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid request: {str(e)}",
+        )
+    except TimeoutError as e:
+        logger.error(f"Agent execution timeout: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail="Agent execution timed out",
+        )
+    except ConnectionError as e:
+        logger.error(f"Agent connection error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Agent service temporarily unavailable",
+        )
     except Exception as e:
+        logger.exception(f"Unexpected error in agent_chat: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Agent execution failed: {str(e)}",
+            detail="Internal server error during agent execution",
         )
 
 
@@ -138,6 +185,12 @@ async def chat_stream(
     db: AsyncSession = Depends(get_db),
     user: dict[str, Any] = Depends(get_current_active_user),
 ):
+    if not request.messages:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Messages list cannot be empty",
+        )
+
     messages = [Message(role=m.role, content=m.content) for m in request.messages]
 
     async def generate():
@@ -160,8 +213,17 @@ async def chat_stream(
                 )
                 yield f"data: {data}\n\n"
             yield "data: [DONE]\n\n"
+        except ValueError as e:
+            logger.warning(f"Validation error in chat_stream: {e}")
+            error_data = json.dumps({"error": f"Invalid request: {str(e)}"})
+            yield f"data: {error_data}\n\n"
+        except ConnectionError as e:
+            logger.error(f"AI provider connection error in stream: {e}")
+            error_data = json.dumps({"error": "AI service temporarily unavailable"})
+            yield f"data: {error_data}\n\n"
         except Exception as e:
-            error_data = json.dumps({"error": str(e)})
+            logger.exception(f"Unexpected error in chat_stream: {e}")
+            error_data = json.dumps({"error": "Internal server error"})
             yield f"data: {error_data}\n\n"
 
     return StreamingResponse(generate(), media_type="text/event-stream")
