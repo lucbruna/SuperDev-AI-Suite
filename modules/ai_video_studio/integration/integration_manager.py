@@ -6,7 +6,27 @@ inspect the whole integration surface through a single ``status()`` call.
 from __future__ import annotations
 from typing import Any
 
+from modules.ai_video_studio.integration.dependency_manager import (
+    DependencyManager,
+    get_dependency_manager,
+)
 from modules.ai_video_studio.integration.event_bus import EventBus, get_event_bus
+from modules.ai_video_studio.integration.health_monitor import (
+    HealthMonitor,
+    get_health_monitor,
+)
+from modules.ai_video_studio.integration.integration_cache import (
+    IntegrationCache,
+    get_integration_cache,
+)
+from modules.ai_video_studio.integration.integration_logger import (
+    IntegrationLogger,
+    get_integration_logger,
+)
+from modules.ai_video_studio.integration.integration_statistics import (
+    IntegrationStatistics,
+    get_integration_statistics,
+)
 from modules.ai_video_studio.integration.module_registry import ModuleRegistry, get_registry
 from modules.ai_video_studio.integration.service_locator import ServiceLocator, get_service_locator
 
@@ -39,6 +59,26 @@ class IntegrationManager:
     def locator(self) -> ServiceLocator:
         return self._locator
 
+    @property
+    def dependencies(self) -> DependencyManager:
+        return get_dependency_manager()
+
+    @property
+    def health(self) -> HealthMonitor:
+        return get_health_monitor()
+
+    @property
+    def cache(self) -> IntegrationCache:
+        return get_integration_cache()
+
+    @property
+    def statistics(self) -> IntegrationStatistics:
+        return get_integration_statistics()
+
+    @property
+    def logger(self) -> IntegrationLogger:
+        return get_integration_logger()
+
     def register_studio_services(self) -> int:
         """Register the studio's real service instances (idempotent)."""
         if self._booted:
@@ -64,8 +104,13 @@ class IntegrationManager:
             self._registry.register_service(
                 name, instance, kind=kind, description=description, version="1.0"
             )
+        # Declare real dependencies between the booted services.
+        self.dependencies.declare("export_service", ["render_engine"])
+        self.dependencies.declare("subtitle_studio", ["ai_studio"])
+        self.dependencies.declare("voice_studio", ["ai_studio"])
         self._registry.register_module(self.MODULE_NAME)
         self._booted = True
+        self.logger.log("integration_manager", f"booted {len(entries)} studio services", level="info")
         return self._registry.count()
 
     def publish(self, event_type: str, **payload: Any) -> int:
@@ -82,15 +127,21 @@ class IntegrationManager:
         by_type: dict[str, int] = {}
         for record in self._bus.history(limit=10_000_000):
             by_type[record["event"]] = by_type.get(record["event"], 0) + 1
+        health = self.health.check_all()
         return {
             "module": self.MODULE_NAME,
             "booted": self._booted,
             "services": self._registry.list_services(),
             "service_count": self._registry.count(),
             "modules": self._registry.list_modules(),
+            "dependencies": self.dependencies.snapshot(),
+            "health": health,
             "events": by_type,
             "event_total": sum(by_type.values()),
             "subscribers": self._bus.subscriber_count(),
+            "statistics": self.statistics.stats(),
+            "cache": self.cache.stats(),
+            "logs": self.logger.stats(),
         }
 
 
