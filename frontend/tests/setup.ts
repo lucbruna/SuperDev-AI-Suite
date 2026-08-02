@@ -24,30 +24,36 @@ vi.mock("next-themes", () => ({
   ThemeProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
-// Mock zustand store
-vi.mock("@/stores/authStore", () => ({
-  useAuthStore: vi.fn(() => ({
+// Mock zustand store with a functional fake that supports BOTH the selector
+// call pattern (components: useAuthStore((s) => s.user)) and the imperative
+// API (api client + api-fetch: getState()/setState()). State is mutated in
+// place so vi.spyOn(useAuthStore.getState(), "...") keeps working.
+vi.mock("@/stores/authStore", () => {
+  const state: Record<string, unknown> = {
     user: null,
-    token: null,
+    accessToken: null,
+    refreshToken: null,
     isAuthenticated: false,
+    isLoading: false,
+    _hydrated: false,
+    error: null,
+    setUser: vi.fn(),
+    setTokens: vi.fn(),
+    setLoading: vi.fn(),
     login: vi.fn(),
     logout: vi.fn(),
-  })),
-}));
+    updateUser: vi.fn(),
+  };
+  const useAuthStore = (selector?: (s: typeof state) => unknown) =>
+    selector ? selector(state) : state;
+  useAuthStore.getState = () => state;
+  useAuthStore.setState = (partial: Partial<typeof state>) => {
+    Object.assign(state, partial);
+  };
+  useAuthStore.subscribe = vi.fn();
+  return { useAuthStore };
+});
 
-// Mock API client
-vi.mock("@/api/client", () => ({
-  apiClient: {
-    get: vi.fn(),
-    post: vi.fn(),
-    put: vi.fn(),
-    delete: vi.fn(),
-    patch: vi.fn(),
-  },
-}));
-
-// Mock cn utility
-vi.mock("@/utils/cn", () => ({
-  cn: (...classes: (string | undefined | false | null)[]) =>
-    classes.filter(Boolean).join(" "),
-}));
+// NOTE: @/api/client is intentionally NOT mocked here — tests/unit/api.test.ts
+// exercises the real client (defaults, interceptors). Component tests that need
+// a client stub mock it locally.

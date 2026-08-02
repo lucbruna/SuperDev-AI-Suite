@@ -78,8 +78,8 @@ describe("Input", () => {
   });
 
   it("passes through HTML input attributes", () => {
-    render(<Input type="password" maxLength={20} />);
-    const input = screen.getByRole("textbox");
+    const { container } = render(<Input type="password" maxLength={20} />);
+    const input = container.querySelector("input") as HTMLInputElement;
     expect(input).toHaveAttribute("type", "password");
     expect(input).toHaveAttribute("maxLength", "20");
   });

@@ -26,7 +26,7 @@ describe("Input", () => {
 
   it("does not set aria-invalid when no error", () => {
     render(<Input label="Email" />);
-    expect(screen.getByRole("textbox")).toHaveAttribute("aria-invalid", "false");
+    expect(screen.getByRole("textbox")).not.toHaveAttribute("aria-invalid");
   });
 
   it("links error to input via aria-describedby", () => {

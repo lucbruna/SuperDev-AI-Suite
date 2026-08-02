@@ -60,7 +60,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               rightIcon && "pr-10",
               className,
             )}
-            aria-invalid={!!error}
+            aria-invalid={error ? true : undefined}
             aria-describedby={error ? `${inputId}-error` : undefined}
             {...props}
           />

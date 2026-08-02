@@ -26,26 +26,26 @@ describe("Card", () => {
 
   it("applies padding sm", () => {
     render(<Card padding="sm">Padded</Card>);
-    const wrapper = screen.getByText("Padded").closest("div");
-    expect(wrapper?.parentElement?.className).toContain("p-3");
+    const content = screen.getByText("Padded");
+    expect(content.className).toContain("p-3");
   });
 
   it("applies padding md by default", () => {
     render(<Card>Default padding</Card>);
     const content = screen.getByText("Default padding");
-    expect(content.parentElement?.className).toContain("p-5");
+    expect(content.className).toContain("p-5");
   });
 
   it("applies padding lg", () => {
     render(<Card padding="lg">Large padding</Card>);
     const content = screen.getByText("Large padding");
-    expect(content.parentElement?.className).toContain("p-7");
+    expect(content.className).toContain("p-7");
   });
 
   it("applies padding none", () => {
     render(<Card padding="none">No padding</Card>);
     const content = screen.getByText("No padding");
-    expect(content.parentElement?.className).not.toContain("p-");
+    expect(content.className).not.toContain("p-");
   });
 
   it("applies hover effect", () => {

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
 import apiClient from "@/api/client";
 import { useAuthStore } from "@/stores/authStore";
@@ -8,11 +9,18 @@ vi.mock("@/constants/api", () => ({
   API_TIMEOUT: 30000,
 }));
 
+const REFRESH_URL = "http://localhost:8000/api/v1/auth/refresh";
+
 describe("API Client", () => {
   let mock: MockAdapter;
+  let refreshMock: MockAdapter;
 
   beforeEach(() => {
     mock = new MockAdapter(apiClient);
+    // The client performs token refresh with the *global* axios instance
+    // (to avoid re-entering its own response interceptor), so it must be
+    // mocked separately here.
+    refreshMock = new MockAdapter(axios);
     useAuthStore.setState({
       accessToken: null,
       refreshToken: null,
@@ -21,6 +29,7 @@ describe("API Client", () => {
 
   afterEach(() => {
     mock.restore();
+    refreshMock.restore();
   });
 
   it("creates axios instance with base URL", () => {
@@ -57,15 +66,20 @@ describe("API Client", () => {
       refreshToken: "valid-refresh-token",
     });
     const setTokensSpy = vi.spyOn(useAuthStore.getState(), "setTokens");
-    const logoutSpy = vi.spyOn(useAuthStore.getState(), "logout");
 
     mock.onGet("/protected").replyOnce(401);
-    mock.onPost("/auth/refresh").replyOnce(200, {
-      data: { accessToken: "new-access-token", refreshToken: "new-refresh-token" },
+    mock.onGet("/protected").reply(200, { success: true });
+    refreshMock.onPost(REFRESH_URL).replyOnce(200, {
+      access_token: "new-access-token",
+      refresh_token: "new-refresh-token",
     });
 
     const response = await apiClient.get("/protected");
     expect(response.status).toBe(200);
+    expect(setTokensSpy).toHaveBeenCalledWith(
+      "new-access-token",
+      "new-refresh-token",
+    );
   });
 
   it("calls logout when refresh fails", async () => {
@@ -76,7 +90,7 @@ describe("API Client", () => {
     const logoutSpy = vi.spyOn(useAuthStore.getState(), "logout");
 
     mock.onGet("/protected").replyOnce(401);
-    mock.onPost("/auth/refresh").replyOnce(401);
+    refreshMock.onPost(REFRESH_URL).replyOnce(401);
 
     await expect(apiClient.get("/protected")).rejects.toThrow();
     expect(logoutSpy).toHaveBeenCalled();
