@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import secrets
 import sys
 from pathlib import Path
 
@@ -31,8 +32,6 @@ def cmd_init(args):
 
     # Create .env template — with a freshly generated JWT secret so the
     # scaffold never ships with a known/guessable key.
-    import secrets
-
     env_file = project_dir / ".env.example"
     env_file.write_text(f"""# SuperDev AI Suite Configuration
 APP_ENVIRONMENT=development

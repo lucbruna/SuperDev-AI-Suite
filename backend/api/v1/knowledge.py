@@ -4,7 +4,7 @@ from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.auth.rbac import Action, Resource, require_permission
@@ -30,6 +30,8 @@ class KnowledgeBaseUpdate(BaseModel):
 
 
 class KnowledgeBaseResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     name: str
     description: str | None
@@ -37,9 +39,6 @@ class KnowledgeBaseResponse(BaseModel):
     is_public: bool
     created_at: str
     updated_at: str
-
-    class Config:
-        from_attributes = True
 
 
 class DocumentCreate(BaseModel):
@@ -53,6 +52,8 @@ class DocumentCreate(BaseModel):
 
 
 class DocumentResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     knowledge_base_id: UUID
     title: str
@@ -64,9 +65,6 @@ class DocumentResponse(BaseModel):
     metadata: dict
     created_at: str
     updated_at: str
-
-    class Config:
-        from_attributes = True
 
 
 class SearchRequest(BaseModel):

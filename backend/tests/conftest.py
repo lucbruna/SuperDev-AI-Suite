@@ -14,13 +14,18 @@ os.environ["DATABASE_URL"] = os.environ.get(
     "postgresql+asyncpg://superdev:superdev@localhost:5432/superdev",
 )
 
-# The JWT manager rejects placeholder secrets (see backend/auth/jwt.py), so
-# integration tests that boot the app must provide a real-looking key no
-# matter what the developer's local .env contains.
-os.environ.setdefault("JWT_SECRET_KEY", "test-only-secret-key-superdev-e2e")
+# The JWT manager rejects placeholder secrets (see backend/auth/jwt.py), and
+# the shell may export a stale placeholder that overrides .env — so tests
+# FORCE a dedicated test key, exactly like DATABASE_URL above.
+os.environ["JWT_SECRET_KEY"] = os.environ.get(
+    "SUPERDEV_TEST_JWT_SECRET",
+    "test-only-secret-key-superdev-e2e",
+)
 
-# Tests must not attempt to export traces/metrics to a local OTLP collector.
-os.environ.setdefault("OTEL_ENABLED", "false")
+# Tests must not attempt to export traces/metrics to a local OTLP collector
+# — forced, like JWT_SECRET_KEY, so a developer's shell export can't turn
+# telemetry back on mid-suite.
+os.environ["OTEL_ENABLED"] = "false"
 
 import pytest
 from fastapi.testclient import TestClient

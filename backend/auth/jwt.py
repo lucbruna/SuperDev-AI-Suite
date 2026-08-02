@@ -15,6 +15,29 @@ from pydantic import SecretStr
 from backend.utils.datetime import utc_now
 from backend.utils.uuid_utils import generate_uuid
 
+# Known placeholder secrets that must never be accepted.
+_INSECURE_SECRET_KEYS = {
+    "super-dev-secret-key-change-in-production",
+    "change-me-in-production",
+    "dev-secret-key-change-in-production",
+    "change-me-to-a-random-256-bit-secret",
+    "change-me",
+    "",
+}
+
+
+def validate_secret_key(secret_key: str) -> str:
+    """Reject known placeholder/empty JWT secrets.
+
+    Single source of truth for the guard; used by both JWTManager and
+    AuthManager so no code path signs tokens with a guessable key.
+    """
+    if not secret_key or secret_key in _INSECURE_SECRET_KEYS:
+        raise ValueError(
+            "JWT_SECRET_KEY must be set to a strong, unique value. Default keys are rejected for security."
+        )
+    return secret_key
+
 
 class JWTManager:
     """Unified JWT manager with JTI, blacklist, and algorithm flexibility.
@@ -43,17 +66,8 @@ class JWTManager:
         audience: str = AUDIENCE,
         redis_client: Any | None = None,
     ) -> None:
-        # Validate secret key — reject defaults
-        if not secret_key or secret_key in (
-            "super-dev-secret-key-change-in-production",
-            "change-me-in-production",
-            "dev-secret-key-change-in-production",
-            "change-me-to-a-random-256-bit-secret",
-            "",
-        ):
-            raise ValueError(
-                "JWT_SECRET_KEY must be set to a strong, unique value. Default keys are rejected for security."
-            )
+        # Validate secret key — reject defaults (shared guard)
+        validate_secret_key(secret_key)
         self._secret_key = SecretStr(secret_key)
         self._algorithm = algorithm
         self._access_token_expire = access_token_expire

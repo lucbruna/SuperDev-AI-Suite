@@ -1,7 +1,7 @@
 # SuperDev AI Suite - Makefile (Unix + PowerShell wrapper)
 # Para Windows: use `make win-<comando>` ou leia Makefile.ps1
 
-.PHONY: help install test lint format build run-api run-frontend clean seed migrate reset reset-db mantis mantis-status mantis-validate mantis-hook mantis-hook-remove
+.PHONY: help install test lint format build run-api run-frontend clean seed migrate reset reset-db version version-check mantis mantis-status mantis-validate mantis-hook mantis-hook-remove
 
 help:
 	@echo "SuperDev AI Suite - Comandos"
@@ -14,6 +14,8 @@ help:
 	@echo "  make lint            - Lint Python (ruff)"
 	@echo "  make format          - Format (ruff)"
 	@echo "  make typecheck       - Type check (mypy)"
+	@echo "  make version         - Sincronizar ./VERSION nos pyproject.toml/package.json"
+	@echo "  make version-check   - Falhar se versao divergir de ./VERSION (CI)"
 	@echo "  make migrate         - Rodar migrations"
 	@echo "  make seed            - Popular banco com dados iniciais"
 	@echo "  make reset-db        - Resetar banco (drop schema + recreates extensions)"
@@ -53,6 +55,12 @@ format:
 
 typecheck:
 	mypy backend/
+
+version:
+	python scripts/sync_version.py
+
+version-check:
+	python scripts/sync_version.py --check
 
 migrate:
 	alembic upgrade head

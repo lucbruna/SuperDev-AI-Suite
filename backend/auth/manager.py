@@ -58,7 +58,10 @@ class TokenPayload:
 
 class AuthManager:
     def __init__(self):
-        self.secret_key = config.auth.secret_key
+        # Same fail-fast guard as jwt.py — never sign with a guessable key.
+        from backend.auth.jwt import validate_secret_key
+
+        self.secret_key = validate_secret_key(config.auth.secret_key)
         self.algorithm = config.auth.algorithm
         self.access_token_expire = timedelta(minutes=config.auth.access_token_expire_minutes)
         self.refresh_token_expire = timedelta(days=config.auth.refresh_token_expire_days)

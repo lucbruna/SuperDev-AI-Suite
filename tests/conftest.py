@@ -9,25 +9,25 @@ Configure pytest via pyproject.toml or pytest.ini:
 """
 from __future__ import annotations
 
-import asyncio
 import os
 import uuid
-from collections.abc import AsyncGenerator, Generator
+from collections.abc import AsyncGenerator
 from typing import Any
 
-# Real-looking secrets so app bootstrapping works regardless of local .env,
-# and telemetry stays off during tests.
-os.environ.setdefault("JWT_SECRET_KEY", "test-only-secret-key-superdev-e2e")
+# Real-looking secrets so app bootstrapping works regardless of local .env or
+# stale shell exports (the JWT manager rejects placeholder keys), and
+# telemetry stays off during tests.
+os.environ["JWT_SECRET_KEY"] = os.environ.get(
+    "SUPERDEV_TEST_JWT_SECRET",
+    "test-only-secret-key-superdev-e2e",
+)
 os.environ.setdefault("OTEL_ENABLED", "false")
 
-import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy import event
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
-    async_sessionmaker,
     create_async_engine,
 )
 
@@ -137,7 +137,7 @@ async def auth_headers(test_user) -> dict[str, str]:
 
     from backend.auth.jwt import JWTManager
 
-    jwt_mgr = JWTManager(secret_key=settings.SECRET_KEY)
+    jwt_mgr = JWTManager(secret_key=settings.auth.secret_key)
     token = jwt_mgr.create_access_token(subject=str(test_user.id))
     return {"Authorization": f"Bearer {token}"}
 
@@ -171,7 +171,7 @@ async def superuser_headers(superuser) -> dict[str, str]:
 
     from backend.auth.jwt import JWTManager
 
-    jwt_mgr = JWTManager(secret_key=settings.SECRET_KEY)
+    jwt_mgr = JWTManager(secret_key=settings.auth.secret_key)
     token = jwt_mgr.create_access_token(subject=str(superuser.id))
     return {"Authorization": f"Bearer {token}"}
 

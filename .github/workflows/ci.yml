@@ -25,6 +25,8 @@ jobs:
         run: ruff check backend/ ai/
       - name: Run ruff format check
         run: ruff format --check backend/ ai/
+      - name: Verify version metadata (./VERSION is single source of truth)
+        run: python scripts/sync_version.py --check
 
   test-backend:
     name: Backend Tests
