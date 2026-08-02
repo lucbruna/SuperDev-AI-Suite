@@ -5,6 +5,7 @@ from typing import Any
 
 from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.auth.jwt import JWTManager
 from backend.config import config
@@ -58,7 +59,12 @@ async def get_current_user(
     from jose import JWTError, jwt
 
     try:
-        payload = jwt.decode(token, config.auth.secret_key, algorithms=[config.auth.algorithm])
+        payload = jwt.decode(
+            token,
+            config.auth.secret_key,
+            algorithms=[config.auth.algorithm],
+            audience=config.auth.audience,
+        )
         user_id: str | None = payload.get("sub")
         if user_id is None:
             raise AuthenticationException("Invalid token payload")

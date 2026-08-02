@@ -1,13 +1,14 @@
-"""Comprehensive tests for ai_knowledge_engine (Volume 40)."""
+﻿"""Comprehensive tests for ai_knowledge_engine (Volume 40)."""
 
 import os
 import sys
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+if __name__ == "__main__":
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import unittest
 
-from ai_knowledge_engine import (
+from ai.ai_knowledge_engine import (
     ConfidenceLevel,
     Document,
     DocumentSubEngine,
@@ -492,7 +493,7 @@ class TestInfrastructure(unittest.TestCase):
 
     def test_security(self):
         sec = KnowledgeSecurity()
-        from ai_knowledge_engine.knowledge_security import AccessPermission, AccessPolicy
+        from ai.ai_knowledge_engine.knowledge_security import AccessPermission, AccessPolicy
 
         policy = AccessPolicy(
             policy_id="p1",

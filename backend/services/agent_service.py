@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import time
+from datetime import datetime, timezone
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -94,7 +94,7 @@ class AgentService:
             task=task,
             context=context or {},
             status="running",
-            started_at=time.time(),
+            started_at=datetime.now(timezone.utc),
         )
         return execution
 
@@ -119,7 +119,7 @@ class AgentService:
             error=error,
             tokens_used=tokens_used,
             cost_usd=cost_usd,
-            completed_at=time.time(),
+            completed_at=datetime.now(timezone.utc),
         )
         if not updated:
             raise AgentExecutionException()

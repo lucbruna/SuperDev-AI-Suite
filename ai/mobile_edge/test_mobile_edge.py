@@ -1,64 +1,65 @@
-"""Comprehensive tests for Mobile Platform & Edge AI Engine (Volume 30)."""
+﻿"""Comprehensive tests for Mobile Platform & Edge AI Engine (Volume 30)."""
 
 import os
 import sys
 import unittest
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+if __name__ == "__main__":
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
-# ── Core imports ──────────────────────────────────────────────────────────
-# ── Biometrics ───────────────────────────────────────────────────────────
-from mobile_edge.biometrics.biometric_engine import AuthResult, BiometricEngine, BiometricType
-from mobile_edge.biometrics.face import FaceRecognitionManager
-from mobile_edge.biometrics.fingerprint import FingerprintManager
-from mobile_edge.biometrics.voice import VoiceRecognitionManager
-from mobile_edge.device_manager import DeviceCategory, DeviceHealth, DeviceManager
+# â”€â”€ Core imports â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# â”€â”€ Biometrics â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+from ai.mobile_edge.biometrics.biometric_engine import AuthResult, BiometricEngine, BiometricType
+from ai.mobile_edge.biometrics.face import FaceRecognitionManager
+from ai.mobile_edge.biometrics.fingerprint import FingerprintManager
+from ai.mobile_edge.biometrics.voice import VoiceRecognitionManager
+from ai.mobile_edge.device_manager import DeviceCategory, DeviceHealth, DeviceManager
 
-# ── Devices ───────────────────────────────────────────────────────────────
-from mobile_edge.devices.device_engine import DeviceEngine, DeviceStatus
-from mobile_edge.devices.device_health import DeviceHealthMonitor
-from mobile_edge.devices.device_registry import DeviceRegistry
-from mobile_edge.devices.inventory import DeviceInventory
-from mobile_edge.devices.remote_control import CommandStatus, RemoteCommand, RemoteControlManager
-from mobile_edge.edge_engine import EdgeEngine, ModelStatus
-from mobile_edge.edge_runtime.accelerator import AcceleratorManager, AcceleratorStatus
+# â”€â”€ Devices â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+from ai.mobile_edge.devices.device_engine import DeviceEngine, DeviceStatus
+from ai.mobile_edge.devices.device_health import DeviceHealthMonitor
+from ai.mobile_edge.devices.device_registry import DeviceRegistry
+from ai.mobile_edge.devices.inventory import DeviceInventory
+from ai.mobile_edge.devices.remote_control import CommandStatus, RemoteCommand, RemoteControlManager
+from ai.mobile_edge.edge_engine import EdgeEngine, ModelStatus
+from ai.mobile_edge.edge_runtime.accelerator import AcceleratorManager, AcceleratorStatus
 
-# ── Edge Runtime ──────────────────────────────────────────────────────────
-from mobile_edge.edge_runtime.edge_runtime_engine import EdgeRuntimeEngine, RuntimeState
-from mobile_edge.edge_runtime.inference import InferenceEngine
-from mobile_edge.edge_runtime.local_model import LocalModelManager, LocalModelStatus
-from mobile_edge.edge_runtime.model_manager import EdgeModelManager, ModelLifecycle
-from mobile_edge.edge_runtime.resource_manager import EdgeResourceManager
-from mobile_edge.mobile_config import MobileConfig
-from mobile_edge.mobile_engine import MobileEngine, MobileState, PlatformType
-from mobile_edge.mobile_events import MobileEventBus, MobileEventType
-from mobile_edge.mobile_logger import LogLevel, MobileLogger
-from mobile_edge.mobile_metrics import MobileMetrics
-from mobile_edge.mobile_models import BatteryMode, ConnectionType, SyncStrategy
-from mobile_edge.mobile_security import MobileSecurityManager, SecurityLevel, ThreatType
-from mobile_edge.notifications.alert_rules import AlertCondition, AlertRuleManager
+# â”€â”€ Edge Runtime â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+from ai.mobile_edge.edge_runtime.edge_runtime_engine import EdgeRuntimeEngine, RuntimeState
+from ai.mobile_edge.edge_runtime.inference import InferenceEngine
+from ai.mobile_edge.edge_runtime.local_model import LocalModelManager, LocalModelStatus
+from ai.mobile_edge.edge_runtime.model_manager import EdgeModelManager, ModelLifecycle
+from ai.mobile_edge.edge_runtime.resource_manager import EdgeResourceManager
+from ai.mobile_edge.mobile_config import MobileConfig
+from ai.mobile_edge.mobile_engine import MobileEngine, MobileState, PlatformType
+from ai.mobile_edge.mobile_events import MobileEventBus, MobileEventType
+from ai.mobile_edge.mobile_logger import LogLevel, MobileLogger
+from ai.mobile_edge.mobile_metrics import MobileMetrics
+from ai.mobile_edge.mobile_models import BatteryMode, ConnectionType, SyncStrategy
+from ai.mobile_edge.mobile_security import MobileSecurityManager, SecurityLevel, ThreatType
+from ai.mobile_edge.notifications.alert_rules import AlertCondition, AlertRuleManager
 
-# ── Notifications ────────────────────────────────────────────────────────
-from mobile_edge.notifications.notification_engine import NotificationEngine, NotificationPriority, NotificationType
-from mobile_edge.notifications.push_manager import PushManager
-from mobile_edge.notifications.templates import TemplateManager
-from mobile_edge.offline.cache_manager import CacheManager
-from mobile_edge.offline.local_database import LocalDatabase
+# â”€â”€ Notifications â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+from ai.mobile_edge.notifications.notification_engine import NotificationEngine, NotificationPriority, NotificationType
+from ai.mobile_edge.notifications.push_manager import PushManager
+from ai.mobile_edge.notifications.templates import TemplateManager
+from ai.mobile_edge.offline.cache_manager import CacheManager
+from ai.mobile_edge.offline.local_database import LocalDatabase
 
-# ── Offline ───────────────────────────────────────────────────────────────
-from mobile_edge.offline.offline_engine import OfflineEngine, OfflineMode
-from mobile_edge.offline.queue_manager import OfflineQueueManager, QueuePriority
-from mobile_edge.offline.sync_queue import SyncQueue
-from mobile_edge.synchronization.cloud_sync import CloudSyncManager, CloudSyncStatus
-from mobile_edge.synchronization.conflict_resolution import ConflictResolver, ConflictStrategy
-from mobile_edge.synchronization.data_merge import DataMerger
+# â”€â”€ Offline â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+from ai.mobile_edge.offline.offline_engine import OfflineEngine, OfflineMode
+from ai.mobile_edge.offline.queue_manager import OfflineQueueManager, QueuePriority
+from ai.mobile_edge.offline.sync_queue import SyncQueue
+from ai.mobile_edge.synchronization.cloud_sync import CloudSyncManager, CloudSyncStatus
+from ai.mobile_edge.synchronization.conflict_resolution import ConflictResolver, ConflictStrategy
+from ai.mobile_edge.synchronization.data_merge import DataMerger
 
-# ── Synchronization ──────────────────────────────────────────────────────
-from mobile_edge.synchronization.sync_engine import MobileSyncEngine, SyncDirection, SyncState
+# â”€â”€ Synchronization â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+from ai.mobile_edge.synchronization.sync_engine import MobileSyncEngine, SyncDirection, SyncState
 
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # CORE TESTS
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 
 class TestCoreModules(unittest.TestCase):
@@ -374,9 +375,9 @@ class TestMobileLogger(unittest.TestCase):
         self.assertEqual(self.logger.count(), 0)
 
 
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # EDGE RUNTIME TESTS
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 
 class TestEdgeRuntime(unittest.TestCase):
@@ -431,9 +432,9 @@ class TestEdgeRuntime(unittest.TestCase):
         self.assertEqual(a.count(), 1)
 
 
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # OFFLINE TESTS
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 
 class TestOffline(unittest.TestCase):
@@ -487,9 +488,9 @@ class TestOffline(unittest.TestCase):
         self.assertEqual(sq.count_pending(), 0)
 
 
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # SYNCHRONIZATION TESTS
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 
 class TestSynchronization(unittest.TestCase):
@@ -525,9 +526,9 @@ class TestSynchronization(unittest.TestCase):
         self.assertTrue(result["success"])
 
 
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # DEVICES TESTS
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 
 class TestDevices(unittest.TestCase):
@@ -571,9 +572,9 @@ class TestDevices(unittest.TestCase):
         self.assertEqual(inv.count(), 1)
 
 
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # NOTIFICATIONS TESTS
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 
 class TestNotifications(unittest.TestCase):
@@ -612,9 +613,9 @@ class TestNotifications(unittest.TestCase):
         self.assertEqual(rendered["message"], "Hello Alice, welcome to SuperDev")
 
 
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # BIOMETRICS TESTS
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 
 class TestBiometrics(unittest.TestCase):
@@ -649,14 +650,14 @@ class TestBiometrics(unittest.TestCase):
         self.assertEqual(v.count(), 1)
 
 
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # SUBSYSTEM IMPORT TESTS
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 
 class TestSubsystemImports(unittest.TestCase):
     def test_edge_runtime_imports(self):
-        from mobile_edge.edge_runtime import (
+        from ai.mobile_edge.edge_runtime import (
             AcceleratorManager,
             EdgeModelManager,
             EdgeResourceManager,
@@ -679,17 +680,17 @@ class TestSubsystemImports(unittest.TestCase):
         )
 
     def test_offline_imports(self):
-        from mobile_edge.offline import CacheManager, LocalDatabase, OfflineEngine, OfflineQueueManager, SyncQueue
+        from ai.mobile_edge.offline import CacheManager, LocalDatabase, OfflineEngine, OfflineQueueManager, SyncQueue
 
         self.assertTrue(all([OfflineEngine, CacheManager, LocalDatabase, OfflineQueueManager, SyncQueue]))
 
     def test_synchronization_imports(self):
-        from mobile_edge.synchronization import CloudSyncManager, ConflictResolver, DataMerger, MobileSyncEngine
+        from ai.mobile_edge.synchronization import CloudSyncManager, ConflictResolver, DataMerger, MobileSyncEngine
 
         self.assertTrue(all([MobileSyncEngine, ConflictResolver, DataMerger, CloudSyncManager]))
 
     def test_devices_imports(self):
-        from mobile_edge.devices import (
+        from ai.mobile_edge.devices import (
             DeviceEngine,
             DeviceHealthMonitor,
             DeviceInventory,
@@ -700,12 +701,12 @@ class TestSubsystemImports(unittest.TestCase):
         self.assertTrue(all([DeviceEngine, DeviceRegistry, DeviceHealthMonitor, RemoteControlManager, DeviceInventory]))
 
     def test_notifications_imports(self):
-        from mobile_edge.notifications import AlertRuleManager, NotificationEngine, PushManager, TemplateManager
+        from ai.mobile_edge.notifications import AlertRuleManager, NotificationEngine, PushManager, TemplateManager
 
         self.assertTrue(all([NotificationEngine, PushManager, AlertRuleManager, TemplateManager]))
 
     def test_biometrics_imports(self):
-        from mobile_edge.biometrics import (
+        from ai.mobile_edge.biometrics import (
             BiometricEngine,
             FaceRecognitionManager,
             FingerprintManager,
@@ -715,9 +716,9 @@ class TestSubsystemImports(unittest.TestCase):
         self.assertTrue(all([BiometricEngine, FingerprintManager, FaceRecognitionManager, VoiceRecognitionManager]))
 
 
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # CROSS-SUBSYSTEM INTEGRATION TESTS
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 
 class TestCrossSubsystemIntegration(unittest.TestCase):

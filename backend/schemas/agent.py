@@ -7,62 +7,49 @@ from pydantic import BaseModel, Field
 from backend.schemas.base import BaseSchema
 
 
-class AgentBase(BaseSchema):
-    """Base agent fields."""
-
-    name: str = Field(..., min_length=1, max_length=255, description="Agent name")
-    type: str = Field(
-        ..., description="Agent type: planner, executor, reviewer, tester, architect, researcher, security, deployment"
-    )
-    description: str | None = Field(None, description="Agent description")
-    config: dict = Field(default_factory=dict, description="Agent configuration JSON")
-    system_prompt: str | None = Field(None, description="System prompt for the agent")
-    model_provider: str | None = Field(None, max_length=50, description="LLM provider name")
-    model_name: str | None = Field(None, max_length=100, description="LLM model name")
-    tools: list[str] = Field(default_factory=list, description="Tool names available to the agent")
-
-
 class AgentCreate(BaseModel):
-    """Request to create a new agent."""
+    """Request to create a new agent — matches the API AgentCreateRequest contract."""
 
-    project_id: str = Field(..., description="Project UUID")
     name: str = Field(..., min_length=1, max_length=255, description="Agent name")
-    type: str = Field(..., description="Agent type")
-    description: str | None = Field(None, description="Agent description")
-    config: dict = Field(default_factory=dict, description="Agent configuration")
+    agent_type: str = Field("react", description="Agent type: react, planner_executor, code, review, chat")
+    description: str = Field("", description="Agent description")
+    model: str | None = Field(None, description="LLM model name")
+    provider: str | None = Field(None, description="LLM provider name")
+    max_steps: int = Field(10, ge=1, le=100, description="Maximum reasoning steps")
+    temperature: float = Field(0.7, ge=0.0, le=2.0, description="Model temperature")
     system_prompt: str | None = Field(None, description="System prompt")
-    model_provider: str | None = Field(None, description="LLM provider name")
-    model_name: str | None = Field(None, description="LLM model name")
-    tools: list[str] = Field(default_factory=list, description="Available tool names")
+    tools_enabled: list[str] | None = Field(None, description="Tool names to enable (all if unset)")
+    template_id: str | None = Field(None, description="Template ID to apply defaults from")
 
 
 class AgentUpdate(BaseModel):
-    """Request to update agent fields."""
+    """Request to update agent fields — matches the API AgentUpdateRequest contract."""
 
     name: str | None = Field(None, min_length=1, max_length=255, description="Agent name")
     description: str | None = Field(None, description="Agent description")
-    config: dict | None = Field(None, description="Agent configuration")
+    model: str | None = Field(None, description="LLM model name")
+    provider: str | None = Field(None, description="LLM provider name")
+    max_steps: int | None = Field(None, ge=1, le=100, description="Maximum reasoning steps")
+    temperature: float | None = Field(None, ge=0.0, le=2.0, description="Model temperature")
     system_prompt: str | None = Field(None, description="System prompt")
-    is_active: bool | None = Field(None, description="Whether the agent is active")
+    tools_enabled: list[str] | None = Field(None, description="Tool names to enable")
 
 
-class AgentResponse(BaseSchema):
-    """Full agent response."""
+class AgentResponse(BaseModel):
+    """Agent response — matches the API AgentResponse contract exactly."""
 
     id: str = Field(..., description="Agent UUID")
-    project_id: str = Field(..., description="Project UUID")
     name: str = Field(..., description="Agent name")
-    type: str = Field(..., description="Agent type")
-    description: str | None = Field(None, description="Agent description")
-    config: dict = Field(default_factory=dict, description="Agent configuration")
+    description: str = Field("", description="Agent description")
+    agent_type: str = Field(..., description="Agent type")
+    status: str = Field("idle", description="Agent status: idle, running, error")
+    tools: list[dict] = Field(default_factory=list, description="Tool schemas (name, description, parameters)")
+    model: str | None = Field(None, description="LLM model name")
+    provider: str | None = Field(None, description="LLM provider name")
+    max_steps: int = Field(10, description="Maximum reasoning steps")
+    temperature: float = Field(0.7, description="Model temperature")
     system_prompt: str | None = Field(None, description="System prompt")
-    model_provider: str | None = Field(None, description="LLM provider name")
-    model_name: str | None = Field(None, description="LLM model name")
-    tools: list[str] = Field(default_factory=list, description="Available tools")
-    is_active: bool = Field(True, description="Whether the agent is active")
-    created_by: str = Field(..., description="Creator user UUID")
-    created_at: datetime | None = Field(None, description="Creation timestamp")
-    updated_at: datetime | None = Field(None, description="Last update timestamp")
+    template_id: str | None = Field(None, description="Template ID")
 
 
 class AgentExecuteRequest(BaseModel):

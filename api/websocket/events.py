@@ -1,11 +1,44 @@
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import Any, Callable
 
 from ..api_logger import APILogger
 from ..api_registry import APIRegistry
 from .connection import WebSocketConnection
+
+
+class EventEmitter:
+    """Simple synchronous event emitter with on/off/once/emit."""
+
+    def __init__(self) -> None:
+        self._listeners: dict[str, list[Callable]] = {}
+
+    def on(self, event: str, handler: Callable) -> None:
+        self._listeners.setdefault(event, []).append(handler)
+
+    def off(self, event: str, handler: Callable) -> None:
+        listeners = self._listeners.get(event, [])
+        if handler in listeners:
+            listeners.remove(handler)
+
+    def once(self, event: str, handler: Callable) -> None:
+        def wrapper(data: Any) -> None:
+            self.off(event, wrapper)
+            handler(data)
+
+        self.on(event, wrapper)
+
+    def emit(self, event: str, data: Any = None) -> list[Any]:
+        results: list[Any] = []
+        for handler in list(self._listeners.get(event, [])):
+            result = handler(data)
+            if result is not None:
+                results.append(result)
+        return results
+
+    def listeners(self, event: str) -> list[Callable]:
+        return list(self._listeners.get(event, []))
 
 
 async def handle_message(

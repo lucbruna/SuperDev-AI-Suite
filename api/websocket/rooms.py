@@ -23,6 +23,20 @@ class RoomManager:
         }
         return True
 
+    def join(self, room_name: str, connection_id: str, handle: Any = None) -> bool:
+        if room_name not in self._rooms:
+            self.create_room(room_name)
+        return self.join_room(connection_id, room_name, handle)
+
+    def leave(self, room_name: str, connection_id: str) -> bool:
+        return self.leave_room(connection_id, room_name)
+
+    def get_members(self, room_name: str) -> list[str]:
+        return self.get_room_members(room_name)
+
+    def get_user_rooms(self, connection_id: str) -> list[str]:
+        return [name for name, room in self._rooms.items() if connection_id in room["members"]]
+
     def join_room(self, connection_id: str, room_name: str, handle: Any = None) -> bool:
         room = self._rooms.get(room_name)
         if room is None:

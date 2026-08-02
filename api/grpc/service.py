@@ -17,7 +17,9 @@ class MethodDefinition:
     def __init__(
         self,
         name: str,
-        handler: Callable,
+        handler: Callable | None = None,
+        input_type: str = "",
+        output_type: str = "",
         request_type: str = "JSON",
         response_type: str = "JSON",
         method_type: MethodType = MethodType.UNARY,
@@ -25,6 +27,8 @@ class MethodDefinition:
     ) -> None:
         self.name = name
         self.handler = handler
+        self.input_type = input_type
+        self.output_type = output_type
         self.request_type = request_type
         self.response_type = response_type
         self.method_type = method_type
@@ -75,11 +79,24 @@ class ServiceRegistry:
     def register(self, service: ServiceDefinition) -> None:
         self._services[service.name] = service
 
+    def register_service(self, name: str) -> None:
+        if name not in self._services:
+            self._services[name] = ServiceDefinition(name)
+
+    def register_method(self, service_name: str, method: MethodDefinition) -> None:
+        if service_name not in self._services:
+            self._services[service_name] = ServiceDefinition(service_name)
+        self._services[service_name].add_method(method)
+
+    def get_methods(self, service_name: str) -> list[MethodDefinition]:
+        service = self._services.get(service_name)
+        return service.list_methods() if service else []
+
     def get(self, name: str) -> ServiceDefinition | None:
         return self._services.get(name)
 
-    def list_services(self) -> list[ServiceDefinition]:
-        return list(self._services.values())
+    def list_services(self) -> list[str]:
+        return list(self._services.keys())
 
     def to_dict(self) -> dict[str, Any]:
         return {

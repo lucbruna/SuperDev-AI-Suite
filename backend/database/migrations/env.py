@@ -15,10 +15,12 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from alembic import context
 from backend.database.base import Base
 
-# Import all models so Alembic can detect them
+# Import all models so Alembic can detect them. The audit table lives in
+# ``audit_log.py`` (there is no ``audit`` module — importing it was a pre-
+# existing bug that made ``alembic upgrade head`` fail with ImportError).
 from backend.database.models import (  # noqa: F401
     agent,
-    audit,
+    audit_log,
     knowledge,
     notification,
     organization,
@@ -65,10 +67,17 @@ def do_run_migrations(connection: Connection) -> None:
 
 async def run_async_migrations() -> None:
     """Run migrations in 'online' mode with an async engine."""
+    # The application engine (backend/database/engine.py) pins the search path
+    # to ``superdev,public``; mirror it here so ALTER/CREATE statements land in
+    # the same schema the models read from.
+    connect_args = {}
+    if (db_url or "").startswith("postgresql"):
+        connect_args = {"server_settings": {"search_path": "superdev,public"}}
     connectable = async_engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        connect_args=connect_args,
     )
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)

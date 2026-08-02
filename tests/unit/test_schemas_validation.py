@@ -205,12 +205,11 @@ class TestWorkflowCreate:
 class TestAgentSchemas:
     def test_agent_create(self):
         agent = AgentCreate(
-            project_id="proj-123",
             name="Code Reviewer",
-            type="reviewer",
+            agent_type="reviewer",
         )
-        assert agent.type == "reviewer"
-        assert agent.tools == []
+        assert agent.agent_type == "reviewer"
+        assert agent.tools_enabled is None
 
     def test_agent_execute_request(self):
         req = AgentExecuteRequest(task="Review this PR")

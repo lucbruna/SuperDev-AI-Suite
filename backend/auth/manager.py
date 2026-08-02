@@ -124,8 +124,24 @@ class AuthManager:
                 issuer=self.issuer,
                 audience=self.audience,
             )
-            return TokenPayload(**payload)
-        except JWTError as e:
+            # Build TokenPayload explicitly: ``TokenPayload(**payload)`` would
+            # crash on JWTManager-issued tokens (extra ``iss``/``aud``/``type``
+            # claims + missing required ``email``). Map ``type`` -> ``token_type``.
+            return TokenPayload(
+                sub=payload.get("sub", ""),
+                email=payload.get("email", ""),
+                org_id=payload.get("org_id"),
+                project_id=payload.get("project_id"),
+                roles=payload.get("roles") or [],
+                permissions=payload.get("permissions") or [],
+                token_type=TokenType(
+                    payload.get("token_type") or payload.get("type") or TokenType.ACCESS.value
+                ),
+                exp=payload.get("exp"),
+                iat=payload.get("iat"),
+                jti=payload.get("jti"),
+            )
+        except (JWTError, ValueError) as e:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail=f"Invalid token: {str(e)}",
@@ -323,11 +339,13 @@ class APIKeyAuth:
     ) -> tuple[User, Organization | None]:
         # Check if it's an API key (format: sk_...)
         if token.startswith("sk_"):
-            from backend.auth.security import verify_password
-            from backend.database.models.api_key import APIKey
+            from backend.database.models.api_key import APIKey, API_KEY_PREFIX_LENGTH
+            # verify_password is the module-level import from passwords.py —
+            # single source of truth (finding 2f29e692: hash-scheme drift).
 
-            # Find API key by prefix
-            prefix = token[:24]  # First 24 chars as prefix
+            # Find API key by prefix. Length must match the stored prefix
+            # (raw[:API_KEY_PREFIX_LENGTH] in api_keys.py) or keys are unfindable.
+            prefix = token[:API_KEY_PREFIX_LENGTH]
             api_keys = await db.execute(select(APIKey).where(APIKey.key_prefix == prefix).where(APIKey.is_active))
             api_key = api_keys.scalar_one_or_none()
 
@@ -345,8 +363,9 @@ class APIKeyAuth:
                 )
 
             # Check scopes if needed
-            # Update last used
+            # Update last used (persist — the session outlives this dependency).
             api_key.last_used_at = datetime.utcnow()
+            await db.commit()
 
             user = await db.get(User, api_key.created_by)
             org = await db.get(Organization, api_key.organization_id)
@@ -558,7 +577,7 @@ class Permissions:
 
 # Default role permissions
 DEFAULT_ROLE_PERMISSIONS = {
-    UserRole.OWNER: [
+    OrgUserRole.OWNER: [
         Permissions.ORG_CREATE,
         Permissions.ORG_READ,
         Permissions.ORG_UPDATE,
@@ -603,7 +622,7 @@ DEFAULT_ROLE_PERMISSIONS = {
         Permissions.ADMIN_ACCESS,
         Permissions.SYSTEM_CONFIG,
     ],
-    UserRole.ADMIN: [
+    OrgUserRole.ADMIN: [
         Permissions.ORG_READ,
         Permissions.ORG_UPDATE,
         Permissions.ORG_MANAGE_MEMBERS,
@@ -643,7 +662,7 @@ DEFAULT_ROLE_PERMISSIONS = {
         Permissions.USER_MANAGE_ROLES,
         Permissions.AUDIT_READ,
     ],
-    UserRole.MEMBER: [
+    OrgUserRole.MEMBER: [
         Permissions.ORG_READ,
         Permissions.PROJECT_READ,
         Permissions.PROJECT_UPDATE,
@@ -657,7 +676,7 @@ DEFAULT_ROLE_PERMISSIONS = {
         Permissions.PLUGIN_EXECUTE,
         Permissions.PROVIDER_READ,
     ],
-    UserRole.VIEWER: [
+    OrgUserRole.VIEWER: [
         Permissions.ORG_READ,
         Permissions.PROJECT_READ,
         Permissions.WORKFLOW_READ,

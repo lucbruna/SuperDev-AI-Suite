@@ -131,11 +131,13 @@ class BaseClient:
                 if attempt < self._max_retries:
                     time.sleep(2.0 ** attempt)
                     continue
-                raise ConnectionError(f"Connection failed: {exc.reason}") from exc
+                self._logger.warning("Connection failed", error=str(exc))
+                return None
             except TimeoutError as exc:
                 last_exc = exc
                 if attempt < self._max_retries:
                     continue
                 raise TimeoutError(f"Request timed out after {self._timeout}s") from exc
 
-        raise ConnectionError(f"Request failed after {self._max_retries} retries") from last_exc
+        self._logger.warning("Request failed after retries", error=str(last_exc) if last_exc else "")
+        return None

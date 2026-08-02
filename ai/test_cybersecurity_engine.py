@@ -1,13 +1,14 @@
-"""Comprehensive tests for cybersecurity_engine (Volume 39)."""
+﻿"""Comprehensive tests for cybersecurity_engine (Volume 39)."""
 
 import os
 import sys
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+if __name__ == "__main__":
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import unittest
 
-from cybersecurity_engine import (
+from ai.cybersecurity_engine import (
     AuditEntry,
     ComplianceStandard,
     CybersecurityEngine,
@@ -22,35 +23,35 @@ from cybersecurity_engine import (
     Vulnerability,
     VulnerabilitySeverity,
 )
-from cybersecurity_engine.audit import AuditEngine
-from cybersecurity_engine.audit.audit_engine import AuditAction
-from cybersecurity_engine.compliance import ComplianceEngine
-from cybersecurity_engine.compliance.compliance_engine import ComplianceFramework, ComplianceStatus
-from cybersecurity_engine.encryption import EncryptionEngine
-from cybersecurity_engine.encryption.encryption_engine import Algorithm, KeyStatus
-from cybersecurity_engine.identity import IdentityEngine
-from cybersecurity_engine.identity.identity_engine import AccessLevel, AuthStatus, IdentityUser
-from cybersecurity_engine.incident_response import IncidentResponseEngine
-from cybersecurity_engine.incident_response.incident_engine import IncidentPhase, IncidentSeverity
-from cybersecurity_engine.incident_response.incident_engine import IncidentStatus as IRStatus
-from cybersecurity_engine.monitoring import MonitoringEngine
-from cybersecurity_engine.monitoring.monitoring_engine import AlertSeverity, MonitoringRule
-from cybersecurity_engine.penetration import PenetrationEngine
-from cybersecurity_engine.penetration.pentest_engine import PentestPhase
-from cybersecurity_engine.penetration.pentest_engine import VulnFinding as PentestVulnFinding
-from cybersecurity_engine.security_config import CybersecurityConfig
-from cybersecurity_engine.security_context import SecurityContext
-from cybersecurity_engine.security_events import SecurityEvent, SecurityEventType
-from cybersecurity_engine.security_factory import SecurityFactory
-from cybersecurity_engine.security_logger import SecurityLogger
-from cybersecurity_engine.security_metrics import SecurityMetrics
-from cybersecurity_engine.security_registry import SecurityRegistry
-from cybersecurity_engine.security_runtime import SecurityRuntime
-from cybersecurity_engine.threat_detection import ThreatDetectionEngine
-from cybersecurity_engine.threat_detection.threat_engine import DetectedThreat
-from cybersecurity_engine.threat_detection.threat_engine import ThreatSeverity as ThreatDetectionSeverity
-from cybersecurity_engine.vulnerability import VulnerabilityEngine
-from cybersecurity_engine.vulnerability.vulnerability_engine import VulnSeverity, VulnStatus
+from ai.cybersecurity_engine.audit import AuditEngine
+from ai.cybersecurity_engine.audit.audit_engine import AuditAction
+from ai.cybersecurity_engine.compliance import ComplianceEngine
+from ai.cybersecurity_engine.compliance.compliance_engine import ComplianceFramework, ComplianceStatus
+from ai.cybersecurity_engine.encryption import EncryptionEngine
+from ai.cybersecurity_engine.encryption.encryption_engine import Algorithm, KeyStatus
+from ai.cybersecurity_engine.identity import IdentityEngine
+from ai.cybersecurity_engine.identity.identity_engine import AccessLevel, AuthStatus, IdentityUser
+from ai.cybersecurity_engine.incident_response import IncidentResponseEngine
+from ai.cybersecurity_engine.incident_response.incident_engine import IncidentPhase, IncidentSeverity
+from ai.cybersecurity_engine.incident_response.incident_engine import IncidentStatus as IRStatus
+from ai.cybersecurity_engine.monitoring import MonitoringEngine
+from ai.cybersecurity_engine.monitoring.monitoring_engine import AlertSeverity, MonitoringRule
+from ai.cybersecurity_engine.penetration import PenetrationEngine
+from ai.cybersecurity_engine.penetration.pentest_engine import PentestPhase
+from ai.cybersecurity_engine.penetration.pentest_engine import VulnFinding as PentestVulnFinding
+from ai.cybersecurity_engine.security_config import CybersecurityConfig
+from ai.cybersecurity_engine.security_context import SecurityContext
+from ai.cybersecurity_engine.security_events import SecurityEvent, SecurityEventType
+from ai.cybersecurity_engine.security_factory import SecurityFactory
+from ai.cybersecurity_engine.security_logger import SecurityLogger
+from ai.cybersecurity_engine.security_metrics import SecurityMetrics
+from ai.cybersecurity_engine.security_registry import SecurityRegistry
+from ai.cybersecurity_engine.security_runtime import SecurityRuntime
+from ai.cybersecurity_engine.threat_detection import ThreatDetectionEngine
+from ai.cybersecurity_engine.threat_detection.threat_engine import DetectedThreat
+from ai.cybersecurity_engine.threat_detection.threat_engine import ThreatSeverity as ThreatDetectionSeverity
+from ai.cybersecurity_engine.vulnerability import VulnerabilityEngine
+from ai.cybersecurity_engine.vulnerability.vulnerability_engine import VulnSeverity, VulnStatus
 
 
 class TestCybersecurityEngine(unittest.TestCase):
@@ -375,7 +376,7 @@ class TestIncidentResponse(unittest.TestCase):
         self.assertEqual(inc.resolution, "Fixed the issue")
 
     def test_playbook(self):
-        from cybersecurity_engine.incident_response.incident_engine import Playbook
+        from ai.cybersecurity_engine.incident_response.incident_engine import Playbook
 
         pb = Playbook(name="Malware Response", incident_type="malware", estimated_time_minutes=30)
         self.engine.add_playbook(pb)
@@ -393,7 +394,7 @@ class TestComplianceEngine(unittest.TestCase):
         self.engine = ComplianceEngine()
 
     def test_add_control(self):
-        from cybersecurity_engine.compliance.compliance_engine import ComplianceControl
+        from ai.cybersecurity_engine.compliance.compliance_engine import ComplianceControl
 
         ctrl = ComplianceControl(
             framework=ComplianceFramework.NIST, title="Access Control", status=ComplianceStatus.NOT_ASSESSED
@@ -402,14 +403,14 @@ class TestComplianceEngine(unittest.TestCase):
         self.assertIsNotNone(self.engine.get_control(ctrl.control_id))
 
     def test_update_control(self):
-        from cybersecurity_engine.compliance.compliance_engine import ComplianceControl
+        from ai.cybersecurity_engine.compliance.compliance_engine import ComplianceControl
 
         ctrl = ComplianceControl(framework=ComplianceFramework.GDPR, title="Data Protection")
         self.engine.add_control(ctrl)
         self.assertTrue(self.engine.update_control_status(ctrl.control_id, ComplianceStatus.COMPLIANT, ["Evidence 1"]))
 
     def test_assess_framework(self):
-        from cybersecurity_engine.compliance.compliance_engine import ComplianceControl
+        from ai.cybersecurity_engine.compliance.compliance_engine import ComplianceControl
 
         self.engine.add_control(
             ComplianceControl(framework=ComplianceFramework.SOC2, title="C1", status=ComplianceStatus.COMPLIANT)
@@ -422,7 +423,7 @@ class TestComplianceEngine(unittest.TestCase):
         self.assertEqual(assessment.compliant, 1)
 
     def test_get_gaps(self):
-        from cybersecurity_engine.compliance.compliance_engine import ComplianceControl
+        from ai.cybersecurity_engine.compliance.compliance_engine import ComplianceControl
 
         self.engine.add_control(
             ComplianceControl(framework=ComplianceFramework.HIPAA, title="H1", status=ComplianceStatus.NON_COMPLIANT)
@@ -431,7 +432,7 @@ class TestComplianceEngine(unittest.TestCase):
         self.assertEqual(len(gaps), 1)
 
     def test_stats(self):
-        from cybersecurity_engine.compliance.compliance_engine import ComplianceControl
+        from ai.cybersecurity_engine.compliance.compliance_engine import ComplianceControl
 
         self.engine.add_control(ComplianceControl(framework=ComplianceFramework.NIST, title="N1"))
         stats = self.engine.get_stats()
@@ -448,14 +449,14 @@ class TestPenetrationEngine(unittest.TestCase):
         self.assertEqual(eng.name, "Test Pentest")
 
     def test_add_target(self):
-        from cybersecurity_engine.penetration.pentest_engine import PentestTarget
+        from ai.cybersecurity_engine.penetration.pentest_engine import PentestTarget
 
         eng = self.engine.create_engagement("Test")
         target = PentestTarget(hostname="web-server", ip_address="192.168.1.10", ports=[80, 443])
         self.assertTrue(self.engine.add_target(eng.engagement_id, target))
 
     def test_add_finding(self):
-        from cybersecurity_engine.penetration.pentest_engine import PentestFinding
+        from ai.cybersecurity_engine.penetration.pentest_engine import PentestFinding
 
         eng = self.engine.create_engagement("Test")
         finding = PentestFinding(title="XSS", severity=PentestVulnFinding.HIGH, cvss=7.5)
@@ -487,7 +488,7 @@ class TestAuditEngine(unittest.TestCase):
         self.assertEqual(entry.action, AuditAction.LOGIN)
 
     def test_query(self):
-        from cybersecurity_engine.audit.audit_engine import AuditQuery
+        from ai.cybersecurity_engine.audit.audit_engine import AuditQuery
 
         self.engine.log(AuditAction.CREATE, user_id="u1")
         self.engine.log(AuditAction.READ, user_id="u2")

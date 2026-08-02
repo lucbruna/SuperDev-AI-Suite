@@ -24,7 +24,7 @@ class StreamingResponse:
 
     def __init__(
         self,
-        generator: AsyncIterator[Any],
+        generator: AsyncIterator[Any] | None = None,
         content_type: str = "application/x-ndjson",
         status: int = 200,
     ) -> None:
@@ -37,6 +37,9 @@ class StreamingResponse:
             "x-accel-buffering": "no",
         }
 
+    def iterate(self, items: list[Any]) -> list[Any]:
+        return list(items)
+
     @property
     def status(self) -> int:
         return self._status
@@ -46,6 +49,8 @@ class StreamingResponse:
         return dict(self._headers)
 
     async def iter_body(self) -> AsyncIterator[str]:
+        if self._generator is None:
+            return
         async for chunk in self._generator:
             if isinstance(chunk, str):
                 yield chunk

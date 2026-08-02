@@ -30,11 +30,18 @@ async def startup_handler() -> None:
 
     logger.info("Running database migrations")
     try:
+        from pathlib import Path
+
         from alembic.config import Config as AlembicConfig
 
         from alembic import command
 
-        alembic_cfg = AlembicConfig(config.database.migration_dir)
+        repo_root = Path(__file__).resolve().parent.parent
+        alembic_cfg = AlembicConfig(str(repo_root / "alembic.ini"))
+        alembic_cfg.set_main_option(
+            "script_location",
+            str((repo_root / config.database.migration_dir).resolve()),
+        )
         command.upgrade(alembic_cfg, "head")
         logger.info("Migrations complete")
     except Exception as e:

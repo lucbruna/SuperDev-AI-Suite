@@ -34,7 +34,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         try:
             import redis.asyncio as aioredis
 
-            redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
+            from backend.config import config
+
+            redis_url = os.environ.get("REDIS_URL") or config.redis.url
             self.redis_client = aioredis.from_url(redis_url, decode_responses=True, socket_connect_timeout=2)
         except Exception:
             self.redis_client = None
@@ -43,7 +45,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         client_ip = request.client.host if request.client else "unknown"
 
         if self.redis_client:
-            is_limited = await self._check_redis(client_ip)
+            try:
+                is_limited = await self._check_redis(client_ip)
+            except Exception:
+                # Redis unavailable at request time — fall back to in-memory
+                self.redis_client = None
+                is_limited = self._check_memory(client_ip)
         else:
             is_limited = self._check_memory(client_ip)
 

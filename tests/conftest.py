@@ -178,7 +178,22 @@ async def superuser_headers(superuser) -> dict[str, str]:
 @pytest_asyncio.fixture
 async def test_project(db_session: AsyncSession, test_user):
     """Create and return a test project owned by the test user."""
+    from sqlalchemy import text as sa_text
     from backend.database.models.project import Project
+
+    # Ensure the user has an organization
+    org_result = await db_session.execute(
+        sa_text("SELECT id FROM organizations LIMIT 1")
+    )
+    org_row = org_result.fetchone()
+    if org_row is None:
+        org_id = _generate_uuid()
+        await db_session.execute(
+            sa_text("INSERT INTO organizations (id, name, slug) VALUES (:id, :name, :slug)"),
+            {"id": org_id, "name": "Test Org", "slug": f"test-org-{org_id[:8]}"},
+        )
+    else:
+        org_id = str(org_row[0])
 
     project_id = _generate_uuid()
     project = Project(
@@ -186,7 +201,8 @@ async def test_project(db_session: AsyncSession, test_user):
         name=f"Test Project {project_id[:8]}",
         description="A project created for testing",
         owner_id=str(test_user.id),
-        is_active=True,
+        organization_id=org_id,
+        slug=f"test-project-{project_id[:8]}",
     )
     db_session.add(project)
     await db_session.flush()
@@ -205,7 +221,7 @@ async def test_workflow(db_session: AsyncSession, test_user, test_project):
         description="A workflow for testing",
         created_by=str(test_user.id),
         project_id=str(test_project.id),
-        is_active=True,
+        definition={"nodes": [], "edges": []},
     )
     db_session.add(workflow)
     await db_session.flush()
@@ -247,7 +263,20 @@ async def create_test_project(
     name: str | None = None,
 ) -> Any:
     """Create a project with sensible defaults and return it."""
+    from sqlalchemy import text as sa_text
     from backend.database.models.project import Project
+
+    # Ensure org exists
+    org_result = await session.execute(sa_text("SELECT id FROM organizations LIMIT 1"))
+    org_row = org_result.fetchone()
+    if org_row is None:
+        org_id = _generate_uuid()
+        await session.execute(
+            sa_text("INSERT INTO organizations (id, name, slug) VALUES (:id, :name, :slug)"),
+            {"id": org_id, "name": "Test Org", "slug": f"test-org-{org_id[:8]}"},
+        )
+    else:
+        org_id = str(org_row[0])
 
     pid = _generate_uuid()
     project = Project(
@@ -255,7 +284,8 @@ async def create_test_project(
         name=name or f"Project {pid[:8]}",
         description="Auto-created test project",
         owner_id=owner_id,
-        is_active=True,
+        organization_id=org_id,
+        slug=f"test-{pid[:8]}",
     )
     session.add(project)
     await session.flush()

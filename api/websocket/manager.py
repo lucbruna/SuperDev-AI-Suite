@@ -19,6 +19,21 @@ class ConnectionManager:
         if handle is not None:
             self._handles[connection_id] = handle
 
+    def add(self, connection: WebSocketConnection, handle: Any = None) -> None:
+        self.register(connection.connection_id, connection, handle)
+
+    def get(self, connection_id: str) -> WebSocketConnection | None:
+        return self.get_connection(connection_id)
+
+    def remove(self, connection_id: str) -> None:
+        self.unregister(connection_id)
+
+    def count(self) -> int:
+        return self.get_connection_count()
+
+    def get_by_user(self, user_id: str) -> list[WebSocketConnection]:
+        return [c for c in self._connections.values() if c.user_id == user_id]
+
     def unregister(self, connection_id: str) -> None:
         conn = self._connections.pop(connection_id, None)
         if conn:

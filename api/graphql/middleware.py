@@ -7,6 +7,22 @@ from ..api_logger import APILogger
 from ..api_metrics import APIMetrics
 
 
+class GraphQLMiddleware:
+    """Simple middleware chain for GraphQL resolvers."""
+
+    def __init__(self) -> None:
+        self._middleware: list[Callable] = []
+
+    def use(self, fn: Callable) -> None:
+        self._middleware.append(fn)
+
+    def get_middlewares(self) -> list[Callable]:
+        return list(self._middleware)
+
+    def __len__(self) -> int:
+        return len(self._middleware)
+
+
 class MiddlewareChain:
     """Chain of GraphQL middleware functions."""
 

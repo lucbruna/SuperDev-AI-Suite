@@ -16,10 +16,15 @@ class GrpcServer:
 
     def __init__(
         self,
+        host: str = "0.0.0.0",
+        port: int = 50051,
         logger: APILogger | None = None,
         metrics: APIMetrics | None = None,
     ) -> None:
-        self.services = ServiceRegistry()
+        self.host = host
+        self.port = port
+        self.registry = ServiceRegistry()
+        self.services = self.registry
         self.interceptors = InterceptorChain()
         self._logger = logger or APILogger("grpc.server")
         self._metrics = metrics
@@ -35,7 +40,7 @@ class GrpcServer:
             return self._error_response(f"Service not found: {service_name}", request.request_id)
 
         method = service.get_method(method_name)
-        if method is None:
+        if method is None or method.handler is None:
             return self._error_response(f"Method not found: {method_name}", request.request_id)
 
         try:
@@ -74,7 +79,7 @@ class GrpcServer:
             return
 
         method = service.get_method(method_name)
-        if method is None:
+        if method is None or method.handler is None:
             yield GrpcSerializer.serialize_message({"error": f"Method not found: {method_name}"})
             return
 

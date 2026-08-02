@@ -38,7 +38,9 @@ class TestAPIManagerIntegration:
 
     def test_cors_middleware_compatibility(self) -> None:
         """Verify middleware classes implement the MiddlewareInterface."""
-        mw = CORSMiddleware(allowed_origins=["*"])
+        # Wildcard only allowed without credentials (wildcard+credentials is
+        # rejected at construction by the CORS fix).
+        mw = CORSMiddleware(allowed_origins=["*"], allow_credentials=False)
 
         class TestMiddleware:
             def process(self, request: Any) -> Any:

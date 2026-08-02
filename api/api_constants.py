@@ -20,7 +20,7 @@ MAX_PAGE_SIZE = 100
 DEFAULT_TIMEOUT_SEC = 30
 MAX_REQUEST_SIZE_MB = 10
 
-CORS_DEFAULT_ORIGINS: list[str] = ["*"]
+CORS_DEFAULT_ORIGINS: list[str] = []  # explicit origins required; never '*' with credentials
 CORS_ALLOW_METHODS: list[str] = [m.value for m in HTTPMethod]
 CORS_ALLOW_HEADERS: list[str] = [
     "Authorization",

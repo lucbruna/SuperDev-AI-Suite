@@ -1,284 +1,206 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Table, Button, Tag, Modal, Form, Input, Select, Space, Message, Divider, Row, Col, Badge, Switch, Tooltip } from 'antd';
-import { 
-  PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, 
-  MoreOutlined, SearchOutlined, FilterOutlined, DownloadOutlined,
-  PlayOutlined, StopOutlined, PauseOutlined, ReloadOutlined,
-  CopyOutlined, CodeOutlined, TerminalOutlined, RobotOutlined,
-  CheckCircleOutlined, CloseCircleOutlined, ExclamationCircleOutlined
-} from '@ant-design/icons';
-import { api } from '../services/api';
-import { format } from 'date-fns';
+import { useState, type FormEvent } from 'react';
+import { FolderKanban, Plus, Pencil, Trash2, Globe, Lock, Loader2 } from 'lucide-react';
+import { Modal } from '../components/Modal';
+import { useProjects, useCreateProject, useUpdateProject, useDeleteProject } from '../hooks/useProjects';
+import type { Project } from '../types/api';
+import { formatDate } from '../lib/utils';
 
-interface Project {
-  id: string;
-  name: string;
-  slug: string;
-  description?: string;
-  visibility: string;
-  organization_id: string;
-  owner_id: string;
-  created_at: string;
-  updated_at: string;
-}
-
+/** Página de projetos — CRUD real via API. */
 export function Projects() {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [editingProject, setEditingProject] = useState<Project | null>(null);
-  const [searchText, setSearchText] = useState('');
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [workflows, setWorkflows] = useState([]);
-  const [workflowsLoading, setWorkflowsLoading] = useState(false);
-  const [workflowsModalVisible, setWorkflowsModalVisible] = useState(false);
-  const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });
+  const { projects, total, isLoading } = useProjects();
+  const createProject = useCreateProject();
+  const updateProject = useUpdateProject();
+  const deleteProject = useDeleteProject();
 
-  const fetchProjects = async () => {
-    setLoading(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState<Project | null>(null);
+  const [form, setForm] = useState({ name: '', description: '' });
+  const [error, setError] = useState<string | null>(null);
+
+  const openCreate = () => {
+    setEditing(null);
+    setForm({ name: '', description: '' });
+    setError(null);
+    setModalOpen(true);
+  };
+
+  const openEdit = (p: Project) => {
+    setEditing(p);
+    setForm({ name: p.name, description: p.description ?? '' });
+    setError(null);
+    setModalOpen(true);
+  };
+
+  const onSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!form.name.trim()) {
+      setError('O nome do projeto é obrigatório.');
+      return;
+    }
+    setError(null);
     try {
-      const response = await api.get('/projects', { params: { search: searchText } });
-      setProjects(response.data);
-    } catch (error) {
-      console.error('Failed to fetch projects:', error);
-    } finally {
-      setLoading(false);
+      if (editing) {
+        await updateProject.mutateAsync({ id: editing.id, data: { name: form.name.trim(), description: form.description.trim() } });
+      } else {
+        await createProject.mutateAsync({ name: form.name.trim(), description: form.description.trim() || undefined });
+      }
+      setModalOpen(false);
+    } catch {
+      setError('Não foi possível salvar o projeto.');
     }
   };
 
-  const fetchWorkflows = async (projectId: string) => {
-    setWorkflowsLoading(true);
+  const onDelete = async (p: Project) => {
+    if (!window.confirm(`Excluir o projeto "${p.name}"?`)) return;
     try {
-      const response = await api.get(`/projects/${projectId}/workflows`);
-      setWorkflows(response.data);
-      setWorkflowsModalVisible(true);
-    } catch (error) {
-      console.error('Failed to fetch workflows:', error);
-    } finally {
-      setWorkflowsLoading(false);
+      await deleteProject.mutateAsync(p.id);
+    } catch {
+      // erro tratado silenciosamente
     }
   };
 
-  const handleCreateProject = async (values: any) => {
-    try {
-      await api.post('/projects', values);
-      fetchProjects();
-      Modal.close();
-    } catch (error) {
-      console.error('Failed to create project:', error);
-    }
-  };
-
-  const handleUpdateProject = async (values: any) => {
-    try {
-      await api.put(`/projects/${editingProject?.id}`, values);
-      fetchProjects();
-      Modal.close();
-    } catch (error) {
-      console.error('Failed to update project:', error);
-    }
-  };
-
-  const handleDeleteProject = async (id: string) => {
-    try {
-      await api.delete(`/projects/${id}`);
-      fetchProjects();
-    } catch (error) {
-      console.error('Failed to delete project:', error);
-    }
-  };
-
-  const handleToggleVisibility = async (project: Project) => {
-    try {
-      await api.patch(`/projects/${project.id}`, { visibility: project.visibility === 'public' ? 'private' : 'public' });
-      fetchProjects();
-    } catch (error) {
-      console.error('Failed to update project visibility:', error);
-    }
-  };
-
-  const columns = [
-    {
-      title: 'Name',
-      dataIndex: 'name',
-      key: 'name',
-      width: 200,
-      render: (name: string, record: Project) => (
-        <div>
-          <div style={{ fontWeight: 500 }}>{name}</div>
-          <div style={{ color: '#999', fontSize: 12 }}>{record.slug}</div>
-        </div>
-      ),
-    },
-    {
-      title: 'Description',
-      dataIndex: 'description',
-      key: 'description',
-      ellipsis: true,
-      width: 200,
-    },
-    {
-      title: 'Visibility',
-      dataIndex: 'visibility',
-      key: 'visibility',
-      width: 100,
-      align: 'center',
-      render: (v: string) => (
-        <Tag color={v === 'public' ? 'green' : v === 'private' ? 'red' : 'blue'}>
-          {v}
-        </Tag>
-      ),
-    },
-    {
-      title: 'Created',
-      dataIndex: 'created_at',
-      key: 'created_at',
-      width: 150,
-      render: (date: string) => format(new Date(date), 'PP'),
-    },
-    {
-      title: 'Actions',
-      key: 'actions',
-      width: 150,
-      fixed: 'right',
-      render: (_: any, record: Project) => (
-        <Space>
-          <Tooltip title="View Workflows">
-            <Button type="link" onClick={() => {
-              setSelectedProject(record);
-              fetchWorkflows(record.id);
-            }}>
-              <EyeOutlined />
-            </Button>
-          </Tooltip>
-          <Tooltip title="Edit">
-            <Button type="link" onClick={() => {
-              setEditingProject(record);
-              setModalVisible(true);
-            }}>
-              <EditOutlined />
-            </Button>
-          </Tooltip>
-          <Tooltip title={record.visibility === 'public' ? 'Make Private' : 'Make Public'}>
-            <Button type="link" onClick={() => handleToggleVisibility(record)}>
-              <Switch checked={record.visibility === 'public'} size="small" />
-            </Button>
-          </Tooltip>
-          <Dropdown
-            menu={{
-              items: [
-                { label: 'Duplicate', key: 'duplicate', icon: <CopyOutlined /> },
-                { label: 'Export', key: 'export', icon: <DownloadOutlined /> },
-                { type: 'divider' },
-                { label: 'Delete', key: 'delete', icon: <DeleteOutlined />, danger: true, onClick: () => Modal.confirm({
-                  title: 'Delete Project',
-                  content: `Are you sure you want to delete "${record.name}"? This action cannot be undone.`,
-                  onOk: () => handleDeleteProject(record.id),
-                })},
-              ]}
-          >
-            <Button type="link"><MoreOutlined /></Button>
-          </Dropdown>
-        </Space>
-      ),
-    },
-  ];
-
-  useEffect(() => {
-    fetchProjects();
-  }, []);
+  const busy = createProject.isPending || updateProject.isPending || deleteProject.isPending;
 
   return (
-    <div className="projects-page">
+    <div>
       <div className="page-header">
         <div>
-          <h1>Projects</h1>
-          <p>Manage your projects and workflows</p>
+          <h1 className="page-title">Projetos</h1>
+          <p className="page-subtitle">Gerencie os projetos do SuperDev ({total} total)</p>
         </div>
-        <Button type="primary" onClick={() => { setEditingProject(null); setModalVisible(true); }}>
-          <PlusOutlined /> Create Project
-        </Button>
+        <button onClick={openCreate} className="btn-primary">
+          <Plus className="h-4 w-4" /> Novo projeto
+        </button>
       </div>
 
-      <Card>
-        <Form layout="inline" onFinish={() => fetchProjects()} style={{ marginBottom: 16 }}>
-          <Row gutter={16}>
-            <Col md={8}>
-              <Form.Item name="search" label="Search">
-                <Input.Search
-                  placeholder="Search projects..."
-                  value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
-                  onPressEnter={() => fetchProjects()}
-                  style={{ width: '100%' }}
-                  allowClear
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-        </Form>
-        
-        <Table
-          columns={columns}
-          dataSource={projects}
-          loading={loading}
-          rowKey="id"
-          pagination={{ pageSize: 10, showTotal: (total) => `Total ${total} projects` }}
-          onChange={(pagination) => setPagination(pagination)}
-        />
+      {isLoading ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="card p-5">
+              <div className="skeleton h-4 w-2/3" />
+              <div className="skeleton mt-3 h-3 w-1/2" />
+              <div className="skeleton mt-3 h-3 w-1/3" />
+            </div>
+          ))}
+        </div>
+      ) : projects.length === 0 ? (
+        <div className="card">
+          <div className="empty-state">
+            <FolderKanban className="h-8 w-8 text-ink-muted" />
+            <p className="empty-title">Nenhum projeto</p>
+            <p className="empty-hint">Crie o primeiro projeto para começar.</p>
+            <button onClick={openCreate} className="btn-primary mt-2">
+              <Plus className="h-4 w-4" /> Criar projeto
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="card">
+          <div className="table-wrap">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Projeto</th>
+                  <th>Visibilidade</th>
+                  <th>Criado em</th>
+                  <th>Atualizado</th>
+                  <th className="text-right">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {projects.map((p) => (
+                  <tr key={p.id}>
+                    <td>
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400">
+                          <FolderKanban className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate font-medium text-ink">{p.name}</p>
+                          {p.description && (
+                            <p className="max-w-md truncate text-xs text-ink-muted">{p.description}</p>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      {p.visibility === 'public' ? (
+                        <span className="badge-info">
+                          <Globe className="h-3 w-3" /> Público
+                        </span>
+                      ) : (
+                        <span className="badge-neutral">
+                          <Lock className="h-3 w-3" /> Privado
+                        </span>
+                      )}
+                    </td>
+                    <td className="text-ink-muted">{p.created_at ? formatDate(p.created_at) : '—'}</td>
+                    <td className="text-ink-muted">{p.updated_at ? formatDate(p.updated_at) : '—'}</td>
+                    <td className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <button
+                          onClick={() => openEdit(p)}
+                          className="rounded-lg p-1.5 text-ink-muted transition hover:bg-surface-alt hover:text-ink"
+                          aria-label={`Editar ${p.name}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => void onDelete(p)}
+                          className="rounded-lg p-1.5 text-ink-muted transition hover:bg-danger-50 hover:text-danger-600"
+                          aria-label={`Excluir ${p.name}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
-        {/* Create/Edit Project Modal */}
-        <Modal
-          title={editingProject ? 'Edit Project' : 'Create Project'}
-          visible={modalVisible}
-          onCancel={() => { setModalVisible(false); setEditingProject(null); }}
-          onOk={() => form.validateFields().then(handleCreateProject).catch(() => {})}
-          destroyOnClose
-        >
-          <Form layout="vertical">
-            <Form.Item name="name" label="Name" rules={[{ required: true, message: 'Please input project name' }]}>
-              <Input placeholder="Enter project name" />
-            </Form.Item>
-            <Form.Item name="slug" label="Slug" rules={[{ required: true, message: 'Please input slug' }]}>
-              <Input placeholder="Enter slug (unique identifier)" />
-            </Form.Item>
-            <Form.Item name="description" label="Description">
-              <Input.TextArea placeholder="Enter description" rows={3} />
-            </Form.Item>
-            <Form.Item name="visibility" label="Visibility" rules={[{ required: true }]}>
-              <Select placeholder="Select visibility" style={{ width: '100%' }}>
-                <Option value="private">Private</Option>
-                <Option value="team">Team</Option>
-                <Option value="public">Public</Option>
-              </Select>
-            </Form.Item>
-          </Form>
-        </Modal>
-
-        {/* Workflows Modal */}
-        <Modal
-          title={`Workflows in ${selectedProject?.name}`}
-          visible={workflowsModalVisible}
-          onCancel={() => setWorkflowsModalVisible(false)}
-          width={800}
-          footer={null}
-        >
-          <Table
-            dataSource={workflows}
-            columns={[
-              { title: 'Name', dataIndex: 'name', key: 'name' },
-              { title: 'Description', dataIndex: 'description', key: 'description', ellipsis: true },
-              { title: 'Version', dataIndex: 'version', key: 'version', width: 80 },
-              { title: 'Runs', dataIndex: 'run_count', key: 'run_count', width: 80, align: 'center' },
-              { title: 'Success Rate', dataIndex: 'success_rate', key: 'success_rate', width: 100, align: 'center', render: (v: number) => `${v}%` },
-              { title: 'Actions', key: 'actions', render: (_: any, record: any) => <Space><Button type="link" onClick={() => window.location.href = `/workflows/${record.id}`}><EyeOutlined /></Button><Button type="link" onClick={() => window.location.href = `/workflows/${record.id}/execute`}><PlayOutlined /></Button></Space> },
-            ]
-            dataSource={workflows}
-            loading={workflowsLoading}
-            pagination={false}
-          />
-        </Modal>
-      </Card>
+      <Modal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={editing ? 'Editar projeto' : 'Novo projeto'}
+        description={editing ? `Atualize os dados de ${editing.name}.` : 'Preencha os dados para criar um projeto.'}
+        footer={
+          <>
+            <button onClick={() => setModalOpen(false)} className="btn-secondary" disabled={busy}>
+              Cancelar
+            </button>
+            <button type="submit" form="project-form" className="btn-primary" disabled={busy}>
+              {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+              {editing ? 'Salvar alterações' : 'Criar projeto'}
+            </button>
+          </>
+        }
+      >
+        <form id="project-form" onSubmit={onSubmit} className="space-y-4">
+          {error && <p className="text-sm text-danger-600">{error}</p>}
+          <label className="block">
+            <span className="label">Nome *</span>
+            <input
+              className="input"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              placeholder="Meu projeto"
+            />
+          </label>
+          <label className="block">
+            <span className="label">Descrição</span>
+            <textarea
+              className="input min-h-20 resize-y"
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              placeholder="Breve descrição do projeto"
+            />
+          </label>
+        </form>
+      </Modal>
     </div>
   );
 }

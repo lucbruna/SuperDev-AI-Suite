@@ -1,321 +1,279 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Table, Button, Tag, Modal, Form, Input, Select, Space, Dropdown, Menu, Message, Divider, Tooltip, Badge, Row, Col } from 'antd';
-import { 
-  PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, 
-  MoreOutlined, SearchOutlined, FilterOutlined, DownloadOutlined,
-  TeamOutlined, SettingOutlined, DeleteOutlined, UserOutlined,
-  CheckCircleOutlined, CloseCircleOutlined, ClockCircleOutlined
-} from '@ant-design/icons';
-import { api } from '../services/api';
-import { format } from 'date-fns';
+import { useState, type FormEvent } from 'react';
+import { Building2, Plus, Pencil, Trash2, Users, Loader2 } from 'lucide-react';
+import { Modal } from '../components/Modal';
+import {
+  useOrganizations,
+  useCreateOrganization,
+  useUpdateOrganization,
+  useDeleteOrganization,
+  useOrganizationMembers,
+} from '../hooks/useOrganizations';
+import type { Organization } from '../types/api';
+import { formatDate } from '../lib/utils';
+import { cn } from '../lib/utils';
 
-const { Option } = Select;
+const PLAN_BADGE: Record<string, string> = {
+  free: 'badge-neutral',
+  pro: 'badge-info',
+  enterprise: 'badge-warning',
+};
 
-interface Organization {
-  id: string;
-  name: string;
-  slug: string;
-  description?: string;
-  plan: string;
-  is_active: boolean;
-  created_at: string;
-  member_count: number;
-  project_count: number;
-}
-
-interface Project {
-  id: string;
-  name: string;
-  slug: string;
-  description?: string;
-  visibility: string;
-  organization_id: string;
-  owner_id: string;
-  created_at: string;
-  updated_at: string;
-}
-
+/** Página de organizações — CRUD real via API. */
 export function Organizations() {
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [editingOrg, setEditingOrg] = useState<Organization | null>(null);
-  const [searchText, setSearchText] = useState('');
-  const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [projectsLoading, setProjectsLoading] = useState(false);
-  const [projectsModalVisible, setProjectsModalVisible] = useState(false);
-  const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });
+  const { organizations, total, isLoading } = useOrganizations();
+  const createOrg = useCreateOrganization();
+  const updateOrg = useUpdateOrganization();
+  const deleteOrg = useDeleteOrganization();
 
-  const fetchOrganizations = async () => {
-    setLoading(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState<Organization | null>(null);
+  const [membersOf, setMembersOf] = useState<Organization | null>(null);
+  const [form, setForm] = useState({ name: '', slug: '', description: '', plan: 'free' });
+  const [error, setError] = useState<string | null>(null);
+
+  const openCreate = () => {
+    setEditing(null);
+    setForm({ name: '', slug: '', description: '', plan: 'free' });
+    setError(null);
+    setModalOpen(true);
+  };
+
+  const openEdit = (org: Organization) => {
+    setEditing(org);
+    setForm({
+      name: org.name,
+      slug: org.slug,
+      description: org.description ?? '',
+      plan: org.plan ?? 'free',
+    });
+    setError(null);
+    setModalOpen(true);
+  };
+
+  const onSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!form.name.trim() || !form.slug.trim()) {
+      setError('Nome e slug são obrigatórios.');
+      return;
+    }
+    setError(null);
     try {
-      const response = await api.get('/organizations', { params: { search: searchText } });
-      setOrganizations(response.data);
-    } catch (error) {
-      console.error('Failed to fetch organizations:', error);
-    } finally {
-      setLoading(false);
+      if (editing) {
+        await updateOrg.mutateAsync({
+          id: editing.id,
+          data: { name: form.name.trim(), slug: form.slug.trim(), description: form.description.trim() || null, plan: form.plan },
+        });
+      } else {
+        await createOrg.mutateAsync({
+          name: form.name.trim(),
+          slug: form.slug.trim().toLowerCase().replace(/\s+/g, '-'),
+          description: form.description.trim() || undefined,
+          plan: form.plan,
+        });
+      }
+      setModalOpen(false);
+    } catch {
+      setError('Não foi possível salvar a organização.');
     }
   };
 
-  const fetchProjects = async (orgId: string) => {
-    setProjectsLoading(true);
+  const onDelete = async (org: Organization) => {
+    if (!window.confirm(`Excluir a organização "${org.name}"?`)) return;
     try {
-      const response = await api.get(`/organizations/${orgId}/projects`);
-      setProjects(response.data);
-      setProjectsModalVisible(true);
-    } catch (error) {
-      console.error('Failed to fetch projects:', error);
-    } finally {
-      setProjectsLoading(false);
+      await deleteOrg.mutateAsync(org.id);
+    } catch {
+      // erro tratado pelo fallback silencioso da mutation
     }
   };
 
-  const handleCreateOrg = async (values: any) => {
-    try {
-      await api.post('/organizations', values);
-      fetchOrganizations();
-      Modal.close();
-    } catch (error) {
-      console.error('Failed to create organization:', error);
-    }
-  };
-
-  const handleUpdateOrg = async (values: any) => {
-    try {
-      await api.put(`/organizations/${editingOrg?.id}`, values);
-      fetchOrganizations();
-      Modal.close();
-    } catch (error) {
-      console.error('Failed to update organization:', error);
-    }
-  };
-
-  const handleDeleteOrg = async (id: string) => {
-    try {
-      await api.delete(`/organizations/${id}`);
-      fetchOrganizations();
-    } catch (error) {
-      console.error('Failed to delete organization:', error);
-    }
-  };
-
-  const handleToggleStatus = async (org: Organization) => {
-    try {
-      await api.patch(`/organizations/${org.id}`, { is_active: !org.is_active });
-      fetchOrganizations();
-    } catch (error) {
-      console.error('Failed to update organization status:', error);
-    }
-  };
-
-  const columns = [
-    {
-      title: 'Name',
-      dataIndex: 'name',
-      key: 'name',
-      width: 200,
-      render: (name: string, record: Organization) => (
-        <div>
-          <div style={{ fontWeight: 500 }}>{name}</div>
-          <div style={{ color: '#999', fontSize: 12 }}>{record.slug}</div>
-        </div>
-      ),
-    },
-    {
-      title: 'Description',
-      dataIndex: 'description',
-      key: 'description',
-      ellipsis: true,
-      width: 200,
-    },
-    {
-      title: 'Plan',
-      dataIndex: 'plan',
-      key: 'plan',
-      width: 100,
-      render: (plan: string) => (
-        <Tag color={plan === 'enterprise' ? 'gold' : plan === 'pro' ? 'blue' : 'default'}>
-          {plan}
-        </Tag>
-      ),
-    },
-    {
-      title: 'Members',
-      dataIndex: 'member_count',
-      key: 'member_count',
-      width: 80,
-      align: 'center',
-    },
-    {
-      title: 'Projects',
-      dataIndex: 'project_count',
-      key: 'project_count',
-      width: 80,
-      align: 'center',
-    },
-    {
-      title: 'Status',
-      dataIndex: 'is_active',
-      key: 'is_active',
-      width: 100,
-      align: 'center',
-      render: (isActive: boolean) => (
-        <Tag color={isActive ? 'success' : 'default'}>
-          {isActive ? 'Active' : 'Inactive'}
-        </Tag>
-      ),
-    },
-    {
-      title: 'Created',
-      dataIndex: 'created_at',
-      key: 'created_at',
-      width: 150,
-      render: (date: string) => format(new Date(date), 'PP'),
-    },
-    {
-      title: 'Actions',
-      key: 'actions',
-      width: 150,
-      fixed: 'right',
-      render: (_: any, record: Organization) => (
-        <Space>
-          <Tooltip title="View Projects">
-            <Button type="link" onClick={() => {
-              setSelectedOrg(record);
-              fetchProjects(record.id);
-            }}>
-              <EyeOutlined />
-            </Button>
-          </Tooltip>
-          <Tooltip title="Edit">
-            <Button type="link" onClick={() => {
-              setEditingOrg(record);
-              setModalVisible(true);
-            }}>
-              <EditOutlined />
-            </Button>
-          </Tooltip>
-          <Tooltip title={record.is_active ? 'Deactivate' : 'Activate'}>
-            <Button type="link" onClick={() => handleToggleStatus(record)}>
-              {record.is_active ? <CheckCircleOutlined /> : <ClockCircleOutlined />}
-            </Button>
-          </Tooltip>
-          <Dropdown
-            menu={{
-              items: [
-                { label: 'View Members', key: 'members', icon: <TeamOutlined />, onClick: () => window.location.href = `/organizations/${record.id}/members` },
-                { label: 'Settings', key: 'settings', icon: <SettingOutlined />, onClick: () => window.location.href = `/organizations/${record.id}/settings` },
-                { type: 'divider' },
-                { label: 'Delete', key: 'delete', icon: <DeleteOutlined />, danger: true, onClick: () => Modal.confirm({
-                  title: 'Delete Organization',
-                  content: `Are you sure you want to delete "${record.name}"? This action cannot be undone.`,
-                  onOk: () => handleDeleteOrg(record.id),
-                })},
-              ]}
-          >
-            <Button type="link"><MoreOutlined /></Button>
-          </Dropdown>
-        </Space>
-      ),
-    },
-  ];
-
-  useEffect(() => {
-    fetchOrganizations();
-  }, []);
+  const { members } = useOrganizationMembers(membersOf?.id);
+  const busy = createOrg.isPending || updateOrg.isPending || deleteOrg.isPending;
 
   return (
-    <div className="organizations-page">
+    <div>
       <div className="page-header">
         <div>
-          <h1>Organizations</h1>
-          <p>Manage your organizations and their settings</p>
+          <h1 className="page-title">Organizações</h1>
+          <p className="page-subtitle">
+            Gerencie as organizações do SuperDev ({total} total)
+          </p>
         </div>
-        <Button type="primary" onClick={() => { setEditingOrg(null); setModalVisible(true); }}>
-          <PlusOutlined /> Create Organization
-        </Button>
+        <button onClick={openCreate} className="btn-primary">
+          <Plus className="h-4 w-4" /> Nova organização
+        </button>
       </div>
 
-      <Card>
-        <Form layout="inline" onFinish={() => fetchOrganizations()} style={{ marginBottom: 16 }}>
-          <Row gutter={16}>
-            <Col md={8}>
-              <Form.Item name="search" label="Search">
-                <Input.Search
-                  placeholder="Search organizations..."
-                  value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
-                  onPressEnter={() => fetchOrganizations()}
-                  style={{ width: '100%' }}
-                  allowClear
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-        </Form>
-        
-        <Table
-          columns={columns}
-          dataSource={organizations}
-          loading={loading}
-          rowKey="id"
-          pagination={{ pageSize: 10, showTotal: (total) => `Total ${total} organizations` }}
-          onChange={(pagination) => setPagination(pagination)}
-        />
+      {isLoading ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="card p-5">
+              <div className="skeleton h-4 w-2/3" />
+              <div className="skeleton mt-3 h-3 w-1/2" />
+              <div className="skeleton mt-3 h-3 w-1/3" />
+            </div>
+          ))}
+        </div>
+      ) : organizations.length === 0 ? (
+        <div className="card">
+          <div className="empty-state">
+            <Building2 className="h-8 w-8 text-ink-muted" />
+            <p className="empty-title">Nenhuma organização</p>
+            <p className="empty-hint">Crie a primeira organização para começar.</p>
+            <button onClick={openCreate} className="btn-primary mt-2">
+              <Plus className="h-4 w-4" /> Criar organização
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {organizations.map((org) => (
+            <div key={org.id} className="card card-hover flex flex-col p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400">
+                    <Building2 className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold text-ink">{org.name}</p>
+                    <p className="text-xs text-ink-muted">/{org.slug}</p>
+                  </div>
+                </div>
+                <span className={cn('badge shrink-0', PLAN_BADGE[org.plan ?? 'free'] ?? 'badge-neutral')}>
+                  {org.plan ?? 'free'}
+                </span>
+              </div>
 
-        {/* Create/Edit Organization Modal */}
-        <Modal
-          title={editingOrg ? 'Edit Organization' : 'Create Organization'}
-          visible={modalVisible}
-          onCancel={() => { setModalVisible(false); setEditingOrg(null); }}
-          onOk={() => form.validateFields().then(handleCreateOrg).catch(() => {})}
-          destroyOnClose
-        >
-          <Form layout="vertical">
-            <Form.Item name="name" label="Name" rules={[{ required: true, message: 'Please input organization name' }]}>
-              <Input placeholder="Enter organization name" />
-            </Form.Item>
-            <Form.Item name="slug" label="Slug" rules={[{ required: true, message: 'Please input slug' }]}>
-              <Input placeholder="Enter slug (unique identifier)" />
-            </Form.Item>
-            <Form.Item name="description" label="Description">
-              <Input.TextArea placeholder="Enter description" rows={3} />
-            </Form.Item>
-            <Form.Item name="plan" label="Plan" rules={[{ required: true }]}>
-              <Select placeholder="Select plan" style={{ width: '100%' }}>
-                <Option value="free">Free</Option>
-                <Option value="pro">Pro</Option>
-                <Option value="enterprise">Enterprise</Option>
-              </Select>
-            </Form.Item>
-          </Form>
-        </Modal>
+              <p className="mt-3 line-clamp-2 min-h-[2.5rem] text-sm text-ink-muted">
+                {org.description || 'Sem descrição.'}
+              </p>
 
-        {/* Projects Modal */}
-        <Modal
-          title={`Projects in ${selectedOrg?.name}`}
-          visible={projectsModalVisible}
-          onCancel={() => setProjectsModalVisible(false)}
-          width={800}
-          footer={null}
-        >
-          <Table
-            dataSource={projects}
-            columns={[
-              { title: 'Name', dataIndex: 'name', key: 'name' },
-              { title: 'Description', dataIndex: 'description', key: 'description', ellipsis: true },
-              { title: 'Visibility', dataIndex: 'visibility', key: 'visibility', render: (v: string) => <Tag color={v === 'public' ? 'green' : v === 'private' ? 'red' : 'blue'}>{v}</Tag> },
-              { title: 'Created', dataIndex: 'created_at', key: 'created_at', render: (d: string) => format(new Date(d), 'PP') },
-              { title: 'Actions', key: 'actions', render: (_: any, record: Project) => <Button type="link" onClick={() => window.location.href = `/projects/${record.id}`}>View</Button> },
-            ]
-            dataSource={projects}
-            loading={projectsLoading}
-            pagination={false}
-          />
-        </Modal>
-      </Card>
+              <div className="mt-4 flex items-center gap-4 border-t border-line pt-3 text-xs text-ink-muted">
+                <button
+                  onClick={() => setMembersOf(org)}
+                  className="flex items-center gap-1.5 transition hover:text-ink"
+                >
+                  <Users className="h-3.5 w-3.5" /> {org.memberCount ?? 0} membros
+                </button>
+                <span>{org.createdAt ? formatDate(org.createdAt) : '—'}</span>
+                <div className="ml-auto flex gap-1">
+                  <button
+                    onClick={() => openEdit(org)}
+                    className="rounded-lg p-1.5 text-ink-muted transition hover:bg-surface-alt hover:text-ink"
+                    aria-label={`Editar ${org.name}`}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => void onDelete(org)}
+                    className="rounded-lg p-1.5 text-ink-muted transition hover:bg-danger-50 hover:text-danger-600"
+                    aria-label={`Excluir ${org.name}`}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Modal criar/editar */}
+      <Modal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={editing ? 'Editar organização' : 'Nova organização'}
+        description={editing ? `Atualize os dados de ${editing.name}.` : 'Preencha os dados para criar uma organização.'}
+        footer={
+          <>
+            <button onClick={() => setModalOpen(false)} className="btn-secondary" disabled={busy}>
+              Cancelar
+            </button>
+            <button type="submit" form="org-form" className="btn-primary" disabled={busy}>
+              {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+              {editing ? 'Salvar alterações' : 'Criar organização'}
+            </button>
+          </>
+        }
+      >
+        <form id="org-form" onSubmit={onSubmit} className="space-y-4">
+          {error && <p className="text-sm text-danger-600">{error}</p>}
+          <label className="block">
+            <span className="label">Nome *</span>
+            <input
+              className="input"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              placeholder="Acme Inc."
+            />
+          </label>
+          <label className="block">
+            <span className="label">Slug *</span>
+            <input
+              className="input"
+              value={form.slug}
+              onChange={(e) => setForm({ ...form, slug: e.target.value })}
+              placeholder="acme-inc"
+              disabled={Boolean(editing)}
+            />
+          </label>
+          <label className="block">
+            <span className="label">Descrição</span>
+            <textarea
+              className="input min-h-20 resize-y"
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              placeholder="Breve descrição da organização"
+            />
+          </label>
+          <label className="block">
+            <span className="label">Plano</span>
+            <select className="select" value={form.plan} onChange={(e) => setForm({ ...form, plan: e.target.value })}>
+              <option value="free">Free</option>
+              <option value="pro">Pro</option>
+              <option value="enterprise">Enterprise</option>
+            </select>
+          </label>
+        </form>
+      </Modal>
+
+      {/* Modal membros */}
+      <Modal
+        open={Boolean(membersOf)}
+        onClose={() => setMembersOf(null)}
+        title={`Membros · ${membersOf?.name ?? ''}`}
+        description="Membros vinculados a esta organização."
+      >
+        {members.length === 0 ? (
+          <div className="empty-state">
+            <Users className="h-6 w-6 text-ink-muted" />
+            <p className="empty-title">Sem membros</p>
+            <p className="empty-hint">Convide usuários para esta organização.</p>
+          </div>
+        ) : (
+          <div className="table-wrap">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Usuário</th>
+                  <th>Função</th>
+                </tr>
+              </thead>
+              <tbody>
+                {members.map((m) => (
+                  <tr key={m.id}>
+                    <td className="font-medium text-ink">
+                      {m.user?.full_name || m.user?.email || m.user_id}
+                    </td>
+                    <td>
+                      <span className={m.role === 'owner' ? 'badge-warning' : 'badge-neutral'}>{m.role}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

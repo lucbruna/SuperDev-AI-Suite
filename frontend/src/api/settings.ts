@@ -1,6 +1,6 @@
 import apiClient from "./client";
 import type { ApiResponse } from "@/types/api";
-import type { GeneralSettings, AppearanceSettings, ProviderConfig } from "@/types/settings";
+import type { GeneralSettings, AppearanceSettings, ProviderConfig, LLMSettings } from "@/types/settings";
 
 export const settingsApi = {
   getGeneralSettings: async (): Promise<GeneralSettings> => {
@@ -38,5 +38,19 @@ export const settingsApi = {
       `/settings/providers/${id}/test`,
     );
     return response.data.data;
+  },
+
+  getLLMSettings: async (): Promise<LLMSettings> => {
+    const response = await apiClient.get<ApiResponse<LLMSettings>>("/settings/llm");
+    return response.data.data;
+  },
+
+  updateLLMSettings: async (data: Partial<LLMSettings>): Promise<LLMSettings> => {
+    const response = await apiClient.put<ApiResponse<LLMSettings>>("/settings/llm", data);
+    return response.data.data;
+  },
+
+  resetSettings: async (): Promise<void> => {
+    await apiClient.post("/settings/reset");
   },
 };

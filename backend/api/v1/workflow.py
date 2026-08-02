@@ -11,6 +11,7 @@ from backend.auth.rbac import Action, Resource, require_permission
 from backend.database.session import get_db
 from backend.dependencies import get_current_active_user
 from backend.workflow_integration.service import WorkflowIntegrationService, get_workflow_integration_service
+from backend.workflow.workflow_manager import workflow_manager
 
 router = APIRouter(dependencies=[Depends(get_current_active_user)])
 
@@ -66,14 +67,14 @@ class VerificationWorkflowResponse(BaseModel):
     correction: dict[str, Any] | None = None
 
 
-@router.post("/workflows", response_model=CreateWorkflowResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=CreateWorkflowResponse, status_code=status.HTTP_201_CREATED)
 async def create_workflow(
     request: CreateWorkflowRequest,
     db: AsyncSession = Depends(get_db),
     service: WorkflowIntegrationService = Depends(get_workflow_integration_service),
     _user: Any = Depends(require_permission(Resource.WORKFLOWS, Action.CREATE)),
 ) -> CreateWorkflowResponse:
-    definition = service.workflow_manager.create_definition(
+    definition = workflow_manager.create_definition(
         name=request.name,
         description=request.description,
         steps=request.steps,
@@ -85,12 +86,12 @@ async def create_workflow(
         workflow_id=str(definition.id),
         name=definition.name,
         description=definition.description,
-        steps=[s.model_dump() for s in definition.steps],
+        steps=[s.to_dict() for s in definition.steps],
         tags=definition.tags,
     )
 
 
-@router.get("/workflows", response_model=list[CreateWorkflowResponse])
+@router.get("", response_model=list[CreateWorkflowResponse])
 async def list_workflows(
     tags: list[str] | None = None,
     db: AsyncSession = Depends(get_db),
@@ -103,14 +104,14 @@ async def list_workflows(
             workflow_id=str(d.id),
             name=d.name,
             description=d.description,
-            steps=[s.model_dump() for s in d.steps],
+            steps=[s.to_dict() for s in d.steps],
             tags=d.tags,
         )
         for d in definitions
     ]
 
 
-@router.get("/workflows/{workflow_id}", response_model=CreateWorkflowResponse)
+@router.get("/{workflow_id}", response_model=CreateWorkflowResponse)
 async def get_workflow(
     workflow_id: UUID,
     db: AsyncSession = Depends(get_db),
@@ -124,12 +125,12 @@ async def get_workflow(
         workflow_id=str(definition.id),
         name=definition.name,
         description=definition.description,
-        steps=[s.model_dump() for s in definition.steps],
+        steps=[s.to_dict() for s in definition.steps],
         tags=definition.tags,
     )
 
 
-@router.post("/workflows/{workflow_id}/execute", response_model=ExecuteWorkflowResponse)
+@router.post("/{workflow_id}/execute", response_model=ExecuteWorkflowResponse)
 async def execute_workflow(
     workflow_id: UUID,
     request: ExecuteWorkflowRequest = ExecuteWorkflowRequest(),
@@ -205,6 +206,6 @@ async def create_verification_workflow(
         workflow_id=str(definition.id),
         name=definition.name,
         description=definition.description,
-        steps=[s.model_dump() for s in definition.steps],
+        steps=[s.to_dict() for s in definition.steps],
         tags=definition.tags,
     )

@@ -44,8 +44,17 @@ export function useProjects(params?: ProjectListParams) {
   });
 
   return {
-    projects: projectsResponse?.data ?? [],
-    pagination: projectsResponse?.pagination,
+    projects: projectsResponse?.items ?? [],
+    pagination: projectsResponse
+      ? {
+          page: projectsResponse.page,
+          limit: projectsResponse.page_size,
+          totalItems: projectsResponse.total,
+          totalPages: projectsResponse.pages,
+          hasNextPage: projectsResponse.has_next,
+          hasPrevPage: projectsResponse.has_prev,
+        }
+      : undefined,
     isLoading,
     error,
     createProject,

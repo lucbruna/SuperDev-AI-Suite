@@ -23,6 +23,9 @@ class ResolverRegistry:
     def get(self, type_name: str, field_name: str) -> Callable | None:
         return self._resolvers.get(f"{type_name}.{field_name}")
 
+    def get_resolver(self, type_name: str, field_name: str) -> Callable | None:
+        return self.get(type_name, field_name)
+
     def has_resolver(self, type_name: str, field_name: str) -> bool:
         return f"{type_name}.{field_name}" in self._resolvers
 

@@ -1,460 +1,205 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Table, Button, Tag, Modal, Form, Input, Select, Space, Switch, Tooltip, Divider, Row, Col, Badge, Dropdown, Menu, Avatar, Tabs, Segmented, Progress, Statistic, List, Spin, Collapse, Descriptions, Typography, Alert, Empty } from 'antd';
-import { 
-  PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, 
-  MoreOutlined, SearchOutlined, FilterOutlined, DownloadOutlined,
-  PlayOutlined, StopOutlined, PauseOutlined, ReloadOutlined,
-  CopyOutlined, CodeOutlined, TerminalOutlined, RobotOutlined,
-  CheckCircleOutlined, CloseCircleOutlined, ExclamationCircleOutlined,
-  ClockCircleOutlined, FileTextOutlined, ArrowUpOutlined, ArrowDownOutlined,
-  EnvironmentOutlined, DatabaseOutlined, UserOutlined, SettingOutlined,
-  WarningOutlined, InfoCircleOutlined, SafetyOutlined, ExperimentOutlined,
-  HistoryOutlined, LogoutOutlined, LinkOutlined, ShareAltOutlined
-} from '@ant-design/icons';
-import { api } from '../services/api';
-import { format } from 'date-fns';
+import { useState, type FormEvent } from 'react';
+import { Workflow as WorkflowIcon, Plus, Play, Loader2, Zap } from 'lucide-react';
+import { Modal } from '../components/Modal';
+import { useWorkflows, useCreateWorkflow, useExecuteWorkflow } from '../hooks/useWorkflows';
+import type { Workflow } from '../types/api';
 
-interface Workflow {
-  id: string;
-  name: string;
-  description: string;
-  definition: any;
-  version: number;
-  tags: string[];
-  is_template: boolean;
-  project_id: string;
-  created_by: string;
-  created_at: string;
-  updated_at: string;
-}
-
-interface WorkflowRun {
-  id: string;
-  workflow_id: string;
-  status: string;
-  variables: any;
-  result: any;
-  error: string;
-  started_at: string;
-  completed_at: string;
-  created_at: string;
-}
-
+/** Página de workflows — criação e execução reais via API. */
 export function Workflows() {
-  const [workflows, setWorkflows] = useState<Workflow[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [editingWorkflow, setEditingWorkflow] = useState<Workflow | null>(null);
-  const [searchText, setSearchText] = useState('');
-  const [selectedWorkflow, setSelectedWorkflow] = useState<Workflow | null>(null);
-  const [runs, setRuns] = useState<WorkflowRun[]>([]);
-  const [runsLoading, setRunsLoading] = useState(false);
-  const [runsModalVisible, setRunsModalVisible] = useState(false);
-  const [selectedRun, setSelectedRun] = useState<WorkflowRun | null>(null);
-  const [runLogs, setRunLogs] = useState<string[]>([]);
-  const [logsModalVisible, setLogsModalVisible] = useState(false);
-  const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });
-  const [activeTab, setActiveTab] = useState('workflows');
+  const { workflows, isLoading } = useWorkflows();
+  const createWorkflow = useCreateWorkflow();
+  const executeWorkflow = useExecuteWorkflow();
 
-  const fetchWorkflows = async () => {
-    setLoading(true);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [form, setForm] = useState({ name: '', description: '', steps: '1' });
+  const [error, setError] = useState<string | null>(null);
+  const [executing, setExecuting] = useState<Workflow | null>(null);
+  const [execResult, setExecResult] = useState<string | null>(null);
+  const [execError, setExecError] = useState<string | null>(null);
+
+  const onCreate = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!form.name.trim()) {
+      setError('O nome do workflow é obrigatório.');
+      return;
+    }
+    setError(null);
+    const stepsCount = Math.max(1, Math.min(20, parseInt(form.steps, 10) || 1));
     try {
-      const response = await api.get('/workflows', { params: { search: searchText } });
-      setWorkflows(response.data);
-    } catch (error) {
-      console.error('Failed to fetch workflows:', error);
-    } finally {
-      setLoading(false);
+      await createWorkflow.mutateAsync({
+        name: form.name.trim(),
+        description: form.description.trim() || undefined,
+        steps: Array.from({ length: stepsCount }, (_, i) => ({ step: i + 1 })),
+      });
+      setCreateOpen(false);
+      setForm({ name: '', description: '', steps: '1' });
+    } catch {
+      setError('Não foi possível criar o workflow.');
     }
   };
 
-  const fetchRuns = async (workflowId: string) => {
-    setRunsLoading(true);
+  const onExecute = async (wf: Workflow) => {
+    setExecuting(wf);
+    setExecResult(null);
+    setExecError(null);
     try {
-      const response = await api.get(`/workflows/${workflowId}/runs`);
-      setRuns(response.data);
-      setRunsModalVisible(true);
-    } catch (error) {
-      console.error('Failed to fetch runs:', error);
-    } finally {
-      setRunsLoading(false);
+      const result = await executeWorkflow.mutateAsync({ id: wf.workflow_id });
+      setExecResult(
+        `Execução ${result.run_id ?? '—'} iniciada (${result.status}). ${JSON.stringify(result.result ?? {})}`
+      );
+    } catch {
+      setExecError('Não foi possível executar o workflow.');
     }
-  };
-
-  const fetchRunLogs = async (runId: string) => {
-    try {
-      const response = await api.get(`/workflow-runs/${runId}/logs`);
-      setRunLogs(response.data.logs || []);
-      setLogsModalVisible(true);
-    } catch (error) {
-      console.error('Failed to fetch run logs:', error);
-    }
-  };
-
-  const handleCreateWorkflow = async (values: any) => {
-    try {
-      await api.post('/workflows', values);
-      fetchWorkflows();
-      Modal.close();
-    } catch (error) {
-      console.error('Failed to create workflow:', error);
-    }
-  };
-
-  const handleUpdateWorkflow = async (values: any) => {
-    try {
-      await api.put(`/workflows/${editingWorkflow?.id}`, values);
-      fetchWorkflows();
-      Modal.close();
-    } catch (error) {
-      console.error('Failed to update workflow:', error);
-    }
-  };
-
-  const handleDeleteWorkflow = async (id: string) => {
-    try {
-      await api.delete(`/workflows/${id}`);
-      fetchWorkflows();
-    } catch (error) {
-      console.error('Failed to delete workflow:', error);
-    }
-  };
-
-  const handleExecuteWorkflow = async (workflow: Workflow, variables?: any) => {
-    try {
-      const response = await api.post(`/workflows/${workflow.id}/execute`, { variables });
-      fetchWorkflows();
-      Message.success('Workflow execution started');
-    } catch (error) {
-      console.error('Failed to execute workflow:', error);
-    }
-  };
-
-  const handleCancelRun = async (runId: string) => {
-    try {
-      await api.post(`/workflow-runs/${runId}/cancel`);
-      if (selectedWorkflow) fetchRuns(selectedWorkflow.id);
-    } catch (error) {
-      console.error('Failed to cancel run:', error);
-    }
-  };
-
-  const handleRetryRun = async (runId: string) => {
-    try {
-      await api.post(`/workflow-runs/${runId}/retry`);
-      if (selectedWorkflow) fetchRuns(selectedWorkflow.id);
-    } catch (error) {
-      console.error('Failed to retry run:', error);
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'running': return 'blue';
-      case 'completed': return 'green';
-      case 'failed': return 'red';
-      case 'cancelled': return 'orange';
-      case 'pending': return 'grey';
-      default: return 'default';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'running': return <ClockCircleOutlined style={{ color: '#1890ff' }} />;
-      case 'completed': return <CheckCircleOutlined style={{ color: '#52c41a' }} />;
-      case 'failed': return <CloseCircleOutlined style={{ color: '#ff4d4f' }} />;
-      case 'cancelled': return <StopOutlined style={{ color: '#faad14' }} />;
-      case 'pending': return <ClockCircleOutlined style={{ color: '#d9d9d9' }} />;
-      default: return <ClockCircleOutlined style={{ color: '#d9d9d9' }} />;
-    }
-  };
-
-  const columns = [
-    {
-      title: 'Name',
-      dataIndex: 'name',
-      key: 'name',
-      width: 200,
-      render: (name: string, record: Workflow) => (
-        <div>
-          <div style={{ fontWeight: 500 }}>{name}</div>
-          <div style={{ color: '#999', fontSize: 12 }}>
-            v{record.version} • {record.is_template ? 'Template' : 'Workflow'}
-          </div>
-        </div>
-      ),
-    },
-    {
-      title: 'Description',
-      dataIndex: 'description',
-      key: 'description',
-      ellipsis: true,
-      width: 200,
-    },
-    {
-      title: 'Project',
-      dataIndex: 'project_id',
-      key: 'project_id',
-      width: 150,
-      render: (projectId: string) => (
-        <Tag color="blue">{projectId.substring(0, 8)}...</Tag>
-      ),
-    },
-    {
-      title: 'Version',
-      dataIndex: 'version',
-      key: 'version',
-      width: 80,
-      align: 'center',
-    },
-    {
-      title: 'Status',
-      dataIndex: 'is_template',
-      key: 'is_template',
-      width: 100,
-      align: 'center',
-      render: (isTemplate: boolean) => isTemplate ? (
-        <Tag color="purple">Template</Tag>
-      ) : (
-        <Tag color="green">Active</Tag>
-      ),
-    },
-    {
-      title: 'Created',
-      dataIndex: 'created_at',
-      key: 'created_at',
-      width: 150,
-      render: (date: string) => format(new Date(date), 'PP'),
-    },
-    {
-      title: 'Actions',
-      key: 'actions',
-      width: 200,
-      fixed: 'right',
-      render: (_: any, record: Workflow) => (
-        <Space>
-          <Tooltip title="View Runs">
-            <Button type="link" onClick={() => {
-              setSelectedWorkflow(record);
-              fetchRuns(record.id);
-            }}>
-              <EyeOutlined />
-            </Button>
-          </Tooltip>
-          <Tooltip title="Execute">
-            <Button type="link" onClick={() => handleExecuteWorkflow(record)} danger={!selectedWorkflow}>
-              <PlayOutlined />
-            </Button>
-          </Tooltip>
-          <Tooltip title="Edit">
-            <Button type="link" onClick={() => {
-              setEditingWorkflow(record);
-              setModalVisible(true);
-            }}>
-              <EditOutlined />
-            </Button>
-          </Tooltip>
-          <Tooltip title="Duplicate">
-            <Button type="link" onClick={() => {
-              const copy = { ...record, name: `${record.name} (copy)`, version: 1, created_at: new Date().toISOString() };
-              setEditingWorkflow(copy);
-              setModalVisible(true);
-            }}>
-              <CopyOutlined />
-            </Button>
-          </Tooltip>
-          <Dropdown
-            menu={{
-              items: [
-                { label: 'Export', key: 'export', icon: <DownloadOutlined /> },
-                { label: 'View Definition', key: 'view_def', icon: <CodeOutlined /> },
-                { type: 'divider' },
-                { label: 'Delete', key: 'delete', icon: <DeleteOutlined />, danger: true, onClick: () => Modal.confirm({
-                  title: 'Delete Workflow',
-                  content: `Are you sure you want to delete "${record.name}"? This action cannot be undone.`,
-                  onOk: () => handleDeleteWorkflow(record.id),
-                })},
-              ]}
-          >
-            <Button type="link"><MoreOutlined /></Button>
-          </Dropdown>
-        </Space>
-      ),
-    },
-  ];
-
-  useEffect(() => {
-    fetchWorkflows();
-  }, []);
-
-  const statusColors = {
-    running: 'blue',
-    completed: 'green',
-    failed: 'red',
-    cancelled: 'orange',
-    pending: 'default',
   };
 
   return (
-    <div className="workflows-page">
+    <div>
       <div className="page-header">
         <div>
-          <h1>Workflows</h1>
-          <p>Create, manage, and execute automated workflows</p>
+          <h1 className="page-title">Workflows</h1>
+          <p className="page-subtitle">Crie e execute workflows de automação</p>
         </div>
-        <Button type="primary" onClick={() => { setEditingWorkflow(null); setModalVisible(true); }}>
-          <PlusOutlined /> Create Workflow
-        </Button>
+        <button onClick={() => { setForm({ name: '', description: '', steps: '1' }); setError(null); setCreateOpen(true); }} className="btn-primary">
+          <Plus className="h-4 w-4" /> Novo workflow
+        </button>
       </div>
 
-      <Tabs activeKey={activeTab} onChange={setActiveTab} style={{ marginBottom: 24 }}>
-        <Tabs.TabPane tab="Workflows" key="workflows" />
-        <Tabs.TabPane tab="Templates" key="templates" />
-      </Tabs>
-
-      <Card>
-        <Form layout="inline" onFinish={() => fetchWorkflows()} style={{ marginBottom: 16 }}>
-          <Row gutter={16}>
-            <Col md={8}>
-              <Form.Item name="search" label="Search">
-                <Input.Search
-                  placeholder="Search workflows..."
-                  value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
-                  onPressEnter={() => fetchWorkflows()}
-                  style={{ width: '100%' }}
-                  allowClear
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-        </Form>
-        
-        <Table
-          columns={columns}
-          dataSource={workflows}
-          loading={loading}
-          rowKey="id"
-          pagination={{ pageSize: 10, showTotal: (total) => `Total ${total} workflows` }}
-          onChange={(pagination) => setPagination(pagination)}
-        />
-
-        {/* Create/Edit Workflow Modal */}
-        <Modal
-          title={editingWorkflow ? 'Edit Workflow' : 'Create Workflow'}
-          visible={modalVisible}
-          onCancel={() => { setModalVisible(false); setEditingWorkflow(null); }}
-          onOk={() => form.validateFields().then(editingWorkflow ? handleUpdateWorkflow : handleCreateWorkflow).catch(() => {})}
-          destroyOnClose
-        >
-          <Form layout="vertical">
-            <Form.Item name="name" label="Name" rules={[{ required: true, message: 'Please input workflow name' }]}>
-              <Input placeholder="Enter workflow name" />
-            </Form.Item>
-            <Form.Item name="slug" label="Slug" rules={[{ required: true, message: 'Please input slug' }]}>
-              <Input placeholder="Enter slug (unique identifier)" />
-            </Form.Item>
-            <Form.Item name="description" label="Description">
-              <Input.TextArea placeholder="Enter description" rows={3} />
-            </Form.Item>
-            <Form.Item name="project_id" label="Project" rules={[{ required: true, message: 'Please select a project' }]}>
-              <Select placeholder="Select project" style={{ width: '100%' }}>
-                <Option value="proj-1">Default Project</Option>
-              </Select>
-            </Form.Item>
-            <Form.Item name="definition" label="Workflow Definition" rules={[{ required: true, message: 'Please provide workflow definition' }]}>
-              <Input.TextArea placeholder="Workflow definition (JSON)" rows={10} />
-            </Form.Item>
-            <Form.Item name="is_template" label="Is Template" valuePropName="checked">
-              <Switch />
-            </Form.Item>
-            <Form.Item name="tags" label="Tags">
-              <Input placeholder="Comma-separated tags" />
-            </Form.Item>
-          </Form>
-        </Modal>
-
-        {/* Runs Modal */}
-        <Modal
-          title={`Runs for ${selectedWorkflow?.name}`}
-          visible={runsModalVisible}
-          onCancel={() => setRunsModalVisible(false)}
-          width={1000}
-          footer={null}
-        >
-          <Table
-            dataSource={runs}
-            columns={[
-              { title: 'Run ID', dataIndex: 'id', key: 'id', width: 150, render: (v: string) => <span>{v.substring(0, 8)}...</span> },
-              { title: 'Status', dataIndex: 'status', key: 'status', width: 100, align: 'center', render: (v: string) => <Tag color={getStatusColor(v)}>{getStatusIcon(v)} {v}</Tag> },
-              { title: 'Started', dataIndex: 'started_at', key: 'started_at', width: 150, render: (d: string) => format(new Date(d), 'PPp') },
-              { title: 'Completed', dataIndex: 'completed_at', key: 'completed_at', width: 150, render: (d: string) => d ? format(new Date(d), 'PPp') : '—' },
-              { title: 'Duration', dataIndex: 'duration_ms', key: 'duration_ms', width: 100, align: 'center', render: (v: number) => v ? `${(v / 1000).toFixed(1)}s` : '—' },
-              { title: 'Actions', key: 'actions', width: 150, render: (_: any, record: WorkflowRun) => <Space>
-                <Tooltip title="View Logs"><Button type="link" size="small" onClick={() => { setSelectedRun(record); fetchRunLogs(record.id); }}><FileTextOutlined /></Button></Tooltip>
-                {record.status === 'running' && <Tooltip title="Cancel"><Button type="link" size="small" danger onClick={() => handleCancelRun(record.id)}><StopOutlined /></Button></Tooltip>}
-                {record.status === 'failed' && <Tooltip title="Retry"><Button type="link" size="small" onClick={() => handleRetryRun(record.id)}><ReloadOutlined /></Button></Tooltip>}
-              </Space> },
-            ]
-            dataSource={runs}
-            loading={runsLoading}
-            pagination={false}
-          />
-        </Modal>
-
-        {/* Logs Modal */}
-        <Modal
-          title={`Logs for ${selectedRun?.id?.substring(0, 8)}`}
-          visible={logsModalVisible}
-          onCancel={() => setLogsModalVisible(false)}
-          width={900}
-          footer={null}
-        >
-          <div style={{ height: 500, overflow: 'auto', fontFamily: 'monospace', fontSize: 12, background: '#1e1e1e', color: '#d4d4d4', padding: 16, borderRadius: 4 }}>
-            {runLogs.map((log: string, i: number) => (
-              <div key={i} style={{ borderBottom: '1px solid #333', padding: '4px 0' }}>
-                {log}
-              </div>
-            ))}
+      {isLoading ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="card p-5">
+              <div className="skeleton h-4 w-2/3" />
+              <div className="skeleton mt-3 h-3 w-1/2" />
+            </div>
+          ))}
+        </div>
+      ) : workflows.length === 0 ? (
+        <div className="card">
+          <div className="empty-state">
+            <WorkflowIcon className="h-8 w-8 text-ink-muted" />
+            <p className="empty-title">Nenhum workflow</p>
+            <p className="empty-hint">Crie um workflow para automatizar seus agentes.</p>
+            <button onClick={() => { setForm({ name: '', description: '', steps: '1' }); setError(null); setCreateOpen(true); }} className="btn-primary mt-2">
+              <Plus className="h-4 w-4" /> Criar workflow
+            </button>
           </div>
-        </Modal>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {workflows.map((wf) => (
+            <div key={wf.workflow_id} className="card card-hover flex flex-col p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-400">
+                    <WorkflowIcon className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold text-ink">{wf.name}</p>
+                    <p className="text-xs text-ink-muted">{wf.steps?.length ?? 0} etapas</p>
+                  </div>
+                </div>
+              </div>
 
-        {/* Create/Edit Modal */}
-        <Modal
-          title={editingWorkflow ? 'Edit Workflow' : 'Create Workflow'}
-          visible={modalVisible}
-          onCancel={() => { setModalVisible(false); setEditingWorkflow(null); }}
-          onOk={() => form.validateFields().then(editingWorkflow ? handleUpdateWorkflow : handleCreateWorkflow).catch(() => {})}
-          destroyOnClose
-        >
-          <Form layout="vertical">
-            <Form.Item name="name" label="Name" rules={[{ required: true, message: 'Please input workflow name' }]}>
-              <Input placeholder="Enter workflow name" />
-            </Form.Item>
-            <Form.Item name="slug" label="Slug" rules={[{ required: true, message: 'Please input slug' }]}>
-              <Input placeholder="Enter slug (unique identifier)" />
-            </Form.Item>
-            <Form.Item name="description" label="Description">
-              <Input.TextArea placeholder="Enter description" rows={3} />
-            </Form.Item>
-            <Form.Item name="project_id" label="Project" rules={[{ required: true, message: 'Please select a project' }]}>
-              <Select placeholder="Select project" style={{ width: '100%' }}>
-                <Option value="proj-1">Default Project</Option>
-              </Select>
-            </Form.Item>
-            <Form.Item name="definition" label="Workflow Definition (JSON)" rules={[{ required: true, message: 'Please provide workflow definition' }]}>
-              <Input.TextArea placeholder="Workflow definition (JSON)" rows={10} />
-            </Form.Item>
-            <Form.Item name="is_template" label="Is Template" valuePropName="checked">
-              <Switch />
-            </Form.Item>
-            <Form.Item name="tags" label="Tags">
-              <Input placeholder="Comma-separated tags" />
-            </Form.Item>
-          </Form>
-        </Modal>
-      </Card>
+              <p className="mt-3 line-clamp-2 min-h-[2.5rem] flex-1 text-sm text-ink-muted">
+                {wf.description || 'Sem descrição.'}
+              </p>
+
+              <div className="mt-4 flex items-center justify-between border-t border-line pt-3">
+                <div className="flex flex-wrap gap-1.5">
+                  {(wf.tags ?? []).slice(0, 3).map((tag) => (
+                    <span key={tag} className="badge-neutral">{tag}</span>
+                  ))}
+                  {(wf.tags ?? []).length === 0 && <span className="text-xs text-ink-muted">Sem tags</span>}
+                </div>
+                <button
+                  onClick={() => void onExecute(wf)}
+                  disabled={executeWorkflow.isPending && executing?.workflow_id === wf.workflow_id}
+                  className="btn-primary btn-sm"
+                >
+                  {executeWorkflow.isPending && executing?.workflow_id === wf.workflow_id ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Play className="h-3.5 w-3.5" />
+                  )}
+                  Executar
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Modal criar workflow */}
+      <Modal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        title="Novo workflow"
+        description="Defina o nome e a quantidade de etapas."
+        footer={
+          <>
+            <button onClick={() => setCreateOpen(false)} className="btn-secondary" disabled={createWorkflow.isPending}>
+              Cancelar
+            </button>
+            <button type="submit" form="wf-form" className="btn-primary" disabled={createWorkflow.isPending}>
+              {createWorkflow.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              Criar workflow
+            </button>
+          </>
+        }
+      >
+        <form id="wf-form" onSubmit={onCreate} className="space-y-4">
+          {error && <p className="text-sm text-danger-600">{error}</p>}
+          <label className="block">
+            <span className="label">Nome *</span>
+            <input
+              className="input"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              placeholder="Pipeline de produção"
+            />
+          </label>
+          <label className="block">
+            <span className="label">Descrição</span>
+            <textarea
+              className="input min-h-20 resize-y"
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              placeholder="O que este workflow automatiza?"
+            />
+          </label>
+          <label className="block">
+            <span className="label">Número de etapas (1–20)</span>
+            <input
+              type="number"
+              min={1}
+              max={20}
+              className="input"
+              value={form.steps}
+              onChange={(e) => setForm({ ...form, steps: e.target.value })}
+            />
+          </label>
+        </form>
+      </Modal>
+
+      {/* Modal resultado de execução */}
+      <Modal
+        open={Boolean(execResult || execError)}
+        onClose={() => { setExecResult(null); setExecError(null); setExecuting(null); }}
+        title="Resultado da execução"
+        description={`Workflow: ${executing?.name ?? ''}`}
+      >
+        {execError ? (
+          <div className="alert alert-danger">
+            <Zap className="h-4 w-4 shrink-0" />
+            {execError}
+          </div>
+        ) : (
+          <div className="alert alert-success">
+            <Zap className="h-4 w-4 shrink-0" />
+            {execResult}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

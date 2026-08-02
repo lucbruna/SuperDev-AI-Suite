@@ -38,8 +38,9 @@ export default function SettingsPage() {
       <h1 className="mb-6 text-2xl font-bold text-surface-900 dark:text-surface-50">Configurações</h1>
 
       <div className="space-y-6">
+        {/* Profile */}
         <div className="rounded-xl border bg-white p-6 shadow-sm dark:border-surface-700 dark:bg-surface-900">
-          <h2 className="mb-4 text-lg font-semibold text-surface-900 dark:text-surface-50">Geral</h2>
+          <h2 className="mb-4 text-lg font-semibold text-surface-900 dark:text-surface-50">Perfil</h2>
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-surface-700 dark:text-surface-300">Nome</label>
@@ -71,11 +72,33 @@ export default function SettingsPage() {
           </button>
         </div>
 
-        <div className="rounded-xl border bg-white p-6 shadow-sm dark:border-surface-700 dark:bg-surface-900">
-          <h2 className="mb-4 text-lg font-semibold text-surface-900 dark:text-surface-50">API Keys</h2>
-          <p className="mb-4 text-sm text-surface-500">Gerencie suas chaves de API para integrações externas.</p>
-          <Link href="/settings/api-keys" className="inline-block rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700">
-            Gerenciar API Keys
+        {/* Quick Links */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Link
+            href="/settings/providers"
+            className="rounded-xl border bg-white p-6 shadow-sm transition-all hover:border-primary-300 hover:shadow-md dark:border-surface-700 dark:bg-surface-900"
+          >
+            <div className="mb-3 text-3xl">🔧</div>
+            <h3 className="font-semibold text-surface-900 dark:text-surface-50">Providers de IA</h3>
+            <p className="mt-1 text-sm text-surface-500">Configure OpenAI, Anthropic, Google e mais</p>
+          </Link>
+
+          <Link
+            href="/settings/llm"
+            className="rounded-xl border bg-white p-6 shadow-sm transition-all hover:border-primary-300 hover:shadow-md dark:border-surface-700 dark:bg-surface-900"
+          >
+            <div className="mb-3 text-3xl">🤖</div>
+            <h3 className="font-semibold text-surface-900 dark:text-surface-50">Configurações LLM</h3>
+            <p className="mt-1 text-sm text-surface-500">Modelo padrão, temperatura, tokens</p>
+          </Link>
+
+          <Link
+            href="/settings/api-keys"
+            className="rounded-xl border bg-white p-6 shadow-sm transition-all hover:border-primary-300 hover:shadow-md dark:border-surface-700 dark:bg-surface-900"
+          >
+            <div className="mb-3 text-3xl">🔑</div>
+            <h3 className="font-semibold text-surface-900 dark:text-surface-50">API Keys</h3>
+            <p className="mt-1 text-sm text-surface-500">Gerencie suas chaves de API</p>
           </Link>
         </div>
       </div>

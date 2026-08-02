@@ -10,14 +10,17 @@ from backend.database.session import get_db
 from backend.dependencies import get_current_admin_user
 from backend.security.compliance import ComplianceFramework, compliance_engine
 from backend.security.multi_tenancy import TenantPlan, tenant_manager
+from backend.services import settings_service
 
 router = APIRouter(dependencies=[Depends(get_current_admin_user)])
 
-_admin_settings: dict = {
+_ADMIN_SETTINGS_DEFAULTS: dict = {
     "defaultLanguage": "en",
     "timezone": "UTC",
     "dateFormat": "YYYY-MM-DD",
 }
+
+_ADMIN_SETTINGS_KEY = "admin"
 
 
 class AuditQueryRequest(BaseModel):
@@ -376,7 +379,9 @@ async def admin_get_system_settings(
     db: AsyncSession = Depends(get_db),
 ):
 
-    return {"success": True, "data": _admin_settings}
+    await settings_service.ensure_table(db)
+    data = await settings_service.get_setting_with_default(db, _ADMIN_SETTINGS_KEY, {"admin": _ADMIN_SETTINGS_DEFAULTS})
+    return {"success": True, "data": data}
 
 
 @router.put("/settings")
@@ -385,5 +390,8 @@ async def admin_update_system_settings(
     db: AsyncSession = Depends(get_db),
 ):
 
-    _admin_settings.update(data)
-    return {"success": True, "data": _admin_settings}
+    await settings_service.ensure_table(db)
+    existing = await settings_service.get_setting_with_default(db, _ADMIN_SETTINGS_KEY, {"admin": _ADMIN_SETTINGS_DEFAULTS})
+    existing.update(data)
+    await settings_service.save_setting(db, _ADMIN_SETTINGS_KEY, existing, category="admin")
+    return {"success": True, "data": existing}

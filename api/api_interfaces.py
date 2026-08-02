@@ -93,3 +93,27 @@ class IAPIGateway(ABC):
     async def forward(self, request: Any, target: str) -> Any: ...
     @abstractmethod
     def register_service(self, name: str, url: str) -> None: ...
+
+
+class RouteInterface(ABC):
+    @abstractmethod
+    def handle(self, request: Any) -> Any: ...
+    @abstractmethod
+    def match(self, path: str) -> bool: ...
+
+
+class MiddlewareInterface(ABC):
+    @abstractmethod
+    def process(self, request: Any) -> Any: ...
+
+
+class AuthInterface(ABC):
+    @abstractmethod
+    async def authenticate(self, request: Any) -> dict[str, Any]: ...
+
+
+class EventInterface(ABC):
+    @abstractmethod
+    def emit(self, event: str, data: Any = None) -> None: ...
+    @abstractmethod
+    def on(self, event: str, handler: Any) -> None: ...

@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { useAuthStore } from "@/stores/authStore";
+import { API_BASE_URL } from "@/constants/api";
 
 type MessageHandler = (data: unknown) => void;
 
@@ -34,8 +35,34 @@ export function WebSocketProvider({ children, url }: WebSocketProviderProps) {
   const wsRef = useRef<WebSocket | null>(null);
   const handlersRef = useRef<Map<string, Set<MessageHandler>>>(new Map());
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const reconnectAttemptsRef = useRef(0);
+  const maxReconnectAttempts = 5;
   const accessToken = useAuthStore((s) => s.accessToken);
+  const refreshToken = useAuthStore((s) => s.refreshToken);
+  const setTokens = useAuthStore((s) => s.setTokens);
   const wsUrl = url ?? process.env.NEXT_PUBLIC_WS_URL ?? "ws://localhost:8000/ws";
+
+  const refreshAccessToken = useCallback(async () => {
+    if (!refreshToken) return false;
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      });
+      if (!response.ok) return false;
+      const data = await response.json();
+      const access_token = data.access_token || data.accessToken;
+      const new_refresh_token = data.refresh_token || data.refreshToken;
+      if (access_token && new_refresh_token) {
+        setTokens(access_token, new_refresh_token);
+        return true;
+      }
+    } catch {
+      // refresh failed
+    }
+    return false;
+  }, [refreshToken, setTokens]);
 
   const connect = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
@@ -44,11 +71,33 @@ export function WebSocketProvider({ children, url }: WebSocketProviderProps) {
     try {
       const ws = new WebSocket(`${wsUrl}?token=${accessToken}`);
 
-      ws.onopen = () => setIsConnected(true);
+      ws.onopen = () => {
+        setIsConnected(true);
+        reconnectAttemptsRef.current = 0;
+      };
 
-      ws.onclose = () => {
+      ws.onclose = async (event) => {
         setIsConnected(false);
-        reconnectTimeoutRef.current = setTimeout(connect, 3000);
+        wsRef.current = null;
+
+        // Auth failure (4003) or policy violation (4001) — try refreshing token first
+        const isAuthError = event.code === 4001 || event.code === 4003;
+
+        if (isAuthError && reconnectAttemptsRef.current < maxReconnectAttempts) {
+          const refreshed = await refreshAccessToken();
+          if (refreshed) {
+            reconnectAttemptsRef.current++;
+            reconnectTimeoutRef.current = setTimeout(connect, 1000);
+            return;
+          }
+        }
+
+        // Non-auth error or auth refresh failed — reconnect with backoff
+        if (reconnectAttemptsRef.current < maxReconnectAttempts) {
+          reconnectAttemptsRef.current++;
+          const delay = Math.min(3000 * Math.pow(2, reconnectAttemptsRef.current - 1), 30000);
+          reconnectTimeoutRef.current = setTimeout(connect, delay);
+        }
       };
 
       ws.onerror = () => {
@@ -77,9 +126,13 @@ export function WebSocketProvider({ children, url }: WebSocketProviderProps) {
 
       wsRef.current = ws;
     } catch {
-      reconnectTimeoutRef.current = setTimeout(connect, 3000);
+      if (reconnectAttemptsRef.current < maxReconnectAttempts) {
+        reconnectAttemptsRef.current++;
+        const delay = Math.min(3000 * Math.pow(2, reconnectAttemptsRef.current - 1), 30000);
+        reconnectTimeoutRef.current = setTimeout(connect, delay);
+      }
     }
-  }, [accessToken, wsUrl]);
+  }, [accessToken, wsUrl, refreshAccessToken]);
 
   useEffect(() => {
     connect();

@@ -1,5 +1,4 @@
 from backend.schemas.agent import (
-    AgentBase,
     AgentCreate,
     AgentExecuteRequest,
     AgentExecutionResponse,
@@ -122,7 +121,6 @@ __all__ = [
     "WorkflowRunResponse",
     "WorkflowStepResponse",
     # Agent
-    "AgentBase",
     "AgentCreate",
     "AgentUpdate",
     "AgentResponse",

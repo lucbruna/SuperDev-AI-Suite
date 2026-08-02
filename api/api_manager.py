@@ -34,10 +34,21 @@ class APIManager:
         self.router = APIRouter(self.registry)
         self.factory = APIFactory(self.registry)
         self.runtime = APIRuntime(self.registry, self.logger, self.metrics, self.events)
+        self._initialized = False
 
     @property
     def is_healthy(self) -> bool:
         return True
+
+    @property
+    def route_registry(self) -> APIRouter:
+        return self.router
+
+    def initialize(self) -> None:
+        self._initialized = True
+
+    def get_status(self) -> dict[str, Any]:
+        return self.to_dict()
 
     def to_dict(self) -> dict[str, Any]:
         return {

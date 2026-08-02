@@ -1,4 +1,4 @@
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api/v1";
 
 export const API_ENDPOINTS = {
   AUTH: {
@@ -42,8 +42,18 @@ export const API_ENDPOINTS = {
     CHAT_STREAM: "/llm/chat/stream",
     HEALTH: "/llm/health",
   },
+  DASHBOARD: {
+    BASE: "/system/dashboard",
+  },
+  AGENTS: {
+    BASE: "/agents",
+  },
+  WORKFLOWS: {
+    BASE: "/workflows",
+  },
 } as const;
 
 export const API_TIMEOUT = 30000;
+export const AGENT_TIMEOUT = 300000; // 5 minutes for agent tasks
 export const API_RETRY_COUNT = 3;
 export const API_RETRY_DELAY = 1000;

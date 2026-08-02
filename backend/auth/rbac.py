@@ -17,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.auth.deps import get_current_user
 from backend.database.models.role import Permission, Role, UserRole, role_permissions
 from backend.database.models.user import User
+from backend.database.session import get_db
 
 # ---------------------------------------------------------------------------
 # System constants
@@ -201,17 +202,15 @@ def require_permission(
     async def _dependency(
         request: Request,
         user_id: str = Depends(get_current_user),
+        db: AsyncSession = Depends(get_db),
     ) -> User:
         # Extract organization_id from query if enabled
         organization_id: str | None = None
         if use_organization:
             organization_id = request.query_params.get("organization_id")
 
-        # Get the DB session from app state (set by middleware)
-        session: AsyncSession = request.state.db_session
-
         # Load full user object
-        result = await session.execute(select(User).where(User.id == user_id))
+        result = await db.execute(select(User).where(User.id == user_id))
         user = result.scalar_one_or_none()
         if user is None:
             raise HTTPException(
@@ -219,7 +218,7 @@ def require_permission(
                 detail="User not found",
             )
 
-        allowed = await checker.check(session, str(user.id), organization_id)
+        allowed = await checker.check(db, str(user.id), organization_id)
         if not allowed:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

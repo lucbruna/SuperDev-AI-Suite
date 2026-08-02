@@ -19,6 +19,9 @@ class CORSMiddleware(IAPIMiddleware):
         allow_credentials: bool = True,
         max_age: int = 3600,
     ) -> None:
+        if "*" in (allowed_origins or list(CORS_DEFAULT_ORIGINS)) and allow_credentials:
+            raise ValueError(
+                "CORS: wildcard origin with allow_credentials=True is forbidden")
         self._allowed_origins = allowed_origins or list(CORS_DEFAULT_ORIGINS)
         self._allowed_methods = allowed_methods or list(CORS_ALLOW_METHODS)
         self._allowed_headers = allowed_headers or list(CORS_ALLOW_HEADERS)
@@ -32,6 +35,9 @@ class CORSMiddleware(IAPIMiddleware):
         if origin in self._allowed_origins:
             return origin
         return ""
+
+    def is_origin_allowed(self, origin: str) -> bool:
+        return self._origin_allowed(origin) != ""
 
     async def before_request(self, request: Any) -> Any:
         headers = getattr(request, "headers", {})

@@ -36,7 +36,8 @@ class RouteEntry:
     def __post_init__(self) -> None:
         pattern_str = ""
         self.param_names = []
-        parts = self.path.split("/")
+        raw_parts = self.path.split("/")
+        parts = [p for p in raw_parts if p != ""]
         for part in parts:
             if part.startswith("{") and part.endswith("}"):
                 name = part[1:-1]

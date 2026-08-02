@@ -1,20 +1,21 @@
-"""Comprehensive tests for business_intelligence subsystem (Volume 33)."""
+﻿"""Comprehensive tests for business_intelligence subsystem (Volume 33)."""
 
 import os
 import sys
 import unittest
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if __name__ == "__main__":
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from business_intelligence.bi_config import BIConfig, ConfigEntry
-from business_intelligence.bi_context import BIContext, BIContextItem
-from business_intelligence.bi_engine import BIEngine
-from business_intelligence.bi_events import BIEvent, BIEventBus, BIEventType
-from business_intelligence.bi_factory import BIFactory
-from business_intelligence.bi_logger import BILogEntry, BILogger, BILogLevel
-from business_intelligence.bi_manager import BIManager, BIProject
-from business_intelligence.bi_metrics import BIMetrics, MetricPoint, MetricSummary
-from business_intelligence.bi_models import (
+from ai.business_intelligence.bi_config import BIConfig, ConfigEntry
+from ai.business_intelligence.bi_context import BIContext, BIContextItem
+from ai.business_intelligence.bi_engine import BIEngine
+from ai.business_intelligence.bi_events import BIEvent, BIEventBus, BIEventType
+from ai.business_intelligence.bi_factory import BIFactory
+from ai.business_intelligence.bi_logger import BILogEntry, BILogger, BILogLevel
+from ai.business_intelligence.bi_manager import BIManager, BIProject
+from ai.business_intelligence.bi_metrics import BIMetrics, MetricPoint, MetricSummary
+from ai.business_intelligence.bi_models import (
     KPI,
     AnalysisType,
     DataPoint,
@@ -28,10 +29,10 @@ from business_intelligence.bi_models import (
     Report,
     RiskLevel,
 )
-from business_intelligence.bi_protocols import BIProtocolConfig, BIProtocols, BIProtocolType
-from business_intelligence.bi_registry import BIComponent, BIRegistry
-from business_intelligence.bi_runtime import BIRuntime, BITask, BITaskState
-from business_intelligence.bi_security import BISecurity, BISecurityCheck, BISecurityIssue, BISeverity
+from ai.business_intelligence.bi_protocols import BIProtocolConfig, BIProtocols, BIProtocolType
+from ai.business_intelligence.bi_registry import BIComponent, BIRegistry
+from ai.business_intelligence.bi_runtime import BIRuntime, BITask, BITaskState
+from ai.business_intelligence.bi_security import BISecurity, BISecurityCheck, BISecurityIssue, BISeverity
 
 
 class TestBIModels(unittest.TestCase):

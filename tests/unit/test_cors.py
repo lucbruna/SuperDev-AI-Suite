@@ -120,3 +120,78 @@ class TestCORSConfig:
         from backend.config import config
 
         assert config.cors.max_age > 0
+
+
+class TestStrListEnvParsing:
+    """Regression: .env uses comma-separated values (CORS_ALLOW_METHODS=GET,POST,...)
+    which pydantic-settings 2.x cannot JSON-decode for list[str] fields. The
+    StrList type (NoDecode + BeforeValidator) must accept JSON arrays,
+    comma-separated strings, single bare values and empty values.
+    """
+
+    def test_comma_separated(self, monkeypatch):
+        monkeypatch.setenv("CORS_ALLOW_METHODS", "GET,POST,PUT,DELETE")
+        from backend.settings import CorsSettings
+
+        assert CorsSettings().allow_methods == ["GET", "POST", "PUT", "DELETE"]
+
+    def test_json_array(self, monkeypatch):
+        monkeypatch.setenv("CORS_ALLOW_METHODS", '["GET", "POST"]')
+        from backend.settings import CorsSettings
+
+        assert CorsSettings().allow_methods == ["GET", "POST"]
+
+    def test_single_bare_value(self, monkeypatch):
+        monkeypatch.setenv("CORS_ALLOW_HEADERS", "*")
+        from backend.settings import CorsSettings
+
+        assert CorsSettings().allow_headers == ["*"]
+
+    def test_empty_value(self, monkeypatch):
+        monkeypatch.setenv("REDIS_SENTINEL_HOSTS", "")
+        from backend.settings import RedisSettings
+
+        assert RedisSettings().sentinel_hosts == []
+
+    def test_absent_env_uses_default(self, monkeypatch):
+        monkeypatch.delenv("CORS_ALLOW_METHODS", raising=False)
+        from backend.settings import CorsSettings
+
+        assert CorsSettings().allow_methods == ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+
+    def test_config_imports_with_comma_separated_env(self, monkeypatch):
+        """The full backend.config (conftest import chain) must load with the
+        comma-separated .env format — no SettingsError.
+
+        Reloading is required because the nested settings (e.g. ``cors``) are
+        instantiated at class-definition time, so a plain ``AppConfig()``
+        would not re-read the environment. The module singleton is restored in
+        ``finally`` so the fabricated values do not leak into other tests.
+        """
+        import importlib
+
+        import backend.config
+
+        env = {
+            "CORS_ALLOW_METHODS": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+            "CORS_ALLOW_ORIGINS": "http://a,http://b",
+            "CORS_ALLOW_HEADERS": "*",
+            "CORS_EXPOSE_HEADERS": "X-Request-ID,X-Process-Time",
+            "RUNTIME_DROP_CAPABILITIES": "all",
+            "PLUGIN_PERMISSIONS_REQUIRED": "filesystem.read",
+        }
+        for key, value in env.items():
+            monkeypatch.setenv(key, value)
+        try:
+            importlib.reload(backend.config)
+            cfg = backend.config.config
+            assert cfg.cors.allow_methods == ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+            assert cfg.cors.allow_origins == ["http://a", "http://b"]
+            assert cfg.sandbox.drop_capabilities == ["all"]
+            assert cfg.plugins.permissions_required == ["filesystem.read"]
+        finally:
+            # Restore the module singleton from the real environment/.env so
+            # the fabricated values don't leak into subsequent tests.
+            for key in env:
+                monkeypatch.delenv(key, raising=False)
+            importlib.reload(backend.config)

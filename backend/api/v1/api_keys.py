@@ -9,7 +9,6 @@ Endpoints:
 
 from __future__ import annotations
 
-import hashlib
 import secrets
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -19,6 +18,9 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.auth.manager import api_key_auth
+from backend.auth.passwords import hash_password, verify_password
+from backend.database.models.api_key import API_KEY_PREFIX_LENGTH
 from backend.database.session import get_db
 from backend.dependencies import get_current_active_user
 
@@ -66,7 +68,6 @@ class APIKeyCreateResponse(BaseModel):
 # Helpers
 # ------------------------------------------------------------------
 
-_PREFIX_LENGTH = 8
 _KEY_BYTES = 32
 
 
@@ -74,17 +75,20 @@ def _generate_api_key() -> tuple[str, str, str]:
     """Return (raw_key, key_hash, key_prefix).
 
     The raw key is ``sk_`` + random hex.
-    The prefix is the first ``_PREFIX_LENGTH`` chars after ``sk_``.
-    The hash is SHA-256 of the raw key for storage.
+    The prefix is the first ``API_KEY_PREFIX_LENGTH`` chars of the raw key — it
+    must equal ``raw[:API_KEY_PREFIX_LENGTH]`` (the shared constant that
+    ``APIKeyAuth`` also uses for its lookup slice in manager.py).
+    The hash is bcrypt via ``backend.auth.passwords`` — the same scheme the
+    auth manager verifies with, so created keys actually authenticate.
     """
     raw = "sk_" + secrets.token_hex(_KEY_BYTES)
-    prefix = raw[: _PREFIX_LENGTH + 3]  # include the sk_ part
-    key_hash = hashlib.sha256(raw.encode()).hexdigest()
+    prefix = raw[:API_KEY_PREFIX_LENGTH]
+    key_hash = hash_password(raw)
     return raw, key_hash, prefix
 
 
 def _verify_api_key(raw_key: str, stored_hash: str) -> bool:
-    return hashlib.sha256(raw_key.encode()).hexdigest() == stored_hash
+    return verify_password(raw_key, stored_hash)
 
 
 # ------------------------------------------------------------------
@@ -189,6 +193,32 @@ async def list_api_keys(
     ]
 
 
+@router.get("/me")
+async def api_key_me(
+    auth: tuple[Any, Any] = Depends(api_key_auth),
+) -> dict[str, Any]:
+    """Authenticate with an API key (``Authorization: Bearer sk_...``).
+
+    Returns the user + organization bound to the key. Wired to
+    ``api_key_auth`` so a valid ``sk_`` token proves authentication over HTTP
+    (regression coverage for finding 2f29e692: keys must be findable via the
+    24-char prefix and verifiable via bcrypt).
+    """
+    user, org = auth
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid API key",
+        )
+    return {
+        "id": str(user.id),
+        "email": user.email,
+        "org_id": str(org.id) if org else None,
+        "org_name": org.name if org else None,
+        "auth_method": "api_key",
+    }
+
+
 @router.get("/{key_id}", response_model=APIKeyResponse)
 async def get_api_key(
     key_id: str,
@@ -199,7 +229,9 @@ async def get_api_key(
     from backend.database.models.api_key import APIKey
 
     api_key = await db.get(APIKey, key_id)
-    if not api_key or api_key.created_by != current_user["id"]:
+    # created_by is a UUID object on the model but a str in the JWT-derived
+    # current_user dict — compare via str() or every owner check would 404.
+    if not api_key or str(api_key.created_by) != str(current_user["id"]):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="API key not found")
 
     return {
@@ -219,12 +251,14 @@ async def revoke_api_key(
     key_id: str,
     current_user: dict[str, Any] = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
-) -> dict[str, str]:
+) -> dict[str, Any]:
     """Revoke (soft-delete) an API key."""
     from backend.database.models.api_key import APIKey
 
     api_key = await db.get(APIKey, key_id)
-    if not api_key or api_key.created_by != current_user["id"]:
+    # created_by is a UUID object on the model but a str in the JWT-derived
+    # current_user dict — compare via str() or every owner check would 404.
+    if not api_key or str(api_key.created_by) != str(current_user["id"]):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="API key not found")
 
     api_key.is_active = False

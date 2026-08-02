@@ -30,7 +30,17 @@ if [ ! -f "run_mantis.py" ] || [ ! -f "scripts/mantis_pipeline.py" ]; then
 fi
 
 # Guard against a missing/invalid Python on the PATH — never fail the hook.
-if ! command -v python >/dev/null 2>&1; then
+# Prefer `python`, fall back to `python3` (Linux/CI images often lack the
+# bare `python` alias; bash does not do PATHEXT-style resolution for
+# Windows python.exe, so this fallback also helps Git Bash/WSL setups).
+PYTHON_BIN=""
+for _cand in python python3; do
+  if command -v "$_cand" >/dev/null 2>&1; then
+    PYTHON_BIN="$_cand"
+    break
+  fi
+done
+if [ -z "$PYTHON_BIN" ]; then
   exit 0
 fi
 
@@ -40,7 +50,7 @@ echo "  [mantis] fast security check after commit (runbook + validate + status)"
 # init runs (cheap: mkdirs + state) so fresh clones self-bootstrap;
 # --skip-plan: skip the slow Mode-A crawl; --no-archive: never archive from a
 # commit hook.
-python run_mantis.py run --auto --skip-plan --no-archive 2>&1 | sed 's/^/    /'
+"$PYTHON_BIN" run_mantis.py run --auto --skip-plan --no-archive 2>&1 | sed 's/^/    /'
 
 echo "  [mantis] check complete — pending stages can be executed with: python run_mantis.py run --auto"
 exit 0

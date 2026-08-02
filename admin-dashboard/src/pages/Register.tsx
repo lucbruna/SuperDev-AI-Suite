@@ -1,123 +1,161 @@
-import React, { useState } from 'react';
-import { Card, Form, Input, Button, Checkbox, Alert, Tabs, TabPane } from 'antd';
-import { UserOutlined, LockOutlined, MailOutlined, UnlockOutlined } from '@ant-design/icons';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, type FormEvent } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Sparkles, Loader2, Mail, Lock, User, AlertCircle } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { message } from 'antd';
-import './AuthPage.css';
 
-const { Item } = Form;
-
-interface RegisterData {
-  email: string;
-  password: string;
-  confirmPassword: string;
-  username: string;
-  fullName: string;
-  organizationName: string;
-  organizationSlug: string;
-}
-
+/** Página de registro — autenticação real via useAuth, sem antd. */
 export function Register() {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState<'personal' | 'organization'>('personal');
   const { register } = useAuth();
   const navigate = useNavigate();
+  const [username, setUsername] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleFinish = async (values: any) => {
-    setLoading(true);
-    setError('');
+  const onSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!username.trim() || !email.trim() || !password) {
+      setError('Preencha todos os campos obrigatórios.');
+      return;
+    }
+    if (password.length < 6) {
+      setError('A senha deve ter pelo menos 6 caracteres.');
+      return;
+    }
+    if (password !== confirm) {
+      setError('As senhas não coincidem.');
+      return;
+    }
+    setError(null);
+    setSubmitting(true);
     try {
-      const data: RegisterData = {
-        email: values.email,
-        password: values.password,
-        username: values.username,
-        fullName: values.fullName,
-        organizationName: values.organizationName,
-        organizationSlug: values.organizationSlug,
-      };
-      await register(data);
-      message.success('Registration successful!');
+      await register({
+        email: email.trim(),
+        password,
+        username: username.trim(),
+        full_name: fullName.trim() || undefined,
+      });
       navigate('/dashboard');
-    } catch (error: any) {
-      setError(error.response?.data?.detail || 'Registration failed');
+    } catch {
+      setError('Não foi possível criar a conta. Verifique os dados e tente novamente.');
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
   return (
-    <div className="auth-page">
-      <div className="auth-container">
-        <div className="auth-header">
-          <div className="logo">
-            <span className="logo-icon">SD</span>
-            <span className="logo-text">SuperDev</span>
+    <div className="flex min-h-screen items-center justify-center bg-surface-alt px-4 py-10">
+      <div className="w-full max-w-md animate-slide-up">
+        <div className="mb-8 flex flex-col items-center gap-3">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg shadow-indigo-500/30">
+            <Sparkles className="h-7 w-7 text-white" />
           </div>
-          <h1>Create Your Account</h1>
-          <p>Start building with SuperDev AI Suite</p>
-        </div>
-
-        {error && <Alert message="Error" description={error} type="error" showIcon closable />}
-
-        <Form layout="vertical" onFinish={handleFinish} className="auth-form">
-          <Tabs activeKey={activeTab} onChange={setActiveTab} className="auth-tabs">
-            <TabPane tab="Personal Info" key="personal">
-              <Form.Item name="fullName" label="Full Name" rules={[{ required: true, message: 'Please input your full name' }]}>
-                <Input prefix={<UserOutlined />} placeholder="Full Name" />
-              </Form.Item>
-              <Form.Item name="username" label="Username" rules={[{ required: true, message: 'Please input a username' }, { pattern: /^[a-zA-Z0-9_-]{3,20}$/, message: 'Username must be 3-20 characters (letters, numbers, _, -)' }]}>
-                <Input prefix={<UserOutlined />} placeholder="Username" />
-              </Form.Item>
-              <Form.Item name="email" label="Email" rules={[{ required: true, message: 'Please input your email' }, { type: 'email', message: 'Invalid email format' }]}>
-                <Input prefix={<MailOutlined />} placeholder="Email" />
-              </Form.Item>
-              <Form.Item name="password" label="Password" rules={[{ required: true, message: 'Please input your password' }, { min: 8, message: 'Password must be at least 8 characters' }]}>
-                <Input.Password prefix={<LockOutlined />} placeholder="Password" />
-              </Form.Item>
-              <Form.Item name="confirmPassword" label="Confirm Password" rules={[{ required: true, message: 'Please confirm your password' }, ({ getFieldValue }) => ({ validator: (_, value) => value === getFieldValue('password') ? Promise.resolve() : Promise.reject(new Error('Passwords do not match')) })]}>
-                <Input.Password prefix={<UnlockOutlined />} placeholder="Confirm Password" />
-              </Form.Item>
-            </TabPane>
-
-            <TabPane tab="Organization" key="organization">
-              <Form.Item name="organizationName" label="Organization Name" rules={[{ required: true, message: 'Please input organization name' }]}>
-                <Input placeholder="Organization Name" />
-              </Form.Item>
-              <Form.Item name="organizationSlug" label="Organization Slug" rules={[{ required: true, message: 'Please input organization slug' }, { pattern: /^[a-z0-9-]+$/, message: 'Slug must be lowercase letters, numbers, and hyphens only' }]}>
-                <Input placeholder="organization-slug" addonAfter=".superdev.ai" />
-              </Form.Item>
-              <Form.Item name="plan" label="Plan">
-                <Select placeholder="Select plan" style={{ width: '100%' }}>
-                  <Option value="free">Free</Option>
-                  <Option value="pro">Pro</Option>
-                  <Option value="enterprise">Enterprise</Option>
-                </Select>
-              </Form.Item>
-            </TabPane>
-          </Tabs>
-
-          <Form.Item>
-            <Button type="primary" htmlType="submit" block size="large" loading={loading}>
-              Create Account
-            </Button>
-          </Form.Item>
-
-          <div className="auth-footer">
-            Already have an account? <Link to="/login">Sign in</Link>
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-ink">Criar conta</h1>
+            <p className="text-sm text-ink-muted">Comece a usar o SuperDev</p>
           </div>
-        </Form>
-
-        <div className="auth-divider">
-          <span>Or continue with</span>
         </div>
 
-        <div className="social-buttons">
-          <Button type="default" block icon={<GitHubOutlined />}>GitHub</Button>
-          <Button type="default" block icon={<GoogleOutlined />}>Google</Button>
-          <Button type="default" block icon={<GitlabOutlined />}>GitLab</Button>
-        </div>
+        <form onSubmit={onSubmit} className="space-y-4 rounded-2xl border border-line bg-surface p-6 shadow-card">
+          {error && (
+            <div className="flex items-start gap-2 rounded-lg border border-danger-200 bg-danger-50 px-3 py-2.5 text-sm text-danger-700 dark:border-danger-500/30 dark:bg-danger-500/10 dark:text-danger-400">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="block">
+              <span className="mb-1.5 block text-sm font-medium text-ink">
+                Nome de usuário <span className="text-danger-500">*</span>
+              </span>
+              <div className="relative">
+                <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" />
+                <input
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="jose.silva"
+                  className="input pl-10"
+                />
+              </div>
+            </label>
+
+            <label className="block">
+              <span className="mb-1.5 block text-sm font-medium text-ink">Nome completo</span>
+              <input
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="José Silva"
+                className="input"
+              />
+            </label>
+          </div>
+
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-medium text-ink">
+              E-mail <span className="text-danger-500">*</span>
+            </span>
+            <div className="relative">
+              <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="voce@empresa.com"
+                autoComplete="email"
+                className="input pl-10"
+              />
+            </div>
+          </label>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="block">
+              <span className="mb-1.5 block text-sm font-medium text-ink">
+                Senha <span className="text-danger-500">*</span>
+              </span>
+              <div className="relative">
+                <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" />
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                  className="input pl-10"
+                />
+              </div>
+            </label>
+
+            <label className="block">
+              <span className="mb-1.5 block text-sm font-medium text-ink">
+                Confirmar senha <span className="text-danger-500">*</span>
+              </span>
+              <input
+                type="password"
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                placeholder="••••••••"
+                autoComplete="new-password"
+                className="input"
+              />
+            </label>
+          </div>
+
+          <button type="submit" disabled={submitting} className="btn-primary w-full justify-center py-2.5">
+            {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+            {submitting ? 'Criando conta...' : 'Criar conta'}
+          </button>
+
+          <p className="pt-1 text-center text-sm text-ink-muted">
+            Já tem uma conta?{' '}
+            <Link to="/login" className="font-medium text-primary-600 hover:text-primary-700">
+              Entrar
+            </Link>
+          </p>
+        </form>
       </div>
     </div>
   );

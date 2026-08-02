@@ -22,8 +22,10 @@ class OllamaProvider(BaseProvider):
     DEFAULT_BASE_URL = "http://localhost:11434"
 
     MODELS = [
-        "llama3.1",
         "llama3.2",
+        "llama3.1",
+        "qwen2.5",
+        "mistral-nemo",
         "mistral",
         "codellama",
         "deepseek-coder",
@@ -71,33 +73,30 @@ class OllamaProvider(BaseProvider):
             "model": model,
             "messages": [{"role": m.role, "content": m.content} for m in messages],
             "stream": False,
-            "options": {
-                "temperature": temperature,
-            },
+            "temperature": temperature,
         }
         if max_tokens:
-            payload["options"]["num_predict"] = max_tokens
+            payload["max_tokens"] = max_tokens
 
-        response = await self._client.post("/api/chat", json=payload)
+        # Ollama exposes an OpenAI-compatible API at /v1/chat/completions.
+        response = await self._client.post("/v1/chat/completions", json=payload)
         response.raise_for_status()
         data = response.json()
 
-        message = data.get("message", {})
-        eval_count = data.get("eval_count", 0)
-        prompt_eval_count = data.get("prompt_eval_count", 0)
-
-        usage = TokenUsage(
-            prompt_tokens=prompt_eval_count,
-            completion_tokens=eval_count,
-            total_tokens=prompt_eval_count + eval_count,
-        )
+        choice = (data.get("choices") or [{}])[0]
+        message = choice.get("message", {})
+        usage = data.get("usage", {}) or {}
 
         return CompletionResponse(
-            id=str(uuid.uuid4()),
+            id=data.get("id", str(uuid.uuid4())),
             model=model,
             content=message.get("content", ""),
-            finish_reason="stop" if data.get("done") else None,
-            usage=usage,
+            finish_reason=choice.get("finish_reason"),
+            usage=TokenUsage(
+                prompt_tokens=usage.get("prompt_tokens", 0),
+                completion_tokens=usage.get("completion_tokens", 0),
+                total_tokens=usage.get("total_tokens", 0),
+            ),
         )
 
     async def stream(
@@ -112,31 +111,38 @@ class OllamaProvider(BaseProvider):
             "model": model,
             "messages": [{"role": m.role, "content": m.content} for m in messages],
             "stream": True,
-            "options": {
-                "temperature": temperature,
-            },
+            "temperature": temperature,
         }
         if max_tokens:
-            payload["options"]["num_predict"] = max_tokens
+            payload["max_tokens"] = max_tokens
 
-        async with self._client.stream("POST", "/api/chat", json=payload) as response:
+        # SSE format: lines like "data: {...}", terminated by "data: [DONE]".
+        async with self._client.stream("POST", "/v1/chat/completions", json=payload) as response:
             response.raise_for_status()
             chunk_id = str(uuid.uuid4())
+
+            import json
+
             async for line in response.aiter_lines():
-                if not line.strip():
+                if not line.strip() or not line.startswith("data:"):
                     continue
+                data_str = line[len("data:"):].strip()
+                if data_str == "[DONE]":
+                    break
 
-                import json
+                data = json.loads(data_str)
+                choice = (data.get("choices") or [{}])[0]
+                delta = choice.get("delta", {})
+                content = delta.get("content", "")
+                finish_reason = choice.get("finish_reason")
 
-                data = json.loads(line)
-                message = data.get("message", {})
-
-                yield StreamChunk(
-                    id=chunk_id,
-                    model=model,
-                    delta=message.get("content", ""),
-                    finish_reason="stop" if data.get("done") else None,
-                )
+                if content or finish_reason:
+                    yield StreamChunk(
+                        id=chunk_id,
+                        model=model,
+                        delta=content,
+                        finish_reason=finish_reason,
+                    )
 
     async def embed(
         self,

@@ -134,6 +134,11 @@ class TenantView:
         }
 
 
+# Backward-compatible alias: the tenant data object was renamed from
+# ``Tenant`` to ``TenantView``; keep the old name importable.
+Tenant = TenantView
+
+
 # ------------------------------------------------------------------
 # Database-backed TenantManager
 # ------------------------------------------------------------------

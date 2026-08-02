@@ -1,7 +1,7 @@
 # SuperDev AI Suite - Makefile (Unix + PowerShell wrapper)
 # Para Windows: use `make win-<comando>` ou leia Makefile.ps1
 
-.PHONY: help install test lint format build run-api run-frontend clean seed migrate reset reset-db
+.PHONY: help install test lint format build run-api run-frontend clean seed migrate reset reset-db mantis mantis-status mantis-validate mantis-hook mantis-hook-remove
 
 help:
 	@echo "SuperDev AI Suite - Comandos"
@@ -19,6 +19,12 @@ help:
 	@echo "  make reset-db        - Resetar banco (drop schema + recreates extensions)"
 	@echo "  make reset           - Reset completo: drop schema + migrate + seed"
 	@echo "  make clean           - Limpar caches"
+	@echo ""
+	@echo "  make mantis          - Rodar pipeline Mantis completo (run --auto)"
+	@echo "  make mantis-status   - Status dos 16 estagios Mantis"
+	@echo "  make mantis-validate - Validar artefatos contra schema.json"
+	@echo "  make mantis-hook     - Ativar hook post-commit versionado (.githooks/)"
+	@echo "  make mantis-hook-remove - Remover hook post-commit"
 	@echo ""
 	@echo "  make docker-build    - Build Docker"
 	@echo "  make setup-dev       - Setup completo"
@@ -70,6 +76,24 @@ clean:
 	rm -rf .pytest_cache .ruff_cache __pycache__
 	rm -rf frontend/.next frontend/node_modules
 	rm -rf .coverage *.egg-info
+
+# ── Mantis security review suite ────────────────────────────────
+
+mantis:
+	python run_mantis.py run --auto
+
+mantis-status:
+	python run_mantis.py status
+
+mantis-validate:
+	python run_mantis.py validate
+
+# Installs the post-commit hook so Mantis runs automatically after every commit.
+mantis-hook:
+	bash scripts/install_mantis_hooks.sh
+
+mantis-hook-remove:
+	bash scripts/install_mantis_hooks.sh --remove
 
 # ============================================================
 # Comandos Windows (via PowerShell)

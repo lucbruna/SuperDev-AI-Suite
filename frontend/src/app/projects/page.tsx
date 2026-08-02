@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { projectsApi } from "@/api/projects";
@@ -18,17 +18,40 @@ export default function ProjectsPage() {
   const [projects, setProjects] = useState<ProjectItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showCreate, setShowCreate] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newProject, setNewProject] = useState({ name: "", description: "" });
 
   useEffect(() => {
     projectsApi
       .getProjects()
       .then((res) => {
-        const items = Array.isArray(res) ? res : res.data || [];
-        setProjects(items);
+        setProjects(res.items || []);
       })
       .catch((err) => setError(err?.message || "Erro ao carregar projetos"))
       .finally(() => setLoading(false));
   }, []);
+
+  const createProject = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!newProject.name.trim()) return;
+    setCreating(true);
+    setError("");
+    try {
+      const project = await projectsApi.createProject({
+        name: newProject.name.trim(),
+        description: newProject.description.trim() || undefined,
+        language: "other",
+      });
+      setProjects((current) => [{ ...project, status: "active" }, ...current]);
+      setNewProject({ name: "", description: "" });
+      setShowCreate(false);
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || err?.message || "Erro ao criar projeto");
+    } finally {
+      setCreating(false);
+    }
+  };
 
   return (
     <DashboardLayout>
@@ -38,7 +61,7 @@ export default function ProjectsPage() {
           <p className="mt-1 text-sm text-surface-500">Gerencie seus projetos</p>
         </div>
         <button
-          onClick={() => router.push("/projects/new")}
+          onClick={() => setShowCreate(true)}
           className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700"
         >
           + Novo Projeto
@@ -47,6 +70,15 @@ export default function ProjectsPage() {
 
       {loading && <p className="text-surface-400">Carregando...</p>}
       {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</p>}
+
+      {showCreate && (
+        <form onSubmit={createProject} className="mb-6 space-y-3 rounded-xl border bg-white p-5 shadow-sm dark:border-surface-700 dark:bg-surface-900">
+          <h2 className="font-semibold text-surface-900 dark:text-surface-50">Novo Projeto</h2>
+          <input required autoFocus value={newProject.name} onChange={(e) => setNewProject({ ...newProject, name: e.target.value })} placeholder="Nome do projeto" className="w-full rounded-lg border px-3 py-2 dark:border-surface-600 dark:bg-surface-800" />
+          <textarea value={newProject.description} onChange={(e) => setNewProject({ ...newProject, description: e.target.value })} placeholder="Descrição (opcional)" rows={3} className="w-full rounded-lg border px-3 py-2 dark:border-surface-600 dark:bg-surface-800" />
+          <div className="flex gap-2"><button disabled={creating} className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">{creating ? "Criando..." : "Criar projeto"}</button><button type="button" onClick={() => setShowCreate(false)} className="rounded-lg border px-4 py-2 text-sm">Cancelar</button></div>
+        </form>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {projects.map((project) => (

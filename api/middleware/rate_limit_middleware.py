@@ -17,15 +17,33 @@ class RateLimitMiddleware(IAPIMiddleware):
         default_max: int = 100,
         default_window: int = 60,
         logger: APILogger | None = None,
+        max_requests: int | None = None,
+        window: int | None = None,
     ) -> None:
         self._default_max = default_max
         self._default_window = default_window
+        self._max_requests = max_requests if max_requests is not None else default_max
+        self._window = window if window is not None else default_window
         self._buckets: dict[str, dict[str, Any]] = {}
+        self._max_buckets = 10_000  # bounded memory: evict oldest (insertion order)
         self._logger = logger or APILogger("api.ratelimit")
+
+    def is_limited(self, key: str) -> bool:
+        if self._window <= 0:
+            return False
+        bucket = self._get_bucket(key, self._max_requests, self._window)
+        if bucket["tokens"] <= 0:
+            return True
+        bucket["tokens"] -= 1
+        return False
 
     def _get_bucket(self, key: str, max_requests: int, window_sec: int) -> dict[str, Any]:
         now = time.time()
         if key not in self._buckets:
+            # Bounded map: evict the oldest bucket (insertion order) only when
+            # a NEW key is added — never on access to an existing bucket.
+            if len(self._buckets) >= self._max_buckets:
+                self._buckets.pop(next(iter(self._buckets)), None)
             self._buckets[key] = {"tokens": max_requests, "last_refill": now, "max": max_requests, "window": window_sec}
         bucket = self._buckets[key]
         elapsed = now - bucket["last_refill"]
@@ -36,14 +54,20 @@ class RateLimitMiddleware(IAPIMiddleware):
         return bucket
 
     async def before_request(self, request: Any) -> Any:
+        # Key by client IP ONLY: per-path buckets let an attacker reset the
+        # quota by varying the URL path.
         client_ip = getattr(request, "client_ip", "") or "unknown"
-        path = getattr(request, "path", "/")
-        key = f"{client_ip}:{path}"
+        key = client_ip
 
-        max_req = self._default_max
-        window = self._default_window
+        max_req = self._max_requests
+        window = self._window
         if hasattr(request, "_rate_limit"):
             max_req = getattr(request, "_rate_limit", max_req)
+
+        # window <= 0 means "always allowed" — mirror is_limited's guard so
+        # _get_bucket never divides by zero (refill = max/window).
+        if window <= 0:
+            return None
 
         bucket = self._get_bucket(key, max_req, window)
         remaining = bucket["tokens"]

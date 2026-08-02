@@ -9,9 +9,33 @@ from ..api_models import HTTPMethod
 class RESTRouter(IAPIRouter):
     """Protocol-specific router for REST endpoints."""
 
-    def __init__(self) -> None:
+    def __init__(self, app: Any = None) -> None:
+        self.app = app
         self._routes: list[dict[str, Any]] = []
         self._registered = False
+
+    @property
+    def routes(self) -> list[dict[str, Any]]:
+        return list(self._routes)
+
+    def register(
+        self,
+        method: str | HTTPMethod,
+        path: str,
+        handler: Any,
+        **metadata: Any,
+    ) -> None:
+        self.add_route(method, path, handler, **metadata)
+
+    def extract_params(self, template: str, path: str) -> dict[str, str] | None:
+        import re
+
+        pattern = re.sub(r"\{([^}]+)\}", r"(?P<\1>[^/]+)", template)
+        regex = re.compile(f"^{pattern}$")
+        match = regex.match(path)
+        if match is None:
+            return None
+        return dict(match.groupdict())
 
     def add_route(
         self,

@@ -59,11 +59,15 @@ class TestVerifyPassword:
             hashed = hash_password(pwd)
             assert verify_password(pwd, hashed), f"Roundtrip failed for: {pwd!r}"
 
-    def test_long_password_exceeds_bcrypt_limit(self):
-        """bcrypt rejects passwords > 72 bytes in this library version."""
+    def test_long_password_is_truncated_to_72_bytes(self):
+        """bcrypt 4.3.0 silently truncates passwords > 72 bytes (no error)."""
         long_pwd = "x" * 200
-        with pytest.raises(ValueError, match="password cannot be longer than 72 bytes"):
-            hash_password(long_pwd)
+        hashed = hash_password(long_pwd)
+        assert isinstance(hashed, str)
+        assert hashed.startswith("$2")
+        # checkpw truncates the same way, so a >72-byte input still verifies
+        # against a hash produced from the same input.
+        assert verify_password(long_pwd, hashed) is True
 
     def test_password_at_bcrypt_limit(self):
         """Exactly 72 bytes should work fine."""

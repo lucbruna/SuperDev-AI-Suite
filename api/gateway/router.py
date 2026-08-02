@@ -1,9 +1,19 @@
 from __future__ import annotations
 
+import types
 from typing import Any
 
 from ..api_interfaces import IAPIRouter
 from ..api_logger import APILogger
+
+
+class Route:
+    """Resolved gateway route."""
+
+    def __init__(self, target: str, remaining_path: str = "", prefix: str = "") -> None:
+        self.target = target
+        self.remaining_path = remaining_path
+        self.prefix = prefix
 
 
 class GatewayRouter(IAPIRouter):
@@ -19,6 +29,13 @@ class GatewayRouter(IAPIRouter):
             "target": target_url,
             "methods": methods or ["GET", "POST", "PUT", "PATCH", "DELETE"],
         })
+
+    def resolve(self, path: str) -> Route | None:
+        for route in self._routes:
+            if path.startswith(route["prefix"]):
+                remaining = path[len(route["prefix"]):]
+                return Route(target=route["target"], remaining_path=remaining, prefix=route["prefix"])
+        return None
 
     def match(self, path: str, method: str) -> dict[str, Any] | None:
         for route in self._routes:

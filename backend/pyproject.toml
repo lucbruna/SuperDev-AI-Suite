@@ -44,4 +44,9 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+# Session-scoped async fixtures (e.g. backend/tests + root tests/conftest.py
+# async_engine) require a session event loop; align the test loop scope too so
+# every async test runs on the same loop (no cross-loop binding errors).
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
 testpaths = ["tests"]

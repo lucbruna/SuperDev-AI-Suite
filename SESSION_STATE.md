@@ -321,6 +321,17 @@
 - **Exemplo:** `examples/llm-navigation/main.py` novo passo 5 "BUDGET APERTADO" (`max_tokens=600`, `max_file_tokens=30` → 5 arquivos truncados, `prompt_tokens=370`, `fits_budget=True`, marcador presente); passo do LLM renumerado para 6; README documenta
 - **Testes:** `TestPromptTruncation` (6 unit tests: desabilitado por default, arquivo curto intocado, longo truncado no meio mantendo fn_0/fn_99 sem fn_50, fallback de linha gigante, prompt truncado cabe no budget, via `build_from_selection`) + `test_tight_budget_truncates_files_in_middle` (end-to-end no demo) — **90 verdes** nas suítes do módulo code
 
+## ✅ BUDGET GLOBAL NO PROMPT BUILDER (truncar/dropar até caber)
+
+**Status:** ✅ **100%** — o `max_tokens` reina sobre o prompt inteiro, mesmo sem `max_file_tokens`
+
+- **`PromptBuilder.build`** (`code/understanding/prompt_builder.py`): após o passe por arquivo, um **passe global** aperta o prompt pela cauda (menos relevante primeiro, pois a seleção é rankeada): enquanto o prompt montado excede `max_tokens`, o arquivo final é re-truncado no meio até o orçamento restante e, quando nem um slice mínimo cabe, é **descartado** (rastreado em `last_dropped`)
+- **Matemática à prova de off-by-one:** o split por linhas reserva o custo do marcador (`_MARKER_RESERVE = 12`) e a verificação pós-montagem usa margem de 2 tokens (`_SLICE_VERIFY_MARGIN`) — `estimate_tokens` arredonda cada parte para baixo, então um slice que cabe em `budget` pelo seu próprio estimate ainda pode estourar o bloco `### FILE` inteiro em 1-2 tokens (partes somam 29, bloco unido 120 chars → 30); slices de fronteira caem no `_char_slice` garantido (reserva marcador + 4 tokens, `rstrip` na cabeça com realocação para a cauda quando vira só whitespace — preserva `zzzz` de arquivos de uma linha só)
+- **Guarda anti-loop infinito:** o passe global só mantém o arquivo quando `shrunk != content` — se o slice já cabe no target, re-truncar devolve o conteúdo inalterado e o `continue` giraria para sempre (estimativas superaditivas podem deixar o prompt 1-2 tokens acima do `max_tokens` mesmo com o bloco cabendo em `remaining`); conteúdo inalterado → drop
+- **Wiring:** `build_llm_context` retorna **`dropped_files`** (contagem) e documenta o passe global no docstring
+- **Exemplo:** `examples/llm-navigation/main.py` nova seção 5b "BUDGET GLOBAL" (`max_tokens=150` **sem** `max_file_tokens` → 1 arquivo truncado, 0 descartados, `prompt_tokens=140`, `fits_budget=True`, blocos FILE preservados); README documenta o passo 6b
+- **Testes:** `TestPromptGlobalBudget` (6 unit tests: trunca o arquivo da cauda no meio sem drops, dropa quando o slice mínimo não cabe, dropa da cauda até caber, cabeça da seleção (seed) sempre sobrevive, tracking reseta por build, budget generoso é no-op) + `test_global_budget_without_max_file_tokens` (end-to-end no demo) + asserts do entrypoint — **34 verdes** nas suítes de prompt_builder + exemplo
+
 ---
 
 ## ✅ SEÇÃO FOCO NO ask_llm (ranking → instrução → medição da resposta)

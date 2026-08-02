@@ -7,6 +7,36 @@ from ..api_models import PaginatedResponse, PaginationParams
 from ..api_interfaces import IAPIMiddleware
 
 
+class PaginationResult:
+    """Result of a paginate() call."""
+
+    def __init__(
+        self,
+        items: list[Any],
+        page: int,
+        per_page: int,
+        total: int,
+    ) -> None:
+        self.items = items
+        self.page = page
+        self.per_page = per_page
+        self.total = total
+
+
+class Pagination:
+    """Slices a full list into pages."""
+
+    def paginate(self, items: list[Any], page: int = 1, per_page: int = 10) -> PaginationResult:
+        start = (page - 1) * per_page
+        end = start + per_page
+        return PaginationResult(
+            items=items[start:end],
+            page=page,
+            per_page=per_page,
+            total=len(items),
+        )
+
+
 def paginate(
     items: list[Any],
     total: int,

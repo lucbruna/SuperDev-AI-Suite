@@ -1,5 +1,6 @@
 import apiClient from "./client";
-import { API_BASE_URL } from "@/constants/api";
+import { API_BASE_URL, AGENT_TIMEOUT } from "@/constants/api";
+import { useAuthStore } from "@/stores/authStore";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -60,6 +61,12 @@ export interface LLMChatResponse {
   tool_calls?: any[];
 }
 
+export interface AgentChatResponse {
+  content: string;
+  tool_calls: Array<{ name: string; arguments: Record<string, unknown>; error?: string | null }>;
+  error?: string | null;
+}
+
 export interface LLMHealthResult {
   overall: string;
   providers: Record<string, { status: string; latency_ms?: number; error?: string }>;
@@ -108,16 +115,26 @@ export const llmApi = {
 
   /** Chat completion */
   async chat(req: LLMChatRequest): Promise<LLMChatResponse> {
-    const { data } = await apiClient.post<{ success: boolean; data: LLMChatResponse }>(
-      `${LLM_BASE}/chat`,
+    const { data } = await apiClient.post<LLMChatResponse>(
+      "/chat/completions",
       req
     );
-    return data.data;
+    return data;
+  },
+
+  /** Run the workspace-enabled coding agent. Uses extended timeout (5 min) for multi-step execution. */
+  async agentChat(req: { message: string; provider?: string; model?: string; temperature?: number }): Promise<AgentChatResponse> {
+    const token = useAuthStore.getState().accessToken;
+    const { data } = await apiClient.post<AgentChatResponse>("/chat/agent", req, {
+      timeout: AGENT_TIMEOUT, // 5 minutes for multi-step agent tasks
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    return data;
   },
 
   /** Stream chat via SSE — returns an EventSource/ReadableStream */
   streamChat(req: LLMChatRequest): EventSource {
-    const token = localStorage.getItem("accessToken");
+    const token = useAuthStore.getState().accessToken;
     const url = `${API_BASE_URL}${LLM_BASE}/chat/stream`;
     const es = new EventSource(url);
 
@@ -134,8 +151,8 @@ export const llmApi = {
     onChunk: (content: string, done: boolean) => void,
     signal?: AbortSignal
   ): Promise<void> {
-    const token = localStorage.getItem("accessToken");
-    const response = await fetch(`${API_BASE_URL}${LLM_BASE}/chat/stream`, {
+    const token = useAuthStore.getState().accessToken;
+    const response = await fetch(`${API_BASE_URL}/chat/stream`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -177,7 +194,7 @@ export const llmApi = {
               onChunk(`[Error: ${parsed.error}]`, true);
               return;
             }
-            onChunk(parsed.content || "", parsed.finish_reason === "stop" || parsed.finish_reason === "error");
+            onChunk(parsed.delta || parsed.content || "", Boolean(parsed.finish_reason));
           } catch {
             // Skip malformed JSON
           }

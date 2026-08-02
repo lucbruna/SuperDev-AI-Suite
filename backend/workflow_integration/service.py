@@ -149,7 +149,7 @@ language = {language!r}
         return workflow_manager.create_definition(
             name=name,
             description=f"Verification workflow for: {task_description[:100]}",
-            steps=[s.model_dump() for s in steps],
+            steps=[s.to_dict() for s in steps],
             variables={
                 "task_description": task_description,
                 "language": language,

@@ -33,6 +33,12 @@ class APIGateway(IAPIGateway):
     def get_service_url(self, name: str) -> str | None:
         return self._services.get(name)
 
+    def add_route(self, path_prefix: str, target_url: str) -> None:
+        self._router.register(path_prefix, target_url)
+
+    def resolve(self, path: str) -> dict[str, Any] | None:
+        return self._router.resolve(path)
+
     def register_route(self, path_prefix: str, service_name: str) -> None:
         target = self._services.get(service_name)
         if target:

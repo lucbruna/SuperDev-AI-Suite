@@ -91,15 +91,17 @@ account_lockout = AccountLockout()
 class AuthMiddleware:
     """Global auth middleware that validates JWT on all non-excluded paths.
 
-    Sets request.state.user_id and request.state.token_payload
-    for downstream use.
+    Pure-ASGI middleware (registered via app.add_middleware). Sets
+    request.state.user_id and request.state.token_payload for downstream use.
     """
 
-    def __init__(self, excluded_paths: list[str] | None = None) -> None:
+    def __init__(self, app: Any, excluded_paths: list[str] | None = None) -> None:
+        self.app = app
         self.excluded_paths = excluded_paths or [
             "/api/v1/auth/login",
             "/api/v1/auth/register",
             "/api/v1/auth/refresh",
+            "/api/v1/api-keys/me",  # API-key auth handled by api_key_auth dependency
             "/api/v1/health",
             "/health",
             "/docs",
@@ -107,47 +109,70 @@ class AuthMiddleware:
             "/openapi.json",
         ]
 
-    async def __call__(self, request: Request, call_next: Any) -> Any:
+    async def __call__(self, scope: Any, receive: Any, send: Any) -> None:
         from starlette.responses import JSONResponse
 
-        path = request.url.path
+        # Only authenticate HTTP requests; pass everything else through.
+        if scope.get("type") != "http":
+            await self.app(scope, receive, send)
+            return
+
+        # CORS preflight requests are sent without credentials. They must reach
+        # CORSMiddleware so the browser can decide whether to send the actual
+        # authenticated request.
+        if scope.get("method") == "OPTIONS":
+            await self.app(scope, receive, send)
+            return
+
+        path = scope.get("path", "")
 
         # Skip excluded paths
         if any(path.startswith(excluded) for excluded in self.excluded_paths):
-            return await call_next(request)
+            await self.app(scope, receive, send)
+            return
 
-        # Skip WebSocket (handled separately)
-        if request.scope.get("type") == "websocket":
-            return await call_next(request)
+        # Extract Authorization header (ASGI headers are lowercase bytes)
+        auth_header = ""
+        for name, value in scope.get("headers", []):
+            if name == b"authorization":
+                auth_header = value.decode("latin-1")
+                break
 
-        auth_header = request.headers.get("Authorization")
         if not auth_header or not auth_header.startswith("Bearer "):
-            return JSONResponse(
+            response = JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 content={"detail": "Not authenticated"},
             )
+            await response(scope, receive, send)
+            return
 
         token = auth_header.removeprefix("Bearer ")
         manager = get_jwt_manager()
         payload = await manager.verify_token(token)
 
         if payload is None:
-            return JSONResponse(
+            response = JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 content={"detail": "Invalid or expired token"},
             )
+            await response(scope, receive, send)
+            return
 
         # Check if all user tokens are revoked
         user_id = payload.get("sub")
         if user_id and await manager.is_user_revoked(user_id):
-            return JSONResponse(
+            response = JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 content={"detail": "Token has been revoked"},
             )
+            await response(scope, receive, send)
+            return
 
+        # Attach user context to the request scope for downstream use
+        request = Request(scope)
         request.state.user_id = user_id
         request.state.token_payload = payload
-        return await call_next(request)
+        await self.app(scope, receive, send)
 
 
 # ------------------------------------------------------------------

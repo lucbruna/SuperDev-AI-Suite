@@ -1,84 +1,85 @@
-"""Comprehensive tests for Integration Hub & API Ecosystem Engine (Volume 29)."""
+﻿"""Comprehensive tests for Integration Hub & API Ecosystem Engine (Volume 29)."""
 
 import os
 import sys
 import unittest
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+if __name__ == "__main__":
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
-# ── Core imports ──────────────────────────────────────────────────────────
-# ── Adapters ──────────────────────────────────────────────────────────────
-from integration.adapters.adapter_engine import AdapterConfig, AdapterEngine, AdapterType
+# â”€â”€ Core imports â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# â”€â”€ Adapters â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+from ai.integration.adapters.adapter_engine import AdapterConfig, AdapterEngine, AdapterType
 
-# ── API Gateway ───────────────────────────────────────────────────────────
-from integration.api_gateway.api_gateway_engine import APIGatewayEngine
-from integration.api_gateway.api_gateway_engine import HttpMethod as GWHttpMethod
-from integration.api_gateway.rate_limit import RateLimiter
-from integration.api_gateway.versioning import VersionManager
-from integration.authentication.api_keys import APIKeyManager
-from integration.authentication.certificates import CertificateManager
+# â”€â”€ API Gateway â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+from ai.integration.api_gateway.api_gateway_engine import APIGatewayEngine
+from ai.integration.api_gateway.api_gateway_engine import HttpMethod as GWHttpMethod
+from ai.integration.api_gateway.rate_limit import RateLimiter
+from ai.integration.api_gateway.versioning import VersionManager
+from ai.integration.authentication.api_keys import APIKeyManager
+from ai.integration.authentication.certificates import CertificateManager
 
-# ── Authentication ────────────────────────────────────────────────────────
-from integration.authentication.integration_auth import AuthType, IntegrationAuth
-from integration.mapping.field_mapper import FieldMapper
+# â”€â”€ Authentication â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+from ai.integration.authentication.integration_auth import AuthType, IntegrationAuth
+from ai.integration.mapping.field_mapper import FieldMapper
 
-# ── Mapping ───────────────────────────────────────────────────────────────
-from integration.mapping.mapping_engine import MappingEngine
-from integration.mapping.schema_mapper import SchemaMapper
-from integration.mapping.transformation import TransformationEngine
-from integration.mapping.validation import MappingValidator
-from integration.monitoring.availability import AvailabilityMonitor
-from integration.monitoring.errors import ErrorMonitor
+# â”€â”€ Mapping â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+from ai.integration.mapping.mapping_engine import MappingEngine
+from ai.integration.mapping.schema_mapper import SchemaMapper
+from ai.integration.mapping.transformation import TransformationEngine
+from ai.integration.mapping.validation import MappingValidator
+from ai.integration.monitoring.availability import AvailabilityMonitor
+from ai.integration.monitoring.errors import ErrorMonitor
 
-# ── Monitoring ────────────────────────────────────────────────────────────
-from integration.monitoring.integration_monitor import HealthStatus, IntegrationMonitor
-from integration.monitoring.latency import LatencyMonitor
-from integration.monitoring.reports import IntegrationReporter
-from integration.queues.dead_letter import DeadLetterQueue
-from integration.queues.message_queue import MessageQueue
-from integration.queues.priority_queue import PriorityQueue
+# â”€â”€ Monitoring â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+from ai.integration.monitoring.integration_monitor import HealthStatus, IntegrationMonitor
+from ai.integration.monitoring.latency import LatencyMonitor
+from ai.integration.monitoring.reports import IntegrationReporter
+from ai.integration.queues.dead_letter import DeadLetterQueue
+from ai.integration.queues.message_queue import MessageQueue
+from ai.integration.queues.priority_queue import PriorityQueue
 
-# ── Queues ────────────────────────────────────────────────────────────────
-from integration.queues.queue_engine import QueueEngine, QueueState
-from integration.queues.retry_queue import RetryQueue
-from integration.synchronization.conflict_manager import ConflictManager
-from integration.synchronization.data_sync import DataSync
-from integration.synchronization.incremental_sync import IncrementalSync
-from integration.synchronization.scheduler import SyncScheduler
-from integration.webhooks.retry_manager import RetryManager
+# â”€â”€ Queues â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+from ai.integration.queues.queue_engine import QueueEngine, QueueState
+from ai.integration.queues.retry_queue import RetryQueue
+from ai.integration.synchronization.conflict_manager import ConflictManager
+from ai.integration.synchronization.data_sync import DataSync
+from ai.integration.synchronization.incremental_sync import IncrementalSync
+from ai.integration.synchronization.scheduler import SyncScheduler
+from ai.integration.webhooks.retry_manager import RetryManager
 
-from integration.authentication.oauth import OAuthProvider
-from integration.authentication.token_manager import IntegrationTokenManager
+from ai.integration.authentication.oauth import OAuthProvider
+from ai.integration.authentication.token_manager import IntegrationTokenManager
 
-# ── Connectors ────────────────────────────────────────────────────────────
-from integration.connectors.connector_engine import ConnectorConfig, ConnectorEngine, ConnectorState, ConnectorType
-from integration.integration_config import ConfigFormat, IntegrationConfig
-from integration.integration_context import IntegrationContext
-from integration.integration_engine import IntegrationEngine
-from integration.integration_events import EventType, IntegrationEvent, IntegrationEvents
-from integration.integration_factory import IntegrationFactory
-from integration.integration_interfaces import IntegrationInterfaces
-from integration.integration_logger import IntegrationLogger
-from integration.integration_manager import IntegrationManager
-from integration.integration_metrics import IntegrationMetrics
-from integration.integration_models import DataFormat, IntegrationModels
-from integration.integration_protocols import IntegrationProtocols, ProtocolType
-from integration.integration_registry import IntegrationRegistry
-from integration.integration_runtime import IntegrationRuntime
-from integration.integration_security import AuthMethod, IntegrationSecurity
+# â”€â”€ Connectors â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+from ai.integration.connectors.connector_engine import ConnectorConfig, ConnectorEngine, ConnectorState, ConnectorType
+from ai.integration.integration_config import ConfigFormat, IntegrationConfig
+from ai.integration.integration_context import IntegrationContext
+from ai.integration.integration_engine import IntegrationEngine
+from ai.integration.integration_events import EventType, IntegrationEvent, IntegrationEvents
+from ai.integration.integration_factory import IntegrationFactory
+from ai.integration.integration_interfaces import IntegrationInterfaces
+from ai.integration.integration_logger import IntegrationLogger
+from ai.integration.integration_manager import IntegrationManager
+from ai.integration.integration_metrics import IntegrationMetrics
+from ai.integration.integration_models import DataFormat, IntegrationModels
+from ai.integration.integration_protocols import IntegrationProtocols, ProtocolType
+from ai.integration.integration_registry import IntegrationRegistry
+from ai.integration.integration_runtime import IntegrationRuntime
+from ai.integration.integration_security import AuthMethod, IntegrationSecurity
 
-# ── Synchronization ──────────────────────────────────────────────────────
-from integration.synchronization.sync_engine import SyncDirection, SyncEngine, SyncStatus
-from integration.webhooks.receiver import WebhookReceiver
-from integration.webhooks.sender import WebhookSender
-from integration.webhooks.validator import WebhookValidator
+# â”€â”€ Synchronization â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+from ai.integration.synchronization.sync_engine import SyncDirection, SyncEngine, SyncStatus
+from ai.integration.webhooks.receiver import WebhookReceiver
+from ai.integration.webhooks.sender import WebhookSender
+from ai.integration.webhooks.validator import WebhookValidator
 
-# ── Webhooks ──────────────────────────────────────────────────────────────
-from integration.webhooks.webhook_engine import WebhookEngine, WebhookStatus
+# â”€â”€ Webhooks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+from ai.integration.webhooks.webhook_engine import WebhookEngine, WebhookStatus
 
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # CORE TESTS
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 
 class TestCoreModules(unittest.TestCase):
@@ -160,9 +161,9 @@ class TestCoreModules(unittest.TestCase):
         self.assertIsNotNone(ConfigFormat)
 
 
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # API GATEWAY TESTS
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 
 class TestAPIGatewayEngine(unittest.TestCase):
@@ -284,9 +285,9 @@ class TestVersionManager(unittest.TestCase):
         self.assertEqual(self.vm.count(), 2)
 
 
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # CONNECTORS TESTS
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 
 class TestConnectorEngine(unittest.TestCase):
@@ -352,9 +353,9 @@ class TestConnectorEngine(unittest.TestCase):
         self.assertEqual(ConnectorState.CONNECTED.value, "connected")
 
 
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # ADAPTERS TESTS
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 
 class TestAdapterEngine(unittest.TestCase):
@@ -423,9 +424,9 @@ class TestAdapterEngine(unittest.TestCase):
         self.assertEqual(len(self.engine.get_log()), 2)
 
 
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # AUTHENTICATION TESTS
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 
 class TestIntegrationAuth(unittest.TestCase):
@@ -501,9 +502,9 @@ class TestIntegrationTokenManager(unittest.TestCase):
         self.assertIsNotNone(m)
 
 
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # WEBHOOKS TESTS
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 
 class TestWebhookEngine(unittest.TestCase):
@@ -563,9 +564,9 @@ class TestWebhookSubModules(unittest.TestCase):
         self.assertIsNotNone(RetryManager())
 
 
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # SYNCHRONIZATION TESTS
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 
 class TestSyncEngine(unittest.TestCase):
@@ -625,9 +626,9 @@ class TestSyncSubModules(unittest.TestCase):
         self.assertIsNotNone(IncrementalSync())
 
 
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # MAPPING TESTS
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 
 class TestMappingEngine(unittest.TestCase):
@@ -713,9 +714,9 @@ class TestMappingSubModules(unittest.TestCase):
         self.assertIsNotNone(MappingValidator())
 
 
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # QUEUES TESTS
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 
 class TestQueueEngine(unittest.TestCase):
@@ -782,9 +783,9 @@ class TestQueueSubModules(unittest.TestCase):
         self.assertIsNotNone(DeadLetterQueue())
 
 
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # MONITORING TESTS
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 
 class TestIntegrationMonitor(unittest.TestCase):
@@ -851,14 +852,14 @@ class TestMonitoringSubModules(unittest.TestCase):
         self.assertIsNotNone(IntegrationReporter())
 
 
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # SUBSYSTEM IMPORT TESTS
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 
 class TestSubsystemImports(unittest.TestCase):
     def test_api_gateway_imports(self):
-        from integration.api_gateway import (
+        from ai.integration.api_gateway import (
             APIGatewayEngine,
             RateLimiter,
             RequestHandler,
@@ -872,7 +873,7 @@ class TestSubsystemImports(unittest.TestCase):
         )
 
     def test_connectors_imports(self):
-        from integration.connectors import (
+        from ai.integration.connectors import (
             ConnectorEngine,
             ConnectorLoader,
             ConnectorManager,
@@ -885,12 +886,12 @@ class TestSubsystemImports(unittest.TestCase):
         )
 
     def test_adapters_imports(self):
-        from integration.adapters import AdapterEngine, AdapterManager, FormatAdapter, LegacyAdapter, ProtocolAdapter
+        from ai.integration.adapters import AdapterEngine, AdapterManager, FormatAdapter, LegacyAdapter, ProtocolAdapter
 
         self.assertTrue(all([AdapterEngine, AdapterManager, ProtocolAdapter, FormatAdapter, LegacyAdapter]))
 
     def test_authentication_imports(self):
-        from integration.authentication import (
+        from ai.integration.authentication import (
             APIKeyManager,
             CertificateManager,
             IntegrationAuth,
@@ -903,27 +904,27 @@ class TestSubsystemImports(unittest.TestCase):
         )
 
     def test_webhooks_imports(self):
-        from integration.webhooks import RetryManager, WebhookEngine, WebhookReceiver, WebhookSender, WebhookValidator
+        from ai.integration.webhooks import RetryManager, WebhookEngine, WebhookReceiver, WebhookSender, WebhookValidator
 
         self.assertTrue(all([WebhookEngine, WebhookReceiver, WebhookSender, WebhookValidator, RetryManager]))
 
     def test_synchronization_imports(self):
-        from integration.synchronization import ConflictManager, DataSync, IncrementalSync, SyncEngine, SyncScheduler
+        from ai.integration.synchronization import ConflictManager, DataSync, IncrementalSync, SyncEngine, SyncScheduler
 
         self.assertTrue(all([SyncEngine, DataSync, ConflictManager, SyncScheduler, IncrementalSync]))
 
     def test_mapping_imports(self):
-        from integration.mapping import FieldMapper, MappingEngine, MappingValidator, SchemaMapper, TransformationEngine
+        from ai.integration.mapping import FieldMapper, MappingEngine, MappingValidator, SchemaMapper, TransformationEngine
 
         self.assertTrue(all([MappingEngine, SchemaMapper, FieldMapper, TransformationEngine, MappingValidator]))
 
     def test_queues_imports(self):
-        from integration.queues import DeadLetterQueue, MessageQueue, PriorityQueue, QueueEngine, RetryQueue
+        from ai.integration.queues import DeadLetterQueue, MessageQueue, PriorityQueue, QueueEngine, RetryQueue
 
         self.assertTrue(all([QueueEngine, MessageQueue, PriorityQueue, RetryQueue, DeadLetterQueue]))
 
     def test_monitoring_imports(self):
-        from integration.monitoring import (
+        from ai.integration.monitoring import (
             AvailabilityMonitor,
             ErrorMonitor,
             IntegrationMonitor,
@@ -936,9 +937,9 @@ class TestSubsystemImports(unittest.TestCase):
         )
 
 
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # CROSS-SUBSYSTEM INTEGRATION TESTS
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 
 class TestCrossSubsystemIntegration(unittest.TestCase):
@@ -1040,7 +1041,7 @@ class TestCrossSubsystemIntegration(unittest.TestCase):
         self.assertTrue(mon.get_status("ext_api").is_online)
 
 
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

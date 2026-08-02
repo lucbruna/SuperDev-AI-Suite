@@ -12,6 +12,9 @@ class RequestIDMiddleware(IAPIMiddleware):
     def __init__(self, header_name: str = "X-Request-ID") -> None:
         self._header_name = header_name
 
+    def generate_id(self) -> str:
+        return str(uuid.uuid4())
+
     async def before_request(self, request: Any) -> Any:
         headers = getattr(request, "headers", {}) if hasattr(request, "headers") else {}
         request_id = ""

@@ -20,6 +20,13 @@ repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || {
   exit 1
 }
 
+# All git calls below (ls-files, config) must resolve paths against the repo
+# root, not the caller's CWD — the script must work from any subdirectory.
+cd "$repo_root" || {
+  echo "[mantis-hook] error: cannot cd into $repo_root" >&2
+  exit 1
+}
+
 versioned_hook="$repo_root/.githooks/post-commit"
 legacy_hook="$repo_root/.git/hooks/post-commit"
 runner="$repo_root/run_mantis.py"
@@ -52,6 +59,7 @@ status_hook() {
   printf "  harness           : "
   [ -f "$harness" ] && echo "present ($harness)" || echo "MISSING ($harness)"
   if [ "$(git config core.hooksPath 2>/dev/null)" = ".githooks" ] \
+    && git ls-files --error-unmatch .githooks/post-commit >/dev/null 2>&1 \
     && [ -x "$versioned_hook" ] \
     && [ -f "$runner" ] \
     && [ -f "$harness" ]; then

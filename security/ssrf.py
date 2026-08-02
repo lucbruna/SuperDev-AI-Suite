@@ -69,6 +69,36 @@ def is_internal_host(host: str) -> bool:
     return _is_blocked(address)
 
 
+def resolve_public_url(url: str, allow_private: bool = False) -> tuple[str, list[str]]:
+    """Resolve *url* once and return (url, pinned_ip_set).
+
+    Callers MUST connect to one of the returned pinned IPs (preserving the
+    Host header) instead of re-resolving the hostname, which is the
+    DNS-rebinding window.
+    """
+    parsed = urlparse(url)
+    if parsed.scheme not in _ALLOWED_SCHEMES:
+        raise ValueError(
+            f"URL scheme must be http or https, got {parsed.scheme!r}")
+    host = parsed.hostname
+    if not host:
+        raise ValueError(f"URL has no host: {url!r}")
+    try:
+        address = ipaddress.ip_address(host)
+    except ValueError:
+        # Hostname: resolve once and pin — the returned set is what callers
+        # must connect to, closing the re-resolve/rebind window.
+        addresses = _resolve_addresses(host)
+        if not allow_private and any(_is_blocked(a) for a in addresses):
+            raise ValueError(
+                f"URL targets an internal/private address: {host!r}")
+        return url, [a.compressed for a in addresses]
+    if not allow_private and _is_blocked(address):
+        raise ValueError(
+            f"URL targets an internal/private address: {host!r}")
+    return url, [str(address)]
+
+
 def validate_public_url(url: str, allow_private: bool = False) -> str:
     """Validate *url* is an http(s) URL that does not target internal networks.
 
@@ -86,6 +116,8 @@ def validate_public_url(url: str, allow_private: bool = False) -> str:
     if parsed.scheme not in _ALLOWED_SCHEMES:
         raise ValueError(
             f"URL scheme must be http or https, got {parsed.scheme!r}")
+    # Reject internal hosts at validation time (defense in depth);
+    # connect-time pinning is provided by resolve_public_url().
     host = parsed.hostname
     if not host:
         raise ValueError(f"URL has no host: {url!r}")

@@ -1,0 +1,32 @@
+{
+  "version": 2,
+  "skills": {
+    "accessibility": {
+      "name": "accessibility",
+      "source": "local",
+      "contentHash": "706129400c8c91a9264582940b36007116faffcaf27bb0780bdab87337b4f881",
+      "installedAt": "2026-08-01T18:13:17.389Z",
+      "updatedAt": "2026-08-01T18:13:17.581Z",
+      "agents": [
+        "cursor",
+        "claude-code",
+        "windsurf"
+      ],
+      "method": "copy",
+      "global": false
+    },
+    "tlc-spec-driven": {
+      "name": "tlc-spec-driven",
+      "source": "local",
+      "contentHash": "e3d5c4dec38bff044207b31229fb28114d5fdb79f2c7200f3ec49a13a70024e1",
+      "installedAt": "2026-08-01T18:13:35.859Z",
+      "updatedAt": "2026-08-01T18:13:35.990Z",
+      "agents": [
+        "cursor",
+        "claude-code"
+      ],
+      "method": "copy",
+      "global": false
+    }
+  }
+}

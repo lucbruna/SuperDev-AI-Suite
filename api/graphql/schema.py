@@ -7,6 +7,7 @@ from .resolver import ResolverRegistry
 from .types import (
     BUILTIN_SCALARS,
     GraphQLEnum,
+    GraphQLField,
     GraphQLInputType,
     GraphQLList,
     GraphQLNonNull,
@@ -28,6 +29,13 @@ class GraphQLSchema:
 
     def register_type(self, graphql_type: GraphQLType | GraphQLEnum | GraphQLInputType | GraphQLScalar) -> None:
         self._types[graphql_type.name] = graphql_type
+
+    def add_type(self, name: str, fields: dict[str, Any]) -> None:
+        field_defs = {k: GraphQLField(k, v) for k, v in fields.items()}
+        self._types[name] = GraphQLType(name=name, fields=field_defs)
+
+    def get_types(self) -> dict[str, Any]:
+        return dict(self._types)
 
     def set_query_type(self, name: str) -> None:
         self._query_type = name

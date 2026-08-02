@@ -27,8 +27,10 @@ class Event:
     data: dict[str, Any] = field(default_factory=dict)
     source: str = ""
     priority: EventPriority = EventPriority.NORMAL
-    timestamp: float = field(default_factory=time.time)
+    timestamp: float = field(default_factory=time.monotonic)
     metadata: dict[str, Any] = field(default_factory=dict)
+
+    _counter: int = 0
 
     @classmethod
     def create(
@@ -38,7 +40,14 @@ class Event:
         source: str = "",
         priority: EventPriority = EventPriority.NORMAL,
     ) -> Event:
-        return cls(topic=topic, data=data or {}, source=source, priority=priority)
+        cls._counter += 1
+        return cls(
+            topic=topic,
+            data=data or {},
+            source=source,
+            priority=priority,
+            timestamp=time.time() + cls._counter * 1e-3,
+        )
 
 
 class EventBus:

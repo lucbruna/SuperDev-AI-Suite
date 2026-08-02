@@ -1,4 +1,9 @@
-"""LLM API endpoints using the new ai/llm provider system."""
+"""LLM API endpoints using the new ai/llm provider system.
+
+Provider resolution now honors providers saved through the Settings UI
+(``app_settings`` → ``providers``) with env-var fallback, so the runtime
+matches what the user configures in the UI.
+"""
 
 from __future__ import annotations
 
@@ -8,9 +13,12 @@ import os
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from backend.database.session import get_db
 
 logger = logging.getLogger(__name__)
 
@@ -88,14 +96,35 @@ def _get_llm_factory():
         return None
 
 
-def _get_available_providers() -> list[dict[str, Any]]:
-    """Return list of providers that have API keys configured."""
+async def _db_provider_config(
+    db: AsyncSession | None, provider_name: str
+) -> dict[str, Any]:
+    """Return DB-saved provider config (api_key/base_url/model) or empty dict.
+
+    Kept separate so both availability detection and instance creation share
+    the same resolution without importing the settings service at module scope.
+    """
+    if db is None:
+        return {}
+    try:
+        from backend.services.settings_service import get_runtime_provider_config
+
+        return await get_runtime_provider_config(db, provider_name)
+    except Exception as e:  # noqa: BLE001 — settings table may be missing
+        logger.debug("DB provider config unavailable for %s: %s", provider_name, e)
+        return {}
+
+
+async def _get_available_providers(db: AsyncSession | None = None) -> list[dict[str, Any]]:
+    """Return providers that have API keys configured (DB or env)."""
     from ai.llm.providers import PROVIDER_ENV_MAP
 
     available = []
-    for name, env_map in PROVIDER_ENV_MAP.items():
+    for name in PROVIDER_ENV_MAP:
+        saved = await _db_provider_config(db, name)
+        env_map = PROVIDER_ENV_MAP[name]
         api_key_var = env_map.get("api_key", "")
-        key = os.getenv(api_key_var, "")
+        key = saved.get("api_key") or os.getenv(api_key_var, "")
         available.append(
             {
                 "name": name,
@@ -106,24 +135,33 @@ def _get_available_providers() -> list[dict[str, Any]]:
     return available
 
 
-def _resolve_provider(provider_name: str | None = None, model: str | None = None) -> tuple[str, str]:
+async def _resolve_provider(
+    provider_name: str | None = None,
+    model: str | None = None,
+    db: AsyncSession | None = None,
+) -> tuple[str, str]:
     """Resolve provider name from request params. Returns (provider_name, model)."""
     if provider_name:
         return provider_name, model or ""
 
-    # Auto-detect from env vars using first available
+    # Auto-detect: DB-saved providers first, then env vars.
     from ai.llm.providers import PROVIDER_DEFAULT_MODELS, PROVIDER_ENV_MAP
 
-    for name, env_map in PROVIDER_ENV_MAP.items():
-        api_key_var = env_map.get("api_key", "")
-        if os.getenv(api_key_var, ""):
-            return name, model or PROVIDER_DEFAULT_MODELS.get(name, "")
+    for name in PROVIDER_ENV_MAP:
+        saved = await _db_provider_config(db, name)
+        api_key_var = PROVIDER_ENV_MAP[name].get("api_key", "")
+        if saved.get("api_key") or os.getenv(api_key_var, ""):
+            return name, model or saved.get("model") or PROVIDER_DEFAULT_MODELS.get(name, "")
 
     return "", ""
 
 
-def _create_provider_instance(provider_name: str, model: str | None = None) -> Any | None:
-    """Create a provider instance from the factory."""
+async def _create_provider_instance(
+    provider_name: str,
+    model: str | None = None,
+    db: AsyncSession | None = None,
+) -> Any | None:
+    """Create a provider instance, overlaying DB-saved config over env defaults."""
     factory = _get_llm_factory()
     if not factory:
         return None
@@ -132,7 +170,17 @@ def _create_provider_instance(provider_name: str, model: str | None = None) -> A
         from ai.llm.providers import PROVIDER_DEFAULT_MODELS
 
         resolved_model = model or PROVIDER_DEFAULT_MODELS.get(provider_name, "")
-        return factory.create(provider_name, model=resolved_model)
+        kwargs: dict[str, Any] = {"model": resolved_model}
+
+        saved = await _db_provider_config(db, provider_name)
+        if saved.get("api_key"):
+            kwargs["api_key"] = saved["api_key"]
+        if saved.get("base_url"):
+            kwargs["base_url"] = saved["base_url"]
+        if saved.get("model"):
+            kwargs["model"] = saved["model"]
+
+        return factory.create(provider_name, **kwargs)
     except Exception as e:
         logger.error("Failed to create provider %s: %s", provider_name, e)
         return None
@@ -144,11 +192,11 @@ def _create_provider_instance(provider_name: str, model: str | None = None) -> A
 
 
 @router.get("/providers", summary="List all LLM providers")
-async def list_providers():
+async def list_providers(db: AsyncSession = Depends(get_db)):
     """List all available LLM providers and their configuration status."""
     available = []
 
-    for prov in _get_available_providers():
+    for prov in await _get_available_providers(db):
         available.append(
             {
                 "name": prov["name"],
@@ -160,7 +208,7 @@ async def list_providers():
 
 
 @router.get("/providers/{provider_name}", summary="Get provider details")
-async def get_provider(provider_name: str):
+async def get_provider(provider_name: str, db: AsyncSession = Depends(get_db)):
     """Get detailed information about a specific provider."""
     from ai.llm.providers import PROVIDER_CLASSES, PROVIDER_DEFAULT_MODELS, PROVIDER_ENV_MAP
 
@@ -172,10 +220,11 @@ async def get_provider(provider_name: str):
 
     provider_cls = PROVIDER_CLASSES[provider_name]
     api_key_var = env_map.get("api_key", "")
-    api_key_configured = bool(os.getenv(api_key_var, ""))
+    saved = await _db_provider_config(db, provider_name)
+    api_key_configured = bool(saved.get("api_key") or os.getenv(api_key_var, ""))
 
     # Create instance and get its models
-    instance = _create_provider_instance(provider_name)
+    instance = await _create_provider_instance(provider_name, db=db)
     models = []
     instance_available = False
     if instance:
@@ -199,9 +248,9 @@ async def get_provider(provider_name: str):
 
 
 @router.post("/providers/{provider_name}/test", summary="Test provider connection")
-async def test_provider(provider_name: str):
+async def test_provider(provider_name: str, db: AsyncSession = Depends(get_db)):
     """Test if a provider is reachable with a health check."""
-    instance = _create_provider_instance(provider_name)
+    instance = await _create_provider_instance(provider_name, db=db)
     if not instance:
         raise HTTPException(
             status_code=400, detail=f"Provider '{provider_name}' not configured or failed to initialize"
@@ -232,6 +281,7 @@ async def test_provider(provider_name: str):
 @router.get("/models", summary="List supported models")
 async def list_models(
     provider: str | None = Query(None, description="Filter by provider"),
+    db: AsyncSession = Depends(get_db),
 ):
     """List all supported models across providers."""
     from ai.llm.providers import PROVIDER_CLASSES, PROVIDER_DEFAULT_MODELS
@@ -243,7 +293,7 @@ async def list_models(
         if name not in PROVIDER_CLASSES:
             continue
 
-        instance = _create_provider_instance(name)
+        instance = await _create_provider_instance(name, db=db)
         if instance:
             try:
                 models = await instance.list_models()
@@ -263,16 +313,16 @@ async def list_models(
 
 
 @router.post("/chat", summary="Chat completion")
-async def chat_completion(request: ChatRequest):
+async def chat_completion(request: ChatRequest, db: AsyncSession = Depends(get_db)):
     """Send a chat completion request to an LLM provider."""
-    provider_name, model = _resolve_provider(request.provider, request.model)
+    provider_name, model = await _resolve_provider(request.provider, request.model, db)
 
     if not provider_name:
         raise HTTPException(
-            status_code=400, detail="No LLM provider configured. Set API keys in environment variables."
+            status_code=400, detail="No LLM provider configured. Set API keys in environment variables or Settings."
         )
 
-    instance = _create_provider_instance(provider_name, model)
+    instance = await _create_provider_instance(provider_name, model, db)
     if not instance:
         raise HTTPException(status_code=400, detail=f"Provider '{provider_name}' not available")
 
@@ -316,16 +366,16 @@ async def chat_completion(request: ChatRequest):
 
 
 @router.post("/chat/stream", summary="Streaming chat completion")
-async def chat_stream(request: ChatRequest):
+async def chat_stream(request: ChatRequest, db: AsyncSession = Depends(get_db)):
     """Stream a chat completion response via SSE."""
-    provider_name, model = _resolve_provider(request.provider, request.model)
+    provider_name, model = await _resolve_provider(request.provider, request.model, db)
 
     if not provider_name:
         raise HTTPException(
-            status_code=400, detail="No LLM provider configured. Set API keys in environment variables."
+            status_code=400, detail="No LLM provider configured. Set API keys in environment variables or Settings."
         )
 
-    instance = _create_provider_instance(provider_name, model)
+    instance = await _create_provider_instance(provider_name, model, db)
     if not instance:
         raise HTTPException(status_code=400, detail=f"Provider '{provider_name}' not available")
 
@@ -381,7 +431,7 @@ async def chat_stream(request: ChatRequest):
 
 
 @router.get("/health", summary="LLM providers health check")
-async def llm_health():
+async def llm_health(db: AsyncSession = Depends(get_db)):
     """Run health checks on all configured providers."""
     from ai.llm.providers import PROVIDER_ENV_MAP
 
@@ -389,7 +439,7 @@ async def llm_health():
     overall = True
 
     for name in PROVIDER_ENV_MAP:
-        instance = _create_provider_instance(name)
+        instance = await _create_provider_instance(name, db=db)
         if not instance:
             results[name] = {"status": "not_configured", "error": "Missing API key"}
             continue

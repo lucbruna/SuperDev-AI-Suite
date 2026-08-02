@@ -72,15 +72,18 @@ apiClient.interceptors.response.use(
 
       try {
         const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
-          refreshToken,
+          refresh_token: refreshToken,
         });
 
-        const { accessToken, refreshToken: newRefreshToken } = response.data.data;
-        useAuthStore.getState().setTokens(accessToken, newRefreshToken);
+        const { access_token, refresh_token } = response.data;
+        if (!access_token || !refresh_token) {
+          throw new Error("Resposta inválida ao renovar a sessão");
+        }
+        useAuthStore.getState().setTokens(access_token, refresh_token);
 
-        processQueue(null, accessToken);
+        processQueue(null, access_token);
 
-        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        originalRequest.headers.Authorization = `Bearer ${access_token}`;
         return apiClient(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
@@ -89,6 +92,11 @@ apiClient.interceptors.response.use(
       } finally {
         isRefreshing = false;
       }
+    }
+
+    // For 401 on the refresh endpoint itself, logout immediately
+    if (error.response?.status === 401) {
+      useAuthStore.getState().logout();
     }
 
     return Promise.reject(error);

@@ -64,7 +64,7 @@ export function RegisterForm() {
         password: formData.password,
         fullName: formData.fullName || undefined,
       });
-      router.push(ROUTES.DASHBOARD);
+      router.push("/onboarding");
     } catch {
       // error is set by context
     }

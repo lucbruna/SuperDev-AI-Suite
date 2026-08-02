@@ -1,419 +1,225 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Table, Button, Tag, Modal, Form, Input, Select, Space, Switch, Tooltip, Dropdown, Menu, Avatar, Badge, Row, Col, Divider, List, Empty, Progress, Statistic, Tabs, Typography, Descriptions, Popconfirm } from 'antd';
-import { 
-  PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, 
-  MoreOutlined, SearchOutlined, FilterOutlined, DownloadOutlined,
-  PlayOutlined, StopOutlined, PauseOutlined, ReloadOutlined,
-  CopyOutlined, CodeOutlined, TerminalOutlined, RobotOutlined,
-  CheckCircleOutlined, CloseCircleOutlined, ExclamationCircleOutlined,
-  ClockCircleOutlined, FileTextOutlined, ArrowUpOutlined, ArrowDownOutlined,
-  EnvironmentOutlined, DatabaseOutlined, UserOutlined, SettingOutlined,
-  WarningOutlined, InfoCircleOutlined, SafetyOutlined, ExperimentOutlined,
-  HistoryOutlined, LogoutOutlined, LinkOutlined, ShareAltOutlined,
-  UploadOutlined, FolderOutlined, FileOutlined, SearchOutlined,
-  UnlockOutlined, LockOutlined, KeyOutlined, ShieldOutlined,
-  TeamOutlined, ProjectOutlined, GitBranchOutlined, ThunderboltOutlined,
-  GlobalOutlined, AuditOutlined, ScheduleOutlined, SyncOutlined
-} from '@ant-design/icons';
-import { api } from '../services/api';
-import { format } from 'date-fns';
+import { useState } from 'react';
+import { Puzzle, Download, Power, Trash2, Star, Loader2, CheckCircle2 } from 'lucide-react';
+import { usePluginMarketplace, useInstallPlugin, useUninstallPlugin, useTogglePlugin } from '../hooks/usePlugins';
+import type { PluginRegistryEntry } from '../types/api';
+import { cn } from '../lib/utils';
 
-interface Plugin {
-  name: string;
-  slug: string;
-  version: string;
-  description: string;
-  author: string;
-  plugin_type: string;
-  tags: string[];
-  downloads: number;
-  rating: number;
-  is_official: boolean;
-  is_installed: boolean;
-  status: string;
-}
-
-interface InstalledPlugin {
-  name: string;
-  slug: string;
-  version: string;
-  status: string;
-  config: any;
-}
-
+/** Página de plugins — marketplace + instalados com ações reais. */
 export function Plugins() {
-  const [plugins, setPlugins] = useState<Plugin[]>([]);
-  const [installedPlugins, setInstalledPlugins] = useState<InstalledPlugin[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [editingPlugin, setEditingPlugin] = useState<Plugin | null>(null);
-  const [searchText, setSearchText] = useState('');
-  const [selectedPlugin, setSelectedPlugin] = useState<Plugin | null>(null);
-  const [pluginConfig, setPluginConfig] = useState<any>({});
-  const [configModalVisible, setConfigModalVisible] = useState(false);
-  const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });
+  const { featured, installed, installedSlugs, isLoading } = usePluginMarketplace();
+  const installPlugin = useInstallPlugin();
+  const uninstallPlugin = useUninstallPlugin();
+  const togglePlugin = useTogglePlugin();
 
-  const fetchPlugins = async () => {
-    setLoading(true);
+  const [tab, setTab] = useState<'featured' | 'installed'>('featured');
+
+  const busy = installPlugin.isPending || uninstallPlugin.isPending || togglePlugin.isPending;
+
+  const onInstall = async (plugin: PluginRegistryEntry) => {
     try {
-      const response = await api.get('/plugins/registry', { params: { search: searchText } });
-      setPlugins(response.data);
-    } catch (error) {
-      console.error('Failed to fetch plugins:', error);
-    } finally {
-      setLoading(false);
+      await installPlugin.mutateAsync({ slug: plugin.slug });
+    } catch {
+      // silencioso
     }
   };
 
-  const fetchInstalledPlugins = async () => {
+  const onUninstall = async (slug: string) => {
+    if (!window.confirm(`Desinstalar o plugin "${slug}"?`)) return;
     try {
-      const response = await api.get('/plugins/installed');
-      setInstalledPlugins(response.data);
-    } catch (error) {
-      console.error('Failed to fetch installed plugins:', error);
+      await uninstallPlugin.mutateAsync(slug);
+    } catch {
+      // silencioso
     }
   };
 
-  const installPlugin = async (slug: string) => {
+  const onToggle = async (slug: string, enabled: boolean) => {
     try {
-      await api.post('/plugins/install', { slug });
-      fetchPlugins();
-      fetchInstalledPlugins();
-      message.success('Plugin installed successfully');
-    } catch (error) {
-      console.error('Failed to install plugin:', error);
+      await togglePlugin.mutateAsync({ slug, enable: !enabled });
+    } catch {
+      // silencioso
     }
   };
 
-  const uninstallPlugin = async (slug: string) => {
-    try {
-      await api.delete(`/plugins/${slug}`);
-      fetchInstalledPlugins();
-      fetchPlugins();
-      message.success('Plugin uninstalled successfully');
-    } catch (error) {
-      console.error('Failed to uninstall plugin:', error);
-    }
-  };
-
-  const enablePlugin = async (slug: string) => {
-    try {
-      await api.post(`/plugins/${slug}/enable`);
-      fetchInstalledPlugins();
-    } catch (error) {
-      console.error('Failed to enable plugin:', error);
-    }
-  };
-
-  const disablePlugin = async (slug: string) => {
-    try {
-      await api.post(`/plugins/${slug}/disable`);
-      fetchInstalledPlugins();
-    } catch (error) {
-      console.error('Failed to disable plugin:', error);
-    }
-  };
-
-  const handleConfigPlugin = async (plugin: InstalledPlugin) => {
-    setSelectedPlugin({ ...plugin } as any);
-    setPluginConfig(plugin.config || {});
-    setConfigModalVisible(true);
-  };
-
-  const handleConfigSubmit = async (values: any) => {
-    try {
-      await api.put(`/plugins/${selectedPlugin?.slug}/config`, values);
-      fetchInstalledPlugins();
-      Modal.close();
-      message.success('Configuration saved');
-    } catch (error) {
-      console.error('Failed to save config:', error);
-    }
-  };
-
-  const searchPlugins = async (query: string) => {
-    setSearchText(query);
-    setLoading(true);
-    try {
-      const response = await api.get('/plugins/registry', { params: { search: query } });
-      setPlugins(response.data);
-    } catch (error) {
-      console.error('Failed to search plugins:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchPlugins();
-    fetchInstalledPlugins();
-  }, []);
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'enabled': return 'green';
-      case 'disabled': return 'red';
-      case 'error': return 'orange';
-      default: return 'default';
-    }
-  };
-
-  const columns = [
-    {
-      title: 'Name',
-      dataIndex: 'name',
-      key: 'name',
-      width: 200,
-      render: (name: string, record: Plugin) => (
-        <div>
-          <div style={{ fontWeight: 500 }}>{name}</div>
-          <div style={{ color: '#999', fontSize: 12 }}>{record.slug}</div>
-        </div>
-      ),
-    },
-    {
-      title: 'Description',
-      dataIndex: 'description',
-      key: 'description',
-      ellipsis: true,
-      width: 200,
-    },
-    {
-      title: 'Type',
-      dataIndex: 'plugin_type',
-      key: 'plugin_type',
-      width: 100,
-      align: 'center',
-      render: (v: string) => <Tag color={v === 'provider' ? 'blue' : v === 'tool' ? 'green' : v === 'agent' ? 'purple' : 'default'}>{v}</Tag>,
-    },
-    {
-      title: 'Version',
-      dataIndex: 'version',
-      key: 'version',
-      width: 100,
-      align: 'center',
-    },
-    {
-      title: 'Author',
-      dataIndex: 'author',
-      key: 'author',
-      width: 120,
-    },
-    {
-      title: 'Downloads',
-      dataIndex: 'downloads',
-      key: 'downloads',
-      width: 80,
-      align: 'center',
-    },
-    {
-      title: 'Rating',
-      dataIndex: 'rating',
-      key: 'rating',
-      width: 80,
-      align: 'center',
-      render: (v: number) => <span>{v}/5</span>,
-    },
-    {
-      title: 'Official',
-      dataIndex: 'is_official',
-      key: 'is_official',
-      width: 80,
-      align: 'center',
-      render: (v: boolean) => v ? <Tag color="gold">Official</Tag> : <Tag>Community</Tag>,
-    },
-    {
-      title: 'Installed',
-      dataIndex: 'is_installed',
-      key: 'is_installed',
-      width: 80,
-      align: 'center',
-      render: (v: boolean) => v ? <CheckCircleOutlined style={{ color: '#52c41a' }} /> : <CloseCircleOutlined style={{ color: '#ff4d4f' }} />,
-    },
-    {
-      title: 'Status',
-      key: 'status',
-      width: 100,
-      align: 'center',
-      render: (_, record: Plugin) => {
-        const installed = installedPlugins.find(p => p.slug === record.slug);
-        if (!installed) return <Tag color="default">Not Installed</Tag>;
-        return <Tag color={getStatusColor(installed.status)}>{installed.status}</Tag>;
-      },
-    },
-    {
-      title: 'Actions',
-      key: 'actions',
-      width: 200,
-      fixed: 'right',
-      render: (_, record: Plugin) => {
-        const installed = installedPlugins.find(p => p.slug === record.slug);
-        if (!installed) {
-          return (
-            <Button type="primary" size="small" onClick={() => installPlugin(record.slug)} loading={loading}>
-              <DownloadOutlined /> Install
-            </Button>
-          );
-        }
-        return (
-          <Space>
-            <Tooltip title={installed.status === 'enabled' ? 'Disable' : 'Enable'}>
-              <Button type="link" size="small" onClick={() => installed.status === 'enabled' ? disablePlugin(record.slug) : enablePlugin(record.slug)}>
-                {installed.status === 'enabled' ? <StopOutlined /> : <PlayOutlined />}
-              </Button>
-            </Tooltip>
-            <Tooltip title="Configure">
-              <Button type="link" size="small" onClick={() => {
-                const plugin = installedPlugins.find(p => p.slug === record.slug);
-                if (plugin) {
-                  setSelectedPlugin({ ...record, ...installed } as any);
-                  setPluginConfig(installed.config || {});
-                  setConfigModalVisible(true);
-                }
-              }}>
-                <SettingOutlined />
-              </Button>
-            </Tooltip>
-            <Popconfirm title="Uninstall Plugin" content={`Are you sure you want to uninstall ${record.name}?`} onConfirm={() => uninstallPlugin(record.slug)} okText="Yes" cancelText="No">
-              <Button type="link" size="small" danger><DeleteOutlined /></Button>
-            </Popconfirm>
-          </Space>
-        );
-      },
-    },
-  ];
-
-  useEffect(() => {
-    fetchPlugins();
-    fetchInstalledPlugins();
-  }, []);
+  const isInstalled = (slug: string) => installedSlugs.has(slug);
 
   return (
-    <div className="plugins-page">
+    <div>
       <div className="page-header">
         <div>
-          <h1>Plugin Marketplace</h1>
-          <p>Browse, install, and manage plugins for your projects</p>
+          <h1 className="page-title">Plugins</h1>
+          <p className="page-subtitle">
+            Estenda o SuperDev com plugins do marketplace ({installed.length} instalados)
+          </p>
         </div>
-        <Button type="primary" onClick={() => setConfigModalVisible(true)}>
-          <PlusOutlined /> Configure Installed Plugin
-        </Button>
+        <div className="flex rounded-lg border border-line bg-surface p-0.5">
+          <button
+            onClick={() => setTab('featured')}
+            className={cn('rounded-md px-3 py-1.5 text-sm font-medium transition', tab === 'featured' ? 'bg-primary-600 text-white shadow-sm' : 'text-ink-muted hover:text-ink')}
+          >
+            Em destaque
+          </button>
+          <button
+            onClick={() => setTab('installed')}
+            className={cn('rounded-md px-3 py-1.5 text-sm font-medium transition', tab === 'installed' ? 'bg-primary-600 text-white shadow-sm' : 'text-ink-muted hover:text-ink')}
+          >
+            Instalados ({installed.length})
+          </button>
+        </div>
       </div>
 
-      <Tabs defaultActiveKey="marketplace">
-        <Tabs.TabPane tab="Marketplace" key="marketplace">
-          <Card>
-            <Form layout="inline" onFinish={() => searchPlugins(searchText)} style={{ marginBottom: 16 }}>
-              <Row gutter={16}>
-                <Col md={8}>
-                  <Form.Item name="search" label="Search">
-                    <Input.Search
-                      placeholder="Search plugins..."
-                      value={searchText}
-                      onChange={(e) => setSearchText(e.target.value)}
-                      onPressEnter={() => searchPlugins(searchText)}
-                      style={{ width: '100%' }}
-                      allowClear
-                    />
-                  </Form.Item>
-                </Col>
-                <Col md={4}>
-                  <Form.Item name="type" label="Type">
-                    <Select placeholder="Filter by type" style={{ width: '100%' }}>
-                      <Option value="provider">Provider</Option>
-                      <Option value="tool">Tool</Option>
-                      <Option value="agent">Agent</Option>
-                      <Option value="integration">Integration</Option>
-                      <Option value="ui">UI</Option>
-                      <Option value="command">Command</Option>
-                    </Select>
-                  </Form.Item>
-                </Col>
-              </Row>
-            </Form>
-            
-            <Table
-              columns={columns}
-              dataSource={plugins}
-              loading={loading}
-              rowKey="slug"
-              pagination={{ pageSize: 10, showTotal: (total) => `Total ${total} plugins` }}
-              onChange={(pagination) => setPagination(pagination)}
-            />
+      {isLoading ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="card p-5">
+              <div className="skeleton h-4 w-2/3" />
+              <div className="skeleton mt-3 h-3 w-1/2" />
+              <div className="skeleton mt-3 h-3 w-1/3" />
+            </div>
+          ))}
+        </div>
+      ) : tab === 'featured' ? (
+        featured.length === 0 ? (
+          <div className="card">
+            <div className="empty-state">
+              <Puzzle className="h-8 w-8 text-ink-muted" />
+              <p className="empty-title">Marketplace vazio</p>
+              <p className="empty-hint">Os plugins em destaque aparecerão aqui.</p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {featured.map((plugin) => {
+              const isInst = isInstalled(plugin.slug);
+              return (
+                <div key={plugin.slug} className="card card-hover flex flex-col p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-fuchsia-50 text-fuchsia-600 dark:bg-fuchsia-500/10 dark:text-fuchsia-400">
+                        <Puzzle className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-ink">{plugin.name}</p>
+                        <p className="text-xs text-ink-muted">
+                          {plugin.author} · v{plugin.version}
+                        </p>
+                      </div>
+                    </div>
+                    {plugin.is_official && <span className="badge-info shrink-0">Oficial</span>}
+                  </div>
 
-            {/* Config Modal */}
-            <Modal
-              title={`Configure ${selectedPlugin?.name}`}
-              visible={configModalVisible}
-              onCancel={() => setConfigModalVisible(false)}
-              onOk={() => form.validateFields().then(handleConfigSubmit).catch(() => {})}
-              destroyOnClose
-            >
-              <Form layout="vertical">
-                {Object.entries(selectedPlugin?.config_schema?.properties || {}).map(([key, schema: any]) => (
-                  <Form.Item key={key} name={key} label={schema.title || key} rules={schema.required ? [{ required: true }] : []}>
-                    {schema.type === 'string' && schema.enum ? (
-                      <Select placeholder={`Select ${schema.title || key}`} style={{ width: '100%' }}>
-                        {schema.enum.map((opt: string) => <Option key={opt} value={opt}>{opt}</Option>)}
-                      </Select>
-                    ) : schema.type === 'boolean' ? (
-                      <Switch />
-                    ) : schema.type === 'number' ? (
-                      <InputNumber placeholder={`Enter ${schema.title || key}`} />
+                  <p className="mt-3 line-clamp-2 min-h-[2.5rem] flex-1 text-sm text-ink-muted">
+                    {plugin.description}
+                  </p>
+
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {(plugin.tags ?? []).slice(0, 3).map((tag) => (
+                      <span key={tag} className="badge-neutral">{tag}</span>
+                    ))}
+                  </div>
+
+                  <div className="mt-4 flex items-center justify-between border-t border-line pt-3">
+                    <div className="flex items-center gap-3 text-xs text-ink-muted">
+                      <span className="flex items-center gap-1">
+                        <Download className="h-3.5 w-3.5" /> {plugin.downloads.toLocaleString('pt-BR')}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" /> {plugin.rating.toFixed(1)}
+                      </span>
+                    </div>
+                    {isInst ? (
+                      <span className="badge-success">
+                        <CheckCircle2 className="h-3 w-3" /> Instalado
+                      </span>
                     ) : (
-                      <Input placeholder={`Enter ${schema.title || key}`} />
+                      <button
+                        onClick={() => void onInstall(plugin)}
+                        disabled={busy}
+                        className="btn-primary btn-sm"
+                      >
+                        {busy && installPlugin.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                        Instalar
+                      </button>
                     )}
-                  </Form.Item>
-                ))}
-              <Form.Item>
-                <Button type="primary" htmlType="submit" loading={configModalVisible}>
-                  Save Configuration
-                </Button>
-              </Form.Item>
-            </Form>
-            </Modal>
-          </Card>
-        </Tabs.TabPane>
-        <Tabs.TabPane tab="Installed Plugins" key="installed">
-          <Card>
-            <Table
-              dataSource={installedPlugins}
-              columns={[
-                { title: 'Name', dataIndex: 'name', key: 'name' },
-                { title: 'Version', dataIndex: 'version', key: 'version' },
-                { title: 'Status', dataIndex: 'status', key: 'status', render: (v: string) => <Tag color={getStatusColor(v)}>{v}</Tag> },
-                { title: 'Actions', key: 'actions', render: (_, record: InstalledPlugin) => (
-                  <Space>
-                    <Tooltip title={record.status === 'enabled' ? 'Disable' : 'Enable'}>
-                      <Button type="link" size="small" onClick={() => record.status === 'enabled' ? disablePlugin(record.slug) : enablePlugin(record.slug)}>
-                        {record.status === 'enabled' ? <StopOutlined /> : <PlayOutlined />}
-                      </Button>
-                    </Tooltip>
-                    <Tooltip title="Configure">
-                      <Button type="link" size="small" onClick={() => {
-                        const plugin = installedPlugins.find(p => p.slug === record.slug);
-                        if (plugin) {
-                          setSelectedPlugin({ ...record, ...plugin } as any);
-                          setPluginConfig(plugin.config || {});
-                          setConfigModalVisible(true);
-                        }
-                      }}>
-                        <SettingOutlined />
-                      </Button>
-                    </Tooltip>
-                    <Popconfirm title="Uninstall Plugin" content={`Are you sure you want to uninstall ${record.name}?`} onConfirm={() => uninstallPlugin(record.slug)} okText="Yes" cancelText="No">
-                      <Button type="link" size="small" danger><DeleteOutlined /></Button>
-                    </Popconfirm>
-                  </Space>
-                )} }
-              ]
-              dataSource={installedPlugins}
-              loading={loading}
-              pagination={false}
-            />
-          </Card>
-        </Tabs.TabPane>
-      </Tabs>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )
+      ) : installed.length === 0 ? (
+        <div className="card">
+          <div className="empty-state">
+            <Puzzle className="h-8 w-8 text-ink-muted" />
+            <p className="empty-title">Nenhum plugin instalado</p>
+            <p className="empty-hint">Instale plugins pela aba "Em destaque".</p>
+          </div>
+        </div>
+      ) : (
+        <div className="card">
+          <div className="table-wrap">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Plugin</th>
+                  <th>Versão</th>
+                  <th>Status</th>
+                  <th className="text-right">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {installed.map((plugin) => {
+                  const enabled = plugin.status === 'enabled';
+                  return (
+                    <tr key={plugin.slug}>
+                      <td>
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-fuchsia-50 text-fuchsia-600 dark:bg-fuchsia-500/10 dark:text-fuchsia-400">
+                            <Puzzle className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-ink">{plugin.name}</p>
+                            <p className="text-xs text-ink-muted">{plugin.slug}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="text-ink-muted">{plugin.version}</td>
+                      <td>
+                        <span className={cn('badge', enabled ? 'badge-active' : 'badge-neutral')}>
+                          {enabled ? 'Ativo' : 'Desativado'}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="flex justify-end gap-1">
+                          <button
+                            onClick={() => void onToggle(plugin.slug, enabled)}
+                            disabled={busy}
+                            className={cn('btn-icon', enabled ? 'btn-ghost' : 'btn-primary')}
+                            title={enabled ? 'Desativar' : 'Ativar'}
+                          >
+                            {busy && togglePlugin.isPending ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Power className="h-4 w-4" />
+                            )}
+                          </button>
+                          <button
+                            onClick={() => void onUninstall(plugin.slug)}
+                            disabled={busy}
+                            className="btn-icon btn-ghost hover:!bg-danger-50 hover:!text-danger-600"
+                            title="Desinstalar"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

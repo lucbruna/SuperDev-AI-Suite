@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { llmApi, type LLMChatMessage, type LLMProviderSummary } from "@/api/llm";
+import { llmApi, type LLMProviderSummary } from "@/api/llm";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -72,6 +72,7 @@ function ModelSelector({
         onChange={(e) => onProviderChange(e.target.value)}
         className="rounded-lg border border-surface-200 bg-white px-3 py-1.5 text-xs font-medium text-surface-700 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-200"
       >
+        {providers.length === 0 && <option value="">Automático</option>}
         {providers
           .filter((p) => p.api_key_configured)
           .map((p) => (
@@ -106,8 +107,8 @@ export default function LLMChatPage() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
   const [providers, setProviders] = useState<LLMProviderSummary[]>([]);
-  const [selectedProvider, setSelectedProvider] = useState("openai");
-  const [models, setModels] = useState<string[]>([]);
+  const [selectedProvider, setSelectedProvider] = useState("");
+  const [models, setModels] = useState<string[]>(["Automático"]);
   const [selectedModel, setSelectedModel] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [temperature, setTemperature] = useState(0.7);
@@ -125,7 +126,7 @@ export default function LLMChatPage() {
       const data = await llmApi.listProviders();
       const configured = data.filter((p) => p.api_key_configured);
       setProviders(configured);
-      if (configured.length > 0 && !selectedProvider) {
+      if (configured.length > 0 && !configured.some((provider) => provider.name === selectedProvider)) {
         setSelectedProvider(configured[0].name);
       }
     } catch {
@@ -139,7 +140,11 @@ export default function LLMChatPage() {
 
   // Load models when provider changes
   useEffect(() => {
-    if (!selectedProvider) return;
+    if (!selectedProvider) {
+      setModels(["Automático"]);
+      setSelectedModel("");
+      return;
+    }
     llmApi
       .listModels(selectedProvider)
       .then((data) => {
@@ -188,42 +193,28 @@ export default function LLMChatPage() {
       };
       setMessages((prev) => [...prev, assistantEntry]);
 
-      const chatHistory: LLMChatMessage[] = messages
-        .filter((m) => m.id !== assistantId)
-        .map((m) => ({
-          role: m.role,
-          content: m.content,
-        }));
-      chatHistory.push({ role: "user", content: text });
-
-      await llmApi.streamChatFetch(
-        {
-          messages: chatHistory,
-          provider: selectedProvider,
-          model: selectedModel,
-          temperature,
-        },
-        (content, done) => {
-          setStreamingContent((prev) => prev + content);
-          if (done) {
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === assistantId
-                  ? { ...m, content: m.content + streamingContent + content, timestamp: Date.now() }
-                  : m
-              )
-            );
-            setStreamingContent("");
-            setIsStreaming(false);
-          }
-        },
-        abortRef.current.signal
+      const response = await llmApi.agentChat({
+        message: text,
+        provider: selectedProvider || undefined,
+        model: selectedModel || undefined,
+        temperature,
+      });
+      const toolSummary = response.tool_calls.length
+        ? `\n\nFerramentas usadas: ${response.tool_calls.map((call) => call.name).join(", ")}`
+        : "";
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === assistantId
+            ? { ...m, content: `${response.content}${toolSummary}`, timestamp: Date.now() }
+            : m
+        )
       );
+      setIsStreaming(false);
     } catch (err: any) {
       if (err.name === "AbortError") {
         setMessages((prev) =>
           prev.map((m) =>
-            m.id === `assistant-${m.timestamp}`
+            m.role === "assistant" && !m.content
               ? { ...m, content: m.content + streamingContent + "\n\n[Stream cancelled]" }
               : m
           )
@@ -232,7 +223,7 @@ export default function LLMChatPage() {
         setError(err?.message || "Falha ao enviar mensagem");
         setMessages((prev) =>
           prev.map((m) =>
-            m.id === `assistant-${Date.now()}`
+            m.role === "assistant" && !m.content
               ? { ...m, content: `[Error: ${err?.message || "Unknown error"}]` }
               : m
           )
@@ -270,7 +261,9 @@ export default function LLMChatPage() {
       : []),
   ];
 
-  const hasConfig = providers.length > 0;
+  // O backend escolhe o provider configurado quando provider/model não são enviados.
+  // A descoberta de providers é opcional e não deve bloquear o chat.
+  const hasConfig = true;
 
   return (
     <DashboardLayout>

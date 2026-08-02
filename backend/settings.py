@@ -1,7 +1,40 @@
 from __future__ import annotations
 
-from pydantic import Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
+import json
+from typing import Annotated, Any
+
+from pydantic import BeforeValidator, Field
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
+
+
+def _parse_str_list(value: Any) -> list[str]:
+    """Parse a list[str] setting read from env.
+
+    Accepts both JSON arrays (``["a", "b"]``) and comma-separated strings
+    (``a,b``), plus a single bare value (``*``) or an empty value.
+    """
+    if isinstance(value, list):
+        return [str(item) for item in value]
+    if isinstance(value, str):
+        text = value.strip()
+        if not text:
+            return []
+        if text.startswith("["):
+            try:
+                parsed = json.loads(text)
+                if isinstance(parsed, list):
+                    return [str(item) for item in parsed]
+            except json.JSONDecodeError:
+                pass  # not JSON → fall back to comma-separated parsing
+        return [item.strip() for item in text.split(",") if item.strip()]
+    return []
+
+
+# list[str] settings read from env. NoDecode stops pydantic-settings from
+# forcing JSON parsing (which rejects comma-separated .env values like
+# CORS_ALLOW_METHODS=GET,POST,...); the BeforeValidator then accepts both
+# JSON arrays and comma-separated strings.
+StrList = Annotated[list[str], NoDecode, BeforeValidator(_parse_str_list)]
 
 
 class AppSettings(BaseSettings):
@@ -69,12 +102,12 @@ class RedisSettings(BaseSettings):
     health_check_interval: int = 30
     # Sentinel
     sentinel_enabled: bool = False
-    sentinel_hosts: list[str] = []
+    sentinel_hosts: StrList = []
     sentinel_password: str = ""
     service_name: str = "mymaster"
     # Cluster
     cluster_enabled: bool = False
-    cluster_nodes: list[str] = []
+    cluster_nodes: StrList = []
 
     @property
     def url(self) -> str:
@@ -83,7 +116,7 @@ class RedisSettings(BaseSettings):
         return f"redis://{self.host}:{self.port}/{self.db}"
 
     # Replicas
-    replica_hosts: list[str] = []
+    replica_hosts: StrList = []
 
 
 class AuthSettings(BaseSettings):
@@ -129,11 +162,11 @@ class CorsSettings(BaseSettings):
         extra="ignore",
     )
 
-    allow_origins: list[str] = ["http://localhost:3000", "http://localhost:8000"]
+    allow_origins: StrList = ["http://localhost:3000", "http://localhost:8000"]
     allow_credentials: bool = True
-    allow_methods: list[str] = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
-    allow_headers: list[str] = ["*"]
-    expose_headers: list[str] = ["X-Request-ID", "X-Process-Time"]
+    allow_methods: StrList = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+    allow_headers: StrList = ["*"]
+    expose_headers: StrList = ["X-Request-ID", "X-Process-Time"]
     max_age: int = 3600
 
 
@@ -241,7 +274,7 @@ class SandboxSettings(BaseSettings):
     use_docker: bool = False
     docker_host: str = "unix:///var/run/docker.sock"
     seccomp_profile: str = "default"
-    drop_capabilities: list[str] = ["all"]
+    drop_capabilities: StrList = ["all"]
     use_user_namespace: bool = True
     uid_map: str = "0:100000:65536"
     gid_map: str = "0:100000:65536"
@@ -276,7 +309,7 @@ class PluginSettings(BaseSettings):
     marketplace_enabled: bool = True
     auto_update: bool = False
     sandbox_enabled: bool = True
-    permissions_required: list[str] = ["filesystem.read"]
+    permissions_required: StrList = ["filesystem.read"]
     max_memory_mb: int = 256
     max_cpu_seconds: int = 30
 

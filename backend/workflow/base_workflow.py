@@ -46,6 +46,20 @@ class StepConfig:
     timeout_seconds: int = 300
     continue_on_error: bool = False
 
+    def to_dict(self) -> dict[str, Any]:
+        """Serialize to a plain dict (dataclass — no model_dump)."""
+        return {
+            "id": self.id,
+            "name": self.name,
+            "step_type": self.step_type.value if isinstance(self.step_type, StepType) else str(self.step_type),
+            "config": self.config,
+            "depends_on": self.depends_on,
+            "retry_count": self.retry_count,
+            "max_retries": self.max_retries,
+            "timeout_seconds": self.timeout_seconds,
+            "continue_on_error": self.continue_on_error,
+        }
+
 
 @dataclass
 class StepResult:

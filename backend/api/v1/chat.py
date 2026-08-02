@@ -1,4 +1,5 @@
 import json
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
@@ -6,8 +7,10 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.ai_router.router import router as ai_router
+from backend.agents.react_agent import ReActAgent
 from backend.ai_router.token_counter import token_counter
 from backend.database.session import get_db
+from backend.dependencies import get_current_active_user
 from backend.providers.base_provider import Message
 
 router = APIRouter()
@@ -35,15 +38,26 @@ class ChatCompletionResponse(BaseModel):
     usage: dict | None = None
 
 
+class AgentChatRequest(BaseModel):
+    message: str
+    model: str | None = None
+    provider: str | None = None
+    temperature: float = 0.7
+    max_steps: int = 20
+
+
+class AgentChatResponse(BaseModel):
+    content: str
+    tool_calls: list[dict]
+    error: str | None = None
+
+
 @router.post("/completions", response_model=ChatCompletionResponse)
 async def chat_completions(
     request: ChatCompletionRequest,
     db: AsyncSession = Depends(get_db),
+    user: dict[str, Any] = Depends(get_current_active_user),
 ) -> ChatCompletionResponse:
-    from backend.dependencies import get_current_active_user
-
-    user = await get_current_active_user(db=db)
-
     messages = [Message(role=m.role, content=m.content) for m in request.messages]
 
     try:
@@ -53,6 +67,7 @@ async def chat_completions(
             provider=request.provider,
             temperature=request.temperature,
             max_tokens=request.max_tokens,
+            db=db,
         )
     except Exception as e:
         raise HTTPException(
@@ -65,7 +80,7 @@ async def chat_completions(
             provider=request.provider or "auto",
             model=response.model,
             usage=response.usage,
-            user_id=str(user.id),
+            user_id=str(user["id"]),
         )
 
     return ChatCompletionResponse(
@@ -84,15 +99,45 @@ async def chat_completions(
     )
 
 
+@router.post("/agent", response_model=AgentChatResponse)
+async def agent_chat(
+    request: AgentChatRequest,
+    db: AsyncSession = Depends(get_db),
+    user: dict[str, Any] = Depends(get_current_active_user),
+) -> AgentChatResponse:
+    """Run a workspace-enabled coding agent for a chat request."""
+    try:
+        agent = ReActAgent(
+            name="Workspace Code Assistant",
+            description="Autonomously inspects and changes the current project when requested.",
+            model=request.model,
+            provider=request.provider,
+            temperature=request.temperature,
+            max_steps=max(1, min(request.max_steps, 30)),
+            db=db,
+        )
+        result = await agent.run(request.message, context={"user_id": str(user["id"])})
+        return AgentChatResponse(
+            content=result.output,
+            tool_calls=[
+                {"name": call.name, "arguments": call.arguments, "error": call.error}
+                for call in result.tool_calls
+            ],
+            error=result.error,
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Agent execution failed: {str(e)}",
+        )
+
+
 @router.post("/stream")
 async def chat_stream(
     request: ChatCompletionRequest,
     db: AsyncSession = Depends(get_db),
+    user: dict[str, Any] = Depends(get_current_active_user),
 ):
-    from backend.dependencies import get_current_active_user
-
-    await get_current_active_user(db=db)
-
     messages = [Message(role=m.role, content=m.content) for m in request.messages]
 
     async def generate():
@@ -103,6 +148,7 @@ async def chat_stream(
                 provider=request.provider,
                 temperature=request.temperature,
                 max_tokens=request.max_tokens,
+                db=db,
             ):
                 data = json.dumps(
                     {

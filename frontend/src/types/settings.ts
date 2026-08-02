@@ -16,9 +16,18 @@ export interface ProviderConfig {
   name: string;
   type: string;
   apiKey: string;
+  apiKeyConfigured?: boolean;
   models: string[];
   enabled: boolean;
   baseUrl?: string;
+}
+
+export interface LLMSettings {
+  provider: string;
+  model: string;
+  temperature: number;
+  max_tokens: number;
+  system_prompt: string;
 }
 
 export interface RuntimeConfig {
@@ -28,4 +37,17 @@ export interface RuntimeConfig {
   sandboxEnabled: boolean;
   allowedLanguages: string[];
   dockerEnabled: boolean;
+}
+
+export interface ProjectSettings {
+  id: string;
+  name: string;
+  description: string;
+  runtime: string;
+  language: string;
+  framework: string;
+  rootPath: string;
+  envVars: Record<string, string>;
+  autoSave: boolean;
+  lintOnSave: boolean;
 }

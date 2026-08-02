@@ -35,5 +35,15 @@ def serialize_message(message: Any) -> str:
     return json.dumps(message, default=str, ensure_ascii=False)
 
 
+class WebSocketProtocol:
+    """Message framing protocol with JSON encode/decode."""
+
+    def encode(self, message: Any) -> str:
+        return serialize_message(message)
+
+    def decode(self, encoded: str) -> Any:
+        return json.loads(encoded)
+
+
 SUPPORTED_SUBPROTOCOLS: list[str] = ["json", "msgpack"]
 SUPPORTED_VERSIONS: list[str] = ["13"]

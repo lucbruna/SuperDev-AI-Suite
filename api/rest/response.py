@@ -59,6 +59,15 @@ class ResponseBuilder:
         self._headers: dict[str, str] = {}
         self._content_type: str = "application/json"
 
+    def json(self, data: Any, status: int = 200) -> dict[str, Any]:
+        return {"status": status, "body": json.dumps(data, default=str, ensure_ascii=False)}
+
+    def error(self, status: int, message: str) -> dict[str, Any]:
+        return {"status": status, "body": json.dumps({"error": {"message": message}})}
+
+    def empty(self, status: int = 204) -> dict[str, Any]:
+        return {"status": status, "body": ""}
+
     def status(self, code: int) -> ResponseBuilder:
         self._status = code
         return self

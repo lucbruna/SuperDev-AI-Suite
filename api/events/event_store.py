@@ -75,7 +75,7 @@ class EventStore:
         return self.get_all()
 
     def since(self, timestamp: float) -> Sequence[Event]:
-        return [e for e in self._events if e.timestamp >= timestamp]
+        return [e for e in self._events if e.timestamp > timestamp]
 
     def between(self, start: float, end: float) -> Sequence[Event]:
         return [e for e in self._events if start <= e.timestamp <= end]

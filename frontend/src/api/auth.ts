@@ -31,17 +31,25 @@ export const authApi = {
   },
 
   refreshToken: async (refreshToken: string): Promise<RefreshTokenResponse> => {
-    const response = await apiClient.post<ApiResponse<RefreshTokenResponse>>(
+    const response = await apiClient.post<{
+      access_token: string;
+      refresh_token: string;
+      token_type: string;
+    }>(
       API_ENDPOINTS.AUTH.REFRESH,
-      { refreshToken },
+      { refresh_token: refreshToken },
     );
-    return response.data.data;
+    return {
+      accessToken: response.data.access_token,
+      refreshToken: response.data.refresh_token,
+      expiresIn: 0,
+    };
   },
 
   getMe: async (): Promise<User> => {
-    const response = await apiClient.get<ApiResponse<User>>(
+    const response = await apiClient.get<{ data: { user: User } }>(
       API_ENDPOINTS.AUTH.ME,
     );
-    return response.data.data;
+    return response.data.data.user;
   },
 };

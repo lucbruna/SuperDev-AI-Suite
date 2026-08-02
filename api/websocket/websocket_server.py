@@ -50,7 +50,7 @@ class WebSocketServer:
             return None
 
         user_id = auth_result.get("user_id", "")
-        conn = WebSocketConnection(connection_id, path, user_id=user_id)
+        conn = WebSocketConnection(connection_id, user_id, path=path)
         self.connections.register(connection_id, conn)
         self._metrics.increment("ws.connections")
         await self._events.emit(APIEventType.CONNECTION_OPENED, {

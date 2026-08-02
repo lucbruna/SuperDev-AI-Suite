@@ -116,7 +116,10 @@ class PromptBuilder:
                     if path not in self.last_truncated:
                         self.last_truncated.append(path)
                     continue
-            # Even the minimal slice does not fit the remaining budget.
+            # Drop: either the minimal slice does not fit the remaining
+            # budget, or truncation made no progress (shrunk == content, the
+            # slice already fit *target* but the joined prompt is still over
+            # max_tokens by 1-2 floor remainders).
             files.pop()
             self.last_dropped.append(path)
 
@@ -145,12 +148,14 @@ class PromptBuilder:
     def _truncate_to_budget(self, content: str, budget: int) -> str:
         """Truncate *content* in the middle to fit *budget* tokens.
 
-        Keeps the head lines that fit the first half of the budget and the
-        tail lines that fit the rest, with a marker line in between. When a
-        single line already exceeds the budget — or the assembled slice
-        still overshoots (per-line estimates miss the joined newlines and
-        the marker digits) — falls back to :meth:`_char_slice`, which is
-        guaranteed to fit. Returns *content* unchanged when it already fits.
+        Keeps the head lines that fit the first half of the marker-reserved
+        budget and the tail lines that fit the rest, with a marker line in
+        between. When a single line already exceeds the budget — or the
+        assembled slice still overshoots (per-line estimates miss the joined
+        newlines and the marker digits) — falls back to :meth:`_char_slice`,
+        which reliably fits budgets down to ~7 tokens (for smaller budgets
+        the global re-check in :meth:`build` gates the block). Returns
+        *content* unchanged when it already fits.
         """
         budget = max(1, budget)
         if estimate_tokens(content) <= budget:
@@ -162,7 +167,10 @@ class PromptBuilder:
 
         # Reserve room for the marker line inside the split budget: without
         # it the line-based slice would overshoot once the marker's ~12
-        # tokens are joined in (see the verify below).
+        # tokens are joined in (see the verify below). Note this also applies
+        # to the per-file path (``max_file_tokens``): slices within 2 tokens
+        # of the cap fall back to :meth:`_char_slice`, losing the informative
+        # "N lines truncated" marker — an accepted trade-off for correctness.
         usable = max(1, budget - _MARKER_RESERVE)
         head_budget = usable // 2
         tail_budget = usable - head_budget
@@ -212,8 +220,10 @@ class PromptBuilder:
 
         Keeps the head and the tail (``~4 chars/token``) with a short fixed
         marker in between. The marker's cost is reserved up-front, so the
-        returned string is **guaranteed** to fit *budget* — unlike the
-        line-based split, whose joined estimate can overshoot.
+        returned string reliably fits budgets down to ~7 tokens (below that
+        the fixed marker itself dominates and the global re-check in
+        :meth:`build` drops the file) — unlike the line-based split, whose
+        joined estimate can overshoot.
         """
         marker_tokens = estimate_tokens(_CHAR_MARKER)
         # Reserve the marker plus a safety margin for the two newlines and

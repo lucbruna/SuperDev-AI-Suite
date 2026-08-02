@@ -78,6 +78,13 @@ def guard_code_exec(code: str,
                 f"access to underscore attribute {node.attr!r} is blocked")
         if isinstance(node, ast.Call):
             func = node.func
+            if (isinstance(func, ast.Attribute)
+                    and func.attr in {"format", "format_map"}):
+                # format-specifiers traverse attributes at runtime
+                # (e.g. "{0.__class__.__mro__[1]}"), invisible to the
+                # AST underscore guard — block the vector entirely.
+                raise ValueError(
+                    f"call to {func.attr!r} (format-spec dunder traversal) is blocked")
             if isinstance(func, ast.Name):
                 name = func.id
                 if name in _HARD_BLOCKED:

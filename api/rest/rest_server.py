@@ -14,7 +14,15 @@ from .router import RESTRouter
 class RESTfulServer:
     """Core REST server that processes HTTP requests through the API pipeline."""
 
-    def __init__(self, registry: APIRegistry, runtime: APIRuntime) -> None:
+    def __init__(
+        self,
+        host: str = "0.0.0.0",
+        port: int = 8080,
+        registry: APIRegistry | None = None,
+        runtime: APIRuntime | None = None,
+    ) -> None:
+        self.host = host
+        self.port = port
         self._registry = registry
         self._runtime = runtime
         self._router = RESTRouter()
@@ -41,6 +49,13 @@ class RESTfulServer:
 
     async def handle_scope(self, scope: dict[str, Any], body_bytes: bytes) -> APIResponse:
         request: APIRequest = self._parser.parse(scope, body_bytes)
+        if self._runtime is None:
+            return APIResponse(
+                status_code=501,
+                body='{"error": "Runtime not configured"}',
+                headers={"content-type": "application/json"},
+                request_id=request.request_id,
+            )
         return await self._runtime.process_request(request)
 
     def register_routes(self, app: Any) -> None:

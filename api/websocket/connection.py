@@ -10,8 +10,8 @@ class WebSocketConnection:
     def __init__(
         self,
         connection_id: str,
-        path: str,
         user_id: str = "",
+        path: str = "",
         metadata: dict[str, Any] | None = None,
     ) -> None:
         self._connection_id = connection_id

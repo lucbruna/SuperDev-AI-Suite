@@ -6,13 +6,14 @@ import { useAuthStore } from "@/stores/authStore";
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { isAuthenticated, _hydrated } = useAuthStore();
+  const { isAuthenticated, accessToken, _hydrated, logout } = useAuthStore();
 
   useEffect(() => {
-    if (_hydrated && !isAuthenticated) {
+    if (_hydrated && (!isAuthenticated || !accessToken)) {
+      if (isAuthenticated && !accessToken) logout();
       router.replace("/login");
     }
-  }, [isAuthenticated, _hydrated, router]);
+  }, [accessToken, isAuthenticated, _hydrated, logout, router]);
 
   if (!_hydrated) {
     return (
@@ -22,7 +23,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !accessToken) {
     return null;
   }
 

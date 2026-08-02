@@ -37,6 +37,17 @@ def parse_request_body(body_bytes: bytes, content_type: str) -> Any:
 class RequestParser:
     """Parses raw ASGI scope + receive into an APIRequest."""
 
+    def parse_json(self, body: bytes | str | Any) -> Any:
+        if isinstance(body, (bytes, bytearray)):
+            return json.loads(body)
+        if isinstance(body, str):
+            return json.loads(body)
+        return body
+
+    def parse_query(self, query_string: str) -> dict[str, str]:
+        parsed = urllib.parse.parse_qs(query_string, keep_blank_values=True)
+        return {k: v[0] if len(v) == 1 else v for k, v in parsed.items()}
+
     def parse(self, scope: dict[str, Any], body_bytes: bytes = b"") -> APIRequest:
         method = scope.get("method", "GET")
         path = scope.get("path", "/")

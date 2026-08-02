@@ -24,6 +24,7 @@ class GraphQLServer:
         self.schema = schema or GraphQLSchema(logger=logger)
         self.mutations = MutationRegistry()
         self.subscriptions = SubscriptionManager()
+        self.resolvers = self.schema.resolvers
         self._logger = logger or APILogger("graphql.server")
         self._metrics = metrics
 

@@ -31,6 +31,15 @@ class ProviderRegistry:
         return cls._instances[name]
 
     @classmethod
+    def invalidate(cls, name: str) -> None:
+        """Drop a cached instance so the next get_instance rebuilds it.
+
+        Used when provider settings (api key / base URL / model) change at
+        runtime so the LLM runtime honors the newly saved configuration.
+        """
+        cls._instances.pop(name, None)
+
+    @classmethod
     async def close_all(cls) -> None:
         for instance in cls._instances.values():
             await instance.close()

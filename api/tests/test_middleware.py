@@ -17,8 +17,19 @@ class TestCORSMiddleware:
         assert not mw.is_origin_allowed("https://evil.com")
 
     def test_allows_all_origins(self) -> None:
-        mw = CORSMiddleware(allowed_origins=["*"])
+        # Wildcard origins are only allowed without credentials (the
+        # wildcard+credentials combination is rejected at construction).
+        mw = CORSMiddleware(allowed_origins=["*"], allow_credentials=False)
         assert mw.is_origin_allowed("https://anything.com")
+
+    def test_rejects_wildcard_with_credentials(self) -> None:
+        with pytest.raises(ValueError, match="wildcard origin"):
+            CORSMiddleware(allowed_origins=["*"], allow_credentials=True)
+
+    def test_default_origins_are_explicit(self) -> None:
+        # CORS_DEFAULT_ORIGINS is now [] — no wildcard, no implicit open CORS.
+        mw = CORSMiddleware(allow_credentials=False)
+        assert not mw.is_origin_allowed("https://anything.com")
 
 
 class TestLoggingMiddleware:
@@ -45,6 +56,15 @@ class TestRateLimitMiddleware:
         client_id = "test-client"
         # window=0 means it always resets
         assert not mw.is_limited(client_id)
+
+    def test_bucket_map_is_bounded(self) -> None:
+        """The bucket map must cap at _max_buckets (memory bound)."""
+        mw = RateLimitMiddleware()
+        # Override the cap to something tiny to exercise eviction.
+        mw._max_buckets = 2
+        for i in range(10):
+            mw.is_limited(f"client-{i}")
+        assert len(mw._buckets) <= 2
 
 
 class TestRequestIDMiddleware:

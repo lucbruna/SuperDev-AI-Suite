@@ -1,459 +1,317 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Table, Button, Tag, Modal, Form, Input, Select, Space, Switch, Tooltip, Dropdown, Menu, Avatar, Badge, Segmented, Progress, Statistic, List, Spin, Collapse, Descriptions, Typography, Alert, Empty, Row, Col, Popconfirm, Message } from 'antd';
-import { 
-  PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, 
-  MoreOutlined, SearchOutlined, FilterOutlined, DownloadOutlined,
-  PlayOutlined, StopOutlined, PauseOutlined, ReloadOutlined,
-  CopyOutlined, CodeOutlined, TerminalOutlined, RobotOutlined,
-  CheckCircleOutlined, CloseCircleOutlined, ExclamationCircleOutlined,
-  ClockCircleOutlined, FileTextOutlined, ArrowUpOutlined, ArrowDownOutlined,
-  EnvironmentOutlined, DatabaseOutlined, UserOutlined, SettingOutlined,
-  WarningOutlined, InfoCircleOutlined, SafetyOutlined, ExperimentOutlined,
-  HistoryOutlined, LogoutOutlined, LinkOutlined, ShareAltOutlined
-} from '@ant-design/icons';
-import { api } from '../services/api';
-import { format } from 'date-fns';
+import { useState, type FormEvent } from 'react';
+import {
+  Bot,
+  Plus,
+  Play,
+  Square,
+  Trash2,
+  Loader2,
+  Wrench,
+  CheckCircle2,
+  XCircle,
+  Clock,
+} from 'lucide-react';
+import { Modal } from '../components/Modal';
+import {
+  useAgents,
+  useCreateAgent,
+  useStartAgent,
+  useStopAgent,
+  useExecuteAgent,
+  useDeleteAgent,
+} from '../hooks/useAgents';
+import type { Agent } from '../types/api';
+import { cn } from '../lib/utils';
 
-interface Agent {
-  id: string;
-  name: string;
-  type: string;
-  description: string;
-  config: any;
-  system_prompt: string;
-  model_provider: string;
-  model_name: string;
-  tools: string[];
-  is_active: boolean;
-  project_id: string;
-  created_by: string;
-  created_at: string;
-  updated_at: string;
-}
-
-interface AgentExecution {
-  id: string;
-  agent_id: string;
-  task: string;
-  context: any;
-  status: string;
-  result: any;
-  error: string;
-  tokens_used: number;
-  cost_usd: number;
-  started_at: string;
-  completed_at: string;
-  created_at: string;
-}
-
+/** Página de agentes — CRUD, start/stop e execução reais via API. */
 export function Agents() {
-  const [agents, setAgents] = useState<Agent[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
-  const [searchText, setSearchText] = useState('');
-  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
-  const [executions, setExecutions] = useState<AgentExecution[]>([]);
-  const [executionsLoading, setExecutionsLoading] = useState(false);
-  const [executionsModalVisible, setExecutionsModalVisible] = useState(false);
-  const [selectedExecution, setSelectedExecution] = useState<AgentExecution | null>(null);
-  const [executionLogs, setExecutionLogs] = useState<string[]>([]);
-  const [logsModalVisible, setLogsModalVisible] = useState(false);
-  const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });
-  const [activeTab, setActiveTab] = useState('agents');
+  const { agents, isLoading } = useAgents();
+  const createAgent = useCreateAgent();
+  const startAgent = useStartAgent();
+  const stopAgent = useStopAgent();
+  const executeAgent = useExecuteAgent();
+  const deleteAgent = useDeleteAgent();
 
-  const fetchAgents = async () => {
-    setLoading(true);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [form, setForm] = useState({ name: '', description: '', agent_type: 'general' });
+  const [error, setError] = useState<string | null>(null);
+
+  const [executing, setExecuting] = useState<Agent | null>(null);
+  const [input, setInput] = useState('');
+  const [execResult, setExecResult] = useState<{ output: string; time_ms: number } | null>(null);
+
+  const onCreate = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!form.name.trim()) {
+      setError('O nome do agente é obrigatório.');
+      return;
+    }
+    setError(null);
     try {
-      const response = await api.get('/agents', { params: { search: searchText } });
-      setAgents(response.data);
-    } catch (error) {
-      console.error('Failed to fetch agents:', error);
-    } finally {
-      setLoading(false);
+      await createAgent.mutateAsync({
+        name: form.name.trim(),
+        description: form.description.trim() || undefined,
+        agent_type: form.agent_type,
+      });
+      setCreateOpen(false);
+      setForm({ name: '', description: '', agent_type: 'general' });
+    } catch {
+      setError('Não foi possível criar o agente.');
     }
   };
 
-  const fetchExecutions = async (agentId: string) => {
-    setExecutionsLoading(true);
+  const openExecute = (agent: Agent) => {
+    setExecuting(agent);
+    setInput('');
+    setExecResult(null);
+  };
+
+  const onExecute = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!executing) return;
+    setExecResult(null);
     try {
-      const response = await api.get(`/agents/${agentId}/executions`);
-      setExecutions(response.data);
-      setExecutionsModalVisible(true);
-    } catch (error) {
-      console.error('Failed to fetch executions:', error);
-    } finally {
-      setExecutionsLoading(false);
+      const result = await executeAgent.mutateAsync({ id: executing.id, input });
+      setExecResult({ output: result.output, time_ms: result.execution_time_ms });
+    } catch {
+      setExecResult({ output: 'Falha na execução do agente.', time_ms: 0 });
     }
   };
 
-  const fetchExecutionLogs = async (executionId: string) => {
+  const onDelete = async (agent: Agent) => {
+    if (!window.confirm(`Excluir o agente "${agent.name}"?`)) return;
     try {
-      const response = await api.get(`/agent-executions/${executionId}/logs`);
-      setExecutionLogs(response.data.logs || []);
-      setLogsModalVisible(true);
-    } catch (error) {
-      console.error('Failed to fetch execution logs:', error);
+      await deleteAgent.mutateAsync(agent.id);
+    } catch {
+      // silencioso
     }
   };
 
-  const handleCreateAgent = async (values: any) => {
-    try {
-      await api.post('/agents', values);
-      fetchAgents();
-      Modal.close();
-    } catch (error) {
-      console.error('Failed to create agent:', error);
+  const toggleRunning = (agent: Agent) => {
+    if (agent.status === 'running') {
+      void stopAgent.mutateAsync(agent.id);
+    } else {
+      void startAgent.mutateAsync(agent.id);
     }
   };
 
-  const handleUpdateAgent = async (values: any) => {
-    try {
-      await api.put(`/agents/${editingAgent?.id}`, values);
-      fetchAgents();
-      Modal.close();
-    } catch (error) {
-      console.error('Failed to update agent:', error);
-    }
-  };
-
-  const handleDeleteAgent = async (id: string) => {
-    try {
-      await api.delete(`/agents/${id}`);
-      fetchAgents();
-    } catch (error) {
-      console.error('Failed to delete agent:', error);
-    }
-  };
-
-  const handleExecuteAgent = async (agent: Agent, task?: string) => {
-    try {
-      const response = await api.post(`/agents/${agent.id}/execute`, { task: task || 'Execute default task' });
-      fetchAgents();
-      Message.success('Agent execution started');
-    } catch (error) {
-      console.error('Failed to execute agent:', error);
-    }
-  };
-
-  const handleCancelExecution = async (executionId: string) => {
-    try {
-      await api.post(`/agent-executions/${executionId}/cancel`);
-      if (selectedAgent) fetchExecutions(selectedAgent.id);
-    } catch (error) {
-      console.error('Failed to cancel execution:', error);
-    }
-  };
-
-  const handleRetryExecution = async (executionId: string) => {
-    try {
-      await api.post(`/agent-executions/${executionId}/retry`);
-      if (selectedAgent) fetchExecutions(selectedAgent.id);
-    } catch (error) {
-      console.error('Failed to retry execution:', error);
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'running': return 'blue';
-      case 'completed': return 'green';
-      case 'failed': return 'red';
-      case 'cancelled': return 'orange';
-      case 'pending': return 'grey';
-      default: return 'default';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'running': return <ClockCircleOutlined style={{ color: '#1890ff' }} />;
-      case 'completed': return <CheckCircleOutlined style={{ color: '#52c41a' }} />;
-      case 'failed': return <CloseCircleOutlined style={{ color: '#ff4d4f' }} />;
-      case 'cancelled': return <StopOutlined style={{ color: '#faad14' }} />;
-      case 'pending': return <ClockCircleOutlined style={{ color: '#d9d9d9' }} />;
-      default: return <ClockCircleOutlined style={{ color: '#d9d9d9' }} />;
-    }
-  };
-
-  const columns = [
-    {
-      title: 'Name',
-      dataIndex: 'name',
-      key: 'name',
-      width: 200,
-      render: (name: string, record: Agent) => (
-        <div>
-          <div style={{ fontWeight: 500 }}>{name}</div>
-          <div style={{ color: '#999', fontSize: 12 }}>
-            {record.type} • {record.model_provider}/{record.model_name}
-          </div>
-        </div>
-      ),
-    },
-    {
-      title: 'Description',
-      dataIndex: 'description',
-      key: 'description',
-      ellipsis: true,
-      width: 200,
-    },
-    {
-      title: 'Type',
-      dataIndex: 'type',
-      key: 'type',
-      width: 100,
-      align: 'center',
-      render: (v: string) => (
-        <Tag color={v === 'planner' ? 'blue' : v === 'executor' ? 'green' : v === 'reviewer' ? 'purple' : v === 'tester' ? 'orange' : v === 'architect' ? 'cyan' : v === 'researcher' ? 'gold' : 'default'}>
-          {v}
-        </Tag>
-      ),
-    },
-    {
-      title: 'Model',
-      dataIndex: 'model_name',
-      key: 'model_name',
-      width: 150,
-      render: (model: string, record: Agent) => (
-        <div>
-          <div style={{ fontWeight: 500 }}>{model}</div>
-          <div style={{ color: '#999', fontSize: 12 }}>{record.model_provider}</div>
-        </div>
-      ),
-    },
-    {
-      title: 'Tools',
-      dataIndex: 'tools',
-      key: 'tools',
-      width: 150,
-      render: (tools: string[]) => (
-        <Space wrap>
-          {tools.map((tool: string) => (
-            <Tag key={tool} color="blue">{tool}</Tag>
-          ))}
-        </Space>
-      ),
-    },
-    {
-      title: 'Status',
-      dataIndex: 'is_active',
-      key: 'is_active',
-      width: 100,
-      align: 'center',
-      render: (active: boolean) => (
-        <Switch checked={active} disabled />
-      ),
-    },
-    {
-      title: 'Created',
-      dataIndex: 'created_at',
-      key: 'created_at',
-      width: 150,
-      render: (date: string) => format(new Date(date), 'PP'),
-    },
-    {
-      title: 'Actions',
-      key: 'actions',
-      width: 200,
-      fixed: 'right',
-      render: (_: any, record: Agent) => (
-        <Space>
-          <Tooltip title="View Executions">
-            <Button type="link" onClick={() => {
-              setSelectedAgent(record);
-              fetchExecutions(record.id);
-            }}>
-              <EyeOutlined />
-            </Button>
-          </Tooltip>
-          <Tooltip title="Execute">
-            <Button type="link" onClick={() => handleExecuteAgent(record)}>
-              <PlayOutlined />
-            </Button>
-          </Tooltip>
-          <Tooltip title="Edit">
-            <Button type="link" onClick={() => {
-              setEditingAgent(record);
-              setModalVisible(true);
-            }}>
-              <EditOutlined />
-            </Button>
-          </Tooltip>
-          <Tooltip title="Toggle Active">
-            <Button type="link" onClick={() => handleToggleActive(record)} danger={record.is_active}>
-              <Switch checked={record.is_active} size="small" />
-            </Button>
-          </Tooltip>
-          <Dropdown
-            menu={{
-              items: [
-                { label: 'Duplicate', key: 'duplicate', icon: <CopyOutlined />, onClick: () => {
-                  const copy = { ...record, name: `${record.name} (copy)`, created_at: new Date().toISOString() };
-                  setEditingAgent(copy);
-                  setModalVisible(true);
-                }},
-                { label: 'Export', key: 'export', icon: <DownloadOutlined /> },
-                { type: 'divider' },
-                { label: 'Delete', key: 'delete', icon: <DeleteOutlined />, danger: true, onClick: () => Modal.confirm({
-                  title: 'Delete Agent',
-                  content: `Are you sure you want to delete "${record.name}"? This action cannot be undone.`,
-                  onOk: () => handleDeleteAgent(record.id),
-                })},
-              ]}
-          >
-            <Button type="link"><MoreOutlined /></Button>
-          </Dropdown>
-        </Space>
-      ),
-    },
-  ];
-
-  useEffect(() => {
-    fetchAgents();
-  }, []);
+  const busy = createAgent.isPending || deleteAgent.isPending;
 
   return (
-    <div className="agents-page">
+    <div>
       <div className="page-header">
         <div>
-          <h1>Agents</h1>
-          <p>Create, manage, and execute AI agents</p>
+          <h1 className="page-title">Agentes</h1>
+          <p className="page-subtitle">
+            Gerencie os agentes de IA ({agents.length} total,{' '}
+            {agents.filter((a) => a.status === 'running').length} ativos)
+          </p>
         </div>
-        <Button type="primary" onClick={() => { setEditingAgent(null); setModalVisible(true); }}>
-          <PlusOutlined /> Create Agent
-        </Button>
+        <button
+          onClick={() => {
+            setForm({ name: '', description: '', agent_type: 'general' });
+            setError(null);
+            setCreateOpen(true);
+          }}
+          className="btn-primary"
+        >
+          <Plus className="h-4 w-4" /> Novo agente
+        </button>
       </div>
 
-      <Tabs activeKey={activeTab} onChange={setActiveTab} style={{ marginBottom: 24 }}>
-        <Tabs.TabPane tab="Agents" key="agents" />
-        <Tabs.TabPane tab="Executions" key="executions" />
-      </Tabs>
-
-      <Card>
-        <Form layout="inline" onFinish={() => fetchAgents()} style={{ marginBottom: 16 }}>
-          <Row gutter={16}>
-            <Col md={8}>
-              <Form.Item name="search" label="Search">
-                <Input.Search
-                  placeholder="Search agents..."
-                  value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
-                  onPressEnter={() => fetchAgents()}
-                  style={{ width: '100%' }}
-                  allowClear
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-        </Form>
-        
-        <Table
-          columns={columns}
-          dataSource={agents}
-          loading={loading}
-          rowKey="id"
-          pagination={{ pageSize: 10, showTotal: (total) => `Total ${total} agents` }}
-          onChange={(pagination) => setPagination(pagination)}
-        />
-
-        {/* Create/Edit Agent Modal */}
-        <Modal
-          title={editingAgent ? 'Edit Agent' : 'Create Agent'}
-          visible={modalVisible}
-          onCancel={() => { setModalVisible(false); setEditingAgent(null); }}
-          onOk={() => form.validateFields().then(editingAgent ? handleUpdateAgent : handleCreateAgent).catch(() => {})}
-          destroyOnClose
-        >
-          <Form layout="vertical">
-            <Form.Item name="name" label="Name" rules={[{ required: true, message: 'Please input agent name' }]}>
-              <Input placeholder="Enter agent name" />
-            </Form.Item>
-            <Form.Item name="type" label="Type" rules={[{ required: true, message: 'Please select agent type' }]}>
-              <Select placeholder="Select agent type" style={{ width: '100%' }}>
-                <Option value="planner">Planner</Option>
-                <Option value="executor">Executor</Option>
-                <Option value="reviewer">Reviewer</Option>
-                <Option value="tester">Tester</Option>
-                <Option value="architect">Architect</Option>
-                <Option value="researcher">Researcher</Option>
-                <Option value="security">Security</Option>
-                <Option value="deployment">Deployment</Option>
-              </Select>
-            </Form.Item>
-            <Form.Item name="description" label="Description">
-              <Input.TextArea placeholder="Enter description" rows={3} />
-            </Form.Item>
-            <Form.Item name="system_prompt" label="System Prompt" rules={[{ required: true, message: 'Please input system prompt' }]}>
-              <Input.TextArea placeholder="Enter system prompt" rows={5} />
-            </Form.Item>
-            <Form.Item name="model_provider" label="Model Provider" rules={[{ required: true, message: 'Please select model provider' }]}>
-              <Select placeholder="Select model provider" style={{ width: '100%' }}>
-                <Option value="openai">OpenAI</Option>
-                <Option value="anthropic">Anthropic</Option>
-                <Option value="gemini">Google Gemini</Option>
-                <Option value="ollama">Ollama (Local)</Option>
-                <Option value="openrouter">OpenRouter</Option>
-              </Select>
-            </Form.Item>
-            <Form.Item name="model_name" label="Model Name" rules={[{ required: true, message: 'Please input model name' }]}>
-              <Input placeholder="e.g., gpt-4o, claude-3-5-sonnet-20241022" />
-            </Form.Item>
-            <Form.Item name="tools" label="Tools">
-              <Input placeholder="Comma-separated tools (e.g., search,code_exec,file_ops)" />
-            </Form.Item>
-            <Form.Item name="is_active" label="Active" valuePropName="checked">
-              <Switch />
-            </Form.Item>
-          </Form>
-        </Modal>
-
-        {/* Executions Modal */}
-        <Modal
-          title={`Executions for ${selectedAgent?.name}`}
-          visible={executionsModalVisible}
-          onCancel={() => setExecutionsModalVisible(false)}
-          width={1000}
-          footer={null}
-        >
-          <Table
-            dataSource={executions}
-            columns={[
-              { title: 'Task', dataIndex: 'task', key: 'task', ellipsis: true },
-              { title: 'Status', dataIndex: 'status', key: 'status', width: 100, align: 'center', render: (v: string) => <Tag color={getStatusColor(v)}>{getStatusIcon(v)} {v}</Tag> },
-              { title: 'Tokens', dataIndex: 'tokens_used', key: 'tokens_used', width: 100, align: 'center', render: (v: number) => v ? v.toLocaleString() : '—' },
-              { title: 'Cost', dataIndex: 'cost_usd', key: 'cost_usd', width: 100, align: 'center', render: (v: number) => v ? `$${v.toFixed(4)}` : '—' },
-              { title: 'Started', dataIndex: 'started_at', key: 'started_at', width: 150, render: (d: string) => format(new Date(d), 'PPp') },
-              { title: 'Completed', dataIndex: 'completed_at', key: 'completed_at', width: 150, render: (d: string) => d ? format(new Date(d), 'PPp') : '—' },
-              { title: 'Actions', key: 'actions', render: (_: any, record: AgentExecution) => <Space>
-                <Tooltip title="View Logs"><Button type="link" size="small" onClick={() => { setSelectedExecution(record); fetchExecutionLogs(record.id); }}><FileTextOutlined /></Button></Tooltip>
-                {record.status === 'running' && <Tooltip title="Cancel"><Button type="link" size="small" danger onClick={() => handleCancelExecution(record.id)}><StopOutlined /></Button></Tooltip>}
-                {record.status === 'failed' && <Tooltip title="Retry"><Button type="link" size="small" onClick={() => handleRetryExecution(record.id)}><ReloadOutlined /></Button></Tooltip>}
-              </Space> },
-            ]
-            dataSource={executions}
-            loading={executionsLoading}
-            pagination={false}
-          />
-        </Modal>
-
-        {/* Logs Modal */}
-        <Modal
-          title={`Logs for ${selectedExecution?.id?.substring(0, 8)}`}
-          visible={logsModalVisible}
-          onCancel={() => setLogsModalVisible(false)}
-          width={900}
-          footer={null}
-        >
-          <div style={{ height: 500, overflow: 'auto', fontFamily: 'monospace', fontSize: 12, background: '#1e1e1e', color: '#d4d4d4', padding: 16, borderRadius: 4 }}>
-            {executionLogs.map((log: string, i: number) => (
-              <div key={i} style={{ borderBottom: '1px solid #333', padding: '4px 0' }}>
-                {log}
-              </div>
-            ))}
+      {isLoading ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="card p-5">
+              <div className="skeleton h-4 w-2/3" />
+              <div className="skeleton mt-3 h-3 w-1/2" />
+              <div className="skeleton mt-3 h-3 w-1/3" />
+            </div>
+          ))}
+        </div>
+      ) : agents.length === 0 ? (
+        <div className="card">
+          <div className="empty-state">
+            <Bot className="h-8 w-8 text-ink-muted" />
+            <p className="empty-title">Nenhum agente</p>
+            <p className="empty-hint">Crie um agente para automatizar tarefas com IA.</p>
+            <button
+              onClick={() => {
+                setForm({ name: '', description: '', agent_type: 'general' });
+                setError(null);
+                setCreateOpen(true);
+              }}
+              className="btn-primary mt-2"
+            >
+              <Plus className="h-4 w-4" /> Criar agente
+            </button>
           </div>
-        </Modal>
-      </Card>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {agents.map((agent) => {
+            const running = agent.status === 'running';
+            return (
+              <div key={agent.id} className="card card-hover flex flex-col p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
+                      <Bot className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-ink">{agent.name}</p>
+                      <p className="text-xs text-ink-muted">{agent.agent_type}</p>
+                    </div>
+                  </div>
+                  <span className={cn('badge shrink-0', running ? 'badge-active' : 'badge-neutral')}>
+                    {running ? (
+                      <>
+                        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" /> ativo
+                      </>
+                    ) : (
+                      agent.status ?? 'parado'
+                    )}
+                  </span>
+                </div>
+
+                <p className="mt-3 line-clamp-2 min-h-[2.5rem] flex-1 text-sm text-ink-muted">
+                  {agent.description || 'Sem descrição.'}
+                </p>
+
+                <div className="mt-3 flex items-center gap-1.5 text-xs text-ink-muted">
+                  <Wrench className="h-3.5 w-3.5" />
+                  <span>{agent.tools?.length ?? 0} ferramentas</span>
+                </div>
+
+                <div className="mt-4 flex items-center justify-between border-t border-line pt-3">
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => toggleRunning(agent)}
+                      disabled={startAgent.isPending || stopAgent.isPending}
+                      className="btn-ghost btn-sm"
+                      title={running ? 'Parar agente' : 'Iniciar agente'}
+                    >
+                      {running ? <Square className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+                      {running ? 'Parar' : 'Iniciar'}
+                    </button>
+                    <button
+                      onClick={() => openExecute(agent)}
+                      className="btn-secondary btn-sm"
+                      title="Executar agente"
+                    >
+                      <Clock className="h-3.5 w-3.5" /> Executar
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => void onDelete(agent)}
+                    className="rounded-lg p-2 text-ink-muted transition hover:bg-danger-50 hover:text-danger-600"
+                    aria-label={`Excluir ${agent.name}`}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Modal criar agente */}
+      <Modal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        title="Novo agente"
+        description="Configure um novo agente de IA."
+        footer={
+          <>
+            <button onClick={() => setCreateOpen(false)} className="btn-secondary" disabled={busy}>
+              Cancelar
+            </button>
+            <button type="submit" form="agent-form" className="btn-primary" disabled={busy}>
+              {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+              Criar agente
+            </button>
+          </>
+        }
+      >
+        <form id="agent-form" onSubmit={onCreate} className="space-y-4">
+          {error && <p className="text-sm text-danger-600">{error}</p>}
+          <label className="block">
+            <span className="label">Nome *</span>
+            <input
+              className="input"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              placeholder="Assistente de suporte"
+            />
+          </label>
+          <label className="block">
+            <span className="label">Tipo</span>
+            <select className="select" value={form.agent_type} onChange={(e) => setForm({ ...form, agent_type: e.target.value })}>
+              <option value="general">Geral</option>
+              <option value="research">Pesquisa</option>
+              <option value="coding">Codificação</option>
+              <option value="data_analysis">Análise de dados</option>
+            </select>
+          </label>
+          <label className="block">
+            <span className="label">Descrição</span>
+            <textarea
+              className="input min-h-20 resize-y"
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              placeholder="O que este agente faz?"
+            />
+          </label>
+        </form>
+      </Modal>
+
+      {/* Modal executar agente */}
+      <Modal
+        open={Boolean(executing)}
+        onClose={() => { setExecuting(null); setExecResult(null); }}
+        title={`Executar · ${executing?.name ?? ''}`}
+        description="Envie uma instrução para o agente."
+        footer={
+          <>
+            <button onClick={() => { setExecuting(null); setExecResult(null); }} className="btn-secondary" disabled={executeAgent.isPending}>
+              Fechar
+            </button>
+            <button type="submit" form="exec-form" className="btn-primary" disabled={executeAgent.isPending || !input.trim()}>
+              {executeAgent.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              Executar
+            </button>
+          </>
+        }
+      >
+        <form id="exec-form" onSubmit={onExecute} className="space-y-4">
+          <label className="block">
+            <span className="label">Instrução</span>
+            <textarea
+              className="input min-h-24 resize-y"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Ex.: Resuma os últimos relatórios..."
+              disabled={executeAgent.isPending}
+            />
+          </label>
+          {execResult && (
+            <div className={cn('alert', execResult.time_ms === 0 ? 'alert-danger' : 'alert-success')}>
+              {execResult.time_ms === 0 ? (
+                <XCircle className="h-4 w-4 shrink-0" />
+              ) : (
+                <CheckCircle2 className="h-4 w-4 shrink-0" />
+              )}
+              <div className="min-w-0">
+                <p className="whitespace-pre-wrap text-sm">{execResult.output}</p>
+                {execResult.time_ms > 0 && (
+                  <p className="mt-1 text-xs opacity-70">Concluído em {execResult.time_ms} ms</p>
+                )}
+              </div>
+            </div>
+          )}
+        </form>
+      </Modal>
     </div>
   );
 }

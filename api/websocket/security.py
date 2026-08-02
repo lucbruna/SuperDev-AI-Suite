@@ -7,6 +7,31 @@ from ..api_interfaces import IAPIAuthenticator
 from ..api_logger import APILogger
 
 
+class WebSocketSecurity:
+    """Origin and token validation helpers."""
+
+    def __init__(self, authenticator: IAPIAuthenticator | None = None, logger: APILogger | None = None) -> None:
+        self._authenticator = authenticator
+        self._logger = logger or APILogger("ws.security")
+
+    def validate_origin(self, origin: str, allowed_origins: list[str]) -> bool:
+        if not allowed_origins:
+            return True
+        return origin in allowed_origins
+
+    def validate_token(self, token: str, valid_tokens: list[str]) -> bool:
+        if not valid_tokens:
+            return bool(token)
+        return token in valid_tokens
+
+    async def authenticate_token(self, token: str) -> dict[str, Any]:
+        if self._authenticator:
+            result = await self._authenticator.validate_token(token)
+            if result.get("valid"):
+                return {"authenticated": True, "user_id": result.get("user_id", "")}
+        return {"authenticated": False, "error": "Authentication required"}
+
+
 class WSAuthenticator:
     """WebSocket connection authentication and security."""
 

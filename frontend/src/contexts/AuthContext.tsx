@@ -46,6 +46,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         .catch(() => storeLogout())
         .finally(() => setIsLoading(false));
     } else {
+      // A profile without tokens can remain from an older local-storage format.
+      // It must not unlock protected pages because every API call would be 401.
+      storeLogout();
       setIsLoading(false);
     }
   }, [setUser, storeLogout]);
