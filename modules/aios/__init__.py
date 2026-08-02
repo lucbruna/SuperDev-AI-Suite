@@ -58,6 +58,15 @@ from modules.aios.docker import (
     DockerVolume,
     get_docker_runtime,
 )
+from modules.aios.go import (
+    GoBuild,
+    GoClient,
+    GoModules,
+    GoRuntime,
+    GoTest,
+    GoUnavailableError,
+    get_go_runtime,
+)
 from modules.aios.java import (
     GradleManager,
     GradleUnavailableError,
@@ -230,6 +239,13 @@ __all__ = [
     "MavenManager",
     "MavenUnavailableError",
     "get_java_runtime",
+    "GoBuild",
+    "GoClient",
+    "GoModules",
+    "GoRuntime",
+    "GoTest",
+    "GoUnavailableError",
+    "get_go_runtime",
     "PipManager",
     "PoetryManager",
     "PoetryUnavailableError",
