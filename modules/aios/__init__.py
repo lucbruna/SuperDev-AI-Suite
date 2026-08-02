@@ -58,6 +58,15 @@ from modules.aios.docker import (
     DockerVolume,
     get_docker_runtime,
 )
+from modules.aios.shell import (
+    Bash,
+    Fish,
+    ShellClient,
+    ShellRuntime,
+    ShellUnavailableError,
+    Zsh,
+    get_shell_runtime,
+)
 from modules.aios.dotnet import (
     DotnetBuild,
     DotnetClient,
@@ -274,6 +283,13 @@ __all__ = [
     "DotnetUnavailableError",
     "NugetManager",
     "get_dotnet_runtime",
+    "Bash",
+    "Fish",
+    "ShellClient",
+    "ShellRuntime",
+    "ShellUnavailableError",
+    "Zsh",
+    "get_shell_runtime",
     "PipManager",
     "PoetryManager",
     "PoetryUnavailableError",
