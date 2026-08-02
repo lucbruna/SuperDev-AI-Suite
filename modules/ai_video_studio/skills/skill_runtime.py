@@ -54,12 +54,19 @@ class SkillRuntime:
         timeout = float(
             definition.metadata.get("timeout_s", self._default_timeout)
         )
+        # Resolve async-ness through instance __call__: iscoroutinefunction is
+        # False for a callable instance even when its __call__ is a coroutine.
+        entrypoint = definition.entrypoint
+        probe = entrypoint
+        if not asyncio.iscoroutinefunction(probe):
+            probe = getattr(entrypoint, "__call__", None)  # noqa: B004 — need the bound __call__ itself
+        is_async = asyncio.iscoroutinefunction(probe)
         try:
-            if asyncio.iscoroutinefunction(definition.entrypoint):
-                output = await asyncio.wait_for(definition.entrypoint(**merged), timeout)
+            if is_async:
+                output = await asyncio.wait_for(entrypoint(**merged), timeout)
             else:
                 output = await asyncio.wait_for(
-                    asyncio.to_thread(definition.entrypoint, **merged), timeout
+                    asyncio.to_thread(entrypoint, **merged), timeout
                 )
         except TimeoutError:
             return SkillResult(

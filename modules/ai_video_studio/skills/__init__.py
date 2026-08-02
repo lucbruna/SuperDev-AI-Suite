@@ -5,10 +5,15 @@ runtime with timeout, permissions, security allowlist, lifecycle
 (install/update/uninstall), marketplace, scheduler, statistics and a
 manager facade. Lifecycle and execution events are published onto the
 Vol 10 integration event bus, and activity is logged through the Vol 10
-integration logger.
+integration logger. Concrete, service-backed skills ship in ``video`` and
+``voice`` bundles and are registered via ``bundles.register_all_concrete``.
 """
 from __future__ import annotations
 
+from modules.ai_video_studio.skills.bundles import (
+    CONCRETE_SKILL_CLASSES,
+    register_all_concrete,
+)
 from modules.ai_video_studio.skills.skill_engine import (
     SkillEngine,
     SkillNotFoundError,
@@ -67,6 +72,8 @@ from modules.ai_video_studio.skills.skill_validator import (
 )
 
 __all__ = [
+    "CONCRETE_SKILL_CLASSES",
+    "register_all_concrete",
     "SkillEngine",
     "SkillNotFoundError",
     "get_skill_engine",
