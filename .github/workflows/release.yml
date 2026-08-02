@@ -47,8 +47,10 @@ jobs:
 
       # Write the input version into ./VERSION and propagate it to every
       # pyproject.toml / package.json via the sync script.
+      # NOTE: use inputs.dry_run (boolean-typed) — github.event.inputs.dry_run
+      # is the string "true"/"false" and would always negate to false.
       - name: Bump version and sync metadata
-        if: ${{ !github.event.inputs.dry_run }}
+        if: ${{ !inputs.dry_run }}
         run: |
           echo "${VERSION_INPUT#v}" > VERSION
           make version
@@ -58,22 +60,22 @@ jobs:
 
       # The tag must point at the commit that carries the bumped metadata.
       - name: Commit version bump
-        if: ${{ !github.event.inputs.dry_run }}
+        if: ${{ !inputs.dry_run }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add VERSION pyproject.toml backend/pyproject.toml package.json frontend/package.json
+          git add VERSION pyproject.toml backend/pyproject.toml backend/constants.py package.json frontend/package.json
           git commit -m "chore: release ${{ github.event.inputs.version }} — bump de versao" || echo "no metadata changes to commit"
           git push origin main
 
       - name: Create Git tag
-        if: ${{ !github.event.inputs.dry_run }}
+        if: ${{ !inputs.dry_run }}
         run: |
           git tag -a "${{ github.event.inputs.version }}" -m "Release ${{ github.event.inputs.version }}"
           git push origin "${{ github.event.inputs.version }}"
 
       - name: Create GitHub Release
-        if: ${{ !github.event.inputs.dry_run }}
+        if: ${{ !inputs.dry_run }}
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.inputs.version }}
@@ -83,7 +85,7 @@ jobs:
           prerelease: false
 
       - name: Dry run output
-        if: ${{ github.event.inputs.dry_run }}
+        if: ${{ inputs.dry_run }}
         run: |
           echo "=== DRY RUN ==="
           echo "Version metadata verified against ./VERSION (make version-check passed)."

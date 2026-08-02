@@ -2,6 +2,22 @@
 
 All notable changes to the SuperDev AI Suite will be documented in this file.
 
+## [6.0.0] - 2026-08-02
+
+### Changed
+- **Single-source versioning:** `VERSION` at the repo root is now the single source of truth for the suite version. `scripts/sync_version.py` propagates it to `pyproject.toml` and `backend/pyproject.toml` (`[project] version`), `package.json` and `frontend/package.json` (top-level `"version"`) and the runtime mirror `backend/constants.py` (`VERSION: Final[str]`). `--check` mode fails on any drift and runs in CI (`python scripts/sync_version.py --check`) plus the `make version-check` target. Independently versioned packages (sdk/, templates/, builders/, admin-dashboard/, desktop/, extensions/) are intentionally untouched. Bump flow: `echo "X.Y.Z" > VERSION && make version`.
+- **Automatic release pipeline:** new `.github/workflows/release.yml` — manual `workflow_dispatch` with `version` input (e.g. `v6.1.0`) and `dry_run` flag; validates the format, refuses existing tags, guards drift with `make version-check`, bumps via `echo "..." > VERSION && make version && make version-check`, commits the bumped metadata, tags and creates a GitHub Release (softprops/action-gh-release). `.github/workflows/cd.yml` gained a fail-fast `make version-check` guard before AWS config so deploys never ship with drifted metadata.
+- **Modern lifespan startup:** removed deprecated `router.on_event("startup")` hooks from `backend/code_search/api.py` and `backend/cloud/api.py`; initialization moved to the central lifespan startup (`backend/startup.py`).
+- **Tests run with OTEL disabled** (`OTEL_ENABLED=false`) — removes OTLP export noise; backend suite dropped from ~29s to ~11s.
+
+### Fixed
+- **JWT/secret hardening (audit C1/C3):** `backend/settings.py` insecure `secret_key` default removed (now `""`) with a validator rejecting known placeholder keys; shared `validate_secret_key()` guard in `backend/auth/jwt.py` used by both `JWTManager` and `AuthManager` (no code path signs tokens with a guessable key); local `.env` regenerated with strong 64-hex `SECRET_KEY`/`JWT_SECRET_KEY`; `backend/tests/conftest.py` + `tests/conftest.py` force a dedicated test key (deterministic suite, independent of `.env`/shell).
+- **Hardcoded credentials removed:** `backend/main_simple.py` generates a random admin password per boot when `ADMIN_PASSWORD` is absent; `backend/scripts/seed_database.py` no longer uses `admin123` (env-driven or random); `backend/cli/main.py` scaffolds generate a random `JWT_SECRET_KEY` instead of a placeholder.
+- **Lint (ruff):** `datetime.UTC` ×3, `TimeoutError`, `N806` — 0 errors across `backend/`.
+- **Pydantic deprecation:** `class Config` → `ConfigDict` in `backend/api/v1/knowledge.py` (2 warnings removed).
+- **Duplicate lockfile:** root `package-lock.json` removed (repo uses pnpm); `frontend/package-lock.json` preserved (frontend uses npm).
+- **Fixture bug:** `settings.SECRET_KEY` → `settings.auth.secret_key` in test conftests.
+
 ## [5.1.0] - 2026-07-31
 
 ### Added

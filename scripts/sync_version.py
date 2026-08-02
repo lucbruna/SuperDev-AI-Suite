@@ -8,12 +8,13 @@ Single source of truth: the ``VERSION`` file at the repo root (plain
   - backend/pyproject.toml  (FastAPI service)    [project] version
   - package.json            (root monorepo)      top-level "version"
   - frontend/package.json   (Next.js web app)    top-level "version"
+  - backend/constants.py    (runtime mirror)     VERSION: Final[str]
 
 Independently versioned packages (sdk/, templates/, builders/, admin-dashboard,
 desktop/, extensions/) are intentionally NOT touched.
 
-It also verifies (read-only) that ``backend/constants.py`` VERSION — the value
-the API exposes at runtime — matches ``./VERSION``.
+``backend/constants.py`` VERSION — the value the API exposes at runtime — is
+synced too, so ``./VERSION`` stays the single source end to end.
 
 Usage:
   python scripts/sync_version.py           # sync and report
@@ -111,16 +112,26 @@ def sync_package_json(path: Path, version: str, check: bool) -> None:
     print(f"  package.json {_rel(path)} -> {version}")
 
 
-def verify_constants(version: str) -> None:
-    text = CONSTANTS_FILE.read_text(encoding="utf-8")
+def sync_constants(path: Path, version: str, check: bool) -> None:
+    text = path.read_text(encoding="utf-8")
     match = _CONSTANTS_RE.search(text)
     if not match:
-        sys.exit(f"{CONSTANTS_FILE}: VERSION constant not found")
-    if match.group("version") != version:
-        sys.exit(
-            f"{CONSTANTS_FILE}: VERSION={match.group('version')} drifted from {version} "
-            f"— update the runtime constant manually."
-        )
+        sys.exit(f"{path}: VERSION constant not found")
+    new_text = (
+        text[: match.start("version")]
+        + version
+        + text[match.end("version"):]
+    )
+    if check:
+        if new_text != text:
+            sys.exit(
+                f"{path}: VERSION={match.group('version')} drifted from {version} "
+                f"— run `python scripts/sync_version.py`"
+            )
+        return
+    if new_text != text:
+        path.write_text(new_text, encoding="utf-8")
+    print(f"  constants   {_rel(path)} -> {version}")
 
 
 def main() -> int:
@@ -144,7 +155,7 @@ def main() -> int:
         sync_pyproject(target, version, args.check)
     for target in PACKAGE_JSON_TARGETS:
         sync_package_json(target, version, args.check)
-    verify_constants(version)
+    sync_constants(CONSTANTS_FILE, version, args.check)
 
     if args.check:
         print("OK: all version metadata matches ./VERSION")

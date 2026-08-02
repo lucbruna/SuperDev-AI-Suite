@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from scripts.sync_version import sync_package_json, sync_pyproject
+from scripts.sync_version import sync_constants, sync_package_json, sync_pyproject
 
 
 def test_pyproject_drift_detected_then_synced(tmp_path: Path) -> None:
@@ -74,3 +74,23 @@ def test_package_json_invalid_input_rejected(tmp_path: Path) -> None:
     f.write_text('{"name": "x", "version": "broken', encoding="utf-8")
     with pytest.raises(SystemExit):
         sync_package_json(f, "6.0.0", check=False)
+
+
+def test_constants_sync_and_drift_detection(tmp_path: Path) -> None:
+    f = tmp_path / "constants.py"
+    f.write_text('VERSION: Final[str] = "5.0.0"\n', encoding="utf-8")
+    # check mode fails on drift
+    with pytest.raises(SystemExit):
+        sync_constants(f, "6.0.0", check=True)
+    # sync mode fixes it
+    sync_constants(f, "6.0.0", check=False)
+    assert f.read_text(encoding="utf-8") == 'VERSION: Final[str] = "6.0.0"\n'
+    # check mode passes once in sync
+    sync_constants(f, "6.0.0", check=True)
+
+
+def test_constants_missing_constant_rejected(tmp_path: Path) -> None:
+    f = tmp_path / "constants.py"
+    f.write_text('APP_NAME = "x"\n', encoding="utf-8")
+    with pytest.raises(SystemExit):
+        sync_constants(f, "6.0.0", check=False)
