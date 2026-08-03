@@ -30,7 +30,7 @@ async def main() -> int:
     runtime = get_process_runtime()
 
     security = get_kernel_security()
-    security.grant("process", "spawn", "execute", "monitor", "tree", "cleanup", "pool_start", "pool_submit", "pool_shutdown")
+    security.grant("process", "spawn", "execute", "terminate", "monitor", "tree", "cleanup", "pool_start", "pool_submit", "pool_shutdown")
 
     # --- ACL ----------------------------------------------------------------------
     security.revoke("process", "execute")
@@ -61,8 +61,10 @@ async def main() -> int:
     _assert(len(runtime.pool._workers) == 0, "pool shuts down")
 
     # --- monitor ------------------------------------------------------------------
-    snap = runtime.monitor.snapshot(info.pid)
-    _assert(snap is not None and snap.pid == info.pid, "monitor snapshots PID")
+    import os
+
+    snap = runtime.monitor.snapshot(os.getpid())
+    _assert(snap is not None and snap.pid == os.getpid(), "monitor snapshots PID")
     procs = runtime.monitor.list_system_processes("python")
     _assert(len(procs) > 0, "monitor lists system processes")
 

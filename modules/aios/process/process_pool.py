@@ -43,8 +43,15 @@ class ProcessPool:
 
     async def _spawn_worker(self) -> None:
         """Spawn a new idle worker."""
-        # Workers are just placeholder processes that wait for tasks
-        info = await self._manager.spawn(["sleep", "3600"])  # Long-running placeholder
+        # Workers are placeholder processes that wait for tasks. Use a
+        # cross-platform long-running command (sleep on POSIX, ping on Windows).
+        import sys
+
+        if sys.platform == "win32":
+            cmd = ["cmd", "/c", "ping -n 3600 127.0.0.1 > nul"]
+        else:
+            cmd = ["sleep", "3600"]
+        info = await self._manager.spawn(cmd)  # Long-running placeholder
         worker = PoolWorker(pid=info.pid, info=info)
         self._workers.append(worker)
 
