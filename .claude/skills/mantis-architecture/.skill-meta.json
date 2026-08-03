@@ -1,0 +1,11 @@
+{
+  "name": "mantis-architecture",
+  "description": "Synthesizes raw learnings and codebase analysis into an interlinked Markdown Knowledge Base (KB). Use at the beginning of a loop to build or update architecture.md, entities, and vulnerabilities. Don't use for generating threat models or formulating execution plans.",
+  "version": "1.0.0",
+  "author": "SuperDev",
+  "created_at": "2026-08-03",
+  "updated_at": "2026-08-03",
+  "dependencies": [],
+  "skills": [],
+  "entrypoint": "SKILL.md"
+}

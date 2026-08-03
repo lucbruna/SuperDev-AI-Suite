@@ -1,0 +1,11 @@
+{
+  "name": "mantis-meta-agent",
+  "description": "Acts as the persistent supervisor, launching and monitoring the automated review campaign. Use when running a long-running, continuous security review campaign that needs autonomous coordination. Don't use for executing individual review stages directly.",
+  "version": "1.0.0",
+  "author": "SuperDev",
+  "created_at": "2026-08-03",
+  "updated_at": "2026-08-03",
+  "dependencies": [],
+  "skills": [],
+  "entrypoint": "SKILL.md"
+}

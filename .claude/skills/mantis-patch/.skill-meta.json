@@ -1,0 +1,11 @@
+{
+  "name": "mantis-patch",
+  "description": "Generates minimal security fixes using transactional isolation (shadow directories or file backups), applies patches, and verifies them. Use when security findings are successfully reproduced and need patches applied and verified. Don't use for initial vulnerability research or reproduction payload generation.",
+  "version": "1.0.0",
+  "author": "SuperDev",
+  "created_at": "2026-08-03",
+  "updated_at": "2026-08-03",
+  "dependencies": [],
+  "skills": [],
+  "entrypoint": "SKILL.md"
+}

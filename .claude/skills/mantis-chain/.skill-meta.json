@@ -1,0 +1,11 @@
+{
+  "name": "mantis-chain",
+  "description": "Analyzes individual security findings to identify and construct complex exploit chains. Use after validation stages to see if multiple low-severity bugs can be combined into a higher impact vulnerability. Don't use for initial codebase auditing or writing patch code.",
+  "version": "1.0.0",
+  "author": "SuperDev",
+  "created_at": "2026-08-03",
+  "updated_at": "2026-08-03",
+  "dependencies": [],
+  "skills": [],
+  "entrypoint": "SKILL.md"
+}

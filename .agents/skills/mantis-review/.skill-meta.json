@@ -1,0 +1,11 @@
+{
+  "name": "mantis-review",
+  "description": "Independently reviews findings and filters out false positives. Use when consolidated findings need validation against the actual source code. Don't use for reproducing crashes or patching code.",
+  "version": "1.0.0",
+  "author": "SuperDev",
+  "created_at": "2026-08-03",
+  "updated_at": "2026-08-03",
+  "dependencies": [],
+  "skills": [],
+  "entrypoint": "SKILL.md"
+}
