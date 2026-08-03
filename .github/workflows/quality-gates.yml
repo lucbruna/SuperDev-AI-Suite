@@ -1,0 +1,41 @@
+name: Quality Gates
+
+on:
+  pull_request:
+    branches: [main]
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  file-quality:
+    name: File quality checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Run file quality checks
+        run: python scripts/check_file_quality.py --verbose
+
+  metadata-valid:
+    name: Metadata validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Validate coverage.json and VERSION
+        run: |
+          python - <<'EOF'
+          import json, re
+          with open("coverage.json", encoding="utf-8") as f:
+              data = json.load(f)
+          assert set(data) >= {"schema_version", "totals", "files", "summary"}, "coverage.json missing required keys"
+          with open("VERSION", encoding="utf-8") as f:
+              first = f.readline().strip()
+          assert re.match(r"^\d+\.\d+\.\d+$", first), f"VERSION first line invalid: {first!r}"
+          print("OK: coverage.json valid, VERSION valid semver")
+          EOF

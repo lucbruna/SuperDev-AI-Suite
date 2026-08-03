@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-08-03T00:00:00.000Z",
+  "tool": "pytest-cov",
+  "totals": {
+    "lines": {
+      "total": 0,
+      "covered": 0,
+      "pct": 0.0
+    },
+    "statements": {
+      "total": 0,
+      "covered": 0,
+      "pct": 0.0
+    },
+    "functions": {
+      "total": 0,
+      "covered": 0,
+      "pct": 0.0
+    },
+    "branches": {
+      "total": 0,
+      "covered": 0,
+      "pct": 0.0
+    }
+  },
+  "files": {},
+  "summary": "No coverage data collected yet. Run `pytest --cov=backend --cov-report=json` to generate.",
+  "status": "pending"
+}

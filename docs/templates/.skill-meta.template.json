@@ -1,0 +1,11 @@
+{
+  "name": "{{SKILL_NAME}}",
+  "description": "{{SKILL_DESCRIPTION}}",
+  "version": "{{VERSION}}",
+  "author": "{{AUTHOR}}",
+  "created_at": "{{CREATED_AT}}",
+  "updated_at": "{{UPDATED_AT}}",
+  "dependencies": [],
+  "skills": [],
+  "entrypoint": "{{ENTRYPOINT}}"
+}

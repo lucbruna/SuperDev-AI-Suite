@@ -32,3 +32,13 @@ repos:
     hooks:
       - id: commitizen
         stages: [commit-msg]
+
+  - repo: local
+    hooks:
+      - id: file-quality
+        name: file-quality
+        description: Validate coverage.json, VERSION, and __init__.py files
+        entry: python scripts/check_file_quality.py
+        language: system
+        pass_filenames: false
+        always_run: true

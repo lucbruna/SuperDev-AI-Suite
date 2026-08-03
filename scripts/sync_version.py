@@ -54,10 +54,12 @@ _SAFE_VERSION = re.compile(r"^\d+\.\d+\.\d+$")
 
 
 def read_source_version() -> str:
-    version = VERSION_FILE.read_text(encoding="utf-8").strip()
-    if not _SAFE_VERSION.match(version):
-        sys.exit(f"Invalid version in {VERSION_FILE}: {version!r} (expected X.Y.Z)")
-    return version
+    # The first line of VERSION is the single source of truth (bare "X.Y.Z").
+    # Any trailing lines are build metadata (comments) and must be ignored.
+    first_line = VERSION_FILE.read_text(encoding="utf-8").splitlines()[0].strip()
+    if not _SAFE_VERSION.match(first_line):
+        sys.exit(f"Invalid version in {VERSION_FILE}: {first_line!r} (expected X.Y.Z)")
+    return first_line
 
 
 def _rel(path: Path) -> str:
