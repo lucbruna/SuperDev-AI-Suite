@@ -51,6 +51,32 @@ export const API_ENDPOINTS = {
   WORKFLOWS: {
     BASE: "/workflows",
   },
+  ARCHITECTURE_GRAPH: {
+    BASE: "/architecture-graph",
+    HEALTH: "/architecture-graph/health",
+    STATS: "/architecture-graph/stats",
+    ANALYZE: "/architecture-graph/analyze",
+    INSIGHTS: "/architecture-graph/insights",
+    RISK: "/architecture-graph/insights/risk",
+    SEARCH: "/architecture-graph/search",
+    EXPORT: (fmt: string) => `/architecture-graph/export/${fmt}`,
+    REPORTS: (kind: string) => `/architecture-graph/reports/${kind}`,
+  },
+  ARCHITECTURE_INTELLIGENCE: {
+    BASE: "/architecture-intelligence",
+    METRICS: "/architecture-intelligence/metrics",
+    INSIGHTS: "/architecture-intelligence/insights",
+    PLAN: "/architecture-intelligence/plan",
+    FORECAST: "/architecture-intelligence/forecast",
+    TRENDS: "/architecture-intelligence/trends",
+    OPTIMIZE: "/architecture-intelligence/optimize",
+    DIAGNOSE: "/architecture-intelligence/diagnose",
+    AGENTS: "/architecture-intelligence/agents",
+    HISTORY: "/architecture-intelligence/history",
+    SNAPSHOT: "/architecture-intelligence/snapshot",
+    ASK: "/architecture-intelligence/ask",
+    REPORT: "/architecture-intelligence/report",
+  },
 } as const;
 
 export const API_TIMEOUT = 30000;

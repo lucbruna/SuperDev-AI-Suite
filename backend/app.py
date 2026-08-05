@@ -188,6 +188,24 @@ def create_app() -> FastAPI:
         tags=["video-studio"],
     )
 
+    # Architecture Graph module (volume 2) — router mounted under /api/v1/architecture-graph
+    _safe_include(
+        app,
+        "modules.architecture_graph.api.router",
+        attr="api_router",
+        prefix="/api/v1/architecture-graph",
+        tags=["architecture-graph"],
+    )
+
+    # Architecture Intelligence module (volume 2) — router mounted under /api/v1/architecture-intelligence
+    _safe_include(
+        app,
+        "modules.architecture_intelligence.api.router",
+        attr="router",
+        prefix="/api/v1/architecture-intelligence",
+        tags=["architecture-intelligence"],
+    )
+
     # Ecosystem modules
     _safe_include(app, "backend.notifications.router", prefix="/api/v1/notifications", tags=["notifications"])
     _safe_include(app, "backend.notifications.email_router", prefix="/api/v1/email", tags=["email"])

@@ -15,6 +15,8 @@ export const ROUTES = {
   API_KEYS: "/settings/api-keys",
   LLM_PROVIDERS: "/llm/providers",
   LLM_CHAT: "/llm/chat",
+  ARCHITECTURE_GRAPH: "/architecture-graph",
+  ARCHITECTURE_INTELLIGENCE: "/architecture-intelligence",
   NOT_FOUND: "/404",
   SERVER_ERROR: "/500",
 } as const;

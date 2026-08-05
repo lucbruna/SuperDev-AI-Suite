@@ -8,6 +8,8 @@ import { AuthGuard } from "./AuthGuard";
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: "📊" },
   { href: "/video-studio", label: "Video Studio", icon: "🎬" },
+  { href: "/architecture-graph", label: "Arquitetura", icon: "🕸️" },
+  { href: "/architecture-intelligence", label: "Inteligência", icon: "🧠" },
   { href: "/projects", label: "Projetos", icon: "📁" },
   { href: "/agents", label: "Agentes", icon: "🤖" },
   { href: "/workflows", label: "Workflows", icon: "⚡" },
