@@ -17,6 +17,7 @@ from modules.ai_video_studio.api.routes import (
     export,
     generation,
     integration,
+    marketing,
     marketplace,
     project,
     render,
@@ -51,6 +52,9 @@ api_router.include_router(
     suite_integration.router, prefix="/suite-integration", tags=["Suite Integration (Volume 10)"]
 )
 api_router.include_router(marketplace.router, prefix="/marketplace", tags=["Marketplace"])
+api_router.include_router(marketing.branding_router, prefix="/branding", tags=["Branding (Volume 5)"])
+api_router.include_router(marketing.marketing_router, prefix="/marketing", tags=["Marketing (Volume 5)"])
+api_router.include_router(marketing.thumbnails_router, prefix="/thumbnails", tags=["Thumbnails (Volume 5)"])
 api_router.include_router(admin.router, prefix="/admin", tags=["Admin"])
 api_router.include_router(analytics.router, prefix="/analytics", tags=["Analytics"])
 api_router.include_router(collaboration.router, prefix="/collaboration", tags=["Collaboration"])

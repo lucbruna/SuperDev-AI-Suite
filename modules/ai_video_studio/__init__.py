@@ -15,6 +15,11 @@ Volume 2 — AI planning engines:
   - ai_storyboard: Storyboard frames, layouts, timeline, preview
   - ai_screenwriter: Script generation, prompts, review, exports
   - ai_director: Production planning, shooting plan, decisions, learning, analytics
+
+Volume 5 — Distribution & growth:
+  - ai_branding: Brand kits, SEO metadata, brand assets
+  - ai_marketing: Campaigns, captions, hashtags, posters
+  - ai_thumbnail: Thumbnail generation with templates
 """
 from modules.ai_video_studio.core.version import __version__
 

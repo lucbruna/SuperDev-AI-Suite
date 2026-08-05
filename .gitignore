@@ -94,10 +94,10 @@ logs/
 *.sqlite
 *.sqlite3
 
-# Uploads
-uploads/
-media/
-staticfiles/
+# Uploads (root-anchored runtime dirs; module-owned dirs must stay tracked)
+/uploads/
+/media/
+/staticfiles/
 
 # Runtime download caches (generated assets, voice caches, learning data)
 downloads/
