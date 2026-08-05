@@ -33,6 +33,7 @@ PROVIDER_CLASSES: dict[str, type[BaseLLMProvider]] = {
     "cohere": CohereProvider,
     "huggingface": HuggingFaceProvider,
     "local": LocalProvider,
+    "ollama": LocalProvider,  # alias — Ollama is served by LocalProvider
     "mock": MockProvider,
     "custom": CustomProvider,
 }

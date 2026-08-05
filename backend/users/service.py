@@ -33,6 +33,10 @@ class UserService:
     async def update_user(self, user_id: str, data: UserUpdate) -> User | None:
         return await self.repository.update(user_id, data)
 
+    async def update_password(self, user_id: str, password: str) -> bool:
+        hashed = hash_password(password)
+        return await self.repository.update_password(user_id, hashed)
+
     async def delete_user(self, user_id: str) -> bool:
         return await self.repository.delete(user_id)
 

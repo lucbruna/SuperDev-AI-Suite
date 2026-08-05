@@ -1,6 +1,14 @@
 from __future__ import annotations
 
 import logging
+import sys
+from pathlib import Path
+
+# Ensure project root is on sys.path so modules/ and core/ are importable
+# regardless of the working directory uvicorn is started from.
+_PROJECT_ROOT = str(Path(__file__).resolve().parent.parent)
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -68,7 +76,7 @@ def create_app() -> FastAPI:
         allowed_hosts = list({urlparse(o).hostname or o for o in allowed_hosts})
     # Add common test hosts for dev/test environments
     if config.app.environment != "production":
-        allowed_hosts.extend(["testserver", "test", "localhost", "127.0.0.1"])
+        allowed_hosts.extend(["testserver", "test", "localhost", "127.0.0.1", "backend", "frontend"])
     app.add_middleware(
         TrustedHostMiddleware,
         allowed_hosts=allowed_hosts,
@@ -160,6 +168,7 @@ def create_app() -> FastAPI:
     _safe_include(app, "backend.code_search.api")
     _safe_include(app, "backend.cloud.api", prefix="/api")
     _safe_include(app, "backend.diff.api", prefix="/api")
+    _safe_include(app, "backend.diff.api", attr="workspace_router", prefix="/api/v1")
     _safe_include(app, "backend.collab.api", prefix="/api")
     _safe_include(app, "backend.deploy.engine")
     _safe_include(app, "backend.websocket.handler")

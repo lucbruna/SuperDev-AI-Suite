@@ -8,6 +8,11 @@ from fastapi import APIRouter, HTTPException
 
 router = APIRouter(prefix="/diff", tags=["diff"])
 
+# Frontend compatibility router: the diff-merge UI posts full file content
+# to /api/v1/workspace/diff/apply. Kept separate so the classic unified-diff
+# endpoints below stay unchanged.
+workspace_router = APIRouter(prefix="/workspace/diff", tags=["workspace-diff"])
+
 
 @router.post("/generate")
 async def generate_diff(payload: dict[str, Any]) -> dict[str, Any]:
@@ -84,3 +89,31 @@ def _apply_patch(original: str, diff_text: str) -> str:
     patch_lines = diff_text.splitlines(keepends=True)
     result = list(difflib.restore(patch_lines, 2))
     return "".join(result) if result else original
+
+
+@workspace_router.post("/apply")
+async def apply_file_content(payload: dict[str, Any]) -> dict[str, Any]:
+    """Write full file content (used by the frontend diff-merge UI).
+
+    Accepts ``{path, content}`` — the complete new file content for the
+    given workspace path — and persists it directly.
+    """
+    filepath = payload.get("path", "")
+    content = payload.get("content", "")
+    if not filepath:
+        raise HTTPException(status_code=400, detail="path is required")
+    if not isinstance(content, str):
+        raise HTTPException(status_code=400, detail="content must be a string")
+
+    directory = os.path.dirname(filepath)
+    if directory:
+        os.makedirs(directory, exist_ok=True)
+    size_before = os.path.getsize(filepath) if os.path.exists(filepath) else 0
+    with open(filepath, "w", encoding="utf-8") as f:
+        f.write(content)
+    return {
+        "path": filepath,
+        "status": "applied",
+        "size_before": size_before,
+        "size_after": len(content),
+    }

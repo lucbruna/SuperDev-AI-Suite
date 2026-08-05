@@ -1,0 +1,360 @@
+---
+- name: SuperDev AI Suite - Server Provisioning
+  hosts: all
+  become: yes
+  gather_facts: yes
+
+  vars:
+    app_user: "superdev"
+    app_group: "superdev"
+    app_directory: "/opt/superdev"
+    python_version: "3.11"
+    node_version: "20"
+    docker_compose_version: "2.27.0"
+    domain_name: "{{ lookup('env', 'DOMAIN_NAME') | default('superdev.local', true) }}"
+    environment: "{{ lookup('env', 'ENVIRONMENT') | default('production', true) }}"
+    timezone: "America/Sao_Paulo"
+    ufw_ports:
+      - { port: 22, protocol: tcp, comment: "SSH" }
+      - { port: 80, protocol: tcp, comment: "HTTP" }
+      - { port: 443, protocol: tcp, comment: "HTTPS" }
+      - { port: 8000, protocol: tcp, comment: "Backend API (internal)" }
+      - { port: 5432, protocol: tcp, comment: "PostgreSQL (internal)" }
+      - { port: 6379, protocol: tcp, comment: "Redis (internal)" }
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install base system packages
+      apt:
+        name:
+          - curl
+          - wget
+          - git
+          - htop
+          - tmux
+          - unzip
+          - zip
+          - gnupg
+          - ca-certificates
+          - lsb-release
+          - software-properties-common
+          - apt-transport-https
+          - ufw
+          - jq
+          - tree
+          - build-essential
+          - libssl-dev
+          - libffi-dev
+          - python3-dev
+          - python3-pip
+          - python3-venv
+          - postgresql-client
+          - redis-tools
+          - nginx
+          - certbot
+          - python3-certbot-nginx
+          - fail2ban
+          - logrotate
+        state: present
+
+    - name: Set timezone
+      timezone:
+        name: "{{ timezone }}"
+
+    - name: Create application user
+      user:
+        name: "{{ app_user }}"
+        group: "{{ app_group }}"
+        shell: /bin/bash
+        create_home: yes
+        home: "{{ app_directory }}"
+        system: yes
+        state: present
+
+    - name: Create application directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: "{{ app_user }}"
+        group: "{{ app_group }}"
+        mode: "0755"
+      loop:
+        - "{{ app_directory }}"
+        - "{{ app_directory }}/backend"
+        - "{{ app_directory }}/web"
+        - "{{ app_directory }}/data"
+        - "{{ app_directory }}/data/postgres"
+        - "{{ app_directory }}/data/redis"
+        - "{{ app_directory }}/logs"
+        - "{{ app_directory }}/backups"
+        - "{{ app_directory }}/scripts"
+
+    - name: Install Docker dependencies
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+
+    - name: Install Docker from official repo
+      block:
+        - name: Add Docker GPG key
+          apt_key:
+            url: https://download.docker.com/linux/ubuntu/gpg
+            state: present
+
+        - name: Add Docker repository
+          apt_repository:
+            repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+            state: present
+
+        - name: Install Docker packages
+          apt:
+            name:
+              - docker-ce
+              - docker-ce-cli
+              - containerd.io
+              - docker-buildx-plugin
+              - docker-compose-plugin
+            state: present
+            update_cache: yes
+
+        - name: Start and enable Docker
+          systemd:
+            name: docker
+            state: started
+            enabled: yes
+
+        - name: Add application user to docker group
+          user:
+            name: "{{ app_user }}"
+            groups: docker
+            append: yes
+
+    - name: Install standalone docker-compose
+      get_url:
+        url: "https://github.com/docker/compose/releases/download/v{{ docker_compose_version }}/docker-compose-linux-x86_64"
+        dest: /usr/local/bin/docker-compose
+        mode: "0755"
+
+    - name: Install Python 3.11
+      block:
+        - name: Add deadsnakes PPA for Python 3.11
+          apt_repository:
+            repo: ppa:deadsnakes/ppa
+            state: present
+
+        - name: Install Python 3.11
+          apt:
+            name:
+              - python3.11
+              - python3.11-dev
+              - python3.11-venv
+              - python3.11-distutils
+            state: present
+            update_cache: yes
+
+        - name: Install pip for Python 3.11
+          shell: |
+            python3.11 -m ensurepip --upgrade
+            python3.11 -m pip install --upgrade pip setuptools wheel
+
+    - name: Set Python 3.11 as default
+      alternatives:
+        name: python3
+        link: /usr/bin/python3
+        path: /usr/bin/python3.11
+
+    - name: Clone repository
+      git:
+        repo: "{{ lookup('env', 'REPO_URL') | default('https://github.com/tomga-tech/superdev-ai-suite.git', true) }}"
+        dest: "{{ app_directory }}/repo"
+        version: "{{ lookup('env', 'GIT_BRANCH') | default('main', true) }}"
+        force: yes
+        accept_hostkey: yes
+      become_user: "{{ app_user }}"
+
+    - name: Copy environment variables
+      copy:
+        src: "{{ app_directory }}/repo/.env.example"
+        dest: "{{ app_directory }}/.env"
+        owner: "{{ app_user }}"
+        group: "{{ app_group }}"
+        mode: "0600"
+        remote_src: yes
+      when: not ansible_check_mode
+
+    - name: Set production environment variables
+      lineinfile:
+        path: "{{ app_directory }}/.env"
+        regexp: "^{{ item.key }}="
+        line: "{{ item.key }}={{ item.value }}"
+      loop:
+        - { key: "ENVIRONMENT", value: "{{ environment }}" }
+        - { key: "DOMAIN_NAME", value: "{{ domain_name }}" }
+        - { key: "SECRET_KEY", value: "{{ lookup('password', '/dev/null chars=ascii_letters,digits length=50') }}" }
+        - { key: "DATABASE_URL", value: "postgresql+asyncpg://superdev:{{ lookup('password', '/dev/null chars=ascii_letters,digits length=20') }}@postgres:5432/superdev" }
+        - { key: "REDIS_URL", value: "redis://redis:6379/0" }
+
+    - name: Configure UFW firewall
+      ufw:
+        rule: "{{ item.rule | default('allow') }}"
+        port: "{{ item.port }}"
+        proto: "{{ item.protocol }}"
+        comment: "{{ item.comment }}"
+      loop: "{{ ufw_ports }}"
+
+    - name: Enable UFW
+      ufw:
+        state: enabled
+        policy: deny
+        direction: incoming
+
+    - name: Copy docker-compose file
+      copy:
+        src: "{{ app_directory }}/repo/docker-compose.yml"
+        dest: "{{ app_directory }}/docker-compose.yml"
+        owner: "{{ app_user }}"
+        group: "{{ app_group }}"
+        mode: "0644"
+        remote_src: yes
+
+    - name: Copy docker-compose.override file
+      copy:
+        src: "{{ app_directory }}/repo/docker-compose.prod.yml"
+        dest: "{{ app_directory }}/docker-compose.override.yml"
+        owner: "{{ app_user }}"
+        group: "{{ app_group }}"
+        mode: "0644"
+        remote_src: yes
+      when: environment == "production"
+
+    - name: Run docker-compose pull
+      community.docker.docker_compose_v2:
+        project_src: "{{ app_directory }}"
+        pull: true
+      become_user: "{{ app_user }}"
+
+    - name: Run docker-compose up
+      community.docker.docker_compose_v2:
+        project_src: "{{ app_directory }}"
+        state: present
+        restarted: yes
+        remove_orphans: yes
+      become_user: "{{ app_user }}"
+
+    - name: Configure Nginx
+      template:
+        src: nginx.conf.j2
+        dest: /etc/nginx/sites-available/superdev
+        mode: "0644"
+
+    - name: Enable Nginx site
+      file:
+        src: /etc/nginx/sites-available/superdev
+        dest: /etc/nginx/sites-enabled/superdev
+        state: link
+
+    - name: Remove default Nginx site
+      file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+
+    - name: Restart Nginx
+      systemd:
+        name: nginx
+        state: restarted
+        enabled: yes
+
+    - name: Configure fail2ban for SSH
+      copy:
+        dest: /etc/fail2ban/jail.local
+        content: |
+          [DEFAULT]
+          bantime = 3600
+          findtime = 600
+          maxretry = 5
+
+          [sshd]
+          enabled = true
+          port = 22
+          logpath = %(sshd_log)s
+          backend = %(sshd_backend)s
+
+          [nginx-http-auth]
+          enabled = true
+          logpath = /var/log/nginx/error.log
+      notify: restart fail2ban
+
+    - name: Configure logrotate for application logs
+      copy:
+        dest: /etc/logrotate.d/superdev
+        content: |
+          {{ app_directory }}/logs/*.log {
+              daily
+              rotate 14
+              compress
+              delaycompress
+              missingok
+              notifempty
+              copytruncate
+          }
+
+    - name: Setup backup cron job
+      cron:
+        name: "SuperDev daily database backup"
+        minute: "0"
+        hour: "3"
+        job: "bash {{ app_directory }}/scripts/backup.sh >> {{ app_directory }}/logs/backup.log 2>&1"
+        user: "{{ app_user }}"
+
+    - name: Setup healthcheck cron job
+      cron:
+        name: "SuperDev health check"
+        minute: "*/5"
+        job: "bash {{ app_directory }}/scripts/healthcheck.sh || curl -X POST -H 'Content-Type: application/json' -d '{\"text\":\"SuperDev healthcheck failed on {{ inventory_hostname }}\"}' {{ lookup('env', 'SLACK_WEBHOOK_URL') | default('', true) }}"
+        user: "{{ app_user }}"
+
+    - name: Run cleanup cron job
+      cron:
+        name: "SuperDev nightly cleanup"
+        minute: "0"
+        hour: "4"
+        job: "bash {{ app_directory }}/scripts/cleanup.sh >> {{ app_directory }}/logs/cleanup.log 2>&1"
+        user: "{{ app_user }}"
+
+    - name: Verify services are running
+      uri:
+        url: "http://localhost:8000/api/health"
+        return_content: yes
+      register: healthcheck
+      retries: 5
+      delay: 10
+      until: healthcheck.status == 200
+      failed_when: healthcheck.status != 200
+
+    - name: Print deployment summary
+      debug:
+        msg:
+          - "============================================"
+          - "  SuperDev AI Suite - Deployment Complete!"
+          - "  Server: {{ inventory_hostname }}"
+          - "  Environment: {{ environment }}"
+          - "  Domain: {{ domain_name }}"
+          - "  API: https://{{ domain_name }}/api"
+          - "  Web: https://{{ domain_name }}"
+          - "============================================"
+
+  handlers:
+    - name: restart fail2ban
+      systemd:
+        name: fail2ban
+        state: restarted
+        enabled: yes

@@ -11,8 +11,8 @@ from backend.schemas.auth import (
 )
 from backend.schemas.user import UserCreate, UserUpdate
 from backend.schemas.project import ProjectCreate, ProjectUpdate
-from backend.schemas.workflow import WorkflowCreate, WorkflowUpdate
-from backend.schemas.agent import AgentCreate, AgentUpdate, AgentExecuteRequest
+from backend.schemas.workflow import WorkflowCreate
+from backend.schemas.agent import AgentCreate, AgentExecuteRequest
 from backend.schemas.plugin import PluginCreate
 from backend.schemas.provider import ProviderCreate
 from backend.schemas.knowledge import KnowledgeBaseCreate, KnowledgeEntryCreate
@@ -214,7 +214,11 @@ class TestAgentSchemas:
     def test_agent_execute_request(self):
         req = AgentExecuteRequest(task="Review this PR")
         assert req.task == "Review this PR"
-        assert req.context == {}
+        assert req.context is None
+
+    def test_agent_execute_request_legacy_input_alias(self):
+        req = AgentExecuteRequest(input="Legacy task")
+        assert req.task == "Legacy task"
 
     def test_agent_execute_empty_task(self):
         with pytest.raises(ValidationError):

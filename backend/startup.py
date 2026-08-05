@@ -15,6 +15,7 @@ async def startup_handler() -> None:
 
     logger.info("Loading configuration", extra={"environment": config.app.environment})
     logger.info("Checking database connection")
+    db_available = False
     try:
         from sqlalchemy import text
         from sqlalchemy.ext.asyncio import create_async_engine
@@ -23,74 +24,78 @@ async def startup_handler() -> None:
         async with engine.begin() as conn:
             await conn.execute(text("SELECT 1"))
         await engine.dispose()
+        db_available = True
         logger.info("Database connection verified")
     except Exception as e:
         logger.warning("Database connection failed — app will start without DB: %s", e)
         # Don't raise — let the app start so health checks and fallback work
 
-    logger.info("Running database migrations")
-    try:
-        import asyncio
-        from pathlib import Path
+    if not db_available:
+        logger.warning("Skipping migrations, seed, and RBAC — database unavailable")
+    else:
+        logger.info("Running database migrations")
+        try:
+            import asyncio
+            from pathlib import Path
 
-        from alembic.config import Config as AlembicConfig
-        from alembic import command
+            from alembic.config import Config as AlembicConfig
+            from alembic import command
 
-        repo_root = Path(__file__).resolve().parent.parent
-        alembic_cfg = AlembicConfig(str(repo_root / "alembic.ini"))
-        alembic_cfg.set_main_option(
-            "script_location",
-            str((repo_root / config.database.migration_dir).resolve()),
-        )
-        # Run alembic in a thread — command.upgrade() calls asyncio.run()
-        # internally, which fails when an event loop is already running
-        # (startup_handler is async).
-        await asyncio.to_thread(command.upgrade, alembic_cfg, "head")
-        logger.info("Migrations complete")
-    except Exception as e:
-        logger.warning("Migrations skipped or failed", extra={"error": str(e)})
+            repo_root = Path(__file__).resolve().parent.parent
+            alembic_cfg = AlembicConfig(str(repo_root / "alembic.ini"))
+            alembic_cfg.set_main_option(
+                "script_location",
+                str((repo_root / config.database.migration_dir).resolve()),
+            )
+            # Run alembic in a thread — command.upgrade() calls asyncio.run()
+            # internally, which fails when an event loop is already running
+            # (startup_handler is async).
+            await asyncio.to_thread(command.upgrade, alembic_cfg, "head")
+            logger.info("Migrations complete")
+        except Exception as e:
+            logger.warning("Migrations skipped or failed", extra={"error": str(e)})
 
-    logger.info("Running database seed")
-    try:
-        import asyncio
+        logger.info("Running database seed")
+        try:
+            import asyncio
 
-        from sqlalchemy import create_engine
-        from sqlalchemy.orm import Session
+            from sqlalchemy import create_engine
+            from sqlalchemy.orm import Session
 
-        # Converte URL async (postgresql+asyncpg://) para sync (postgresql://)
-        sync_url = config.database.url.replace("+asyncpg", "").replace("+aiosqlite", "")
+            # Converte URL async (postgresql+asyncpg://) para sync (postgresql://)
+            sync_url = config.database.url.replace("+asyncpg", "").replace("+aiosqlite", "")
 
-        def _run_seed():
-            engine = create_engine(sync_url, pool_pre_ping=True)
-            try:
-                with Session(engine) as session:
-                    from backend.database.seeds.roles import seed_roles_and_permissions
-                    from backend.database.seeds.seed_data import seed_database
+            def _run_seed():
+                engine = create_engine(sync_url, pool_pre_ping=True)
+                try:
+                    with Session(engine) as session:
+                        from backend.database.seeds.roles import seed_roles_and_permissions
+                        from backend.database.seeds.seed_data import seed_database
 
-                    seed_roles_and_permissions(session)
-                    seed_database(session)
-            finally:
-                engine.dispose()
+                        seed_roles_and_permissions(session)
+                        seed_database(session)
+                finally:
+                    engine.dispose()
 
-        await asyncio.to_thread(_run_seed)
-        logger.info("Database seed complete")
-    except Exception as e:
-        logger.warning("Database seed skipped or failed", extra={"error": str(e)})
+            await asyncio.to_thread(_run_seed)
+            logger.info("Database seed complete")
+        except Exception as e:
+            logger.warning("Database seed skipped or failed", extra={"error": str(e)})
 
-    # Ensure RBAC system roles exist (idempotent)
-    try:
-        from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+        # Ensure RBAC system roles exist (idempotent)
+        try:
+            from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-        engine = create_async_engine(config.database.url, pool_size=1, echo=False)
-        async_session = async_sessionmaker(engine, expire_on_commit=False)
-        async with async_session() as session:
-            from backend.auth.rbac import ensure_system_roles
+            engine = create_async_engine(config.database.url, pool_size=1, echo=False)
+            async_session = async_sessionmaker(engine, expire_on_commit=False)
+            async with async_session() as session:
+                from backend.auth.rbac import ensure_system_roles
 
-            await ensure_system_roles(session)
-        await engine.dispose()
-        logger.info("RBAC system roles ensured")
-    except Exception as e:
-        logger.warning("RBAC role seeding skipped or failed: %s", e)
+                await ensure_system_roles(session)
+            await engine.dispose()
+            logger.info("RBAC system roles ensured")
+        except Exception as e:
+            logger.warning("RBAC role seeding skipped or failed: %s", e)
 
     logger.info("Initializing cache")
     try:

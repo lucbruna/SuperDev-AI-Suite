@@ -2,6 +2,22 @@
 
 All notable changes to the SuperDev AI Suite will be documented in this file.
 
+## [Unreleased]
+
+### Added
+- **AI Avatar & Digital Human Engine (AI Video Studio Volume 6)** — `modules/ai_video_studio/ai_avatar_engine/` complete with **146 files across 10 subsystems**: core (AvatarEngine orchestrator, manager, registry, scheduler, optimizer, learning, statistics, cache, logger, profiles, permissions, metadata, export/import), digital_humans (15 procedural generators + proportions/variations/ages), facial_animation (rig, 23-landmark mesh, solver + 10 feature controllers), emotions (12 presets + blending with easing), gestures (engine + 15 context vocabularies), motion_capture (keypoints → pose → skeleton → retarget → JSON export), clothing (8 garment generators + wardrobe/materials/textures/palettes), hairstyles (9 catalogs + color engine), library (**48 virtual actors in 15 domains**), training (5 learning systems + RL bandit + quality validation + model versioning)
+- **Avatar Engine REST API:** 9 endpoints under `/api/v1/video-studio/avatar-engine/*` (profiles GET/POST, generate, emotions, gestures, clothing, hairstyles, motion-capture, stats) wired into `modules/ai_video_studio/api/router.py`; Swagger UI at `/api/v1/video-studio/docs`
+- **Volume 6 documentation:** `modules/ai_video_studio/ai_avatar_engine/README.md` (architecture, subsystems, quick start, API reference, integrations); SESSION_STATE entry registered
+- **Tests:** `tests/unit/test_avatar_engine_v6.py` (33 tests) — generation pipeline, library, emotions, gestures, clothing, hairstyles, mocap, training, API routes
+- **Global Suite Integration (AI Video Studio Volume 10, Part 1 — SuiteBridge):** `modules/ai_video_studio/suite_integration/` (12 files) — `SuiteBridge` + `SuiteManifest` + 6 adapters that reuse the real platform (integration engine via `IntegrationDefinition`, `backend.auth.jwt`, `SuperDev.security.ssrf` with stdlib fallback, `SuperDev.monitoring`, `SuperDev.workflow`; `SuperDev.plugin_platform` currently broken in the repo so the plugin adapter uses a local descriptor registry with 8 official studio plugins); REST routes `/api/v1/video-studio/suite-integration/*`; `suite_bridge` registered as an integration-manager service; `tests/unit/test_suite_integration.py` (16 hermetic tests)
+- **Global Suite Integration (Volume 10, Part 2 — 17 domain connectors):** `modules/ai_video_studio/integration/` — shared base (`connector_base.DomainConnector` contract status/capabilities/execute, `_brief.VideoBrief`, `connectors_registry` lazy + failure-tolerant) + 17 business-domain connectors: enterprise_ai (LLM router, prompt dispatcher, multi-agent, reasoning, memory, knowledge, embeddings, vector DB), agriculture_ai, erp, crm, human_resources, finance, business_intelligence, security (permission/audit/encryption/auth bridges), automation, notifications (local outbox), knowledge (RAG), cloud (5 providers, dry-run), monitoring, supervisor, gateway (REST/WS/gRPC/events), message_bus (kafka/rabbitmq/redis/nats/mqtt), learning (RL bandit + quality feedback); auto-registered in the integration manager + `GET /api/v1/video-studio/integration/connectors`; `tests/unit/test_connectors_v10.py` (21 tests); docs in `integration/README.md`; SESSION_STATE entry registered
+
+### Fixed
+- **wardrobe_manager color selection:** operator-precedence bug made the accent color equal the primary color; now guaranteed to differ
+- **facial_engine imports:** per-feature controllers now lazy-imported (avoided a top-level import cycle); `emotional_blending` lazy import of `emotion_engine` resolves the circular import
+- **avatar_registry:** removed dead `_logger` assignment; `avatar_manager` no longer reaches into registry internals
+- **Stale version assertions in tests:** `tests/unit/test_api_docs.py`, `tests/unit/test_metrics_endpoint.py`, `tests/unit/test_schemas_validation.py`, `tests/integration/test_api_e2e.py` updated from the old `5.0.0` expectations to `6.0.0` (suite went from 3 failures to green)
+
 ## [6.0.0] - 2026-08-02
 
 ### Changed

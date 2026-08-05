@@ -99,6 +99,10 @@ uploads/
 media/
 staticfiles/
 
+# Runtime download caches (generated assets, voice caches, learning data)
+downloads/
+modules/downloads/
+
 # Secrets
 *.pem
 *.key

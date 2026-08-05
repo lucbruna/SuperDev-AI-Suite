@@ -6,6 +6,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from modules.ai_video_studio.core.settings import get_settings
 from modules.ai_video_studio.core.version import __version__
 from modules.ai_video_studio.api.router import api_router
+from modules.ai_video_studio.skills.bundles import register_all_concrete
+from modules.ai_video_studio.skills.skill_engine import get_skill_engine
 
 
 @asynccontextmanager
@@ -13,6 +15,8 @@ async def lifespan(app: FastAPI):
     """Startup / shutdown lifecycle."""
     settings = get_settings()
     settings.storage.ensure_dirs()
+    # Register the shipped skill catalog so the API serves it out of the box.
+    register_all_concrete(get_skill_engine())
     yield
     # Shutdown: nothing persistent to close for in-process renderers
 

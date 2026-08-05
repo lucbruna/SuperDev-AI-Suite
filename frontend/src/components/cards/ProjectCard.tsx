@@ -1,7 +1,8 @@
 "use client";
 
-import type { Project, ProjectStatus } from "@/types/project";
+import type { Project } from "@/types/project";
 import { cn } from "@/utils/cn";
+import { projectStatusVariant } from "@/utils/format";
 import { Badge } from "@/components/badges/Badge";
 import { Folder, Clock, Users } from "lucide-react";
 
@@ -10,12 +11,6 @@ interface ProjectCardProps {
   onClick?: () => void;
   className?: string;
 }
-
-const statusVariant: Record<ProjectStatus, "default" | "success" | "warning" | "danger"> = {
-  active: "success",
-  archived: "warning",
-  deleted: "danger",
-};
 
 export function ProjectCard({ project, onClick, className }: ProjectCardProps) {
   const lastActivity = project.stats?.lastActivity ?? project.updatedAt;
@@ -33,7 +28,7 @@ export function ProjectCard({ project, onClick, className }: ProjectCardProps) {
         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-400">
           <Folder className="h-5 w-5" />
         </div>
-        <Badge variant={statusVariant[project.status]} size="sm">
+        <Badge variant={projectStatusVariant(project.status)} size="sm">
           {project.status}
         </Badge>
       </div>

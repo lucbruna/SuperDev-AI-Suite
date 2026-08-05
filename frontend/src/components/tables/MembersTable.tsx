@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useMemo, useState } from "react";
 import { cn } from "@/utils/cn";
+import { memberStatusVariant, roleVariant } from "@/utils/format";
 import { Badge } from "@/components/badges/Badge";
 import { DropdownMenu } from "@/components/menus/DropdownMenu";
 import { MoreHorizontal, Mail, UserMinus, Shield, ArrowUpDown } from "lucide-react";
@@ -24,18 +25,6 @@ interface MembersTableProps {
   loading?: boolean;
   className?: string;
 }
-
-const roleVariant: Record<string, "primary" | "info" | "default"> = {
-  owner: "primary",
-  admin: "info",
-  member: "default",
-};
-
-const statusVariant: Record<string, "success" | "warning" | "default"> = {
-  active: "success",
-  invited: "warning",
-  pending: "warning",
-};
 
 export function MembersTable({
   members,
@@ -161,12 +150,12 @@ export function MembersTable({
                 {member.email}
               </td>
               <td className="whitespace-nowrap px-4 py-3">
-                <Badge variant={roleVariant[member.role] ?? "default"} size="sm">
+                <Badge variant={roleVariant(member.role)} size="sm">
                   {member.role}
                 </Badge>
               </td>
               <td className="whitespace-nowrap px-4 py-3">
-                <Badge variant={statusVariant[member.status] ?? "default"} size="sm" dot>
+                <Badge variant={memberStatusVariant(member.status)} size="sm" dot>
                   {member.status}
                 </Badge>
               </td>

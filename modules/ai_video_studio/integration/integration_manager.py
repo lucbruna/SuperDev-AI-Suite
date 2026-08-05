@@ -91,6 +91,7 @@ class IntegrationManager:
         from modules.ai_video_studio.services.export_service import ExportService
         from modules.ai_video_studio.services.subtitle_studio import SubtitleStudioService
         from modules.ai_video_studio.services.voice_studio import VoiceStudioService
+        from modules.ai_video_studio.suite_integration import get_suite_bridge
 
         entries: list[tuple[str, Any, str, str]] = [
             ("ai_studio", AIStudioService(), "ai", "AI writing and direction (script, storyboard, plan)"),
@@ -99,6 +100,7 @@ class IntegrationManager:
             ("subtitle_studio", SubtitleStudioService(), "media", "SRT generation and subtitle translation"),
             ("export_service", ExportService(), "pipeline", "Multi-format export (mp4/webm/mov/gif)"),
             ("render_engine", RenderEngine(), "pipeline", "FFmpeg-backed rendering and muxing"),
+            ("suite_bridge", get_suite_bridge(), "platform", "SuperDev suite bridge (auth/security/observability/workflow/integration)"),
         ]
         for name, instance, kind, description in entries:
             self._registry.register_service(
@@ -121,9 +123,35 @@ class IntegrationManager:
             self._bus.publish(event_type, **payload)
         )
 
+    def register_connectors(self) -> int:
+        """Register the Volume 10 domain connectors (lazy, idempotent)."""
+        from modules.ai_video_studio.integration.connectors_registry import get_connectors
+
+        connectors = get_connectors()
+        for domain, connector in connectors.items():
+            if connector is None:
+                continue
+            self._registry.register_service(
+                f"connector.{domain}",
+                connector,
+                kind="connector",
+                description=connector.description,
+                version="1.0",
+                tags=["volume10", domain],
+            )
+        self._registry.register_module("connectors")
+        return self._registry.count()
+
+    def list_connectors(self) -> list[dict[str, Any]]:
+        """Registered connector service records."""
+        return [
+            s for s in self._registry.list_services() if s.get("kind") == "connector"
+        ]
+
     def status(self) -> dict[str, Any]:
         """Full integration surface for health/ops dashboards."""
         self.register_studio_services()
+        self.register_connectors()
         by_type: dict[str, int] = {}
         for record in self._bus.history(limit=10_000_000):
             by_type[record["event"]] = by_type.get(record["event"], 0) + 1

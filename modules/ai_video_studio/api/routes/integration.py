@@ -22,6 +22,21 @@ async def integration_services() -> list[dict[str, Any]]:
     return get_integration_manager().registry.list_services()
 
 
+@router.get("/connectors", tags=["Integration"])
+async def integration_connectors() -> dict[str, Any]:
+    """Volume 10 domain connectors (status + capabilities)."""
+    from modules.ai_video_studio.integration.connectors_registry import get_connectors
+
+    connectors = get_connectors()
+    return {
+        "count": sum(1 for c in connectors.values() if c is not None),
+        "connectors": {
+            domain: (c.status() if c is not None else {"domain": domain, "error": "unavailable"})
+            for domain, c in connectors.items()
+        },
+    }
+
+
 @router.get("/health", tags=["Integration"])
 async def integration_health() -> dict[str, Any]:
     """Per-service health snapshot (registration + dependency graph)."""

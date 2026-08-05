@@ -136,3 +136,98 @@ async def terminal_ai(data: dict):
         "explanation": f"Command suggestion for: '{prompt}'",
         "type": "command",
     }
+
+
+# ------------------------------------------------------------------
+# MCP tool execution
+# ------------------------------------------------------------------
+
+_MCP_TOOLS = [
+    {
+        "name": "read_file",
+        "description": "Read file contents",
+        "input_schema": {"type": "object", "properties": {"path": {"type": "string"}}, "required": ["path"]},
+    },
+    {
+        "name": "write_file",
+        "description": "Write content to a file",
+        "input_schema": {
+            "type": "object",
+            "properties": {"path": {"type": "string"}, "content": {"type": "string"}},
+            "required": ["path", "content"],
+        },
+    },
+    {
+        "name": "execute_command",
+        "description": "Run a shell command",
+        "input_schema": {"type": "object", "properties": {"command": {"type": "string"}}, "required": ["command"]},
+    },
+]
+
+
+def _resolve_workspace_path(path: str) -> str:
+    """Resolve a path relative to the workspace root, preventing escapes."""
+    import os
+
+    root = os.path.abspath(os.getcwd())
+    candidate = os.path.abspath(os.path.join(root, path))
+    if not (candidate == root or candidate.startswith(root + os.sep)):
+        raise ValueError(f"Path escapes workspace root: {path}")
+    return candidate
+
+
+@router.post("/mcp/call")
+async def mcp_call(data: dict):
+    import asyncio
+    import subprocess
+    import time
+    import uuid
+
+    tool_name = data.get("tool_name", "")
+    arguments = data.get("arguments") or {}
+    tool_call_id = f"call_{uuid.uuid4().hex[:12]}"
+    start = time.perf_counter()
+    error: str | None = None
+    result: dict | None = None
+
+    try:
+        if tool_name == "read_file":
+            path = _resolve_workspace_path(str(arguments.get("path", "")))
+            with open(path, "r", encoding="utf-8", errors="replace") as f:
+                result = {"content": f.read(), "path": path}
+        elif tool_name == "write_file":
+            path = _resolve_workspace_path(str(arguments.get("path", "")))
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(str(arguments.get("content", "")))
+            result = {"path": path, "written": True}
+        elif tool_name == "execute_command":
+            command = str(arguments.get("command", ""))
+            proc = await asyncio.create_subprocess_shell(
+                command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                cwd=__import__("os").getcwd(),
+            )
+            try:
+                stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=60)
+                result = {
+                    "exit_code": proc.returncode,
+                    "stdout": stdout.decode("utf-8", errors="replace")[:5000],
+                    "stderr": stderr.decode("utf-8", errors="replace")[:2000],
+                }
+            except asyncio.TimeoutError:
+                proc.kill()
+                error = "Command timed out after 60s"
+        else:
+            error = f"Unknown tool: {tool_name}"
+    except Exception as exc:  # noqa: BLE001
+        error = str(exc)
+
+    duration_ms = int((time.perf_counter() - start) * 1000)
+    return {
+        "tool_call_id": tool_call_id,
+        "tool_name": tool_name,
+        "result": result,
+        "error": error,
+        "duration_ms": duration_ms,
+    }

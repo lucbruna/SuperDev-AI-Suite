@@ -4,6 +4,7 @@ import Image from "next/image";
 import type { OrganizationMember } from "@/types/organization";
 import type { ProjectMember } from "@/types/project";
 import { cn } from "@/utils/cn";
+import { roleVariant } from "@/utils/format";
 import { Badge } from "@/components/badges/Badge";
 import { DropdownMenu } from "@/components/menus/DropdownMenu";
 import { MoreHorizontal, Mail, UserMinus, Shield } from "lucide-react";
@@ -19,13 +20,6 @@ interface MemberCardProps {
   onRemove?: (memberId: string) => void;
   className?: string;
 }
-
-const roleVariant: Record<string, "primary" | "success" | "default" | "info"> = {
-  owner: "primary",
-  admin: "info",
-  member: "default",
-  viewer: "default",
-};
 
 export function MemberCard({
   member,
@@ -73,7 +67,7 @@ export function MemberCard({
         </p>
       </div>
 
-      <Badge variant={roleVariant[role] ?? "default"} size="sm">
+      <Badge variant={roleVariant(role)} size="sm">
         {role}
       </Badge>
 

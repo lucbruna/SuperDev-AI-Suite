@@ -59,6 +59,14 @@ class UserRepository:
         await self.db.commit()
         return True
 
+    async def update_password(self, user_id: str, hashed_password: str) -> bool:
+        user = await self.get_by_id(user_id)
+        if not user:
+            return False
+        user.hashed_password = hashed_password
+        await self.db.commit()
+        return True
+
     async def list(
         self,
         page: int = 1,

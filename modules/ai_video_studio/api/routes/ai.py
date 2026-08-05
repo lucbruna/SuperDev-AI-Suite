@@ -27,7 +27,7 @@ router = APIRouter()
 class GenerateProjectRequest(BaseModel):
     prompt: str = Field(..., min_length=1, max_length=5000)
     num_scenes: int = Field(default=3, ge=1, le=20)
-    duration_seconds: float = Field(default=10.0, ge=1.0, le=300.0)
+    duration_seconds: float = Field(default=10.0, ge=1.0, le=600.0, description="Project duration in seconds (up to 10 minutes)")
     style: str = Field(default="cinematic")
     language: str = Field(default="en", min_length=2, max_length=10)
     provider: str | None = Field(default=None)

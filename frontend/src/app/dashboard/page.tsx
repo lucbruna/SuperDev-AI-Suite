@@ -8,6 +8,7 @@ import { useDashboard } from "@/hooks/useDashboard";
 import { Card, CardHeader, CardBody } from "@/components/cards/Card";
 import { Badge } from "@/components/badges/Badge";
 import { Button } from "@/components/buttons/Button";
+import { activityVariant, serviceHealthVariant } from "@/utils/format";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -69,24 +70,25 @@ function formatDate(): string {
 // Activity type config
 // ---------------------------------------------------------------------------
 
-const activityConfig: Record<string, { icon: string; variant: "success" | "warning" | "danger" | "info" | "default" }> = {
-  agent: { icon: "🤖", variant: "info" },
-  workflow: { icon: "⚡", variant: "warning" },
-  workflow_run: { icon: "⚡", variant: "warning" },
-  project: { icon: "📁", variant: "default" },
-  error: { icon: "❌", variant: "danger" },
-  create: { icon: "➕", variant: "success" },
-  update: { icon: "✏️", variant: "info" },
-  delete: { icon: "🗑️", variant: "danger" },
-  execute: { icon: "▶️", variant: "success" },
-  auth: { icon: "🔒", variant: "default" },
+// Activity type → icon (variants live in format.ts via `activityVariant`).
+const activityIcons: Record<string, string> = {
+  agent: "🤖",
+  workflow: "⚡",
+  workflow_run: "⚡",
+  project: "📁",
+  error: "❌",
+  create: "➕",
+  update: "✏️",
+  delete: "🗑️",
+  execute: "▶️",
+  auth: "🔒",
 };
 
 function getActivityStyle(type: string) {
-  for (const [key, val] of Object.entries(activityConfig)) {
-    if (type.toLowerCase().includes(key)) return val;
+  for (const [key, icon] of Object.entries(activityIcons)) {
+    if (type.toLowerCase().includes(key)) return { icon, variant: activityVariant(key) };
   }
-  return { icon: "📋", variant: "default" as const };
+  return { icon: "📋", variant: activityVariant("unknown") };
 }
 
 // ---------------------------------------------------------------------------
@@ -354,14 +356,16 @@ export default function DashboardPage() {
         </div>
         <div className="flex items-center gap-2">
           {health && (
-            <Badge
-              variant={health.status === "healthy" ? "success" : health.status === "degraded" ? "warning" : "danger"}
-              size="sm"
-              dot
-            >
+            <Badge variant={serviceHealthVariant(health.status)} size="sm" dot>
               Sistema {health.status === "healthy" ? "Saudável" : health.status === "degraded" ? "Degradado" : "Com Problemas"}
             </Badge>
           )}
+          <Link
+            href="/video-studio"
+            className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:from-violet-700 hover:to-fuchsia-700 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2"
+          >
+            🎬 Video Studio
+          </Link>
           <Button
             variant="primary"
             size="sm"
@@ -493,10 +497,7 @@ export default function DashboardPage() {
                         <span className="text-xs text-surface-400">
                           {check.latency_ms}ms
                         </span>
-                        <Badge
-                          variant={check.status === "healthy" ? "success" : check.status === "degraded" ? "warning" : "danger"}
-                          size="sm"
-                        >
+                        <Badge variant={serviceHealthVariant(check.status)} size="sm">
                           {check.status}
                         </Badge>
                       </div>

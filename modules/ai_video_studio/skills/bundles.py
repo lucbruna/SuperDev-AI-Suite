@@ -9,6 +9,15 @@ from typing import Any
 
 from modules.ai_video_studio.skills.skill_loader import load
 from modules.ai_video_studio.skills.skill_registry import SkillDefinition
+from modules.ai_video_studio.skills.ai import (
+    AgentOrchestratorSkill,
+    FineTunerSkill,
+    LlmGatewaySkill,
+    MlPipelineSkill,
+    ModelEvaluatorSkill,
+    PromptEngineerSkill,
+    RagBuilderSkill,
+)
 from modules.ai_video_studio.skills.avatar import (
     DoctorSkill,
     EngineerSkill,
@@ -18,25 +27,90 @@ from modules.ai_video_studio.skills.avatar import (
     SalespersonSkill,
     TeacherSkill,
 )
+from modules.ai_video_studio.skills.business import (
+    BusinessPlanSkill,
+    ContractDraftSkill,
+    FinancialReportSkill,
+    MeetingSummarySkill,
+    PitchDeckSkill,
+    ProposalSkill,
+)
+from modules.ai_video_studio.skills.development import (
+    ApiBuilderSkill,
+    CodeReviewerSkill,
+    DebuggerSkill,
+    DependencyAuditorSkill,
+    DocWriterSkill,
+    RefactorerSkill,
+    TestWriterSkill,
+)
+from modules.ai_video_studio.skills.hallmark import HallmarkSkill
+from modules.ai_video_studio.skills.marketing import (
+    AdCopywriterSkill,
+    BrandStrategySkill,
+    CampaignAnalyticsSkill,
+    EmailCampaignSkill,
+    LandingPageSkill,
+    SeoOptimizerSkill,
+    SocialPlannerSkill,
+)
+from modules.ai_video_studio.skills.security import (
+    DependencyCheckerSkill,
+    PolicyWriterSkill,
+    SecretsScannerSkill,
+    SecurityAuditSkill,
+    VulnerabilityScannerSkill,
+)
 from modules.ai_video_studio.skills.video import (
+    AdvertisingSkill,
+    AgricultureSkill,
     CinematicSkill,
+    CorporateSkill,
+    DocumentarySkill,
+    EducationalSkill,
+    MedicalSkill,
     TikTokSkill,
     YouTubeSkill,
 )
 from modules.ai_video_studio.skills.voice import (
+    AudiobookSkill,
     DubbingSkill,
+    InterviewSkill,
     NarratorSkill,
+    PodcastSkill,
+    StorytellerSkill,
     TranslatorSkill,
+)
+from modules.ai_video_studio.skills.workflow import (
+    ApproverSkill,
+    BackupSkill,
+    NotifierSkill,
+    SchedulerSkill,
+    VersionerSkill,
+    WorkflowOrchestratorSkill,
 )
 
 # All concrete skill classes shipped with the studio.
 CONCRETE_SKILL_CLASSES: list[type] = [
+    # Video (9)
     CinematicSkill,
     YouTubeSkill,
     TikTokSkill,
+    DocumentarySkill,
+    AdvertisingSkill,
+    EducationalSkill,
+    CorporateSkill,
+    AgricultureSkill,
+    MedicalSkill,
+    # Voice (7)
     NarratorSkill,
     DubbingSkill,
     TranslatorSkill,
+    PodcastSkill,
+    AudiobookSkill,
+    InterviewSkill,
+    StorytellerSkill,
+    # Avatar (7)
     PresenterSkill,
     TeacherSkill,
     DoctorSkill,
@@ -44,6 +118,52 @@ CONCRETE_SKILL_CLASSES: list[type] = [
     FarmerSkill,
     EngineerSkill,
     SalespersonSkill,
+    # Marketing (7)
+    AdCopywriterSkill,
+    SeoOptimizerSkill,
+    SocialPlannerSkill,
+    EmailCampaignSkill,
+    BrandStrategySkill,
+    LandingPageSkill,
+    CampaignAnalyticsSkill,
+    # Business (6)
+    PitchDeckSkill,
+    BusinessPlanSkill,
+    FinancialReportSkill,
+    ProposalSkill,
+    MeetingSummarySkill,
+    ContractDraftSkill,
+    # AI (7)
+    PromptEngineerSkill,
+    ModelEvaluatorSkill,
+    FineTunerSkill,
+    RagBuilderSkill,
+    AgentOrchestratorSkill,
+    LlmGatewaySkill,
+    MlPipelineSkill,
+    # Development (7)
+    CodeReviewerSkill,
+    TestWriterSkill,
+    ApiBuilderSkill,
+    DebuggerSkill,
+    RefactorerSkill,
+    DocWriterSkill,
+    DependencyAuditorSkill,
+    # Security (5)
+    VulnerabilityScannerSkill,
+    SecretsScannerSkill,
+    SecurityAuditSkill,
+    DependencyCheckerSkill,
+    PolicyWriterSkill,
+    # Workflow (6)
+    WorkflowOrchestratorSkill,
+    NotifierSkill,
+    SchedulerSkill,
+    ApproverSkill,
+    VersionerSkill,
+    BackupSkill,
+    # Hallmark (1)
+    HallmarkSkill,
 ]
 
 

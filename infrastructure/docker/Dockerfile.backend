@@ -30,6 +30,12 @@ COPY builders/ ./builders/
 COPY runtime_engine/ ./runtime_engine/
 COPY workflow_engine/ ./workflow_engine/
 
+# Modulos nativos (ex.: ai_video_studio) importados pelo backend em runtime
+COPY modules/ ./modules/
+
+# Alembic config (migracoes de banco executadas no startup)
+COPY alembic.ini ./
+
 EXPOSE 8000
 
 CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]

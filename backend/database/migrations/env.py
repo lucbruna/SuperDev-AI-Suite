@@ -34,7 +34,10 @@ from backend.database.models import (  # noqa: F401
 
 config = context.config
 if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+    # Never disable the application's existing loggers (superdev, uvicorn, ...).
+    # The default `disable_existing_loggers=True` disables them at migration
+    # time, silently killing all app logging for the rest of the process life.
+    fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 target_metadata = Base.metadata
 

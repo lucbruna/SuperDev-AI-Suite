@@ -416,3 +416,42 @@ async def find_similar_code(
         ],
         total=len(results),
     )
+
+
+@router.get("")
+async def list_knowledge_entries(
+    limit: int = Query(50, ge=1, le=200),
+    db: AsyncSession = Depends(get_db),
+    current_user: dict[str, Any] = Depends(get_current_active_user),
+) -> dict[str, Any]:
+    """Return recent knowledge entries for the current user.
+
+    Shape matches the frontend memory page: ``{id, content, type,
+    created_at, relevance}`` entries under ``data``.
+    """
+    from sqlalchemy import select
+
+    from backend.database.models.knowledge import KnowledgeBase, KnowledgeEntry
+
+    query = (
+        select(KnowledgeEntry, KnowledgeBase.name)
+        .join(KnowledgeBase, KnowledgeEntry.knowledge_base_id == KnowledgeBase.id)
+        .where(KnowledgeBase.created_by == current_user["id"])
+        .order_by(KnowledgeEntry.created_at.desc())
+        .limit(limit)
+    )
+    result = await db.execute(query)
+    rows = result.all()
+
+    entries = [
+        {
+            "id": str(entry.id),
+            "content": entry.title,
+            "type": entry.source_type or "document",
+            "created_at": entry.created_at.isoformat() if entry.created_at else "",
+            "relevance": 1.0,
+            "knowledge_base": kb_name,
+        }
+        for entry, kb_name in rows
+    ]
+    return {"success": True, "data": entries, "total": len(entries)}

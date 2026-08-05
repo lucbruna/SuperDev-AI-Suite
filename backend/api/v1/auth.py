@@ -52,6 +52,15 @@ class LogoutRequest(BaseModel):
     refresh_token: str | None = None
 
 
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    password: str
+
+
 class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str
@@ -286,7 +295,7 @@ async def refresh(
 async def logout(
     request: LogoutRequest,
     current_user: dict[str, Any] = Depends(get_current_active_user),
-) -> dict[str, str]:
+) -> dict[str, Any]:
     """Logout by revoking the refresh token.
 
     Optionally revoke all user tokens.
@@ -335,3 +344,69 @@ async def get_current_user_profile(
             }
         },
     }
+
+
+@router.post("/forgot-password")
+async def forgot_password(
+    request: ForgotPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """Request a password reset token for an account.
+
+    For security, the response is identical whether or not the email
+    exists (prevents account enumeration). The reset token is returned
+    in the payload so the frontend can drive the reset flow.
+    """
+    from datetime import timedelta
+
+    service = UserService(db)
+    user = await service.get_user_by_email(request.email)
+    if not user:
+        return {"success": True, "message": "If the account exists, a reset email was sent."}
+
+    manager = get_jwt_manager()
+    token = manager.create_access_token(
+        subject=str(user.id),
+        expires_delta=timedelta(minutes=30),
+        extra_claims={"type": "password_reset", "purpose": "password_reset"},
+    )
+    return {
+        "success": True,
+        "message": "If the account exists, a reset email was sent.",
+        "data": {"reset_token": token, "expires_in": 1800},
+    }
+
+
+@router.post("/reset-password")
+async def reset_password(
+    request: ResetPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """Reset the password using a token issued by /forgot-password."""
+    _validate_password_strength(request.password)
+
+    manager = get_jwt_manager()
+    payload = await manager.verify_token(request.token)
+    if not payload or payload.get("type") != "password_reset":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired reset token",
+        )
+
+    subject = payload.get("sub")
+    if not subject:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid reset token payload",
+        )
+
+    service = UserService(db)
+    user = await service.get_user(subject)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired reset token",
+        )
+
+    await service.update_password(str(user.id), request.password)
+    return {"success": True, "message": "Password reset successfully"}

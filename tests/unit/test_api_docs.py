@@ -1,6 +1,5 @@
 """Unit tests for API docs configuration."""
 
-import pytest
 from starlette.applications import Starlette
 
 
@@ -12,7 +11,7 @@ class TestAPIDocs:
         setup_docs(app)
 
         assert app.title == "SuperDev AI Suite"
-        assert app.version == "5.0.0"
+        assert app.version == "6.0.0"
         assert "Enterprise" in app.description
 
     def test_setup_docs_configures_tags(self):

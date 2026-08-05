@@ -5,6 +5,8 @@ import json
 import time
 from typing import Any
 
+import re
+
 from backend.agents.base_agent import (
     AgentResult,
     AgentStatus,
@@ -22,6 +24,64 @@ from backend.websocket.manager import manager
 # Timeout constants
 STEP_TIMEOUT_SECONDS = 60  # Max time per LLM call + tool execution
 OVERALL_TIMEOUT_SECONDS = 240  # Max total agent runtime (4 minutes)
+
+# Intent patterns — messages matching these are conversational and bypass the agent loop
+_CONVERSATIONAL_PATTERNS = re.compile(
+    r"^\s*(hi|hello|hey|thanks|thank you|good\s*(morning|afternoon|evening|night)"
+    r"|how are you|what'?s up|bye|goodbye|see you"
+    r"|who are you|what can you do|what are you"
+    r"|help|ping|pong|test)\s*[!?.]*\s*$",
+    re.IGNORECASE,
+)
+
+
+def _is_conversational(text: str) -> bool:
+    """Return True if the message is a simple greeting or chitchat."""
+    return bool(_CONVERSATIONAL_PATTERNS.match(text.strip()))
+
+
+def _sanitize_output(text: str) -> str:
+    """Strip raw JSON artifacts that may leak through when the model
+    produces malformed ReAct output instead of clean text."""
+    text = text.strip()
+
+    # If the entire text is valid JSON with ReAct fields, extract the output
+    try:
+        parsed = json.loads(text)
+        if isinstance(parsed, dict) and "action_input" in parsed:
+            output = parsed.get("action_input", {}).get("output", "")
+            if output:
+                return output
+    except (json.JSONDecodeError, AttributeError):
+        pass
+
+    # Strip leading/trailing JSON object fragments
+    # e.g. {"thought":...,"action":"finish","action_input":{"output":"Hello!"}}
+    text = re.sub(
+        r"^\s*\{[^{}]*\"action_input\"\s*:\s*\{[^{}]*\"output\"\s*:\s*\"([^\"]*?)\"[^{}]*\}[^{}]*\}\s*$",
+        r"\1",
+        text,
+        flags=re.DOTALL,
+    )
+
+    # Strip semicolon-separated JSON objects (hallucinated multi-action)
+    # e.g. {"thought":...,"action":"delete_file",...}; {"thought":...,"action":"list_files",...}
+    if re.search(r"\}\s*;\s*\{", text):
+        # Take the last JSON object's output if it's a finish action
+        parts = re.split(r"\}\s*;\s*\{", text)
+        for part in reversed(parts):
+            try:
+                obj = json.loads("{" + part.rstrip("}"))
+                if obj.get("action") == "finish":
+                    output = obj.get("action_input", {}).get("output", "")
+                    if output:
+                        return output
+            except (json.JSONDecodeError, AttributeError):
+                continue
+        # No finish action found — return empty to avoid leaking garbage
+        return ""
+
+    return text
 
 
 class ReActAgent(BaseAgent):
@@ -114,6 +174,35 @@ Always think step by step. Use tools when needed to accomplish the task."""
         event = EventBuilder.agent_start(self.name, self.name)
         await manager.broadcast_all(event.to_dict())
 
+        # ── Intent pre-check: simple greetings/questions bypass the agent ──
+        if _is_conversational(input_text):
+            try:
+                provider_messages = [Message(role="user", content=input_text)]
+                response = await asyncio.wait_for(
+                    ai_router.complete(
+                        messages=provider_messages,
+                        model=self.model,
+                        provider=self.provider,
+                        temperature=self.temperature,
+                        max_tokens=256,
+                    ),
+                    timeout=STEP_TIMEOUT_SECONDS,
+                )
+                output = response.content or "Hello! How can I help you today?"
+            except Exception:
+                output = "Hello! How can I help you today?"
+
+            self._status = AgentStatus.COMPLETED
+            execution_time = (time.time() - start_time) * 1000
+            complete_event = EventBuilder.agent_complete(self.name, output)
+            await manager.broadcast_all(complete_event.to_dict())
+            return AgentResult(
+                output=output,
+                steps=steps,
+                tool_calls=all_tool_calls,
+                execution_time_ms=execution_time,
+            )
+
         messages = [
             {"role": "system", "content": self._build_system_prompt()},
             {"role": "user", "content": input_text},
@@ -135,9 +224,19 @@ Always think step by step. Use tools when needed to accomplish the task."""
                 response_text = await self.think(messages)
 
                 try:
-                    parsed = json.loads(response_text)
+                    # Strip markdown code blocks the model may wrap around JSON
+                    cleaned = response_text.strip()
+                    md_match = re.search(r"```(?:json)?\s*\n?(.*?)\n?\s*```", cleaned, re.DOTALL)
+                    if md_match:
+                        cleaned = md_match.group(1).strip()
+                    parsed = json.loads(cleaned)
                 except json.JSONDecodeError:
-                    parsed = {"thought": response_text, "action": "finish", "action_input": {"output": response_text}}
+                    raw = response_text.strip()
+                    # If it looks like multiple hallucinated JSON objects, bail clean
+                    if re.search(r"\}\s*;\s*\{", raw):
+                        parsed = {"thought": "", "action": "finish", "action_input": {"output": ""}}
+                    else:
+                        parsed = {"thought": raw, "action": "finish", "action_input": {"output": raw}}
 
                 step = AgentStep(
                     thought=parsed.get("thought", ""),
@@ -153,7 +252,7 @@ Always think step by step. Use tools when needed to accomplish the task."""
                 await manager.broadcast_all(progress_event.to_dict())
 
                 if step.action == "finish":
-                    output = step.action_input.get("output", "")
+                    output = _sanitize_output(step.action_input.get("output", ""))
                     steps.append(step)
 
                     complete_event = EventBuilder.agent_complete(self.name, output)

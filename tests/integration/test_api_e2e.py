@@ -11,7 +11,6 @@ import pytest
 from fastapi import FastAPI, Request
 from httpx import ASGITransport, AsyncClient
 
-from backend.observability.metrics import get_metrics_collector
 
 
 # ---------------------------------------------------------------------------
@@ -137,7 +136,7 @@ class TestMetricsEndpoint:
     @pytest.mark.asyncio
     async def test_metrics_includes_info(self, client):
         resp = await client.get("/metrics")
-        assert 'superdev_info{version="5.0.0"' in resp.text
+        assert 'superdev_info{version="6.0.0"' in resp.text
 
     @pytest.mark.asyncio
     async def test_metrics_reflects_requests(self, client):

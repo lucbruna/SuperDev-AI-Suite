@@ -60,7 +60,7 @@ class LocalProvider(BaseLLMProvider):
         requests_per_minute: int = 60,
     ) -> None:
         super().__init__(name="local", model=model)
-        self._endpoint = endpoint or os.getenv("OLLAMA_HOST", "http://localhost:11434")
+        self._endpoint = endpoint or os.getenv("OLLAMA_BASE_URL") or os.getenv("OLLAMA_HOST", "http://localhost:11434")
         self._max_retries = max_retries
         self._pricing = LOCAL_PRICING
         self._client: Any = None

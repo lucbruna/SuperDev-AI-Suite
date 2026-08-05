@@ -39,6 +39,9 @@ def setup_logging(settings: LoggingSettings) -> logging.Logger:
     logger = logging.getLogger("superdev")
     logger.setLevel(settings.level.upper())
     logger.handlers.clear()
+    # Own handlers only — never double-log through the root logger (alembic's
+    # fileConfig adds a root console handler during migrations).
+    logger.propagate = False
 
     if settings.output == "stdout":
         console_handler = logging.StreamHandler(sys.stdout)

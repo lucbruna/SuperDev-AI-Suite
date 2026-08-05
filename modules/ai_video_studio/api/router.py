@@ -6,17 +6,24 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.ai_video_studio.api.routes import (
+    admin,
     ai,
+    analytics,
     assets,
     audio,
     avatar,
+    avatar_engine,
+    collaboration,
     export,
+    generation,
     integration,
+    marketplace,
     project,
     render,
     scene,
     skills,
     subtitles,
+    suite_integration,
     timeline,
     video,
 )
@@ -34,10 +41,19 @@ api_router.include_router(timeline.router, prefix="/timelines", tags=["Timelines
 api_router.include_router(assets.router, prefix="/assets", tags=["Assets"])
 api_router.include_router(audio.router, prefix="/audio", tags=["Audio"])
 api_router.include_router(avatar.router, prefix="/avatars", tags=["Avatars"])
+api_router.include_router(avatar_engine.router, prefix="/avatar-engine", tags=["Avatar Engine (Volume 6)"])
 api_router.include_router(export.router, prefix="/export", tags=["Export"])
 api_router.include_router(subtitles.router, prefix="/subtitles", tags=["Subtitles"])
 api_router.include_router(integration.router, prefix="/integration", tags=["Integration"])
 api_router.include_router(skills.router, prefix="/skills", tags=["Skills"])
+api_router.include_router(generation.router, prefix="", tags=["Generation"])
+api_router.include_router(
+    suite_integration.router, prefix="/suite-integration", tags=["Suite Integration (Volume 10)"]
+)
+api_router.include_router(marketplace.router, prefix="/marketplace", tags=["Marketplace"])
+api_router.include_router(admin.router, prefix="/admin", tags=["Admin"])
+api_router.include_router(analytics.router, prefix="/analytics", tags=["Analytics"])
+api_router.include_router(collaboration.router, prefix="/collaboration", tags=["Collaboration"])
 
 
 @api_router.get("/health", tags=["Health"])

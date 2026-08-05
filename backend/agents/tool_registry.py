@@ -60,11 +60,24 @@ class ToolRegistry:
             for tool in self._tools.values()
         ]
 
+    # Common parameter aliases that LLMs frequently produce instead of the
+    # canonical names defined in tool schemas.  Normalising here keeps every
+    # handler clean and avoids "unexpected keyword argument" failures.
+    _PARAM_ALIASES: dict[str, dict[str, str]] = {
+        "read_file":   {"file": "path", "file_path": "path", "filename": "path", "filepath": "path"},
+        "write_file":  {"file": "path", "file_path": "path", "filename": "path", "filepath": "path"},
+        "delete_file": {"file": "path", "file_path": "path", "filename": "path", "filepath": "path"},
+        "list_files":  {"file": "path", "file_path": "path", "filename": "path", "filepath": "path"},
+        "search_code": {"file_path": "path", "filepath": "path", "filename": "path", "query": "pattern"},
+    }
+
     async def execute(self, name: str, **kwargs) -> Any:
         tool = self._tools.get(name)
         if not tool:
             raise ValueError(f"Tool not found: {name}")
-        return await tool.handler(**kwargs)
+        aliases = self._PARAM_ALIASES.get(name, {})
+        normalized = {aliases.get(k, k): v for k, v in kwargs.items()}
+        return await tool.handler(**normalized)
 
     def delete(self, name: str) -> bool:
         if name in self._tools:

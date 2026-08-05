@@ -28,6 +28,13 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
+    # The table was historically created lazily by ``settings_service`` via
+    # ``CREATE TABLE IF NOT EXISTS``, so it may already exist when this
+    # migration runs. Skip creation in that case instead of failing with a
+    # DuplicateTableError that aborts the whole ``alembic upgrade head``.
+    bind = op.get_bind()
+    if sa.inspect(bind).has_table("app_settings"):
+        return
     op.create_table(
         "app_settings",
         sa.Column("id", sa.Text(), nullable=False),

@@ -69,4 +69,4 @@ class TestPrometheusMetrics:
         async with AsyncClient(transport=transport, base_url="http://test") as client:
             resp = await client.get("/metrics")
         body = resp.text
-        assert 'superdev_info{version="5.0.0"' in body
+        assert 'superdev_info{version="6.0.0"' in body

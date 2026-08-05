@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "SuperDev AI Suite",
+    "slug": "superdev-ai-suite",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "backgroundColor": "#3F51B5"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.superdev.ai-suite"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#3F51B5"
+      },
+      "package": "com.superdev.ai_suite"
+    }
+  }
+}

@@ -1,10 +1,22 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 from typing import Annotated, Any
 
 from pydantic import BeforeValidator, Field, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
+
+# Shared env file path — all nested BaseSettings subclasses need this because
+# pydantic-settings v2 does NOT inherit env_file from a parent model.
+_ENV_FILE = str(Path(__file__).resolve().parent.parent / ".env")
+_ENV_CONFIG = SettingsConfigDict(env_file=_ENV_FILE, env_file_encoding="utf-8", extra="ignore")
+
+
+class _SharedEnvSettings(BaseSettings):
+    """Base for all settings classes that need to read from the root .env file."""
+
+    model_config = _ENV_CONFIG
 
 
 def _parse_str_list(value: Any) -> list[str]:
@@ -37,7 +49,7 @@ def _parse_str_list(value: Any) -> list[str]:
 StrList = Annotated[list[str], NoDecode, BeforeValidator(_parse_str_list)]
 
 
-class AppSettings(BaseSettings):
+class AppSettings(_SharedEnvSettings):
     model_config = SettingsConfigDict(
         env_prefix="APP_",
         extra="ignore",
@@ -59,7 +71,7 @@ class AppSettings(BaseSettings):
     request_timeout: int = 120
 
 
-class DatabaseSettings(BaseSettings):
+class DatabaseSettings(_SharedEnvSettings):
     model_config = SettingsConfigDict(
         env_prefix="DATABASE_",
         extra="ignore",
@@ -83,7 +95,7 @@ class DatabaseSettings(BaseSettings):
     pgbouncer_pool_mode: str = "transaction"
 
 
-class RedisSettings(BaseSettings):
+class RedisSettings(_SharedEnvSettings):
     model_config = SettingsConfigDict(
         env_prefix="REDIS_",
         extra="ignore",
@@ -130,7 +142,7 @@ _INSECURE_SECRET_KEYS = {
 }
 
 
-class AuthSettings(BaseSettings):
+class AuthSettings(_SharedEnvSettings):
     model_config = SettingsConfigDict(
         env_prefix="JWT_",
         extra="ignore",
@@ -179,7 +191,7 @@ class AuthSettings(BaseSettings):
         return v
 
 
-class CorsSettings(BaseSettings):
+class CorsSettings(_SharedEnvSettings):
     model_config = SettingsConfigDict(
         env_prefix="CORS_",
         extra="ignore",
@@ -193,7 +205,7 @@ class CorsSettings(BaseSettings):
     max_age: int = 3600
 
 
-class LoggingSettings(BaseSettings):
+class LoggingSettings(_SharedEnvSettings):
     model_config = SettingsConfigDict(
         env_prefix="LOG_",
         extra="ignore",
@@ -210,7 +222,7 @@ class LoggingSettings(BaseSettings):
     sql_log: bool = False
 
 
-class TelemetrySettings(BaseSettings):
+class TelemetrySettings(_SharedEnvSettings):
     model_config = SettingsConfigDict(
         env_prefix="OTEL_",
         extra="ignore",
@@ -246,7 +258,7 @@ class TelemetrySettings(BaseSettings):
     sentry_traces_sample_rate: float = 0.1
 
 
-class ProviderSettings(BaseSettings):
+class ProviderSettings(_SharedEnvSettings):
     model_config = SettingsConfigDict(
         env_prefix="",
         extra="ignore",
@@ -280,7 +292,7 @@ class ProviderSettings(BaseSettings):
     embedding_batch_size: int = 32
 
 
-class SandboxSettings(BaseSettings):
+class SandboxSettings(_SharedEnvSettings):
     model_config = SettingsConfigDict(
         env_prefix="RUNTIME_",
         extra="ignore",
@@ -303,7 +315,7 @@ class SandboxSettings(BaseSettings):
     gid_map: str = "0:100000:65536"
 
 
-class KnowledgeBaseSettings(BaseSettings):
+class KnowledgeBaseSettings(_SharedEnvSettings):
     model_config = SettingsConfigDict(
         env_prefix="KB_",
         extra="ignore",
@@ -320,7 +332,7 @@ class KnowledgeBaseSettings(BaseSettings):
     max_context_tokens: int = 8000
 
 
-class PluginSettings(BaseSettings):
+class PluginSettings(_SharedEnvSettings):
     model_config = SettingsConfigDict(
         env_prefix="PLUGIN_",
         extra="ignore",
@@ -337,7 +349,7 @@ class PluginSettings(BaseSettings):
     max_cpu_seconds: int = 30
 
 
-class WorkflowSettings(BaseSettings):
+class WorkflowSettings(_SharedEnvSettings):
     model_config = SettingsConfigDict(
         env_prefix="WORKFLOW_",
         extra="ignore",
@@ -351,7 +363,7 @@ class WorkflowSettings(BaseSettings):
     state_ttl: int = 86400
 
 
-class VerificationSettings(BaseSettings):
+class VerificationSettings(_SharedEnvSettings):
     model_config = SettingsConfigDict(
         env_prefix="VERIFICATION_",
         extra="ignore",

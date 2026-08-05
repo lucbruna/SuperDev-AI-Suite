@@ -42,3 +42,8 @@ async def liveness_check() -> dict:
         "version": "6.0.0",
         "timestamp": datetime.now(UTC).isoformat(),
     }
+
+
+@router.get("/health/live")
+async def liveness_check_live() -> dict:
+    return await liveness_check()

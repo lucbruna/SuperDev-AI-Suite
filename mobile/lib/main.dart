@@ -1,67 +1,45 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'config/theme.dart';
+import 'providers/auth_provider.dart';
+import 'providers/enterprise_provider.dart';
+import 'screens/splash_screen.dart';
+import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
-import 'screens/agents_screen.dart';
-import 'screens/workflows_screen.dart';
-import 'screens/settings_screen.dart';
-import 'services/api_service.dart';
 
-void main() {
-  runApp(const SuperDevApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final prefs = await SharedPreferences.getInstance();
+  final isDarkMode = prefs.getBool('is_dark_mode') ?? true;
+
+  runApp(SuperDevAISuite(isDarkMode: isDarkMode));
 }
 
-class SuperDevApp extends StatelessWidget {
-  const SuperDevApp({super.key});
+class SuperDevAISuite extends StatelessWidget {
+  final bool isDarkMode;
+
+  const SuperDevAISuite({super.key, required this.isDarkMode});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'SuperDev',
-      theme: ThemeData(
-        colorSchemeSeed: const Color(0xFF6366F1),
-        brightness: Brightness.light,
-        useMaterial3: true,
-      ),
-      darkTheme: ThemeData(
-        colorSchemeSeed: const Color(0xFF6366F1),
-        brightness: Brightness.dark,
-        useMaterial3: true,
-      ),
-      home: const MainShell(),
-    );
-  }
-}
-
-class MainShell extends StatefulWidget {
-  const MainShell({super.key});
-
-  @override
-  State<MainShell> createState() => _MainShellState();
-}
-
-class _MainShellState extends State<MainShell> {
-  int _currentIndex = 0;
-  final ApiService _api = ApiService();
-
-  final List<Widget> _screens = const [
-    HomeScreen(),
-    AgentsScreen(),
-    WorkflowsScreen(),
-    SettingsScreen(),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: _screens[_currentIndex],
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (i) => setState(() => _currentIndex = i),
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
-          NavigationDestination(icon: Icon(Icons.smart_toy_outlined), selectedIcon: Icon(Icons.smart_toy), label: 'Agents'),
-          NavigationDestination(icon: Icon(Icons.account_tree_outlined), selectedIcon: Icon(Icons.account_tree), label: 'Workflows'),
-          NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings), label: 'Settings'),
-        ],
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => EnterpriseProvider()),
+      ],
+      child: MaterialApp(
+        title: 'SuperDev AI Suite',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
+        initialRoute: '/',
+        routes: {
+          '/': (context) => const SplashScreen(),
+          '/login': (context) => const LoginScreen(),
+          '/home': (context) => const HomeScreen(),
+        },
       ),
     );
   }

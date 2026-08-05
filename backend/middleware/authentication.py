@@ -103,7 +103,9 @@ class AuthMiddleware:
             "/api/v1/auth/refresh",
             "/api/v1/api-keys/me",  # API-key auth handled by api_key_auth dependency
             "/api/v1/health",
+            "/api/v1/video-studio/health",
             "/health",
+            "/metrics",
             "/docs",
             "/redoc",
             "/openapi.json",
