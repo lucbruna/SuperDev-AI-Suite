@@ -8,6 +8,8 @@ import { useDashboard } from "@/hooks/useDashboard";
 import { Card, CardHeader, CardBody } from "@/components/cards/Card";
 import { Badge } from "@/components/badges/Badge";
 import { Button } from "@/components/buttons/Button";
+import { EvolutionPanel } from "@/components/evolution/EvolutionPanel";
+import { ControlCenter } from "@/components/control/ControlCenter";
 import { activityVariant, serviceHealthVariant } from "@/utils/format";
 
 // ---------------------------------------------------------------------------
@@ -741,6 +743,12 @@ export default function DashboardPage() {
           </CardBody>
         </Card>
       </div>
+
+      {/* ─── Centro de Controle: operar todos os módulos ─────────────────── */}
+      <ControlCenter />
+
+      {/* ─── AI Evolution Engine ─────────────────────────────────────────── */}
+      <EvolutionPanel className="lg:col-span-3" />
     </DashboardLayout>
   );
 }

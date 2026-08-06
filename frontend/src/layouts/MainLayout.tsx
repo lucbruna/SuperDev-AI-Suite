@@ -50,6 +50,36 @@ export function MainLayout({ children }: MainLayoutProps) {
             label="Projects"
             collapsed={!isSidebarOpen}
           />
+          <SidebarItem
+            href={ROUTES.DIGITAL_TWIN}
+            icon="🧬"
+            label="Digital Twin"
+            collapsed={!isSidebarOpen}
+          />
+          <SidebarItem
+            href={ROUTES.SELF_HEALING}
+            icon="🩺"
+            label="Self-Healing"
+            collapsed={!isSidebarOpen}
+          />
+          <SidebarItem
+            href={ROUTES.AUTONOMOUS_DEVELOPER}
+            icon="🤖"
+            label="Autonomous Dev"
+            collapsed={!isSidebarOpen}
+          />
+          <SidebarItem
+            href={ROUTES.KNOWLEDGE_GRAPH}
+            icon="🕸️"
+            label="Knowledge Graph"
+            collapsed={!isSidebarOpen}
+          />
+          <SidebarItem
+            href={ROUTES.WORKSPACES}
+            icon="🗂️"
+            label="Workspaces"
+            collapsed={!isSidebarOpen}
+          />
         </nav>
 
         <div className="border-t p-2">

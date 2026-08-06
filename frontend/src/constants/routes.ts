@@ -17,6 +17,11 @@ export const ROUTES = {
   LLM_CHAT: "/llm/chat",
   ARCHITECTURE_GRAPH: "/architecture-graph",
   ARCHITECTURE_INTELLIGENCE: "/architecture-intelligence",
+  DIGITAL_TWIN: "/digital-twin",
+  SELF_HEALING: "/self-healing",
+  AUTONOMOUS_DEVELOPER: "/autonomous-developer",
+  KNOWLEDGE_GRAPH: "/knowledge-graph",
+  WORKSPACES: "/workspace",
   NOT_FOUND: "/404",
   SERVER_ERROR: "/500",
 } as const;
