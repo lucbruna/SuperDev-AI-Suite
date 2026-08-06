@@ -1,0 +1,31 @@
+# Qodo PR-Agent configuration (the-pr-agent/pr-agent).
+# Shared by the PR review workflow (.github/workflows/pr-agent.yml).
+#
+# Provider: the workflow passes OPENAI_KEY and ANTHROPIC_API_KEY. LiteLLM is
+# the fallback provider so any API key (DeepSeek, local Ollama, etc.) can be
+# used by setting the matching env vars on the workflow.
+
+[config]
+model = "gpt-4o-mini"
+model_turbo = "gpt-4o-mini"
+fallback_models = ["gpt-4o-mini", "gpt-4o"]
+fallback_models_turbo = ["gpt-4o-mini", "gpt-4o"]
+use_extra_context = true
+enable_auto_approval = false
+require_score = false
+
+[litellm]
+provider = "openai"
+
+[pr_reviewer]
+require_focused_review = false
+num_code_suggestions = 4
+extra_instructions = "Review for correctness, security and maintainability. Ignore style nits."
+enable_auto_approval = false
+require_score = false
+
+[pr_description]
+add_description = false
+
+[summarize]
+model_strategy = "summary"

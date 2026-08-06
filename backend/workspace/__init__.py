@@ -1,3 +1,3 @@
-from backend.workspace.service import WorkspaceService
+from backend.workspace.manager import WorkspaceManager
 
-__all__ = ["WorkspaceService"]
+__all__ = ["WorkspaceManager"]

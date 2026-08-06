@@ -206,6 +206,69 @@ def create_app() -> FastAPI:
         tags=["architecture-intelligence"],
     )
 
+    # AI Evolution Engine module (volume 5) — router mounted under /api/v1/evolution
+    _safe_include(
+        app,
+        "modules.ai_evolution_engine.api.router",
+        attr="router",
+        prefix="/api/v1/evolution",
+        tags=["evolution"],
+    )
+
+    # Super AI Orchestrator Core module (volume 6) — router mounted under /api/v1/orchestrator
+    _safe_include(
+        app,
+        "modules.super_ai_orchestrator.api.router",
+        attr="router",
+        prefix="/api/v1/orchestrator",
+        tags=["orchestrator"],
+    )
+
+    # Digital Twin module — router mounted under /api/v1/digital-twin
+    _safe_include(
+        app,
+        "modules.digital_twin.api.router",
+        attr="router",
+        prefix="/api/v1/digital-twin",
+        tags=["digital-twin"],
+    )
+
+    # Self-Healing Engine module — router mounted under /api/v1/self-healing
+    _safe_include(
+        app,
+        "modules.self_healing_engine.api.router",
+        attr="router",
+        prefix="/api/v1/self-healing",
+        tags=["self-healing"],
+    )
+
+    # Autonomous Developer module — router mounted under /api/v1/autonomous-developer
+    _safe_include(
+        app,
+        "modules.autonomous_developer.api.router",
+        attr="router",
+        prefix="/api/v1/autonomous-developer",
+        tags=["autonomous-developer"],
+    )
+
+    # AI Code Knowledge Graph module — router mounted under /api/v1/knowledge-graph
+    _safe_include(
+        app,
+        "modules.ai_code_knowledge_graph.api.router",
+        attr="router",
+        prefix="/api/v1/knowledge-graph",
+        tags=["knowledge-graph"],
+    )
+
+    # Workspace sessions — router mounted under /api/v1/workspace
+    _safe_include(
+        app,
+        "backend.workspace.router",
+        attr="router",
+        prefix="/api/v1/workspace",
+        tags=["workspace"],
+    )
+
     # Ecosystem modules
     _safe_include(app, "backend.notifications.router", prefix="/api/v1/notifications", tags=["notifications"])
     _safe_include(app, "backend.notifications.email_router", prefix="/api/v1/email", tags=["email"])

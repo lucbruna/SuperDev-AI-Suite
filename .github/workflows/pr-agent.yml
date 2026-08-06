@@ -1,0 +1,44 @@
+name: PR-Agent Code Review
+
+# Automated AI code review on pull requests using Qodo PR-Agent
+# (the-pr-agent/pr-agent, Apache-2.0). Reviews every PR that targets main
+# and replies with a summary + inline review comments.
+#
+# Model config: PR-Agent supports OpenAI, Anthropic and local Ollama/LiteLLM
+# endpoints. Configure the provider via the corresponding API key secret.
+# When no key is available the job skips gracefully (step "Review" is
+# conditional on the key being present).
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  pr_agent:
+    name: PR-Agent Review
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: PR Agent (review)
+        uses: the-pr-agent/pr-agent@main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Local model providers (Ollama / LiteLLM) can be enabled instead by
+          # setting the endpoint + key below, e.g.:
+          #   litellm.api_base: http://localhost:4000
+          #   litellm.model: gpt-4o-mini
+          #   litellm.organization: litellm
+          pr_agent.summarize_model_strategy: "summary"
+        with:
+          mode: review
+          pr_reviewer.enable_auto_approval: "false"
+          pr_reviewer.require_score: "false"

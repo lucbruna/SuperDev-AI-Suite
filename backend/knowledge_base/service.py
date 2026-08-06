@@ -73,6 +73,32 @@ class VectorStore:
         search_results.sort(key=lambda x: x.similarity, reverse=True)
         return search_results[:top_k]
 
+    async def get_knowledge_base(self, kb_id: UUID) -> KnowledgeBase | None:
+        return await self.session.get(KnowledgeBase, kb_id)
+
+    async def delete_knowledge_base(self, kb_id: UUID) -> bool:
+        kb = await self.session.get(KnowledgeBase, kb_id)
+        if kb:
+            await self.session.delete(kb)
+            return True
+        return False
+
+    async def list_knowledge_bases(
+        self,
+        is_public: bool | None = None,
+        kb_type: str | None = None,
+    ) -> list[KnowledgeBase]:
+        query = select(KnowledgeBase)
+
+        if is_public is not None:
+            query = query.where(KnowledgeBase.is_public == is_public)
+        if kb_type:
+            query = query.where(KnowledgeBase.type == kb_type)
+
+        query = query.order_by(KnowledgeBase.created_at.desc())
+        result = await self.session.execute(query)
+        return list(result.scalars().all())
+
 
 class KnowledgeBaseService:
     def __init__(self, session: AsyncSession):

@@ -137,5 +137,6 @@ mantis-summary.md
 .slim/deepwork/
 # SuperDev runtime data (architecture intelligence history/state)
 .superdev/
+data/architecture_graph/
 
 

@@ -23,5 +23,8 @@ class WorkspaceManager:
     async def list_workspaces(self, project_id: str) -> list[dict]:
         return [w for w in _workspaces.values() if w["project_id"] == project_id]
 
+    async def list_all(self) -> list[dict]:
+        return list(_workspaces.values())
+
     async def delete_workspace(self, workspace_id: str) -> bool:
         return _workspaces.pop(workspace_id, None) is not None
