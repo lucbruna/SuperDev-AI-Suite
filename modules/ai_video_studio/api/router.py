@@ -20,6 +20,7 @@ from modules.ai_video_studio.api.routes import (
     marketing,
     marketplace,
     project,
+    publisher,
     render,
     scene,
     skills,
@@ -36,6 +37,7 @@ api_router = APIRouter()
 api_router.include_router(ai.router, prefix="/ai", tags=["AI Studio"])
 api_router.include_router(video.router, prefix="/videos", tags=["Videos"])
 api_router.include_router(project.router, prefix="/projects", tags=["Projects"])
+api_router.include_router(publisher.router, prefix="/publisher", tags=["Publisher"])
 api_router.include_router(scene.router, prefix="/scenes", tags=["Scenes"])
 api_router.include_router(render.router, prefix="/render", tags=["Render"])
 api_router.include_router(timeline.router, prefix="/timelines", tags=["Timelines"])

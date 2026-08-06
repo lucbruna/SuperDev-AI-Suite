@@ -1,0 +1,4 @@
+# Self-Healing Engine é puro Python stdlib (determinístico, sem runtime).
+# Dependências de desenvolvimento:
+
+pytest>=8.0

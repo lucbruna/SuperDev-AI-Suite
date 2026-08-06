@@ -1,0 +1,4 @@
+# Digital Twin module runtime dependencies.
+# All components are deterministic and run without third-party packages;
+# entries below are optional integration extras only.
+python-dateutil>=2.8.0

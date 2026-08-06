@@ -1,0 +1,14 @@
+# Autonomous Developer — runtime dependencies.
+# Core planning/generation pipeline works with the Python standard library
+# only; the module degrades gracefully when LLM features are disabled.
+#
+# Optional (feature-gated at import time):
+#   fastapi           REST API (module api/)
+#   pydantic          API request models
+#   httpx             llm/ integrations
+#   openai            openai provider
+#   google-genai      gemini provider
+#   anthropic         claude provider
+#   redis             distributed memory store
+fastapi>=0.100
+pydantic>=2.0
