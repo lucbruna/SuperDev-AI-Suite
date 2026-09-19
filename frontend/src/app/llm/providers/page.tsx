@@ -213,8 +213,8 @@ export default function LLMProvidersPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await llmApi.listProviders();
-      setProviders(data);
+      const { providers } = await llmApi.listProviders();
+      setProviders(providers);
     } catch (err: any) {
       setError(err?.message || "Falha ao carregar providers");
     } finally {

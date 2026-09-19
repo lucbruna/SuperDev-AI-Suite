@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from {{project_name}}.api.v1 import health, auth, users, items
+from project_name.api.v1 import health, auth, users, items
 
 api_router = APIRouter()
 

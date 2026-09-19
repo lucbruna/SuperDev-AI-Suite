@@ -142,11 +142,15 @@ Always think step by step. Use tools when needed to accomplish the task."""
             )
             return response.content
         except TimeoutError:
-            return json.dumps({
-                "thought": "LLM call timed out, finishing with current progress",
-                "action": "finish",
-                "action_input": {"output": "Request timed out. The task required more time than allowed. Please try a simpler request or break it into smaller steps."}
-            })
+            return json.dumps(
+                {
+                    "thought": "LLM call timed out, finishing with current progress",
+                    "action": "finish",
+                    "action_input": {
+                        "output": "Request timed out. The task required more time than allowed. Please try a simpler request or break it into smaller steps."
+                    },
+                }
+            )
 
     async def act(
         self,

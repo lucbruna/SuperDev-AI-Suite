@@ -6,14 +6,14 @@ import time
 import uuid
 from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
-from enum import Enum
+from datetime import datetime, timedelta, timezone, UTC
+from enum import StrEnum
 from typing import Any, Optional
 
 logger = logging.getLogger("superdev.ai.planner")
 
 
-class TaskStatus(str, Enum):
+class TaskStatus(StrEnum):
     PENDING = "pending"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
@@ -22,14 +22,14 @@ class TaskStatus(str, Enum):
     FAILED = "failed"
 
 
-class TaskPriority(str, Enum):
+class TaskPriority(StrEnum):
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
     CRITICAL = "critical"
 
 
-class PlanStatus(str, Enum):
+class PlanStatus(StrEnum):
     DRAFT = "draft"
     VALIDATED = "validated"
     IN_PROGRESS = "in_progress"
@@ -58,14 +58,14 @@ class SubTask:
     depends_on: list[str] = field(default_factory=list)
     estimated_effort_hours: float = 1.0
     actual_effort_hours: float = 0.0
-    assigned_to: Optional[str] = None
+    assigned_to: str | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
     resources: ResourceRequirement = field(default_factory=ResourceRequirement)
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
-    result: Optional[Any] = None
-    error: Optional[str] = None
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    result: Any | None = None
+    error: str | None = None
     tags: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
@@ -118,7 +118,7 @@ class SubTask:
             assigned_to=data.get("assigned_to"),
             metadata=data.get("metadata", {}),
             resources=resources,
-            created_at=datetime.fromisoformat(data["created_at"]) if "created_at" in data else datetime.now(timezone.utc),
+            created_at=datetime.fromisoformat(data["created_at"]) if "created_at" in data else datetime.now(UTC),
             started_at=datetime.fromisoformat(data["started_at"]) if data.get("started_at") else None,
             completed_at=datetime.fromisoformat(data["completed_at"]) if data.get("completed_at") else None,
             tags=data.get("tags", []),
@@ -197,8 +197,8 @@ class Plan:
     tasks: list[Task] = field(default_factory=list)
     status: PlanStatus = PlanStatus.DRAFT
     version: str = "1.0.0"
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -223,8 +223,8 @@ class Plan:
             tasks=[Task.from_dict(t) for t in data.get("tasks", [])],
             status=PlanStatus(data.get("status", PlanStatus.DRAFT.value)),
             version=data.get("version", "1.0.0"),
-            created_at=datetime.fromisoformat(data["created_at"]) if "created_at" in data else datetime.now(timezone.utc),
-            updated_at=datetime.fromisoformat(data["updated_at"]) if "updated_at" in data else datetime.now(timezone.utc),
+            created_at=datetime.fromisoformat(data["created_at"]) if "created_at" in data else datetime.now(UTC),
+            updated_at=datetime.fromisoformat(data["updated_at"]) if "updated_at" in data else datetime.now(UTC),
             metadata=data.get("metadata", {}),
         )
 
@@ -240,10 +240,7 @@ class Plan:
         total_sub = sum(len(t.sub_tasks) for t in self.tasks)
         if total_sub == 0:
             return 0.0
-        completed_sub = sum(
-            sum(1 for st in t.sub_tasks if st.status == TaskStatus.COMPLETED)
-            for t in self.tasks
-        )
+        completed_sub = sum(sum(1 for st in t.sub_tasks if st.status == TaskStatus.COMPLETED) for t in self.tasks)
         return completed_sub / total_sub
 
 
@@ -256,14 +253,14 @@ class PlannerEngine:
         self,
         name: str,
         description: str = "",
-        tasks: Optional[list[Task]] = None,
+        tasks: list[Task] | None = None,
     ) -> Plan:
         plan = Plan(name=name, description=description, tasks=tasks or [])
         self._plans[plan.id] = plan
         logger.info("Created plan: %s (id=%s)", name, plan.id)
         return plan
 
-    def get_plan(self, plan_id: str) -> Optional[Plan]:
+    def get_plan(self, plan_id: str) -> Plan | None:
         return self._plans.get(plan_id)
 
     def delete_plan(self, plan_id: str) -> bool:
@@ -272,7 +269,7 @@ class PlannerEngine:
             return True
         return False
 
-    def list_plans(self, status: Optional[PlanStatus] = None) -> list[Plan]:
+    def list_plans(self, status: PlanStatus | None = None) -> list[Plan]:
         if status:
             return [p for p in self._plans.values() if p.status == status]
         return list(self._plans.values())
@@ -282,7 +279,7 @@ class PlannerEngine:
         title: str,
         description: str,
         goal: str,
-        sub_task_specs: Optional[list[dict[str, Any]]] = None,
+        sub_task_specs: list[dict[str, Any]] | None = None,
     ) -> Task:
         task = Task(title=title, description=description, goal=goal)
 
@@ -389,9 +386,7 @@ class PlannerEngine:
             for sub in task.sub_tasks:
                 for dep in sub.depends_on:
                     if dep not in all_sub_ids:
-                        result.warnings.append(
-                            f"Sub-task '{sub.name}' depends on non-existent sub-task '{dep}'"
-                        )
+                        result.warnings.append(f"Sub-task '{sub.name}' depends on non-existent sub-task '{dep}'")
 
         cycles = self.detect_circular_dependencies(plan_id)
         if cycles:
@@ -439,9 +434,12 @@ class PlannerEngine:
 
         all_sub_tasks.sort(
             key=lambda st: (
-                TaskPriority.HIGH.value if st.priority == TaskPriority.CRITICAL
-                else TaskPriority.HIGH.value if st.priority == TaskPriority.HIGH
-                else TaskPriority.MEDIUM.value if st.priority == TaskPriority.MEDIUM
+                TaskPriority.HIGH.value
+                if st.priority == TaskPriority.CRITICAL
+                else TaskPriority.HIGH.value
+                if st.priority == TaskPriority.HIGH
+                else TaskPriority.MEDIUM.value
+                if st.priority == TaskPriority.MEDIUM
                 else TaskPriority.LOW.value
             )
         )
@@ -474,20 +472,16 @@ class PlannerEngine:
         for level in levels:
             optimized_sub_tasks.extend(level)
 
-        idx = 0
-        for task in plan.tasks:
+        for _idx, task in enumerate(plan.tasks):
             task_sub_ids = set(st.id for st in task.sub_tasks)
             task.sub_tasks = [st for st in optimized_sub_tasks if st.id in task_sub_ids]
-            idx += 1
 
-        plan.updated_at = datetime.now(timezone.utc)
+        plan.updated_at = datetime.now(UTC)
         logger.info("Plan '%s' optimized: %d sub-tasks reordered", plan.name, len(all_sub_tasks))
 
         return plan
 
-    def estimate_completion_time(
-        self, plan_id: str, parallel_workers: int = 1
-    ) -> timedelta:
+    def estimate_completion_time(self, plan_id: str, parallel_workers: int = 1) -> timedelta:
         plan = self._plans.get(plan_id)
         if not plan:
             return timedelta()
@@ -592,7 +586,7 @@ class PlannerEngine:
             "estimated_completion": self.estimate_completion_time(plan_id).total_seconds(),
         }
 
-    def serialize_plan(self, plan_id: str) -> Optional[str]:
+    def serialize_plan(self, plan_id: str) -> str | None:
         plan = self._plans.get(plan_id)
         if not plan:
             return None
@@ -609,20 +603,20 @@ class PlannerEngine:
         if serialized is None:
             return False
         import pathlib
+
         pathlib.Path(filepath).write_text(serialized, encoding="utf-8")
         return True
 
-    def import_plan(self, filepath: str) -> Optional[Plan]:
+    def import_plan(self, filepath: str) -> Plan | None:
         import pathlib
+
         path = pathlib.Path(filepath)
         if not path.exists():
             return None
         data = path.read_text(encoding="utf-8")
         return self.deserialize_plan(data)
 
-    def update_sub_task_status(
-        self, plan_id: str, sub_task_id: str, status: TaskStatus
-    ) -> bool:
+    def update_sub_task_status(self, plan_id: str, sub_task_id: str, status: TaskStatus) -> bool:
         plan = self._plans.get(plan_id)
         if not plan:
             return False
@@ -632,9 +626,9 @@ class PlannerEngine:
                 if sub.id == sub_task_id:
                     sub.status = status
                     if status == TaskStatus.IN_PROGRESS:
-                        sub.started_at = datetime.now(timezone.utc)
+                        sub.started_at = datetime.now(UTC)
                     elif status in (TaskStatus.COMPLETED, TaskStatus.FAILED):
-                        sub.completed_at = datetime.now(timezone.utc)
-                    plan.updated_at = datetime.now(timezone.utc)
+                        sub.completed_at = datetime.now(UTC)
+                    plan.updated_at = datetime.now(UTC)
                     return True
         return False

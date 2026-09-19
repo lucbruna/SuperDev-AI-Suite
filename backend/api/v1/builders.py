@@ -102,6 +102,12 @@ BUILDER_REGISTRY: dict[str, dict[str, Any]] = {
         "class": None,
         "frameworks": ["fastapi"],
     },
+    "python": {
+        "name": "python",
+        "description": "Generates a Python/FastAPI package from the {{project_name}} template tree",
+        "class": None,
+        "frameworks": ["python", "fastapi"],
+    },
 }
 
 
@@ -119,6 +125,7 @@ def _resolve_builder_class(builder_id: str) -> Any:
         "frontend": "builders.frontend.builder:FrontendBuilder",
         "api": "builders.api.builder:APIBuilder",
         "microservices": "builders.microservices.builder:MicroservicesBuilder",
+        "python": "builders.python.builder:PythonBuilder",
     }
 
     import_path = imports.get(builder_id)

@@ -148,8 +148,7 @@ async def agent_chat(
         return AgentChatResponse(
             content=result.output,
             tool_calls=[
-                {"name": call.name, "arguments": call.arguments, "error": call.error}
-                for call in result.tool_calls
+                {"name": call.name, "arguments": call.arguments, "error": call.error} for call in result.tool_calls
             ],
             error=result.error,
         )

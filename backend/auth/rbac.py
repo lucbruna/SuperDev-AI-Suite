@@ -258,9 +258,7 @@ async def ensure_system_roles(session: AsyncSession) -> None:
             # Look up by the unique `name` constraint so this stays idempotent
             # even when a permission with the same name was seeded earlier with
             # a different (resource, action) pair.
-            perm_result = await session.execute(
-                select(Permission).where(Permission.name == f"{res}:{act}")
-            )
+            perm_result = await session.execute(select(Permission).where(Permission.name == f"{res}:{act}"))
             perm = perm_result.scalar_one_or_none()
             if perm is None:
                 perm = Permission(
@@ -274,7 +272,12 @@ async def ensure_system_roles(session: AsyncSession) -> None:
             # run_sync: `role.permissions` may lazy-load (the Role instance is
             # expired after flush because its id uses a server-side default),
             # and lazy IO outside a greenlet raises MissingGreenlet in async.
-            await session.run_sync(lambda _s: role.permissions.append(perm))
+
+            def _attach_permission(session_sync, role=role, perm=perm):
+                role.permissions.append(perm)
+                return None
+
+            await session.run_sync(_attach_permission)
 
     await session.commit()
 

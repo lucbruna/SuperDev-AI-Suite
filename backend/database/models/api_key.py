@@ -33,9 +33,7 @@ class APIKey(Base, TimestampMixin):
     # made every created key unfindable.
     key_prefix: Mapped[str] = mapped_column(String(32), nullable=False)
     scopes: Mapped[list[str]] = mapped_column(ARRAY(String), server_default="{}", nullable=False)
-    is_active: Mapped[bool] = mapped_column(
-        sa.Boolean(), server_default=sa.text("true"), nullable=False, index=True
-    )
+    is_active: Mapped[bool] = mapped_column(sa.Boolean(), server_default=sa.text("true"), nullable=False, index=True)
     expires_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
     last_used_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
     created_by: Mapped[str] = mapped_column(

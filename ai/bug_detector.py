@@ -7,13 +7,13 @@ import subprocess  # nosec
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from enum import Enum
+from enum import StrEnum
 from typing import Any, Optional
 
 logger = logging.getLogger("superdev.ai.bugs")
 
 
-class BugSeverity(str, Enum):
+class BugSeverity(StrEnum):
     CRITICAL = "critical"
     HIGH = "high"
     MEDIUM = "medium"
@@ -21,7 +21,7 @@ class BugSeverity(str, Enum):
     INFO = "info"
 
 
-class BugCategory(str, Enum):
+class BugCategory(StrEnum):
     NULL_POINTER = "null_pointer"
     INDEX_ERROR = "index_error"
     TYPE_ERROR = "type_error"
@@ -119,10 +119,10 @@ class DetectedBug:
     column: int = 0
     snippet: str = ""
     confidence: float = 0.8
-    fix_suggestion: Optional[str] = None
+    fix_suggestion: str | None = None
     source: str = "pattern"
-    file_path: Optional[str] = None
-    tool_name: Optional[str] = None
+    file_path: str | None = None
+    tool_name: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -148,7 +148,7 @@ class BugDetector:
     def detect_bugs(
         self,
         code: str,
-        file_path: Optional[str] = None,
+        file_path: str | None = None,
         enable_static_analysis: bool = True,
         min_confidence: float = 0.3,
     ) -> list[DetectedBug]:
@@ -169,19 +169,21 @@ class BugDetector:
 
         all_bugs.sort(
             key=lambda b: (
-                BugSeverity.CRITICAL.value if b.severity == BugSeverity.CRITICAL
-                else BugSeverity.HIGH.value if b.severity == BugSeverity.HIGH
-                else BugSeverity.MEDIUM.value if b.severity == BugSeverity.MEDIUM
-                else BugSeverity.LOW.value if b.severity == BugSeverity.LOW
+                BugSeverity.CRITICAL.value
+                if b.severity == BugSeverity.CRITICAL
+                else BugSeverity.HIGH.value
+                if b.severity == BugSeverity.HIGH
+                else BugSeverity.MEDIUM.value
+                if b.severity == BugSeverity.MEDIUM
+                else BugSeverity.LOW.value
+                if b.severity == BugSeverity.LOW
                 else BugSeverity.INFO.value
             )
         )
 
         return all_bugs
 
-    def _detect_pattern_bugs(
-        self, code: str, file_path: Optional[str] = None
-    ) -> list[DetectedBug]:
+    def _detect_pattern_bugs(self, code: str, file_path: str | None = None) -> list[DetectedBug]:
         bugs: list[DetectedBug] = []
 
         for pattern_name, pattern_info in self._patterns.items():
@@ -240,9 +242,7 @@ class BugDetector:
 
         return round(confidence, 3)
 
-    def _detect_ast_bugs(
-        self, code: str, file_path: Optional[str] = None
-    ) -> list[DetectedBug]:
+    def _detect_ast_bugs(self, code: str, file_path: str | None = None) -> list[DetectedBug]:
         bugs: list[DetectedBug] = []
         try:
             tree = ast.parse(code)
@@ -284,7 +284,11 @@ class BugDetector:
                         )
 
                 elif isinstance(node, ast.Raise):
-                    if isinstance(node.cause, ast.Call) and isinstance(node.cause.func, ast.Name) and node.cause.func.id == "Exception":
+                    if (
+                        isinstance(node.cause, ast.Call)
+                        and isinstance(node.cause.func, ast.Name)
+                        and node.cause.func.id == "Exception"
+                    ):
                         pass
 
             for node in ast.walk(tree):
@@ -296,9 +300,7 @@ class BugDetector:
             logger.debug("AST analysis skipped due to syntax errors")
         return bugs
 
-    def _run_static_analysis(
-        self, code: str, file_path: Optional[str] = None
-    ) -> list[DetectedBug]:
+    def _run_static_analysis(self, code: str, file_path: str | None = None) -> list[DetectedBug]:
         bugs: list[DetectedBug] = []
         tools_to_try = [
             ("pylint", ["--from-stdin", "input.py"]),
@@ -323,9 +325,7 @@ class BugDetector:
 
         return bugs
 
-    def _parse_linter_output(
-        self, line: str, tool_name: str, file_path: Optional[str] = None
-    ) -> Optional[DetectedBug]:
+    def _parse_linter_output(self, line: str, tool_name: str, file_path: str | None = None) -> DetectedBug | None:
         if not line.strip() or "---" in line:
             return None
 
@@ -369,7 +369,13 @@ class BugDetector:
                 existing = deduped[key]
                 existing.confidence = max(existing.confidence, bug.confidence)
                 if existing.severity != bug.severity:
-                    severity_order = [BugSeverity.CRITICAL, BugSeverity.HIGH, BugSeverity.MEDIUM, BugSeverity.LOW, BugSeverity.INFO]
+                    severity_order = [
+                        BugSeverity.CRITICAL,
+                        BugSeverity.HIGH,
+                        BugSeverity.MEDIUM,
+                        BugSeverity.LOW,
+                        BugSeverity.INFO,
+                    ]
                     existing.severity = min(
                         [existing.severity, bug.severity],
                         key=lambda s: severity_order.index(s),
@@ -389,7 +395,7 @@ class BugDetector:
     def classify_severity(self, bug: DetectedBug) -> BugSeverity:
         return bug.severity
 
-    def suggest_fix(self, bug: DetectedBug, code: str) -> Optional[str]:
+    def suggest_fix(self, bug: DetectedBug, code: str) -> str | None:
         if bug.fix_suggestion:
             return bug.fix_suggestion
 
@@ -404,9 +410,7 @@ class BugDetector:
 
         return None
 
-    def mark_false_positive(
-        self, bug_id: str, file_path: str, tool_name: str
-    ) -> None:
+    def mark_false_positive(self, bug_id: str, file_path: str, tool_name: str) -> None:
         cache_key = f"{file_path}:{tool_name}"
         self._false_positive_cache.setdefault(cache_key, set()).add(bug_id)
         logger.info("Marked bug %s as false positive", bug_id)
@@ -426,7 +430,5 @@ class BugDetector:
             "high_count": severity_counts.get(BugSeverity.HIGH.value, 0),
             "medium_count": severity_counts.get(BugSeverity.MEDIUM.value, 0),
             "low_count": severity_counts.get(BugSeverity.LOW.value, 0),
-            "average_confidence": round(
-                sum(b.confidence for b in bugs) / max(len(bugs), 1), 3
-            ),
+            "average_confidence": round(sum(b.confidence for b in bugs) / max(len(bugs), 1), 3),
         }

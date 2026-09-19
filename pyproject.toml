@@ -104,6 +104,8 @@ no_implicit_reexport = true
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
 check_untyped_defs = true
+# Scaffolding templates with import placeholders - not real source modules.
+exclude = ['^builders/python/src/']
 
 [tool.pytest.ini_options]
 testpaths = ["tests/unit", "tests/integration", "tests/runtime_engine", "tests/e2e"]

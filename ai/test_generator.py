@@ -8,13 +8,13 @@ import string
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from enum import Enum
+from enum import StrEnum
 from typing import Any, Optional
 
 logger = logging.getLogger("superdev.ai.testgen")
 
 
-class TestFramework(str, Enum):
+class TestFramework(StrEnum):
     PYTEST = "pytest"
     UNITTEST = "unittest"
     JEST = "jest"
@@ -24,7 +24,7 @@ class TestFramework(str, Enum):
     RUST_TEST = "rust_test"
 
 
-class TestType(str, Enum):
+class TestType(StrEnum):
     UNIT = "unit"
     INTEGRATION = "integration"
     FUNCTIONAL = "functional"
@@ -57,7 +57,7 @@ class GeneratedTest:
     test_data: dict[str, Any] = field(default_factory=dict)
     coverage_estimate: float = 0.0
     warnings: list[str] = field(default_factory=list)
-    file_path: Optional[str] = None
+    file_path: str | None = None
 
 
 FRAMEWORK_CONFIGS: dict[TestFramework, dict[str, Any]] = {
@@ -103,18 +103,19 @@ FRAMEWORK_CONFIGS: dict[TestFramework, dict[str, Any]] = {
 class TestGenerator:
     def __init__(
         self,
-        api_key: Optional[str] = None,
-        base_url: Optional[str] = None,
-        model: Optional[str] = None,
+        api_key: str | None = None,
+        base_url: str | None = None,
+        model: str | None = None,
     ) -> None:
         self._api_key = api_key
         self._base_url = base_url
         self._model = model or "gpt-4o"
-        self._llm_client: Optional[Any] = None
+        self._llm_client: Any | None = None
 
     async def _ensure_llm(self) -> Any:
         if self._llm_client is None:
             from ai.reasoning_engine import LLMClient
+
             self._llm_client = LLMClient(
                 api_key=self._api_key,
                 base_url=self._base_url,
@@ -152,7 +153,6 @@ class TestGenerator:
             test_parts.append("")
 
         generated_tests: list[str] = []
-        mocks_used: list[str] = []
 
         if classes:
             for cls_name in classes:
@@ -161,7 +161,7 @@ class TestGenerator:
                 test_parts.append(f"\nclass Test{cls_name}:\n")
                 test_parts.append(f'    """Test suite for {cls_name}."""\n')
                 test_parts.append("    @pytest.fixture(autouse=True)\n")
-                test_parts.append(f"    def setup_method(self):\n")
+                test_parts.append("    def setup_method(self):\n")
                 test_parts.append(f"        self.instance = {cls_name}()\n")
                 test_parts.append("")
 
@@ -181,9 +181,7 @@ class TestGenerator:
                     continue
                 if any(f"[{c}]" in func_name for c in classes):
                     continue
-                test_func = self._generate_unit_test_function(
-                    func_name, func_info, "", TestFramework.PYTEST, request
-                )
+                test_func = self._generate_unit_test_function(func_name, func_info, "", TestFramework.PYTEST, request)
                 generated_tests.append(test_func)
 
         for test in generated_tests:
@@ -192,9 +190,7 @@ class TestGenerator:
 
         result.test_code = "\n".join(test_parts)
 
-        result.coverage_estimate = self._estimate_coverage(
-            request.code, result.test_code
-        )
+        result.coverage_estimate = self._estimate_coverage(request.code, result.test_code)
 
         return result
 
@@ -218,9 +214,7 @@ class TestGenerator:
         for func_name, func_info in functions:
             if func_name.startswith("_"):
                 continue
-            test = self._generate_unit_test_function(
-                func_name, func_info, "", TestFramework.UNITTEST, request
-            )
+            test = self._generate_unit_test_function(func_name, func_info, "", TestFramework.UNITTEST, request)
             test_parts.append(test)
             test_parts.append("")
 
@@ -229,9 +223,7 @@ class TestGenerator:
             test_parts.append("    unittest.main()")
 
         result.test_code = "\n".join(test_parts)
-        result.coverage_estimate = self._estimate_coverage(
-            request.code, result.test_code
-        )
+        result.coverage_estimate = self._estimate_coverage(request.code, result.test_code)
         return result
 
     async def _generate_jest(self, request: TestRequest) -> GeneratedTest:
@@ -253,7 +245,9 @@ class TestGenerator:
             test_parts.append(f"        test('should execute {func_name} correctly', () => {{")
             args = [a.arg for a in func_info.args if a.arg not in ("self", "cls")]
             test_args = ", ".join(f"'{a}'" for a in args) if args else ""
-            test_parts.append(f"            const result = {request.class_name.lower() or 'module'}.{func_name}({test_args});")
+            test_parts.append(
+                f"            const result = {request.class_name.lower() or 'module'}.{func_name}({test_args});"
+            )
             test_parts.append("            expect(result).toBeDefined();")
             test_parts.append("        });")
             test_parts.append("    });")
@@ -261,9 +255,7 @@ class TestGenerator:
         test_parts.append("});")
 
         result.test_code = "\n".join(test_parts)
-        result.coverage_estimate = self._estimate_coverage(
-            request.code, result.test_code
-        )
+        result.coverage_estimate = self._estimate_coverage(request.code, result.test_code)
         return result
 
     async def _generate_junit(self, request: TestRequest) -> GeneratedTest:
@@ -276,24 +268,24 @@ class TestGenerator:
             "",
         ]
 
-        test_parts.append(f"    private {request.class_name or 'Module'} {request.class_name.lower() or 'module'} = new {request.class_name or 'Module'}();\n")
+        test_parts.append(
+            f"    private {request.class_name or 'Module'} {request.class_name.lower() or 'module'} = new {request.class_name or 'Module'}();\n"
+        )
 
         functions, classes = self._parse_functions_and_classes(request.code)
         for func_name, func_info in functions:
             if func_name.startswith("_"):
                 continue
-            test_parts.append(f"    @Test")
+            test_parts.append("    @Test")
             test_parts.append(f"    public void test{func_name.capitalize()}() {{")
             test_parts.append(f"        // TODO: implement test for {func_name}")
             test_parts.append(f"        assertNotNull({request.class_name.lower() or 'module'}.{func_name}());")
-            test_parts.append(f"    }}")
+            test_parts.append("    }")
 
         test_parts.append("}")
 
         result.test_code = "\n".join(test_parts)
-        result.coverage_estimate = self._estimate_coverage(
-            request.code, result.test_code
-        )
+        result.coverage_estimate = self._estimate_coverage(request.code, result.test_code)
         return result
 
     def _generate_go_test(self, request: TestRequest) -> GeneratedTest:
@@ -304,7 +296,7 @@ class TestGenerator:
             f"package {package_name}\n",
             'import "testing"\n',
             f"func Test{request.class_name or 'Module'}(t *testing.T) {{",
-            f'    // Test for {request.function_name or request.module_name}',
+            f"    // Test for {request.function_name or request.module_name}",
             "}",
         ]
 
@@ -340,7 +332,6 @@ class TestGenerator:
         framework: TestFramework,
         request: TestRequest,
     ) -> str:
-        config = FRAMEWORK_CONFIGS.get(framework, FRAMEWORK_CONFIGS[TestFramework.PYTEST])
         parts: list[str] = []
 
         test_method_name = f"test_{func_name}"
@@ -363,7 +354,7 @@ class TestGenerator:
         if func_info.returns:
             return_type = self._get_return_type_name(func_info.returns)
             if return_type in ("bool", "int", "str", "list", "dict"):
-                parts.append(f"    assert result is not None")
+                parts.append("    assert result is not None")
                 parts.append(f"    assert isinstance(result, {self._get_type_check(return_type)})")
             else:
                 parts.append("    assert result is not None")
@@ -390,9 +381,7 @@ class TestGenerator:
         else:
             return "'test_value'"
 
-    def _parse_functions_and_classes(
-        self, code: str
-    ) -> tuple[list[tuple[str, ast.FunctionDef]], list[str]]:
+    def _parse_functions_and_classes(self, code: str) -> tuple[list[tuple[str, ast.FunctionDef]], list[str]]:
         functions: list[tuple[str, ast.FunctionDef]] = []
         classes: list[str] = []
 
@@ -452,9 +441,7 @@ class TestGenerator:
 
         return covered / len(source_functions)
 
-    async def generate_integration_tests(
-        self, request: TestRequest
-    ) -> GeneratedTest:
+    async def generate_integration_tests(self, request: TestRequest) -> GeneratedTest:
         result = GeneratedTest(
             framework=request.framework,
             test_type=TestType.INTEGRATION,
@@ -483,7 +470,7 @@ class TestGenerator:
         generators = {
             "int": lambda: random.randint(-1000, 1000),
             "float": lambda: round(random.uniform(-1000.0, 1000.0), 2),
-            "str": lambda: ''.join(random.choices(string.ascii_lowercase, k=8)),
+            "str": lambda: "".join(random.choices(string.ascii_lowercase, k=8)),
             "bool": lambda: random.choice([True, False]),
             "list": lambda: [random.randint(0, 100) for _ in range(random.randint(1, 5))],
             "dict": lambda: {f"key_{i}": random.randint(0, 100) for i in range(random.randint(1, 4))},
@@ -493,16 +480,12 @@ class TestGenerator:
         gen = generators.get(type_hint, generators["str"])
         return [gen() for _ in range(count)]
 
-    def suggest_test_maintenance(
-        self, source_code: str, existing_tests: str
-    ) -> list[str]:
+    def suggest_test_maintenance(self, source_code: str, existing_tests: str) -> list[str]:
         suggestions: list[str] = []
         source_funcs, source_classes = self._parse_functions_and_classes(source_code)
         test_funcs, _ = self._parse_functions_and_classes(existing_tests)
 
-        source_func_names = {
-            f[0].split("].")[-1].replace(".", "_") for f in source_funcs
-        }
+        source_func_names = {f[0].split("].")[-1].replace(".", "_") for f in source_funcs}
         test_func_names = {f[0].replace(".", "_") for f in test_funcs}
 
         for func_name in source_func_names:

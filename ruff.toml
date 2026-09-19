@@ -1,6 +1,12 @@
 line-length = 120
 target-version = "py311"
 
+# On-disk scaffolding templates: contain import placeholders ("from project_name. ...")
+# that are only valid after the PythonBuilder renders them with a real slug.
+extend-exclude = [
+    "builders/python/src",
+]
+
 [lint]
 select = ["E", "F", "I", "N", "W", "UP", "B", "SIM", "ARG", "PTH"]
 ignore = [

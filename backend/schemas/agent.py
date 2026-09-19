@@ -21,9 +21,7 @@ class AgentCreateRequest(BaseModel):
     max_steps: int = Field(10, ge=1, le=100, description="Maximum reasoning steps")
     temperature: float = Field(0.7, ge=0.0, le=2.0, description="Model temperature")
     system_prompt: str | None = Field(None, description="System prompt")
-    tools_enabled: list[str] | None = Field(
-        None, description="Tool names to enable (all if unset)"
-    )
+    tools_enabled: list[str] | None = Field(None, description="Tool names to enable (all if unset)")
     template_id: str | None = Field(None, description="Template ID to apply defaults from")
 
 
@@ -72,9 +70,7 @@ class AgentResponse(BaseModel):
     description: str = Field("", description="Agent description")
     agent_type: str = Field(..., description="Agent type")
     status: str = Field("idle", description="Agent status: idle, running, error")
-    tools: list[dict] = Field(
-        default_factory=list, description="Tool schemas (name, description, parameters)"
-    )
+    tools: list[dict] = Field(default_factory=list, description="Tool schemas (name, description, parameters)")
     model: str | None = Field(None, description="LLM model name")
     provider: str | None = Field(None, description="LLM provider name")
     max_steps: int = Field(10, description="Maximum reasoning steps")

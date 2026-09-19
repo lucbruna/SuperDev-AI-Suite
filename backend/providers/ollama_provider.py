@@ -126,7 +126,7 @@ class OllamaProvider(BaseProvider):
             async for line in response.aiter_lines():
                 if not line.strip() or not line.startswith("data:"):
                     continue
-                data_str = line[len("data:"):].strip()
+                data_str = line[len("data:") :].strip()
                 if data_str == "[DONE]":
                     break
 

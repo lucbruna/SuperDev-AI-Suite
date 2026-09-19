@@ -7,7 +7,7 @@ from typing import Any
 
 from pythonjsonlogger import jsonlogger
 
-from {{project_name}}.config import get_settings
+from project_name.config import get_settings
 
 
 _request_id_var: contextvars.ContextVar[str | None] = contextvars.ContextVar("request_id", default=None)

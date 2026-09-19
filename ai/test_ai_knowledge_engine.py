@@ -1,4 +1,4 @@
-﻿"""Comprehensive tests for ai_knowledge_engine (Volume 40)."""
+"""Comprehensive tests for ai_knowledge_engine (Volume 40)."""
 
 import os
 import sys

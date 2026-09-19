@@ -4,6 +4,7 @@ from __future__ import annotations
 from modules.autonomous_developer.config.constants import (
     OP_MODIFY,
     PHASE_IMPLEMENT,
+    PHASE_MERGE,
     PHASE_PLAN,
     PHASE_REVIEW,
     PHASE_TEST,
@@ -437,6 +438,11 @@ class StubReviewer:
         return ReviewVerdict(task_id="t1", verdict="approved")
 
 
+class StubExecutor:
+    def run(self, ctx, **kwargs):
+        return {"branch": "work", "commit": None, "pr_created": False, "skipped": None}
+
+
 class FailingComponent:
     def run(self, ctx, **kwargs):
         raise PlanningError("cannot decompose")
@@ -458,6 +464,7 @@ class TestRuntime:
         runtime.registry.register("generator", "default", StubGenerator(), replace=True)
         runtime.registry.register("validator", "default", StubValidator(), replace=True)
         runtime.registry.register("reviewer", "default", StubReviewer(), replace=True)
+        runtime.registry.register("executor", "default", StubExecutor(), replace=True)
 
     def test_execute_runs_all_phases(self, tmp_path) -> None:
         runtime = self._configured_runtime(tmp_path)
@@ -468,6 +475,7 @@ class TestRuntime:
         assert ctx.artifacts[PHASE_IMPLEMENT]["written"] == ["src/app.py"]
         assert ctx.artifacts[PHASE_TEST]["passed"] == 3
         assert ctx.artifacts[PHASE_REVIEW].approved is True
+        assert ctx.artifacts[PHASE_MERGE]["branch"] == "work"
         # Session lifecycle
         sessions = runtime.sessions.recent(limit=1)
         assert sessions and sessions[0].status == "completed"
@@ -478,7 +486,7 @@ class TestRuntime:
         runtime.execute("go")
         types = [e.type for e in runtime.bus.history(limit=20)]
         # history() returns newest first.
-        expected = ["task.completed"] + ["phase.completed", "phase.started"] * 4 + ["task.started"]
+        expected = ["task.completed"] + ["phase.completed", "phase.started"] * 5 + ["task.started"]
         assert types == expected
 
     def test_missing_component_fails_gracefully(self, tmp_path) -> None:

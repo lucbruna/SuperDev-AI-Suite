@@ -7,14 +7,14 @@ import subprocess  # nosec
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import Any, Optional
 
 logger = logging.getLogger("superdev.ai.security")
 
 
-class VulnerabilitySeverity(str, Enum):
+class VulnerabilitySeverity(StrEnum):
     NONE = "none"
     LOW = "low"
     MEDIUM = "medium"
@@ -22,7 +22,7 @@ class VulnerabilitySeverity(str, Enum):
     CRITICAL = "critical"
 
 
-class OwaspCategory(str, Enum):
+class OwaspCategory(StrEnum):
     BROKEN_ACCESS_CONTROL = "A01_broken_access_control"
     CRYPTOGRAPHIC_FAILURES = "A02_cryptographic_failures"
     INJECTION = "A03_injection"
@@ -40,7 +40,7 @@ class RemediationSuggestion:
     description: str
     effort: str = "medium"
     priority: str = "medium"
-    code_example: Optional[str] = None
+    code_example: str | None = None
     references: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
@@ -60,16 +60,16 @@ class SecurityVulnerability:
     description: str = ""
     severity: VulnerabilitySeverity = VulnerabilitySeverity.MEDIUM
     cvss_score: float = 0.0
-    owasp_category: Optional[OwaspCategory] = None
-    cve_id: Optional[str] = None
+    owasp_category: OwaspCategory | None = None
+    cve_id: str | None = None
     line_number: int = 0
     snippet: str = ""
-    remediation: Optional[RemediationSuggestion] = None
+    remediation: RemediationSuggestion | None = None
     source: str = "pattern"
-    file_path: Optional[str] = None
-    package_name: Optional[str] = None
-    installed_version: Optional[str] = None
-    fixed_version: Optional[str] = None
+    file_path: str | None = None
+    package_name: str | None = None
+    installed_version: str | None = None
+    fixed_version: str | None = None
     confidence: float = 0.8
 
     def to_dict(self) -> dict[str, Any]:
@@ -121,7 +121,11 @@ OWASP_PATTERNS: list[dict[str, Any]] = [
     {
         "category": OwaspCategory.AUTH_FAILURES,
         "patterns": [
-            (r"@app\.route.*methods=\[.*'GET'.*\].*\n.*\b(password|login|auth)\b", 0.70, "Credentials exposed via GET request"),
+            (
+                r"@app\.route.*methods=\[.*'GET'.*\].*\n.*\b(password|login|auth)\b",
+                0.70,
+                "Credentials exposed via GET request",
+            ),
             (r"session\.\['user'\]\s*=\s*True", 0.60, "Weak session authentication"),
             (r"token\s*=\s*['\"][a-zA-Z0-9]{1,10}['\"]", 0.70, "Suspiciously short token"),
         ],
@@ -148,7 +152,11 @@ OWASP_PATTERNS: list[dict[str, Any]] = [
     {
         "category": OwaspCategory.SSRF,
         "patterns": [
-            (r"requests\.(get|post|put|delete)\s*\(\s*['\"](http|https)://.*\{", 0.75, "URL constructed from user input may enable SSRF"),
+            (
+                r"requests\.(get|post|put|delete)\s*\(\s*['\"](http|https)://.*\{",
+                0.75,
+                "URL constructed from user input may enable SSRF",
+            ),
             (r"urllib\.request\.urlopen\s*\(\s*['\"].*\{", 0.75, "URL constructed from user input may enable SSRF"),
         ],
     },
@@ -190,7 +198,7 @@ class SecurityAnalyzer:
     def analyze_code(
         self,
         code: str,
-        file_path: Optional[str] = None,
+        file_path: str | None = None,
         check_dependencies: bool = True,
     ) -> list[SecurityVulnerability]:
         vulns: list[SecurityVulnerability] = []
@@ -215,9 +223,7 @@ class SecurityAnalyzer:
 
         return vulns
 
-    def _detect_owasp_violations(
-        self, code: str, file_path: Optional[str] = None
-    ) -> list[SecurityVulnerability]:
+    def _detect_owasp_violations(self, code: str, file_path: str | None = None) -> list[SecurityVulnerability]:
         vulns: list[SecurityVulnerability] = []
 
         for entry in self._owasp_patterns:
@@ -252,18 +258,13 @@ class SecurityAnalyzer:
 
         return vulns
 
-    def _detect_secrets(
-        self, code: str, file_path: Optional[str] = None
-    ) -> list[SecurityVulnerability]:
+    def _detect_secrets(self, code: str, file_path: str | None = None) -> list[SecurityVulnerability]:
         vulns: list[SecurityVulnerability] = []
 
         for pattern, secret_type, confidence in self._secret_patterns:
             for match in re.finditer(pattern, code, re.MULTILINE):
                 start_pos = match.start()
                 line_number = code[:start_pos].count("\n") + 1
-                matched_text = match.group()
-
-                redacted = re.sub(r"['\"][^'\"]+['\"]", "'***REDACTED***'", matched_text)
                 lines = code.split("\n")
                 start_line = max(0, line_number - 1)
                 end_line = min(len(lines), line_number + 1)
@@ -283,9 +284,7 @@ class SecurityAnalyzer:
                             effort="low",
                             priority="critical",
                             code_example="# Use environment variable instead:\nimport os\nsecret = os.environ.get('SECRET_NAME')",
-                            references=[
-                                "https://owasp.org/www-community/Secrets_Management_Cheat_Sheet"
-                            ],
+                            references=["https://owasp.org/www-community/Secrets_Management_Cheat_Sheet"],
                         ),
                         source="secret_detection",
                         file_path=file_path,
@@ -295,9 +294,7 @@ class SecurityAnalyzer:
 
         return vulns
 
-    def _check_dependency_vulnerabilities(
-        self, file_path: Optional[str] = None
-    ) -> list[SecurityVulnerability]:
+    def _check_dependency_vulnerabilities(self, file_path: str | None = None) -> list[SecurityVulnerability]:
         vulns: list[SecurityVulnerability] = []
 
         req_files = []
@@ -333,9 +330,7 @@ class SecurityAnalyzer:
                                 description=f"Package {finding.get('package', 'unknown')} "
                                 f"v{finding.get('installed_version', '?')} has vulnerability: "
                                 f"{finding.get('advisory', 'No details')}",
-                                severity=self._cvss_to_severity(
-                                    float(finding.get("cvss_score", 5.0))
-                                ),
+                                severity=self._cvss_to_severity(float(finding.get("cvss_score", 5.0))),
                                 cvss_score=float(finding.get("cvss_score", 5.0)),
                                 owasp_category=OwaspCategory.VULNERABLE_COMPONENTS,
                                 cve_id=finding.get("cve"),
@@ -361,9 +356,7 @@ class SecurityAnalyzer:
 
         return vulns
 
-    def analyze_project_dependencies(
-        self, project_path: Optional[str] = None
-    ) -> list[SecurityVulnerability]:
+    def analyze_project_dependencies(self, project_path: str | None = None) -> list[SecurityVulnerability]:
         return self._check_dependency_vulnerabilities(
             str(Path(project_path) / "requirements.txt") if project_path else None
         )
@@ -402,9 +395,7 @@ class SecurityAnalyzer:
             return VulnerabilitySeverity.LOW
         return VulnerabilitySeverity.NONE
 
-    def _generate_remediation(
-        self, category: OwaspCategory, message: str
-    ) -> RemediationSuggestion:
+    def _generate_remediation(self, category: OwaspCategory, message: str) -> RemediationSuggestion:
         remediations: dict[OwaspCategory, RemediationSuggestion] = {
             OwaspCategory.INJECTION: RemediationSuggestion(
                 description="Use parameterized queries and input validation. Never concatenate user input into SQL/commands.",
@@ -449,7 +440,9 @@ class SecurityAnalyzer:
                 description="Validate and sanitize all URLs. Use an allowlist of permitted domains.",
                 effort="medium",
                 priority="high",
-                references=["https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html"],
+                references=[
+                    "https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html"
+                ],
             ),
             OwaspCategory.LOGGING_MONITORING_FAILURES: RemediationSuggestion(
                 description="Implement proper logging and monitoring. Never silently catch exceptions.",
@@ -483,17 +476,15 @@ class SecurityAnalyzer:
     def get_cvss_score(self, vuln: SecurityVulnerability) -> float:
         return vuln.cvss_score
 
-    def get_owasp_category(self, vuln: SecurityVulnerability) -> Optional[OwaspCategory]:
+    def get_owasp_category(self, vuln: SecurityVulnerability) -> OwaspCategory | None:
         return vuln.owasp_category
 
-    def get_remediation(self, vuln: SecurityVulnerability) -> Optional[str]:
+    def get_remediation(self, vuln: SecurityVulnerability) -> str | None:
         if vuln.remediation:
             return vuln.remediation.description
         return None
 
-    def generate_security_report(
-        self, vulns: list[SecurityVulnerability]
-    ) -> dict[str, Any]:
+    def generate_security_report(self, vulns: list[SecurityVulnerability]) -> dict[str, Any]:
         severity_counts: dict[str, int] = {}
         category_counts: dict[str, int] = {}
 
@@ -509,9 +500,7 @@ class SecurityAnalyzer:
                 "high": severity_counts.get("high", 0),
                 "medium": severity_counts.get("medium", 0),
                 "low": severity_counts.get("low", 0),
-                "average_cvss": round(
-                    sum(v.cvss_score for v in vulns) / max(len(vulns), 1), 2
-                ),
+                "average_cvss": round(sum(v.cvss_score for v in vulns) / max(len(vulns), 1), 2),
             },
             "by_severity": severity_counts,
             "by_owasp_category": category_counts,

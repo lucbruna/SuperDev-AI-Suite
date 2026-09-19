@@ -71,16 +71,12 @@ async def _executions_stats(db: AsyncSession) -> dict[str, Any]:
         today = 0
         try:
             result = await db.execute(
-                sa_text(
-                    "SELECT COUNT(*) FROM workflow_runs WHERE created_at >= :start"
-                ),
+                sa_text("SELECT COUNT(*) FROM workflow_runs WHERE created_at >= :start"),
                 {"start": datetime.now(UTC) - timedelta(days=1)},
             )
             today = int(result.scalar() or 0)
             result = await db.execute(
-                sa_text(
-                    "SELECT COUNT(*) FROM agent_executions WHERE created_at >= :start"
-                ),
+                sa_text("SELECT COUNT(*) FROM agent_executions WHERE created_at >= :start"),
                 {"start": datetime.now(UTC) - timedelta(days=1)},
             )
             today += int(result.scalar() or 0)

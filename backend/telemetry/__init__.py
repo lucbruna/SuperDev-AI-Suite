@@ -45,9 +45,7 @@ def configure_tracing(settings=None):
 
         endpoint = getattr(settings, "traces_endpoint", "") or settings.exporter_endpoint
         if not _endpoint_reachable(endpoint):
-            logger.warning(
-                "OTLP collector not reachable at %s — OTLP trace export disabled", endpoint
-            )
+            logger.warning("OTLP collector not reachable at %s — OTLP trace export disabled", endpoint)
             return None
 
         resource = Resource.create({"service.name": settings.service_name})
@@ -80,9 +78,7 @@ def configure_metrics(settings=None):
 
         endpoint = getattr(settings, "metrics_endpoint", "") or settings.exporter_endpoint
         if not _endpoint_reachable(endpoint):
-            logger.warning(
-                "OTLP collector not reachable at %s — OTLP metrics export disabled", endpoint
-            )
+            logger.warning("OTLP collector not reachable at %s — OTLP metrics export disabled", endpoint)
             return None
 
         resource = Resource.create({"service.name": settings.service_name})

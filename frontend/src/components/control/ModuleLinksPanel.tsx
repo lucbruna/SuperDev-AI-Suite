@@ -28,6 +28,7 @@ const links = [
   { label: "Memory", desc: "Bases de conhecimento", icon: "🗂️", href: "/memory" },
   { label: "Marketplace", desc: "Plugins disponíveis", icon: "🛍️", href: "/marketplace" },
   { label: "Video Studio", desc: "Geração de vídeos", icon: "🎬", href: "/video-studio" },
+  { label: "Multimedia AI", desc: "Avatares, render, análises e streaming", icon: "🎛️", href: "/multimedia" },
   { label: "Command Center", desc: "Central de comandos", icon: "🎛️", href: "/command-center" },
   { label: "Admin", desc: "Administração completa", icon: "🛡️", href: "/admin" },
 ];

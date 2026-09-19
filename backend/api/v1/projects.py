@@ -122,7 +122,9 @@ async def list_projects(
 
     return ProjectList(
         items=[
-            ProjectResponse(id=str(r[0]), name=r[1], description=r[2], visibility=r[3], created_at=r[4], updated_at=r[5])
+            ProjectResponse(
+                id=str(r[0]), name=r[1], description=r[2], visibility=r[3], created_at=r[4], updated_at=r[5]
+            )
             for r in rows
         ],
         total=total,
@@ -165,6 +167,7 @@ async def update_project(
     # Handle settings as a full JSONB replace (frontend sends complete object)
     if "settings" in updates:
         import json
+
         updates["settings"] = json.dumps(updates["settings"])
 
     set_clause = ", ".join(f"{k} = :{k}" for k in updates)

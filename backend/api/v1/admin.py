@@ -391,7 +391,9 @@ async def admin_update_system_settings(
 ):
 
     await settings_service.ensure_table(db)
-    existing = await settings_service.get_setting_with_default(db, _ADMIN_SETTINGS_KEY, {"admin": _ADMIN_SETTINGS_DEFAULTS})
+    existing = await settings_service.get_setting_with_default(
+        db, _ADMIN_SETTINGS_KEY, {"admin": _ADMIN_SETTINGS_DEFAULTS}
+    )
     existing.update(data)
     await settings_service.save_setting(db, _ADMIN_SETTINGS_KEY, existing, category="admin")
     return {"success": True, "data": existing}

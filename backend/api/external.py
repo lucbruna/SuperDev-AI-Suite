@@ -193,7 +193,7 @@ async def mcp_call(data: dict):
     try:
         if tool_name == "read_file":
             path = _resolve_workspace_path(str(arguments.get("path", "")))
-            with open(path, "r", encoding="utf-8", errors="replace") as f:
+            with open(path, encoding="utf-8", errors="replace") as f:
                 result = {"content": f.read(), "path": path}
         elif tool_name == "write_file":
             path = _resolve_workspace_path(str(arguments.get("path", "")))
@@ -215,7 +215,7 @@ async def mcp_call(data: dict):
                     "stdout": stdout.decode("utf-8", errors="replace")[:5000],
                     "stderr": stderr.decode("utf-8", errors="replace")[:2000],
                 }
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 proc.kill()
                 error = "Command timed out after 60s"
         else:

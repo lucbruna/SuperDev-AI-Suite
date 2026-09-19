@@ -398,7 +398,16 @@ class TestAPI:
     def test_router_routes(self) -> None:
         from modules.architecture_intelligence.api.router import router
 
-        paths = {getattr(route, "path", "") for route in router.routes}
+        def _iter_routes(r):
+            # FastAPI >=0.121 wraps include_router in _IncludedRouter objects;
+            # flatten recursively to collect all effective paths.
+            for route in r.routes:
+                if hasattr(route, "original_router"):
+                    yield from _iter_routes(route.original_router)
+                elif hasattr(route, "path"):
+                    yield route
+
+        paths = {getattr(route, "path", "") for route in _iter_routes(router)}
         for expected in [
             "/",
             "/metrics",

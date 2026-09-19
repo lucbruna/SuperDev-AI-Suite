@@ -1,4 +1,4 @@
-﻿"""Comprehensive tests for Mobile Platform & Edge AI Engine (Volume 30)."""
+"""Comprehensive tests for Mobile Platform & Edge AI Engine (Volume 30)."""
 
 import os
 import sys

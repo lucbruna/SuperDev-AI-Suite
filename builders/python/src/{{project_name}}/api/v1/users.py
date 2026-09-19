@@ -7,7 +7,7 @@ from uuid import uuid4
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, EmailStr
 
-from {{project_name}}.api.v1.auth import get_current_user
+from project_name.api.v1.auth import get_current_user
 
 
 router = APIRouter()
