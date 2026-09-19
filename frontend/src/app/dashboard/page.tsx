@@ -368,6 +368,12 @@ export default function DashboardPage() {
           >
             🎬 Video Studio
           </Link>
+          <Link
+            href="/multimedia"
+            className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:from-cyan-700 hover:to-blue-700 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2"
+          >
+            🎛️ Multimedia
+          </Link>
           <Button
             variant="primary"
             size="sm"

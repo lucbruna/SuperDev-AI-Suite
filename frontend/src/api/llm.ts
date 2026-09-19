@@ -9,6 +9,29 @@ import { useAuthStore } from "@/stores/authStore";
 export interface LLMProviderSummary {
   name: string;
   api_key_configured: boolean;
+  /** True when the provider currently exposes at least one free-tier model (live catalog). */
+  free?: boolean;
+  free_model_count?: number;
+  free_models?: string[];
+}
+
+export interface LLMDiscoveryInfo {
+  free_only: boolean;
+  catalog_age_seconds: number;
+  last_error?: string | null;
+}
+
+export interface LLMProvidersResult {
+  providers: LLMProviderSummary[];
+  count: number;
+  discovery?: LLMDiscoveryInfo;
+}
+
+export interface LLMRefreshResult {
+  providers_with_free_models: string[];
+  total_free_models: number;
+  catalog_age_seconds: number;
+  last_error?: string | null;
 }
 
 export interface LLMProviderDetail {
@@ -79,12 +102,21 @@ export interface LLMHealthResult {
 const LLM_BASE = "/llm";
 
 export const llmApi = {
-  /** List all providers */
-  async listProviders(): Promise<LLMProviderSummary[]> {
-    const { data } = await apiClient.get<{ success: boolean; data: { providers: LLMProviderSummary[] } }>(
-      `${LLM_BASE}/providers`
+  /** List all providers (optionally only those with current free-tier models) */
+  async listProviders(freeOnly = false): Promise<LLMProvidersResult> {
+    const { data } = await apiClient.get<{ success: boolean; data: LLMProvidersResult }>(
+      `${LLM_BASE}/providers`,
+      { params: freeOnly ? { free_only: true } : {} }
     );
-    return data.data.providers;
+    return data.data;
+  },
+
+  /** Force-refresh the free model catalog from the OpenCode Models API */
+  async refreshFreeCatalog(): Promise<LLMRefreshResult> {
+    const { data } = await apiClient.post<{ success: boolean; data: LLMRefreshResult }>(
+      `${LLM_BASE}/providers/refresh`
+    );
+    return data.data;
   },
 
   /** Get provider details */
@@ -103,9 +135,13 @@ export const llmApi = {
     return data.data;
   },
 
-  /** List models */
-  async listModels(provider?: string): Promise<Record<string, { provider: string; default_model: string; models: LLMModelInfo[] }>> {
-    const params = provider ? { provider } : {};
+  /** List models (optionally only free-tier models from the live catalog) */
+  async listModels(
+    provider?: string,
+    freeOnly = false
+  ): Promise<Record<string, { provider: string; default_model: string; models: LLMModelInfo[] }>> {
+    const params: Record<string, string | boolean> = provider ? { provider } : {};
+    if (freeOnly) params.free_only = true;
     const { data } = await apiClient.get<{ success: boolean; data: Record<string, any> }>(
       `${LLM_BASE}/models`,
       { params }

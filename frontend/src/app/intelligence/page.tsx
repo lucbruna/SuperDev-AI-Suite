@@ -126,8 +126,17 @@ export default function IntelligencePage() {
       try {
         await action();
         await refresh();
-      } catch {
-        setError("Ação falhou. Verifique se o backend está rodando.");
+      } catch (err) {
+        const timedOut =
+          err &&
+          typeof err === "object" &&
+          "code" in err &&
+          (err as { code?: string }).code === "ECONNABORTED";
+        setError(
+          timedOut
+            ? "A ação demorou mais que o esperado e o pedido expirou. Verifique os logs do backend ou tente novamente."
+            : "Ação falhou. Verifique se o backend está rodando.",
+        );
       } finally {
         setBusy(false);
       }

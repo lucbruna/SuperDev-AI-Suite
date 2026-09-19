@@ -1,4 +1,5 @@
 import apiClient from "./client";
+import { AGENT_TIMEOUT } from "@/constants/api";
 
 // ---------------------------------------------------------------------------
 // Autonomous Developer API client — connects the dashboard to the module
@@ -70,6 +71,7 @@ export const autonomousDeveloperApi = {
     const { data } = await apiClient.post(
       `${AUTONOMOUS_DEVELOPER_BASE}/execute`,
       input,
+      { timeout: AGENT_TIMEOUT }, // full bug-fix loop runs synchronously on the backend
     );
     return unwrap<DeveloperExecuteResult>(data);
   },

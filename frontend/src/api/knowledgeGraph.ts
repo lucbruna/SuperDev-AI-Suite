@@ -1,4 +1,5 @@
 import apiClient from "./client";
+import { AGENT_TIMEOUT } from "@/constants/api";
 
 // ---------------------------------------------------------------------------
 // AI Code Knowledge Graph API client — connects the dashboard to the module
@@ -51,10 +52,11 @@ export interface KnowledgeEntityCounts {
 
 export const knowledgeGraphApi = {
   async scan(project_root?: string, meta?: Record<string, unknown>): Promise<KnowledgeScanResult> {
-    const { data } = await apiClient.post(`${KNOWLEDGE_GRAPH_BASE}/scan`, {
-      project_root,
-      meta,
-    });
+    const { data } = await apiClient.post(
+      `${KNOWLEDGE_GRAPH_BASE}/scan`,
+      { project_root, meta },
+      { timeout: AGENT_TIMEOUT }, // full codebase scan runs synchronously on the backend
+    );
     return unwrap<KnowledgeScanResult>(data);
   },
 

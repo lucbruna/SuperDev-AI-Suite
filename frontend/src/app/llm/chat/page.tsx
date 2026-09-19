@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { llmApi, type LLMProviderSummary } from "@/api/llm";
+import { llmApi, type LLMDiscoveryInfo, type LLMProviderSummary } from "@/api/llm";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -55,44 +55,97 @@ function ModelSelector({
   selectedProvider,
   selectedModel,
   models,
+  discovery,
+  isRefreshing,
   onProviderChange,
   onModelChange,
+  onRefreshCatalog,
 }: {
   providers: LLMProviderSummary[];
   selectedProvider: string;
   selectedModel: string;
   models: string[];
+  discovery: LLMDiscoveryInfo | null;
+  isRefreshing: boolean;
   onProviderChange: (p: string) => void;
   onModelChange: (m: string) => void;
+  onRefreshCatalog: () => void;
 }) {
+  const freeCount = providers.filter((p) => p.free).length;
+
   return (
-    <div className="flex items-center gap-2 border-b border-surface-200 bg-white px-4 py-2 dark:border-surface-700 dark:bg-surface-900">
-      <select
-        value={selectedProvider}
-        onChange={(e) => onProviderChange(e.target.value)}
-        className="rounded-lg border border-surface-200 bg-white px-3 py-1.5 text-xs font-medium text-surface-700 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-200"
-      >
-        {providers.length === 0 && <option value="">Automático</option>}
-        {providers
-          .filter((p) => p.api_key_configured)
-          .map((p) => (
+    <div className="border-b border-surface-200 bg-white dark:border-surface-700 dark:bg-surface-900">
+      <div className="flex items-center gap-2 px-4 py-2">
+        <select
+          value={selectedProvider}
+          onChange={(e) => onProviderChange(e.target.value)}
+          className="rounded-lg border border-surface-200 bg-white px-3 py-1.5 text-xs font-medium text-surface-700 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-200"
+        >
+          {providers.length === 0 && <option value="">Automático</option>}
+          {providers.map((p) => (
             <option key={p.name} value={p.name}>
               {p.name.charAt(0).toUpperCase() + p.name.slice(1)}
+              {p.free ? " · grátis" : ""}
+              {!p.api_key_configured ? " · sem chave" : ""}
             </option>
           ))}
-      </select>
+        </select>
 
-      <select
-        value={selectedModel}
-        onChange={(e) => onModelChange(e.target.value)}
-        className="flex-1 rounded-lg border border-surface-200 bg-white px-3 py-1.5 text-xs text-surface-700 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-200"
-      >
-        {models.map((m) => (
-          <option key={m} value={m}>
-            {m}
-          </option>
-        ))}
-      </select>
+        <select
+          value={selectedModel}
+          onChange={(e) => onModelChange(e.target.value)}
+          className="flex-1 rounded-lg border border-surface-200 bg-white px-3 py-1.5 text-xs text-surface-700 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-200"
+        >
+          {models.map((m) => (
+            <option key={m} value={m}>
+              {m}
+            </option>
+          ))}
+        </select>
+
+        <button
+          onClick={onRefreshCatalog}
+          disabled={isRefreshing}
+          title="Atualizar catálogo de modelos gratuitos"
+          className="rounded-lg border border-surface-200 px-2.5 py-1.5 text-xs text-surface-500 transition-colors hover:bg-surface-50 disabled:opacity-50 dark:border-surface-600 dark:hover:bg-surface-800"
+        >
+          {isRefreshing ? (
+            <svg className="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+            </svg>
+          ) : (
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
+            </svg>
+          )}
+        </button>
+      </div>
+
+      {discovery && (
+        <div className="flex items-center justify-between border-t border-surface-100 px-4 py-1 text-[11px] text-surface-400 dark:border-surface-800">
+          <span>
+            {freeCount > 0
+              ? `${freeCount} provedor(es) com modelos gratuitos agora`
+              : "Nenhum modelo gratuito no catálogo agora"}
+            {discovery.catalog_age_seconds != null && (
+              <span className="ml-1">
+                · catálogo atualizado há{" "}
+                {discovery.catalog_age_seconds < 60
+                  ? `${Math.round(discovery.catalog_age_seconds)}s`
+                  : `${Math.round(discovery.catalog_age_seconds / 60)}min`}
+              </span>
+            )}
+            {discovery.last_error && <span className="ml-1 text-red-400">· falha na atualização</span>}
+          </span>
+          <span className="text-surface-300 dark:text-surface-600">fonte: models.dev</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -107,6 +160,8 @@ export default function LLMChatPage() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
   const [providers, setProviders] = useState<LLMProviderSummary[]>([]);
+  const [discovery, setDiscovery] = useState<LLMDiscoveryInfo | null>(null);
+  const [isRefreshingCatalog, setIsRefreshingCatalog] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState("");
   const [models, setModels] = useState<string[]>(["Automático"]);
   const [selectedModel, setSelectedModel] = useState("");
@@ -120,14 +175,20 @@ export default function LLMChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, streamingContent]);
 
-  // Load providers
+  // Load providers (configured or with current free-tier models)
   const loadProviders = useCallback(async () => {
     try {
       const data = await llmApi.listProviders();
-      const configured = data.filter((p) => p.api_key_configured);
-      setProviders(configured);
-      if (configured.length > 0 && !configured.some((provider) => provider.name === selectedProvider)) {
-        setSelectedProvider(configured[0].name);
+      const visible = data.providers.filter((p) => p.api_key_configured || p.free);
+      setProviders(visible);
+      setDiscovery(data.discovery ?? null);
+      if (visible.length > 0 && !visible.some((provider) => provider.name === selectedProvider)) {
+        // Prefer a configured provider, otherwise the first one with free models.
+        const preferred =
+          visible.find((p) => p.api_key_configured) ??
+          visible.find((p) => p.free) ??
+          visible[0];
+        setSelectedProvider(preferred.name);
       }
     } catch {
       // Silently fail, user will see error when trying to send
@@ -138,7 +199,32 @@ export default function LLMChatPage() {
     loadProviders();
   }, [loadProviders]);
 
-  // Load models when provider changes
+  // Force-refresh the free model catalog from the OpenCode Models API
+  const refreshCatalog = useCallback(async () => {
+    setIsRefreshingCatalog(true);
+    try {
+      const result = await llmApi.refreshFreeCatalog();
+      // Reload providers + models with the fresh catalog
+      const data = await llmApi.listProviders();
+      const visible = data.providers.filter((p) => p.api_key_configured || p.free);
+      setProviders(visible);
+      setDiscovery(data.discovery ?? null);
+      if (visible.length > 0 && !visible.some((provider) => provider.name === selectedProvider)) {
+        const preferred =
+          visible.find((p) => p.api_key_configured) ??
+          visible.find((p) => p.free) ??
+          visible[0];
+        setSelectedProvider(preferred.name);
+      }
+      return result.total_free_models;
+    } catch {
+      return null;
+    } finally {
+      setIsRefreshingCatalog(false);
+    }
+  }, [selectedProvider]);
+
+  // Load models when provider changes (prefer free-tier models)
   useEffect(() => {
     if (!selectedProvider) {
       setModels(["Automático"]);
@@ -146,16 +232,26 @@ export default function LLMChatPage() {
       return;
     }
     llmApi
-      .listModels(selectedProvider)
+      .listModels(selectedProvider, true)
       .then((data) => {
         const providerModels = data[selectedProvider]?.models || [];
         const modelIds = providerModels.map((m: any) => m.id);
-        setModels(modelIds);
-        setSelectedModel((current) =>
-          modelIds.length > 0 && !modelIds.includes(current)
-            ? modelIds[0]
-            : current
-        );
+        if (modelIds.length > 0) {
+          setModels(modelIds);
+          setSelectedModel((current) =>
+            modelIds.length > 0 && !modelIds.includes(current) ? modelIds[0] : current
+          );
+        } else {
+          // No free models for this provider — fall back to its full model list.
+          llmApi.listModels(selectedProvider).then((all) => {
+            const allModels = all[selectedProvider]?.models || [];
+            const allIds = allModels.map((m: any) => m.id);
+            setModels(allIds.length ? allIds : [`${selectedProvider}-default`]);
+            setSelectedModel((current) =>
+              allIds.length > 0 && !allIds.includes(current) ? allIds[0] : current
+            );
+          });
+        }
       })
       .catch(() => {
         setModels([`${selectedProvider}-default`]);
@@ -276,8 +372,13 @@ export default function LLMChatPage() {
           selectedProvider={selectedProvider}
           selectedModel={selectedModel}
           models={models}
+          discovery={discovery}
+          isRefreshing={isRefreshingCatalog}
           onProviderChange={setSelectedProvider}
           onModelChange={setSelectedModel}
+          onRefreshCatalog={() => {
+            refreshCatalog();
+          }}
         />
 
         {/* Messages */}
@@ -290,9 +391,9 @@ export default function LLMChatPage() {
                   LLM Chat
                 </h2>
                 <p className="text-sm text-surface-500">
-                  {hasConfig
-                    ? "Digite uma mensagem abaixo para começar a conversar com os modelos de IA."
-                    : "Configure uma API key nas variáveis de ambiente para começar."}
+                  {providers.length > 0
+                    ? "Escolha um provedor acima. Os marcados com 'grátis' vêm do catálogo gratuito detectado a cada inicialização — basta configurar a chave para usá-los."
+                    : "Nenhum provedor gratuito detectado. Configure uma API key nas variáveis de ambiente ou use o botão de atualizar o catálogo."}
                 </p>
               </div>
             </div>
