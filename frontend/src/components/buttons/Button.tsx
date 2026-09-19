@@ -3,8 +3,8 @@
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { cn } from "@/utils/cn";
 
-type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
-type ButtonSize = "sm" | "md" | "lg";
+type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "warning";
+type ButtonSize = "xs" | "sm" | "md" | "lg";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
@@ -25,9 +25,12 @@ const variantStyles: Record<ButtonVariant, string> = {
     "bg-transparent text-surface-600 hover:bg-surface-100 focus-visible:ring-surface-500 dark:text-surface-400 dark:hover:bg-surface-800",
   danger:
     "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500 disabled:bg-red-400",
+  warning:
+    "bg-amber-500 text-white hover:bg-amber-600 focus-visible:ring-amber-500 disabled:bg-amber-400",
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
+  xs: "px-2 py-0.5 text-xs gap-1",
   sm: "px-3 py-1.5 text-xs gap-1.5",
   md: "px-4 py-2 text-sm gap-2",
   lg: "px-6 py-3 text-base gap-2.5",
