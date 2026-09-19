@@ -1,6 +1,13 @@
 FROM node:20-alpine AS base
 WORKDIR /app
-RUN npm install -g pnpm && echo "node-linker=hoisted" > .npmrc
+# verify-deps-before-run=false: pnpm >= 10.13 re-verifies deps on every `pnpm run`
+# and silently installs missing/outdated packages. Inside the build stage there is
+# no pnpm-workspace.yaml/lockfile, so that implicit install ignores the approved
+# build scripts (esbuild, unrs-resolver) and fails with ERR_PNPM_IGNORED_BUILDS.
+# Classic behavior: `pnpm run` only runs the script; deps come from the deps stage.
+RUN npm install -g pnpm \
+  && echo "node-linker=hoisted" > /app/.npmrc \
+  && echo "verify-deps-before-run=false" >> /app/.npmrc
 
 # ── deps: Install dependencies with frozen lockfile ──────────────
 FROM base AS deps
