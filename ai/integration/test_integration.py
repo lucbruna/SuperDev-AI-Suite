@@ -1,4 +1,4 @@
-﻿"""Comprehensive tests for Integration Hub & API Ecosystem Engine (Volume 29)."""
+"""Comprehensive tests for Integration Hub & API Ecosystem Engine (Volume 29)."""
 
 import os
 import sys
@@ -904,7 +904,13 @@ class TestSubsystemImports(unittest.TestCase):
         )
 
     def test_webhooks_imports(self):
-        from ai.integration.webhooks import RetryManager, WebhookEngine, WebhookReceiver, WebhookSender, WebhookValidator
+        from ai.integration.webhooks import (
+            RetryManager,
+            WebhookEngine,
+            WebhookReceiver,
+            WebhookSender,
+            WebhookValidator,
+        )
 
         self.assertTrue(all([WebhookEngine, WebhookReceiver, WebhookSender, WebhookValidator, RetryManager]))
 
@@ -914,7 +920,13 @@ class TestSubsystemImports(unittest.TestCase):
         self.assertTrue(all([SyncEngine, DataSync, ConflictManager, SyncScheduler, IncrementalSync]))
 
     def test_mapping_imports(self):
-        from ai.integration.mapping import FieldMapper, MappingEngine, MappingValidator, SchemaMapper, TransformationEngine
+        from ai.integration.mapping import (
+            FieldMapper,
+            MappingEngine,
+            MappingValidator,
+            SchemaMapper,
+            TransformationEngine,
+        )
 
         self.assertTrue(all([MappingEngine, SchemaMapper, FieldMapper, TransformationEngine, MappingValidator]))
 

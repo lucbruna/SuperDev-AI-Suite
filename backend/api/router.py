@@ -48,12 +48,8 @@ v1_router.include_router(scanners.router, prefix="/scanners", tags=["scanners"])
 v1_router.include_router(builders.router, prefix="/builders", tags=["builders"])
 v1_router.include_router(settings.router, prefix="/settings", tags=["settings"])
 v1_router.include_router(system.router, prefix="/system", tags=["system"])
-v1_router.include_router(
-    dashboard.router, prefix="/system", tags=["dashboard"]
-)
-v1_router.include_router(
-    feature_flags.router, prefix="/feature-flags", tags=["feature-flags"]
-)
+v1_router.include_router(dashboard.router, prefix="/system", tags=["dashboard"])
+v1_router.include_router(feature_flags.router, prefix="/feature-flags", tags=["feature-flags"])
 v1_router.include_router(executions.router, prefix="/executions", tags=["executions"])
 v1_router.include_router(cost.router, prefix="/cost", tags=["cost"])
 v1_router.include_router(organizations.router, prefix="/organizations", tags=["organizations"])

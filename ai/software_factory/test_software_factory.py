@@ -1,4 +1,4 @@
-﻿"""Comprehensive tests for software_factory subsystem â€” Volume 32."""
+"""Comprehensive tests for software_factory subsystem â€” Volume 32."""
 
 import os
 import sys
@@ -459,7 +459,12 @@ class TestArchitectureRenderer:
 
     def test_render_mermaid(self):
         from ai.software_factory.architecture.architecture_renderer import ArchitectureRenderer
-        from ai.software_factory.architecture.models import ArchitectureComponent, ComponentType, Connector, ConnectorType
+        from ai.software_factory.architecture.models import (
+            ArchitectureComponent,
+            ComponentType,
+            Connector,
+            ConnectorType,
+        )
 
         renderer = ArchitectureRenderer()
         c1 = ArchitectureComponent(component_id="c1", name="API", component_type=ComponentType.API)

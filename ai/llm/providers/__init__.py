@@ -15,6 +15,7 @@ from .huggingface_provider import HuggingFaceProvider
 from .local_provider import LocalProvider
 from .mistral_provider import MistralProvider
 from .mock_provider import MockProvider
+from .opencode_provider import OpenCodeProvider
 from .openai_provider import OpenAIProvider
 from .together_provider import TogetherProvider
 
@@ -36,6 +37,7 @@ PROVIDER_CLASSES: dict[str, type[BaseLLMProvider]] = {
     "ollama": LocalProvider,  # alias — Ollama is served by LocalProvider
     "mock": MockProvider,
     "custom": CustomProvider,
+    "opencode": OpenCodeProvider,
 }
 
 # --- Default env var mappings for auto-discovery ---
@@ -52,6 +54,8 @@ PROVIDER_ENV_MAP: dict[str, dict[str, str]] = {
     "aws": {"api_key": "AWS_ACCESS_KEY_ID"},
     "cohere": {"api_key": "COHERE_API_KEY"},
     "huggingface": {"api_key": "HUGGINGFACE_API_KEY"},
+    "openrouter": {"api_key": "OPENROUTER_API_KEY"},
+    "opencode": {"api_key": "OPENROUTER_API_KEY"},
 }
 
 # --- Default model per provider ---
@@ -68,6 +72,8 @@ PROVIDER_DEFAULT_MODELS: dict[str, str] = {
     "aws": "claude-3-5-sonnet-20241022",
     "cohere": "command-r-plus",
     "huggingface": "HuggingFaceH4/zephyr-7b-beta",
+    "openrouter": "cohere/north-mini-code:free",
+    "opencode": "openrouter/google/gemma-4-31b-it:free",
     "local": "local-model",
     "mock": "mock-model",
     "custom": "custom-model",
@@ -87,6 +93,7 @@ __all__ = [
     "LocalProvider",
     "MistralProvider",
     "MockProvider",
+    "OpenCodeProvider",
     "OpenAIProvider",
     "TogetherProvider",
     "PROVIDER_CLASSES",

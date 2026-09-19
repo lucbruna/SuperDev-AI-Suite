@@ -1,4 +1,4 @@
-﻿"""Comprehensive tests for business_intelligence subsystem (Volume 33)."""
+"""Comprehensive tests for business_intelligence subsystem (Volume 33)."""
 
 import os
 import sys

@@ -68,10 +68,7 @@ async def run_persisted_agent(
         "execution_id": str(execution.id),
         "agent_id": str(agent.id),
         "output": result.output,
-        "steps": [
-            {"thought": s.thought, "action": s.action, "observation": s.observation}
-            for s in result.steps
-        ],
+        "steps": [{"thought": s.thought, "action": s.action, "observation": s.observation} for s in result.steps],
         "tool_calls": [
             {"name": tc.name, "arguments": tc.arguments, "result": tc.result, "error": tc.error}
             for tc in result.tool_calls

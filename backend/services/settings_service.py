@@ -177,9 +177,7 @@ def mask_api_keys(providers: list[dict[str, Any]]) -> list[dict[str, Any]]:
         raw_key = p_copy.get("apiKey") or ""
         if raw_key:
             p_copy["apiKeyConfigured"] = True
-            p_copy["apiKey"] = (
-                f"{raw_key[:8]}...{raw_key[-4:]}" if len(raw_key) > 12 else "***"
-            )
+            p_copy["apiKey"] = f"{raw_key[:8]}...{raw_key[-4:]}" if len(raw_key) > 12 else "***"
         else:
             p_copy["apiKeyConfigured"] = False
         masked.append(p_copy)
@@ -199,9 +197,7 @@ async def get_runtime_provider_config(
     configuration saved in the UI instead of only reading env vars.
     """
     await ensure_table(db)
-    providers = await get_setting_with_default(
-        db, "providers", {"providers": PROVIDER_DEFAULTS}
-    )
+    providers = await get_setting_with_default(db, "providers", {"providers": PROVIDER_DEFAULTS})
     providers = list(providers) if isinstance(providers, list) else []
 
     saved = next((p for p in providers if p.get("id") == provider_name), None)

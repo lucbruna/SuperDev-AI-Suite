@@ -36,11 +36,10 @@ ai/
 ```python
 from ai.ai_engine import AIEngine
 
+
 async def main():
     async with AIEngine() as engine:
-        response = await engine.chat([
-            {"role": "user", "content": "Hello!"}
-        ])
+        response = await engine.chat([{"role": "user", "content": "Hello!"}])
         print(response["content"])
 ```
 

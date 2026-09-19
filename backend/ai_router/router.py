@@ -75,18 +75,14 @@ class AIRouter:
 
         return kwargs
 
-    async def _get_provider(
-        self, provider_name: str | None = None, db: Any | None = None
-    ) -> BaseProvider:
+    async def _get_provider(self, provider_name: str | None = None, db: Any | None = None) -> BaseProvider:
         name = provider_name or self._preferred_provider
         if name:
             return await ProviderRegistry.get_instance(name, **await self._provider_kwargs(name, db))
 
         for name in self._fallback_order:
             try:
-                provider = await ProviderRegistry.get_instance(
-                    name, **await self._provider_kwargs(name, db)
-                )
+                provider = await ProviderRegistry.get_instance(name, **await self._provider_kwargs(name, db))
                 if await provider.health_check():
                     return provider
             except Exception:

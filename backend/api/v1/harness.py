@@ -44,6 +44,7 @@ def _get_harness():
     global _harness
     if _harness is None:
         from harness.orchestrator import UltraHarness
+
         _harness = UltraHarness()
     return _harness
 

@@ -1,4 +1,4 @@
-﻿"""Comprehensive tests for cybersecurity_engine (Volume 39)."""
+"""Comprehensive tests for cybersecurity_engine (Volume 39)."""
 
 import os
 import sys

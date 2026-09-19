@@ -262,9 +262,7 @@ async def create_agent(
     provider = request.provider or (template["provider"] if template else None)
     max_steps = request.max_steps or (template["max_steps"] if template else 10)
     temperature = (
-        request.temperature
-        if request.temperature is not None
-        else (template["temperature"] if template else 0.7)
+        request.temperature if request.temperature is not None else (template["temperature"] if template else 0.7)
     )
     system_prompt = request.system_prompt or (template["system_prompt"] if template else None)
     tools_enabled = request.tools_enabled or (template["tools_enabled"] if template else None)

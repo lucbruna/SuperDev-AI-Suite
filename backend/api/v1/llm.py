@@ -96,9 +96,7 @@ def _get_llm_factory():
         return None
 
 
-async def _db_provider_config(
-    db: AsyncSession | None, provider_name: str
-) -> dict[str, Any]:
+async def _db_provider_config(db: AsyncSession | None, provider_name: str) -> dict[str, Any]:
     """Return DB-saved provider config (api_key/base_url/model) or empty dict.
 
     Kept separate so both availability detection and instance creation share

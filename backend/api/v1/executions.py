@@ -79,9 +79,7 @@ async def executions_stats_today(
 
     failed = by_status.get("failed", 0)
     running = by_status.get("running", 0)
-    success_rate = (
-        round((today - failed - running) / today * 100, 2) if today > 0 else 0.0
-    )
+    success_rate = round((today - failed - running) / today * 100, 2) if today > 0 else 0.0
 
     return {
         "success": True,

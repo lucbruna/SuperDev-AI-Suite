@@ -64,10 +64,10 @@ class ToolRegistry:
     # canonical names defined in tool schemas.  Normalising here keeps every
     # handler clean and avoids "unexpected keyword argument" failures.
     _PARAM_ALIASES: dict[str, dict[str, str]] = {
-        "read_file":   {"file": "path", "file_path": "path", "filename": "path", "filepath": "path"},
-        "write_file":  {"file": "path", "file_path": "path", "filename": "path", "filepath": "path"},
+        "read_file": {"file": "path", "file_path": "path", "filename": "path", "filepath": "path"},
+        "write_file": {"file": "path", "file_path": "path", "filename": "path", "filepath": "path"},
         "delete_file": {"file": "path", "file_path": "path", "filename": "path", "filepath": "path"},
-        "list_files":  {"file": "path", "file_path": "path", "filename": "path", "filepath": "path"},
+        "list_files": {"file": "path", "file_path": "path", "filename": "path", "filepath": "path"},
         "search_code": {"file_path": "path", "filepath": "path", "filename": "path", "query": "pattern"},
     }
 
@@ -380,11 +380,13 @@ async def _list_skills() -> list[dict]:
                             break
                 except Exception:
                     pass
-            skills.append({
-                "name": item.name,
-                "has_skill_md": skill_md.exists(),
-                "description": description,
-            })
+            skills.append(
+                {
+                    "name": item.name,
+                    "has_skill_md": skill_md.exists(),
+                    "description": description,
+                }
+            )
     return skills
 
 

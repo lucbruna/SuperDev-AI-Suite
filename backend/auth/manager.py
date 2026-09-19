@@ -137,9 +137,7 @@ class AuthManager:
                 project_id=payload.get("project_id"),
                 roles=payload.get("roles") or [],
                 permissions=payload.get("permissions") or [],
-                token_type=TokenType(
-                    payload.get("token_type") or payload.get("type") or TokenType.ACCESS.value
-                ),
+                token_type=TokenType(payload.get("token_type") or payload.get("type") or TokenType.ACCESS.value),
                 exp=payload.get("exp"),
                 iat=payload.get("iat"),
                 jti=payload.get("jti"),
