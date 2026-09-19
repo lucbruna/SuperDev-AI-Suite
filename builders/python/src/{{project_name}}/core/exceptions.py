@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
-from {{project_name}}.core.logging import get_logger
+from project_name.core.logging import get_logger
 
 logger = get_logger(__name__)
 

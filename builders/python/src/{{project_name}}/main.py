@@ -8,10 +8,10 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 
-from {{project_name}}.config import get_settings
-from {{project_name}}.core.exceptions import register_exception_handlers
-from {{project_name}}.core.logging import get_logger, setup_logging
-from {{project_name}}.database import close_db
+from project_name.config import get_settings
+from project_name.core.exceptions import register_exception_handlers
+from project_name.core.logging import get_logger, setup_logging
+from project_name.database import close_db
 
 settings = get_settings()
 logger = get_logger(__name__)
@@ -70,7 +70,7 @@ def create_app() -> FastAPI:
         
         # Generate request ID
         request_id = str(uuid.uuid4())
-        from {{project_name}}.core.logging import set_request_id
+        from project_name.core.logging import set_request_id
         set_request_id(request_id)
         
         # Log request
@@ -132,7 +132,7 @@ def create_app() -> FastAPI:
         return {"status": "alive"}
     
     # API routes
-    from {{project_name}}.api.v1.router import api_router
+    from project_name.api.v1.router import api_router
     app.include_router(api_router, prefix="/api/v1")
     
     return app
@@ -144,7 +144,7 @@ app = create_app()
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
-        "{{project_name}}.main:app",
+        "project_name.main:app",
         host=settings.host,
         port=settings.port,
         reload=settings.is_development,

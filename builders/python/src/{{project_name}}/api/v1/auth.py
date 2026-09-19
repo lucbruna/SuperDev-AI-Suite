@@ -8,8 +8,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel, EmailStr
 
-from {{project_name}}.config import get_settings
-from {{project_name}}.core.security import (
+from project_name.config import get_settings
+from project_name.core.security import (
     create_access_token,
     create_refresh_token,
     decode_token,

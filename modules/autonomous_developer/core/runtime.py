@@ -29,6 +29,7 @@ from modules.autonomous_developer.config.constants import (
 from modules.autonomous_developer.core.context import DeveloperContext
 from modules.autonomous_developer.core.exceptions import DeveloperError
 from modules.autonomous_developer.core.state import DeveloperState
+from modules.autonomous_developer.memory.lessons import LessonLearner
 
 logger = logging.getLogger(__name__)
 
@@ -68,6 +69,9 @@ class DeveloperRuntime:
     ) -> None:
         self.config = config or get_default_config()
         self.config.resolve()
+        # Ensure default phase components exist before any phase dispatch.
+        # Lazy (not at import time) to break the core → generator → core cycle.
+        _register_defaults()
         if registry is not None:
             self.context = DeveloperContext(config=self.config, registry=registry)
         else:
@@ -236,21 +240,27 @@ def build_runtime(config: DeveloperConfig | None = None) -> DeveloperRuntime:
 
 
 # Load phase components and register their defaults with the shared default
-# registry so execute() runs the real flow. Kept at the bottom: the phase
-# packages are core-free, and by this point the registry module is already
-# initialized. Later phases add validator/reviewer/executor defaults here.
+# registry so execute() runs the real flow. Registration is lazy (via
+# _register_defaults, called at first execute) to break the import cycle:
+# core/__init__ → runtime → generator → core/__init__ (partially initialized).
 from modules.autonomous_developer.core.registry import default_registry  # noqa: E402
-from modules.autonomous_developer.execution.merge import GitPrExecutor  # noqa: E402,F401
-from modules.autonomous_developer.generator import CodeGenerator  # noqa: E402,F401
-from modules.autonomous_developer.memory.lessons import LessonLearner  # noqa: E402,F401
-from modules.autonomous_developer.planner import LLMPlanner  # noqa: E402,F401
-from modules.autonomous_developer.review import CodeReviewer  # noqa: E402,F401
-from modules.autonomous_developer.validation.test_runner import (  # noqa: E402,F401
-    TestRunnerValidator,
-)
 
-default_registry().register("planner", "default", LLMPlanner())
-default_registry().register("generator", "default", CodeGenerator())
-default_registry().register("validator", "default", TestRunnerValidator())
-default_registry().register("reviewer", "default", CodeReviewer())
-default_registry().register("executor", "default", GitPrExecutor())
+
+def _register_defaults() -> None:
+    """Register default phase components (idempotent, lazy to avoid cycles)."""
+    registry = default_registry()
+    if registry.has("planner", "default"):
+        return
+    from modules.autonomous_developer.execution.merge import GitPrExecutor  # noqa: F401
+    from modules.autonomous_developer.generator import CodeGenerator  # noqa: F401
+    from modules.autonomous_developer.planner import LLMPlanner  # noqa: F401
+    from modules.autonomous_developer.review import CodeReviewer  # noqa: F401
+    from modules.autonomous_developer.validation.test_runner import (  # noqa: F401
+        TestRunnerValidator,
+    )
+
+    registry.register("planner", "default", LLMPlanner())
+    registry.register("generator", "default", CodeGenerator())
+    registry.register("validator", "default", TestRunnerValidator())
+    registry.register("reviewer", "default", CodeReviewer())
+    registry.register("executor", "default", GitPrExecutor())

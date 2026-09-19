@@ -10,21 +10,37 @@ Modules:
     frontend          — Frontend project generator (React, Next.js, Vue, Svelte)
     api               — API scaffolding generator (REST, GraphQL, WebSocket, gRPC)
     microservices     — Microservices project generator with Docker Compose
+    python            — Python/FastAPI generator rendering the {{project_name}} template
 """
 
 from .base import (
-    ApiType, BaseBuilder, BuildConfig, BuildResult,
-    DatabaseType, FrameworkType, GeneratedFile,
+    ApiType,
+    BaseBuilder,
+    BuildConfig,
+    BuildResult,
+    DatabaseType,
+    FrameworkType,
+    GeneratedFile,
 )
 from .backend.builder import BackendBuilder
 from .frontend.builder import FrontendBuilder
 from .api.builder import APIBuilder
 from .microservices.builder import MicroservicesBuilder
+from .python.builder import PythonBuilder
 
 __all__ = [
     # Types
-    "ApiType", "BaseBuilder", "BuildConfig", "BuildResult",
-    "DatabaseType", "FrameworkType", "GeneratedFile",
+    "ApiType",
+    "BaseBuilder",
+    "BuildConfig",
+    "BuildResult",
+    "DatabaseType",
+    "FrameworkType",
+    "GeneratedFile",
     # Builders
-    "BackendBuilder", "FrontendBuilder", "APIBuilder", "MicroservicesBuilder",
+    "BackendBuilder",
+    "FrontendBuilder",
+    "APIBuilder",
+    "MicroservicesBuilder",
+    "PythonBuilder",
 ]
