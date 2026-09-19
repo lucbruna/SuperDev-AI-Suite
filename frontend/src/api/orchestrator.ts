@@ -41,6 +41,10 @@ export interface OrchestratorAnalytics {
 }
 
 export interface OrchestratorAuditEntry {
+  status?: string;
+  action?: string;
+  timestamp?: number;
+  detail?: string;
   [key: string]: unknown;
 }
 

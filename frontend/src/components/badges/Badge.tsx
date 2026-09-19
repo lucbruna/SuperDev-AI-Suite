@@ -3,7 +3,14 @@
 import { type ReactNode } from "react";
 import { cn } from "@/utils/cn";
 
-type BadgeVariant = "default" | "primary" | "success" | "warning" | "danger" | "info";
+type BadgeVariant =
+  | "default"
+  | "primary"
+  | "secondary"
+  | "success"
+  | "warning"
+  | "danger"
+  | "info";
 type BadgeSize = "sm" | "md" | "lg";
 
 interface BadgeProps {
@@ -21,6 +28,8 @@ const variantStyles: Record<BadgeVariant, string> = {
     "bg-surface-100 text-surface-700 dark:bg-surface-800 dark:text-surface-300",
   primary:
     "bg-primary-50 text-primary-700 dark:bg-primary-950 dark:text-primary-300",
+  secondary:
+    "bg-surface-100 text-surface-600 dark:bg-surface-800 dark:text-surface-300",
   success:
     "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300",
   warning:
@@ -40,6 +49,7 @@ const sizeStyles: Record<BadgeSize, string> = {
 const dotColors: Record<BadgeVariant, string> = {
   default: "bg-surface-400",
   primary: "bg-primary-500",
+  secondary: "bg-surface-500",
   success: "bg-green-500",
   warning: "bg-amber-500",
   danger: "bg-red-500",
