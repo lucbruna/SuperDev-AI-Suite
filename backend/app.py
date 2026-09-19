@@ -260,6 +260,15 @@ def create_app() -> FastAPI:
         tags=["knowledge-graph"],
     )
 
+    # Autonomous Multimedia AI Engine — router mounted under /api/v1/multimedia
+    _safe_include(
+        app,
+        "modules.multimedia_ai_engine.api.router",
+        attr="router",
+        prefix="/api/v1/multimedia",
+        tags=["multimedia"],
+    )
+
     # Workspace sessions — router mounted under /api/v1/workspace
     _safe_include(
         app,

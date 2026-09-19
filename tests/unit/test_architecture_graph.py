@@ -287,11 +287,21 @@ class TestCLI:
 
 
 # ----------------------------------------------------------------------- API
+def _iter_router_routes(router):
+    """Flatten routes across include_router wrappers (FastAPI >=0.121 wraps
+    included routers in _IncludedRouter objects; paths are no longer flat)."""
+    for route in router.routes:
+        if hasattr(route, "original_router"):
+            yield from _iter_router_routes(route.original_router)
+        elif hasattr(route, "path"):
+            yield route
+
+
 class TestAPI:
     def test_router_routes(self) -> None:
         from modules.architecture_graph.api.router import api_router
 
-        paths = {getattr(route, "path", "") for route in api_router.routes}
+        paths = {getattr(route, "path", "") for route in _iter_router_routes(api_router)}
         for expected in [
             "/",
             "/health",
@@ -312,7 +322,7 @@ class TestAPI:
     def test_graph_routes_return_types(self) -> None:
         from modules.architecture_graph.api.router import api_router
 
-        for route in api_router.routes:
+        for route in _iter_router_routes(api_router):
             if getattr(route, "path", "").startswith("/export/"):
                 assert getattr(route, "path", "") == "/export/{fmt}"
 
