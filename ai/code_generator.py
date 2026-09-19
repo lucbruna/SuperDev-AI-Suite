@@ -8,14 +8,14 @@ import subprocess  # nosec
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import Any, Optional
 
 logger = logging.getLogger("superdev.ai.codegen")
 
 
-class Language(str, Enum):
+class Language(StrEnum):
     PYTHON = "python"
     JAVASCRIPT = "javascript"
     TYPESCRIPT = "typescript"
@@ -24,7 +24,7 @@ class Language(str, Enum):
     JAVA = "java"
 
 
-class GenerationMethod(str, Enum):
+class GenerationMethod(StrEnum):
     LLM = "llm"
     TEMPLATE = "template"
     HYBRID = "hybrid"
@@ -35,7 +35,7 @@ class GenerationRequest:
     description: str
     language: Language = Language.PYTHON
     method: GenerationMethod = GenerationMethod.LLM
-    context: Optional[str] = None
+    context: str | None = None
     dependencies: list[str] = field(default_factory=list)
     constraints: list[str] = field(default_factory=list)
     include_tests: bool = True
@@ -43,16 +43,16 @@ class GenerationRequest:
     style_guide: str = ""
     max_tokens: int = 4096
     temperature: float = 0.3
-    additional_instructions: Optional[str] = None
-    existing_code: Optional[str] = None
+    additional_instructions: str | None = None
+    existing_code: str | None = None
 
 
 @dataclass
 class GeneratedCode:
     code: str
-    tests: Optional[str] = None
+    tests: str | None = None
     language: Language = Language.PYTHON
-    file_path: Optional[str] = None
+    file_path: str | None = None
     token_usage: dict[str, int] = field(default_factory=dict)
     warnings: list[str] = field(default_factory=list)
     formatted: bool = False
@@ -110,7 +110,7 @@ class ${class_name}:
 ''',
     },
     Language.JAVASCRIPT: {
-        "module": '''/**
+        "module": """/**
  * ${description}
  */
 
@@ -124,10 +124,10 @@ class ${class_name} {
 }
 
 module.exports = { ${class_name} };
-''',
+""",
     },
     Language.TYPESCRIPT: {
-        "module": '''/**
+        "module": """/**
  * ${description}
  */
 
@@ -139,10 +139,10 @@ export class ${class_name} {
      * ${description}
      */
 }
-''',
+""",
     },
     Language.GO: {
-        "module": '''package ${package_name}
+        "module": """package ${package_name}
 
 // ${description}
 type ${struct_name} struct {
@@ -152,10 +152,10 @@ type ${struct_name} struct {
 func New${struct_name}() *${struct_name} {
     return &${struct_name}{}
 }
-''',
+""",
     },
     Language.RUST: {
-        "module": '''/// ${description}
+        "module": """/// ${description}
 pub struct ${struct_name} {
 }
 
@@ -165,10 +165,10 @@ impl ${struct_name} {
         Self {}
     }
 }
-''',
+""",
     },
     Language.JAVA: {
-        "module": '''package ${package_name};
+        "module": """package ${package_name};
 
 /**
  * ${description}
@@ -177,7 +177,7 @@ public class ${class_name} {
     public ${class_name}() {
     }
 }
-''',
+""",
     },
 }
 
@@ -200,7 +200,7 @@ class Test${class_name}:
         """Test ${description}."""
         pass
 ''',
-    Language.JAVASCRIPT: '''const { ${class_name} } = require("../${module_path}");
+    Language.JAVASCRIPT: """const { ${class_name} } = require("../${module_path}");
 
 describe("${class_name}", () => {
     test("should initialize correctly", () => {
@@ -208,8 +208,8 @@ describe("${class_name}", () => {
         expect(instance).toBeDefined();
     });
 });
-''',
-    Language.TYPESCRIPT: '''import { ${class_name} } from "../${module_path}";
+""",
+    Language.TYPESCRIPT: """import { ${class_name} } from "../${module_path}";
 
 describe("${class_name}", () => {
     test("should initialize correctly", () => {
@@ -217,7 +217,7 @@ describe("${class_name}", () => {
         expect(instance).toBeDefined();
     });
 });
-''',
+""",
 }
 
 
@@ -267,9 +267,9 @@ def _format_test_messages(request: GenerationRequest, code: str) -> list[dict[st
 class CodeGenerator:
     def __init__(
         self,
-        api_key: Optional[str] = None,
-        base_url: Optional[str] = None,
-        model: Optional[str] = None,
+        api_key: str | None = None,
+        base_url: str | None = None,
+        model: str | None = None,
         format_enabled: bool = True,
         lint_enabled: bool = True,
     ) -> None:
@@ -278,11 +278,12 @@ class CodeGenerator:
         self._model = model or "gpt-4o"
         self._format_enabled = format_enabled
         self._lint_enabled = lint_enabled
-        self._llm_client: Optional[Any] = None
+        self._llm_client: Any | None = None
 
     async def _ensure_llm(self) -> Any:
         if self._llm_client is None:
             from ai.reasoning_engine import LLMClient
+
             self._llm_client = LLMClient(
                 api_key=self._api_key,
                 base_url=self._base_url,
@@ -301,9 +302,7 @@ class CodeGenerator:
             return match2.group(1).strip()
         return text.strip()
 
-    async def generate(
-        self, request: GenerationRequest
-    ) -> GeneratedCode:
+    async def generate(self, request: GenerationRequest) -> GeneratedCode:
         result = GeneratedCode(language=request.language)
 
         if request.method == GenerationMethod.TEMPLATE:
@@ -377,26 +376,18 @@ class CodeGenerator:
         name = re.sub(r"[^a-zA-Z0-9_]", "", name)
         return name or "GeneratedModule"
 
-    async def _generate_via_llm(
-        self, request: GenerationRequest
-    ) -> tuple[str, dict[str, int]]:
+    async def _generate_via_llm(self, request: GenerationRequest) -> tuple[str, dict[str, int]]:
         llm = await self._ensure_llm()
         messages = _format_llm_messages(request)
-        content, usage = await llm.chat(
-            messages, temperature=request.temperature, max_tokens=request.max_tokens
-        )
+        content, usage = await llm.chat(messages, temperature=request.temperature, max_tokens=request.max_tokens)
         code = self._extract_code_block(content, request.language)
         return code, usage.to_dict()
 
-    async def _generate_tests(
-        self, request: GenerationRequest, code: str
-    ) -> Optional[str]:
+    async def _generate_tests(self, request: GenerationRequest, code: str) -> str | None:
         llm = await self._ensure_llm()
         messages = _format_test_messages(request, code)
         try:
-            content, _ = await llm.chat(
-                messages, temperature=0.2, max_tokens=2048
-            )
+            content, _ = await llm.chat(messages, temperature=0.2, max_tokens=2048)
             tests = self._extract_code_block(content, request.language)
             return tests
         except Exception as exc:
@@ -407,14 +398,12 @@ class CodeGenerator:
                 module_path = self._suggest_file_path(request) or class_name.lower()
                 module_path = Path(module_path).stem
                 test_name = request.description.split()[0].lower() if request.description.split() else "feature"
-                return template.replace("${class_name}", class_name).replace(
-                    "${module_path}", module_path
-                ).replace(
-                    "${module_name}", class_name.lower()
-                ).replace(
-                    "${test_name}", test_name
-                ).replace(
-                    "${description}", request.description
+                return (
+                    template.replace("${class_name}", class_name)
+                    .replace("${module_path}", module_path)
+                    .replace("${module_name}", class_name.lower())
+                    .replace("${test_name}", test_name)
+                    .replace("${description}", request.description)
                 )
             return None
 
@@ -436,7 +425,7 @@ class CodeGenerator:
         ext = LANGUAGE_EXTENSIONS.get(request.language, ".txt")
         return f"{class_name.lower()}{ext}"
 
-    async def _format_code(self, code: str, language: Language) -> Optional[str]:
+    async def _format_code(self, code: str, language: Language) -> str | None:
         formatters = {
             Language.PYTHON: ("black", ["-"]),
             Language.JAVASCRIPT: ("npx", ["prettier", "--parser", "babel"]),
@@ -462,7 +451,7 @@ class CodeGenerator:
                 return stdout.decode("utf-8").strip()
             logger.debug("Formatter failed for %s: %s", language.value, stderr.decode())
             return None
-        except (FileNotFoundError, asyncio.TimeoutError, OSError) as exc:
+        except (TimeoutError, FileNotFoundError, OSError) as exc:
             logger.debug("Formatter unavailable for %s: %s", language.value, exc)
             return None
 
@@ -487,7 +476,7 @@ class CodeGenerator:
             output = stderr.decode("utf-8")
             errors = [line.strip() for line in output.split("\n") if line.strip() and ":" in line]
             return proc.returncode == 0, errors[:20]
-        except (FileNotFoundError, asyncio.TimeoutError, OSError) as exc:
+        except (TimeoutError, FileNotFoundError, OSError) as exc:
             logger.debug("Linter unavailable for %s: %s", language.value, exc)
             return True, []
 

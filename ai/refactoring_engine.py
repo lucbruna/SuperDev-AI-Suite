@@ -7,20 +7,20 @@ import re
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import Any, Optional
 
 logger = logging.getLogger("superdev.ai.refactoring")
 
 
-class SmellSeverity(str, Enum):
+class SmellSeverity(StrEnum):
     INFO = "info"
     WARNING = "warning"
     CRITICAL = "critical"
 
 
-class RefactoringType(str, Enum):
+class RefactoringType(StrEnum):
     EXTRACT_METHOD = "extract_method"
     RENAME_VARIABLE = "rename_variable"
     SIMPLIFY_CONDITIONAL = "simplify_conditional"
@@ -95,8 +95,8 @@ class CodeSmell:
     line_number: int
     column: int = 0
     snippet: str = ""
-    refactoring_type: Optional[RefactoringType] = None
-    suggested_fix: Optional[str] = None
+    refactoring_type: RefactoringType | None = None
+    suggested_fix: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -160,14 +160,13 @@ class RefactoringEngine:
     def detect_smells(
         self,
         code: str,
-        file_path: Optional[str] = None,
+        file_path: str | None = None,
     ) -> list[CodeSmell]:
         smells: list[CodeSmell] = []
         lines = code.split("\n")
 
         for smell_type, pattern_info in self._smell_patterns.items():
             for match in re.finditer(pattern_info["regex"], code, re.MULTILINE):
-                matched_text = match.group()
                 start_pos = match.start()
                 line_number = code[:start_pos].count("\n") + 1
 
@@ -186,7 +185,9 @@ class RefactoringEngine:
                     )
                 )
 
-        smells.sort(key=lambda s: (s.severity != SmellSeverity.CRITICAL, s.severity != SmellSeverity.WARNING, s.line_number))
+        smells.sort(
+            key=lambda s: (s.severity != SmellSeverity.CRITICAL, s.severity != SmellSeverity.WARNING, s.line_number)
+        )
         return smells
 
     def _detect_ast_smells(self, code: str) -> list[CodeSmell]:
@@ -278,7 +279,7 @@ class RefactoringEngine:
         }
         return severity_map.get(smell.severity, 0.5)
 
-    def _apply_single_refactoring(self, code: str, smell: CodeSmell) -> Optional[str]:
+    def _apply_single_refactoring(self, code: str, smell: CodeSmell) -> str | None:
         if not smell.refactoring_type:
             return None
 
@@ -306,13 +307,21 @@ class RefactoringEngine:
             return None
 
     def _suggest_variable_name(self, code: str, old_name: str) -> str:
-        context_lines = code.split("\n")
         suggestions = {
-            "i": "index", "j": "column", "k": "key",
-            "x": "value_x", "y": "value_y", "z": "value_z",
-            "s": "string", "n": "count", "c": "character",
-            "d": "data", "f": "file", "t": "temp",
-            "e": "element", "l": "item_list",
+            "i": "index",
+            "j": "column",
+            "k": "key",
+            "x": "value_x",
+            "y": "value_y",
+            "z": "value_z",
+            "s": "string",
+            "n": "count",
+            "c": "character",
+            "d": "data",
+            "f": "file",
+            "t": "temp",
+            "e": "element",
+            "l": "item_list",
         }
         return suggestions.get(old_name, f"{old_name}_value")
 
@@ -325,7 +334,7 @@ class RefactoringEngine:
         self,
         code: str,
         suggestion: RefactoringSuggestion,
-        file_path: Optional[str] = None,
+        file_path: str | None = None,
     ) -> RefactoringResult:
         backup_key = file_path or uuid.uuid4().hex
         self._backup_cache[backup_key] = code
@@ -369,7 +378,7 @@ class RefactoringEngine:
     async def refactor_code(
         self,
         code: str,
-        file_path: Optional[str] = None,
+        file_path: str | None = None,
         auto_apply: bool = False,
     ) -> RefactoringResult:
         result = RefactoringResult(original_code=code, rollback_available=(file_path is not None))
@@ -387,9 +396,7 @@ class RefactoringEngine:
                 if refactor_result.success:
                     code = refactor_result.refactored_code
                     result.applied_refactorings.append(suggestion)
-                    result.warnings.append(
-                        f"Auto-applied: {suggestion.refactoring_type.value}"
-                    )
+                    result.warnings.append(f"Auto-applied: {suggestion.refactoring_type.value}")
                 else:
                     result.errors.extend(refactor_result.errors)
 
@@ -417,11 +424,11 @@ class RefactoringEngine:
         )
         return "".join(diff)
 
-    def rollback(self, file_path: str) -> Optional[str]:
+    def rollback(self, file_path: str) -> str | None:
         original = self._backup_cache.pop(file_path, None)
         if original:
             logger.info("Rolled back refactoring for %s", file_path)
         return original
 
-    def get_backup(self, file_path: str) -> Optional[str]:
+    def get_backup(self, file_path: str) -> str | None:
         return self._backup_cache.get(file_path)

@@ -5,8 +5,8 @@ import logging
 import time
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from enum import Enum
+from datetime import datetime, timezone, UTC
+from enum import StrEnum
 from typing import Any, Optional
 
 import httpx
@@ -16,7 +16,7 @@ from core.configuration import settings
 logger = logging.getLogger("superdev.ai.reasoning")
 
 
-class ReasoningStrategy(str, Enum):
+class ReasoningStrategy(StrEnum):
     STEP_BY_STEP = "step_by_step"
     TREE_OF_THOUGHT = "tree_of_thought"
     RECURSIVE_REFINEMENT = "recursive_refinement"
@@ -54,8 +54,8 @@ class TokenUsage:
 class ConversationTurn:
     role: str
     content: str
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    token_usage: Optional[TokenUsage] = None
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
+    token_usage: TokenUsage | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
 
 
@@ -65,7 +65,7 @@ class ReasoningResult:
     strategy: ReasoningStrategy
     reasoning_path: list[str] = field(default_factory=list)
     confidence: float = 1.0
-    token_usage: Optional[TokenUsage] = None
+    token_usage: TokenUsage | None = None
     duration_ms: float = 0.0
     intermediate_results: list[dict[str, Any]] = field(default_factory=list)
     metadata: dict[str, Any] = field(default_factory=dict)
@@ -74,16 +74,16 @@ class ReasoningResult:
 class LLMClient:
     def __init__(
         self,
-        api_key: Optional[str] = None,
-        base_url: Optional[str] = None,
-        model: Optional[str] = None,
+        api_key: str | None = None,
+        base_url: str | None = None,
+        model: str | None = None,
         timeout: float = 60.0,
     ) -> None:
         self._api_key = api_key or settings.secret_key
         self._base_url = (base_url or "https://api.openai.com/v1").rstrip("/")
         self._model = model or "gpt-4o"
         self._timeout = timeout
-        self._client: Optional[httpx.AsyncClient] = None
+        self._client: httpx.AsyncClient | None = None
 
     async def _get_client(self) -> httpx.AsyncClient:
         if self._client is None:
@@ -103,7 +103,7 @@ class LLMClient:
         temperature: float = 0.7,
         max_tokens: int = 4096,
         top_p: float = 1.0,
-        stop: Optional[list[str]] = None,
+        stop: list[str] | None = None,
     ) -> tuple[str, TokenUsage]:
         # Local offline fallback when no real API key is configured
         if not self._api_key or self._api_key in {
@@ -158,9 +158,7 @@ class LLMClient:
         answer = (
             f"## Análise Local (modo offline)\n\n"
             f"**Solicitação:** {prompt[:500]}\n\n"
-            f"### Caminho de raciocínio\n"
-            + "\n".join(steps)
-            + "\n\n### Recomendação\n"
+            f"### Caminho de raciocínio\n" + "\n".join(steps) + "\n\n### Recomendação\n"
             "Implemente a solução incrementalmente, valide com testes e proteja todas as entradas externas. "
             "Configure OPENAI_API_KEY para respostas completas com IA."
         )
@@ -184,9 +182,9 @@ class LLMClient:
 class ReasoningEngine:
     def __init__(
         self,
-        api_key: Optional[str] = None,
-        base_url: Optional[str] = None,
-        model: Optional[str] = None,
+        api_key: str | None = None,
+        base_url: str | None = None,
+        model: str | None = None,
         max_history: int = 100,
     ) -> None:
         self._llm = LLMClient(api_key=api_key, base_url=base_url, model=model)
@@ -198,8 +196,8 @@ class ReasoningEngine:
         self,
         prompt: str,
         strategy: ReasoningStrategy = ReasoningStrategy.STEP_BY_STEP,
-        conversation_id: Optional[str] = None,
-        context: Optional[list[dict[str, str]]] = None,
+        conversation_id: str | None = None,
+        context: list[dict[str, str]] | None = None,
         temperature: float = 0.7,
         max_tokens: int = 4096,
     ) -> ReasoningResult:
@@ -230,7 +228,7 @@ class ReasoningEngine:
         self,
         conv_id: str,
         prompt: str,
-        context: Optional[list[dict[str, str]]],
+        context: list[dict[str, str]] | None,
         temperature: float,
         max_tokens: int,
     ) -> ReasoningResult:
@@ -268,7 +266,7 @@ class ReasoningEngine:
         self,
         conv_id: str,
         prompt: str,
-        context: Optional[list[dict[str, str]]],
+        context: list[dict[str, str]] | None,
         temperature: float,
         max_tokens: int,
     ) -> ReasoningResult:
@@ -323,7 +321,7 @@ class ReasoningEngine:
         self,
         conv_id: str,
         prompt: str,
-        context: Optional[list[dict[str, str]]],
+        context: list[dict[str, str]] | None,
         temperature: float,
         max_tokens: int,
     ) -> ReasoningResult:
@@ -358,7 +356,7 @@ class ReasoningEngine:
         self,
         conv_id: str,
         prompt: str,
-        context: Optional[list[dict[str, str]]],
+        context: list[dict[str, str]] | None,
         temperature: float,
         max_tokens: int,
     ) -> ReasoningResult:
@@ -390,7 +388,7 @@ class ReasoningEngine:
         }
         synthesis_msgs = [synthesis_prompt]
         for i, round_text in enumerate(debate_rounds):
-            synthesis_msgs.append({"role": "user", "content": f"Perspective {i+1}: {round_text}"})
+            synthesis_msgs.append({"role": "user", "content": f"Perspective {i + 1}: {round_text}"})
         synthesis_msgs.append({"role": "user", "content": "Synthesize these perspectives into a final answer."})
 
         final, usage = await self._llm.chat(synthesis_msgs, temperature, max_tokens)
@@ -406,14 +404,16 @@ class ReasoningEngine:
             reasoning_path=debate_rounds + [final],
             confidence=self._estimate_confidence(final),
             token_usage=usage,
-            intermediate_results=[{"perspective": p, "argument": a} for p, a in zip(perspectives, debate_rounds)],
+            intermediate_results=[
+                {"perspective": p, "argument": a} for p, a in zip(perspectives, debate_rounds, strict=False)
+            ],
         )
 
     async def _react(
         self,
         conv_id: str,
         prompt: str,
-        context: Optional[list[dict[str, str]]],
+        context: list[dict[str, str]] | None,
         temperature: float,
         max_tokens: int,
     ) -> ReasoningResult:
@@ -436,7 +436,10 @@ class ReasoningEngine:
         steps: list[str] = []
         for line in content.split("\n"):
             stripped = line.strip()
-            if any(stripped.lower().startswith(prefix) for prefix in ("thought:", "action:", "observation:", "final answer:")):
+            if any(
+                stripped.lower().startswith(prefix)
+                for prefix in ("thought:", "action:", "observation:", "final answer:")
+            ):
                 steps.append(stripped)
 
         return ReasoningResult(
@@ -451,16 +454,22 @@ class ReasoningEngine:
         self,
         conv_id: str,
         prompt: str,
-        context: Optional[list[dict[str, str]]],
+        context: list[dict[str, str]] | None,
         temperature: float,
         max_tokens: int,
     ) -> ReasoningResult:
         examples = context or [
             {"role": "user", "content": "Solve: What is 15 * 7?"},
-            {"role": "assistant", "content": "15 * 7 = 105. Step 1: 10 * 7 = 70. Step 2: 5 * 7 = 35. Step 3: 70 + 35 = 105."},
+            {
+                "role": "assistant",
+                "content": "15 * 7 = 105. Step 1: 10 * 7 = 70. Step 2: 5 * 7 = 35. Step 3: 70 + 35 = 105.",
+            },
         ]
         messages = [
-            {"role": "system", "content": "Use os seguintes exemplos para guiar sua abordagem de raciocínio. Siga o mesmo padrão. Responda sempre em português do Brasil."},
+            {
+                "role": "system",
+                "content": "Use os seguintes exemplos para guiar sua abordagem de raciocínio. Siga o mesmo padrão. Responda sempre em português do Brasil.",
+            },
             *examples,
             {"role": "user", "content": prompt},
         ]
@@ -482,7 +491,18 @@ class ReasoningEngine:
 
     def _estimate_confidence(self, response: str) -> float:
         certainty_indicators = ["i am certain", "definitely", "clearly", "without doubt", "conclusively", "always"]
-        uncertainty_indicators = ["i think", "maybe", "perhaps", "possibly", "might be", "could be", "not sure", "uncertain", "unclear", "i'm not sure"]
+        uncertainty_indicators = [
+            "i think",
+            "maybe",
+            "perhaps",
+            "possibly",
+            "might be",
+            "could be",
+            "not sure",
+            "uncertain",
+            "unclear",
+            "i'm not sure",
+        ]
 
         lower = response.lower()
         certainty_score = sum(1 for ind in certainty_indicators if ind in lower)
@@ -494,13 +514,13 @@ class ReasoningEngine:
 
     def _trim_conversation(self, conv_id: str) -> None:
         if len(self._conversations[conv_id]) > self._max_history:
-            self._conversations[conv_id] = self._conversations[conv_id][-self._max_history:]
+            self._conversations[conv_id] = self._conversations[conv_id][-self._max_history :]
 
     async def chat(
         self,
         message: str,
         conversation_id: str,
-        system_prompt: Optional[str] = None,
+        system_prompt: str | None = None,
         temperature: float = 0.7,
         max_tokens: int = 4096,
     ) -> str:

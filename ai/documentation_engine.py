@@ -3,14 +3,14 @@ from __future__ import annotations
 import ast
 import logging
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import Any, Optional
 
 logger = logging.getLogger("superdev.ai.docs")
 
 
-class DocstringStyle(str, Enum):
+class DocstringStyle(StrEnum):
     GOOGLE = "google"
     NUMPY = "numpy"
     SPHINX = "sphinx"
@@ -31,7 +31,7 @@ class GeneratedDocumentation:
     content: str
     style: DocstringStyle = DocstringStyle.GOOGLE
     original_text: str = ""
-    file_path: Optional[str] = None
+    file_path: str | None = None
     changes_made: int = 0
     warnings: list[str] = field(default_factory=list)
 
@@ -54,13 +54,13 @@ DOCSTRING_TEMPLATES: dict[DocstringStyle, dict[str, str]] = {
 
 
 class DocumentationEngine:
-    def __init__(self, config: Optional[DocConfig] = None) -> None:
+    def __init__(self, config: DocConfig | None = None) -> None:
         self._config = config or DocConfig()
 
     def generate_docstring(
         self,
         code: str,
-        style: Optional[DocstringStyle] = None,
+        style: DocstringStyle | None = None,
     ) -> GeneratedDocumentation:
         style = style or self._config.style
         try:
@@ -112,19 +112,14 @@ class DocumentationEngine:
             warnings=warnings,
         )
 
-    def _generate_function_docstring(
-        self, node: ast.FunctionDef, style: DocstringStyle
-    ) -> Optional[str]:
-        func_name = node.name
+    def _generate_function_docstring(self, node: ast.FunctionDef, style: DocstringStyle) -> str | None:
         description = self._infer_function_description(node)
         args = node.args.args
         returns = node.returns
 
         if style == DocstringStyle.GOOGLE:
             args_str = "\n".join(
-                f"    {a.arg}: Description of {a.arg}."
-                for a in args
-                if a.arg != "self" and a.arg != "cls"
+                f"    {a.arg}: Description of {a.arg}." for a in args if a.arg != "self" and a.arg != "cls"
             )
             return_str = "Description of the return value." if returns else ""
             template = DOCSTRING_TEMPLATES[style]["function"]
@@ -132,9 +127,7 @@ class DocumentationEngine:
 
         elif style == DocstringStyle.NUMPY:
             args_str = "\n".join(
-                f"{a.arg} : type\n    Description of {a.arg}."
-                for a in args
-                if a.arg != "self" and a.arg != "cls"
+                f"{a.arg} : type\n    Description of {a.arg}." for a in args if a.arg != "self" and a.arg != "cls"
             )
             return_str = "Description of the return value." if returns else ""
             template = DOCSTRING_TEMPLATES[style]["function"]
@@ -151,13 +144,18 @@ class DocumentationEngine:
                 parts.append(":returns: Description of the return value.")
                 parts.append(":rtype: type")
             template = DOCSTRING_TEMPLATES[style]["function"]
-            return template.format(description=description, arg_name="arg", arg_desc="desc", arg_type="type", return_desc="desc", return_type="type")
+            return template.format(
+                description=description,
+                arg_name="arg",
+                arg_desc="desc",
+                arg_type="type",
+                return_desc="desc",
+                return_type="type",
+            )
 
         return None
 
-    def _generate_class_docstring(
-        self, node: ast.ClassDef, style: DocstringStyle
-    ) -> Optional[str]:
+    def _generate_class_docstring(self, node: ast.ClassDef, style: DocstringStyle) -> str | None:
         description = f"{node.name} class."
         attrs = []
 
@@ -171,15 +169,11 @@ class DocumentationEngine:
 
         if style == DocstringStyle.GOOGLE:
             attrs_str = "\n".join(f"    {a}: Description of {a}." for a in attrs)
-            return DOCSTRING_TEMPLATES[style]["class"].format(
-                description=description, attrs=attrs_str or ""
-            )
+            return DOCSTRING_TEMPLATES[style]["class"].format(description=description, attrs=attrs_str or "")
 
         elif style == DocstringStyle.NUMPY:
             attrs_str = "\n".join(f"{a} : type\n    Description of {a}." for a in attrs)
-            return DOCSTRING_TEMPLATES[style]["class"].format(
-                description=description, attrs=attrs_str or ""
-            )
+            return DOCSTRING_TEMPLATES[style]["class"].format(description=description, attrs=attrs_str or "")
 
         return description
 
@@ -207,7 +201,7 @@ class DocumentationEngine:
         self,
         project_name: str,
         description: str,
-        project_path: Optional[str] = None,
+        project_path: str | None = None,
     ) -> str:
         sections: list[str] = []
 
@@ -247,9 +241,7 @@ class DocumentationEngine:
 
         return "".join(sections)
 
-    def _analyze_project_modules(
-        self, project_path: str
-    ) -> list[tuple[str, str]]:
+    def _analyze_project_modules(self, project_path: str) -> list[tuple[str, str]]:
         modules: list[tuple[str, str]] = []
         path = Path(project_path)
 
@@ -268,9 +260,7 @@ class DocumentationEngine:
 
         return modules
 
-    def generate_api_docs(
-        self, code: str, module_name: str = ""
-    ) -> str:
+    def generate_api_docs(self, code: str, module_name: str = "") -> str:
         try:
             tree = ast.parse(code)
         except SyntaxError as exc:
@@ -332,7 +322,7 @@ class DocumentationEngine:
             warnings=warnings,
         )
 
-    def _suggest_comment(self, code_line: str) -> Optional[str]:
+    def _suggest_comment(self, code_line: str) -> str | None:
         if "=" in code_line and "def " not in code_line and "import " not in code_line:
             return "Initialize or assign value"
         if "for " in code_line:
@@ -370,7 +360,12 @@ class DocumentationEngine:
                     formatted.append("")
                     continue
 
-                if line.strip() and not line.startswith("-") and not line.startswith("*") and not line.strip().isdigit():
+                if (
+                    line.strip()
+                    and not line.startswith("-")
+                    and not line.startswith("*")
+                    and not line.strip().isdigit()
+                ):
                     if len(line) > self._config.max_line_length:
                         words = line.split()
                         current = ""
@@ -388,9 +383,7 @@ class DocumentationEngine:
 
         return "\n".join(formatted)
 
-    def generate_module_docs(
-        self, code: str, module_name: str = ""
-    ) -> str:
+    def generate_module_docs(self, code: str, module_name: str = "") -> str:
         try:
             tree = ast.parse(code)
         except SyntaxError:
@@ -412,13 +405,13 @@ class DocumentationEngine:
         ]
 
         if classes:
-            parts.append(f"## Classes\n")
+            parts.append("## Classes\n")
             for cls in classes:
                 parts.append(f"- `{cls}`\n")
             parts.append("")
 
         if functions:
-            parts.append(f"## Functions\n")
+            parts.append("## Functions\n")
             for func in functions:
                 parts.append(f"- `{func}()`\n")
             parts.append("")

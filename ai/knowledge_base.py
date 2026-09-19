@@ -9,8 +9,8 @@ import time
 import uuid
 from collections import OrderedDict
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from enum import Enum
+from datetime import datetime, timezone, UTC
+from enum import StrEnum
 from pathlib import Path
 from typing import Any, Optional
 
@@ -19,7 +19,7 @@ from core.configuration import settings
 logger = logging.getLogger("superdev.ai.knowledge")
 
 
-class ChunkingStrategy(str, Enum):
+class ChunkingStrategy(StrEnum):
     PARAGRAPH = "paragraph"
     SENTENCE = "sentence"
     FIXED_SIZE = "fixed_size"
@@ -40,12 +40,12 @@ class Document:
     doc_id: str = field(default_factory=lambda: uuid.uuid4().hex)
     content: str = ""
     metadata: dict[str, Any] = field(default_factory=dict)
-    embedding: Optional[list[float]] = None
+    embedding: list[float] | None = None
     chunk_index: int = 0
-    parent_id: Optional[str] = None
+    parent_id: str | None = None
     source: str = ""
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -85,7 +85,7 @@ class LRUCache:
         self._ttl = ttl_seconds
         self._cache: OrderedDict[str, tuple[Any, float]] = OrderedDict()
 
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         if key not in self._cache:
             return None
         value, expiry = self._cache[key]
@@ -95,7 +95,7 @@ class LRUCache:
         self._cache.move_to_end(key)
         return value
 
-    def set(self, key: str, value: Any, ttl: Optional[float] = None) -> None:
+    def set(self, key: str, value: Any, ttl: float | None = None) -> None:
         expiry = time.monotonic() + (ttl or self._ttl)
         self._cache[key] = (value, expiry)
         self._cache.move_to_end(key)
@@ -117,7 +117,7 @@ class LRUCache:
 
 
 class EmbeddingModel:
-    def __init__(self, config: Optional[EmbeddingConfig] = None) -> None:
+    def __init__(self, config: EmbeddingConfig | None = None) -> None:
         self._config = config or EmbeddingConfig()
         self._model: Any = None
         self._model_loaded = False
@@ -127,6 +127,7 @@ class EmbeddingModel:
             return
         try:
             from sentence_transformers import SentenceTransformer
+
             self._model = SentenceTransformer(
                 self._config.model_name,
                 device=self._config.device,
@@ -135,9 +136,7 @@ class EmbeddingModel:
             self._model_loaded = True
             logger.info("Loaded embedding model: %s", self._config.model_name)
         except ImportError:
-            raise ImportError(
-                "sentence-transformers is required. Install with: pip install sentence-transformers"
-            )
+            raise ImportError("sentence-transformers is required. Install with: pip install sentence-transformers")
 
     async def embed(self, texts: list[str]) -> list[list[float]]:
         self._load_model()
@@ -168,12 +167,14 @@ class EmbeddingModel:
 
 
 class DocumentChunker:
-    def __init__(self, strategy: ChunkingStrategy = ChunkingStrategy.PARAGRAPH, chunk_size: int = 512, overlap: int = 50):
+    def __init__(
+        self, strategy: ChunkingStrategy = ChunkingStrategy.PARAGRAPH, chunk_size: int = 512, overlap: int = 50
+    ):
         self._strategy = strategy
         self._chunk_size = chunk_size
         self._overlap = overlap
 
-    def chunk(self, text: str, source: str = "", metadata: Optional[dict[str, Any]] = None) -> list[Document]:
+    def chunk(self, text: str, source: str = "", metadata: dict[str, Any] | None = None) -> list[Document]:
         metadata = metadata or {}
         chunks: list[Document] = []
 
@@ -189,6 +190,7 @@ class DocumentChunker:
 
         elif self._strategy == ChunkingStrategy.SENTENCE:
             import re
+
             sentences = re.split(r"(?<=[.!?])\s+", text)
             current = ""
             for sent in sentences:
@@ -234,7 +236,7 @@ class DocumentChunker:
 
         for sep in separators:
             if not sep:
-                parts = [text[i:i + self._chunk_size] for i in range(0, len(text), self._chunk_size)]
+                parts = [text[i : i + self._chunk_size] for i in range(0, len(text), self._chunk_size)]
                 return [self._make_doc(p, source, metadata, i) for i, p in enumerate(parts)]
             if sep in text:
                 parts = text.split(sep)
@@ -264,7 +266,7 @@ class DocumentChunker:
 
 
 class ElasticsearchStore:
-    def __init__(self, hosts: Optional[list[str]] = None, index_prefix: str = "superdev_kb") -> None:
+    def __init__(self, hosts: list[str] | None = None, index_prefix: str = "superdev_kb") -> None:
         self._hosts = hosts or settings.elasticsearch.hosts
         self._index_prefix = index_prefix
         self._client: Any = None
@@ -275,12 +277,15 @@ class ElasticsearchStore:
             return
         try:
             from elasticsearch import AsyncElasticsearch
+
             self._client = AsyncElasticsearch(
                 hosts=self._hosts,
                 basic_auth=(
                     settings.elasticsearch.username,
                     settings.elasticsearch.password,
-                ) if settings.elasticsearch.username else None,
+                )
+                if settings.elasticsearch.username
+                else None,
                 verify_certs=settings.elasticsearch.verify_certs,
                 ssl_show_warn=False,
             )
@@ -313,9 +318,7 @@ class ElasticsearchStore:
             logger.error("ES index error: %s", exc)
             return False
 
-    async def search(
-        self, query: str, index: str = "documents", size: int = 10
-    ) -> list[SearchResult]:
+    async def search(self, query: str, index: str = "documents", size: int = 10) -> list[SearchResult]:
         if not self._available:
             return []
         await self._ensure_connected()
@@ -361,9 +364,7 @@ class ElasticsearchStore:
         if not self._available:
             return False
         try:
-            await self._client.indices.delete(
-                index=f"{self._index_prefix}_{index}", ignore_unavailable=True
-            )
+            await self._client.indices.delete(index=f"{self._index_prefix}_{index}", ignore_unavailable=True)
             return True
         except Exception:
             return False
@@ -376,7 +377,7 @@ class ElasticsearchStore:
 class KnowledgeBase:
     def __init__(
         self,
-        embedding_config: Optional[EmbeddingConfig] = None,
+        embedding_config: EmbeddingConfig | None = None,
         chunking_strategy: ChunkingStrategy = ChunkingStrategy.PARAGRAPH,
         chunk_size: int = 512,
         overlap: int = 50,
@@ -389,13 +390,13 @@ class KnowledgeBase:
         self._cache = LRUCache(capacity=cache_capacity, ttl_seconds=cache_ttl)
         self._documents: dict[str, Document] = {}
         self._embeddings: dict[str, list[float]] = {}
-        self._es: Optional[ElasticsearchStore] = ElasticsearchStore() if use_elasticsearch else None
+        self._es: ElasticsearchStore | None = ElasticsearchStore() if use_elasticsearch else None
 
     async def add_text(
         self,
         text: str,
         source: str = "",
-        metadata: Optional[dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> list[str]:
         chunks = self._chunker.chunk(text, source, metadata)
 
@@ -564,7 +565,7 @@ class KnowledgeBase:
         header = f"Context retrieved for: {query}\n{'-' * 40}\n"
         return header + "\n\n".join(context_parts)
 
-    def get_document(self, doc_id: str) -> Optional[Document]:
+    def get_document(self, doc_id: str) -> Document | None:
         return self._documents.get(doc_id)
 
     def delete_document(self, doc_id: str) -> bool:
