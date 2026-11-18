@@ -20,7 +20,7 @@ from typing import Any, Callable
 from modules.ai_video_studio.core.exceptions import ValidationError
 from modules.ai_video_studio.media.llm import get_scene_planner
 from modules.ai_video_studio.media.output_paths import get_subsystem_dir, unique_filename
-from modules.ai_video_studio.media.render import render_multi_scene_video
+from modules.ai_video_studio.media.render import render_multi_scene_video, render_scene_video
 from modules.ai_video_studio.media.characters import add_character
 from modules.ai_video_studio.media.scene_library import OBJECTS, compose_scene_object
 from modules.ai_video_studio.ai_video_generator.generation_statistics import get_generation_statistics
@@ -280,6 +280,35 @@ class TextToVideoEngine:
             studio_id=studio_id,
         )
 
+        # VidGrid imports clips individually, so export a separate strict MP4
+        # for every ten-second scene in addition to the assembled full video.
+        scene_clips: list[dict[str, Any]] = []
+        if vidgrid_compatible:
+            clip_dir = get_subsystem_dir("videos") / "vidgrid_clips"
+            for scene_index, scene in enumerate(scenes):
+                clip_path = unique_filename(clip_dir, f"scene_{scene_index + 1:02d}", "mp4")
+                clip_result = await asyncio.to_thread(
+                    render_scene_video,
+                    scene,
+                    clip_path,
+                    duration=10.0,
+                    fps=fps,
+                    width=width,
+                    height=height,
+                    require_mp4=True,
+                    studio_id=studio_id,
+                )
+                scene_clips.append({
+                    "scene_index": scene_index,
+                    "duration": 10.0,
+                    "fps": fps,
+                    "width": width,
+                    "height": height,
+                    "output_path": clip_result["output_path"],
+                    "bytes": clip_result["bytes"],
+                    "encode_engine": clip_result["engine"],
+                })
+
         result: dict[str, Any] = {
             "mode": "text_to_video",
             "studio_id": studio_id,
@@ -287,6 +316,7 @@ class TextToVideoEngine:
             "scene_assets": scene_assets,
             "vidgrid_compatible": vidgrid_compatible,
             "clip_duration_seconds": 10.0 if vidgrid_compatible else None,
+            "scene_clips": scene_clips,
             "ai_planner": plan["provider"] or "deterministic",
             "ai_generated": plan["ai_generated"],
             "scenes": scenes,
