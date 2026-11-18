@@ -159,8 +159,8 @@ def test_generate_async_composes_selected_characters_into_every_scene(monkeypatc
         def plan(self, prompt, *, num_scenes, duration, timeout):
             return {
                 "scenes": [
-                    {"duration": 1.0, "description": "Cena um"},
-                    {"duration": 1.0, "description": "Cena dois"},
+                    {"duration": 1.0, "description": "Cena um", "visual_prompt": "Mia aponta para o quadro"},
+                    {"duration": 1.0, "description": "Cena dois", "visual_prompt": "Leo está surpreso"},
                 ],
                 "provider": "deterministic",
                 "ai_generated": False,
@@ -206,6 +206,8 @@ def test_generate_async_composes_selected_characters_into_every_scene(monkeypatc
         assert len(scene["circles"]) >= 11
         assert scene["_darkstudio_characters"] == ["mia", "leo"]
         assert scene["_darkstudio_objects"] == []
+    assert captured["scenes"][0]["character_pose"] == "point"
+    assert captured["scenes"][1]["character_expression"] == "surprised"
 
 
 def test_generate_async_composes_selected_objects_into_every_scene(monkeypatch, tmp_path) -> None:
