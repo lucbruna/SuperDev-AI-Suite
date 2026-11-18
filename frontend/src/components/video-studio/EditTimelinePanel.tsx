@@ -350,9 +350,9 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
     if (!jobId || regeneratingImageBatch || editingImageScene !== null) return;
     const selectedScenes = sceneIndices.map((sceneIndex) => {
       const direction = visualDirections[sceneIndex];
-      const authored = sceneImagePrompts[sceneIndex];
-      const prompt = authored ?? direction?.visual_prompt_full ?? direction?.visual_prompt_suggestion ?? direction?.visual_prompt
-        ?? (direction?.narration ? `Ilustração fiel desta narração: ${direction.narration}. ${direction.visual_direction ?? ""}` : "");
+      const authored = String(sceneImagePrompts[sceneIndex] ?? "").trim();
+      const prompt = authored || direction?.visual_prompt_full || direction?.visual_prompt_suggestion || direction?.visual_prompt
+        || (direction?.narration ? `Ilustração fiel desta narração: ${direction.narration}. ${direction.visual_direction ?? ""}` : "");
       return { scene_index: sceneIndex, prompt: prompt.trim() };
     });
     const missing = selectedScenes.filter((scene) => !scene.prompt);
