@@ -279,7 +279,9 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
     if scene_index < 0 or scene_index >= len(scenes):
         raise HTTPException(status_code=404, detail="Scene index not found")
     from modules.ai_video_studio.media.output_paths import get_subsystem_dir
-    from modules.ai_video_studio.ai_image_generator.providers.local_diffusion import edit_image, generate_scene_image
+    from modules.ai_video_studio.ai_image_generator.providers.local_diffusion import (
+        edit_image, fit_image_dimensions, generate_scene_image,
+    )
 
     scene = scenes[scene_index]
     image_root = Path(get_subsystem_dir("images")).resolve()
@@ -299,12 +301,13 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
         else:
             params = record.get("params") or {}
             width, height = _parse_resolution(record.get("resolution") or params.get("resolution", "1280x720"))
+            image_width, image_height = fit_image_dimensions(width, height)
             result = await asyncio.to_thread(
                 generate_scene_image,
                 req.prompt,
                 negative_prompt=req.negative_prompt,
-                width=min(1024, max(256, width)),
-                height=min(1024, max(256, height)),
+                width=image_width,
+                height=image_height,
                 steps=req.steps, cfg_scale=req.cfg_scale,
             )
             operation = "text_to_image"
