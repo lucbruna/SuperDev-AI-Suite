@@ -1,8 +1,8 @@
 """AI Voice Studio — real text-to-speech synthesis core (Volume 4).
 
-Chained synthesis engines (edge-tts → gTTS → pyttsx3 → local formant
-synthesizer), multilingual voices, expressive/emotion prosody, streaming,
-normalization and narrator profiles. Always writes a real audio file.
+Speech synthesis engines (edge-tts → gTTS → pyttsx3), multilingual voices,
+expressive/emotion prosody, normalization and narrator profiles. Formant
+sound effects are not accepted as spoken narration.
 """
 from modules.ai_video_studio.ai_voice_studio.voice_engine import VoiceEngine, get_voice_engine
 from modules.ai_video_studio.ai_voice_studio.voice_manager import VoiceManager, get_voice_manager
