@@ -1227,6 +1227,20 @@ class TestCompletedOutputValidation:
         assert report["audio_streams"] == 1
         assert video_routes._jobs["validate-job"]["output_validation"]["valid"] is True
 
+    def test_job_status_response_exposes_persisted_output_validation(self):
+        from modules.ai_video_studio.api.routes.video import VideoStatusResponse
+
+        report = {
+            "job_id": "persisted-job", "path_exists": True, "file_size_bytes": 4096,
+            "ffprobe_available": True, "valid": True, "duration_seconds": 10.0,
+            "video_streams": 1, "audio_streams": 1, "errors": [], "warnings": [],
+        }
+        response = VideoStatusResponse(
+            job_id="persisted-job", status="completed", progress=1.0,
+            output_validation=report,
+        )
+        assert response.model_dump()["output_validation"] == report
+
     @pytest.mark.asyncio
     async def test_rejects_output_path_outside_video_directory(self, tmp_path, monkeypatch):
         from modules.ai_video_studio.api.routes import video as video_routes
