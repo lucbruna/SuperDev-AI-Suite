@@ -118,20 +118,65 @@ def render_multi_scene_video(
         raise ValueError("No scenes to render")
     prepared_scenes = [_prepare_scene(scene, studio_id, fps=fps) for scene in scenes]
 
-    total_frames = 0
-    for scene in prepared_scenes:
-        duration = float(scene.get("duration", 3.0))
-        total_frames += max(1, int(duration * fps))
+    from modules.ai_video_studio.media.transitions import (
+        blend_frames, fade_from_black, fade_to_black, transition_spec,
+    )
+
+    scene_frames = [max(1, int(float(scene.get("duration", 3.0)) * fps)) for scene in prepared_scenes]
+    transitions = [transition_spec(scene) for scene in prepared_scenes]
+    effective_transitions: list[dict[str, Any]] = []
+    for index, spec in enumerate(transitions):
+        frames = spec["duration_frames"]
+        if spec["type"] == "crossfade":
+            if index == len(prepared_scenes) - 1:
+                raise ValueError("The final scene cannot have an outgoing crossfade")
+            frames = min(frames, scene_frames[index] // 2, scene_frames[index + 1] // 2)
+            if frames < 2:
+                raise ValueError("Scenes are too short for the requested crossfade")
+        elif spec["type"] == "fade_through_black":
+            frames = min(frames, scene_frames[index] // 2)
+            if index < len(prepared_scenes) - 1:
+                frames = min(frames, scene_frames[index + 1] // 2)
+            if frames < 2:
+                raise ValueError("Scenes are too short for the requested fade-through-black")
+        effective_transitions.append({"type": spec["type"], "duration_frames": frames})
+
+    total_frames = sum(scene_frames) - sum(
+        item["duration_frames"] for item in effective_transitions if item["type"] == "crossfade"
+    )
     if total_frames <= 0:
         raise ValueError("No scenes to render")
 
     def _frame_iter():
         rendered = 0
-        for scene in prepared_scenes:
-            duration = float(scene.get("duration", 3.0))
-            total = max(1, int(duration * fps))
-            for i in range(total):
-                yield canvas.render_scene(scene, i)
+        for scene_index, scene in enumerate(prepared_scenes):
+            total = scene_frames[scene_index]
+            transition = effective_transitions[scene_index]
+            kind = transition["type"]
+            transition_frames = transition["duration_frames"]
+            next_scene = prepared_scenes[scene_index + 1] if scene_index + 1 < len(prepared_scenes) else None
+            next_total = scene_frames[scene_index + 1] if next_scene is not None else 0
+            crossfade_head = (
+                [canvas.render_scene(next_scene, j) for j in range(transition_frames)]
+                if kind == "crossfade" and next_scene is not None else []
+            )
+            skip_head = transition_frames if kind == "crossfade" else 0
+            for frame_index in range(total):
+                frame = canvas.render_scene(scene, frame_index)
+                if kind == "crossfade" and frame_index >= total - transition_frames:
+                    offset = frame_index - (total - transition_frames)
+                    alpha = (offset + 1) / transition_frames
+                    frame = blend_frames(frame, crossfade_head[offset], alpha)
+                elif kind == "fade_through_black" and frame_index >= total - transition_frames:
+                    offset = frame_index - (total - transition_frames)
+                    progress = (offset + 1) / transition_frames
+                    frame = fade_to_black(frame, progress)
+                elif kind == "fade_through_black" and frame_index < transition_frames and scene_index > 0:
+                    progress = frame_index / (transition_frames - 1)
+                    frame = fade_from_black(frame, progress)
+                if frame_index < skip_head:
+                    continue
+                yield frame
                 rendered += 1
                 if on_frame is not None:
                     on_frame(rendered, total_frames)
