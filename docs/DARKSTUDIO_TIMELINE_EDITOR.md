@@ -106,3 +106,12 @@ The deterministic metadata heuristic is studio-aware:
 Per-scene diagnostics include shot type, camera keyframe deltas, animated primitive counts, primitive/particle counts, text presence, and character IDs. Warnings include static scene descriptors, long unchanged shots, consecutive repeated compositions, low shot variety, and character-ID changes. The engine records selected character and prop IDs on every planned scene to make identity changes auditable.
 
 The 0–100 score is explicitly a heuristic over scene descriptors. It is **not** computer vision: it does not inspect encoded MP4 pixels, assess actual artistic quality, verify faces, or prove visual continuity. Review the rendered video before publication; the report never edits scenes automatically.
+
+
+## Encoded MP4 Scene Intelligence
+
+The editor adds **Analisar MP4 renderizado**, backed by `POST /videos/jobs/{job_id}/mp4-visual-analysis`. It inspects the latest edited MP4 when available, otherwise the original rendered MP4. FFprobe reads the real duration; FFmpeg extracts up to 48 evenly sampled frames, resized to 160×90. Pillow/NumPy compute adjacent-frame pixel change, perceptual difference hash, RGB histogram similarity, and a 4×4 luminance-grid change proxy.
+
+The report flags near-duplicate sampled frames and sustained low-change runs, and maps sampled comparisons to video timeline clips when clip timing is present. The sampling is bounded and configurable from 3 to 120 frames at the API boundary.
+
+**Interpretation limits:** this is not semantic computer vision. It cannot identify Mia/Leo, recognize faces or props, infer whether motion is meaningful, or judge artistic quality. Pixel change may come from camera movement, object movement, compression noise, or scene cuts. Issues between sampled timestamps can be missed. Use the report to locate sections for human review, not as an automatic export gate.
