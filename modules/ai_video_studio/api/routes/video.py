@@ -185,6 +185,7 @@ class VideoStatusResponse(BaseModel):
     scene_assets: list[dict] | None = None
     vidgrid_compatible: bool | None = None
     clip_duration_seconds: float | None = None
+    scene_clips: list[dict] | None = None
     edit_render_ducking: dict | None = None
     edit_render_normalization: dict | None = None
     edit_render_loudness: dict | None = None
@@ -444,8 +445,11 @@ async def generate_video(req: VideoGenerateRequest, background_tasks: Background
                 }
             scene_assets = result.get("scene_assets") or []
             for asset in scene_assets:
-                if asset.get("image_path") and asset.get("status") == "generated":
+                if asset.get("image_path") and asset.get("status") in {"generated", "edited"}:
                     asset["image_url"] = to_download_url(asset["image_path"])
+            scene_clips = result.get("scene_clips") or []
+            for clip in scene_clips:
+                clip["output_url"] = to_download_url(clip["output_path"])
             record.update(
                 status="completed",
                 progress=1.0,
@@ -462,6 +466,7 @@ async def generate_video(req: VideoGenerateRequest, background_tasks: Background
                 scene_assets=result.get("scene_assets", []),
                 vidgrid_compatible=result.get("vidgrid_compatible", False),
                 clip_duration_seconds=result.get("clip_duration_seconds"),
+                scene_clips=scene_clips,
                 _source_scenes=result.get("scenes"),
                 _edited_scenes=result.get("scenes"),
             )
