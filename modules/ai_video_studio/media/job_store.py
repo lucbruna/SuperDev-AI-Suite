@@ -43,7 +43,8 @@ def save_job(record: dict[str, Any]) -> None:
     payload = {key: value for key, value in record.items() if key != "_rendering_edits"}
     encoded = json.dumps(payload, ensure_ascii=False, separators=(",", ":"), default=str)
     updated_at = datetime.now(timezone.utc).isoformat()
-    with _connect() as connection:
+    connection = _connect()
+    try:
         connection.execute(
             """
             INSERT INTO video_jobs(job_id, project_id, status, payload, updated_at)
@@ -56,11 +57,15 @@ def save_job(record: dict[str, Any]) -> None:
             """,
             (job_id, project_id, str(record.get("status") or "unknown"), encoded, updated_at),
         )
+        connection.commit()
+    finally:
+        connection.close()
 
 
 def load_jobs(project_id: str | None = None) -> dict[str, dict[str, Any]]:
     """Load persisted jobs, optionally filtered by project."""
-    with _connect() as connection:
+    connection = _connect()
+    try:
         if project_id:
             rows = connection.execute(
                 "SELECT job_id, payload FROM video_jobs WHERE project_id=? ORDER BY updated_at DESC",
@@ -70,6 +75,8 @@ def load_jobs(project_id: str | None = None) -> dict[str, dict[str, Any]]:
             rows = connection.execute(
                 "SELECT job_id, payload FROM video_jobs ORDER BY updated_at DESC"
             ).fetchall()
+    finally:
+        connection.close()
     result: dict[str, dict[str, Any]] = {}
     for job_id, payload in rows:
         try:
