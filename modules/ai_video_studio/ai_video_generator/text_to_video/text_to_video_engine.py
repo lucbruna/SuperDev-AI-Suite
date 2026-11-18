@@ -149,7 +149,16 @@ class TextToVideoEngine:
             fallback_duration=scene_fallback_duration,
         )
 
-        # Preserve identity metadata for downstream continuity diagnostics.
+        # Convert each authored narration beat into a scene-specific visual
+        # brief, with stable IDs and continuity metadata before image creation.
+        from modules.ai_video_studio.media.storyboard_director import build_cinematic_storyboard
+
+        scenes, storyboard_report = build_cinematic_storyboard(
+            scenes,
+            studio_id=studio_id,
+            character_ids=character_ids,
+            object_ids=object_ids,
+        )
         for scene in scenes:
             scene["_darkstudio_characters"] = list(character_ids)
             scene["_darkstudio_objects"] = list(object_ids)
@@ -176,7 +185,8 @@ class TextToVideoEngine:
             )
             for scene_index, scene in enumerate(scenes):
                 visual_prompt = str(
-                    scene.get("visual_prompt")
+                    scene.get("visual_prompt_full")
+                    or scene.get("visual_prompt")
                     or scene.get("visual_prompt_suggestion")
                     or scene.get("description")
                     or prompt
@@ -351,6 +361,7 @@ class TextToVideoEngine:
             "ai_generated": plan["ai_generated"],
             "scenes": scenes,
             "editing_report": editing_report,
+            "storyboard_report": storyboard_report,
             "frames": video_result["frames"],
             "fps": fps,
             "duration": round(video_result["frames"] / fps, 3),
