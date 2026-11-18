@@ -148,7 +148,10 @@ class TextToVideoEngine:
             raise ValidationError("scene_image_mode must be procedural, ai or auto", field="scene_image_mode")
         scene_assets: list[dict[str, Any]] = []
         if image_mode in {"ai", "auto"}:
-            from modules.ai_video_studio.ai_image_generator.providers.local_diffusion import generate_scene_image
+            from modules.ai_video_studio.ai_image_generator.providers.local_diffusion import (
+                fit_image_dimensions, generate_scene_image,
+            )
+            image_width, image_height = fit_image_dimensions(width, height)
 
             image_style = (
                 "handcrafted felt-clay stop motion, tactile wool fibers, soft studio lighting, "
@@ -173,8 +176,8 @@ class TextToVideoEngine:
                         generate_scene_image,
                         full_prompt,
                         negative_prompt=str(scene.get("negative_prompt") or ""),
-                        width=min(1024, max(256, width)),
-                        height=min(1024, max(256, height)),
+                        width=image_width,
+                        height=image_height,
                         steps=int(params.get("scene_image_steps", 20)),
                         timeout=float(params.get("scene_image_timeout", 240)),
                     )
