@@ -588,6 +588,7 @@ async def render_video_job_edits(job_id: str):
             "ducking": (mix_result.get("ducking") if isinstance(mix_result, dict) else None),
             "normalization": (mix_result.get("normalization") if isinstance(mix_result, dict) else None),
             "loudness": (mix_result.get("loudness") if isinstance(mix_result, dict) else None),
+            "mastering": (mix_result.get("mastering") if isinstance(mix_result, dict) else None),
         }
     except Exception as exc:
         record["edit_render_status"] = "failed"
