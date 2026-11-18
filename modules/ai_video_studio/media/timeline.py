@@ -46,6 +46,23 @@ def _asset_clips(items: list[dict[str, Any]], fps: int, *, track_type: str) -> l
     return clips
 
 
+def _bound_audio_clips(clips: list[dict[str, Any]], total_frames: int, fps: int) -> list[dict[str, Any]]:
+    """Clip audio metadata to the visible video duration."""
+    bounded = []
+    for clip in clips:
+        start = clip["start_frame"]
+        end = min(clip["end_frame"], total_frames)
+        if start >= total_frames or end <= start:
+            continue
+        bounded.append({
+            **clip,
+            "end_frame": end,
+            "duration_frames": end - start,
+            "end_seconds": round(end / fps, 6),
+        })
+    return bounded
+
+
 def build_edit_timeline(
     scenes: list[dict[str, Any]],
     *,
@@ -128,15 +145,15 @@ def build_edit_timeline(
         narration_items = narration
     # Per-scene TTS reports include silent/failed scenes without audio_path.
     narration_items = [item for item in narration_items if item.get("audio_path") or item.get("asset") or item.get("path")]
-    narration_clips = _asset_clips(narration_items, fps, track_type="narration")
+    narration_clips = _bound_audio_clips(_asset_clips(narration_items, fps, track_type="narration"), cursor, fps)
     if narration_clips:
         tracks.append({"id": "audio-narration", "type": "audio", "role": "narration", "clips": narration_clips})
 
-    music = _asset_clips(list(music_clips or []), fps, track_type="music")
+    music = _bound_audio_clips(_asset_clips(list(music_clips or []), fps, track_type="music"), cursor, fps)
     if music:
         tracks.append({"id": "audio-music", "type": "audio", "role": "music", "clips": music})
 
-    effects = _asset_clips(list(sfx_clips or []), fps, track_type="sfx")
+    effects = _bound_audio_clips(_asset_clips(list(sfx_clips or []), fps, track_type="sfx"), cursor, fps)
     if effects:
         tracks.append({"id": "audio-sfx", "type": "audio", "role": "sound_effect", "clips": effects})
 
