@@ -1060,3 +1060,43 @@ class TestSceneImageCandidateApproval:
         response = await client.post("/api/v1/video-studio/videos/jobs/missing_candidate_job/scenes/0/image-candidates/not-found/approve")
         assert response.status_code == 404
         assert video._jobs["missing_candidate_job"]["_source_scenes"][0]["background_image_path"] == "/old.png"
+
+
+class TestSceneImageSimilarityAnalysis:
+    @pytest.mark.asyncio
+    async def test_detects_pixel_identical_scene_images(self, client: AsyncClient, monkeypatch, tmp_path):
+        from PIL import Image
+        from modules.ai_video_studio.api.routes import video
+        from modules.ai_video_studio.media import output_paths
+        image_root = tmp_path / "images"
+        image_root.mkdir()
+        first, second = image_root / "scene-1.png", image_root / "scene-2.png"
+        Image.new("RGB", (48, 48), (30, 100, 180)).save(first)
+        Image.new("RGB", (48, 48), (30, 100, 180)).save(second)
+        monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda name: image_root if name == "images" else tmp_path / name)
+        monkeypatch.setitem(video._jobs, "similarity_job", {"job_id": "similarity_job", "status": "completed", "_source_scenes": [
+            {"_source_scene_index": 0, "background_image_path": str(first)},
+            {"_source_scene_index": 1, "background_image_path": str(second)},
+        ]})
+        response = await client.post("/api/v1/video-studio/videos/jobs/similarity_job/image-similarity-analysis")
+        assert response.status_code == 200
+        body = response.json()
+        assert body["status"] == "duplicates_found"
+        assert body["duplicate_pairs"][0]["match_type"] == "exact"
+        assert body["duplicate_pairs"][0]["scene_indices"] == [0, 1]
+
+    @pytest.mark.asyncio
+    async def test_rejects_scene_image_paths_outside_asset_directory(self, client: AsyncClient, monkeypatch, tmp_path):
+        from modules.ai_video_studio.api.routes import video
+        from modules.ai_video_studio.media import output_paths
+        image_root = tmp_path / "images"
+        image_root.mkdir()
+        outside = tmp_path / "outside.png"
+        outside.write_bytes(b"not-used")
+        monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda name: image_root if name == "images" else tmp_path / name)
+        monkeypatch.setitem(video._jobs, "unsafe_similarity_job", {"job_id": "unsafe_similarity_job", "status": "completed", "_source_scenes": [
+            {"_source_scene_index": 4, "background_image_path": str(outside)},
+        ]})
+        response = await client.post("/api/v1/video-studio/videos/jobs/unsafe_similarity_job/image-similarity-analysis")
+        assert response.status_code == 200
+        assert response.json()["skipped_images"][0]["reason"] == "image_path_outside_asset_directory"
