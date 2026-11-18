@@ -79,7 +79,7 @@ export default function VideoStudioPage() {
   const [characterLoadError, setCharacterLoadError] = useState<string | null>(null);
   const [sceneObjects, setSceneObjects] = useState<StudioSceneObject[]>([]);
   const [selectedObjectIds, setSelectedObjectIds] = useState<string[]>([]);
-  const [sceneImageMode, setSceneImageMode] = useState<"procedural" | "ai" | "auto">("procedural");
+  const [sceneImageMode, setSceneImageMode] = useState<"procedural" | "ai" | "auto">("auto");
   const [objectLoadError, setObjectLoadError] = useState<string | null>(null);
 
   // Generation form state
@@ -463,7 +463,7 @@ export default function VideoStudioPage() {
 
           <section className="rounded-xl border border-surface-200 p-4 dark:border-surface-700" aria-labelledby="scene-image-mode-title">
             <h3 id="scene-image-mode-title" className="text-sm font-semibold text-surface-900 dark:text-surface-100">Imagens das cenas</h3>
-            <p className="mt-1 text-xs text-surface-500">Cada cena pode receber uma imagem própria criada a partir do texto do roteiro. Você não fica limitado à biblioteca de Mia, Leo ou objetos prontos.</p>
+            <p className="mt-1 text-xs text-surface-500">O DARKSTUDIO interpreta o roteiro e cria uma imagem diferente para cada cena. No modo Automático, tenta a IA local primeiro e usa a composição procedural apenas se o serviço de imagens não estiver disponível. Mia, Leo e os objetos são elementos opcionais, não imagens obrigatórias.</p>
             <label className="mt-3 block">
               <span className="text-xs font-medium text-surface-500">Motor visual</span>
               <select value={sceneImageMode} onChange={(event) => setSceneImageMode(event.target.value as "procedural" | "ai" | "auto")} className="mt-1 w-full rounded-lg border border-surface-200 bg-transparent p-2 text-sm text-surface-900 dark:border-surface-700 dark:text-surface-100">
