@@ -434,3 +434,41 @@ def test_mp4_visual_analysis_requires_rendered_output_path(completed_job):
     with pytest.raises(HTTPException) as exc:
         asyncio.run(video.analyze_video_job_mp4_visuals(completed_job))
     assert exc.value.status_code == 409
+
+
+def test_scene_image_edit_updates_edited_scene_and_persists_asset(completed_job, monkeypatch, tmp_path):
+    from modules.ai_video_studio.ai_image_generator.providers import local_diffusion
+    from modules.ai_video_studio.media import output_paths
+
+    source = tmp_path / "source.png"
+    source.write_bytes(b"old")
+    edited = tmp_path / "edited.png"
+    record = video._jobs[completed_job]
+    record["_edited_scenes"][0]["background_image_path"] = str(source)
+    monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda _name: tmp_path)
+    monkeypatch.setattr(local_diffusion, "edit_image", lambda *args, **kwargs: {
+        "image_path": str(edited), "provider": "automatic1111_compatible",
+        "operation": "image_to_image",
+    })
+    monkeypatch.setattr(video, "_persist_job", lambda item: None)
+    request = video.SceneImageEditRequest(prompt="Change the background to a sunset")
+    result = asyncio.run(video.edit_video_job_scene_image(completed_job, 0, request))
+    assert record["_edited_scenes"][0]["background_image_path"] == str(edited)
+    assert record["_edited_scenes"][0]["visual_prompt"] == request.prompt
+    assert result["operation"] == "image_to_image"
+    assert result["render_required"] is True
+
+
+def test_scene_image_edit_rejects_path_outside_image_library(completed_job, monkeypatch, tmp_path):
+    from modules.ai_video_studio.media import output_paths
+
+    record = video._jobs[completed_job]
+    outside = tmp_path / "outside.png"
+    outside.write_bytes(b"not-an-image")
+    record["_edited_scenes"][0]["background_image_path"] = str(outside)
+    monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda _name: tmp_path / "images")
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(video.edit_video_job_scene_image(
+            completed_job, 0, video.SceneImageEditRequest(prompt="Change the sky"),
+        ))
+    assert exc.value.status_code == 422
