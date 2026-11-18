@@ -17,7 +17,13 @@ from typing import Any, Callable
 import numpy as np
 
 from modules.ai_video_studio.media.canvas import SceneCanvas
+from modules.ai_video_studio.media.studio_profiles import apply_studio_profile
 from modules.ai_video_studio.media.video import frames_to_video, stream_frames_to_video
+
+
+def _prepare_scene(scene: dict[str, Any], studio_id: str | None) -> dict[str, Any]:
+    \"\"\"Apply a studio's visual contract when a studio is explicitly selected.\"\"\"
+    return apply_studio_profile(studio_id, scene) if studio_id else scene
 
 
 def render_still(scene: dict[str, Any], output_path: str | Path, *, width: int = 1280, height: int = 720, seed: int = 42) -> Path:
