@@ -20,6 +20,61 @@ def _audio_roots(tmp_path, monkeypatch):
     return downloads
 
 
+def test_final_mix_quality_report_detects_masking_silence_and_pre_limiter_peak():
+    sample_rate = 1000
+    samples = np.full((3000, 2), 0.2, dtype=np.float32)
+    samples[1000:2000] = 0.0
+    windows = 30
+    voice_energy = np.zeros(windows, dtype=np.float64)
+    voice_counts = np.zeros(windows, dtype=np.int64)
+    music_energy = np.zeros(windows, dtype=np.float64)
+    music_counts = np.zeros(windows, dtype=np.int64)
+    voice_energy[:10] = 10 * (0.1 ** 2)
+    voice_counts[:10] = 10
+    music_energy[:10] = 10 * (0.2 ** 2)
+    music_counts[:10] = 10
+    report = audio_timeline.build_audio_quality_report(
+        samples, sample_rate=sample_rate,
+        narration_energy=voice_energy, narration_counts=voice_counts,
+        music_energy=music_energy, music_counts=music_counts,
+        pre_limiter_peak=1.2,
+    )
+    assert report["status"] == "needs_review"
+    assert report["export_allowed"] is True
+    assert report["silence_gaps"] == [{"start": 1.0, "end": 2.0, "duration": 1.0}]
+    assert report["narration_music_masking"][0]["start"] == 0.0
+    assert {item["code"] for item in report["warnings"]} == {
+        "pre_limiter_clipping", "internal_silence_gaps", "narration_may_be_masked",
+    }
+
+
+def test_final_mix_quality_report_blocks_actual_output_clipping():
+    samples = np.zeros((1000, 2), dtype=np.float32)
+    samples[500:510] = 1.0
+    report = audio_timeline.build_audio_quality_report(samples, sample_rate=1000)
+    assert report["status"] == "blocked"
+    assert report["export_allowed"] is False
+    assert report["critical_count"] == 1
+    assert any(item["code"] == "final_clipping_detected" for item in report["warnings"])
+
+
+def test_mix_audio_timeline_returns_quality_report(tmp_path, monkeypatch):
+    _audio_roots(tmp_path, monkeypatch)
+    voice = np.full(8000, 0.1, dtype=np.float32)
+    music = np.full(8000, 0.2, dtype=np.float32)
+    result = audio_timeline.mix_audio_timeline(
+        [
+            {"samples": voice, "kind": "narration", "start": 0, "end": 1},
+            {"samples": music, "kind": "music", "start": 0, "end": 1},
+        ],
+        tmp_path / "quality_mix.wav", total_duration=1, sample_rate=8000,
+        normalization_enabled=False,
+    )
+    assert result["quality"]["duration_seconds"] == 1.0
+    assert result["quality"]["export_allowed"] is True
+    assert result["quality"]["narration_music_masking"]
+
+
 def test_audio_intelligence_flags_clipping_silence_and_stereo_imbalance(tmp_path, monkeypatch):
     downloads = _audio_roots(tmp_path, monkeypatch)
     path = downloads / "music" / "analysis.wav"
