@@ -224,7 +224,7 @@ class TextToVideoEngine:
             synth = await get_voice_engine().synthesize_async(
                 narration,
                 voice_id=str(params.get("voice_id", "default")),
-                language=str(params.get("voice_language", "en")),
+                language=str(params.get("voice_language", "pt-BR")),
                 speed=float(params.get("voice_speed", 1.0)),
                 pitch=float(params.get("voice_pitch", 1.0)),
             )
