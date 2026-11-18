@@ -86,3 +86,40 @@ def test_character_preview_rejects_invalid_pose() -> None:
     with pytest.raises(HTTPException) as error:
         asyncio.run(preview_studio_character("leo", {"scene": {}, "pose": "dance"}))
     assert error.value.status_code == 422
+
+
+def test_scene_object_catalog_is_filtered_by_studio() -> None:
+    from modules.ai_video_studio.api.routes.studios import list_studio_objects
+
+    whymentary = asyncio.run(list_studio_objects("whymentary"))
+    historical = asyncio.run(list_studio_objects("historical_documentary"))
+    assert whymentary["count"] >= 4
+    assert historical["count"] >= 4
+    assert all(item["studio_id"] == "whymentary" for item in whymentary["objects"])
+    assert all(item["studio_id"] == "historical_documentary" for item in historical["objects"])
+
+
+def test_scene_object_preview_composes_editable_primitives_without_mutation() -> None:
+    from modules.ai_video_studio.api.routes.studios import preview_scene_object
+
+    source = {"background_type": "solid", "rects": [{"x": 1, "y": 1, "w": 2, "h": 2}]}
+    result = asyncio.run(preview_scene_object(
+        "water_glass", {"scene": source, "x": 100, "y": 50, "scale": 2}
+    ))
+    assert result["object_id"] == "water_glass"
+    assert len(result["scene"]["rects"]) == 3
+    assert result["scene"]["rects"][1]["x"] == 100
+    assert result["scene"]["rects"][1]["y"] == 50
+    assert len(source["rects"]) == 1
+
+
+def test_scene_object_preview_rejects_unknown_object_and_invalid_scale() -> None:
+    from modules.ai_video_studio.api.routes.studios import preview_scene_object
+
+    with pytest.raises(HTTPException) as unknown:
+        asyncio.run(preview_scene_object("not-a-prop", {"scene": {}}))
+    assert unknown.value.status_code == 422
+
+    with pytest.raises(HTTPException) as invalid:
+        asyncio.run(preview_scene_object("torch", {"scene": {}, "scale": 0}))
+    assert invalid.value.status_code == 422
