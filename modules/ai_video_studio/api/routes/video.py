@@ -341,7 +341,7 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
             result = await asyncio.to_thread(
                 generate_scene_image,
                 edit_prompt,
-                negative_prompt=req.negative_prompt,
+                negative_prompt=req.negative_prompt or str(scene.get("negative_prompt") or ""),
                 width=image_width,
                 height=image_height,
                 steps=req.steps, cfg_scale=req.cfg_scale,
