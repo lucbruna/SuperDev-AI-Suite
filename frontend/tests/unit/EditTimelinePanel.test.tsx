@@ -79,6 +79,8 @@ describe("EditTimelinePanel", () => {
     expect(save.mock.calls[0][1].sfx_clips).toEqual([]);
     expect(save.mock.calls[0][1].music_clips).toHaveLength(1);
     expect(save.mock.calls[0][1].music_clips[0].loop).toBe(true);
+    expect(save.mock.calls[0][1].ducking_enabled).toBe(false);
+    expect(save.mock.calls[0][1].ducking_db).toBe(14);
     save.mockRestore();
     assets.mockRestore();
     job.mockRestore();
