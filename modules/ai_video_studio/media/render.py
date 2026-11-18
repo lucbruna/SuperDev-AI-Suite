@@ -244,3 +244,116 @@ def render_single_scene_clip(
         require_mp4=require_mp4,
         studio_id=studio_id,
     )
+
+
+def render_mixed_scene_video(
+    scenes: list[dict[str, Any]],
+    output_path: str | Path,
+    *,
+    generated_clips: dict[int, str],
+    fps: int = 24,
+    width: int = 1280,
+    height: int = 720,
+    seed: int = 42,
+    require_mp4: bool = True,
+    studio_id: str | None = None,
+) -> dict[str, Any]:
+    """Render a mixed timeline using AI-generated MP4s for selected source scenes.
+
+    Every scene is normalized to the same H.264/yuv420p format and exact frame
+    count before concatenation. This first mixed-render path uses hard cuts:
+    transition metadata is deliberately flattened so the encoded duration and
+    downstream narration/subtitle offsets stay frame-accurate.
+    """
+    import json
+    import shutil
+    import subprocess
+    import tempfile
+
+    if not scenes:
+        raise ValueError("No scenes to render")
+    if not isinstance(fps, int) or fps < 1 or width < 2 or height < 2:
+        raise ValueError("Invalid mixed render dimensions or frame rate")
+    if width % 2 or height % 2:
+        raise ValueError("H.264 mixed render requires even width and height")
+    ffmpeg = shutil.which("ffmpeg")
+    if not ffmpeg:
+        raise RuntimeError("FFmpeg is required for mixed-scene rendering")
+
+    out = Path(output_path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    total_frames = 0
+    clip_paths: list[Path] = []
+    transition_scenes: list[int] = []
+
+    with tempfile.TemporaryDirectory(prefix="darkstudio-mixed-", dir=str(out.parent)) as temp_dir:
+        temp_root = Path(temp_dir)
+        video_root = Path(__import__(
+            "modules.ai_video_studio.media.output_paths", fromlist=["get_subsystem_dir"]
+        ).get_subsystem_dir("videos")).resolve()
+
+        for position, scene in enumerate(scenes):
+            source_index = int(scene.get("_source_scene_index", scene.get("index", position)))
+            duration = float(scene.get("duration", 3.0))
+            frame_count = max(1, int(round(duration * fps)))
+            total_frames += frame_count
+            transition = scene.get("transition_out") or {}
+            if transition.get("type", "cut") != "cut":
+                transition_scenes.append(source_index)
+
+            generated_path = generated_clips.get(source_index)
+            if generated_path:
+                source = Path(generated_path).resolve()
+                if video_root not in source.parents or not source.is_file():
+                    raise ValueError(f"Generated clip for scene {source_index} is not a valid DARKSTUDIO video asset")
+            else:
+                source = temp_root / f"scene_{position:03d}_procedural.mp4"
+                render_single_scene_clip(
+                    scene, source, duration=duration, fps=fps, width=width, height=height,
+                    require_mp4=True, studio_id=studio_id,
+                )
+                source = source.resolve()
+
+            normalized = temp_root / f"scene_{position:03d}_normalized.mp4"
+            command = [
+                ffmpeg, "-hide_banner", "-loglevel", "error", "-y", "-i", str(source),
+                "-an", "-vf",
+                f"fps={fps},scale={width}:{height}:force_original_aspect_ratio=decrease,"
+                f"pad={width}:{height}:(ow-iw)/2:(oh-ih)/2,setsar=1",
+                "-frames:v", str(frame_count), "-r", str(fps), "-c:v", "libx264",
+                "-preset", "veryfast", "-pix_fmt", "yuv420p", "-movflags", "+faststart",
+                str(normalized),
+            ]
+            completed = subprocess.run(command, capture_output=True, text=True, timeout=max(180, duration * 30))
+            if completed.returncode != 0 or not normalized.is_file() or normalized.stat().st_size == 0:
+                raise RuntimeError(
+                    f"Could not normalize mixed scene {source_index}: {completed.stderr[-1200:]}"
+                )
+            clip_paths.append(normalized)
+
+        concat_file = temp_root / "concat.txt"
+        concat_file.write_text(
+            "".join(f"file '{str(path).replace(chr(39), chr(39)+chr(92)+chr(39)+chr(39))}'\\n" for path in clip_paths),
+            encoding="utf-8",
+        )
+        command = [
+            ffmpeg, "-hide_banner", "-loglevel", "error", "-y",
+            "-f", "concat", "-safe", "0", "-i", str(concat_file),
+            "-an", "-c:v", "libx264", "-preset", "veryfast", "-pix_fmt", "yuv420p",
+            "-r", str(fps), "-frames:v", str(total_frames), "-movflags", "+faststart",
+            str(out),
+        ]
+        completed = subprocess.run(command, capture_output=True, text=True, timeout=max(300, total_frames / fps * 30))
+        if completed.returncode != 0 or not out.is_file() or out.stat().st_size == 0:
+            out.unlink(missing_ok=True)
+            raise RuntimeError(f"Could not assemble mixed DARKSTUDIO timeline: {completed.stderr[-1500:]}")
+
+    return {
+        "output_path": str(out),
+        "frames": total_frames,
+        "bytes": out.stat().st_size,
+        "engine": "ffmpeg_mixed_scene_concat",
+        "generated_scene_indices": sorted(int(key) for key in generated_clips),
+        "transition_policy": "hard_cut",
+        "transitions_flattened": transition_scenes,
+    }
