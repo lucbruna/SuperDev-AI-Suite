@@ -79,15 +79,17 @@ def _narration_activity_envelope(clips, *, total_samples, sample_rate, threshold
         active = np.repeat((db >= threshold_db).astype(np.float32), block)[:len(source)]
         activity[start:end] = np.maximum(activity[start:end], active)
     if not np.any(activity): return activity
-    attack = max(1, int(round(attack_seconds * sample_rate)))
-    release = max(1, int(round(release_seconds * sample_rate)))
-    envelope = np.zeros(total_samples, dtype=np.float32)
+    padded_activity = np.pad(activity, (0, (-total_samples) % block))
+    block_activity = padded_activity.reshape(-1, block).max(axis=1)
+    attack_blocks = max(1, int(round(attack_seconds * sample_rate / block)))
+    release_blocks = max(1, int(round(release_seconds * sample_rate / block)))
+    block_envelope = np.zeros(len(block_activity), dtype=np.float32)
     current = 0.0
-    for index, target in enumerate(activity):
-        coefficient = 1.0 / (attack if target > current else release)
+    for index, target in enumerate(block_activity):
+        coefficient = 1.0 / (attack_blocks if target > current else release_blocks)
         current += (float(target) - current) * coefficient
-        envelope[index] = current
-    return envelope
+        block_envelope[index] = current
+    return np.repeat(block_envelope, block)[:total_samples]
 
 def mix_audio_timeline(
     clips: list[dict[str, Any]],
