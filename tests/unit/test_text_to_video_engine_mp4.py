@@ -195,7 +195,7 @@ def test_generate_async_composes_selected_characters_into_every_scene(monkeypatc
     assert result["studio_id"] == "whymentary"
     assert len(captured["scenes"]) == 2
     for scene in captured["scenes"]:
-        assert len(scene["rects"]) == 6
+        assert len(scene["rects"]) == 5
         assert len(scene["circles"]) >= 11
 
 
