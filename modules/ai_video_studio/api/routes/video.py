@@ -360,16 +360,68 @@ async def render_video_job_edits(job_id: str):
             render_multi_scene_video, scenes, output_path, fps=fps, width=width, height=height,
             require_mp4=True, studio_id=params.get("studio_id") or "whymentary",
         )
-        edited_url = to_download_url(result["output_path"])
+        rendered_path = result["output_path"]
+        audio_status = "silent"
+        final_path = rendered_path
+
+        # Rebuild per-scene narration against the edited scene order/durations.
+        # A single flat narration track cannot be safely retimed.
+        voiceover = record.get("voiceover") or {}
+        narration_clips = voiceover.get("clips") if isinstance(voiceover, dict) else None
+        if isinstance(narration_clips, list) and any(
+            isinstance(clip, dict) and clip.get("audio_path") for clip in narration_clips
+        ):
+            from pathlib import Path
+            from modules.ai_video_studio.media.scene_narration import compute_scene_offsets
+            from modules.ai_video_studio.ai_dubbing.export_dubbing import export_audio_track
+            from modules.ai_video_studio.media.audio import mux_audio_into_video
+            from modules.ai_video_studio.media.output_paths import get_subsystem_dir, unique_filename
+
+            offsets = compute_scene_offsets(scenes, fps=fps)
+            placed_clips = []
+            for position, (scene, start) in enumerate(zip(scenes, offsets, strict=False)):
+                source_index = scene.get("_source_scene_index", position)
+                if not isinstance(source_index, int) or not 0 <= source_index < len(narration_clips):
+                    continue
+                original = narration_clips[source_index]
+                if not isinstance(original, dict) or not original.get("audio_path"):
+                    continue
+                scene_frames = max(1, int(round(float(scene.get("duration") or 3.0) * fps)))
+                placed_clips.append({
+                    "index": source_index,
+                    "text": original.get("text", ""),
+                    "start": round(start, 6),
+                    "end": round(start + scene_frames / fps, 6),
+                    "audio_path": original["audio_path"],
+                })
+
+            if placed_clips:
+                audio_path = unique_filename(get_subsystem_dir("jobs"), "edited_narration", "wav")
+                total_duration = int(round(result["frames"])) / fps
+                await asyncio.to_thread(
+                    export_audio_track,
+                    [{"clips": placed_clips}],
+                    audio_path,
+                    total_duration=total_duration,
+                )
+                muxed_path = unique_filename(get_subsystem_dir("videos"), "text_to_video_edited_final", "mp4")
+                mux_result = await asyncio.to_thread(mux_audio_into_video, rendered_path, audio_path, muxed_path)
+                if mux_result.get("muxed"):
+                    final_path = mux_result["output_path"]
+                    audio_status = "narration_retimed"
+                else:
+                    audio_status = "narration_mux_failed"
+
+        edited_url = to_download_url(final_path)
         edited_duration = round(result["frames"] / fps, 3)
-        edited_bytes = result.get("bytes", 0)
+        edited_bytes = Path(final_path).stat().st_size
         record.update(
-            edited_output_path=result["output_path"],
+            edited_output_path=final_path,
             edited_output_url=edited_url,
             edited_file_size_bytes=edited_bytes,
             edited_video_duration=edited_duration,
             edit_render_status="completed",
-            edit_render_audio="not_retimed",
+            edit_render_audio=audio_status,
         )
         _persist_job(record)
         return {
@@ -378,8 +430,14 @@ async def render_video_job_edits(job_id: str):
             "output_url": edited_url,
             "video_duration": edited_duration,
             "file_size_bytes": edited_bytes,
-            "audio_status": "not_retimed",
-            "message": "Novo MP4 renderizado. A narração original não foi reposicionada para as novas durações/ordem; este arquivo deve ser tratado como prévia visual sem áudio sincronizado.",
+            "audio_status": audio_status,
+            "message": (
+                "MP4 editado renderizado com a narração por cena reposicionada."
+                if audio_status == "narration_retimed"
+                else "MP4 editado renderizado. Não havia narração por cena disponível para sincronizar."
+                if audio_status == "silent"
+                else "MP4 visual renderizado, mas a muxagem da narração falhou; consulte o status do áudio."
+            ),
         }
     except Exception as exc:
         record["edit_render_status"] = "failed"
