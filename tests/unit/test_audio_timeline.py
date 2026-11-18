@@ -72,6 +72,28 @@ def test_mix_audio_timeline_loops_short_music_only_when_requested(tmp_path, monk
     assert rate == dsp.SAMPLE_RATE
     assert np.max(np.abs(samples[rate // 2:])) > 0.08
 
+
+def test_mix_audio_timeline_ducks_music_during_narration(tmp_path, monkeypatch):
+    _audio_roots(tmp_path, monkeypatch)
+    sample_rate = 8000
+    music = np.full(sample_rate * 2, 0.2, dtype=np.float32)
+    narration = np.full(sample_rate, 0.2, dtype=np.float32)
+    output = tmp_path / "ducked.wav"
+    result = audio_timeline.mix_audio_timeline(
+        [
+            {"samples": music, "start": 0, "end": 2, "kind": "music"},
+            {"samples": narration, "offset": 0.5, "kind": "narration"},
+        ],
+        output, total_duration=2, sample_rate=sample_rate,
+        ducking_db=12, ducking_threshold_db=-40, ducking_attack=0.01, ducking_release=0.05,
+    )
+    mixed, _ = dsp.read_audio(output, target_sr=sample_rate)
+    before = np.sqrt(np.mean(mixed[int(0.1 * sample_rate):int(0.4 * sample_rate)] ** 2))
+    during = np.sqrt(np.mean(mixed[int(0.9 * sample_rate):int(1.3 * sample_rate)] ** 2))
+    assert result["ducking"]["speech_detected"] is True
+    assert result["clips"][0]["ducking_applied"] is True
+    assert during < before * 0.7
+
 def test_mix_audio_timeline_accepts_pre_aligned_narration_samples(tmp_path, monkeypatch):
     _audio_roots(tmp_path, monkeypatch)
     output = tmp_path / "narration_mix.wav"
