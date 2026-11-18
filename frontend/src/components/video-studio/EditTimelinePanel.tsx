@@ -140,6 +140,13 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
     videoStudioApi.listJobAudioAssets(jobId).then(setAudioAssets).catch(() => setAudioAssets([]));
     videoStudioApi.getJob(jobId).then((job) => {
       if (job.scene_assets) setSceneImageAssets(job.scene_assets);
+      if (job.scene_image_candidates) {
+        const pending: Record<number, SceneImageAsset & { candidate_id: string }> = {};
+        for (const items of Object.values(job.scene_image_candidates)) {
+          for (const item of items) pending[item.scene_index] = item;
+        }
+        setSceneImageCandidates(pending);
+      }
       if (job.scene_clips?.length) {
         setGeneratedMotionClips(Object.fromEntries(
           job.scene_clips
