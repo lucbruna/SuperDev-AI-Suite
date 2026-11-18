@@ -21,7 +21,9 @@ def test_two_studio_profiles_are_registered_and_distinct() -> None:
     assert history.background_type == "gradient"
     assert history.background_colors != why.background_colors
     assert why.noise == 0.0
+    assert why.grading_strength == 0.0
     assert history.noise > 0.0
+    assert history.grading_strength > 0.0
 
 
 def test_apply_profile_enforces_studio_visual_identity() -> None:
@@ -36,6 +38,7 @@ def test_apply_profile_enforces_studio_visual_identity() -> None:
     assert rendered["background_type"] == "solid"
     assert rendered["background_colors"] == ["#FFFFFF"]
     assert rendered["noise"] == 0.0
+    assert rendered["grading_strength"] == 0.0
     assert rendered["text"]["content"] == "A ideia inesperada"
     assert rendered["text"]["color"] == "#111827"
     assert rendered["rects"] == source["rects"]
