@@ -7,7 +7,19 @@ import apiClient from "./client";
 
 const STUDIO_BASE = "/video-studio";
 
-export interface StudioProfile {\n  id: "whymentary" | "historical_documentary";\n  name: string;\n  visual_language: string;\n  background: { type: string; colors: string[] };\n  palette: string[];\n  noise: number;\n  grading_strength: number;\n  text: { default_color: string; default_size: number };\n  camera_defaults: Record<string, number>;\n}\n\nexport interface StudioHealth {
+export interface StudioProfile {
+  id: "whymentary" | "historical_documentary";
+  name: string;
+  visual_language: string;
+  background: { type: string; colors: string[] };
+  palette: string[];
+  noise: number;
+  grading_strength: number;
+  text: { default_color: string; default_size: number };
+  camera_defaults: Record<string, number>;
+}
+
+export interface StudioHealth {
   status: string;
   service: string;
   version: string;
@@ -79,10 +91,21 @@ export interface GenerateVideoParams {
   voiceover_mode?: "per_scene" | "single";
   llm_timeout?: number;
   format?: string;
+  studio_id?: StudioProfile["id"];
 }
 
 export const videoStudioApi = {
-  async listStudios(): Promise<StudioProfile[]> {\n    const { data } = await apiClient.get(`${STUDIO_BASE}/studios`);\n    return data?.studios ?? [];\n  },\n\n  async getStudio(studioId: StudioProfile["id"]): Promise<StudioProfile> {\n    const { data } = await apiClient.get(`${STUDIO_BASE}/studios/${studioId}`);\n    return data;\n  },\n\n  async health(): Promise<StudioHealth> {
+  async listStudios(): Promise<StudioProfile[]> {
+    const { data } = await apiClient.get(`${STUDIO_BASE}/studios`);
+    return data?.studios ?? [];
+  },
+
+  async getStudio(studioId: StudioProfile["id"]): Promise<StudioProfile> {
+    const { data } = await apiClient.get(`${STUDIO_BASE}/studios/${studioId}`);
+    return data;
+  },
+
+  async health(): Promise<StudioHealth> {
     const { data } = await apiClient.get(`${STUDIO_BASE}/health`);
     return data;
   },
