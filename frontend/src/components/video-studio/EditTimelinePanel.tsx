@@ -88,24 +88,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
   const [analyzingVisuals, setAnalyzingVisuals] = useState(false);
   const [mp4VisualReport, setMp4VisualReport] = useState<Awaited<ReturnType<typeof videoStudioApi.analyzeJobMp4Visuals>> | null>(null);
   const [analyzingMp4Visuals, setAnalyzingMp4Visuals] = useState(false);
-  useEffect(() => {
-    if (!jobId) return;
-    let cancelled = false;
-    videoStudioApi.getJobVisualDirection(jobId).then((result) => {
-      if (cancelled) return;
-      const byIndex: Record<number, SceneVisualDirection> = {};
-      const suggestedPrompts: Record<number, string> = {};
-      for (const scene of result.scenes) {
-        byIndex[scene.scene_index] = scene;
-        if (scene.visual_prompt_suggestion) suggestedPrompts[scene.scene_index] = scene.visual_prompt_suggestion;
-      }
-      setVisualDirections(byIndex);
-      setSceneImagePrompts((current) => ({ ...suggestedPrompts, ...current }));
-    }).catch(() => {
-      // Older jobs may not have retained scene direction metadata.
-    });
-    return () => { cancelled = true; };
-  }, [jobId]);
+
   const [renderQuality, setRenderQuality] = useState<Awaited<ReturnType<typeof videoStudioApi.getJob>>["edit_render_quality"]>(null);
   const [duckingEnabled, setDuckingEnabled] = useState(true);
   const [duckingDb, setDuckingDb] = useState("9");
@@ -126,6 +109,24 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
   const duration = Math.max(1, draft.duration_frames);
   const selectedClip = clips[selected] ?? null;
 
+  useEffect(() => {
+    if (!jobId) return;
+    let cancelled = false;
+    videoStudioApi.getJobVisualDirection(jobId).then((result) => {
+      if (cancelled) return;
+      const byIndex: Record<number, SceneVisualDirection> = {};
+      const suggestedPrompts: Record<number, string> = {};
+      for (const scene of result.scenes) {
+        byIndex[scene.scene_index] = scene;
+        if (scene.visual_prompt_suggestion) suggestedPrompts[scene.scene_index] = scene.visual_prompt_suggestion;
+      }
+      setVisualDirections(byIndex);
+      setSceneImagePrompts((current) => ({ ...suggestedPrompts, ...current }));
+    }).catch(() => {
+      // Older jobs may not have retained scene direction metadata.
+    });
+    return () => { cancelled = true; };
+  }, [jobId]);
   useEffect(() => { setDraft(timeline); setDirty(false); setAudioDirty(false); setSelected(0); }, [timeline]);
   useEffect(() => { setSceneImageAssets(sceneAssets ?? []); }, [sceneAssets]);
   useEffect(() => { setRenderUrl(editedOutputUrl ?? ""); }, [editedOutputUrl]);
