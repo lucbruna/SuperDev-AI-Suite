@@ -403,6 +403,46 @@ async def render_video_job_edits(job_id: str):
                 else:
                     audio_status = "narration_mux_failed"
 
+        # Rebuild subtitle sidecar against the edited scene order and timing.
+        subtitle_status = "not_generated"
+        subtitle_info = None
+        try:
+            from modules.ai_video_studio.media.scene_narration import compute_scene_offsets, scene_narration_text
+            from modules.ai_video_studio.media.output_paths import get_subsystem_dir, unique_filename
+            from modules.ai_video_studio.services.subtitle_studio import SubtitleStudioService
+
+            subtitle_offsets = compute_scene_offsets(scenes, fps=fps)
+            subtitle_scenes = [
+                {
+                    "text": scene_narration_text(scene),
+                    "duration": max(1, int(round(float(scene.get("duration") or 3.0) * fps))) / fps,
+                    "start_offset": subtitle_offsets[index],
+                }
+                for index, scene in enumerate(scenes)
+            ]
+            subtitle_path = unique_filename(
+                get_subsystem_dir("subtitles"), "edited_video_subtitles", "srt"
+            )
+            generated_subtitles = await asyncio.to_thread(
+                SubtitleStudioService().generate_srt,
+                subtitle_scenes,
+                output_path=str(subtitle_path),
+            )
+            subtitle_info = {
+                "format": "srt",
+                "file_path": generated_subtitles["file_path"],
+                "download_url": to_download_url(generated_subtitles["file_path"]),
+                "cue_count": generated_subtitles["cue_count"],
+                "duration": generated_subtitles["duration"],
+            }
+            subtitle_status = "regenerated"
+            record["edited_subtitles"] = subtitle_info
+        except Exception as subtitle_exc:
+            subtitle_status = "failed"
+            record["edited_subtitles"] = {
+                "generated": False, "reason": str(subtitle_exc)[:200]
+            }
+
         edited_url = to_download_url(final_path)
         edited_duration = round(result["frames"] / fps, 3)
         edited_bytes = Path(final_path).stat().st_size
@@ -413,6 +453,7 @@ async def render_video_job_edits(job_id: str):
             edited_video_duration=edited_duration,
             edit_render_status="completed",
             edit_render_audio=audio_status,
+            edit_render_subtitles=subtitle_status,
         )
         _persist_job(record)
         return {
@@ -422,6 +463,8 @@ async def render_video_job_edits(job_id: str):
             "video_duration": edited_duration,
             "file_size_bytes": edited_bytes,
             "audio_status": audio_status,
+            "subtitle_status": subtitle_status,
+            "subtitles": subtitle_info,
             "message": (
                 "MP4 editado renderizado com a narração por cena reposicionada."
                 if audio_status == "narration_retimed"
