@@ -254,12 +254,14 @@ def test_render_edits_uses_persisted_comfyui_scene_clip(completed_job, monkeypat
     calls = {}
 
     def fake_mixed(scenes, output_path, *, generated_clips, **kwargs):
+        from pathlib import Path
         calls["generated_clips"] = generated_clips
         calls["transitions"] = [scene.get("transition_out", {}).get("type", "cut") for scene in scenes]
         Path(output_path).write_bytes(b"mixed-mp4")
         return {
-            "output_path": str(output_path), "frames": 96, "bytes": 1234,
-            "engine": "ffmpeg_mixed_scene_concat", "transitions_flattened": [0],
+            "output_path": str(output_path), "frames": 84, "bytes": 1234,
+            "engine": "ffmpeg_mixed_scene_transitions", "transition_policy": "frame_accurate",
+            "transitions_applied": [{"scene_index": 0, "type": "crossfade", "duration_frames": 12}],
         }
 
     monkeypatch.setattr(render, "render_mixed_scene_video", fake_mixed)
@@ -267,10 +269,11 @@ def test_render_edits_uses_persisted_comfyui_scene_clip(completed_job, monkeypat
     assert result["status"] == "completed"
     assert result["generated_scene_count"] == 1
     assert calls["generated_clips"] == {1: str(generated)}
-    assert calls["transitions"] == ["cut", "cut"]
+    assert calls["transitions"] == ["crossfade", "cut"]
     assert record["output_url"] == "/downloads/original.mp4"
     assert record["edited_output_url"] == "/downloads/mixed-edited.mp4"
-    assert record["edit_render_transition_policy"]["mode"] == "hard_cut"
+    assert record["edit_render_transition_policy"]["mode"] == "frame_accurate"
+    assert record["edit_timeline"]["duration_frames"] == 84
 
 
 def test_render_edits_mixes_saved_audio_tracks(completed_job, monkeypatch, tmp_path) -> None:
