@@ -110,12 +110,13 @@ class SceneCanvas:
     def _background(self, scene: dict[str, Any], rng: random.Random) -> np.ndarray:
         bg_type = scene.get("background_type", "gradient")
         colors = [c for c in scene.get("background_colors", []) if c]
-        if len(colors) < 2:
-            colors = ["#1a1a2e", "#16213e"]
 
         h, w = self.height, self.width
         if bg_type == "solid":
-            rgb = _hex_to_rgb(colors[0])
+            # A solid background needs exactly one color. Do not replace a
+            # profile's single-color palette with the gradient fallback.
+            solid_color = colors[0] if colors else "#1a1a2e"
+            rgb = _hex_to_rgb(solid_color)
             return np.zeros((h, w, 3), dtype=np.uint8) + np.array(rgb, dtype=np.uint8)
 
         c0 = np.array(_hex_to_rgb(colors[0]), dtype=np.float32)
