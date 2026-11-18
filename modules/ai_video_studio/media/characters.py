@@ -136,3 +136,53 @@ def add_character(
     for layer, primitives in character.items():
         result[layer] = [*scene.get(layer, []), *primitives]
     return result
+
+
+
+def add_character_motion(
+    scene: dict[str, Any],
+    character_id: str,
+    *,
+    from_x: float,
+    from_y: float,
+    to_x: float,
+    to_y: float,
+    duration_frames: int,
+    start_frame: int = 0,
+    scale: float = 1.0,
+    pose: str = "neutral",
+    expression: str = "neutral",
+) -> dict[str, Any]:
+    """Add a character with a smooth, finite position animation.
+
+    Motion uses smoothstep easing and is evaluated by SceneCanvas at render
+    time. The character remains at its starting point before start_frame and
+    reaches its destination after duration_frames.
+    """
+    if duration_frames <= 0:
+        raise ValueError("duration_frames must be greater than zero")
+    if start_frame < 0:
+        raise ValueError("start_frame cannot be negative")
+
+    result = add_character(
+        scene,
+        character_id,
+        x=from_x,
+        y=from_y,
+        scale=scale,
+        pose=pose,
+        expression=expression,
+    )
+    displacement = {
+        "motion_dx": float(to_x) - float(from_x),
+        "motion_dy": float(to_y) - float(from_y),
+        "motion_start_frame": int(start_frame),
+        "motion_frames": int(duration_frames),
+    }
+    for layer in ("rects", "circles", "lines"):
+        count = len(result[layer]) - len(scene.get(layer, []))
+        if count <= 0:
+            continue
+        for primitive in result[layer][-count:]:
+            primitive.update(displacement)
+    return result
