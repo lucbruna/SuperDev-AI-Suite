@@ -161,26 +161,41 @@ class SceneCanvas:
         except Exception:  # noqa: BLE001 — never break a frame
             return
 
+    @staticmethod
+    def _motion_offset(item: dict[str, Any], frame_index: int) -> tuple[float, float]:
+        """Return eased, finite keyframe displacement for an animated primitive."""
+        start = int(item.get("motion_start_frame", 0))
+        duration = max(1, int(item.get("motion_frames", 1)))
+        progress = min(1.0, max(0.0, (frame_index - start) / duration))
+        eased = progress * progress * (3.0 - 2.0 * progress)
+        return (
+            float(item.get("motion_dx", 0.0)) * eased,
+            float(item.get("motion_dy", 0.0)) * eased,
+        )
+
     def _draw_rect(self, draw: ImageDraw.ImageDraw, r: dict[str, Any], frame_index: int) -> None:
-        dx = float(r.get("dx", 0)) * frame_index
+        motion_x, motion_y = self._motion_offset(r, frame_index)
+        dx = float(r.get("dx", 0)) * frame_index + motion_x
         x0 = float(r.get("x", 0)) + dx
-        y0 = float(r.get("y", 0))
+        y0 = float(r.get("y", 0)) + motion_y
         x1 = x0 + float(r.get("w", 50))
         y1 = y0 + float(r.get("h", 50))
         draw.rectangle([x0, y0, x1, y1], fill=r.get("color", "#888888"), outline=r.get("outline"))
 
     def _draw_circle(self, draw: ImageDraw.ImageDraw, c: dict[str, Any], frame_index: int) -> None:
-        cx = float(c.get("x", 0)) + float(c.get("dx", 0)) * frame_index
-        cy = float(c.get("y", 0)) + float(c.get("dy", 0)) * frame_index
+        motion_x, motion_y = self._motion_offset(c, frame_index)
+        cx = float(c.get("x", 0)) + float(c.get("dx", 0)) * frame_index + motion_x
+        cy = float(c.get("y", 0)) + float(c.get("dy", 0)) * frame_index + motion_y
         r = max(1, float(c.get("radius", 20)))
         draw.ellipse([cx - r, cy - r, cx + r, cy + r], fill=c.get("color", "#FFFFFF"))
 
     def _draw_line(self, draw: ImageDraw.ImageDraw, line: dict[str, Any], frame_index: int) -> None:
         growth = min(1.0, max(0.0, (frame_index - float(line.get("start_frame", 0))) / max(1, float(line.get("grow_frames", 10)))))
-        x1 = float(line.get("x1", 0)) + float(line.get("dx1", 0)) * frame_index
-        y1 = float(line.get("y1", 0)) + float(line.get("dy1", 0)) * frame_index
-        x2 = float(line.get("x2", 0)) + float(line.get("dx2", 0)) * frame_index
-        y2 = float(line.get("y2", 0)) + float(line.get("dy2", 0)) * frame_index
+        motion_x, motion_y = self._motion_offset(line, frame_index)
+        x1 = float(line.get("x1", 0)) + float(line.get("dx1", 0)) * frame_index + motion_x
+        y1 = float(line.get("y1", 0)) + float(line.get("dy1", 0)) * frame_index + motion_y
+        x2 = float(line.get("x2", 0)) + float(line.get("dx2", 0)) * frame_index + motion_x
+        y2 = float(line.get("y2", 0)) + float(line.get("dy2", 0)) * frame_index + motion_y
         if growth < 1.0:
             x2 = x1 + (x2 - x1) * growth
             y2 = y1 + (y2 - y1) * growth
