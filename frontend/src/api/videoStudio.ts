@@ -204,6 +204,17 @@ export interface StudioJob {
   clip_duration_seconds?: number | null;
   file_size_bytes?: number | null;
   output_validation?: VideoOutputValidation | null;
+  scene_progress?: {
+    scene_index: number;
+    status: "pending" | "processing" | "completed" | "fallback" | "failed" | string;
+    stage?: string;
+    title?: string;
+    visual_prompt?: string;
+    image_provider?: string;
+    clip_path?: string;
+    error?: string;
+    updated_at?: number;
+  }[] | null;
   video_duration?: number | null;
   resolution?: string | null;
   frame_rate?: number | null;
