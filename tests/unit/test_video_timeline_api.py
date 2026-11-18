@@ -82,6 +82,8 @@ def test_update_audio_timeline_persists_music_and_sfx_controls(completed_job, mo
     assert record["_audio_clips"]["sfx"][0]["start"] == 1.0
     assert record["_audio_settings"]["ducking_db"] == 12
     assert record["audio_settings"]["ducking_threshold_db"] == -38
+    assert record["_audio_settings"]["normalization_enabled"] is True
+    assert record["_audio_settings"]["normalization_target_dbfs"] == -18
     music_track = next(track for track in result["edit_timeline"]["tracks"] if track.get("role") == "music")
     assert music_track["clips"][0]["fade_in"] == 0.5
 
@@ -165,7 +167,7 @@ def test_render_edits_mixes_saved_audio_tracks(completed_job, monkeypatch, tmp_p
         "music": [{"asset": str(tmp_path / "music" / "bed.wav"), "start": 0, "end": 4, "volume": 0.3}],
         "sfx": [],
     }
-    video._jobs[completed_job]["_audio_settings"] = {"ducking_enabled": True, "ducking_db": 11, "ducking_threshold_db": -36, "ducking_attack": 0.08, "ducking_release": 0.35}
+    video._jobs[completed_job]["_audio_settings"] = {"ducking_enabled": True, "ducking_db": 11, "ducking_threshold_db": -36, "ducking_attack": 0.08, "ducking_release": 0.35, "normalization_enabled": True, "normalization_target_dbfs": -18, "normalization_max_gain_db": 6}
 
     result = asyncio.run(video.render_video_job_edits(completed_job))
     assert result["audio_status"] == "mixed_audio"
