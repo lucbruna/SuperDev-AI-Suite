@@ -314,6 +314,16 @@ The dashboard provides a **Validar MP4** action next to the download link. A rep
 
 This check confirms container/stream readability, not visual quality, narration intelligibility, subtitle correctness, or whether the scene images match the script. Those require separate semantic and human review.
 
+## Reconstrução seletiva de clipes VidGrid
+
+O endpoint `POST /videos/jobs/{job_id}/scenes/rebuild-stale-clips` reconstrói somente os clipes marcados como `stale` após a aprovação de uma nova imagem. Para cada cena, reutiliza a imagem aprovada, as configurações do estúdio e a narração por cena já existente; não solicita novas imagens nem recria a narração. O resultado substitui o registro do clipe daquela cena e preserva os demais clipes.
+
+- Disponível somente para jobs concluídos no modo VidGrid.
+- Cada clipe reconstruído mantém exatamente 10 segundos.
+- Falhas são reportadas por cena; clipes atualizados com sucesso são preservados mesmo se outra cena falhar.
+- Operações concorrentes de edição, regeneração em lote e render final são bloqueadas enquanto a reconstrução seletiva está ativa.
+- A reconstrução dos clipes não concatena o MP4 completo. Depois dela, ainda é necessário chamar `POST /videos/jobs/{job_id}/render-edits` para gerar o vídeo final.
+
 ## Bloqueio seguro entre regeneração e render
 
 A API agora impede alterações de imagens/candidatas enquanto o MP4 editado está sendo renderizado e impede iniciar o render final enquanto uma regeneração em lote ainda está ativa. A aprovação de candidatas também é bloqueada durante uma operação de lote. Essas respostas usam HTTP 409 para que a interface possa orientar o usuário a aguardar, em vez de permitir que o render leia um storyboard que está sendo alterado simultaneamente.
