@@ -144,6 +144,36 @@ class TextToVideoEngine:
                 result["output_path"] = voice["output_path"]
                 result["output_bytes"] = voice.get("bytes", result["output_bytes"])
 
+        # Optional timed SRT sidecar. Keep subtitles as a separate deliverable
+        # so callers can review/edit them before any burn-in/export decision.
+        if params.get("generate_subtitles") or params.get("subtitles"):
+            try:
+                from modules.ai_video_studio.media.scene_narration import scene_narration_text
+                from modules.ai_video_studio.services.subtitle_studio import SubtitleStudioService
+
+                subtitle_scenes = [
+                    {
+                        "text": scene_narration_text(scene),
+                        "duration": max(0.1, float(scene.get("duration") or duration / len(scenes))),
+                    }
+                    for scene in scenes
+                ]
+                subtitle_path = unique_filename(
+                    get_subsystem_dir("subtitles"), "text_to_video_subtitles", "srt"
+                )
+                subtitle_result = SubtitleStudioService().generate_srt(
+                    subtitle_scenes, output_path=str(subtitle_path)
+                )
+                result["subtitles"] = {
+                    "format": "srt",
+                    "file_path": subtitle_result["file_path"],
+                    "cue_count": subtitle_result["cue_count"],
+                    "duration": subtitle_result["duration"],
+                }
+            except Exception as e:  # noqa: BLE001 — sidecar failure is non-fatal
+                logger.warning("Subtitle generation failed: %s", e)
+                result["subtitles"] = {"generated": False, "reason": str(e)[:200]}
+
         elapsed = (time.time() - started) * 1000
         get_generation_statistics().record(
             mode="text_to_video", duration_ms=elapsed, quality_score=0.8,
