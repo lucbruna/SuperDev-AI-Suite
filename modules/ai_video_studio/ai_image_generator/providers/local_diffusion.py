@@ -70,6 +70,16 @@ def _decode_image(result: dict[str, Any], prefix: str) -> dict[str, Any]:
         raise RuntimeError("Image model API returned invalid base64 image data") from exc
     if not raw:
         raise RuntimeError("Image model API returned an empty image")
+    from io import BytesIO
+    from PIL import Image, UnidentifiedImageError
+
+    try:
+        with Image.open(BytesIO(raw)) as decoded:
+            if decoded.format != "PNG":
+                raise RuntimeError("Image model API must return PNG images")
+            decoded.verify()
+    except (UnidentifiedImageError, OSError) as exc:
+        raise RuntimeError("Image model API returned a corrupt or unsupported image") from exc
     output = unique_filename(get_subsystem_dir("images"), prefix, "png")
     output.write_bytes(raw)
     return {
