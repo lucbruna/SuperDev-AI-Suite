@@ -35,8 +35,8 @@ def test_concat_uses_stream_copy_and_strips_per_clip_audio(tmp_path, monkeypatch
         assert "-an" in command
         assert command[command.index("-c:v") + 1] == "copy"
         manifest = Path(command[command.index("-i") + 1]).read_text(encoding="utf-8")
-        assert manifest.startswith("ffconcat version 1.0\\n")
-        assert manifest.count("\\nfile '") == 2
+        assert manifest.startswith("ffconcat version 1.0\n")
+        assert manifest.count("\nfile '") == 2
         output = Path(command[-1])
         output.write_bytes(b"joined-mp4")
         return SimpleNamespace(returncode=0, stdout="", stderr="")
