@@ -1,8 +1,17 @@
 from __future__ import annotations
 
 import base64
+from io import BytesIO
+
+from PIL import Image
 
 from modules.ai_video_studio.ai_image_generator.providers import local_diffusion
+
+
+def _png_bytes() -> bytes:
+    buffer = BytesIO()
+    Image.new("RGB", (8, 8), (120, 30, 200)).save(buffer, format="PNG")
+    return buffer.getvalue()
 
 
 def test_text_to_image_uses_local_diffusion_api_and_saves_png(monkeypatch, tmp_path):
@@ -13,7 +22,7 @@ def test_text_to_image_uses_local_diffusion_api_and_saves_png(monkeypatch, tmp_p
 
     def fake_post(url, payload, timeout):
         captured.update(url=url, payload=payload, timeout=timeout)
-        return {"images": [base64.b64encode(b"png-image-data").decode("ascii")]}
+        return {"images": [base64.b64encode(_png_bytes()).decode("ascii")]}
     monkeypatch.setattr(local_diffusion, "_post_json", fake_post)
 
     result = local_diffusion.generate_scene_image(
@@ -22,7 +31,7 @@ def test_text_to_image_uses_local_diffusion_api_and_saves_png(monkeypatch, tmp_p
     assert captured["url"].endswith("/sdapi/v1/txt2img")
     assert captured["payload"]["prompt"] == "A felt-clay forest"
     assert captured["payload"]["steps"] == 12
-    assert output.read_bytes() == b"png-image-data"
+    assert output.read_bytes().startswith(b"\\x89PNG")
     assert result["provider"] == "automatic1111_compatible"
 
 
@@ -36,7 +45,7 @@ def test_image_to_image_sends_source_and_edit_prompt(monkeypatch, tmp_path):
 
     def fake_post(url, payload, timeout):
         captured.update(url=url, payload=payload)
-        return {"images": [base64.b64encode(b"edited-image").decode("ascii")]}
+        return {"images": [base64.b64encode(_png_bytes()).decode("ascii")]}
     monkeypatch.setattr(local_diffusion, "_post_json", fake_post)
 
     result = local_diffusion.edit_image(source, "Change the sky to sunset", denoising_strength=0.3)
