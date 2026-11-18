@@ -1100,3 +1100,19 @@ class TestSceneImageSimilarityAnalysis:
         response = await client.post("/api/v1/video-studio/videos/jobs/unsafe_similarity_job/image-similarity-analysis")
         assert response.status_code == 200
         assert response.json()["skipped_images"][0]["reason"] == "image_path_outside_asset_directory"
+
+
+class TestSceneImageCandidateDiscard:
+    @pytest.mark.asyncio
+    async def test_discard_keeps_active_scene_image_unchanged(self, client: AsyncClient, monkeypatch):
+        from modules.ai_video_studio.api.routes import video
+        monkeypatch.setitem(video._jobs, "discard_candidate_job", {
+            "job_id": "discard_candidate_job", "status": "completed",
+            "_source_scenes": [{"background_image_path": "/active/current.png"}],
+            "scene_image_candidates": {"0": [{"candidate_id": "discard-me", "image_path": "/candidate/new.png"}]},
+        })
+        response = await client.post("/api/v1/video-studio/videos/jobs/discard_candidate_job/scenes/0/image-candidates/discard-me/discard")
+        assert response.status_code == 200
+        assert response.json()["active_image_unchanged"] is True
+        assert video._jobs["discard_candidate_job"]["_source_scenes"][0]["background_image_path"] == "/active/current.png"
+        assert video._jobs["discard_candidate_job"]["scene_image_candidates"] == {}
