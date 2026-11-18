@@ -16,7 +16,7 @@ from typing import Any
 
 import numpy as np
 
-from modules.ai_video_studio.core.exceptions import ValidationError
+from modules.ai_video_studio.core.exceptions import RenderingError, ValidationError
 from modules.ai_video_studio.media.canvas import SceneCanvas
 from modules.ai_video_studio.media.output_paths import get_subsystem_dir, unique_filename
 from modules.ai_video_studio.media.video import stream_frames_to_video
@@ -84,7 +84,7 @@ class ImageToVideoEngine:
         if width % 2 or height % 2:
             raise ValidationError("ComfyUI MP4 output requires even width and height", field="resolution")
         if not shutil.which("ffmpeg"):
-            raise RuntimeError("FFmpeg is required to normalize the ComfyUI video to the requested clip duration")
+            raise RenderingError("FFmpeg is required to normalize the ComfyUI video to the requested clip duration")
 
         output = unique_filename(get_subsystem_dir("videos"), "image_to_video_ai", "mp4")
         temp_handle = tempfile.NamedTemporaryFile(prefix="darkstudio-comfyui-", suffix=".mp4", delete=False)
@@ -116,7 +116,7 @@ class ImageToVideoEngine:
             completed = subprocess.run(command, capture_output=True, text=True, timeout=max(180, duration * 20))
             if completed.returncode != 0 or not output.is_file() or output.stat().st_size == 0:
                 output.unlink(missing_ok=True)
-                raise RuntimeError(f"Could not normalize ComfyUI clip: {completed.stderr[-1500:]}")
+                raise RenderingError(f"Could not normalize ComfyUI clip: {completed.stderr[-1500:]}")
             return {
                 "mode": "image_to_video",
                 "provider": generated["provider"],
@@ -135,6 +135,10 @@ class ImageToVideoEngine:
                 "elapsed_seconds": round(time.time() - started, 3),
                 "output_ref": f"itv_{job_id}",
             }
+        except (ValidationError, RenderingError):
+            raise
+        except Exception as exc:  # normalize provider/network/timeout failures for the API layer
+            raise RenderingError(f"ComfyUI image-to-video failed: {exc}") from exc
         finally:
             raw_path.unlink(missing_ok=True)
 
