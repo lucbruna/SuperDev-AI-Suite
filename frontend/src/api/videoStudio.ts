@@ -119,6 +119,8 @@ export interface SceneVideoClip {
   encode_engine: string;
   audio_status?: "per_scene_narration_muxed" | "no_scene_narration" | "narration_mux_failed" | "single_track_not_split" | "silent_or_tts_unavailable";
   audio_error?: string;
+  status?: "updated" | "stale";
+  reason?: string;
 }
 
 export interface StudioJob {
@@ -321,7 +323,11 @@ export const videoStudioApi = {
     denoising_strength?: number;
     steps?: number;
     cfg_scale?: number;
-  }): Promise<SceneImageAsset & { job_id: string; render_required: boolean }> {
+  }): Promise<SceneImageAsset & {
+    job_id: string;
+    render_required: boolean;
+    scene_clip?: SceneVideoClip & { status?: "updated" | "stale"; reason?: string };
+  }> {
     const { data } = await apiClient.post(
       `${STUDIO_BASE}/videos/jobs/${jobId}/scenes/${sceneIndex}/image-edit`,
       payload,
