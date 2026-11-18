@@ -265,7 +265,6 @@ def render_mixed_scene_video(
     transition metadata is deliberately flattened so the encoded duration and
     downstream narration/subtitle offsets stay frame-accurate.
     """
-    import json
     import shutil
     import subprocess
     import tempfile
@@ -333,7 +332,7 @@ def render_mixed_scene_video(
 
         concat_file = temp_root / "concat.txt"
         concat_file.write_text(
-            "".join(f"file '{str(path).replace(chr(39), chr(39)+chr(92)+chr(39)+chr(39))}'\\n" for path in clip_paths),
+            "".join(f"file '{str(path).replace(chr(39), chr(39)+chr(92)+chr(39)+chr(39))}'\n" for path in clip_paths),
             encoding="utf-8",
         )
         command = [
