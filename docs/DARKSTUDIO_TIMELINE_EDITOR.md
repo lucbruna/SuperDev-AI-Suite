@@ -278,3 +278,22 @@ A regeneração individual e em lote pode operar em modo de pré-visualização.
 A ação **Detectar imagens repetidas** compara os arquivos de imagem ativos das cenas, não os textos dos prompts. O serviço calcula SHA-256 para duplicatas binariamente idênticas e um difference hash (dHash) de 64 bits para sinalizar imagens estruturalmente semelhantes, com distância de Hamming configurável (padrão 6). A execução é CPU/Pillow e não requer GPU nem serviço de IA. O relatório lista os pares de cenas e o percentual de similaridade estrutural. Isso não é reconhecimento semântico: imagens diferentes do mesmo assunto podem ser sinalizadas, e imagens visualmente relacionadas com composição alterada podem escapar. A análise é consultiva e não exclui nem substitui arquivos automaticamente.
  O botão **Manter imagem atual** descarta a candidata pendente sem alterar a imagem ativa da cena.
 \n\n## Bíblia de personagens e auditoria de continuidade\n\nO storyboard injeta instruções de identidade estáveis para personagens conhecidos: Leo (cabelo loiro, camisa azul, calça escura) e Mia (cabelo castanho preso, vestido vermelho). O perfil é acrescentado ao prompt completo de cada cena selecionada, além das restrições negativas contra alteração de identidade. A análise de continuidade compara personagens declarados por cena e descrições de aparência/figurino fornecidas em `character_appearance` ou `character_costumes`; sinaliza mudanças de elenco e divergências de aparência, com índices exatos das cenas. O relatório é exposto na API de direção visual e no editor.\n\n**Limite importante:** esta etapa é uma auditoria de metadados e instruções de geração, não reconhecimento de personagens nos pixels. Ela melhora a consistência solicitada ao gerador, mas não certifica que a imagem gerada respeitou a bíblia visual. A revisão visual continua necessária.\n
+
+## Generation preflight
+
+Before submitting a new render, the dashboard calls `POST /videos/preflight` with the same generation parameters. The response contains:
+
+- MP4 encoder availability (FFmpeg), FFprobe availability, and whether the local image endpoint / ComfyUI workflow have configuration values.
+- A hard blocker when FFmpeg is missing, plus warnings for optional or unverified services.
+- The calculated duration, frame budget, resolution and FPS. In VidGrid mode the estimate is exactly `scene_count × 10 seconds`, with ten-second clip duration.
+
+The dashboard stops before queueing when `can_queue=false` and displays warnings when the configuration is usable but incomplete. The preflight deliberately does not claim that an HTTP endpoint, model, TTS voice, GPU or ComfyUI workflow is reachable or operational; those checks require runtime/provider-specific health probes. An endpoint marked `configured_unverified` is configuration evidence only, not a successful model test.
+
+Example:
+
+```http
+POST /api/v1/video-studio/videos/preflight
+Content-Type: application/json
+```
+
+Use the same request body as `POST /videos/generate`. A successful preflight does not reserve resources or create a job; generation is still submitted separately.
