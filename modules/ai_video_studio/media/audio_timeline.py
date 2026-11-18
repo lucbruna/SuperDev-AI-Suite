@@ -67,9 +67,8 @@ def mix_audio_timeline(
     """Mix music/SFX/narration clips into one mono WAV with bounded envelopes.
 
     Each clip supports asset, start, end, trim_start, volume (0..2),
-    fade_in and fade_out. The clip's selected source segment is fitted to its
-    timeline interval without time-stretching. The mix never exceeds the
-    requested video duration.
+    fade_in, fade_out and explicit loop. Looping is opt-in and intended for
+    background music; source audio is otherwise never repeated implicitly.
     """
     if not np.isfinite(total_duration) or total_duration <= 0:
         raise ValueError("total_duration must be a positive finite number")
@@ -116,12 +115,13 @@ def mix_audio_timeline(
                 samples = dsp.resample(samples, int(round(len(samples) * sample_rate / source_rate)))
         source_start = int(round(trim_start * sample_rate))
         count = int(round(duration * sample_rate))
-        segment = np.asarray(samples[source_start:source_start + count], dtype=np.float32)
+        segment = np.asarray(samples[source_start:], dtype=np.float32)
         if len(segment) == 0:
             raise ValueError(f"audio clip {index} trim starts beyond the source asset")
-        # A clip is never looped implicitly. Short sources end in silence.
+        if bool(clip.get("loop", False)) and len(segment) < count:
+            segment = np.tile(segment, int(np.ceil(count / len(segment))))
         placed = np.zeros(count, dtype=np.float32)
-        placed[:len(segment)] = segment
+        placed[:min(count, len(segment))] = segment[:count]
         envelope = np.ones(count, dtype=np.float32)
         fade_in_samples = min(count, int(round(fade_in * sample_rate)))
         fade_out_samples = min(count, int(round(fade_out * sample_rate)))
