@@ -156,6 +156,7 @@ export interface StudioJob {
     narration_music_masking?: { start: number; end: number; duration: number; voice_music_gap_db: number }[];
     masking_method?: string;
     warnings?: { code: string; severity: "warning" | "critical"; message: string }[];
+    recommendations?: { action: string; recommended_ducking_db?: number; recommended_reduction_db?: number; message: string }[];
     critical_count?: number;
     warning_count?: number;
   } | null;
@@ -295,6 +296,7 @@ export const videoStudioApi = {
     narration_music_masking?: { start: number; end: number; duration: number; voice_music_gap_db: number }[];
     masking_method?: string;
     warnings?: { code: string; severity: "warning" | "critical"; message: string }[];
+    recommendations?: { action: string; recommended_ducking_db?: number; recommended_reduction_db?: number; message: string }[];
     critical_count?: number;
     warning_count?: number;
   } | null;
