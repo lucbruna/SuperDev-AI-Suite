@@ -65,15 +65,23 @@ class TTSEngine:
         except Exception as e:  # noqa: BLE001
             errors.append(f"network engines: {e}")
 
-        # 2) Local engines (pyttsx3 → formant synthesizer).
+        # 2) Local OS speech (pyttsx3). The OfflineTTS helper can fall back
+        # to a formant sound generator; that output is not intelligible speech
+        # and must never be mislabeled or muxed as narration.
         try:
-            return self.offline.synthesize(
+            result = self.offline.synthesize(
                 text, output_path=output_path, rate=speed, pitch=pitch,
             )
+            if result.get("engine") == "formant":
+                raise RuntimeError(
+                    "Only synthetic formant audio was available; install a local "
+                    "speech voice (pyttsx3/SAPI) or enable a network TTS provider."
+                )
+            return result
         except Exception as e:  # noqa: BLE001
-            errors.append(f"offline: {e}")
+            errors.append(f"offline speech: {e}")
 
-        raise RuntimeError("; ".join(errors) or "no TTS engine available")
+        raise RuntimeError("; ".join(errors) or "no intelligible TTS engine available")
 
 
 def voice_for_language(language: str) -> str:
