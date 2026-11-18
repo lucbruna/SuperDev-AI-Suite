@@ -9,6 +9,7 @@ vi.mock("@/api/videoStudio", () => ({
     health: vi.fn(),
     listStudios: vi.fn(),
     listCharacters: vi.fn(),
+    listSceneObjects: vi.fn(),
     listVoices: vi.fn(),
     listJobs: vi.fn(),
     getJob: vi.fn(),
@@ -49,6 +50,7 @@ beforeEach(() => {
   mockedApi.health.mockReset();
   mockedApi.listStudios.mockReset();
   mockedApi.listCharacters.mockReset();
+  mockedApi.listSceneObjects.mockReset();
   mockedApi.listVoices.mockReset();
   mockedApi.listJobs.mockReset();
   mockedApi.getJob.mockReset();
@@ -61,6 +63,7 @@ beforeEach(() => {
   });
   mockedApi.listStudios.mockResolvedValue([]);
   mockedApi.listCharacters.mockResolvedValue([]);
+  mockedApi.listSceneObjects.mockResolvedValue([]);
   mockedApi.listVoices.mockResolvedValue([]);
   mockedApi.listJobs.mockResolvedValue([]);
 
@@ -116,5 +119,26 @@ describe("VideoStudioPage", () => {
     const suggestedChip = screen.getByTitle("15s — recomendado para TikTok");
     expect(suggestedChip).toHaveAttribute("aria-pressed", "true");
     expect(within(suggestedChip).getByText("✦")).toBeInTheDocument();
+  });
+});
+
+
+describe("DARKSTUDIO scene object picker", () => {
+  it("loads studio objects and includes selected object IDs in generation", async () => {
+    mockedApi.listSceneObjects.mockResolvedValue([
+      { id: "water_glass", name: "Copo de água", studio_id: "whymentary", category: "health", description: "Copo ilustrado" },
+    ]);
+    mockedApi.generateVideo.mockResolvedValue({
+      job_id: "job_objects", project_id: "u1", status: "queued", progress: 0,
+    });
+    render(<VideoStudioPage />);
+
+    const objectCheckbox = await screen.findByRole("checkbox", { name: /Copo de água/ });
+    fireEvent.click(objectCheckbox);
+    fireEvent.click(screen.getByRole("button", { name: /Gerar vídeo/ }));
+
+    expect(mockedApi.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
+      object_ids: ["water_glass"],
+    }));
   });
 });
