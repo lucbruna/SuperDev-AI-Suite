@@ -20,6 +20,8 @@ class CharacterPreset:
     trousers: str
     shoes: str
     outline: str = "#18212F"
+    outfit_style: str = "shirt"
+    hair_tie: bool = False
 
 
 PRESETS: dict[str, CharacterPreset] = {
@@ -30,6 +32,13 @@ PRESETS: dict[str, CharacterPreset] = {
     "historical_narrator": CharacterPreset(
         "historical_narrator", "#D9AE88", "#29231F", "#8B6B43",
         "#343B46", "#171B22",
+    ),
+    "leo": CharacterPreset(
+        "leo", "#F2C9A5", "#F2C14E", "#2563EB", "#1F2937", "#111827",
+    ),
+    "mia": CharacterPreset(
+        "mia", "#F2C9A5", "#5B3828", "#DC2626", "#1F2937", "#111827",
+        outfit_style="dress", hair_tie=True,
     ),
 }
 
@@ -72,6 +81,10 @@ def character_primitives(
         {"x": px(8), "y": py(-148), "radius": 2*s, "color": preset.outline},
         {"x": px(-12), "y": py(-162), "radius": 12*s, "color": preset.hair},
     ]
+    if preset.hair_tie:
+        circles.append({
+            "x": px(21), "y": py(-163), "radius": 10*s, "color": preset.hair,
+        })
     lines: list[dict[str, Any]] = [
         {"x1": px(-13), "y1": py(-52), "x2": px(-18), "y2": py(-5),
          "color": preset.trousers, "width": max(2, int(9*s))},
@@ -115,6 +128,11 @@ def character_primitives(
         {"x": px(-25), "y": py(-110), "w": 50*s, "h": 58*s,
          "color": preset.clothing},
     ]
+    if preset.outfit_style == "dress":
+        rects.append({
+            "x": px(-31), "y": py(-65), "w": 62*s, "h": 28*s,
+            "color": preset.clothing,
+        })
     return {"rects": rects, "circles": circles, "lines": lines}
 
 
