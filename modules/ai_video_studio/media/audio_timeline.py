@@ -60,6 +60,86 @@ def list_audio_assets() -> list[dict[str, Any]]:
     return assets
 
 
+def analyze_audio_file(path: str | Path, *, sample_rate: int = dsp.SAMPLE_RATE) -> dict[str, Any]:
+    """Measure loudness, silence, clipping and stereo balance for an approved audio asset."""
+    source = Path(path).resolve()
+    if not source.is_file():
+        raise ValueError("audio analysis source does not exist")
+    samples, actual_rate = dsp.read_audio(source, target_sr=sample_rate, preserve_channels=True)
+    audio = np.asarray(samples, dtype=np.float32)
+    if audio.ndim == 1:
+        audio = audio[:, None]
+    if audio.ndim != 2 or audio.shape[1] not in (1, 2) or len(audio) == 0:
+        raise ValueError("audio analysis requires a non-empty mono or stereo file")
+    finite = np.isfinite(audio)
+    if not np.all(finite):
+        raise ValueError("audio contains NaN or infinite samples")
+    mono = np.mean(audio, axis=1, dtype=np.float32)
+    peak = dsp.peak(audio)
+    rms = dsp.rms(mono)
+    peak_db = float(20 * np.log10(max(peak, 1e-9)))
+    rms_db = float(20 * np.log10(max(rms, 1e-9)))
+    block = max(1, int(round(actual_rate * 0.1)))
+    padded = np.pad(mono, (0, (-len(mono)) % block))
+    levels = np.sqrt(np.mean(padded.reshape(-1, block) ** 2, axis=1))
+    levels_db = 20 * np.log10(np.maximum(levels, 1e-9))
+    silence_ratio = float(np.mean(levels_db < -50.0))
+    clipping_ratio = float(np.mean(np.abs(audio) >= 0.999))
+    stereo = audio.shape[1] == 2
+    left_rms = dsp.rms(audio[:, 0])
+    right_rms = dsp.rms(audio[:, 1]) if stereo else left_rms
+    balance_db = float(20 * np.log10(max(left_rms, 1e-9) / max(right_rms, 1e-9)))
+    correlation = None
+    if stereo and len(audio) > 1 and np.std(audio[:, 0]) > 1e-8 and np.std(audio[:, 1]) > 1e-8:
+        correlation = float(np.corrcoef(audio[:, 0], audio[:, 1])[0, 1])
+    warnings: list[str] = []
+    if peak_db > -0.1 or clipping_ratio > 0:
+        warnings.append("clipping_or_near_full_scale_peak")
+    if silence_ratio > 0.25:
+        warnings.append("long_silent_sections")
+    if rms_db < -38:
+        warnings.append("very_low_average_level")
+    if stereo and abs(balance_db) > 6:
+        warnings.append("strong_left_right_imbalance")
+    if correlation is not None and correlation < -0.2:
+        warnings.append("possible_stereo_phase_cancellation")
+    return {
+        "file": source.name,
+        "duration_seconds": round(len(audio) / actual_rate, 3),
+        "sample_rate": int(actual_rate),
+        "channels": int(audio.shape[1]),
+        "peak_dbfs": round(peak_db, 2),
+        "rms_dbfs": round(rms_db, 2),
+        "crest_factor_db": round(peak_db - rms_db, 2),
+        "silence_ratio": round(silence_ratio, 4),
+        "clipping_ratio": round(clipping_ratio, 6),
+        "stereo_balance_db": round(balance_db, 2) if stereo else None,
+        "stereo_correlation": round(correlation, 3) if correlation is not None else None,
+        "warnings": warnings,
+    }
+
+
+def recommend_ducking(narration_reports: list[dict[str, Any]], music_reports: list[dict[str, Any]]) -> dict[str, Any]:
+    """Suggest conservative side-chain settings from measured narration/music levels."""
+    if not narration_reports or not music_reports:
+        return {"available": False, "reason": "É necessário ter narração e música para calcular o ducking."}
+    voice_level = float(np.median([item["rms_dbfs"] for item in narration_reports]))
+    music_level = float(np.median([item["rms_dbfs"] for item in music_reports]))
+    level_gap = music_level - voice_level
+    reduction = float(np.clip(8.0 + max(0.0, level_gap) * 0.25, 6.0, 15.0))
+    threshold = float(np.clip(voice_level - 10.0, -48.0, -24.0))
+    return {
+        "available": True,
+        "narration_median_rms_dbfs": round(voice_level, 2),
+        "music_median_rms_dbfs": round(music_level, 2),
+        "recommended_ducking_db": round(reduction, 1),
+        "recommended_threshold_db": round(threshold, 1),
+        "attack_seconds": 0.08,
+        "release_seconds": 0.35,
+        "reason": "Ajuste sugerido a partir dos níveis RMS medidos; confirme ouvindo a mixagem final.",
+    }
+
+
 def _narration_activity_envelope(clips, *, total_samples, sample_rate, threshold_db, attack_seconds, release_seconds):
     """Return a smoothed speech-activity envelope for side-chain ducking."""
     block = max(1, int(round(sample_rate * 0.01)))
