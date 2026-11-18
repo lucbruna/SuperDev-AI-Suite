@@ -53,6 +53,15 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
   const [renderUrl, setRenderUrl] = useState(editedOutputUrl ?? "");
   const [message, setMessage] = useState("");
   const [dirty, setDirty] = useState(false);
+  const [musicAsset, setMusicAsset] = useState("");
+  const [musicStart, setMusicStart] = useState("0");
+  const [musicEnd, setMusicEnd] = useState("10");
+  const [musicVolume, setMusicVolume] = useState("0.25");
+  const [sfxAsset, setSfxAsset] = useState("");
+  const [sfxStart, setSfxStart] = useState("0");
+  const [sfxEnd, setSfxEnd] = useState("1");
+  const [sfxVolume, setSfxVolume] = useState("0.8");
+  const [savingAudio, setSavingAudio] = useState(false);
   const videoTrack = draft.tracks.find((track) => track.type === "video");
   const clips = videoTrack?.clips ?? [];
   const duration = Math.max(1, draft.duration_frames);
@@ -116,6 +125,51 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
       setMessage(error instanceof Error ? error.message : "Não foi possível salvar o rascunho.");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function saveAudioDraft() {
+    if (!jobId || dirty || saving) return;
+    const parseClip = (asset: string, start: string, end: string, volume: string) => {
+      if (!asset.trim()) return null;
+      const startValue = Number(start);
+      const endValue = Number(end);
+      const volumeValue = Number(volume);
+      if (!Number.isFinite(startValue) || !Number.isFinite(endValue) || !Number.isFinite(volumeValue) ||
+          startValue < 0 || endValue <= startValue || volumeValue < 0 || volumeValue > 2) {
+        throw new Error("Confira posição, fim e volume das faixas de áudio.");
+      }
+      return { asset: asset.trim(), start: startValue, end: endValue, volume: volumeValue };
+    };
+    setSavingAudio(true);
+    setMessage("");
+    try {
+      const existingMusic = draft.tracks.find((track) => track.role === "music")?.clips ?? [];
+      const existingSfx = draft.tracks.find((track) => track.role === "sound_effect")?.clips ?? [];
+      const music = existingMusic.map((clip) => ({
+        asset: clip.asset ?? "", start: clip.start_seconds ?? clip.start_frame / draft.fps,
+        end: clip.end_seconds ?? clip.end_frame / draft.fps, volume: clip.volume ?? 1,
+        trim_start: clip.trim_start ?? 0, fade_in: clip.fade_in ?? 0, fade_out: clip.fade_out ?? 0,
+      })).filter((clip) => clip.asset);
+      const sfx = existingSfx.map((clip) => ({
+        asset: clip.asset ?? "", start: clip.start_seconds ?? clip.start_frame / draft.fps,
+        end: clip.end_seconds ?? clip.end_frame / draft.fps, volume: clip.volume ?? 1,
+        trim_start: clip.trim_start ?? 0, fade_in: clip.fade_in ?? 0, fade_out: clip.fade_out ?? 0,
+      })).filter((clip) => clip.asset);
+      const nextMusic = parseClip(musicAsset, musicStart, musicEnd, musicVolume);
+      const nextSfx = parseClip(sfxAsset, sfxStart, sfxEnd, sfxVolume);
+      if (nextMusic) music.push(nextMusic);
+      if (nextSfx) sfx.push(nextSfx);
+      const result = await videoStudioApi.updateJobAudio(jobId, { music_clips: music, sfx_clips: sfx });
+      setDraft(result.edit_timeline);
+      onSaved?.(result.edit_timeline);
+      setMusicAsset("");
+      setSfxAsset("");
+      setMessage(result.message);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Não foi possível salvar as faixas de áudio.");
+    } finally {
+      setSavingAudio(false);
     }
   }
 
@@ -225,6 +279,39 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
         </div>
       )}
 
+      {jobId && (
+        <div className="mb-4 grid gap-3 rounded-lg border border-surface-200 p-3 dark:border-surface-700 sm:grid-cols-2">
+          <div className="space-y-2">
+            <strong className="text-sm">🎵 Música de fundo</strong>
+            <label className="block text-xs text-surface-500">Caminho do áudio gerado
+              <input value={musicAsset} onChange={(event) => setMusicAsset(event.target.value)} placeholder="modules/downloads/music/faixa.wav" className="mt-1 w-full rounded border bg-transparent px-2 py-1.5 text-xs" />
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              <label className="text-xs text-surface-500">Início (s)<input type="number" min="0" value={musicStart} onChange={(event) => setMusicStart(event.target.value)} className="mt-1 w-full rounded border bg-transparent px-2 py-1" /></label>
+              <label className="text-xs text-surface-500">Fim (s)<input type="number" min="0.1" value={musicEnd} onChange={(event) => setMusicEnd(event.target.value)} className="mt-1 w-full rounded border bg-transparent px-2 py-1" /></label>
+              <label className="text-xs text-surface-500">Volume (0–2)<input type="number" min="0" max="2" step="0.05" value={musicVolume} onChange={(event) => setMusicVolume(event.target.value)} className="mt-1 w-full rounded border bg-transparent px-2 py-1" /></label>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <strong className="text-sm">🔊 Efeito sonoro</strong>
+            <label className="block text-xs text-surface-500">Caminho do áudio gerado
+              <input value={sfxAsset} onChange={(event) => setSfxAsset(event.target.value)} placeholder="modules/downloads/effects/impact.wav" className="mt-1 w-full rounded border bg-transparent px-2 py-1.5 text-xs" />
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              <label className="text-xs text-surface-500">Início (s)<input type="number" min="0" value={sfxStart} onChange={(event) => setSfxStart(event.target.value)} className="mt-1 w-full rounded border bg-transparent px-2 py-1" /></label>
+              <label className="text-xs text-surface-500">Fim (s)<input type="number" min="0.1" value={sfxEnd} onChange={(event) => setSfxEnd(event.target.value)} className="mt-1 w-full rounded border bg-transparent px-2 py-1" /></label>
+              <label className="text-xs text-surface-500">Volume (0–2)<input type="number" min="0" max="2" step="0.05" value={sfxVolume} onChange={(event) => setSfxVolume(event.target.value)} className="mt-1 w-full rounded border bg-transparent px-2 py-1" /></label>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
+            <button type="button" onClick={saveAudioDraft} disabled={savingAudio || dirty || saving || (!musicAsset.trim() && !sfxAsset.trim() && !draft.tracks.some((track) => track.role === "music" || track.role === "sound_effect"))} className="rounded-md border border-surface-300 px-3 py-2 text-xs font-semibold disabled:opacity-40 dark:border-surface-600">
+              {savingAudio ? "Salvando áudio…" : "Salvar faixas de áudio"}
+            </button>
+            <span className="text-[11px] text-surface-400">Use arquivos nas pastas geradas music, effects, voice ou dubbing. Caminhos externos são bloqueados.</span>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-wrap items-center gap-3 border-t border-surface-100 pt-3 dark:border-surface-800">
         <label className="flex min-w-[220px] flex-1 items-center gap-2 text-xs text-surface-500">
           <span>Cursor</span>
@@ -245,7 +332,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
       {message && <p role="status" className="mt-2 text-xs text-surface-500">{message}</p>}
       {renderUrl && <p className="mt-2 text-xs"><a className="text-primary-600 underline" href={renderUrl} target="_blank" rel="noreferrer">Abrir MP4 renderizado</a></p>}
       <p className="mt-2 text-[11px] text-surface-400">
-        O rascunho fica no SQLite local do servidor. A prévia MP4 é salva separadamente; narração e demais faixas de áudio ainda não são reposicionadas automaticamente.
+        O rascunho fica no SQLite local. Música, efeitos e narração por cena são mixados na renderização; uma faixa única original não é reposicionada automaticamente.
       </p>
     </section>
   );
