@@ -211,7 +211,6 @@ export interface StudioJob {
     title?: string;
     visual_prompt?: string;
     image_provider?: string;
-    clip_path?: string;
     error?: string;
     updated_at?: number;
   }[] | null;
