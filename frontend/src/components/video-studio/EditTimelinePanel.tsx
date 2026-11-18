@@ -229,7 +229,10 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
     try {
       const result = await videoStudioApi.renderJobEdits(jobId);
       setRenderUrl(result.output_url);
-      setMessage(result.message);
+      const duckingNote = result.ducking?.speech_detected
+        ? ` Ducking aplicado: redução de ${result.ducking.reduction_db ?? 0} dB durante a narração.`
+        : "";
+      setMessage(result.message + duckingNote);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Falha ao renderizar a edição.");
     } finally {
