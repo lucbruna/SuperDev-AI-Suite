@@ -84,3 +84,12 @@ The editor displays the report after rendering and can restore it from job statu
 - edit_draft_status: persisted_local_sqlite means scene edits were stored in the local SQLite database.
 - edit_render_status: rendering | completed | failed | quality_blocked describes the edited MP4 lifecycle.
 - audio_status: use the values above; it is not a generic guarantee that the original narration was retained.
+
+
+## A/V Sync Intelligence
+
+The editor exposes `POST /videos/jobs/{job_id}/av-sync-analysis` and the **Verificar A/V** action. The analyzer compares narration clip ranges with video scene ranges using integer frames and the project FPS. It reports scene start/end offsets, long narration gaps, overlaps, and narration extending beyond the video. A two-frame tolerance is used by default; intentional crossfade overlaps are accounted for when comparing scene ends.
+
+The report is persisted on the job as `av_sync_analysis` and is restored when reopening the editor. Critical narration ranges outside the video are reported as blocked; ordinary timing mismatches and long gaps require review.
+
+**Scope limitation:** this is timeline metadata validation only. It does not inspect acoustic speech onsets, lip movements, dialogue semantics, or actual mouth synchronization. A waveform/forced-alignment or audiovisual model would be required for those checks. It does not silently shift or trim clips.
