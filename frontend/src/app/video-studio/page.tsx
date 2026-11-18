@@ -79,6 +79,7 @@ export default function VideoStudioPage() {
   const [characterLoadError, setCharacterLoadError] = useState<string | null>(null);
   const [sceneObjects, setSceneObjects] = useState<StudioSceneObject[]>([]);
   const [selectedObjectIds, setSelectedObjectIds] = useState<string[]>([]);
+  const [sceneImageMode, setSceneImageMode] = useState<"procedural" | "ai" | "auto">("procedural");
   const [objectLoadError, setObjectLoadError] = useState<string | null>(null);
 
   // Generation form state
@@ -218,6 +219,7 @@ export default function VideoStudioPage() {
         studio_id: studioId,
         character_ids: selectedCharacterIds,
         object_ids: selectedObjectIds,
+        scene_image_mode: sceneImageMode,
         voiceover,
         generate_subtitles: generateSubtitles,
         voice_id: voiceId,
@@ -444,6 +446,20 @@ export default function VideoStudioPage() {
               })}
             </div>
             {!sceneObjects.length && !objectLoadError && <p className="text-xs text-surface-400">Nenhum objeto cadastrado para este estúdio.</p>}
+          </section>
+
+          <section className="rounded-xl border border-surface-200 p-4 dark:border-surface-700" aria-labelledby="scene-image-mode-title">
+            <h3 id="scene-image-mode-title" className="text-sm font-semibold text-surface-900 dark:text-surface-100">Imagens das cenas</h3>
+            <p className="mt-1 text-xs text-surface-500">Cada cena pode receber uma imagem própria criada a partir do texto do roteiro. Você não fica limitado à biblioteca de Mia, Leo ou objetos prontos.</p>
+            <label className="mt-3 block">
+              <span className="text-xs font-medium text-surface-500">Motor visual</span>
+              <select value={sceneImageMode} onChange={(event) => setSceneImageMode(event.target.value as "procedural" | "ai" | "auto")} className="mt-1 w-full rounded-lg border border-surface-200 bg-transparent p-2 text-sm text-surface-900 dark:border-surface-700 dark:text-surface-100">
+                <option value="procedural">Procedural — sem modelo de imagem</option>
+                <option value="ai">IA local — gerar uma imagem por cena</option>
+                <option value="auto">Automático — IA local e fallback procedural</option>
+              </select>
+            </label>
+            <p className="mt-2 text-xs text-surface-400">A opção IA exige um servidor local compatível com Stable Diffusion WebUI API configurado em DARKSTUDIO_IMAGE_API_URL. O modo procedural continua disponível sem esse servidor.</p>
           </section>
 
           {/* ── Resolution + FPS ─────────────────────────────────── */}
