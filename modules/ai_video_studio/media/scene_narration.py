@@ -49,7 +49,7 @@ def compute_scene_offsets(
     offsets: list[float] = []
     cursor = 0.0
     durations = [max(0.1, float(scene.get("duration") or fallback_duration)) for scene in scenes]
-    frame_counts = [max(1, int(duration * fps)) for duration in durations]
+    frame_counts = [max(1, int(round(duration * fps))) for duration in durations]
     for index, scene in enumerate(scenes):
         offsets.append(round(cursor, 6))
         cursor += frame_counts[index] / fps
