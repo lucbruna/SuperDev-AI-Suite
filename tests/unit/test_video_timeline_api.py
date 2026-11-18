@@ -389,3 +389,48 @@ def test_visual_analysis_endpoint_requires_scene_plan(completed_job):
     with pytest.raises(HTTPException) as exc:
         asyncio.run(video.analyze_video_job_visuals(completed_job))
     assert exc.value.status_code == 409
+
+
+def test_mp4_visual_analysis_endpoint_persists_real_frame_report(completed_job, monkeypatch):
+    from modules.ai_video_studio.media import mp4_visual_analysis
+
+    captured = {}
+    def fake_analyze(path, *, timeline=None, max_frames=48):
+        captured.update(path=path, timeline=timeline, max_frames=max_frames)
+        return {
+            "status": "needs_review", "sample_count": 8, "comparison_count": 7,
+            "duplicate_pair_count": 2, "low_change_pair_count": 3,
+            "static_runs": [], "scene_summaries": [], "comparisons": [],
+            "warnings": [{"code": "near_duplicate_sampled_frames", "count": 2}],
+            "analysis_method": "ffmpeg_sampled_frames_pillow_numpy",
+            "limitations": ["Não reconhece personagens."],
+            "video_duration_seconds": 4.0, "sample_interval_seconds": 0.5,
+            "video_file_bytes": 1234, "max_frames": max_frames,
+        }
+    monkeypatch.setattr(mp4_visual_analysis, "analyze_mp4_visuals", fake_analyze)
+    monkeypatch.setattr(video, "_persist_job", lambda record: None)
+    record = video._jobs[completed_job]
+    record["output_path"] = "/tmp/original.mp4"
+    result = asyncio.run(video.analyze_video_job_mp4_visuals(completed_job, max_frames=8))
+    assert captured["path"] == "/tmp/original.mp4"
+    assert captured["max_frames"] == 8
+    assert result["video_source"] == "original"
+    assert result["sample_count"] == 8
+    assert record["mp4_visual_analysis"]["duplicate_pair_count"] == 2
+
+
+def test_mp4_visual_analysis_requires_completed_video_job(completed_job):
+    record = video._jobs[completed_job]
+    record["output_path"] = "/tmp/original.mp4"
+    record["status"] = "processing"
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(video.analyze_video_job_mp4_visuals(completed_job))
+    assert exc.value.status_code == 409
+
+
+def test_mp4_visual_analysis_requires_rendered_output_path(completed_job):
+    record = video._jobs[completed_job]
+    record.pop("output_path", None)
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(video.analyze_video_job_mp4_visuals(completed_job))
+    assert exc.value.status_code == 409
