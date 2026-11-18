@@ -197,6 +197,7 @@ def test_job_status_exposes_persisted_edit_render_metadata(completed_job) -> Non
         edited_video_duration=4.0,
         edit_render_audio="mixed_audio",
         edit_render_ducking={"enabled": True, "reduction_db": 12, "speech_detected": True},
+        edit_render_normalization={"enabled": True, "target_dbfs": -18, "gain_db": -2},
         edit_render_subtitles="regenerated",
         edited_subtitles={"format": "srt", "download_url": "/downloads/edited.srt"},
     )
@@ -205,5 +206,6 @@ def test_job_status_exposes_persisted_edit_render_metadata(completed_job) -> Non
     assert result.edit_render_status == "completed"
     assert result.edit_render_audio == "mixed_audio"
     assert result.edit_render_ducking["reduction_db"] == 12
+    assert result.edit_render_normalization["gain_db"] == -2
     assert result.edit_render_subtitles == "regenerated"
     assert result.edited_subtitles["download_url"] == "/downloads/edited.srt"
