@@ -230,3 +230,13 @@ A geração de movimento ComfyUI pode ser iniciada dentro de uma cena já existe
 **Limitação atual de montagem mista:** o assembler concatena com cortes secos. Se a timeline tiver crossfade ou fade-through-black, esses efeitos são convertidos em cortes secos quando há pelo menos um clipe generativo. A EDL, os offsets de narração por cena e as legendas são recalculados com esse mesmo tempo de corte para evitar dessincronização. O renderer tradicional continua aplicando as transições quando nenhuma cena usa clipe generativo.
 
 A geração exige ComfyUI e workflow API configurados no servidor. O endpoint não inicia nem instala o ComfyUI automaticamente.
+
+
+## Diretor visual por cena e regeneração pontual
+
+- `GET /videos/jobs/{job_id}/visual-direction` retorna a narração, o papel narrativo, o enquadramento, a direção de composição e a sugestão de prompt por cena.
+- O editor apresenta a justificativa do plano e preenche o prompt sugerido; o usuário pode alterá-lo antes de gerar a imagem.
+- `POST /videos/jobs/{job_id}/scenes/{scene_index}/image-edit` regenera somente a imagem da cena selecionada. O endpoint usa o índice estável da cena original mesmo quando a timeline foi reordenada.
+- A regeneração preserva o restante do storyboard e do MP4 original. O clipe VidGrid correspondente pode ser atualizado separadamente; para refletir a imagem no vídeo completo, é necessário renderizar a edição.
+- O diretor não inventa fatos históricos: sugestões visuais são derivadas do texto narrado e identificadas como instruções de composição, não como novas afirmações factuais.
+- O perfil Whymentary mantém fundo branco, formas 2D e cores chapadas; Historical Documentary mantém ilustração cinematográfica, profundidade e luz atmosférica.
