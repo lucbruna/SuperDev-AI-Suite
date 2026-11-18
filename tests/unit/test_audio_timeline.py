@@ -36,6 +36,41 @@ def test_list_audio_assets_returns_only_approved_generated_files(tmp_path, monke
     assert all("secret" not in item["asset"] for item in assets)
 
 
+
+def test_dsp_round_trips_stereo_wav_without_collapsing_channels(tmp_path):
+    source = tmp_path / "stereo.wav"
+    stereo = np.column_stack([np.full(800, 0.25, dtype=np.float32), np.full(800, -0.1, dtype=np.float32)])
+    dsp.write_audio(source, stereo, sample_rate=8000)
+    decoded, rate = dsp.read_audio(source, target_sr=8000, preserve_channels=True)
+    assert rate == 8000
+    assert decoded.shape == (800, 2)
+    assert np.mean(decoded[:, 0]) == pytest.approx(0.25, abs=0.001)
+    assert np.mean(decoded[:, 1]) == pytest.approx(-0.1, abs=0.001)
+
+def test_stereo_mixer_keeps_channels_and_applies_pan(tmp_path, monkeypatch):
+    _audio_roots(tmp_path, monkeypatch)
+    stereo = np.column_stack([np.full(8000, 0.2, dtype=np.float32), np.full(8000, 0.2, dtype=np.float32)])
+    output = tmp_path / "panned.wav"
+    result = audio_timeline.mix_audio_timeline(
+        [{"samples": stereo, "start": 0, "end": 1, "kind": "sound_effect", "pan": -1}],
+        output, total_duration=1, sample_rate=8000, normalization_enabled=False,
+    )
+    with wave.open(str(output), "rb") as rendered:
+        assert rendered.getnchannels() == 2
+    rendered, rate = dsp.read_audio(output, target_sr=8000, preserve_channels=True)
+    assert result["channels"] == 2
+    assert result["channel_layout"] == "stereo"
+    assert np.mean(np.abs(rendered[:, 0])) > 0.1
+    assert np.max(np.abs(rendered[:, 1])) < 0.001
+
+def test_stereo_limiter_uses_linked_gain_for_both_channels():
+    stereo = np.zeros((2000, 2), dtype=np.float32)
+    stereo[500, 0] = 1.2
+    stereo[500, 1] = 0.6
+    limited = dsp.limiter(stereo, threshold=0.8, sample_rate=8000)
+    assert np.max(np.abs(limited)) <= 0.801
+    assert limited[500 + 40, 1] / limited[500 + 40, 0] == pytest.approx(0.5, abs=0.02)
+
 def test_mix_audio_timeline_places_trimmed_clip_with_fades_and_fixed_duration(tmp_path, monkeypatch):
     downloads = _audio_roots(tmp_path, monkeypatch)
     source = downloads / "music" / "bed.wav"
@@ -124,7 +159,7 @@ def test_normalize_loudness_file_uses_two_pass_ebu_r128(tmp_path, monkeypatch):
             Path(command[-1]).write_bytes(b"normalized")
         return type("Result", (), {"returncode": 0, "stderr": report, "stdout": ""})()
     monkeypatch.setattr(audio_timeline.subprocess, "run", fake_run)
-    monkeypatch.setattr(dsp, "read_audio", lambda path, target_sr: (np.full(4410, 0.1, dtype=np.float32), 44100))
+    monkeypatch.setattr(dsp, "read_audio", lambda path, target_sr, preserve_channels=False: (np.full((4410, 2), 0.1, dtype=np.float32) if preserve_channels else np.full(4410, 0.1, dtype=np.float32), 44100))
     monkeypatch.setattr(dsp, "limiter", lambda samples, **kwargs: samples)
     written = []
     monkeypatch.setattr(dsp, "write_audio", lambda path, samples, sample_rate: written.append((path, sample_rate)) or path)
