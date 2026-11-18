@@ -70,11 +70,16 @@ def _narration_activity_envelope(clips, *, total_samples, sample_rate, threshold
         samples = clip.get("samples")
         if samples is None:
             continue
-        audio = np.asarray(samples, dtype=np.float32).reshape(-1)
+        audio = np.asarray(samples, dtype=np.float32)
+        if audio.ndim == 1:
+            audio = audio[:, None]
+        if audio.ndim != 2:
+            continue
+        mono = np.mean(audio, axis=1, dtype=np.float32)
         start = max(0, int(round(float(clip.get("offset", clip.get("start", 0))) * sample_rate)))
-        end = min(total_samples, start + len(audio))
+        end = min(total_samples, start + len(mono))
         if end <= start: continue
-        source = audio[:end - start]
+        source = mono[:end - start]
         padded = np.pad(source, (0, (-len(source)) % block))
         if len(padded) == 0: continue
         rms = np.sqrt(np.mean(padded.reshape(-1, block) ** 2, axis=1))
@@ -144,7 +149,7 @@ def normalize_loudness_file(path: str | Path, *, target_lufs: float = -14.0, tru
         temporary = Path(tmp.name)
     try:
         output_report = _ffmpeg_loudnorm_pass(source, temporary, target_lufs=target_lufs, true_peak_db=true_peak_db, lra=lra, measured=measured)
-        normalized, rate = dsp.read_audio(temporary, target_sr=44100)
+        normalized, rate = dsp.read_audio(temporary, target_sr=44100, preserve_channels=True)
         safe = dsp.limiter(normalized, threshold=float(10 ** (true_peak_db / 20.0)), sample_rate=rate)
         dsp.write_audio(source, safe, sample_rate=rate)
         verified = _ffmpeg_loudnorm_pass(source, None, target_lufs=target_lufs, true_peak_db=true_peak_db, lra=lra)
@@ -171,7 +176,7 @@ def mix_audio_timeline(
     true_peak_db: float = -1.0,
     loudness_range: float = 11.0,
 ) -> dict[str, Any]:
-    """Mix music/SFX/narration clips into one mono WAV with bounded envelopes.
+    """Mix music/SFX/narration clips into a stereo WAV with bounded envelopes.
 
     Each clip supports asset, start, end, trim_start, volume (0..2),
     fade_in, fade_out and explicit loop. Looping is opt-in and intended for
@@ -190,7 +195,8 @@ def mix_audio_timeline(
     if not all(np.isfinite(value) for value in (target_lufs, true_peak_db, loudness_range)) or not -36 <= target_lufs <= -5 or not -9 <= true_peak_db <= 0 or not 1 <= loudness_range <= 20:
         raise ValueError("LUFS target must be -36..-5, true peak -9..0 dBTP, and LRA 1..20")
     total_samples = int(round(total_duration * sample_rate))
-    mix = np.zeros(total_samples, dtype=np.float64)
+    output_channels = 2
+    mix = np.zeros((total_samples, output_channels), dtype=np.float64)
     reports: list[dict[str, Any]] = []
     speech_envelope = (_narration_activity_envelope(clips, total_samples=total_samples, sample_rate=sample_rate, threshold_db=ducking_threshold_db, attack_seconds=ducking_attack, release_seconds=ducking_release) if ducking_enabled and ducking_db > 0 else np.zeros(total_samples, dtype=np.float32))
     duck_floor = float(10 ** (-ducking_db / 20.0))
@@ -224,12 +230,18 @@ def mix_audio_timeline(
             raise ValueError(f"audio clip {index} fade exceeds its timeline duration")
 
         if raw_samples is not None:
-            samples = np.asarray(raw_samples, dtype=np.float32).reshape(-1)
+            samples = np.asarray(raw_samples, dtype=np.float32)
             source_rate = sample_rate
         else:
-            samples, source_rate = dsp.read_audio(asset, target_sr=sample_rate)
+            samples, source_rate = dsp.read_audio(asset, target_sr=sample_rate, preserve_channels=True)
             if source_rate != sample_rate:
                 samples = dsp.resample(samples, int(round(len(samples) * sample_rate / source_rate)))
+        if samples.ndim == 1:
+            samples = samples[:, None]
+        if samples.ndim != 2 or samples.shape[1] not in (1, 2):
+            raise ValueError(f"audio clip {index} must contain mono or stereo samples")
+        if samples.shape[1] == 1:
+            samples = np.repeat(samples, 2, axis=1)
         source_start = int(round(trim_start * sample_rate))
         count = int(round(duration * sample_rate))
         segment = np.asarray(samples[source_start:], dtype=np.float32)
@@ -237,7 +249,7 @@ def mix_audio_timeline(
             raise ValueError(f"audio clip {index} trim starts beyond the source asset")
         if bool(clip.get("loop", False)) and len(segment) < count:
             segment = np.tile(segment, int(np.ceil(count / len(segment))))
-        placed = np.zeros(count, dtype=np.float32)
+        placed = np.zeros((count, output_channels), dtype=np.float32)
         placed[:min(count, len(segment))] = segment[:count]
         envelope = np.ones(count, dtype=np.float32)
         fade_in_samples = min(count, int(round(fade_in * sample_rate)))
@@ -254,7 +266,7 @@ def mix_audio_timeline(
             visible = placed[:destination_end - destination_start]
             if clip.get("kind") == "music" and ducking_enabled and ducking_db > 0:
                 speech = speech_envelope[destination_start:destination_end]
-                visible = visible * (1.0 - speech * (1.0 - duck_floor))
+                visible = visible * (1.0 - speech[:, None] * (1.0 - duck_floor))
             mix[destination_start:destination_end] += visible
         reports.append({
             "index": index,
@@ -281,11 +293,13 @@ def mix_audio_timeline(
     loudness_report = None
     if loudness_normalization_enabled:
         loudness_report = normalize_loudness_file(out, target_lufs=target_lufs, true_peak_db=true_peak_db, lra=loudness_range)
-        limited, _ = dsp.read_audio(out, target_sr=sample_rate)
+        limited, _ = dsp.read_audio(out, target_sr=sample_rate, preserve_channels=True)
     return {
         "output_path": str(out),
         "duration": round(len(limited) / sample_rate, 3),
         "sample_rate": sample_rate,
+        "channels": output_channels,
+        "channel_layout": "stereo",
         "clip_count": len(reports),
         "clips": reports,
         "peak": round(dsp.peak(limited), 4),
