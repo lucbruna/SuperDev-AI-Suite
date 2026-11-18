@@ -64,6 +64,7 @@ class VideoGenerateRequest(BaseModel):
     scene_image_mode: str = Field(default="procedural", pattern="^(procedural|ai|auto)$", description="Procedural scenes or per-scene local diffusion image generation")
     scene_image_steps: int = Field(default=20, ge=1, le=60)
     scene_image_timeout: float = Field(default=240.0, ge=1.0, le=900.0)
+    vidgrid_compatible: bool = Field(default=False, description="Render every storyboard clip at exactly 10 seconds for VidGrid")
 
     @field_validator("resolution")
     @classmethod
@@ -165,6 +166,8 @@ class VideoStatusResponse(BaseModel):
     mp4_visual_analysis: dict | None = None
     scene_image_mode: str | None = None
     scene_assets: list[dict] | None = None
+    vidgrid_compatible: bool | None = None
+    clip_duration_seconds: float | None = None
     edit_render_ducking: dict | None = None
     edit_render_normalization: dict | None = None
     edit_render_loudness: dict | None = None
@@ -307,6 +310,7 @@ async def generate_video(req: VideoGenerateRequest, background_tasks: Background
                         "scene_image_mode": r.scene_image_mode,
                         "scene_image_steps": r.scene_image_steps,
                         "scene_image_timeout": r.scene_image_timeout,
+                        "vidgrid_compatible": r.vidgrid_compatible,
                     },
                 },
                 progress_callback=_on_render_progress,
@@ -332,6 +336,8 @@ async def generate_video(req: VideoGenerateRequest, background_tasks: Background
                 edit_timeline=result.get("edit_timeline"),
                 scene_image_mode=result.get("scene_image_mode", "procedural"),
                 scene_assets=result.get("scene_assets", []),
+                vidgrid_compatible=result.get("vidgrid_compatible", False),
+                clip_duration_seconds=result.get("clip_duration_seconds"),
                 _source_scenes=result.get("scenes"),
                 _edited_scenes=result.get("scenes"),
             )
