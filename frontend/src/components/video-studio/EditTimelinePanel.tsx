@@ -241,7 +241,10 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
       const duckingNote = result.ducking?.speech_detected
         ? ` Ducking aplicado: redução de ${result.ducking.reduction_db ?? 0} dB durante a narração.`
         : "";
-      setMessage(result.message + duckingNote);
+      const normalizationNote = result.normalization?.enabled
+        ? ` Normalização RMS: ${result.normalization.gain_db ?? 0} dB de ajuste, com limitador de pico.`
+        : "";
+      setMessage(result.message + duckingNote + normalizationNote);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Falha ao renderizar a edição.");
     } finally {
