@@ -253,15 +253,17 @@ it("generates a separate 10-second ComfyUI motion clip from a scene image", asyn
     job_id: "motion-job", project_id: "p1", status: "completed", progress: 1,
   });
   vi.spyOn(videoStudioApi, "listJobAudioAssets").mockResolvedValue([]);
-  const generate = vi.spyOn(videoStudioApi, "generateImageToVideo").mockResolvedValue({
-    success: true,
-    data: {
-      output_path: "/downloads/videos/ai-motion.mp4",
-      download_url: "/api/v1/downloads/videos/ai-motion.mp4",
-      duration: 10,
-      fps: 24,
-      provider: "comfyui_workflow",
-    },
+  const generate = vi.spyOn(videoStudioApi, "generateJobSceneMotion").mockResolvedValue({
+    job_id: "motion-job",
+    scene_index: 0,
+    status: "ready",
+    output_path: "/downloads/videos/ai-motion.mp4",
+    download_url: "/api/v1/downloads/videos/ai-motion.mp4",
+    duration: 10,
+    frames: 240,
+    fps: 24,
+    provider: "comfyui_workflow",
+    message: "saved",
   });
   const vidgridTimeline: EditTimeline = {
     ...timeline,
@@ -286,13 +288,9 @@ it("generates a separate 10-second ComfyUI motion clip from a scene image", asyn
     }]}
   />);
   fireEvent.click(screen.getByRole("button", { name: "Animar com IA · ComfyUI" }));
-  await waitFor(() => expect(generate).toHaveBeenCalledWith(expect.objectContaining({
-    image_ref: "/downloads/images/scene-01.png",
-    duration_seconds: 10,
-    fps: 24,
-    motion_provider: "comfyui",
+  await waitFor(() => expect(generate).toHaveBeenCalledWith("motion-job", 0, expect.objectContaining({
     motion_prompt: "A historical ship crossing the sea",
   })));
-  expect(await screen.findByText(/Clipe generativo da cena 1 concluído/)).toBeInTheDocument();
+  expect(await screen.findByText(/Clipe generativo da cena 1 integrado ao projeto/)).toBeInTheDocument();
   expect(screen.getByText(/Abrir clipe generativo da cena 1/)).toBeInTheDocument();
 });
