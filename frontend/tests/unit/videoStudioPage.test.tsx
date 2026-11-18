@@ -98,6 +98,20 @@ describe("VideoStudioPage", () => {
     expect(within(jobsSection).queryByText("Quadrado 1:1")).not.toBeInTheDocument();
   });
 
+  it("defaults to automatic prompt-driven images for every scene", async () => {
+    mockedApi.generateVideo.mockResolvedValue({
+      job_id: "job_auto_images", project_id: "u1", status: "queued", progress: 0,
+    });
+    render(<VideoStudioPage />);
+    await screen.findByText("Gerar vídeo com narração");
+    const imageMode = screen.getByLabelText("Motor visual");
+    expect(imageMode).toHaveValue("auto");
+    fireEvent.click(screen.getByRole("button", { name: /Gerar vídeo/ }));
+    expect(mockedApi.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
+      scene_image_mode: "auto",
+    }));
+  });
+
   it("suggests the matching duration preset when a format is active", async () => {
     render(<VideoStudioPage />);
     await screen.findByText("Gerar vídeo com narração");
