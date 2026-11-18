@@ -1390,3 +1390,20 @@ class TestSelectiveVidGridClipRebuild:
         with pytest.raises(HTTPException) as error:
             await video.rebuild_stale_video_job_scene_clips("busy-vidgrid-job")
         assert error.value.status_code == 409
+
+    @pytest.mark.asyncio
+    async def test_batch_image_regeneration_rejects_during_stale_clip_rebuild(self):
+        from fastapi import HTTPException
+        from modules.ai_video_studio.api.routes import video
+
+        video._jobs["batch-lock-vidgrid-job"] = {
+            "job_id": "batch-lock-vidgrid-job", "status": "completed",
+            "_rebuilding_scene_clips": True,
+        }
+        request = video.SceneImageBatchEditRequest(
+            scenes=[{"scene_index": 0, "prompt": "A distinct educational background"}],
+        )
+        with pytest.raises(HTTPException) as error:
+            await video.regenerate_video_job_scene_images("batch-lock-vidgrid-job", request)
+        assert error.value.status_code == 409
+
