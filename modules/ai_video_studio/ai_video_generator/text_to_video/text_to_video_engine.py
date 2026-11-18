@@ -208,9 +208,9 @@ class TextToVideoEngine:
             )
 
             per_scene = str(params.get("voiceover_mode", "per_scene")).lower() != "single"
-            has_scene_text = any(
-                (s.get("description") or s.get("voiceover_text") or s.get("name")) for s in scenes
-            )
+            from modules.ai_video_studio.media.scene_narration import scene_narration_text
+
+            has_scene_text = any(scene_narration_text(s) for s in scenes)
             if per_scene and has_scene_text:
                 result = await synthesize_scene_narration_async(
                     scenes,
@@ -280,9 +280,11 @@ class TextToVideoEngine:
     def _build_narration(prompt: str, scenes: list[dict[str, Any]]) -> str:
         """Compose (and cap) the narration text from scene descriptions."""
         parts: list[str] = []
+        from modules.ai_video_studio.media.scene_narration import scene_narration_text
+
         for scene in scenes:
-            description = scene.get("description") or scene.get("name") or ""
-            if description:
-                parts.append(str(description))
+            text = scene_narration_text(scene)
+            if text:
+                parts.append(text)
         joined = " ".join(parts).strip() if parts else prompt
         return joined[:_MAX_NARRATION_CHARS] or prompt
