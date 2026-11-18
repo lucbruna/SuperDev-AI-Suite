@@ -74,6 +74,8 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
   const [analyzingAudio, setAnalyzingAudio] = useState(false);
   const [avSyncReport, setAvSyncReport] = useState<Awaited<ReturnType<typeof videoStudioApi.analyzeJobAvSync>> | null>(null);
   const [analyzingAvSync, setAnalyzingAvSync] = useState(false);
+  const [visualReport, setVisualReport] = useState<Awaited<ReturnType<typeof videoStudioApi.analyzeJobVisuals>> | null>(null);
+  const [analyzingVisuals, setAnalyzingVisuals] = useState(false);
   const [renderQuality, setRenderQuality] = useState<Awaited<ReturnType<typeof videoStudioApi.getJob>>["edit_render_quality"]>(null);
   const [duckingEnabled, setDuckingEnabled] = useState(true);
   const [duckingDb, setDuckingDb] = useState("9");
@@ -104,6 +106,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
       if (job.edit_render_quality) setRenderQuality(job.edit_render_quality);
       if (job.audio_analysis) setAudioAnalysis(job.audio_analysis as Awaited<ReturnType<typeof videoStudioApi.analyzeJobAudio>>);
       if (job.av_sync_analysis) setAvSyncReport(job.av_sync_analysis as Awaited<ReturnType<typeof videoStudioApi.analyzeJobAvSync>>);
+      if (job.visual_intelligence) setVisualReport(job.visual_intelligence as Awaited<ReturnType<typeof videoStudioApi.analyzeJobVisuals>>);
       if (job.audio_settings) {
         setDuckingEnabled(job.audio_settings.ducking_enabled ?? true);
         setDuckingDb(String(job.audio_settings.ducking_db ?? 9));
@@ -208,6 +211,17 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
     try { const result = await videoStudioApi.analyzeJobAudio(jobId); setAudioAnalysis(result); setMessage(result.message); }
     catch (error) { setMessage(error instanceof Error ? error.message : "Não foi possível analisar o áudio."); }
     finally { setAnalyzingAudio(false); }
+  }
+  async function analyzeVisuals() {
+    if (!jobId || dirty || audioDirty || saving || savingAudio || analyzingVisuals) return;
+    setAnalyzingVisuals(true); setMessage("");
+    try {
+      const report = await videoStudioApi.analyzeJobVisuals(jobId);
+      setVisualReport(report);
+      setMessage(report.status === "good" ? "Análise visual concluída sem alertas." : "Análise visual concluída; revise os pontos indicados.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Não foi possível analisar a qualidade visual.");
+    } finally { setAnalyzingVisuals(false); }
   }
   async function analyzeAvSync() {
     if (!jobId || dirty || audioDirty || saving || savingAudio || analyzingAvSync) return;
@@ -531,6 +545,9 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
             <button type="button" onClick={analyzeAudio} disabled={!jobId || dirty || audioDirty || saving || savingAudio || analyzingAudio} className="rounded-md border border-primary-300 px-3 py-2 text-xs font-semibold disabled:opacity-40 dark:border-primary-700">
               {analyzingAudio ? "Analisando áudio…" : "Analisar áudio"}
             </button>
+            <button type="button" onClick={analyzeVisuals} disabled={!jobId || dirty || audioDirty || saving || savingAudio || analyzingVisuals} className="rounded-md border border-primary-300 px-3 py-2 text-xs font-semibold disabled:opacity-40 dark:border-primary-700">
+              {analyzingVisuals ? "Analisando visual…" : "Analisar qualidade visual"}
+            </button>
             <button type="button" onClick={analyzeAvSync} disabled={!jobId || dirty || audioDirty || saving || savingAudio || analyzingAvSync} className="rounded-md border border-primary-300 px-3 py-2 text-xs font-semibold disabled:opacity-40 dark:border-primary-700">
               {analyzingAvSync ? "Verificando sincronização…" : "Verificar A/V"}
             </button>
@@ -539,6 +556,18 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
             </button>
             <span className="text-[11px] text-surface-400">A lista mostra arquivos gerados em music, effects, voice, dubbing e mix. Caminhos externos são bloqueados.</span>
           </div>
+          {visualReport && <div className="rounded-md border border-surface-200 p-3 text-xs dark:border-surface-700 sm:col-span-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <strong>Visual Intelligence · {visualReport.studio_id === "whymentary" ? "Whymentary" : "Documentário Histórico"}</strong>
+              <span className={visualReport.status === "good" ? "text-emerald-600" : "text-amber-600"}>{visualReport.score}/100 · {visualReport.status.replaceAll("_", " ")}</span>
+            </div>
+            <p className="mt-1 text-surface-500">{visualReport.scene_count} cenas · {visualReport.moving_camera_scenes} com movimento de câmera · {visualReport.animated_primitives} elementos animados · {visualReport.unique_shot_types} tipos de plano</p>
+            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {Object.entries(visualReport.components).map(([key, value]) => <div key={key} className="rounded bg-surface-100 p-2 dark:bg-surface-800"><div className="capitalize text-surface-500">{key === "motion" ? "Movimento" : key === "composition" ? "Composição" : key === "variety" ? "Variedade" : "Clareza"}</div><strong>{value}/100</strong></div>)}
+            </div>
+            {visualReport.warnings.length > 0 ? <ul className="mt-3 list-disc space-y-1 pl-5 text-amber-600">{visualReport.warnings.map((warning, index) => <li key={index}>{warning.code.replaceAll("_", " ")}{typeof warning.scene_index === "number" ? ` · cena ${warning.scene_index + 1}` : ""}</li>)}</ul> : <p className="mt-2 text-emerald-600">Nenhum alerta nos metadados avaliados.</p>}
+            <p className="mt-2 text-surface-400">Pontuação heurística dos descritores da cena; não é análise de pixels do MP4. Revise o vídeo antes da publicação.</p>
+          </div>}
           {avSyncReport && <div className="rounded-md border border-surface-200 p-3 text-xs dark:border-surface-700 sm:col-span-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <strong>Sincronização de áudio e vídeo</strong>
