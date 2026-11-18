@@ -1,8 +1,8 @@
 """Offline TTS — voices that never need a network.
 
-Primary: ``pyttsx3`` (OS speech). Last resort: a deterministic formant
-synthesizer written in numpy that maps characters to vowel/consonant sound
-units, producing real (robotic) speech audio with zero dependencies.
+Primary: ``pyttsx3`` (OS speech). An optional deterministic formant
+synthesizer is retained for sound-effect demonstrations only; it is not
+intelligible speech and can be disabled by narration callers.
 """
 from __future__ import annotations
 
