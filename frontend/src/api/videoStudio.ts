@@ -355,6 +355,23 @@ export interface GenerateVideoParams {
   vidgrid_compatible?: boolean;
 }
 
+export interface VideoOutputValidation {
+  job_id: string;
+  path_exists: boolean;
+  file_size_bytes: number;
+  ffprobe_available: boolean;
+  valid: boolean;
+  duration_seconds?: number;
+  expected_duration_seconds?: number;
+  duration_tolerance_seconds?: number;
+  format_name?: string;
+  video_streams?: number;
+  audio_streams?: number;
+  video?: { width?: number; height?: number; r_frame_rate?: string } | null;
+  errors: string[];
+  warnings: string[];
+}
+
 export interface VideoPreflight {
   status: "ready" | "ready_with_warnings" | "blocked";
   can_queue: boolean;
@@ -610,6 +627,11 @@ export const videoStudioApi = {
     message: string;
   }> {
     const { data } = await apiClient.post(`${STUDIO_BASE}/videos/jobs/${jobId}/render-edits`);
+    return data;
+  },
+
+  async validateJobOutput(jobId: string): Promise<VideoOutputValidation> {
+    const { data } = await apiClient.post(`${STUDIO_BASE}/videos/jobs/${jobId}/validate-output`);
     return data;
   },
 
