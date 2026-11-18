@@ -240,6 +240,9 @@ export interface GenerateVideoParams {
   llm_timeout?: number;
   format?: string;
   studio_id?: StudioProfile["id"];
+  scene_image_mode?: "procedural" | "ai" | "auto";
+  scene_image_steps?: number;
+  scene_image_timeout?: number;
 }
 
 export const videoStudioApi = {
