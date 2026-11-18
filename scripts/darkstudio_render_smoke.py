@@ -8,7 +8,14 @@ import argparse
 import json
 import shutil
 import subprocess
+import sys
 from pathlib import Path
+
+# Running a file from scripts/ puts that directory, not the repository root,
+# at sys.path[0]. Add the root so the project package is importable in CI.
+REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+if str(REPOSITORY_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPOSITORY_ROOT))
 
 from modules.ai_video_studio.media.render import render_multi_scene_video
 
