@@ -170,6 +170,7 @@ export interface StudioJob {
   output_path?: string | null;
   scene_image_mode?: string | null;
   scene_assets?: SceneImageAsset[] | null;
+  scene_image_candidates?: Record<string, (SceneImageAsset & { candidate_id: string })[]> | null;
   storyboard_report?: {
     scene_count: number;
     ready_count: number;
