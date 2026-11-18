@@ -94,6 +94,7 @@ class SceneImageEditRequest(BaseModel):
     denoising_strength: float = Field(default=0.45, ge=0.05, le=0.95)
     steps: int = Field(default=20, ge=1, le=60)
     cfg_scale: float = Field(default=7.0, ge=1.0, le=20.0)
+    stage_only: bool = Field(default=False, description="Store the generated image as a candidate until explicit approval")
 
 
 class SceneImageBatchItem(BaseModel):
@@ -368,6 +369,21 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
+    if req.stage_only:
+        candidate_id = uuid.uuid4().hex
+        candidate = {"candidate_id": candidate_id, "scene_index": scene_index,
+                     "image_path": result["image_path"], "image_url": to_download_url(result["image_path"]),
+                     "provider": result["provider"], "operation": operation, "prompt": req.prompt,
+                     "negative_prompt": req.negative_prompt or str(scene.get("negative_prompt") or ""),
+                     "status": "pending_approval"}
+        candidates = record.setdefault("scene_image_candidates", {})
+        candidates.setdefault(str(scene_index), []).append(candidate)
+        _persist_job(record)
+        return {"job_id": job_id, "scene_index": scene_index, "candidate_id": candidate_id,
+                "image_path": result["image_path"], "image_url": to_download_url(result["image_path"]),
+                "operation": operation, "provider": result["provider"], "status": "candidate",
+                "prompt": req.prompt, "approval_required": True, "render_required": False}
+
     scene["background_image_path"] = result["image_path"]
     scene["image_asset_provider"] = result["provider"]
     scene["visual_prompt"] = req.prompt
@@ -456,6 +472,62 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
     }
 
 
+
+
+@router.post("/jobs/{job_id}/scenes/{scene_index}/image-candidates/{candidate_id}/approve")
+async def approve_video_job_scene_image(job_id: str, scene_index: int, candidate_id: str):
+    """Promote one reviewed candidate to the active scene image."""
+    record = _jobs.get(job_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+    if record.get("status") != "completed":
+        raise HTTPException(status_code=409, detail="Only completed jobs can approve scene images")
+    candidates = record.get("scene_image_candidates") or {}
+    scene_candidates = candidates.get(str(scene_index)) or []
+    candidate = next((item for item in scene_candidates if item.get("candidate_id") == candidate_id), None)
+    if candidate is None:
+        raise HTTPException(status_code=404, detail="Image candidate not found")
+    from modules.ai_video_studio.media.output_paths import get_subsystem_dir
+    image_root = Path(get_subsystem_dir("images")).resolve()
+    candidate_path = Path(str(candidate.get("image_path") or "")).resolve()
+    if image_root not in candidate_path.parents or not candidate_path.is_file():
+        raise HTTPException(status_code=422, detail="Candidate image is not a valid DARKSTUDIO asset")
+    source_scenes = record.get("_edited_scenes") or record.get("_source_scenes") or []
+    scenes = [dict(item) for item in source_scenes]
+    position = next((i for i, item in enumerate(scenes) if int(item.get("_source_scene_index", i)) == scene_index), None)
+    if position is None and 0 <= scene_index < len(scenes):
+        position = scene_index
+    if position is None:
+        raise HTTPException(status_code=404, detail="Scene index not found")
+    scene = scenes[position]
+    scene["background_image_path"] = str(candidate_path)
+    scene["image_asset_provider"] = candidate.get("provider")
+    scene["visual_prompt"] = candidate.get("prompt") or scene.get("visual_prompt")
+    scene["visual_prompt_full"] = candidate.get("prompt") or scene.get("visual_prompt_full")
+    scene["negative_prompt"] = candidate.get("negative_prompt") or scene.get("negative_prompt", "")
+    scene["image_edit_operation"] = candidate.get("operation")
+    record["_edited_scenes"] = scenes
+    assets = record.setdefault("scene_assets", [])
+    assets[:] = [item for item in assets if int(item.get("scene_index", -1)) != scene_index]
+    assets.append({"scene_index": scene_index, "image_path": str(candidate_path),
+                   "image_url": to_download_url(str(candidate_path)), "provider": candidate.get("provider"),
+                   "status": "edited", "operation": candidate.get("operation"), "prompt": candidate.get("prompt")})
+    candidates[str(scene_index)] = [item for item in scene_candidates if item.get("candidate_id") != candidate_id]
+    if not candidates[str(scene_index)]:
+        candidates.pop(str(scene_index), None)
+    record["scene_image_candidates"] = candidates
+    record["scene_image_mode"] = "mixed"
+    for clip in record.get("scene_clips") or []:
+        if int(clip.get("scene_index", -1)) == scene_index:
+            clip["status"] = "stale"
+            clip["reason"] = "A imagem da cena foi aprovada; gere novamente o clipe VidGrid."
+    _persist_job(record)
+    return {"job_id": job_id, "scene_index": scene_index, "candidate_id": candidate_id,
+            "status": "approved", "image_path": str(candidate_path),
+            "image_url": to_download_url(str(candidate_path)), "render_required": True,
+            "message": "Imagem aprovada e aplicada à cena. Renderize a edição para atualizar o MP4 completo."}
+
+
 @router.post("/jobs/{job_id}/scenes/regenerate")
 async def regenerate_video_job_scene_images(job_id: str, req: SceneImageBatchEditRequest):
     """Regenerate selected scene images sequentially; preserve per-scene outcomes."""
@@ -486,9 +558,10 @@ async def regenerate_video_job_scene_images(job_id: str, req: SceneImageBatchEdi
                     SceneImageEditRequest(
                         prompt=item.prompt,
                         negative_prompt=item.negative_prompt,
+                        stage_only=True,
                     ),
                 )
-                results.append({"scene_index": item.scene_index, "status": "edited", "result": result})
+                results.append({"scene_index": item.scene_index, "status": "candidate", "result": result})
             except HTTPException as exc:
                 results.append({
                     "scene_index": item.scene_index,
@@ -510,7 +583,7 @@ async def regenerate_video_job_scene_images(job_id: str, req: SceneImageBatchEdi
         _scene_batch_jobs.discard(job_id)
         _persist_job(record)
 
-    succeeded = sum(item["status"] == "edited" for item in results)
+    succeeded = sum(item["status"] == "candidate" for item in results)
     return {
         "job_id": job_id,
         "status": "completed" if succeeded == len(results) else "partial" if succeeded else "failed",
@@ -518,7 +591,7 @@ async def regenerate_video_job_scene_images(job_id: str, req: SceneImageBatchEdi
         "succeeded": succeeded,
         "failed": len(results) - succeeded,
         "results": results,
-        "message": f"{succeeded} de {len(results)} cenas atualizadas; a exportação final ainda precisa ser renderizada.",
+        "message": f"{succeeded} de {len(results)} imagens geradas como candidatas. Compare e aprove cada uma antes de renderizar.",
     }
 
 
