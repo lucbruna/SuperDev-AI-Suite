@@ -1447,6 +1447,11 @@ async def render_video_job_edits(job_id: str):
         }
         vidgrid_clip_paths: list[str] = []
         if record.get("vidgrid_compatible"):
+            if not record.get("scene_clips"):
+                raise HTTPException(
+                    status_code=409,
+                    detail="This VidGrid job has no exported scene clips. Regenerate the VidGrid clips before final export.",
+                )
             clips_by_index = {
                 int(item.get("scene_index", -1)): item
                 for item in (record.get("scene_clips") or [])
