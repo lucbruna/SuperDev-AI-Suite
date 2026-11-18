@@ -57,6 +57,32 @@ describe("EditTimelinePanel", () => {
     });
     expect(screen.getByText("00:02.5")).toBeInTheDocument();
   });
+  it("analyzes audio sources and applies the recommended ducking values", async () => {
+    const audioTimeline: EditTimeline = {
+      ...timeline,
+      tracks: [...timeline.tracks,
+        { id: "audio-music", type: "audio", role: "music", clips: [{ asset: "music/theme.wav", start_frame: 0, end_frame: 96, duration_frames: 96, start_seconds: 0, end_seconds: 4 }] },
+      ],
+    };
+    vi.spyOn(videoStudioApi, "listJobAudioAssets").mockResolvedValue([]);
+    vi.spyOn(videoStudioApi, "getJob").mockResolvedValue({ job_id: "analysis-job", project_id: "p1", status: "completed", progress: 1 });
+    const analysis = vi.spyOn(videoStudioApi, "analyzeJobAudio").mockResolvedValue({
+      sources_analyzed: 2,
+      reports: { narration: [], music: [], sound_effect: [] },
+      warnings: [{ role: "music", source: "music_0", code: "clipping_or_near_full_scale_peak" }],
+      skipped: [],
+      ducking_recommendation: { available: true, recommended_ducking_db: 12, recommended_threshold_db: -32, reason: "Níveis medidos." },
+      message: "Análise concluída.",
+    });
+    render(<EditTimelinePanel timeline={audioTimeline} jobId="analysis-job" />);
+    fireEvent.click(screen.getByRole("button", { name: "Analisar áudio" }));
+    await waitFor(() => expect(analysis).toHaveBeenCalledWith("analysis-job"));
+    expect(await screen.findByText(/clipping or near full scale peak/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Aplicar sugestão" }));
+    expect(screen.getByRole("checkbox", { name: "Ativar ducking" })).toBeChecked();
+    expect(screen.getByLabelText("Redução do ducking (dB)")).toHaveValue(12);
+  });
+
   it("allows removing a sound effect and persists the remaining audio clips", async () => {
     const audioTimeline: EditTimeline = {
       ...timeline,
