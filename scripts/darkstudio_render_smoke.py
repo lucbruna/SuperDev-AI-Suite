@@ -17,6 +17,7 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 if str(REPOSITORY_ROOT) not in sys.path:
     sys.path.insert(0, str(REPOSITORY_ROOT))
 
+from modules.ai_video_studio.media.characters import add_character_motion
 from modules.ai_video_studio.media.render import render_multi_scene_video
 
 
@@ -53,6 +54,20 @@ def main() -> None:
             "camera": {"zoom": 1.02, "dx": -0.15},
         },
     ]
+
+    scenes[1] = add_character_motion(
+        scenes[1],
+        "historical_narrator",
+        from_x=72,
+        from_y=174,
+        to_x=248,
+        to_y=174,
+        duration_frames=12,
+        start_frame=2,
+        scale=0.48,
+        pose="explain",
+        expression="happy",
+    )
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     result = render_multi_scene_video(
