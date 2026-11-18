@@ -155,6 +155,18 @@ def test_mix_audio_timeline_bypasses_rms_limiter_when_lufs_is_enabled(tmp_path, 
     assert result["normalization"]["enabled"] is False
     assert result["loudness"]["verified"] is True
 
+
+@pytest.mark.parametrize("kwargs", [
+    {"target_lufs": -40},
+    {"true_peak_db": -12},
+    {"lra": 25},
+])
+def test_normalize_loudness_file_rejects_out_of_range_targets(tmp_path, kwargs):
+    source = tmp_path / "mix.wav"
+    source.write_bytes(b"placeholder")
+    with pytest.raises(ValueError, match="LUFS target"):
+        audio_timeline.normalize_loudness_file(source, **kwargs)
+
 def test_mix_audio_timeline_accepts_pre_aligned_narration_samples(tmp_path, monkeypatch):
     _audio_roots(tmp_path, monkeypatch)
     output = tmp_path / "narration_mix.wav"
