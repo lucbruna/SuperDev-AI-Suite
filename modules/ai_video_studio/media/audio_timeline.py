@@ -271,12 +271,12 @@ def mix_audio_timeline(
     mixed = mix.astype(np.float32)
     pre_normalization_rms = dsp.rms(mixed)
     normalization_gain_db = 0.0
-    if normalization_enabled and pre_normalization_rms > 1e-9:
+    if normalization_enabled and not loudness_normalization_enabled and pre_normalization_rms > 1e-9:
         target_rms = float(10 ** (normalization_target_dbfs / 20.0))
         requested_gain_db = 20.0 * np.log10(target_rms / pre_normalization_rms)
         normalization_gain_db = min(float(normalization_max_gain_db), float(requested_gain_db))
         mixed = (mixed * float(10 ** (normalization_gain_db / 20.0))).astype(np.float32)
-    limited = dsp.limiter(mixed, threshold=0.97, sample_rate=sample_rate)
+    limited = mixed if loudness_normalization_enabled else dsp.limiter(mixed, threshold=0.97, sample_rate=sample_rate)
     out = dsp.write_audio(output_path, limited, sample_rate=sample_rate)
     loudness_report = None
     if loudness_normalization_enabled:
@@ -289,7 +289,7 @@ def mix_audio_timeline(
         "clip_count": len(reports),
         "clips": reports,
         "peak": round(dsp.peak(limited), 4),
-        "normalization": {"enabled": bool(normalization_enabled), "target_dbfs": float(normalization_target_dbfs), "gain_db": round(normalization_gain_db, 3), "pre_rms": round(pre_normalization_rms, 6)},
+        "normalization": {"enabled": bool(normalization_enabled and not loudness_normalization_enabled), "bypassed_for_loudness": bool(loudness_normalization_enabled), "target_dbfs": float(normalization_target_dbfs), "gain_db": round(normalization_gain_db, 3), "pre_rms": round(pre_normalization_rms, 6)},
         "loudness": {"enabled": bool(loudness_normalization_enabled), **(loudness_report or {})},
         "ducking": {"enabled": bool(ducking_enabled and ducking_db > 0), "reduction_db": float(ducking_db), "threshold_db": float(ducking_threshold_db), "attack_seconds": float(ducking_attack), "release_seconds": float(ducking_release), "speech_detected": bool(np.any(speech_envelope))},
     }
