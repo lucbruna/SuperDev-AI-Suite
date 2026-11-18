@@ -3,9 +3,10 @@
 1. ``edge-tts`` (Microsoft neural, multilingual, best quality)
 2. ``gTTS`` (Google, network fallback)
 3. ``pyttsx3`` (offline OS voices)
-4. ``formant synthesizer`` (pure numpy, always works, no network)
 
-The chain never fails: the last engine is fully local and deterministic.
+Formant synthesis is available only as a sound-effect/demo utility; it is
+never returned as intelligible spoken narration. Synthesis raises a clear
+error when no speech engine is available.
 """
 from __future__ import annotations
 
