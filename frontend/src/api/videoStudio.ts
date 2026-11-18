@@ -243,6 +243,7 @@ export interface GenerateVideoParams {
   scene_image_mode?: "procedural" | "ai" | "auto";
   scene_image_steps?: number;
   scene_image_timeout?: number;
+  vidgrid_compatible?: boolean;
 }
 
 export const videoStudioApi = {
