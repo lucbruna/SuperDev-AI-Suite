@@ -42,6 +42,8 @@ The database uses SQLite WAL mode. It survives API process restarts when the hos
 
 The audio draft endpoint accepts separate music and sound-effect clips. The renderer mixes mono sources to dual-mono and preserves stereo sources, with per-clip left/right balance (pan: -1 left, 0 center, +1 right), trim, fades, volume and optional music looping. Speech activity can duck background music; sound effects and narration are not ducked. A linked stereo lookahead limiter reduces peaks without independently changing the left/right image.
 
+The final stereo mastering stage also supports an optional linked-channel RMS compressor and three-band EQ. The compressor exposes threshold (-60 to 0 dB), ratio (1:1 to 20:1), attack, release and makeup gain; the editor currently exposes threshold and ratio while keeping conservative attack/release/makeup defaults. The EQ exposes low, mid and high gain from -12 to +12 dB. Both stages are disabled by default and can be enabled independently. Compressor gain is linked across channels to preserve stereo balance; EQ uses smooth spectral crossovers.
+
 Optional EBU R128 loudness normalization uses FFmpeg's two-pass loudnorm filter and measures the encoded WAV again after processing. Defaults are -14 LUFS integrated and -1 dBTP true peak. LUFS mode bypasses the separate RMS gain stage. This requires an FFmpeg build with the loudnorm filter; a missing filter is reported as an audio-render failure rather than silently skipped.
 
 Per-clip pan is saved with the timeline metadata. Mono sources are duplicated to both channels before balance is applied; stereo sources retain their channel separation. The mix output is a two-channel WAV.
