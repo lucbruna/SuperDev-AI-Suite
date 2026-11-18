@@ -229,7 +229,7 @@ def build_audio_quality_report(
     warnings = []
     pre_peak = float(pre_limiter_peak) if pre_limiter_peak is not None else peak
     if pre_peak >= 0.999:
-        warnings.append({"code": "pre_limiter_clipping", "severity": "critical", "message": "A mixagem atingiu clipping antes do limitador."})
+        warnings.append({"code": "pre_limiter_clipping", "severity": "warning", "message": "A mixagem atingiu clipping antes do limitador."})
     if peak_db > -1.0:
         warnings.append({"code": "final_peak_above_minus_1_dbfs", "severity": "warning", "message": "O pico final está acima de -1 dBFS."})
     if clipped > 0:
@@ -239,7 +239,8 @@ def build_audio_quality_report(
     if masking_windows:
         warnings.append({"code": "narration_may_be_masked", "severity": "warning", "message": "A música está próxima ou acima do nível da narração em alguns trechos."})
     return {
-        "status": "needs_review" if warnings else "passed",
+        "status": "blocked" if clipped > 0 else ("needs_review" if warnings else "passed"),
+        "export_allowed": bool(clipped == 0),
         "duration_seconds": round(len(audio) / sample_rate, 3),
         "sample_rate": int(sample_rate),
         "channels": int(audio.shape[1]),
