@@ -216,8 +216,24 @@ class TextToVideoEngine:
                         x = width * 0.5
                     else:
                         x = width * (0.34 if character_index == 0 else 0.66)
-                    pose = ("explain", "point", "neutral")[scene_index % 3]
-                    expression = ("neutral", "happy", "surprised")[scene_index % 3]
+                    scene_words = " ".join(str(scene.get(key) or "") for key in (
+                        "visual_prompt", "description", "voiceover_text",
+                    )).lower()
+                    pose = str(scene.get("character_pose") or "")
+                    if pose not in {"neutral", "explain", "point"}:
+                        pose = (
+                            "point" if any(word in scene_words for word in ("point", "pointing", "apont", "indica"))
+                            else "explain" if any(word in scene_words for word in ("explain", "explaining", "explica", "mostra"))
+                            else "neutral"
+                        )
+                    expression = str(scene.get("character_expression") or "")
+                    if expression not in {"neutral", "happy", "surprised", "concerned"}:
+                        expression = (
+                            "surprised" if any(word in scene_words for word in ("surprised", "surpresa", "espant"))
+                            else "concerned" if any(word in scene_words for word in ("concern", "preocup", "alerta"))
+                            else "happy" if any(word in scene_words for word in ("happy", "feliz", "sorr"))
+                            else "neutral"
+                        )
                     scenes[scene_index] = add_character(
                         scenes[scene_index],
                         character_id,
