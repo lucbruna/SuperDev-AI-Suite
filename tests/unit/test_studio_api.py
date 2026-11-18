@@ -124,3 +124,24 @@ def test_scene_object_preview_rejects_unknown_object_and_invalid_scale() -> None
     with pytest.raises(HTTPException) as invalid:
         asyncio.run(preview_scene_object("torch", {"scene": {}, "scale": 0}))
     assert invalid.value.status_code == 422
+
+
+def test_scene_library_objects_render_and_animate_on_real_canvas() -> None:
+    from modules.ai_video_studio.media.canvas import SceneCanvas
+    from modules.ai_video_studio.media.scene_library import compose_scene_object
+
+    canvas = SceneCanvas(width=200, height=140, fps=24, seed=3)
+    scene = compose_scene_object(
+        {"background_type": "solid", "background_colors": ["#FFFFFF"]},
+        "water_glass",
+        x=60,
+        y=30,
+    )
+    first_frame = canvas.render_scene(scene, 0)
+    settled_frame = canvas.render_scene(scene, 12)
+
+    assert first_frame.shape == (140, 200, 3)
+    assert settled_frame.shape == (140, 200, 3)
+    assert (first_frame != 255).any()
+    assert (settled_frame != 255).any()
+    assert not (first_frame == settled_frame).all()
