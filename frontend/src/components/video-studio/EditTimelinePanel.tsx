@@ -291,7 +291,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
         motion_prompt: (sceneImagePrompts[sceneIndex] || asset.visual_prompt || asset.prompt || "Create natural cinematic movement while preserving the scene subject").trim(),
         negative_prompt: "flicker, unstable identity, deformation, extra limbs, text, watermark",
       });
-      setGeneratedMotionClips((current) => ({ ...current, [sceneIndex]: result.download_url }));
+      setGeneratedMotionClips((current) => ({ ...current, [sourceSceneIndex]: result.download_url }));
       setMessage(`Clipe generativo da cena ${sceneIndex + 1} integrado ao projeto. Salve a timeline e renderize para incluí-lo no MP4 final.`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Não foi possível gerar o movimento por IA. Verifique o ComfyUI e o workflow configurado.");
