@@ -185,6 +185,7 @@ class AudioTimelineClip(BaseModel):
     volume: float = Field(default=1, ge=0, le=2)
     fade_in: float = Field(default=0, ge=0, le=36000)
     fade_out: float = Field(default=0, ge=0, le=36000)
+    loop: bool = Field(default=False, description="Repeat a short source to fill the timeline clip; use for music only")
 
 
 class AudioTimelineEditRequest(BaseModel):
@@ -385,6 +386,8 @@ async def update_video_job_audio(job_id: str, req: AudioTimelineEditRequest):
     try:
         for clip in music + effects:
             validate_audio_asset(clip["asset"])
+        if any(clip["loop"] for clip in effects):
+            raise ValueError("loop is supported for background music only")
         params = record.get("params") or {}
         fps = int(params.get("frame_rate") or record.get("frame_rate") or 24)
         width, height = _parse_resolution(params.get("resolution") or record.get("resolution") or "1280x720")
