@@ -167,3 +167,13 @@ def test_fallback_planner_includes_standalone_visual_prompts() -> None:
     assert "Scene focus:" in scene["visual_prompt"]
     assert scene["voiceover_text"]
     assert scene["shot_type"] in {"establishing", "wide", "medium", "close_up", "detail"}
+
+
+def test_planner_fills_missing_scenes_to_requested_count(monkeypatch) -> None:
+    planner = ScenePlanner()
+    monkeypatch.setattr(planner, "_call_ollama", lambda *args, **kwargs: '[{"name":"Only scene","description":"One scene"}]')
+    result = planner.plan("A longer documentary", num_scenes=3, duration=30)
+    assert len(result["scenes"]) == 3
+    assert result["scenes"][0]["name"] == "Only scene"
+    assert result["scenes"][1]["duration"] == 10
+    assert result["scenes"][2]["duration"] == 10
