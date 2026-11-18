@@ -140,6 +140,122 @@ def recommend_ducking(narration_reports: list[dict[str, Any]], music_reports: li
     }
 
 
+def _accumulate_window_energy(energy: np.ndarray, counts: np.ndarray, samples: np.ndarray, start: int, block: int) -> None:
+    """Accumulate per-window channel-mean energy without retaining full stems."""
+    cursor = 0
+    while cursor < len(samples):
+        absolute = start + cursor
+        window = absolute // block
+        take = min(len(samples) - cursor, block - (absolute % block))
+        chunk = samples[cursor:cursor + take]
+        energy[window] += float(np.sum(np.mean(chunk.astype(np.float64) ** 2, axis=1)))
+        counts[window] += take
+        cursor += take
+
+
+def build_audio_quality_report(
+    samples: np.ndarray,
+    *,
+    sample_rate: int,
+    narration_energy: np.ndarray | None = None,
+    narration_counts: np.ndarray | None = None,
+    music_energy: np.ndarray | None = None,
+    music_counts: np.ndarray | None = None,
+    pre_limiter_peak: float | None = None,
+    window_seconds: float = 0.1,
+) -> dict[str, Any]:
+    """Evaluate final mix and estimate narration/music masking by short windows.
+
+    Masking is an energy-ratio heuristic, not a perceptual or ML speech model.
+    """
+    audio = np.asarray(samples, dtype=np.float32)
+    if audio.ndim == 1:
+        audio = audio[:, None]
+    if audio.ndim != 2 or audio.shape[1] not in (1, 2) or not len(audio):
+        raise ValueError("quality analysis requires non-empty mono or stereo samples")
+    if not np.all(np.isfinite(audio)):
+        raise ValueError("quality analysis received non-finite samples")
+    peak = float(np.max(np.abs(audio)))
+    peak_db = float(20 * np.log10(max(peak, 1e-9)))
+    rms = float(np.sqrt(np.mean(audio.astype(np.float64) ** 2)))
+    rms_db = float(20 * np.log10(max(rms, 1e-9)))
+    clipped = float(np.mean(np.abs(audio) >= 0.999))
+    block = max(1, int(round(sample_rate * window_seconds)))
+    mono = np.mean(audio, axis=1, dtype=np.float32)
+    padded = np.pad(mono, (0, (-len(mono)) % block))
+    frame_rms = np.sqrt(np.mean(padded.reshape(-1, block).astype(np.float64) ** 2, axis=1))
+    frame_db = 20 * np.log10(np.maximum(frame_rms, 1e-9))
+    silence = frame_db < -55.0
+    silence_segments = []
+    index = 0
+    while index < len(silence):
+        if not silence[index]:
+            index += 1
+            continue
+        start = index
+        while index < len(silence) and silence[index]:
+            index += 1
+        duration = (index - start) * block / sample_rate
+        start_seconds = start * block / sample_rate
+        end_seconds = min(len(audio) / sample_rate, index * block / sample_rate)
+        if duration >= 0.5 and start_seconds > 0.15 and end_seconds < len(audio) / sample_rate - 0.15:
+            silence_segments.append({"start": round(start_seconds, 2), "end": round(end_seconds, 2), "duration": round(end_seconds - start_seconds, 2)})
+
+    masking_windows = []
+    if narration_energy is not None and music_energy is not None and narration_counts is not None and music_counts is not None:
+        n = min(len(narration_energy), len(music_energy), len(narration_counts), len(music_counts))
+        voice_rms = np.sqrt(np.divide(narration_energy[:n], narration_counts[:n], out=np.zeros(n), where=narration_counts[:n] > 0))
+        music_rms = np.sqrt(np.divide(music_energy[:n], music_counts[:n], out=np.zeros(n), where=music_counts[:n] > 0))
+        voice_db = 20 * np.log10(np.maximum(voice_rms, 1e-9))
+        music_db = 20 * np.log10(np.maximum(music_rms, 1e-9))
+        masked = (voice_db > -45.0) & (music_db > voice_db - 6.0)
+        index = 0
+        while index < n:
+            if not masked[index]:
+                index += 1
+                continue
+            start = index
+            while index < n and masked[index]:
+                index += 1
+            duration = (index - start) * block / sample_rate
+            if duration >= 0.2:
+                masking_windows.append({
+                    "start": round(start * block / sample_rate, 2),
+                    "end": round(min(len(audio) / sample_rate, index * block / sample_rate), 2),
+                    "duration": round(duration, 2),
+                    "voice_music_gap_db": round(float(np.median(voice_db[start:index] - music_db[start:index])), 2),
+                })
+
+    warnings = []
+    pre_peak = float(pre_limiter_peak) if pre_limiter_peak is not None else peak
+    if pre_peak >= 0.999:
+        warnings.append({"code": "pre_limiter_clipping", "severity": "critical", "message": "A mixagem atingiu clipping antes do limitador."})
+    if peak_db > -1.0:
+        warnings.append({"code": "final_peak_above_minus_1_dbfs", "severity": "warning", "message": "O pico final está acima de -1 dBFS."})
+    if clipped > 0:
+        warnings.append({"code": "final_clipping_detected", "severity": "critical", "message": "Há amostras clipadas no áudio final."})
+    if silence_segments:
+        warnings.append({"code": "internal_silence_gaps", "severity": "warning", "message": "Foram encontrados intervalos silenciosos internos; confirme se são intencionais."})
+    if masking_windows:
+        warnings.append({"code": "narration_may_be_masked", "severity": "warning", "message": "A música está próxima ou acima do nível da narração em alguns trechos."})
+    return {
+        "status": "needs_review" if warnings else "passed",
+        "duration_seconds": round(len(audio) / sample_rate, 3),
+        "sample_rate": int(sample_rate),
+        "channels": int(audio.shape[1]),
+        "peak_dbfs": round(peak_db, 2),
+        "pre_limiter_peak_dbfs": round(20 * np.log10(max(pre_peak, 1e-9)), 2),
+        "rms_dbfs": round(rms_db, 2),
+        "clipping_ratio": round(clipped, 7),
+        "silence_gaps": silence_segments,
+        "narration_music_masking": masking_windows,
+        "masking_method": "100ms RMS energy comparison; heuristic, not speech recognition",
+        "warnings": warnings,
+        "critical_count": sum(item["severity"] == "critical" for item in warnings),
+        "warning_count": sum(item["severity"] == "warning" for item in warnings),
+    }
+
+
 def _narration_activity_envelope(clips, *, total_samples, sample_rate, threshold_db, attack_seconds, release_seconds):
     """Return a smoothed speech-activity envelope for side-chain ducking."""
     block = max(1, int(round(sample_rate * 0.01)))
@@ -316,6 +432,12 @@ def mix_audio_timeline(
     output_channels = 2
     mix = np.zeros((total_samples, output_channels), dtype=np.float64)
     reports: list[dict[str, Any]] = []
+    quality_block = max(1, int(round(sample_rate * 0.1)))
+    quality_windows = int(np.ceil(total_samples / quality_block))
+    narration_energy = np.zeros(quality_windows, dtype=np.float64)
+    narration_counts = np.zeros(quality_windows, dtype=np.int64)
+    music_energy = np.zeros(quality_windows, dtype=np.float64)
+    music_counts = np.zeros(quality_windows, dtype=np.int64)
     speech_envelope = (_narration_activity_envelope(clips, total_samples=total_samples, sample_rate=sample_rate, threshold_db=ducking_threshold_db, attack_seconds=ducking_attack, release_seconds=ducking_release) if ducking_enabled and ducking_db > 0 else np.zeros(total_samples, dtype=np.float32))
     duck_floor = float(10 ** (-ducking_db / 20.0))
 
@@ -394,6 +516,11 @@ def mix_audio_timeline(
                 speech = speech_envelope[destination_start:destination_end]
                 visible = visible * (1.0 - speech[:, None] * (1.0 - duck_floor))
             mix[destination_start:destination_end] += visible
+            kind = clip.get("kind")
+            if kind == "narration":
+                _accumulate_window_energy(narration_energy, narration_counts, visible, destination_start, quality_block)
+            elif kind == "music":
+                _accumulate_window_energy(music_energy, music_counts, visible, destination_start, quality_block)
         reports.append({
             "index": index,
             "status": "mixed",
@@ -426,14 +553,22 @@ def mix_audio_timeline(
         requested_gain_db = 20.0 * np.log10(target_rms / pre_normalization_rms)
         normalization_gain_db = min(float(normalization_max_gain_db), float(requested_gain_db))
         mixed = (mixed * float(10 ** (normalization_gain_db / 20.0))).astype(np.float32)
+    pre_limiter_peak = dsp.peak(mixed)
     limited = mixed if loudness_normalization_enabled else dsp.limiter(mixed, threshold=0.97, sample_rate=sample_rate)
     out = dsp.write_audio(output_path, limited, sample_rate=sample_rate)
     loudness_report = None
     if loudness_normalization_enabled:
         loudness_report = normalize_loudness_file(out, target_lufs=target_lufs, true_peak_db=true_peak_db, lra=loudness_range)
         limited, _ = dsp.read_audio(out, target_sr=sample_rate, preserve_channels=True)
+    quality_report = build_audio_quality_report(
+        limited, sample_rate=sample_rate,
+        narration_energy=narration_energy, narration_counts=narration_counts,
+        music_energy=music_energy, music_counts=music_counts,
+        pre_limiter_peak=pre_limiter_peak,
+    )
     return {
         "output_path": str(out),
+        "quality": quality_report,
         "duration": round(len(limited) / sample_rate, 3),
         "sample_rate": sample_rate,
         "channels": output_channels,
