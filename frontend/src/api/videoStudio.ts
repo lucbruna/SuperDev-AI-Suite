@@ -19,6 +19,15 @@ export interface StudioProfile {
   camera_defaults: Record<string, number>;
 }
 
+export interface StudioCharacter {
+  id: string;
+  name: string;
+  studio_id: StudioProfile["id"];
+  appearance: Record<string, string | boolean>;
+  supported_poses: string[];
+  supported_expressions: string[];
+}
+
 export interface StudioHealth {
   status: string;
   service: string;
@@ -64,6 +73,7 @@ export interface StudioJob {
     voice_pitch?: number;
     voiceover_mode?: string;
     generate_subtitles?: boolean;
+    character_ids?: string[];
     llm_timeout?: number;
   } | null;
   ai_planner?: string | null;
@@ -92,6 +102,7 @@ export interface GenerateVideoParams {
   voice_pitch?: number;
   voiceover_mode?: "per_scene" | "single";
   generate_subtitles?: boolean;
+  character_ids?: string[];
   llm_timeout?: number;
   format?: string;
   studio_id?: StudioProfile["id"];
@@ -106,6 +117,13 @@ export const videoStudioApi = {
   async getStudio(studioId: StudioProfile["id"]): Promise<StudioProfile> {
     const { data } = await apiClient.get(`${STUDIO_BASE}/studios/${studioId}`);
     return data;
+  },
+
+  async listCharacters(studioId: StudioProfile["id"]): Promise<StudioCharacter[]> {
+    const { data } = await apiClient.get(`${STUDIO_BASE}/studios/character-library`, {
+      params: { studio_id: studioId },
+    });
+    return data?.characters ?? [];
   },
 
   async health(): Promise<StudioHealth> {
