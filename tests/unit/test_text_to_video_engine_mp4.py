@@ -203,6 +203,8 @@ def test_generate_async_composes_selected_characters_into_every_scene(monkeypatc
     for scene in captured["scenes"]:
         assert len(scene["rects"]) == 5
         assert len(scene["circles"]) >= 11
+        assert scene["_darkstudio_characters"] == ["mia", "leo"]
+        assert scene["_darkstudio_objects"] == []
 
 
 def test_generate_async_composes_selected_objects_into_every_scene(monkeypatch, tmp_path) -> None:
