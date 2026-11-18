@@ -3,13 +3,15 @@
 1. ``edge-tts`` (Microsoft neural, multilingual, best quality)
 2. ``gTTS`` (Google, network fallback)
 3. ``pyttsx3`` (offline OS voices)
-4. ``formant synthesizer`` (pure numpy, always works, no network)
 
-The chain never fails: the last engine is fully local and deterministic.
+Formant synthesis is available only as a sound-effect/demo utility; it is
+never returned as intelligible spoken narration. Synthesis raises a clear
+error when no speech engine is available.
 """
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 
 from modules.ai_video_studio.ai_voice_studio.synthesis.offline_tts import OfflineTTS
 from modules.ai_video_studio.ai_voice_studio.profiles import build_catalog
@@ -65,15 +67,22 @@ class TTSEngine:
         except Exception as e:  # noqa: BLE001
             errors.append(f"network engines: {e}")
 
-        # 2) Local engines (pyttsx3 → formant synthesizer).
+        # 2) Local OS speech (pyttsx3). The OfflineTTS helper can fall back
+        # to a formant sound generator; that output is not intelligible speech
+        # and must never be mislabeled or muxed as narration.
         try:
-            return self.offline.synthesize(
-                text, output_path=output_path, rate=speed, pitch=pitch,
+            local_path = str(Path(output_path).with_suffix(".wav")) if output_path else None
+            result = self.offline.synthesize(
+                text, output_path=local_path, rate=speed, pitch=pitch,
+                allow_formant=False,
             )
+            if result.get("engine") == "formant":
+                raise RuntimeError("Formant audio is not intelligible spoken narration")
+            return result
         except Exception as e:  # noqa: BLE001
-            errors.append(f"offline: {e}")
+            errors.append(f"offline speech: {e}")
 
-        raise RuntimeError("; ".join(errors) or "no TTS engine available")
+        raise RuntimeError("; ".join(errors) or "no intelligible TTS engine available")
 
 
 def voice_for_language(language: str) -> str:

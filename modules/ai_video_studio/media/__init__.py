@@ -23,6 +23,20 @@ from modules.ai_video_studio.media.render import (
     render_still,
 )
 from modules.ai_video_studio.media.video import frames_to_video
+from modules.ai_video_studio.media.characters import (
+    PRESETS as CHARACTER_PRESETS,
+    add_character,
+    add_character_motion,
+    character_primitives,
+    build_character_cue_timeline,
+    add_character_performance,
+)
+from modules.ai_video_studio.media.studio_profiles import (
+    HISTORICAL_DOCUMENTARY,
+    WHYMENTARY,
+    apply_studio_profile,
+    get_studio_profile,
+)
 from modules.ai_video_studio.media.llm import ScenePlanner, get_scene_planner
 from modules.ai_video_studio.media import audio, dsp, scene_narration, style_scenes
 
@@ -35,6 +49,16 @@ __all__ = [
     "render_sim_frames",
     "render_still",
     "frames_to_video",
+    "CHARACTER_PRESETS",
+    "add_character",
+    "add_character_motion",
+    "character_primitives",
+    "build_character_cue_timeline",
+    "add_character_performance",
+    "WHYMENTARY",
+    "HISTORICAL_DOCUMENTARY",
+    "apply_studio_profile",
+    "get_studio_profile",
     "ScenePlanner",
     "get_scene_planner",
     "audio",

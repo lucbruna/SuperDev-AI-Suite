@@ -25,11 +25,12 @@ def test_compute_scene_offsets_no_scenes() -> None:
     assert scene_narration.compute_scene_offsets([]) == []
 
 
-def test_scene_narration_text_priority() -> None:
+def test_scene_narration_text_prefers_authored_speech_over_visual_description() -> None:
     assert scene_narration.scene_narration_text(
-        {"description": "desc", "voiceover_text": "vo", "name": "n"}
-    ) == "desc"
-    assert scene_narration.scene_narration_text({"voiceover_text": "vo", "name": "n"}) == "vo"
+        {"description": "visual direction", "voiceover_text": "spoken line", "name": "scene"}
+    ) == "spoken line"
+    assert scene_narration.scene_narration_text({"narration": "narrated line", "description": "visual"}) == "narrated line"
+    assert scene_narration.scene_narration_text({"description": "desc", "name": "n"}) == "desc"
     assert scene_narration.scene_narration_text({"name": "n"}) == "n"
     assert scene_narration.scene_narration_text({}) == ""
 
@@ -131,6 +132,56 @@ def test_synthesize_scene_narration_all_no_text(tmp_path) -> None:
     ))
     assert result["muxed"] is False
     assert "reason" in result
+
+
+def test_synthesize_scene_narration_defaults_to_portuguese_brazil(monkeypatch, tmp_path) -> None:
+    import asyncio
+    from modules.ai_video_studio.ai_voice_studio import voice_engine as ve
+
+    seen_languages: list[str] = []
+
+    async def _fake_synthesize(self, text, *, voice_id="default", language="en",
+                               speed=1.0, pitch=1.0, output_path=None, use_cache=True):
+        seen_languages.append(language)
+        out = str(tmp_path / "pt_br.wav")
+        samples = dsp.sine(220.0, 0.5) * 0.5
+        dsp.write_audio(out, samples)
+        return {"output_path": out, "duration": 0.5, "engine": "formant"}
+
+    monkeypatch.setattr(ve.VoiceEngine, "synthesize_async", _fake_synthesize)
+    monkeypatch.setattr(
+        "modules.ai_video_studio.media.audio.mux_audio_into_video",
+        lambda *a, **k: {"muxed": True, "output_path": "pt_br.mp4", "bytes": 100},
+    )
+    video = tmp_path / "video.mp4"
+    video.write_bytes(b"fake-video")
+
+    result = asyncio.run(scene_narration.synthesize_scene_narration_async(
+        [{"index": 0, "voiceover_text": "Esta é uma narração de teste.", "duration": 2.0}],
+        video_path=str(video),
+        output_dir=str(tmp_path),
+    ))
+
+    assert result["language"] == "pt-BR"
+    assert seen_languages == ["pt-BR"]
+
+
+def test_synthesize_scene_narration_respects_explicit_language(fake_tts, monkeypatch, tmp_path) -> None:
+    import asyncio
+
+    monkeypatch.setattr(
+        "modules.ai_video_studio.media.audio.mux_audio_into_video",
+        lambda *a, **k: {"muxed": True, "output_path": "explicit.mp4", "bytes": 100},
+    )
+    video = tmp_path / "video-explicit.mp4"
+    video.write_bytes(b"fake-video")
+    result = asyncio.run(scene_narration.synthesize_scene_narration_async(
+        [{"index": 0, "voiceover_text": "Testing explicit language.", "duration": 1.0}],
+        video_path=str(video),
+        params={"voice_language": "en"},
+        output_dir=str(tmp_path),
+    ))
+    assert result["language"] == "en"
 
 
 # ── TextToVideoEngine integration ────────────────────────────────────

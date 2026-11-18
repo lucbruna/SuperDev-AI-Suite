@@ -21,6 +21,7 @@ from modules.ai_video_studio.core.exceptions import ValidationError
 from modules.ai_video_studio.media.llm import get_scene_planner
 from modules.ai_video_studio.media.output_paths import get_subsystem_dir, unique_filename
 from modules.ai_video_studio.media.render import render_multi_scene_video
+from modules.ai_video_studio.media.characters import PRESETS as CHARACTER_PRESETS, add_character
 from modules.ai_video_studio.ai_video_generator.generation_statistics import get_generation_statistics
 
 logger = logging.getLogger(__name__)
@@ -83,6 +84,25 @@ class TextToVideoEngine:
         width = int(params.get("width", 1280))
         height = int(params.get("height", 720))
 
+        character_ids = list(params.get("character_ids") or [])
+        if character_ids:
+            allowed_characters = {
+                "whymentary": {"leo", "mia"},
+                "historical_documentary": {"historical_narrator"},
+            }
+            unknown = set(character_ids) - allowed_characters.get(
+                str(params.get("studio_id") or "whymentary"), set()
+            )
+            if unknown:
+                raise ValidationError(
+                    f"Characters {sorted(unknown)} do not belong to the selected studio",
+                    field="character_ids",
+                )
+            if len(character_ids) != len(set(character_ids)):
+                raise ValidationError("Duplicate character IDs are not allowed", field="character_ids")
+            if len(character_ids) > 2:
+                raise ValidationError("At most two characters can be selected", field="character_ids")
+
         # Ollama on CPU needs time for the first model load (~90s); callers
         # may override with ``llm_timeout``. Falls back to the deterministic
         # planner automatically on timeout.
@@ -94,6 +114,28 @@ class TextToVideoEngine:
         if not scenes:
             raise ValidationError("Scene planner returned no scenes", field="prompt")
 
+        # Apply the same registered character identities to every scene.
+        # Pose/expression variations are deterministic across the storyboard.
+        if character_ids:
+            scale = max(0.35, min(width, height) / 720.0)
+            for scene_index, scene in enumerate(scenes):
+                for character_index, character_id in enumerate(character_ids):
+                    if len(character_ids) == 1:
+                        x = width * 0.5
+                    else:
+                        x = width * (0.34 if character_index == 0 else 0.66)
+                    pose = ("explain", "point", "neutral")[scene_index % 3]
+                    expression = ("neutral", "happy", "surprised")[scene_index % 3]
+                    scenes[scene_index] = add_character(
+                        scenes[scene_index],
+                        character_id,
+                        x=x,
+                        y=height * 0.88,
+                        scale=scale,
+                        pose=pose,
+                        expression=expression,
+                    )
+
         out = unique_filename(get_subsystem_dir("videos"), "text_to_video", "mp4")
 
         def _on_frame(rendered: int, total: int) -> None:
@@ -103,6 +145,7 @@ class TextToVideoEngine:
         # Run the CPU-bound render in a worker thread: keeps the event loop
         # free so job polling (progress bar) stays responsive during 5–10 min
         # videos instead of blocking the whole server.
+        studio_id = str(params.get("studio_id") or "whymentary")
         video_result = await asyncio.to_thread(
             render_multi_scene_video,
             scenes,
@@ -111,10 +154,13 @@ class TextToVideoEngine:
             width=width,
             height=height,
             on_frame=_on_frame,
+            require_mp4=True,
+            studio_id=studio_id,
         )
 
         result: dict[str, Any] = {
             "mode": "text_to_video",
+            "studio_id": studio_id,
             "ai_planner": plan["provider"] or "deterministic",
             "ai_generated": plan["ai_generated"],
             "scenes": scenes,
@@ -139,6 +185,36 @@ class TextToVideoEngine:
             if voice and voice.get("muxed"):
                 result["output_path"] = voice["output_path"]
                 result["output_bytes"] = voice.get("bytes", result["output_bytes"])
+
+        # Optional timed SRT sidecar. Keep subtitles as a separate deliverable
+        # so callers can review/edit them before any burn-in/export decision.
+        if params.get("generate_subtitles") or params.get("subtitles"):
+            try:
+                from modules.ai_video_studio.media.scene_narration import scene_narration_text
+                from modules.ai_video_studio.services.subtitle_studio import SubtitleStudioService
+
+                subtitle_scenes = [
+                    {
+                        "text": scene_narration_text(scene),
+                        "duration": max(0.1, float(scene.get("duration") or duration / len(scenes))),
+                    }
+                    for scene in scenes
+                ]
+                subtitle_path = unique_filename(
+                    get_subsystem_dir("subtitles"), "text_to_video_subtitles", "srt"
+                )
+                subtitle_result = SubtitleStudioService().generate_srt(
+                    subtitle_scenes, output_path=str(subtitle_path)
+                )
+                result["subtitles"] = {
+                    "format": "srt",
+                    "file_path": subtitle_result["file_path"],
+                    "cue_count": subtitle_result["cue_count"],
+                    "duration": subtitle_result["duration"],
+                }
+            except Exception as e:  # noqa: BLE001 — sidecar failure is non-fatal
+                logger.warning("Subtitle generation failed: %s", e)
+                result["subtitles"] = {"generated": False, "reason": str(e)[:200]}
 
         elapsed = (time.time() - started) * 1000
         get_generation_statistics().record(
@@ -174,9 +250,9 @@ class TextToVideoEngine:
             )
 
             per_scene = str(params.get("voiceover_mode", "per_scene")).lower() != "single"
-            has_scene_text = any(
-                (s.get("description") or s.get("voiceover_text") or s.get("name")) for s in scenes
-            )
+            from modules.ai_video_studio.media.scene_narration import scene_narration_text
+
+            has_scene_text = any(scene_narration_text(s) for s in scenes)
             if per_scene and has_scene_text:
                 result = await synthesize_scene_narration_async(
                     scenes,
@@ -221,7 +297,7 @@ class TextToVideoEngine:
             synth = await get_voice_engine().synthesize_async(
                 narration,
                 voice_id=str(params.get("voice_id", "default")),
-                language=str(params.get("voice_language", "en")),
+                language=str(params.get("voice_language", "pt-BR")),
                 speed=float(params.get("voice_speed", 1.0)),
                 pitch=float(params.get("voice_pitch", 1.0)),
             )
@@ -246,9 +322,11 @@ class TextToVideoEngine:
     def _build_narration(prompt: str, scenes: list[dict[str, Any]]) -> str:
         """Compose (and cap) the narration text from scene descriptions."""
         parts: list[str] = []
+        from modules.ai_video_studio.media.scene_narration import scene_narration_text
+
         for scene in scenes:
-            description = scene.get("description") or scene.get("name") or ""
-            if description:
-                parts.append(str(description))
+            text = scene_narration_text(scene)
+            if text:
+                parts.append(text)
         joined = " ".join(parts).strip() if parts else prompt
         return joined[:_MAX_NARRATION_CHARS] or prompt

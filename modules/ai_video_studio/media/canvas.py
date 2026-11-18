@@ -94,7 +94,11 @@ class SceneCanvas:
             self._draw_text(draw, text)
 
         img = self._apply_camera(img, scene.get("camera") or {}, frame_index)
-        img = self._apply_grading(img, scene.get("palette") or [])
+        img = self._apply_grading(
+            img,
+            scene.get("palette") or [],
+            strength=float(scene.get("grading_strength", 0.08)),
+        )
 
         return np.asarray(img, dtype=np.uint8)
 
@@ -106,12 +110,13 @@ class SceneCanvas:
     def _background(self, scene: dict[str, Any], rng: random.Random) -> np.ndarray:
         bg_type = scene.get("background_type", "gradient")
         colors = [c for c in scene.get("background_colors", []) if c]
-        if len(colors) < 2:
-            colors = ["#1a1a2e", "#16213e"]
 
         h, w = self.height, self.width
         if bg_type == "solid":
-            rgb = _hex_to_rgb(colors[0])
+            # A solid background needs exactly one color. Do not replace a
+            # profile's single-color palette with the gradient fallback.
+            solid_color = colors[0] if colors else "#1a1a2e"
+            rgb = _hex_to_rgb(solid_color)
             return np.zeros((h, w, 3), dtype=np.uint8) + np.array(rgb, dtype=np.uint8)
 
         c0 = np.array(_hex_to_rgb(colors[0]), dtype=np.float32)
@@ -157,26 +162,53 @@ class SceneCanvas:
         except Exception:  # noqa: BLE001 — never break a frame
             return
 
+    @staticmethod
+    def _motion_offset(item: dict[str, Any], frame_index: int) -> tuple[float, float]:
+        """Return eased, finite keyframe displacement for an animated primitive."""
+        start = int(item.get("motion_start_frame", 0))
+        duration = max(1, int(item.get("motion_frames", 1)))
+        progress = min(1.0, max(0.0, (frame_index - start) / duration))
+        eased = progress * progress * (3.0 - 2.0 * progress)
+        return (
+            float(item.get("motion_dx", 0.0)) * eased,
+            float(item.get("motion_dy", 0.0)) * eased,
+        )
+
+    @staticmethod
+    def _is_visible(item: dict[str, Any], frame_index: int) -> bool:
+        start = int(item.get("visible_from_frame", 0))
+        end = item.get("visible_until_frame")
+        return frame_index >= start and (end is None or frame_index < int(end))
+
     def _draw_rect(self, draw: ImageDraw.ImageDraw, r: dict[str, Any], frame_index: int) -> None:
-        dx = float(r.get("dx", 0)) * frame_index
+        if not self._is_visible(r, frame_index):
+            return
+        motion_x, motion_y = self._motion_offset(r, frame_index)
+        dx = float(r.get("dx", 0)) * frame_index + motion_x
         x0 = float(r.get("x", 0)) + dx
-        y0 = float(r.get("y", 0))
+        y0 = float(r.get("y", 0)) + motion_y
         x1 = x0 + float(r.get("w", 50))
         y1 = y0 + float(r.get("h", 50))
         draw.rectangle([x0, y0, x1, y1], fill=r.get("color", "#888888"), outline=r.get("outline"))
 
     def _draw_circle(self, draw: ImageDraw.ImageDraw, c: dict[str, Any], frame_index: int) -> None:
-        cx = float(c.get("x", 0)) + float(c.get("dx", 0)) * frame_index
-        cy = float(c.get("y", 0)) + float(c.get("dy", 0)) * frame_index
+        if not self._is_visible(c, frame_index):
+            return
+        motion_x, motion_y = self._motion_offset(c, frame_index)
+        cx = float(c.get("x", 0)) + float(c.get("dx", 0)) * frame_index + motion_x
+        cy = float(c.get("y", 0)) + float(c.get("dy", 0)) * frame_index + motion_y
         r = max(1, float(c.get("radius", 20)))
         draw.ellipse([cx - r, cy - r, cx + r, cy + r], fill=c.get("color", "#FFFFFF"))
 
     def _draw_line(self, draw: ImageDraw.ImageDraw, line: dict[str, Any], frame_index: int) -> None:
+        if not self._is_visible(line, frame_index):
+            return
         growth = min(1.0, max(0.0, (frame_index - float(line.get("start_frame", 0))) / max(1, float(line.get("grow_frames", 10)))))
-        x1 = float(line.get("x1", 0)) + float(line.get("dx1", 0)) * frame_index
-        y1 = float(line.get("y1", 0)) + float(line.get("dy1", 0)) * frame_index
-        x2 = float(line.get("x2", 0)) + float(line.get("dx2", 0)) * frame_index
-        y2 = float(line.get("y2", 0)) + float(line.get("dy2", 0)) * frame_index
+        motion_x, motion_y = self._motion_offset(line, frame_index)
+        x1 = float(line.get("x1", 0)) + float(line.get("dx1", 0)) * frame_index + motion_x
+        y1 = float(line.get("y1", 0)) + float(line.get("dy1", 0)) * frame_index + motion_y
+        x2 = float(line.get("x2", 0)) + float(line.get("dx2", 0)) * frame_index + motion_x
+        y2 = float(line.get("y2", 0)) + float(line.get("dy2", 0)) * frame_index + motion_y
         if growth < 1.0:
             x2 = x1 + (x2 - x1) * growth
             y2 = y1 + (y2 - y1) * growth
@@ -217,15 +249,19 @@ class SceneCanvas:
             )
         return img
 
-    def _apply_grading(self, img: Image.Image, palette: list[str]) -> Image.Image:
-        """Simple cinematic grade: tint shadows toward the first palette color."""
-        if not palette:
+    def _apply_grading(
+        self, img: Image.Image, palette: list[str], *, strength: float = 0.08
+    ) -> Image.Image:
+        """Tint the image toward the first palette color by a bounded amount."""
+        if not palette or strength <= 0:
             return img
+        if not 0 <= strength <= 1:
+            raise ValueError("grading strength must be between 0 and 1")
         rgb = _hex_to_rgb(palette[0])
         img = img.filter(ImageFilter.GaussianBlur(radius=0.2))
         arr = np.asarray(img, dtype=np.float32)
         tint = np.array(rgb, dtype=np.float32)
-        arr = arr * 0.92 + tint * 0.08
+        arr = arr * (1.0 - strength) + tint * strength
         return Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8))
 
     # ── Convenience ───────────────────────────────────────────────

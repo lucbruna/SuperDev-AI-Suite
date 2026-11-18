@@ -47,8 +47,9 @@ class VideoGenerateRequest(BaseModel):
     frame_rate: int = Field(default=24, ge=1, le=120)
     num_scenes: int = Field(default=3, ge=1, le=20)
     voiceover: bool = Field(default=False, description="Add AI narration (edge-tts/gTTS/pyttsx3)")
+    generate_subtitles: bool = Field(default=False, description="Generate a timed SRT sidecar from scene narration")
     voice_id: str = Field(default="default")
-    voice_language: str = Field(default="en")
+    voice_language: str = Field(default="pt-BR")
     voice_speed: float = Field(default=1.0, ge=0.5, le=2.0)
     voice_pitch: float = Field(default=1.0, ge=0.5, le=2.0)
     voiceover_mode: str = Field(default="per_scene", pattern="^(per_scene|single)$", description="per_scene = one clip per scene, single = one flat track")
@@ -56,12 +57,21 @@ class VideoGenerateRequest(BaseModel):
     # Platform format preset selected in the dashboard (shorts/reels/tiktok/
     # youtube/square) or "custom" when the user tweaked a dimension manually.
     format: str = Field(default="custom", max_length=32)
+    studio_id: str = Field(default="whymentary", pattern="^(whymentary|historical_documentary)$")
+    character_ids: list[str] = Field(default_factory=list, max_length=2, description="Stable character IDs to include in every scene")
 
     @field_validator("resolution")
     @classmethod
     def _validate_resolution(cls, v: str) -> str:
         _parse_resolution(v)
         return v
+
+    @field_validator("character_ids")
+    @classmethod
+    def _validate_character_ids(cls, values: list[str]) -> list[str]:
+        if len(values) != len(set(values)):
+            raise ValueError("character_ids must not contain duplicates")
+        return values
 
 
 class VideoGenerateResponse(BaseModel):
@@ -132,6 +142,7 @@ class VideoStatusResponse(BaseModel):
     format: str | None = None
     params: dict | None = None
     voiceover: VoiceoverInfo | None = None
+    subtitles: dict | None = None
     error: str | None = None
 
 
@@ -151,7 +162,7 @@ async def generate_video(req: VideoGenerateRequest, background_tasks: Background
         # Full param snapshot (every request field, including the prompt) so
         # the list can label the job and re-run it with identical settings.
         "params": req.model_dump(exclude={"project_id"}),
-        "voiceover": None, "error": None,
+        "voiceover": None, "subtitles": None, "error": None,
     }
 
     async def _run(job_id: str, r: VideoGenerateRequest) -> None:
@@ -182,17 +193,26 @@ async def generate_video(req: VideoGenerateRequest, background_tasks: Background
                         "width": width,
                         "height": height,
                         "voiceover": r.voiceover,
+                        "generate_subtitles": r.generate_subtitles,
                         "voice_id": r.voice_id,
                         "voice_language": r.voice_language,
                         "voice_speed": r.voice_speed,
                         "voice_pitch": r.voice_pitch,
                         "voiceover_mode": r.voiceover_mode,
                         "llm_timeout": r.llm_timeout,
+                        "studio_id": r.studio_id,
+                        "character_ids": r.character_ids,
                     },
                 },
                 progress_callback=_on_render_progress,
             )
             output_path = result["output_path"]
+            subtitle_info = result.get("subtitles")
+            if isinstance(subtitle_info, dict) and subtitle_info.get("file_path"):
+                subtitle_info = {
+                    **subtitle_info,
+                    "download_url": to_download_url(subtitle_info["file_path"]),
+                }
             record.update(
                 status="completed",
                 progress=1.0,
@@ -203,6 +223,7 @@ async def generate_video(req: VideoGenerateRequest, background_tasks: Background
                 ai_planner=result.get("ai_planner"),
                 video_duration=await _probe_video_duration(output_path),
                 voiceover=result.get("voiceover"),
+                subtitles=subtitle_info,
             )
         except Exception as e:  # noqa: BLE001 — surface any failure on the job
             record.update(status="failed", error=str(e))

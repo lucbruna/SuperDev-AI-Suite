@@ -59,12 +59,15 @@ NARRATOR_CATALOG: list[NarratorProfile] = [
 
 def _lookup_voice(voice_id: str, language: str) -> NarratorProfile:
     voice_id = (voice_id or "default").lower()
+    # "default" means automatic selection: honor the requested language
+    # before falling back to the catalog's English default.
+    if voice_id != "default":
+        for p in NARRATOR_CATALOG:
+            if p.id == voice_id:
+                return p
+    lang = (language or "en").lower().split("-")[0]
     for p in NARRATOR_CATALOG:
-        if p.id == voice_id:
-            return p
-    lang = (language or "en").lower()
-    for p in NARRATOR_CATALOG:
-        if p.language.lower().startswith(lang.split("-")[0]):
+        if p.language.lower().split("-")[0] == lang and p.id != "default":
             return p
     return NARRATOR_CATALOG[-1]
 

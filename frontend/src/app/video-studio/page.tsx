@@ -7,7 +7,7 @@ import { Card, CardHeader, CardBody } from "@/components/cards/Card";
 import { Badge } from "@/components/badges/Badge";
 import { Button } from "@/components/buttons/Button";
 import { useAuthStore } from "@/stores/authStore";
-import { videoStudioApi, type StudioJob, type StudioVoice } from "@/api/videoStudio";
+import { videoStudioApi, type StudioJob, type StudioVoice, type StudioProfile, type StudioCharacter } from "@/api/videoStudio";
 import { extractErrorMessage } from "@/utils/apiError";
 import { fmtBytes, fmtDuration, fmtEstimate, jobStatusVariant, studioHealthVariant } from "@/utils/format";
 import {
@@ -69,10 +69,17 @@ export default function VideoStudioPage() {
   const [version, setVersion] = useState<string>("");
   const [voices, setVoices] = useState<StudioVoice[]>([]);
   const [jobs, setJobs] = useState<StudioJob[]>([]);
+  const [studioProfiles, setStudioProfiles] = useState<StudioProfile[]>([]);
+  const [studioId, setStudioId] = useState<StudioProfile["id"]>("whymentary");
+  const [studioLoadError, setStudioLoadError] = useState<string | null>(null);
+  const [characters, setCharacters] = useState<StudioCharacter[]>([]);
+  const [selectedCharacterIds, setSelectedCharacterIds] = useState<string[]>([]);
+  const [characterLoadError, setCharacterLoadError] = useState<string | null>(null);
 
   // Generation form state
   const [prompt, setPrompt] = useState("A cinematic drone shot over a misty mountain range at sunrise, with a voiceover narration");
   const [voiceover, setVoiceover] = useState(true);
+  const [generateSubtitles, setGenerateSubtitles] = useState(false);
   const [voiceId, setVoiceId] = useState("default");
   const [mode, setMode] = useState<"per_scene" | "single">("per_scene");
   const [numScenes, setNumScenes] = useState(3);
@@ -114,6 +121,12 @@ export default function VideoStudioPage() {
         if (!cancelled) setHealth("offline");
       }
       try {
+        const profiles = await videoStudioApi.listStudios();
+        if (!cancelled) setStudioProfiles(profiles);
+      } catch (e) {
+        if (!cancelled) setStudioLoadError(extractErrorMessage(e, "Não foi possível carregar os estúdios"));
+      }
+      try {
         const v = await videoStudioApi.listVoices();
         if (!cancelled && v.length) setVoices(v);
       } catch {
@@ -126,6 +139,23 @@ export default function VideoStudioPage() {
       if (pollTimer.current) clearInterval(pollTimer.current);
     };
   }, [refreshJobs]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setSelectedCharacterIds([]);
+    videoStudioApi.listCharacters(studioId).then((items) => {
+      if (!cancelled) {
+        setCharacters(items);
+        setCharacterLoadError(null);
+      }
+    }).catch((error) => {
+      if (!cancelled) {
+        setCharacters([]);
+        setCharacterLoadError(extractErrorMessage(error, "Não foi possível carregar os personagens"));
+      }
+    });
+    return () => { cancelled = true; };
+  }, [studioId]);
 
   const pollUntilDone = useCallback(async (jobId: string) => {
     if (pollTimer.current) clearInterval(pollTimer.current);
@@ -174,7 +204,10 @@ export default function VideoStudioPage() {
       const job = await videoStudioApi.generateVideo({
         project_id: projectId,
         prompt,
+        studio_id: studioId,
+        character_ids: selectedCharacterIds,
         voiceover,
+        generate_subtitles: generateSubtitles,
         voice_id: voiceId,
         voiceover_mode: mode,
         num_scenes: Math.min(20, Math.max(1, numScenes)),
@@ -243,6 +276,55 @@ export default function VideoStudioPage() {
           <Badge variant="primary" size="sm">Text to Video + TTS</Badge>
         </CardHeader>
         <CardBody>
+          <section className="mb-5 rounded-xl border border-surface-200 bg-surface-50 p-4 dark:border-surface-700 dark:bg-surface-900/50" aria-labelledby="darkstudio-profile-title">
+            <div className="mb-3">
+              <h3 id="darkstudio-profile-title" className="text-sm font-semibold text-surface-900 dark:text-surface-100">DARKSTUDIO AI · Escolha seu estúdio</h3>
+              <p className="mt-1 text-xs text-surface-500">O perfil selecionado define a linguagem visual aplicada durante a renderização.</p>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              {[{ id: "whymentary" as const, title: "Whymentary", subtitle: "Explicações 2D · fundo branco · cores chapadas", mark: "✍️" }, { id: "historical_documentary" as const, title: "Documentário Histórico", subtitle: "Ilustração cinematográfica · profundidade · luz dramática", mark: "🏛️" }].map((profile) => {
+                const active = studioId === profile.id;
+                return (
+                  <button key={profile.id} type="button" aria-pressed={active} onClick={() => setStudioId(profile.id)} className={active ? "rounded-lg border border-primary-500 bg-primary-50 p-3 text-left ring-2 ring-primary-500/20 dark:bg-primary-950/30" : "rounded-lg border border-surface-200 bg-white p-3 text-left hover:border-primary-300 dark:border-surface-700 dark:bg-surface-800"}>
+                    <span className="flex items-center gap-2 text-sm font-semibold text-surface-900 dark:text-surface-100"><span aria-hidden="true">{profile.mark}</span>{profile.title}{active && <span className="ml-auto text-xs text-primary-600 dark:text-primary-300">Selecionado</span>}</span>
+                    <span className="mt-1 block text-xs text-surface-500">{profile.subtitle}</span>
+                  </button>
+                );
+              })}
+            </div>
+            {studioLoadError && <p role="status" className="mt-2 text-xs text-amber-600">{studioLoadError} · seleção local disponível.</p>}
+            {studioProfiles.length > 0 && <p className="mt-2 text-xs text-surface-400">{studioProfiles.length} perfis carregados da API.</p>}
+          </section>
+          <section className="mb-5 rounded-xl border border-surface-200 p-4 dark:border-surface-700" aria-labelledby="darkstudio-characters-title">
+            <div className="mb-3">
+              <h3 id="darkstudio-characters-title" className="text-sm font-semibold text-surface-900 dark:text-surface-100">Personagens recorrentes</h3>
+              <p className="mt-1 text-xs text-surface-500">Os personagens selecionados aparecem nas cenas com identidade visual consistente.</p>
+            </div>
+            {characters.length > 0 ? (
+              <div className="grid gap-2 sm:grid-cols-2">
+                {characters.map((character) => {
+                  const checked = selectedCharacterIds.includes(character.id);
+                  const disabled = !checked && selectedCharacterIds.length >= 2;
+                  return (
+                    <label key={character.id} className="flex cursor-pointer items-start gap-3 rounded-lg border border-surface-200 p-3 dark:border-surface-700">
+                      <input type="checkbox" checked={checked} disabled={disabled}
+                        onChange={(event) => setSelectedCharacterIds((current) =>
+                          event.target.checked ? [...current, character.id] : current.filter((id) => id !== character.id)
+                        )}
+                        className="mt-1 h-4 w-4 accent-primary-600" />
+                      <span>
+                        <span className="block text-sm font-medium text-surface-800 dark:text-surface-100">{character.name}</span>
+                        <span className="block text-xs text-surface-500">{character.appearance.outfit ?? character.appearance.clothing_color ?? "Personagem do estúdio"}</span>
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-xs text-surface-500">{characterLoadError ?? "Carregando personagens do estúdio…"}</p>
+            )}
+            <p className="mt-2 text-xs text-surface-400">Até 2 personagens por vídeo. A seleção é opcional.</p>
+          </section>
           <textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
@@ -407,6 +489,10 @@ export default function VideoStudioPage() {
             <label className="flex items-center gap-2 rounded-lg border border-surface-200 p-3 dark:border-surface-700">
               <input type="checkbox" checked={voiceover} onChange={(e) => setVoiceover(e.target.checked)} className="h-4 w-4 accent-primary-600" />
               <span className="text-sm text-surface-700 dark:text-surface-300">🎙️ Narração</span>
+            </label>
+            <label className="flex items-center gap-2 rounded-lg border border-surface-200 p-3 dark:border-surface-700">
+              <input type="checkbox" checked={generateSubtitles} onChange={(e) => setGenerateSubtitles(e.target.checked)} className="h-4 w-4 accent-primary-600" />
+              <span className="text-sm text-surface-700 dark:text-surface-300">💬 Gerar legendas SRT</span>
             </label>
 
             <label className="block rounded-lg border border-surface-200 p-3 dark:border-surface-700">
@@ -613,6 +699,14 @@ export default function VideoStudioPage() {
                         )}
                       </p>
                     )}
+                    {job.subtitles?.cue_count != null && (
+                      <p className="mt-1 text-xs text-surface-400">
+                        💬 {job.subtitles.cue_count} legendas SRT geradas
+                      </p>
+                    )}
+                    {job.subtitles?.reason && (
+                      <p className="mt-1 text-xs text-amber-500">Legendas: {job.subtitles.reason}</p>
+                    )}
                     {job.error && <p className="mt-1 text-xs text-red-500">{job.error}</p>}
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
@@ -625,6 +719,11 @@ export default function VideoStudioPage() {
                     {job.output_url && job.status === "completed" && (
                       <Button variant="secondary" size="sm" onClick={() => window.open(job.output_url as string, "_blank")}>
                         ⬇ Baixar MP4
+                      </Button>
+                    )}
+                    {job.subtitles?.download_url && job.status === "completed" && (
+                      <Button variant="secondary" size="sm" onClick={() => window.open(job.subtitles?.download_url as string, "_blank")}>
+                        ⬇ Baixar SRT
                       </Button>
                     )}
                   </div>

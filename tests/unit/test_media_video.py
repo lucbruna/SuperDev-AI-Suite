@@ -23,6 +23,43 @@ def _frames(count: int = 8, size: int = 32) -> list[np.ndarray]:
     return [np.full((size, size, 3), i * 20, dtype=np.uint8) for i in range(count)]
 
 
+
+def test_frames_to_video_requires_mp4_when_ffmpeg_is_missing(tmp_path) -> None:
+    """DARKSTUDIO must fail rather than silently delivering a GIF as MP4."""
+    out = tmp_path / "required.mp4"
+    with patch("modules.ai_video_studio.media.video.ffmpeg_available", return_value=False):
+        with pytest.raises(RuntimeError, match="FFmpeg is required"):
+            frames_to_video(_frames(3), str(out), fps=12, require_mp4=True)
+    assert not out.exists()
+    assert not (tmp_path / "required.gif").exists()
+
+
+def test_frames_to_video_require_mp4_rejects_other_extensions(tmp_path) -> None:
+    with pytest.raises(ValueError, match="must end with .mp4"):
+        frames_to_video(_frames(3), str(tmp_path / "output.gif"), require_mp4=True)
+
+
+def test_stream_frames_to_video_requires_mp4_when_ffmpeg_is_missing(tmp_path) -> None:
+    out = tmp_path / "required-stream.mp4"
+    with patch("modules.ai_video_studio.media.video.ffmpeg_available", return_value=False):
+        with pytest.raises(RuntimeError, match="FFmpeg is required"):
+            stream_frames_to_video(
+                (frame for frame in _frames(3)), str(out), fps=12, require_mp4=True,
+            )
+    assert not out.exists()
+    assert not (tmp_path / "required-stream.gif").exists()
+
+
+def test_render_multi_scene_can_require_mp4(tmp_path) -> None:
+    scenes = [{"background_colors": ["#112233", "#445566"], "duration": 0.25}]
+    with patch("modules.ai_video_studio.media.video.ffmpeg_available", return_value=False):
+        with pytest.raises(RuntimeError, match="FFmpeg is required"):
+            render.render_multi_scene_video(
+                scenes, tmp_path / "required.mp4", fps=4, width=32, height=32,
+                require_mp4=True,
+            )
+
+
 def test_frames_to_video_rejects_empty() -> None:
     with pytest.raises(ValueError):
         frames_to_video([], "out.mp4")
@@ -49,6 +86,17 @@ def test_frames_to_video_ffmpeg_mp4(tmp_path) -> None:
     assert result["frames"] == 12
     assert result["fps"] == 12
 
+
+
+@pytest.mark.skipif(not ffmpeg_available(), reason="ffmpeg not installed")
+def test_frames_to_video_require_mp4_success(tmp_path) -> None:
+    """Strict mode must produce an actual MP4 when FFmpeg is available."""
+    out = tmp_path / "strict.mp4"
+    result = frames_to_video(_frames(12), out, fps=12, require_mp4=True)
+    assert result["engine"] == "ffmpeg"
+    assert result["output_path"] == str(out)
+    assert out.is_file()
+    assert out.stat().st_size > 0
 
 def test_frames_to_video_gif_fallback(tmp_path) -> None:
     """Without ffmpeg the pipeline must still produce a file (GIF)."""
@@ -106,6 +154,7 @@ def test_stream_frames_to_video_gif_fallback(tmp_path) -> None:
     assert gif.stat().st_size > 0
 
 
+@pytest.mark.skipif(not ffmpeg_available(), reason="ffmpeg not installed; MP4 output cannot be asserted")
 def test_render_multi_scene_streams_and_reports_total_frames(tmp_path) -> None:
     """render_multi_scene_video streams frames and reports the exact count."""
     scenes = [

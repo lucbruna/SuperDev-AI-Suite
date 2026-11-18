@@ -21,6 +21,25 @@ def ffmpeg_available() -> bool:
     return shutil.which("ffmpeg") is not None
 
 
+def _validate_frame_dimensions(frames: list[Any], expected: tuple[int, int] | None = None) -> tuple[int, int]:
+    """Validate RGB frame dimensions before either FFmpeg or GIF encoding."""
+    dimensions = expected
+    for index, frame in enumerate(frames):
+        arr = np.asarray(frame)
+        if arr.ndim != 3 or arr.shape[2] != 3:
+            raise ValueError(f"Frame {index} must have shape (height, width, 3); got {arr.shape}")
+        current = arr.shape[:2]
+        if dimensions is None:
+            dimensions = current
+        elif current != dimensions:
+            raise ValueError(
+                f"All frames must share the same dimensions; got {dimensions} and {current}"
+            )
+    if dimensions is None:
+        raise ValueError("No frames to encode")
+    return dimensions
+
+
 def frames_to_video(
     frames: list[np.ndarray] | list[Any],
     output_path: str | Path,
@@ -30,6 +49,7 @@ def frames_to_video(
     crf: int = 23,
     preset: str = "medium",
     progress: bool = False,
+    require_mp4: bool = False,
 ) -> dict[str, Any]:
     """Encode a list of numpy frames into a real video file.
 
@@ -39,13 +59,18 @@ def frames_to_video(
     """
     if not frames:
         raise ValueError("No frames to encode")
+    _validate_frame_dimensions(frames)
     if fps <= 0:
         raise ValueError("fps must be positive")
 
+    out = Path(output_path)
+    if require_mp4 and out.suffix.lower() != ".mp4":
+        raise ValueError("MP4 output required: output_path must end with .mp4")
     if not ffmpeg_available():
+        if require_mp4:
+            raise RuntimeError("FFmpeg is required to produce MP4; install FFmpeg or disable require_mp4")
         return _encode_gif(frames, output_path, fps=fps)
 
-    out = Path(output_path)
     out.parent.mkdir(parents=True, exist_ok=True)
 
     def _iter() -> Any:
@@ -54,6 +79,7 @@ def frames_to_video(
 
     return stream_frames_to_video(
         _iter(), output_path, fps=fps, codec=codec, crf=crf, preset=preset, total_frames=len(frames),
+        require_mp4=require_mp4,
     )
 
 
@@ -67,6 +93,7 @@ def stream_frames_to_video(
     preset: str = "medium",
     total_frames: int | None = None,
     encode_timeout: float = 1800.0,
+    require_mp4: bool = False,
 ) -> dict[str, Any]:
     """Encode frames from an iterator, streaming raw RGB24 to FFmpeg stdin.
 
@@ -82,9 +109,15 @@ def stream_frames_to_video(
     out = Path(output_path)
     out.parent.mkdir(parents=True, exist_ok=True)
 
+    if require_mp4 and out.suffix.lower() != ".mp4":
+        raise ValueError("MP4 output required: output_path must end with .mp4")
     if not ffmpeg_available():
+        if require_mp4:
+            raise RuntimeError("FFmpeg is required to produce MP4; install FFmpeg or disable require_mp4")
         # GIF fallback needs all frames materialized (short videos only).
-        return _encode_gif(list(frame_iter), output_path, fps=fps)
+        buffered = list(frame_iter)
+        _validate_frame_dimensions(buffered)
+        return _encode_gif(buffered, output_path, fps=fps)
 
     # Buffer the first frame to learn the dimensions, then stream the rest.
     it = iter(frame_iter)
@@ -92,6 +125,8 @@ def stream_frames_to_video(
         first = np.asarray(next(it), dtype=np.uint8)
     except StopIteration:
         raise ValueError("No frames to encode") from None
+    if first.ndim != 3 or first.shape[2] != 3:
+        raise ValueError(f"Frame 0 must have shape (height, width, 3); got {first.shape}")
     height, width = first.shape[:2]
 
     cmd = [
@@ -123,6 +158,10 @@ def stream_frames_to_video(
             process.stdin.write(arr.tobytes())
             encoded += 1
         process.stdin.close()
+        # communicate() flushes stdin when the handle is present. It is already
+        # closed after streaming, so detach it before communicate() drains the
+        # output pipes and waits for FFmpeg.
+        process.stdin = None
         _, stderr = process.communicate(timeout=encode_timeout)
         if process.returncode != 0:
             raise RuntimeError(f"FFmpeg encode failed: {stderr.decode()[-1000:]}")

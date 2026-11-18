@@ -59,7 +59,12 @@ def silence(duration: float = 2.0, *, sample_rate: int = SAMPLE_RATE) -> np.ndar
 
 
 def mux_audio_into_video(video_path: str | Path, audio_path: str | Path, output_path: str | Path) -> dict[str, Any]:
-    """Attach an audio track to a video with FFmpeg (shortest duration)."""
+    """Attach audio while preserving the full video duration.
+
+The audio is padded with silence when narration ends early, then ``-shortest``
+uses the video stream as the limiting stream. This prevents a short TTS clip
+from truncating the final frames of the rendered video.
+"""
     import shutil
 
     if shutil.which("ffmpeg") is None:
@@ -72,6 +77,7 @@ def mux_audio_into_video(video_path: str | Path, audio_path: str | Path, output_
         "-i", str(audio_path),
         "-map", "0:v:0", "-map", "1:a:0",
         "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
+        "-af", "apad",
         "-shortest",
         str(out),
     ]

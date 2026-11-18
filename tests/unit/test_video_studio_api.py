@@ -48,11 +48,23 @@ class _FakeEngine:
 
         out = get_subsystem_dir("videos") / "fake_voiced_0001.mp4"
         out.write_bytes(b"FAKE-MP4-WITH-AUDIO")
+        subtitle_info = None
+        if job.get("params", {}).get("generate_subtitles"):
+            subtitle_path = get_subsystem_dir("subtitles") / "fake_0001.srt"
+            subtitle_path.parent.mkdir(parents=True, exist_ok=True)
+            subtitle_path.write_text("1\\n00:00:00,000 --> 00:00:02,000\\nLegenda de teste.\\n", encoding="utf-8")
+            subtitle_info = {
+                "format": "srt",
+                "file_path": str(subtitle_path),
+                "cue_count": 1,
+                "duration": 2.0,
+            }
         result = {
             "output_path": str(out),
             "output_bytes": out.stat().st_size,
             "ai_planner": "deterministic",
             "video_duration": 6.0,
+            "subtitles": subtitle_info,
             "voiceover": {
                 "muxed": True,
                 "output_path": str(out),
@@ -120,6 +132,7 @@ class TestGenerateVoiceover:
                 "voice_speed": 1.1,
                 "voice_pitch": 1.05,
                 "voiceover_mode": "per_scene",
+                "generate_subtitles": True,
             },
         )
         assert resp.status_code == 202
@@ -136,6 +149,7 @@ class TestGenerateVoiceover:
         assert params["voice_speed"] == 1.1
         assert params["voice_pitch"] == 1.05
         assert params["voiceover_mode"] == "per_scene"
+        assert params["generate_subtitles"] is True
 
     @pytest.mark.asyncio
     async def test_defaults_voiceover_off(self, client: AsyncClient, fake_engine: _FakeEngine):
@@ -148,6 +162,8 @@ class TestGenerateVoiceover:
         params = fake_engine.received["params"]
         assert params["voiceover"] is False
         assert params["voice_id"] == "default"
+        assert params["voice_language"] == "pt-BR"
+        assert params["generate_subtitles"] is False
         assert params["voiceover_mode"] == "per_scene"
 
     @pytest.mark.asyncio
@@ -744,3 +760,91 @@ class TestToDownloadUrl:
     def test_returns_none_outside_tree(self):
         assert urls.to_download_url("C:/other/output.mp4") is None
         assert urls.to_download_url("") is None
+
+
+class TestDarkstudioProfileSelection:
+    @pytest.mark.asyncio
+    async def test_selected_studio_profile_reaches_render_engine(
+        self, client: AsyncClient, fake_engine: _FakeEngine
+    ):
+        resp = await client.post(
+            "/api/v1/video-studio/videos/generate",
+            json={
+                "project_id": "p1",
+                "prompt": "Uma cidade histórica ao amanhecer",
+                "studio_id": "historical_documentary",
+            },
+        )
+        assert resp.status_code == 202
+        assert fake_engine.received is not None
+        assert fake_engine.received["params"]["studio_id"] == "historical_documentary"
+
+    @pytest.mark.asyncio
+    async def test_unknown_studio_profile_is_rejected(
+        self, client: AsyncClient
+    ):
+        resp = await client.post(
+            "/api/v1/video-studio/videos/generate",
+            json={
+                "project_id": "p1",
+                "prompt": "Uma cena de teste",
+                "studio_id": "unknown",
+            },
+        )
+        assert resp.status_code == 422
+
+
+class TestSubtitleDownload:
+    @pytest.mark.asyncio
+    async def test_generated_srt_is_exposed_as_downloadable_file(
+        self, client: AsyncClient, fake_engine: _FakeEngine
+    ):
+        resp = await client.post(
+            "/api/v1/video-studio/videos/generate",
+            json={
+                "project_id": "p1",
+                "prompt": "Cena com legenda.",
+                "generate_subtitles": True,
+            },
+        )
+        assert resp.status_code == 202
+        job_id = resp.json()["job_id"]
+        status = (await client.get(f"/api/v1/video-studio/videos/jobs/{job_id}")).json()
+        subtitle = status["subtitles"]
+        assert subtitle["format"] == "srt"
+        assert subtitle["cue_count"] == 1
+        assert subtitle["download_url"].endswith("/downloads/subtitles/fake_0001.srt")
+        downloaded = await client.get(subtitle["download_url"])
+        assert downloaded.status_code == 200
+        assert "Legenda de teste." in downloaded.text
+
+
+class TestCharacterSelection:
+    @pytest.mark.asyncio
+    async def test_selected_characters_are_forwarded_to_generation_engine(
+        self, client: AsyncClient, fake_engine: _FakeEngine
+    ):
+        response = await client.post(
+            "/api/v1/video-studio/videos/generate",
+            json={
+                "project_id": "p1",
+                "prompt": "Mia e Leo explicam uma descoberta.",
+                "studio_id": "whymentary",
+                "character_ids": ["mia", "leo"],
+            },
+        )
+        assert response.status_code == 202
+        assert fake_engine.received is not None
+        assert fake_engine.received["params"]["character_ids"] == ["mia", "leo"]
+
+    @pytest.mark.asyncio
+    async def test_duplicate_character_selection_is_rejected(self, client: AsyncClient):
+        response = await client.post(
+            "/api/v1/video-studio/videos/generate",
+            json={
+                "project_id": "p1",
+                "prompt": "Teste",
+                "character_ids": ["mia", "mia"],
+            },
+        )
+        assert response.status_code == 422

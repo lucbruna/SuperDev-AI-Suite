@@ -22,10 +22,12 @@ _MAX_SCENE_CHARS = 400
 
 
 def scene_narration_text(scene: dict[str, Any]) -> str:
-    """The narration text for one scene (description > name > empty)."""
+    """Prefer authored speech text; use visual description only as a fallback."""
     return str(
-        scene.get("description")
-        or scene.get("voiceover_text")
+        scene.get("voiceover_text")
+        or scene.get("narration")
+        or scene.get("dialogue")
+        or scene.get("description")
         or scene.get("name")
         or ""
     ).strip()[:_MAX_SCENE_CHARS]
@@ -83,9 +85,9 @@ async def synthesize_scene_narration_async(
 
     Fails soft (``muxed=False`` + ``reason``) so TTS problems never break
     video generation — consistent with the module's pipeline patterns. TTS
-    runs through the full ``ai_voice_studio`` chain (edge-tts → gTTS →
-    pyttsx3 → formant) whose last resort is fully local, so narration always
-    synthesizes even with no network.
+    runs through the ``ai_voice_studio`` chain (edge-tts → gTTS →
+    pyttsx3). If no speech engine is available, the scene is marked as failed;
+    synthetic formant effects are not accepted as spoken narration.
 
     Returns ``{muxed, output_path, bytes, clips, total_duration, ...}`` where
     ``clips`` lists each scene's ``{index, text, start, end, audio_path,
@@ -98,7 +100,7 @@ async def synthesize_scene_narration_async(
 
     offsets = compute_scene_offsets(scenes)
     voice_id = str(params.get("voice_id", "default"))
-    language = str(params.get("voice_language", "en"))
+    language = str(params.get("voice_language", "pt-BR"))
     speed = float(params.get("voice_speed", 1.0))
     pitch = float(params.get("voice_pitch", 1.0))
 

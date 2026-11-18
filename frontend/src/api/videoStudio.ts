@@ -7,6 +7,27 @@ import apiClient from "./client";
 
 const STUDIO_BASE = "/video-studio";
 
+export interface StudioProfile {
+  id: "whymentary" | "historical_documentary";
+  name: string;
+  visual_language: string;
+  background: { type: string; colors: string[] };
+  palette: string[];
+  noise: number;
+  grading_strength: number;
+  text: { default_color: string; default_size: number };
+  camera_defaults: Record<string, number>;
+}
+
+export interface StudioCharacter {
+  id: string;
+  name: string;
+  studio_id: StudioProfile["id"];
+  appearance: Record<string, string | boolean>;
+  supported_poses: string[];
+  supported_expressions: string[];
+}
+
 export interface StudioHealth {
   status: string;
   service: string;
@@ -51,9 +72,12 @@ export interface StudioJob {
     voice_speed?: number;
     voice_pitch?: number;
     voiceover_mode?: string;
+    generate_subtitles?: boolean;
+    character_ids?: string[];
     llm_timeout?: number;
   } | null;
   ai_planner?: string | null;
+  subtitles?: { format?: string; file_path?: string; download_url?: string | null; cue_count?: number; duration?: number; generated?: boolean; reason?: string } | null;
   voiceover?: {
     muxed?: boolean;
     narration_style?: string;
@@ -77,11 +101,31 @@ export interface GenerateVideoParams {
   voice_speed?: number;
   voice_pitch?: number;
   voiceover_mode?: "per_scene" | "single";
+  generate_subtitles?: boolean;
+  character_ids?: string[];
   llm_timeout?: number;
   format?: string;
+  studio_id?: StudioProfile["id"];
 }
 
 export const videoStudioApi = {
+  async listStudios(): Promise<StudioProfile[]> {
+    const { data } = await apiClient.get(`${STUDIO_BASE}/studios`);
+    return data?.studios ?? [];
+  },
+
+  async getStudio(studioId: StudioProfile["id"]): Promise<StudioProfile> {
+    const { data } = await apiClient.get(`${STUDIO_BASE}/studios/${studioId}`);
+    return data;
+  },
+
+  async listCharacters(studioId: StudioProfile["id"]): Promise<StudioCharacter[]> {
+    const { data } = await apiClient.get(`${STUDIO_BASE}/studios/library/characters`, {
+      params: { studio_id: studioId },
+    });
+    return data?.characters ?? [];
+  },
+
   async health(): Promise<StudioHealth> {
     const { data } = await apiClient.get(`${STUDIO_BASE}/health`);
     return data;
