@@ -118,7 +118,7 @@ describe("VideoStudioPage", () => {
     await waitFor(() => expect(mockedApi.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
       scene_image_mode: "auto",
     })));
-    expect(mockedApi.preflightVideo).toHaveBeenCalledBefore(mockedApi.generateVideo);
+    expect(mockedApi.preflightVideo.mock.invocationCallOrder[0]).toBeLessThan(mockedApi.generateVideo.mock.invocationCallOrder[0]);
   });
 
   it("does not queue a render when preflight reports a missing MP4 prerequisite", async () => {
