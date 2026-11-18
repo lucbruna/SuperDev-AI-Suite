@@ -175,6 +175,16 @@ def mix_audio_timeline(
     target_lufs: float = -14.0,
     true_peak_db: float = -1.0,
     loudness_range: float = 11.0,
+    compressor_enabled: bool = False,
+    compressor_threshold_db: float = -18.0,
+    compressor_ratio: float = 3.0,
+    compressor_attack: float = 0.01,
+    compressor_release: float = 0.12,
+    compressor_makeup_db: float = 0.0,
+    eq_enabled: bool = False,
+    eq_low_db: float = 0.0,
+    eq_mid_db: float = 0.0,
+    eq_high_db: float = 0.0,
 ) -> dict[str, Any]:
     """Mix music/SFX/narration clips into a stereo WAV with bounded envelopes.
 
@@ -194,6 +204,12 @@ def mix_audio_timeline(
         raise ValueError("normalization target must be -60..0 dBFS and max gain 0..24 dB")
     if not all(np.isfinite(value) for value in (target_lufs, true_peak_db, loudness_range)) or not -36 <= target_lufs <= -5 or not -9 <= true_peak_db <= 0 or not 1 <= loudness_range <= 20:
         raise ValueError("LUFS target must be -36..-5, true peak -9..0 dBTP, and LRA 1..20")
+    if not all(np.isfinite(value) for value in (compressor_threshold_db, compressor_ratio, compressor_attack, compressor_release, compressor_makeup_db, eq_low_db, eq_mid_db, eq_high_db)):
+        raise ValueError("compressor and EQ controls must be finite")
+    if not -60 <= compressor_threshold_db <= 0 or not 1 <= compressor_ratio <= 20 or not 0.001 <= compressor_attack <= 2 or not 0.001 <= compressor_release <= 5 or not -12 <= compressor_makeup_db <= 24:
+        raise ValueError("compressor controls are outside supported ranges")
+    if any(not -12 <= value <= 12 for value in (eq_low_db, eq_mid_db, eq_high_db)):
+        raise ValueError("EQ gains must be between -12 and +12 dB")
     total_samples = int(round(total_duration * sample_rate))
     output_channels = 2
     mix = np.zeros((total_samples, output_channels), dtype=np.float64)
@@ -290,6 +306,17 @@ def mix_audio_timeline(
         })
 
     mixed = mix.astype(np.float32)
+    if compressor_enabled:
+        mixed = dsp.compressor(
+            mixed, threshold_db=compressor_threshold_db, ratio=compressor_ratio,
+            attack=compressor_attack, release=compressor_release,
+            makeup_db=compressor_makeup_db, sample_rate=sample_rate,
+        )
+    if eq_enabled:
+        mixed = dsp.three_band_eq(
+            mixed, low_db=eq_low_db, mid_db=eq_mid_db, high_db=eq_high_db,
+            sample_rate=sample_rate,
+        )
     pre_normalization_rms = dsp.rms(mixed)
     normalization_gain_db = 0.0
     if normalization_enabled and not loudness_normalization_enabled and pre_normalization_rms > 1e-9:
@@ -314,5 +341,17 @@ def mix_audio_timeline(
         "peak": round(dsp.peak(limited), 4),
         "normalization": {"enabled": bool(normalization_enabled and not loudness_normalization_enabled), "bypassed_for_loudness": bool(loudness_normalization_enabled), "target_dbfs": float(normalization_target_dbfs), "gain_db": round(normalization_gain_db, 3), "pre_rms": round(pre_normalization_rms, 6)},
         "loudness": {"enabled": bool(loudness_normalization_enabled), **(loudness_report or {})},
+        "mastering": {
+            "compressor_enabled": bool(compressor_enabled),
+            "compressor_threshold_db": float(compressor_threshold_db),
+            "compressor_ratio": float(compressor_ratio),
+            "compressor_attack": float(compressor_attack),
+            "compressor_release": float(compressor_release),
+            "compressor_makeup_db": float(compressor_makeup_db),
+            "eq_enabled": bool(eq_enabled),
+            "eq_low_db": float(eq_low_db),
+            "eq_mid_db": float(eq_mid_db),
+            "eq_high_db": float(eq_high_db),
+        },
         "ducking": {"enabled": bool(ducking_enabled and ducking_db > 0), "reduction_db": float(ducking_db), "threshold_db": float(ducking_threshold_db), "attack_seconds": float(ducking_attack), "release_seconds": float(ducking_release), "speech_detected": bool(np.any(speech_envelope))},
     }
