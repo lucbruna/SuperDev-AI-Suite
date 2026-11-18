@@ -8,6 +8,8 @@ old placeholder pipeline. Jobs run in the background and expose real
 from __future__ import annotations
 
 import asyncio
+import os
+import shutil
 import uuid
 from pathlib import Path
 from math import gcd
@@ -753,6 +755,54 @@ async def edit_generated_scene_image(req: ImageEditRequest):
     }
 
 
+@router.post("/preflight")
+async def preflight_video_generation(req: VideoGenerateRequest):
+    """Check local prerequisites before queueing a video job.
+
+    This is a configuration check, not a guarantee that an external model
+    will be reachable or produce a successful result.
+    """
+    ffmpeg = shutil.which("ffmpeg")
+    ffprobe = shutil.which("ffprobe")
+    image_api = os.getenv("DARKSTUDIO_IMAGE_API_URL", "http://127.0.0.1:7860").strip()
+    comfy_url = os.getenv("DARKSTUDIO_COMFYUI_URL", "").strip()
+    comfy_workflow = os.getenv("DARKSTUDIO_COMFYUI_WORKFLOW", "").strip()
+    workflow_exists = bool(comfy_workflow and Path(comfy_workflow).is_file())
+
+    checks = [
+        {"id": "ffmpeg", "status": "ready" if ffmpeg else "blocked",
+         "message": f"FFmpeg encontrado: {ffmpeg}" if ffmpeg else "FFmpeg não encontrado no PATH; a exportação MP4 não pode ser concluída."},
+        {"id": "ffprobe", "status": "ready" if ffprobe else "warning",
+         "message": "FFprobe disponível para validar duração e metadados." if ffprobe else "FFprobe ausente; a duração final pode ficar sem confirmação automática."},
+        {"id": "image_provider", "status": "configured_unverified" if image_api else "missing",
+         "message": f"Endpoint de imagens configurado ({image_api}); serviço/modelo não testado." if image_api else "Endpoint local de imagens não configurado."},
+        {"id": "generative_video", "status": "ready" if comfy_url and workflow_exists else "optional",
+         "message": "ComfyUI e workflow configurados; conexão não testada." if comfy_url and workflow_exists else "ComfyUI não está completamente configurado; movimentos de câmera continuam disponíveis."},
+    ]
+    blockers = [item for item in checks if item["status"] == "blocked"]
+    warnings = [item["message"] for item in checks if item["status"] in {"warning", "missing", "optional", "configured_unverified"}]
+    if req.scene_image_mode == "auto":
+        warnings.append("Modo auto pode usar cenas procedurais se a difusão estiver indisponível.")
+    if req.voiceover:
+        warnings.append("A disponibilidade do mecanismo TTS e da voz será confirmada durante a síntese.")
+    total_seconds = req.num_scenes * 10 if req.vidgrid_compatible else req.duration_seconds
+    clip_seconds = 10 if req.vidgrid_compatible else None
+    width, height = _parse_resolution(req.resolution)
+    if width * height >= 1920 * 1080 and req.frame_rate >= 30:
+        warnings.append("Resolução/FPS elevados podem tornar a renderização lenta em hardware de entrada.")
+    return {
+        "status": "blocked" if blockers else ("ready_with_warnings" if warnings else "ready"),
+        "can_queue": not blockers, "project_id": req.project_id, "studio_id": req.studio_id,
+        "scene_count": req.num_scenes, "duration_seconds": total_seconds,
+        "clip_duration_seconds": clip_seconds, "total_frames": int(total_seconds * req.frame_rate),
+        "resolution": f"{width}x{height}", "fps": req.frame_rate,
+        "vidgrid_compatible": req.vidgrid_compatible, "checks": checks,
+        "blockers": blockers, "warnings": warnings,
+        "limitations": [
+            "O preflight verifica configuração local, não garante disponibilidade remota nem qualidade artística.",
+            "O modo de imagem IA gera imagens estáticas por cena; movimento generativo depende de workflow ComfyUI.",
+        ],
+    }
 @router.post("/generate", response_model=VideoGenerateResponse, status_code=202)
 async def generate_video(req: VideoGenerateRequest, background_tasks: BackgroundTasks):
     job_id = str(uuid.uuid4())
