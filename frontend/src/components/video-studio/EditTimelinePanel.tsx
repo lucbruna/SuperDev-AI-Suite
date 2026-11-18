@@ -50,6 +50,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
   const [sceneImageAssets, setSceneImageAssets] = useState<SceneImageAsset[]>(sceneAssets ?? []);
   const [sceneImagePrompts, setSceneImagePrompts] = useState<Record<number, string>>({});
   const [editingImageScene, setEditingImageScene] = useState<number | null>(null);
+  const [imageDenoisingStrength, setImageDenoisingStrength] = useState(0.45);
   const [selected, setSelected] = useState<number>(0);
   const [playheadFrame, setPlayheadFrame] = useState(0);
   const [saving, setSaving] = useState(false);
@@ -250,7 +251,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
     setEditingImageScene(sceneIndex);
     setMessage("");
     try {
-      const result = await videoStudioApi.editSceneImage(jobId, sceneIndex, { prompt });
+      const result = await videoStudioApi.editSceneImage(jobId, sceneIndex, { prompt, denoising_strength: imageDenoisingStrength });
       setSceneImageAssets((current) => [
         ...current.filter((asset) => asset.scene_index !== sceneIndex),
         { scene_index: sceneIndex, image_path: result.image_path, image_url: result.image_url,
@@ -411,6 +412,11 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
           <h3 className="text-sm font-semibold text-surface-900 dark:text-surface-100">Imagens por cena · edição com texto</h3>
           <p className="mt-1 text-xs text-surface-500">Descreva a alteração desejada. A IA edita a imagem existente ou cria uma imagem nova para a cena. Depois, use Renderizar edição para atualizar o MP4.</p>
         </div>
+        <label className="mb-3 block max-w-sm text-xs text-surface-500">
+          Força da alteração · {imageDenoisingStrength.toFixed(2)}
+          <input type="range" min={0.05} max={0.95} step={0.05} value={imageDenoisingStrength} onChange={(event) => setImageDenoisingStrength(Number(event.target.value))} className="mt-1 w-full accent-primary-600" />
+          <span className="flex justify-between text-[10px]"><span>Preservar imagem</span><span>Transformar bastante</span></span>
+        </label>
         <div className="grid gap-3 sm:grid-cols-2">
           {(draft.tracks.find((track) => track.type === "video")?.clips ?? []).map((clip) => {
             const index = clip.scene_index ?? 0;
