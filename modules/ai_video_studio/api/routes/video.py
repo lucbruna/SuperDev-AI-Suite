@@ -329,7 +329,7 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
         if source is not None:
             result = await asyncio.to_thread(
                 edit_image, source, edit_prompt,
-                negative_prompt=req.negative_prompt,
+                negative_prompt=req.negative_prompt or str(scene.get("negative_prompt") or ""),
                 denoising_strength=req.denoising_strength,
                 steps=req.steps, cfg_scale=req.cfg_scale,
             )
@@ -355,6 +355,8 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
     scene["background_image_path"] = result["image_path"]
     scene["image_asset_provider"] = result["provider"]
     scene["visual_prompt"] = req.prompt
+    scene["visual_prompt_full"] = edit_prompt
+    scene["negative_prompt"] = req.negative_prompt or str(scene.get("negative_prompt") or "")
     scene["image_edit_operation"] = operation
     record["_edited_scenes"] = scenes
     assets = record.setdefault("scene_assets", [])
