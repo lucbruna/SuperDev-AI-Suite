@@ -46,3 +46,20 @@ def test_solid_background_without_color_uses_documented_fallback() -> None:
     )
     expected = np.full((2, 2, 3), (26, 26, 46), dtype=np.uint8)
     assert np.array_equal(frame, expected)
+
+
+def test_scene_canvas_uses_generated_image_asset_as_background(monkeypatch, tmp_path) -> None:
+    from modules.ai_video_studio.media import output_paths
+
+    image_path = tmp_path / "scene.png"
+    Image.new("RGB", (8, 8), (210, 30, 40)).save(image_path)
+    monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda _name: tmp_path)
+    canvas = SceneCanvas(width=4, height=4)
+    frame = canvas.render_scene({
+        "background_image_path": str(image_path),
+        "noise": 0.0,
+        "grading_strength": 0.0,
+    }, 0)
+    assert np.all(frame[:, :, 0] == 210)
+    assert np.all(frame[:, :, 1] == 30)
+    assert np.all(frame[:, :, 2] == 40)
