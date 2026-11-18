@@ -153,10 +153,12 @@ def test_render_edits_mixes_saved_audio_tracks(completed_job, monkeypatch, tmp_p
         assert clips[0]["asset"].endswith("bed.wav")
         assert settings["ducking_db"] == 11
         assert settings["normalization_target_dbfs"] == -18
+        assert settings["target_lufs"] == -14
+        assert settings["loudness_normalization_enabled"] is True
         assert total_duration == 4
         from pathlib import Path
         Path(output_path).write_bytes(b"mixed-wav")
-        return {"output_path": str(output_path), "duration": total_duration, "ducking": {"enabled": True, "reduction_db": 11, "speech_detected": True}, "normalization": {"enabled": True, "target_dbfs": -18, "gain_db": -2.5, "pre_rms": 0.13}}
+        return {"output_path": str(output_path), "duration": total_duration, "ducking": {"enabled": True, "reduction_db": 11, "speech_detected": True}, "normalization": {"enabled": True, "target_dbfs": -18, "gain_db": -2.5, "pre_rms": 0.13}, "loudness": {"enabled": True, "target_lufs": -14, "true_peak_db": -1, "output_i": -14.1, "output_tp": -1.2, "output_lra": 6.1, "passes": 2, "verified": True}}
 
     def fake_mux(video_path, audio_path, output_path):
         from pathlib import Path
@@ -170,12 +172,14 @@ def test_render_edits_mixes_saved_audio_tracks(completed_job, monkeypatch, tmp_p
         "music": [{"asset": str(tmp_path / "music" / "bed.wav"), "start": 0, "end": 4, "volume": 0.3}],
         "sfx": [],
     }
-    video._jobs[completed_job]["_audio_settings"] = {"ducking_enabled": True, "ducking_db": 11, "ducking_threshold_db": -36, "ducking_attack": 0.08, "ducking_release": 0.35, "normalization_enabled": True, "normalization_target_dbfs": -18, "normalization_max_gain_db": 6}
+    video._jobs[completed_job]["_audio_settings"] = {"ducking_enabled": True, "ducking_db": 11, "ducking_threshold_db": -36, "ducking_attack": 0.08, "ducking_release": 0.35, "normalization_enabled": True, "normalization_target_dbfs": -18, "normalization_max_gain_db": 6, "loudness_normalization_enabled": True, "target_lufs": -14, "true_peak_db": -1, "loudness_range": 11}
 
     result = asyncio.run(video.render_video_job_edits(completed_job))
     assert result["audio_status"] == "mixed_audio"
     assert result["ducking"]["reduction_db"] == 11
     assert result["normalization"]["gain_db"] == -2.5
+    assert result["loudness"]["output_i"] == -14.1
+    assert video._jobs[completed_job]["edit_render_loudness"]["verified"] is True
     assert result["output_url"] == "/downloads/edited-final.mp4"
     assert video._jobs[completed_job]["edit_render_audio"] == "mixed_audio"
 
