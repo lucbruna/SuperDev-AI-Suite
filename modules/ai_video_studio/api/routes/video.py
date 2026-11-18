@@ -1513,6 +1513,7 @@ async def render_video_job_edits(job_id: str):
             )
             record["edit_timeline"] = mixed_timeline
             result = None
+            vidgrid_stream_copy_used = False
             if vidgrid_clip_paths:
                 from modules.ai_video_studio.media.transitions import transition_spec
                 hard_cuts_only = all(transition_spec(scene).get("type") == "cut" for scene in scenes)
@@ -1522,6 +1523,7 @@ async def render_video_job_edits(job_id: str):
                         fps=fps, width=width, height=height, expected_scene_duration=10.0,
                     )
                     if concat_result.get("used"):
+                        vidgrid_stream_copy_used = True
                         result = {
                             "output_path": concat_result["output_path"],
                             "frames": concat_result["frames"],
@@ -1543,7 +1545,7 @@ async def render_video_job_edits(job_id: str):
                     fps=fps, width=width, height=height, require_mp4=True,
                     studio_id=params.get("studio_id") or "whymentary",
                 )
-            if "edit_render_transition_policy" not in record or record["edit_render_transition_policy"].get("mode") != "vidgrid_stream_copy":
+            if not vidgrid_stream_copy_used:
                 record["edit_render_transition_policy"] = {
                 "mode": result.get("transition_policy", "frame_accurate"),
                 "transitions_applied": result.get("transitions_applied", []),
