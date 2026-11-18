@@ -246,6 +246,99 @@ def render_single_scene_clip(
     )
 
 
+
+def concat_vidgrid_scene_clips(
+    clip_paths: list[str | Path],
+    output_path: str | Path,
+    *,
+    fps: int,
+    width: int,
+    height: int,
+    expected_scene_duration: float = 10.0,
+) -> dict[str, Any]:
+    """Join compatible VidGrid clips by stream copy when every cut is hard.
+
+    Audio is deliberately omitted: the edited-render pipeline rebuilds the
+    narration/music/SFX mix against the final frame count, preventing duplicate
+    per-clip narration. Returns used=False when inputs are incompatible so the
+    caller can fall back to the transition-aware renderer.
+    """
+    import json
+    import shutil
+    import subprocess
+    import tempfile
+
+    if not clip_paths:
+        return {"used": False, "reason": "no_scene_clips"}
+    ffmpeg, ffprobe = shutil.which("ffmpeg"), shutil.which("ffprobe")
+    if not ffmpeg or not ffprobe:
+        return {"used": False, "reason": "ffmpeg_or_ffprobe_unavailable"}
+
+    expected = {
+        "codec_name": None, "width": width, "height": height,
+        "avg_frame_rate": f"{fps}/1", "pix_fmt": "yuv420p",
+    }
+    signatures: list[dict[str, Any]] = []
+    for raw_path in clip_paths:
+        source = Path(raw_path).resolve()
+        if not source.is_file() or source.stat().st_size <= 0:
+            return {"used": False, "reason": "missing_or_empty_clip"}
+        probe = subprocess.run(
+            [ffprobe, "-v", "error", "-show_entries",
+             "stream=codec_type,codec_name,width,height,avg_frame_rate,pix_fmt",
+             "-show_entries", "format=duration", "-of", "json", str(source)],
+            capture_output=True, text=True, timeout=30,
+        )
+        if probe.returncode != 0:
+            return {"used": False, "reason": "clip_probe_failed"}
+        try:
+            data = json.loads(probe.stdout)
+            video = next(stream for stream in data.get("streams", []) if stream.get("codec_type") == "video")
+            duration = float(data.get("format", {}).get("duration") or 0)
+        except (ValueError, TypeError, StopIteration):
+            return {"used": False, "reason": "invalid_clip_metadata"}
+        if (
+            video.get("width") != width or video.get("height") != height
+            or video.get("avg_frame_rate") != expected["avg_frame_rate"]
+            or video.get("pix_fmt") != expected["pix_fmt"]
+            or duration <= 0
+            or abs(duration - expected_scene_duration) > max(0.08, 1.0 / fps)
+        ):
+            return {"used": False, "reason": "clip_format_or_duration_mismatch"}
+        signature = {
+            key: video.get(key)
+            for key in ("codec_name", "width", "height", "avg_frame_rate", "pix_fmt")
+        }
+        if signatures and signature != signatures[0]:
+            return {"used": False, "reason": "incompatible_clip_streams"}
+        signatures.append(signature)
+
+    out = Path(output_path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix="darkstudio-vidgrid-concat-", dir=str(out.parent)) as tmp:
+        listing = Path(tmp) / "clips.ffconcat"
+        lines = ["ffconcat version 1.0"]
+        for raw_path in clip_paths:
+            safe_path = Path(raw_path).resolve().as_posix().replace("'", "'\\''")
+            lines.append(f"file '{safe_path}'")
+        listing.write_text("\\n".join(lines) + "\\n", encoding="utf-8")
+        completed = subprocess.run(
+            [ffmpeg, "-hide_banner", "-loglevel", "error", "-y",
+             "-f", "concat", "-safe", "0", "-i", str(listing),
+             "-map", "0:v:0", "-an", "-c:v", "copy", "-movflags", "+faststart", str(out)],
+            capture_output=True, text=True, timeout=max(300, len(clip_paths) * expected_scene_duration * 4),
+        )
+        if completed.returncode != 0 or not out.is_file() or out.stat().st_size <= 0:
+            out.unlink(missing_ok=True)
+            raise RuntimeError(f"VidGrid stream-copy concat failed: {completed.stderr[-1200:]}")
+    return {
+        "used": True, "output_path": str(out), "bytes": out.stat().st_size,
+        "frames": int(round(len(clip_paths) * expected_scene_duration * fps)),
+        "engine": "ffmpeg_vidgrid_stream_copy",
+        "scene_count": len(clip_paths),
+    }
+
+
 def render_mixed_scene_video(
     scenes: list[dict[str, Any]],
     output_path: str | Path,
