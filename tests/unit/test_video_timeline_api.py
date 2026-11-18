@@ -84,6 +84,8 @@ def test_update_audio_timeline_persists_music_and_sfx_controls(completed_job, mo
     assert record["audio_settings"]["ducking_threshold_db"] == -38
     assert record["_audio_settings"]["normalization_enabled"] is True
     assert record["_audio_settings"]["normalization_target_dbfs"] == -18
+    assert record["_audio_settings"]["loudness_normalization_enabled"] is False
+    assert record["_audio_settings"]["target_lufs"] == -14
     music_track = next(track for track in result["edit_timeline"]["tracks"] if track.get("role") == "music")
     assert music_track["clips"][0]["fade_in"] == 0.5
 
