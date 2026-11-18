@@ -51,6 +51,8 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
   const [sceneImagePrompts, setSceneImagePrompts] = useState<Record<number, string>>({});
   const [visualDirections, setVisualDirections] = useState<Record<number, SceneVisualDirection>>({});
   const [editingImageScene, setEditingImageScene] = useState<number | null>(null);
+  const [selectedImageScenes, setSelectedImageScenes] = useState<number[]>([]);
+  const [regeneratingImageBatch, setRegeneratingImageBatch] = useState(false);
   const [generatingMotionScene, setGeneratingMotionScene] = useState<number | null>(null);
   const [generatedMotionClips, setGeneratedMotionClips] = useState<Record<number, string>>({});
   const [imageDenoisingStrength, setImageDenoisingStrength] = useState(0.45);
@@ -305,6 +307,66 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
     }
   }
 
+  async function regenerateSelectedImages() {
+    if (!jobId || regeneratingImageBatch || editingImageScene !== null) return;
+    const selectedScenes = selectedImageScenes.map((sceneIndex) => ({
+      scene_index: sceneIndex,
+      prompt: (sceneImagePrompts[sceneIndex] ?? visualDirections[sceneIndex]?.visual_prompt_suggestion ?? visualDirections[sceneIndex]?.visual_prompt ?? "").trim(),
+    }));
+    const missing = selectedScenes.filter((scene) => !scene.prompt);
+    if (missing.length) {
+      setMessage(`Adicione um prompt para as cenas: ${missing.map((scene) => scene.scene_index + 1).join(", ")}.`);
+      return;
+    }
+    if (!selectedScenes.length) return;
+    setRegeneratingImageBatch(true);
+    setMessage("");
+    try {
+      const response = await videoStudioApi.regenerateSelectedSceneImages(jobId, selectedScenes);
+      const successful = response.results.filter((item) => item.status === "edited" && item.result);
+      setSceneImageAssets((current) => {
+        const next = [...current];
+        for (const item of successful) {
+          const result = item.result!;
+          const asset: SceneImageAsset = {
+            scene_index: item.scene_index,
+            image_path: result.image_path,
+            image_url: result.image_url,
+            provider: result.provider,
+            status: "edited",
+            operation: result.operation,
+            prompt: result.prompt,
+          };
+          const existing = next.findIndex((entry) => entry.scene_index === item.scene_index);
+          if (existing >= 0) next[existing] = asset;
+          else next.push(asset);
+        }
+        return next;
+      });
+      setVisualDirections((current) => {
+        const next = { ...current };
+        for (const item of successful) {
+          if (!item.result) continue;
+          const prompt = selectedScenes.find((scene) => scene.scene_index === item.scene_index)?.prompt ?? "";
+          if (next[item.scene_index]) next[item.scene_index] = {
+            ...next[item.scene_index],
+            visual_prompt: prompt,
+            visual_prompt_suggestion: prompt,
+            image_url: item.result.image_url,
+            image_status: "edited",
+          };
+        }
+        return next;
+      });
+      setSelectedImageScenes([]);
+      setMessage(response.message + (response.failed ? ` Falhas: ${response.results.filter((item) => item.status === "failed").map((item) => `cena ${item.scene_index + 1}: ${item.error}`).join("; ")` : ""));
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Não foi possível regenerar as cenas selecionadas.");
+    } finally {
+      setRegeneratingImageBatch(false);
+    }
+  }
+
   async function generateSceneMotion(sceneIndex: number, asset: SceneImageAsset) {
     if (!asset.image_path || generatingMotionScene !== null) return;
     setGeneratingMotionScene(sceneIndex);
@@ -487,6 +549,15 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
           <input type="range" min={0.05} max={0.95} step={0.05} value={imageDenoisingStrength} onChange={(event) => setImageDenoisingStrength(Number(event.target.value))} className="mt-1 w-full accent-primary-600" />
           <span className="flex justify-between text-[10px]"><span>Preservar imagem</span><span>Transformar bastante</span></span>
         </label>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-md bg-surface-50 p-2 dark:bg-surface-800">
+          <label className="flex items-center gap-2 text-xs text-surface-600 dark:text-surface-300">
+            <input type="checkbox" checked={clips.length > 0 && clips.every((clip, index) => selectedImageScenes.includes(clip.source_scene_index ?? clip.scene_index ?? index))} onChange={(event) => setSelectedImageScenes(event.target.checked ? clips.map((clip, index) => clip.source_scene_index ?? clip.scene_index ?? index) : [])} />
+            Selecionar todas as cenas
+          </label>
+          <button type="button" onClick={regenerateSelectedImages} disabled={!selectedImageScenes.length || regeneratingImageBatch || editingImageScene !== null} className="rounded-md bg-primary-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-40">
+            {regeneratingImageBatch ? "Regenerando cenas…" : `Regenerar selecionadas (${selectedImageScenes.length})`}
+          </button>
+        </div>
         <div className="grid gap-3 sm:grid-cols-2">
           {(draft.tracks.find((track) => track.type === "video")?.clips ?? []).map((clip) => {
             const index = clip.scene_index ?? 0;
@@ -494,7 +565,10 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
             const asset = sceneImageAssets.find((item) => item.scene_index === sourceIndex);
             return <div key={index} className="rounded-lg border border-surface-200 p-2 dark:border-surface-700">
               {asset?.image_url ? <img src={asset.image_url} alt={`Imagem da cena ${index + 1}`} className="mb-2 aspect-video w-full rounded-md object-cover" /> : <div className="mb-2 flex aspect-video items-center justify-center rounded-md bg-surface-100 text-xs text-surface-500 dark:bg-surface-800">Cena {index + 1} · imagem procedural ou ainda não criada</div>}
-              <p className="mb-1 text-xs font-semibold text-surface-700 dark:text-surface-300">Cena {index + 1}</p>
+              <label className="mb-2 flex items-center gap-2 text-xs font-semibold text-surface-700 dark:text-surface-300">
+                <input type="checkbox" checked={selectedImageScenes.includes(sourceIndex)} onChange={(event) => setSelectedImageScenes((current) => event.target.checked ? [...new Set([...current, sourceIndex])] : current.filter((value) => value !== sourceIndex))} />
+                Selecionar cena {index + 1}
+              </label>
               {visualDirections[sourceIndex] && <div className="mb-2 rounded-md bg-surface-50 p-2 text-[11px] dark:bg-surface-800">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="rounded-full bg-primary-100 px-2 py-0.5 font-semibold text-primary-700 dark:bg-primary-950 dark:text-primary-300">{visualDirections[sourceIndex].narrative_beat.replaceAll("_", " ")}</span>
