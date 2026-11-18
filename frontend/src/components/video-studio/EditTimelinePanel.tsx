@@ -81,6 +81,12 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
   useEffect(() => {
     if (!jobId) return;
     videoStudioApi.listJobAudioAssets(jobId).then(setAudioAssets).catch(() => setAudioAssets([]));
+    videoStudioApi.getJob(jobId).then((job) => {
+      if (job.audio_settings) {
+        setDuckingEnabled(job.audio_settings.ducking_enabled ?? true);
+        setDuckingDb(String(job.audio_settings.ducking_db ?? 9));
+      }
+    }).catch(() => undefined);
   }, [jobId]);
 
   const sceneOrder = useMemo(
