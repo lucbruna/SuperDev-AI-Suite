@@ -276,7 +276,8 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
         raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
     if record.get("status") != "completed":
         raise HTTPException(status_code=409, detail="Scene images can only be changed after generation completes")
-    scenes = record.get("_edited_scenes") or record.get("_source_scenes") or []
+    source_scenes = record.get("_edited_scenes") or record.get("_source_scenes") or []
+    scenes = [dict(item) for item in source_scenes]
     if scene_index < 0 or scene_index >= len(scenes):
         raise HTTPException(status_code=404, detail="Scene index not found")
     from modules.ai_video_studio.media.output_paths import get_subsystem_dir
@@ -285,6 +286,19 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
     )
 
     scene = scenes[scene_index]
+    params = record.get("params") or {}
+    studio_id = str(params.get("studio_id") or "whymentary")
+    style_prompt = (
+        "handcrafted felt-clay stop motion, tactile wool fibers, bright educational lighting"
+        if studio_id == "whymentary"
+        else "cinematic historical illustration, period-accurate environment, atmospheric depth"
+    )
+    character_ids = params.get("character_ids") or []
+    character_reservation = (
+        " Background plate only, no people or characters; preserve clear foreground space for animated cast."
+        if character_ids else ""
+    )
+    edit_prompt = f"{style_prompt}. {req.prompt}.{character_reservation}"
     image_root = Path(get_subsystem_dir("images")).resolve()
     source_value = scene.get("background_image_path")
     source = Path(str(source_value)).resolve() if source_value else None
@@ -293,7 +307,7 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
     try:
         if source is not None:
             result = await asyncio.to_thread(
-                edit_image, source, req.prompt,
+                edit_image, source, edit_prompt,
                 negative_prompt=req.negative_prompt,
                 denoising_strength=req.denoising_strength,
                 steps=req.steps, cfg_scale=req.cfg_scale,
@@ -305,7 +319,7 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
             image_width, image_height = fit_image_dimensions(width, height)
             result = await asyncio.to_thread(
                 generate_scene_image,
-                req.prompt,
+                edit_prompt,
                 negative_prompt=req.negative_prompt,
                 width=image_width,
                 height=image_height,
