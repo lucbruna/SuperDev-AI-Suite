@@ -50,6 +50,8 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
   const [sceneImageAssets, setSceneImageAssets] = useState<SceneImageAsset[]>(sceneAssets ?? []);
   const [sceneImagePrompts, setSceneImagePrompts] = useState<Record<number, string>>({});
   const [editingImageScene, setEditingImageScene] = useState<number | null>(null);
+  const [generatingMotionScene, setGeneratingMotionScene] = useState<number | null>(null);
+  const [generatedMotionClips, setGeneratedMotionClips] = useState<Record<number, string>>({});
   const [imageDenoisingStrength, setImageDenoisingStrength] = useState(0.45);
   const [selected, setSelected] = useState<number>(0);
   const [playheadFrame, setPlayheadFrame] = useState(0);
@@ -271,6 +273,30 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
     }
   }
 
+  async function generateSceneMotion(sceneIndex: number, asset: SceneImageAsset, durationFrames: number) {
+    if (!asset.image_path || generatingMotionScene !== null) return;
+    setGeneratingMotionScene(sceneIndex);
+    setMessage("");
+    try {
+      const result = await videoStudioApi.generateImageToVideo({
+        image_ref: asset.image_path,
+        duration_seconds: Math.max(1, durationFrames / draft.fps),
+        fps: draft.fps,
+        width: draft.width,
+        height: draft.height,
+        motion_provider: "comfyui",
+        motion_prompt: (sceneImagePrompts[sceneIndex] || asset.visual_prompt || asset.prompt || "Create natural cinematic movement while preserving the scene subject").trim(),
+        negative_prompt: "flicker, unstable identity, deformation, extra limbs, text, watermark",
+      });
+      setGeneratedMotionClips((current) => ({ ...current, [sceneIndex]: result.data.download_url }));
+      setMessage(`Clipe generativo da cena ${sceneIndex + 1} concluído. Ele foi salvo como arquivo separado; a timeline principal ainda não foi substituída.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Não foi possível gerar o movimento por IA. Verifique o ComfyUI e o workflow configurado.");
+    } finally {
+      setGeneratingMotionScene(null);
+    }
+  }
+
   async function analyzeAvSync() {
     if (!jobId || dirty || audioDirty || saving || savingAudio || analyzingAvSync) return;
     setAnalyzingAvSync(true); setMessage("");
@@ -428,6 +454,13 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
               <button type="button" onClick={() => editSceneImage(index)} disabled={!sceneImagePrompts[index]?.trim() || editingImageScene !== null} className="mt-2 rounded-md border border-primary-300 px-3 py-1.5 text-xs font-semibold disabled:opacity-40 dark:border-primary-700">
                 {editingImageScene === index ? "Gerando imagem…" : asset ? "Alterar imagem por texto" : "Criar imagem por texto"}
               </button>
+              <button type="button" onClick={() => asset && generateSceneMotion(index, asset, clip.duration_frames)} disabled={!asset?.image_path || generatingMotionScene !== null} className="ml-2 mt-2 rounded-md border border-violet-300 px-3 py-1.5 text-xs font-semibold disabled:opacity-40 dark:border-violet-700">
+                {generatingMotionScene === index ? "Gerando vídeo IA…" : "Animar com IA · ComfyUI"}
+              </button>
+              {generatedMotionClips[index] && <div className="mt-2 space-y-1">
+                <video controls preload="metadata" src={generatedMotionClips[index]} className="w-full rounded-md" />
+                <a href={generatedMotionClips[index]} target="_blank" rel="noreferrer" className="text-xs font-medium text-primary-600 underline">Abrir clipe generativo da cena {index + 1}</a>
+              </div>}
               {asset?.status === "edited" && <p className="mt-1 text-[10px] text-emerald-600">Imagem atualizada · {asset.operation === "image_to_image" ? "edição da imagem anterior" : "imagem criada do zero"}</p>}
             </div>;
           })}
