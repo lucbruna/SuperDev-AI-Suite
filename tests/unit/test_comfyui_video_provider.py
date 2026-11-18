@@ -110,3 +110,20 @@ def test_comfyui_generate_uploads_image_and_downloads_mp4(tmp_path, monkeypatch)
     assert output.read_bytes()[4:8] == b"ftyp"
     assert submitted["workflow"]["1"]["inputs"]["image"] == "uploaded.png"
     assert submitted["workflow"]["2"]["inputs"]["text"] == "The camera circles the subject"
+
+
+def test_image_to_video_api_exposes_explicit_comfyui_opt_in():
+    from modules.ai_video_studio.api.routes.generation import ImageToVideoRequest
+
+    default = ImageToVideoRequest(image_ref="scene.png")
+    assert default.motion_provider == "camera"
+    request = ImageToVideoRequest(
+        image_ref="scene.png",
+        duration_seconds=10,
+        motion_provider="comfyui",
+        motion_prompt="Slow orbit, preserve the subject",
+    )
+    assert request.motion_provider == "comfyui"
+    assert request.duration_seconds == 10
+    with pytest.raises(Exception):
+        ImageToVideoRequest(image_ref="scene.png", motion_provider="wan_direct")
