@@ -46,6 +46,73 @@ def _continuity_tokens(scene: dict[str, Any], character_ids: list[str], object_i
     }
 
 
+_CHARACTER_IDENTITY = {
+    "leo": "Leo é sempre o mesmo menino: cabelo loiro, camisa azul, calça escura, mesmas proporções faciais e corporais; não trocar cabelo, roupa ou paleta.",
+    "mia": "Mia é sempre a mesma menina: cabelo castanho preso, vestido vermelho, mesmas proporções faciais e corporais; não trocar cabelo, penteado, vestido ou paleta.",
+    "whymentary_host": "Manter exatamente a identidade, paleta de pele, cabelo, roupa e proporções do personagem Whymentary Host.",
+    "historical_narrator": "Manter a mesma identidade visual, cabelo, vestuário e proporções do narrador histórico estabelecido no guia visual.",
+}
+
+
+def _character_identity_prompt(character_ids: list[str]) -> str:
+    descriptions = [_CHARACTER_IDENTITY[item] for item in character_ids if item in _CHARACTER_IDENTITY]
+    unknown = [item for item in character_ids if item not in _CHARACTER_IDENTITY]
+    if unknown:
+        descriptions.extend(f"Preservar sem alterações a identidade visual aprovada do personagem {item}." for item in unknown)
+    return " ".join(descriptions)
+
+
+def analyze_storyboard_continuity(scenes: list[dict[str, Any]]) -> dict[str, Any]:
+    """Validate declared per-scene character/object continuity; this is metadata QA, not image recognition."""
+    if not isinstance(scenes, list):
+        raise ValueError("scenes must be a list")
+    warnings: list[dict[str, Any]] = []
+    character_sets: list[tuple[int, tuple[str, ...]]] = []
+    appearances: dict[str, dict[str, set[str]]] = {}
+    for index, scene in enumerate(scenes):
+        continuity = scene.get("continuity") if isinstance(scene.get("continuity"), dict) else {}
+        raw_characters = continuity.get("characters") or scene.get("character_ids") or scene.get("_darkstudio_characters")
+        if raw_characters is not None:
+            ids = tuple(sorted(set(str(value) for value in raw_characters)))
+            character_sets.append((index, ids))
+        raw_appearance = scene.get("character_appearance") or scene.get("character_costumes") or {}
+        if isinstance(raw_appearance, dict):
+            for character_id, description in raw_appearance.items():
+                if isinstance(description, str) and description.strip():
+                    appearances.setdefault(str(character_id), {}).setdefault(description.strip().lower(), set()).add(str(index + 1))
+    for (left_index, left_ids), (right_index, right_ids) in zip(character_sets, character_sets[1:]):
+        if left_ids != right_ids:
+            warnings.append({
+                "type": "character_presence_change",
+                "scene_indices": [left_index, right_index],
+                "previous_characters": list(left_ids),
+                "current_characters": list(right_ids),
+                "severity": "review",
+                "message": "A lista de personagens mudou entre cenas consecutivas; confirme se a entrada ou saída é intencional.",
+            })
+    for character_id, variants in appearances.items():
+        if len(variants) > 1:
+            scene_groups = [sorted(int(value) - 1 for value in indices) for indices in variants.values()]
+            all_indices = sorted({index for group in scene_groups for index in group})
+            warnings.append({
+                "type": "character_appearance_drift",
+                "scene_indices": all_indices,
+                "character_id": character_id,
+                "variants": [{"description": description, "scene_numbers": sorted(int(value) for value in indices)} for description, indices in variants.items()],
+                "severity": "high",
+                "message": f"Descrições visuais diferentes foram declaradas para o personagem {character_id}; revise cabelo, roupa e paleta.",
+            })
+    return {
+        "status": "review_required" if warnings else "consistent_metadata",
+        "checked_scenes": len(scenes),
+        "warnings": warnings,
+        "method": "declared_scene_metadata_consistency",
+        "limitations": [
+            "Esta verificação compara metadados e descrições declaradas, não reconhece personagens dentro dos pixels das imagens.",
+            "Mudanças de figurino intencionais devem ser aprovadas pelo roteiro e registradas explicitamente.",
+        ],
+    }
+
 def _negative_prompt(studio_id: str, character_ids: list[str]) -> str:
     shared = (
         "text, captions, subtitles, watermark, logo, malformed anatomy, "
@@ -102,6 +169,9 @@ def build_cinematic_storyboard(
             "Representar somente informações sustentadas pelo texto desta cena; "
             "não inventar eventos, personagens, datas, símbolos ou detalhes históricos."
         )
+        identity_prompt = _character_identity_prompt(characters)
+        if identity_prompt:
+            prompt += " Guia de identidade obrigatório: " + identity_prompt
         if characters:
             prompt += (
                 " Manter identidade, proporções, cabelo, roupas e paleta dos personagens "
@@ -137,8 +207,11 @@ def build_cinematic_storyboard(
         if scene["storyboard_status"] == "needs_review":
             warnings.append(f"Scene {index + 1}: no narration or visual description; manual storyboard review required.")
 
+    continuity_report = analyze_storyboard_continuity(storyboard)
+    warnings.extend(item["message"] for item in continuity_report["warnings"])
     report = {
         "scene_count": len(storyboard),
+        "continuity_report": continuity_report,
         "ready_count": sum(item["storyboard_status"] == "ready" for item in storyboard),
         "needs_review_count": sum(item["storyboard_status"] == "needs_review" for item in storyboard),
         "repeated_visuals": repeated,
