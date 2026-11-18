@@ -234,6 +234,8 @@ class TextToVideoEngine:
                             else "happy" if any(word in scene_words for word in ("happy", "feliz", "sorr"))
                             else "neutral"
                         )
+                    scenes[scene_index]["character_pose"] = pose
+                    scenes[scene_index]["character_expression"] = expression
                     scenes[scene_index] = add_character(
                         scenes[scene_index],
                         character_id,
