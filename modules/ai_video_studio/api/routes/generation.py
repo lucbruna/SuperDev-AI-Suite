@@ -36,6 +36,10 @@ class ImageToVideoRequest(BaseModel):
     duration_seconds: float = Field(default=4.0, ge=1.0, le=60.0)
     fps: int = Field(default=24, ge=1, le=60)
     camera_motion: str = Field(default="parallax")
+    motion_provider: str = Field(default="camera", pattern="^(camera|comfyui)$", description="camera = deterministic motion; comfyui = configured generative workflow")
+    motion_prompt: str = Field(default="", max_length=4000, description="Motion instruction sent to the configured ComfyUI workflow")
+    negative_prompt: str = Field(default="", max_length=2000)
+    provider_timeout: float = Field(default=900.0, ge=5.0, le=3600.0)
     width: int = Field(default=1280, ge=64, le=4096)
     height: int = Field(default=720, ge=64, le=4096)
 
@@ -100,6 +104,10 @@ async def image_to_video(req: ImageToVideoRequest):
                     "duration": req.duration_seconds,
                     "fps": req.fps,
                     "camera_motion": req.camera_motion,
+                    "motion_provider": req.motion_provider,
+                    "motion_prompt": req.motion_prompt,
+                    "negative_prompt": req.negative_prompt,
+                    "provider_timeout": req.provider_timeout,
                     "width": req.width,
                     "height": req.height,
                 },
