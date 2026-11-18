@@ -140,3 +140,30 @@ def test_ollama_model_fallback_env(monkeypatch) -> None:
     # get_settings may fail in test env → env fallback path
     model = llm._ollama_model()
     assert model  # non-empty either from settings or env default
+
+
+def test_scene_normalization_preserves_visual_prompt_and_narration_fields() -> None:
+    planner = ScenePlanner()
+    scenes = planner._normalize([{
+        "name": "Abertura",
+        "description": "Uma cidade antiga ao amanhecer.",
+        "visual_prompt": "Wide cinematic view of an ancient city at dawn.",
+        "negative_prompt": "modern cars, text",
+        "voiceover_text": "A cidade despertava.",
+        "shot_type": "establishing",
+        "duration": 10,
+    }], num_scenes=1, duration=10)
+    assert scenes[0]["visual_prompt"].startswith("Wide cinematic")
+    assert scenes[0]["negative_prompt"] == "modern cars, text"
+    assert scenes[0]["voiceover_text"] == "A cidade despertava."
+    assert scenes[0]["shot_type"] == "establishing"
+
+
+def test_fallback_planner_includes_standalone_visual_prompts() -> None:
+    scene = ScenePlanner().fallback(
+        "A travessia de uma expedição por uma floresta.",
+        num_scenes=2, duration=20,
+    )["scenes"][0]
+    assert "Scene focus:" in scene["visual_prompt"]
+    assert scene["voiceover_text"]
+    assert scene["shot_type"] in {"establishing", "wide", "medium", "close_up", "detail"}
