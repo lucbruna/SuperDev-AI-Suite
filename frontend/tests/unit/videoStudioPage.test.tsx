@@ -166,10 +166,15 @@ describe("DARKSTUDIO scene object picker", () => {
 
     const objectCheckbox = await screen.findByRole("checkbox", { name: /Copo de água/ });
     fireEvent.click(objectCheckbox);
+    fireEvent.change(screen.getByLabelText("Motor visual"), { target: { value: "ai" } });
+    expect(screen.getByRole("checkbox", { name: /Modo compatível com VidGrid/ })).toBeChecked();
     fireEvent.click(screen.getByRole("button", { name: /Gerar vídeo/ }));
 
     expect(mockedApi.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
       object_ids: ["water_glass"],
+      scene_image_mode: "ai",
+      vidgrid_compatible: true,
+      duration_seconds: 30,
     }));
   });
 });
