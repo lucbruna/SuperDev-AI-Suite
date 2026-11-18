@@ -204,6 +204,18 @@ export const videoStudioApi = {
     return data;
   },
 
+  async renderJobEdits(jobId: string): Promise<{
+    status: string;
+    output_url: string;
+    video_duration: number;
+    file_size_bytes: number;
+    audio_status: string;
+    message: string;
+  }> {
+    const { data } = await apiClient.post(`${STUDIO_BASE}/videos/jobs/${jobId}/render-edits`);
+    return data;
+  },
+
   async listJobs(projectId?: string): Promise<StudioJob[]> {
     const { data } = await apiClient.get(`${STUDIO_BASE}/videos/jobs`, {
       params: projectId ? { project_id: projectId } : undefined,
