@@ -400,7 +400,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
           </div>
           <div className="rounded-md border border-surface-200 p-3 dark:border-surface-700 sm:col-span-2">
             <div className="flex flex-wrap items-center gap-4">
-              <div><strong className="text-sm">📊 Loudness EBU R128 (LUFS)</strong><p className="text-xs text-surface-500">Duas passagens FFmpeg; true peak limitado a -1 dBTP. Requer FFmpeg com filtro loudnorm.</p></div>
+              <div><strong className="text-sm">📊 Loudness EBU R128 (LUFS)</strong><p className="text-xs text-surface-500">Duas passagens FFmpeg + verificação final; alvo de true peak em -1 dBTP. Requer FFmpeg com filtro loudnorm.</p></div>
               <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={loudnessEnabled} onChange={(event) => { setLoudnessEnabled(event.target.checked); setAudioDirty(true); }} /> Ativar LUFS</label>
               <label className="text-xs text-surface-500">Alvo LUFS<input type="number" min="-36" max="-5" step="1" value={targetLufs} onChange={(event) => { setTargetLufs(event.target.value); setAudioDirty(true); }} className="ml-2 w-20 rounded border bg-transparent px-2 py-1" /></label>
             </div>
