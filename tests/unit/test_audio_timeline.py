@@ -42,6 +42,21 @@ def test_mix_audio_timeline_places_trimmed_clip_with_fades_and_fixed_duration(tm
         assert rendered.getframerate() == dsp.SAMPLE_RATE
 
 
+def test_mix_audio_timeline_accepts_pre_aligned_narration_samples(tmp_path, monkeypatch):
+    _audio_roots(tmp_path, monkeypatch)
+    output = tmp_path / "narration_mix.wav"
+    result = audio_timeline.mix_audio_timeline(
+        [{"samples": np.ones(dsp.SAMPLE_RATE, dtype=np.float32) * 0.1,
+          "offset": 0.5, "gain": 0.7}],
+        output,
+        total_duration=2.0,
+    )
+    assert result["clips"][0]["asset"] == "narration"
+    assert result["clips"][0]["start"] == 0.5
+    with wave.open(str(output), "rb") as rendered:
+        assert rendered.getnframes() == 2 * dsp.SAMPLE_RATE
+
+
 def test_mix_audio_timeline_rejects_arbitrary_files(tmp_path, monkeypatch):
     _audio_roots(tmp_path, monkeypatch)
     outside = tmp_path / "private.wav"
