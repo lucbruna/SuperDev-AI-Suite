@@ -56,6 +56,7 @@ class VideoGenerateRequest(BaseModel):
     # Platform format preset selected in the dashboard (shorts/reels/tiktok/
     # youtube/square) or "custom" when the user tweaked a dimension manually.
     format: str = Field(default="custom", max_length=32)
+    studio_id: str = Field(default="whymentary", pattern="^(whymentary|historical_documentary)$")
 
     @field_validator("resolution")
     @classmethod
@@ -188,6 +189,7 @@ async def generate_video(req: VideoGenerateRequest, background_tasks: Background
                         "voice_pitch": r.voice_pitch,
                         "voiceover_mode": r.voiceover_mode,
                         "llm_timeout": r.llm_timeout,
+                        "studio_id": r.studio_id,
                     },
                 },
                 progress_callback=_on_render_progress,
