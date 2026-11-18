@@ -22,6 +22,7 @@ class StudioProfile:
     background_colors: tuple[str, ...]
     palette: tuple[str, ...]
     noise: float
+    grading_strength: float
     default_text_color: str
     default_text_size: int
     camera_defaults: tuple[tuple[str, float], ...]
@@ -35,6 +36,7 @@ WHYMENTARY = StudioProfile(
     background_colors=("#FFFFFF",),
     palette=("#FFFFFF", "#111827", "#FACC15", "#2563EB", "#EF4444", "#22C55E"),
     noise=0.0,
+    grading_strength=0.0,
     default_text_color="#111827",
     default_text_size=42,
     camera_defaults=(("zoom", 1.0), ("dx", 0.0), ("dy", 0.0), ("roll", 0.0)),
@@ -48,6 +50,7 @@ HISTORICAL_DOCUMENTARY = StudioProfile(
     background_colors=("#101827", "#34445B", "#151B2A"),
     palette=("#D7B56D", "#C7D2E0", "#64748B", "#1E293B"),
     noise=0.035,
+    grading_strength=0.08,
     default_text_color="#F8FAFC",
     default_text_size=44,
     camera_defaults=(("zoom", 1.025), ("dx", 0.12), ("dy", 0.0), ("roll", 0.0)),
@@ -86,6 +89,7 @@ def apply_studio_profile(
     result["background_colors"] = list(profile.background_colors)
     result["palette"] = list(profile.palette)
     result["noise"] = profile.noise
+    result["grading_strength"] = profile.grading_strength
 
     text = deepcopy(result.get("text") or {})
     text.setdefault("color", profile.default_text_color)
