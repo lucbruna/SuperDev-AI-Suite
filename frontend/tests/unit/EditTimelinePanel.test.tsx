@@ -61,7 +61,7 @@ describe("EditTimelinePanel", () => {
     vi.spyOn(videoStudioApi, "getJob").mockResolvedValue({ job_id: "quality-job", project_id: "p1", status: "completed", progress: 1 });
     const renderJob = vi.spyOn(videoStudioApi, "renderJobEdits").mockResolvedValue({
       status: "completed", output_url: "/downloads/final.mp4", video_duration: 4, file_size_bytes: 1000, audio_status: "mixed_audio",
-      quality: { status: "needs_review", export_allowed: true, peak_dbfs: -1.5, rms_dbfs: -18, clipping_ratio: 0, warning_count: 1, critical_count: 0, warnings: [{ code: "internal_silence_gaps", severity: "warning", message: "Silêncio interno detectado" }], silence_gaps: [{ start: 1, end: 1.8, duration: 0.8 }], narration_music_masking: [{ start: 2, end: 3, duration: 1, voice_music_gap_db: -2 }], masking_method: "RMS heuristic" },
+      quality: { status: "needs_review", export_allowed: true, peak_dbfs: -1.5, rms_dbfs: -18, clipping_ratio: 0, warning_count: 1, critical_count: 0, warnings: [{ code: "internal_silence_gaps", severity: "warning", message: "Silêncio interno detectado" }], silence_gaps: [{ start: 1, end: 1.8, duration: 0.8 }], narration_music_masking: [{ start: 2, end: 3, duration: 1, voice_music_gap_db: -2 }], recommendations: [{ action: "increase_ducking", recommended_ducking_db: 12, message: "Aumente o ducking em 3 dB." }], masking_method: "RMS heuristic" },
       message: "Render concluído com revisão recomendada.",
     });
     render(<EditTimelinePanel timeline={timeline} jobId="quality-job" />);
@@ -70,6 +70,9 @@ describe("EditTimelinePanel", () => {
     expect(await screen.findByText("Revisão recomendada")).toBeInTheDocument();
     expect(screen.getByText("Silêncio interno detectado")).toBeInTheDocument();
     expect(screen.getByText(/Possível voz encoberta/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Aplicar correção" }));
+    expect(screen.getByLabelText("Redução (dB)")).toHaveValue(12);
+    expect(screen.getByText(/Ducking atualizado no rascunho/)).toBeInTheDocument();
   });
   it("analyzes audio sources and applies the recommended ducking values", async () => {
     const audioTimeline: EditTimeline = {
