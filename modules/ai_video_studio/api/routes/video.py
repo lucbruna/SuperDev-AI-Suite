@@ -293,7 +293,7 @@ except Exception:
 
 
 _scene_batch_jobs: set[str] = set()
-_scene_batch_dispatching: set[str] = set()
+_scene_batch_tasks: dict[str, asyncio.Task] = {}
 
 
 @router.post("/jobs/{job_id}/scenes/{scene_index}/image-edit")
@@ -302,7 +302,7 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
     record = _jobs.get(job_id)
     if record is None:
         raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
-    if job_id in _scene_batch_jobs and job_id not in _scene_batch_dispatching:
+    if job_id in _scene_batch_jobs and asyncio.current_task() is not _scene_batch_tasks.get(job_id):
         raise HTTPException(status_code=409, detail="A batch scene regeneration is already running")
     if record.get("status") != "completed":
         raise HTTPException(status_code=409, detail="Scene images can only be changed after generation completes")
@@ -471,13 +471,15 @@ async def regenerate_video_job_scene_images(job_id: str, req: SceneImageBatchEdi
         raise HTTPException(status_code=422, detail="Duplicate scene indices are not allowed")
 
     _scene_batch_jobs.add(job_id)
+    current_task = asyncio.current_task()
+    if current_task is not None:
+        _scene_batch_tasks[job_id] = current_task
     record["_scene_batch_total"] = len(req.scenes)
     record["_scene_batch_completed"] = 0
     _persist_job(record)
     results: list[dict[str, Any]] = []
     try:
         for item in req.scenes:
-            _scene_batch_dispatching.add(job_id)
             try:
                 result = await edit_video_job_scene_image(
                     job_id, item.scene_index,
@@ -501,11 +503,10 @@ async def regenerate_video_job_scene_images(job_id: str, req: SceneImageBatchEdi
                     "error": str(exc)[:300],
                 })
             finally:
-                _scene_batch_dispatching.discard(job_id)
                 record["_scene_batch_completed"] = len(results)
                 _persist_job(record)
     finally:
-        _scene_batch_dispatching.discard(job_id)
+        _scene_batch_tasks.pop(job_id, None)
         _scene_batch_jobs.discard(job_id)
         _persist_job(record)
 
