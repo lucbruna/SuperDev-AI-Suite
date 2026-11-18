@@ -42,6 +42,7 @@ def _asset_clips(items: list[dict[str, Any]], fps: int, *, track_type: str) -> l
             "end_seconds": round(end / fps, 6),
             **({"text": str(item["text"])} if item.get("text") is not None else {}),
             **({key: float(item[key]) for key in ("volume", "trim_start", "fade_in", "fade_out") if item.get(key) is not None}),
+            **({"loop": bool(item["loop"])} if item.get("loop") is not None else {}),
         })
     return clips
 
