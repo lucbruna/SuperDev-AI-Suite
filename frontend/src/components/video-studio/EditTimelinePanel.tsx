@@ -562,6 +562,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
               <span className={visualReport.status === "good" ? "text-emerald-600" : "text-amber-600"}>{visualReport.score}/100 · {visualReport.status.replaceAll("_", " ")}</span>
             </div>
             <p className="mt-1 text-surface-500">{visualReport.scene_count} cenas · {visualReport.moving_camera_scenes} com movimento de câmera · {visualReport.animated_primitives} elementos animados · {visualReport.unique_shot_types} tipos de plano</p>
+            <p className="mt-1 text-surface-500">Transições: {Object.entries(visualReport.transition_counts).map(([type, count]) => `${type} ${count}`).join(" · ") || "não especificadas"}</p>
             <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
               {Object.entries(visualReport.components).map(([key, value]) => <div key={key} className="rounded bg-surface-100 p-2 dark:bg-surface-800"><div className="capitalize text-surface-500">{key === "motion" ? "Movimento" : key === "composition" ? "Composição" : key === "variety" ? "Variedade" : "Clareza"}</div><strong>{value}/100</strong></div>)}
             </div>
