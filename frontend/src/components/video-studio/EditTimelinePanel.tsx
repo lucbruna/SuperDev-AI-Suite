@@ -67,6 +67,8 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
   const [previewUrl, setPreviewUrl] = useState("");
   const [renderUrl, setRenderUrl] = useState(editedOutputUrl ?? "");
   const [message, setMessage] = useState("");
+  const [staleVidGridClipCount, setStaleVidGridClipCount] = useState(0);
+  const [rebuildingVidGridClips, setRebuildingVidGridClips] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [audioAssets, setAudioAssets] = useState<StudioAudioAsset[]>([]);
   const [musicAsset, setMusicAsset] = useState("");
@@ -152,6 +154,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
         }
         setSceneImageCandidates(pending);
       }
+      setStaleVidGridClipCount(job.scene_clips?.filter((clip) => clip.status === "stale").length ?? 0);
       if (job.scene_clips?.length) {
         setGeneratedMotionClips(Object.fromEntries(
           job.scene_clips
@@ -501,6 +504,23 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
       setMessage(error instanceof Error ? error.message : "Falha ao gerar a prévia visual.");
     } finally {
       setPreviewing(false);
+    }
+  }
+
+  async function rebuildStaleVidGridClips() {
+    if (!jobId || rebuildingVidGridClips || rendering || dirty || audioDirty) return;
+    setRebuildingVidGridClips(true);
+    setMessage("Reconstruindo somente os clipes desatualizados de 10 segundos…");
+    try {
+      const result = await videoStudioApi.rebuildStaleVidGridClips(jobId);
+      const latest = await videoStudioApi.getJob(jobId);
+      setStaleVidGridClipCount(latest.scene_clips?.filter((clip) => clip.status === "stale").length ?? 0);
+      if (latest.scene_assets) setSceneImageAssets(latest.scene_assets);
+      setMessage(result.message || `${result.rebuilt} clipe(s) reconstruído(s); ${result.failed} falha(s).`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Falha ao reconstruir os clipes desatualizados.");
+    } finally {
+      setRebuildingVidGridClips(false);
     }
   }
 
@@ -901,6 +921,15 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
             onChange={(event) => setPlayheadFrame(Number(event.target.value))} className="w-full accent-primary-600" />
           <span className="w-14 text-right tabular-nums">{formatTime(playheadFrame / draft.fps)}</span>
         </label>
+        {jobId && staleVidGridClipCount > 0 && <button
+          type="button"
+          onClick={rebuildStaleVidGridClips}
+          disabled={rebuildingVidGridClips || rendering || previewing || saving || dirty || audioDirty || savingAudio}
+          className="rounded-md border border-amber-300 px-3 py-2 text-xs font-semibold text-amber-700 disabled:opacity-40 dark:border-amber-700 dark:text-amber-300"
+          title="Recria apenas os clipes marcados como desatualizados, usando as imagens aprovadas e a narração já existente."
+        >
+          {rebuildingVidGridClips ? "Reconstruindo clipes…" : `Reconstruir ${staleVidGridClipCount} clipe(s) VidGrid`}
+        </button>}
         {jobId && <>
           <button type="button" onClick={saveDraft} disabled={saving || !dirty || audioDirty} className="rounded-md border border-surface-300 px-3 py-2 text-xs font-semibold disabled:opacity-40 dark:border-surface-600">
             {saving ? "Salvando…" : "Salvar rascunho"}
