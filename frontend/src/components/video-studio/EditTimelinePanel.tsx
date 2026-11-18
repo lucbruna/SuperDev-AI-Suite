@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { videoStudioApi, type EditTimeline, type EditTimelineClip } from "@/api/videoStudio";
+import { videoStudioApi, type EditTimeline, type EditTimelineClip, type StudioAudioAsset } from "@/api/videoStudio";
 
 type Props = {
   timeline: EditTimeline;
@@ -53,6 +53,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
   const [renderUrl, setRenderUrl] = useState(editedOutputUrl ?? "");
   const [message, setMessage] = useState("");
   const [dirty, setDirty] = useState(false);
+  const [audioAssets, setAudioAssets] = useState<StudioAudioAsset[]>([]);
   const [musicAsset, setMusicAsset] = useState("");
   const [musicStart, setMusicStart] = useState("0");
   const [musicEnd, setMusicEnd] = useState("10");
@@ -73,6 +74,10 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
 
   useEffect(() => { setDraft(timeline); setDirty(false); setSelected(0); }, [timeline]);
   useEffect(() => { setRenderUrl(editedOutputUrl ?? ""); }, [editedOutputUrl]);
+  useEffect(() => {
+    if (!jobId) return;
+    videoStudioApi.listJobAudioAssets(jobId).then(setAudioAssets).catch(() => setAudioAssets([]));
+  }, [jobId]);
 
   const sceneOrder = useMemo(
     () => clips.map((clip, index) => clip.source_scene_index ?? clip.scene_index ?? index),
@@ -291,7 +296,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
           <div className="space-y-2">
             <strong className="text-sm">🎵 Música de fundo</strong>
             <label className="block text-xs text-surface-500">Caminho do áudio gerado
-              <input value={musicAsset} onChange={(event) => setMusicAsset(event.target.value)} placeholder="modules/downloads/music/faixa.wav" className="mt-1 w-full rounded border bg-transparent px-2 py-1.5 text-xs" />
+              <select value={musicAsset} onChange={(event) => setMusicAsset(event.target.value)} className="mt-1 w-full rounded border bg-transparent px-2 py-1.5 text-xs"><option value="">Selecione um arquivo de áudio…</option>{audioAssets.map((asset) => <option key={asset.asset} value={asset.asset}>[{asset.folder}] {asset.name}</option>)}</select>
             </label>
             <div className="grid grid-cols-3 gap-2">
               <label className="text-xs text-surface-500">Início (s)<input type="number" min="0" value={musicStart} onChange={(event) => setMusicStart(event.target.value)} className="mt-1 w-full rounded border bg-transparent px-2 py-1" /></label>
@@ -304,7 +309,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
           <div className="space-y-2">
             <strong className="text-sm">🔊 Efeito sonoro</strong>
             <label className="block text-xs text-surface-500">Caminho do áudio gerado
-              <input value={sfxAsset} onChange={(event) => setSfxAsset(event.target.value)} placeholder="modules/downloads/effects/impact.wav" className="mt-1 w-full rounded border bg-transparent px-2 py-1.5 text-xs" />
+              <select value={sfxAsset} onChange={(event) => setSfxAsset(event.target.value)} className="mt-1 w-full rounded border bg-transparent px-2 py-1.5 text-xs"><option value="">Selecione um arquivo de áudio…</option>{audioAssets.map((asset) => <option key={asset.asset} value={asset.asset}>[{asset.folder}] {asset.name}</option>)}</select>
             </label>
             <div className="grid grid-cols-3 gap-2">
               <label className="text-xs text-surface-500">Início (s)<input type="number" min="0" value={sfxStart} onChange={(event) => setSfxStart(event.target.value)} className="mt-1 w-full rounded border bg-transparent px-2 py-1" /></label>
@@ -318,7 +323,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
             <button type="button" onClick={saveAudioDraft} disabled={savingAudio || dirty || saving || (!musicAsset.trim() && !sfxAsset.trim() && !draft.tracks.some((track) => track.role === "music" || track.role === "sound_effect"))} className="rounded-md border border-surface-300 px-3 py-2 text-xs font-semibold disabled:opacity-40 dark:border-surface-600">
               {savingAudio ? "Salvando áudio…" : "Salvar faixas de áudio"}
             </button>
-            <span className="text-[11px] text-surface-400">Use arquivos nas pastas geradas music, effects, voice ou dubbing. Caminhos externos são bloqueados.</span>
+            <span className="text-[11px] text-surface-400">A lista mostra arquivos gerados em music, effects, voice, dubbing e mix. Caminhos externos são bloqueados.</span>
           </div>
         </div>
       )}
