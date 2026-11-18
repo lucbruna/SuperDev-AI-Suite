@@ -48,6 +48,8 @@ export default function EditTimelinePanel({ timeline, jobId, title = "Editor de 
   const [selected, setSelected] = useState<number>(0);
   const [playheadFrame, setPlayheadFrame] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [rendering, setRendering] = useState(false);
+  const [renderUrl, setRenderUrl] = useState("");
   const [message, setMessage] = useState("");
   const [dirty, setDirty] = useState(false);
   const videoTrack = draft.tracks.find((track) => track.type === "video");
@@ -112,6 +114,21 @@ export default function EditTimelinePanel({ timeline, jobId, title = "Editor de 
       setMessage(error instanceof Error ? error.message : "Não foi possível salvar o rascunho.");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function renderEdits() {
+    if (!jobId || dirty || saving) return;
+    setRendering(true);
+    setMessage("");
+    try {
+      const result = await videoStudioApi.renderJobEdits(jobId);
+      setRenderUrl(result.output_url);
+      setMessage(result.message);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Falha ao renderizar a edição.");
+    } finally {
+      setRendering(false);
     }
   }
 
@@ -211,14 +228,19 @@ export default function EditTimelinePanel({ timeline, jobId, title = "Editor de 
             onChange={(event) => setPlayheadFrame(Number(event.target.value))} className="w-full accent-primary-600" />
           <span className="w-14 text-right tabular-nums">{formatTime(playheadFrame / draft.fps)}</span>
         </label>
-        {jobId && <button type="button" onClick={saveDraft} disabled={saving || !dirty}
-          className="rounded-md bg-primary-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-40">
-          {saving ? "Salvando…" : "Salvar rascunho"}
-        </button>}
+        {jobId && <>
+          <button type="button" onClick={saveDraft} disabled={saving || !dirty} className="rounded-md border border-surface-300 px-3 py-2 text-xs font-semibold disabled:opacity-40 dark:border-surface-600">
+            {saving ? "Salvando…" : "Salvar rascunho"}
+          </button>
+          <button type="button" onClick={renderEdits} disabled={rendering || saving || dirty} className="rounded-md bg-primary-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-40">
+            {rendering ? "Renderizando MP4…" : "Renderizar edição"}
+          </button>
+        </>}
       </div>
       {message && <p role="status" className="mt-2 text-xs text-surface-500">{message}</p>}
+      {renderUrl && <p className="mt-2 text-xs"><a className="text-primary-600 underline" href={renderUrl} target="_blank" rel="noreferrer">Abrir MP4 renderizado</a></p>}
       <p className="mt-2 text-[11px] text-surface-400">
-        Edição de ordem, duração e transição disponível. O rascunho fica somente na memória do servidor; ainda não há persistência em banco nem re-renderização deste corte.
+        O rascunho e o resultado ainda dependem da memória do servidor. A renderização atual gera uma prévia visual; narração e demais faixas de áudio ainda não são reposicionadas automaticamente.
       </p>
     </section>
   );
