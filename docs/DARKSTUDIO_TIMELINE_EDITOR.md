@@ -337,3 +337,10 @@ Cada job expõe agora `scene_progress`, uma lista persistida de estados individu
 Estados observáveis: `pending`, `processing`, `completed`, `fallback` e `failed`. As etapas incluem `storyboard`, `image_generation`, `image_ready`, `image_fallback`, `clip_render`, `clip_ready` e `exported`. A interface apresenta a grade de cenas e a contagem de cenas concluídas, preservadas ao recarregar a lista de jobs.
 
 Limite atual: este lote implementa rastreamento e diagnóstico por cena, não a repetição isolada de uma cena. A regeneração seletiva exige ainda uma operação que reutilize o storyboard/ativos originais, invalide somente o ativo escolhido e remonte o vídeo final; não deve ser confundida com o status visual já disponível.
+
+
+### Ação na interface
+
+O painel da timeline consulta os clipes do job e exibe **Reconstruir N clipe(s) VidGrid** somente quando há clipes marcados como desatualizados. A ação chama o endpoint seletivo, bloqueia edição/render concorrente, atualiza a contagem após a operação e apresenta o resumo de sucesso parcial/falha. A aprovação de uma imagem candidata atualiza a contagem sem exigir recarregar a página.
+
+A regeneração em lote de imagens também respeita o bloqueio de reconstrução seletiva, evitando que a imagem ativa seja trocada enquanto o clipe correspondente está sendo reconstruído. A reconstrução seletiva continua sendo apenas a etapa dos clipes individuais; o botão **Renderizar edição** segue responsável por produzir o MP4 completo.
