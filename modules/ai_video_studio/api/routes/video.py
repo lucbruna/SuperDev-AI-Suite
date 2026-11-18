@@ -457,7 +457,7 @@ async def render_video_job_edits(job_id: str):
             )
             if mux_result.get("muxed"):
                 final_path = mux_result["output_path"]
-                audio_status = "mixed_narration_music_sfx" if has_per_scene_narration else "mixed_music_sfx_single_track_omitted" if single_track else "mixed_music_sfx"
+                audio_status = "mixed_audio_single_track_omitted" if single_track and not has_per_scene_narration else "mixed_audio"
             else:
                 audio_status = "audio_mux_failed"
 
@@ -523,19 +523,7 @@ async def render_video_job_edits(job_id: str):
             "audio_status": audio_status,
             "subtitle_status": subtitle_status,
             "subtitles": subtitle_info,
-            "message": (
-                "MP4 editado renderizado com narração, música e efeitos mixados."
-                if audio_status == "mixed_narration_music_sfx"
-                else "MP4 editado renderizado com música e efeitos; a narração original em faixa única foi omitida."
-                if audio_status == "mixed_music_sfx_single_track_omitted"
-                else "MP4 editado renderizado com música e efeitos mixados."
-                if audio_status == "mixed_music_sfx"
-                else "MP4 editado renderizado; a faixa única original não foi reposicionada automaticamente."
-                if audio_status == "single_track_not_retimed"
-                else "MP4 editado renderizado sem faixas de áudio configuradas."
-                if audio_status == "silent"
-                else "MP4 visual renderizado, mas a muxagem de áudio falhou; consulte o status do áudio."
-            ),,
+            "message": "MP4 editado renderizado com as faixas configuradas mixadas." if audio_status == "mixed_audio" else "MP4 editado renderizado com música/efeitos; a narração original em faixa única foi omitida." if audio_status == "mixed_audio_single_track_omitted" else "MP4 editado renderizado; a faixa única original não foi reposicionada automaticamente." if audio_status == "single_track_not_retimed" else "MP4 editado renderizado sem faixas de áudio configuradas." if audio_status == "silent" else "MP4 visual renderizado, mas a muxagem de áudio falhou; consulte o status do áudio.",,,
         }
     except Exception as exc:
         record["edit_render_status"] = "failed"
