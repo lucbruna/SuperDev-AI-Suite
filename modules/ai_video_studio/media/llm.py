@@ -158,6 +158,11 @@ class ScenePlanner:
             scenes = raw if isinstance(raw, list) else raw.get("scenes", []) if isinstance(raw, dict) else []
             if scenes:
                 normalized = self._normalize(scenes, num_scenes, duration)
+                if len(normalized) < num_scenes:
+                    fallback_scenes = self.fallback(
+                        prompt, num_scenes=num_scenes, duration=duration,
+                    )["scenes"]
+                    normalized.extend(fallback_scenes[len(normalized):num_scenes])
                 return {"provider": "ollama", "model": _ollama_model(), "ai_generated": True, "scenes": normalized}
             logger.warning("Ollama returned no scenes — falling back to deterministic planner")
         except Exception as e:  # noqa: BLE001 — any failure falls back
