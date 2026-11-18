@@ -232,6 +232,17 @@ export const videoStudioApi = {
     return data?.assets ?? [];
   },
 
+  async analyzeJobAudio(jobId: string): Promise<{
+    sources_analyzed: number;
+    reports: Record<string, { source: string; file: string; rms_dbfs: number; peak_dbfs: number; silence_ratio: number; clipping_ratio: number; warnings: string[] }[]>;
+    warnings: { role: string; source: string; code: string }[];
+    skipped: { role: string; reason: string }[];
+    ducking_recommendation: { available: boolean; recommended_ducking_db?: number; recommended_threshold_db?: number; narration_median_rms_dbfs?: number; music_median_rms_dbfs?: number; reason: string };
+    message: string;
+  }> {
+    const { data } = await apiClient.post(`${STUDIO_BASE}/videos/jobs/${jobId}/audio-analysis`);
+    return data;
+  },
   async updateJobAudio(jobId: string, payload: {
     music_clips: { asset: string; start: number; end: number; trim_start?: number; volume?: number; fade_in?: number; fade_out?: number; loop?: boolean; pan?: number }[];
     sfx_clips: { asset: string; start: number; end: number; trim_start?: number; volume?: number; fade_in?: number; fade_out?: number; pan?: number }[];
