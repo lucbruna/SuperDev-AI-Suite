@@ -69,6 +69,8 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
   const [sfxFadeOut, setSfxFadeOut] = useState("0.2");
   const [savingAudio, setSavingAudio] = useState(false);
   const [audioDirty, setAudioDirty] = useState(false);
+  const [duckingEnabled, setDuckingEnabled] = useState(true);
+  const [duckingDb, setDuckingDb] = useState("9");
   const videoTrack = draft.tracks.find((track) => track.type === "video");
   const clips = videoTrack?.clips ?? [];
   const duration = Math.max(1, draft.duration_frames);
@@ -194,7 +196,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
       const nextSfx = parseClip(sfxAsset, sfxStart, sfxEnd, sfxVolume, sfxFadeIn, sfxFadeOut);
       if (nextMusic) music.push(nextMusic);
       if (nextSfx) sfx.push(nextSfx);
-      const result = await videoStudioApi.updateJobAudio(jobId, { music_clips: music, sfx_clips: sfx });
+      const result = await videoStudioApi.updateJobAudio(jobId, { music_clips: music, sfx_clips: sfx, ducking_enabled: duckingEnabled, ducking_db: Number(duckingDb), ducking_threshold_db: -36, ducking_attack: 0.08, ducking_release: 0.35 });
       setDraft(result.edit_timeline);
       setAudioDirty(false);
       onSaved?.(result.edit_timeline);
@@ -342,6 +344,13 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
               <label className="text-xs text-surface-500">Volume (0–2)<input type="number" min="0" max="2" step="0.05" value={sfxVolume} onChange={(event) => setSfxVolume(event.target.value)} className="mt-1 w-full rounded border bg-transparent px-2 py-1" /></label>
               <label className="text-xs text-surface-500">Fade-in (s)<input type="number" min="0" step="0.1" value={sfxFadeIn} onChange={(event) => setSfxFadeIn(event.target.value)} className="mt-1 w-full rounded border bg-transparent px-2 py-1" /></label>
               <label className="text-xs text-surface-500">Fade-out (s)<input type="number" min="0" step="0.1" value={sfxFadeOut} onChange={(event) => setSfxFadeOut(event.target.value)} className="mt-1 w-full rounded border bg-transparent px-2 py-1" /></label>
+            </div>
+          </div>
+          <div className="rounded-md border border-surface-200 p-3 dark:border-surface-700 sm:col-span-2">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div><strong className="text-sm">🎚️ Ducking automático da música</strong><p className="text-xs text-surface-500">Reduz a trilha quando a narração está ativa.</p></div>
+              <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={duckingEnabled} onChange={(event) => { setDuckingEnabled(event.target.checked); setAudioDirty(true); }} /> Ativar</label>
+              <label className="text-xs text-surface-500">Redução (dB)<input type="number" min="0" max="24" step="1" value={duckingDb} onChange={(event) => { setDuckingDb(event.target.value); setAudioDirty(true); }} className="ml-2 w-20 rounded border bg-transparent px-2 py-1" /></label>
             </div>
           </div>
           {(["music", "sound_effect"] as const).map((role) => {
