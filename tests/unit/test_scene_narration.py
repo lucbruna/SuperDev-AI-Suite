@@ -270,3 +270,45 @@ def test_engine_add_voiceover_single_when_no_scene_text(fake_tts, monkeypatch, t
     ))
     assert called_single["ok"] is True
     assert result["narration_style"] == "single_track"
+
+
+def test_remap_narration_clips_for_reordered_and_resized_scenes() -> None:
+    original = [
+        {"text": "first", "audio_path": "first.wav"},
+        {"text": "second", "audio_path": "second.wav"},
+        {"text": "third", "audio_path": "third.wav"},
+    ]
+    edited_scenes = [
+        {"_source_scene_index": 2, "duration": 1.5},
+        {"_source_scene_index": 0, "duration": 2.0,
+         "transition_out": {"type": "crossfade", "duration_frames": 12}},
+        {"_source_scene_index": 1, "duration": 3.0},
+    ]
+
+    clips = scene_narration.remap_narration_clips_for_edits(
+        edited_scenes, original, fps=24
+    )
+
+    assert [clip["audio_path"] for clip in clips] == [
+        "third.wav", "first.wav", "second.wav"
+    ]
+    assert [(clip["start"], clip["end"]) for clip in clips] == [
+        (0.0, 1.5), (1.5, 3.5), (3.0, 6.0)
+    ]
+
+
+def test_remap_narration_omits_scenes_without_audio_and_rejects_bad_source_index() -> None:
+    original = [{"text": "silent scene"}, {"text": "spoken", "audio_path": "voice.wav"}]
+    scenes = [
+        {"_source_scene_index": 0, "duration": 1.0},
+        {"_source_scene_index": 1, "duration": 2.0},
+    ]
+    clips = scene_narration.remap_narration_clips_for_edits(scenes, original, fps=30)
+    assert len(clips) == 1
+    assert clips[0]["start"] == 1.0
+    assert clips[0]["end"] == 3.0
+
+    with pytest.raises(ValueError, match="source index"):
+        scene_narration.remap_narration_clips_for_edits(
+            [{"_source_scene_index": "bad", "duration": 1.0}], original
+        )
