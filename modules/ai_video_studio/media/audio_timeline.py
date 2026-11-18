@@ -268,9 +268,14 @@ def build_audio_quality_report(
             "recommended_reduction_db": 2.0,
             "message": "Reduza o ganho das faixas mais altas em aproximadamente 2 dB e gere uma nova prévia.",
         })
+    true_peak_exceeded = (
+        measured_true_peak_dbTP is not None
+        and target_true_peak_dbTP is not None
+        and measured_true_peak_dbTP > target_true_peak_dbTP + 0.2
+    )
     return {
-        "status": "blocked" if clipped > 0 else ("needs_review" if warnings else "passed"),
-        "export_allowed": bool(clipped == 0),
+        "status": "blocked" if clipped > 0 or true_peak_exceeded else ("needs_review" if warnings else "passed"),
+        "export_allowed": bool(clipped == 0 and not true_peak_exceeded),
         "duration_seconds": round(len(audio) / sample_rate, 3),
         "sample_rate": int(sample_rate),
         "channels": int(audio.shape[1]),
