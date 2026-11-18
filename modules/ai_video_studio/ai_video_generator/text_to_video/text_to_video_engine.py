@@ -79,7 +79,7 @@ class TextToVideoEngine:
         params = job.get("params", {})
         started = time.time()
 
-        num_scenes = max(1, int(params.get("num_scenes", 3)))
+        num_scenes = min(60, max(1, int(params.get("num_scenes", 3))))
         duration = max(1.0, float(params.get("duration", 6.0)))
         vidgrid_compatible = bool(params.get("vidgrid_compatible", False))
         if vidgrid_compatible:
