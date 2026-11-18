@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import VideoStudioPage from "@/app/video-studio/page";
 import { useAuthStore } from "@/stores/authStore";
 import type { StudioJob } from "@/api/videoStudio";
@@ -115,9 +115,24 @@ describe("VideoStudioPage", () => {
     const imageMode = screen.getByLabelText("Motor visual");
     expect(imageMode).toHaveValue("auto");
     fireEvent.click(screen.getByRole("button", { name: /Gerar vídeo/ }));
-    expect(mockedApi.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
+    await waitFor(() => expect(mockedApi.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
       scene_image_mode: "auto",
-    }));
+    })));
+    expect(mockedApi.preflightVideo).toHaveBeenCalledBefore(mockedApi.generateVideo);
+  });
+
+  it("does not queue a render when preflight reports a missing MP4 prerequisite", async () => {
+    mockedApi.preflightVideo.mockResolvedValue({
+      status: "blocked", can_queue: false, project_id: "p1", studio_id: "whymentary",
+      scene_count: 3, duration_seconds: 30, clip_duration_seconds: 10, total_frames: 720,
+      resolution: "1280x720", fps: 24, vidgrid_compatible: true,
+      checks: [], blockers: [{ id: "ffmpeg", status: "blocked", message: "FFmpeg não encontrado." }],
+      warnings: [], limitations: [],
+    });
+    render(<VideoStudioPage />);
+    fireEvent.click(await screen.findByRole("button", { name: /Gerar vídeo/ }));
+    expect(await screen.findByText("FFmpeg não encontrado.")).toBeInTheDocument();
+    expect(mockedApi.generateVideo).not.toHaveBeenCalled();
   });
 
   it("suggests the matching duration preset when a format is active", async () => {
