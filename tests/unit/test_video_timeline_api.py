@@ -65,7 +65,7 @@ def test_update_timeline_draft_rejects_unknown_job() -> None:
     assert error.value.status_code == 404
 
 
-def test_render_edits_returns_new_mp4_and_discloses_audio_limitation(completed_job, monkeypatch, tmp_path) -> None:
+def test_render_edits_returns_new_mp4_and_regenerates_subtitle_sidecar(completed_job, monkeypatch, tmp_path) -> None:
     monkeypatch.setattr(video, "_persist_job", lambda record: None)
     from modules.ai_video_studio.media import output_paths, render
 
@@ -82,7 +82,10 @@ def test_render_edits_returns_new_mp4_and_discloses_audio_limitation(completed_j
     result = asyncio.run(video.render_video_job_edits(completed_job))
     assert result["status"] == "completed"
     assert result["output_url"] == "/downloads/edited.mp4"
-    assert result["audio_status"] == "not_retimed"
+    assert result["audio_status"] == "silent"
+    assert result["subtitle_status"] == "regenerated"
+    assert result["subtitles"]["format"] == "srt"
+    assert video._jobs[completed_job]["edit_render_subtitles"] == "regenerated"
     assert video._jobs[completed_job]["edit_render_status"] == "completed"
     assert video._jobs[completed_job]["output_url"] == "/downloads/original.mp4"
     assert video._jobs[completed_job]["edited_output_url"] == "/downloads/edited.mp4"
@@ -105,9 +108,13 @@ def test_job_status_exposes_persisted_edit_render_metadata(completed_job) -> Non
         edit_render_status="completed",
         edited_output_url="/downloads/edited.mp4",
         edited_video_duration=4.0,
-        edit_render_audio="not_retimed",
+        edit_render_audio="silent",
+        edit_render_subtitles="regenerated",
+        edited_subtitles={"format": "srt", "download_url": "/downloads/edited.srt"},
     )
     result = asyncio.run(video.get_video_job_status(completed_job))
     assert result.edited_output_url == "/downloads/edited.mp4"
     assert result.edit_render_status == "completed"
-    assert result.edit_render_audio == "not_retimed"
+    assert result.edit_render_audio == "silent"
+    assert result.edit_render_subtitles == "regenerated"
+    assert result.edited_subtitles["download_url"] == "/downloads/edited.srt"
