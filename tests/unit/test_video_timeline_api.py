@@ -237,7 +237,7 @@ def test_render_edits_mixes_saved_audio_tracks(completed_job, monkeypatch, tmp_p
         assert total_duration == 4
         from pathlib import Path
         Path(output_path).write_bytes(b"mixed-wav")
-        return {"output_path": str(output_path), "duration": total_duration, "ducking": {"enabled": True, "reduction_db": 11, "speech_detected": True}, "normalization": {"enabled": True, "target_dbfs": -18, "gain_db": -2.5, "pre_rms": 0.13}, "loudness": {"enabled": True, "target_lufs": -14, "true_peak_db": -1, "output_i": -14.1, "output_tp": -1.2, "output_lra": 6.1, "passes": 2, "verified": True}}
+        return {"output_path": str(output_path), "duration": total_duration, "ducking": {"enabled": True, "reduction_db": 11, "speech_detected": True}, "normalization": {"enabled": True, "target_dbfs": -18, "gain_db": -2.5, "pre_rms": 0.13}, "loudness": {"enabled": True, "target_lufs": -14, "true_peak_db": -1, "output_i": -14.1, "output_tp": -1.2, "output_lra": 6.1, "passes": 2, "verified": True}, "quality": {"status": "needs_review", "export_allowed": True, "peak_dbfs": -1.5, "rms_dbfs": -18.2, "clipping_ratio": 0.0, "warnings": [{"code": "internal_silence_gaps", "severity": "warning", "message": "Silêncio interno"}], "silence_gaps": [{"start": 1.0, "end": 1.6, "duration": 0.6}], "narration_music_masking": [], "critical_count": 0, "warning_count": 1}}
 
     def fake_mux(video_path, audio_path, output_path):
         from pathlib import Path
@@ -259,9 +259,34 @@ def test_render_edits_mixes_saved_audio_tracks(completed_job, monkeypatch, tmp_p
     assert result["normalization"]["gain_db"] == -2.5
     assert result["loudness"]["output_i"] == -14.1
     assert video._jobs[completed_job]["edit_render_loudness"]["verified"] is True
+    assert result["quality"]["status"] == "needs_review"
+    assert video._jobs[completed_job]["edit_render_quality"]["warning_count"] == 1
     assert result["output_url"] == "/downloads/edited-final.mp4"
     assert video._jobs[completed_job]["edit_render_audio"] == "mixed_audio"
 
+
+def test_render_edits_blocks_final_audio_clipping(completed_job, monkeypatch, tmp_path) -> None:
+    monkeypatch.setattr(video, "_persist_job", lambda record: None)
+    from modules.ai_video_studio.media import audio, audio_timeline, output_paths, render
+    monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda *_: tmp_path)
+    monkeypatch.setattr(output_paths, "unique_filename", lambda directory, prefix, extension: tmp_path / f"{prefix}.{extension}")
+    def fake_render(scenes, output_path, **kwargs):
+        from pathlib import Path
+        Path(output_path).write_bytes(b"visual")
+        return {"output_path": str(output_path), "frames": 96, "bytes": 1, "engine": "ffmpeg"}
+    def fake_mix(clips, output_path, *, total_duration, **settings):
+        return {"output_path": str(output_path), "quality": {"status": "blocked", "export_allowed": False, "critical_count": 1, "warnings": [{"code": "final_clipping_detected", "severity": "critical", "message": "Clipping"}]}}
+    def forbidden_mux(*args):
+        raise AssertionError("Mux must not run when final audio clipping is detected")
+    monkeypatch.setattr(render, "render_multi_scene_video", fake_render)
+    monkeypatch.setattr(audio_timeline, "mix_audio_timeline", fake_mix)
+    monkeypatch.setattr(audio, "mux_audio_into_video", forbidden_mux)
+    video._jobs[completed_job]["_audio_clips"] = {"music": [{"asset": str(tmp_path / "music.wav"), "start": 0, "end": 4}], "sfx": []}
+    with pytest.raises(HTTPException) as error:
+        asyncio.run(video.render_video_job_edits(completed_job))
+    assert error.value.status_code == 422
+    assert video._jobs[completed_job]["edit_render_status"] == "quality_blocked"
+    assert video._jobs[completed_job]["edit_render_quality"]["export_allowed"] is False
 
 def test_render_edits_rejects_job_without_saved_scene_draft() -> None:
     job_id = "no-draft-job"
@@ -284,6 +309,7 @@ def test_job_status_exposes_persisted_edit_render_metadata(completed_job) -> Non
         edit_render_ducking={"enabled": True, "reduction_db": 12, "speech_detected": True},
         edit_render_normalization={"enabled": True, "target_dbfs": -18, "gain_db": -2},
         edit_render_loudness={"enabled": True, "target_lufs": -14, "output_i": -14.1, "output_tp": -1.2, "verified": True},
+        edit_render_quality={"status": "needs_review", "export_allowed": True, "warning_count": 1, "warnings": [{"code": "internal_silence_gaps", "severity": "warning", "message": "Silêncio interno"}]},
         edit_render_subtitles="regenerated",
         edited_subtitles={"format": "srt", "download_url": "/downloads/edited.srt"},
     )
@@ -295,5 +321,7 @@ def test_job_status_exposes_persisted_edit_render_metadata(completed_job) -> Non
     assert result.edit_render_normalization["gain_db"] == -2
     assert result.edit_render_loudness["output_i"] == -14.1
     assert result.edit_render_loudness["verified"] is True
+    assert result.edit_render_quality["status"] == "needs_review"
+    assert result.edit_render_quality["warning_count"] == 1
     assert result.edit_render_subtitles == "regenerated"
     assert result.edited_subtitles["download_url"] == "/downloads/edited.srt"
