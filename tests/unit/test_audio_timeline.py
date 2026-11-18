@@ -37,6 +37,55 @@ def test_list_audio_assets_returns_only_approved_generated_files(tmp_path, monke
 
 
 
+def test_compressor_reduces_level_above_threshold_and_preserves_stereo_ratio():
+    audio = np.column_stack([
+        np.full(44100, 0.8, dtype=np.float32),
+        np.full(44100, 0.4, dtype=np.float32),
+    ])
+    compressed = dsp.compressor(audio, threshold_db=-12, ratio=4, attack=0.005, release=0.05)
+    assert compressed.shape == audio.shape
+    assert dsp.rms(compressed) < dsp.rms(audio)
+    active = compressed[10000:]
+    assert np.mean(active[:, 1] / active[:, 0]) == pytest.approx(0.5, abs=0.01)
+
+
+def test_compressor_rejects_invalid_controls():
+    with pytest.raises(ValueError, match="compressor controls"):
+        dsp.compressor(np.ones(100, dtype=np.float32), ratio=0.5)
+
+
+def test_three_band_eq_boosts_low_frequency_and_preserves_stereo_shape():
+    sample_rate = 8000
+    time = np.arange(sample_rate, dtype=np.float32) / sample_rate
+    bass = np.sin(2 * np.pi * 80 * time).astype(np.float32)
+    stereo = np.column_stack([bass, bass * 0.5])
+    equalized = dsp.three_band_eq(stereo, low_db=6, mid_db=0, high_db=0, sample_rate=sample_rate)
+    assert equalized.shape == stereo.shape
+    assert dsp.rms(equalized[:, 0]) > dsp.rms(stereo[:, 0]) * 1.4
+    assert np.mean(equalized[:, 1] / equalized[:, 0]) == pytest.approx(0.5, abs=0.02)
+
+
+def test_three_band_eq_rejects_out_of_range_gains():
+    with pytest.raises(ValueError, match="EQ gains"):
+        dsp.three_band_eq(np.ones(100, dtype=np.float32), low_db=13)
+
+
+def test_audio_mixer_reports_applied_mastering_settings(tmp_path, monkeypatch):
+    _audio_roots(tmp_path, monkeypatch)
+    source = np.full((8000, 2), 0.15, dtype=np.float32)
+    result = audio_timeline.mix_audio_timeline(
+        [{"samples": source, "start": 0, "end": 1, "kind": "narration"}],
+        tmp_path / "mastered.wav", total_duration=1, sample_rate=8000,
+        compressor_enabled=True, compressor_threshold_db=-20, compressor_ratio=4,
+        eq_enabled=True, eq_low_db=2, eq_mid_db=-1, eq_high_db=1,
+        normalization_enabled=False,
+    )
+    assert result["mastering"]["compressor_enabled"] is True
+    assert result["mastering"]["compressor_ratio"] == 4
+    assert result["mastering"]["eq_enabled"] is True
+    assert result["mastering"]["eq_low_db"] == 2
+
+
 def test_dsp_round_trips_stereo_wav_without_collapsing_channels(tmp_path):
     source = tmp_path / "stereo.wav"
     stereo = np.column_stack([np.full(800, 0.25, dtype=np.float32), np.full(800, -0.1, dtype=np.float32)])
