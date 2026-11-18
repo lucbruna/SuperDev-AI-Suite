@@ -381,3 +381,45 @@ it("generates a separate 10-second ComfyUI motion clip from a scene image", asyn
     expect(screen.getByAltText("Imagem candidata da cena 1")).toHaveAttribute("src", "/images/0.png");
     expect(screen.getByAltText("Imagem candidata da cena 2")).toHaveAttribute("src", "/images/1.png");
   });
+
+
+it("regenerates every storyboard image from its scene-specific visual brief with one action", async () => {
+  vi.spyOn(videoStudioApi, "getJob").mockResolvedValue({
+    job_id: "all-scenes-job", project_id: "p1", status: "completed", progress: 1,
+  });
+  vi.spyOn(videoStudioApi, "getJobVisualDirection").mockResolvedValue({
+    job_id: "all-scenes-job", studio_id: "historical_documentary", scene_count: 2,
+    scenes: [
+      {
+        scene_index: 0, narration: "A cidade surgiu junto ao rio.",
+        visual_prompt: "", visual_prompt_full: "Plano geral cinematográfico da cidade junto ao rio.",
+        visual_prompt_suggestion: "Sugestão alternativa da cidade.", visual_direction: "Plano geral.",
+        narrative_beat: "context", shot_type: "wide", image_status: "generated",
+      },
+      {
+        scene_index: 1, narration: "Os navios chegaram ao porto.",
+        visual_prompt: "", visual_prompt_full: "Navios entrando no porto ao amanhecer.",
+        visual_prompt_suggestion: "Sugestão alternativa dos navios.", visual_direction: "Travelling lateral.",
+        narrative_beat: "development", shot_type: "tracking", image_status: "generated",
+      },
+    ],
+  });
+  const batch = vi.spyOn(videoStudioApi, "regenerateSelectedSceneImages").mockResolvedValue({
+    job_id: "all-scenes-job", status: "completed", requested: 2, succeeded: 2, failed: 0,
+    message: "2 de 2 imagens geradas como candidatas.",
+    results: [
+      { scene_index: 0, status: "candidate", result: { scene_index: 0, candidate_id: "all-c0", image_path: "/images/all-0.png", image_url: "/images/all-0.png", provider: "mock", status: "candidate", operation: "text_to_image", prompt: "Plano geral cinematográfico da cidade junto ao rio." } },
+      { scene_index: 1, status: "candidate", result: { scene_index: 1, candidate_id: "all-c1", image_path: "/images/all-1.png", image_url: "/images/all-1.png", provider: "mock", status: "candidate", operation: "text_to_image", prompt: "Navios entrando no porto ao amanhecer." } },
+    ],
+  });
+  render(<EditTimelinePanel timeline={timeline} jobId="all-scenes-job" />);
+  await waitFor(() => expect(screen.getByText("context")).toBeInTheDocument());
+  fireEvent.click(screen.getByRole("button", { name: "Gerar imagens de todas as cenas pelo roteiro" }));
+  await waitFor(() => expect(batch).toHaveBeenCalledWith("all-scenes-job", [
+    { scene_index: 0, prompt: "Plano geral cinematográfico da cidade junto ao rio." },
+    { scene_index: 1, prompt: "Navios entrando no porto ao amanhecer." },
+  ]));
+  expect(await screen.findByText("2 de 2 imagens geradas como candidatas.")).toBeInTheDocument();
+  expect(screen.getByAltText("Imagem candidata da cena 1")).toHaveAttribute("src", "/images/all-0.png");
+  expect(screen.getByAltText("Imagem candidata da cena 2")).toHaveAttribute("src", "/images/all-1.png");
+});
