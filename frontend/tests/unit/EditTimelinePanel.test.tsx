@@ -81,9 +81,7 @@ describe("EditTimelinePanel", () => {
     expect(screen.getByLabelText("Graves")).toHaveValue("2");
     expect(screen.getByLabelText("Médios")).toHaveValue("-1");
     expect(screen.getByLabelText("Agudos")).toHaveValue("1");
-    fireEvent.change(screen.getByLabelText("Threshold (dB)"), { target: { value: "-24" } });
-    fireEvent.change(screen.getByLabelText("Ratio (1:1 a 20:1)"), { target: { value: "5" } });
-    fireEvent.change(screen.getByLabelText("Graves"), { target: { value: "3" } });
+    fireEvent.change(screen.getByLabelText("Preset de masterização"), { target: { value: "voice" } });
     fireEvent.change(screen.getAllByRole("slider", { name: /Panorama L\/R/ })[0], { target: { value: "-0.5" } });
     fireEvent.click(screen.getByRole("checkbox", { name: "Repetir" }));
     fireEvent.click(screen.getByRole("button", { name: "Remover" }));
@@ -100,12 +98,13 @@ describe("EditTimelinePanel", () => {
     expect(save.mock.calls[0][1].loudness_normalization_enabled).toBe(true);
     expect(save.mock.calls[0][1].target_lufs).toBe(-16);
     expect(save.mock.calls[0][1].compressor_enabled).toBe(true);
-    expect(save.mock.calls[0][1].compressor_threshold_db).toBe(-24);
-    expect(save.mock.calls[0][1].compressor_ratio).toBe(5);
+    expect(save.mock.calls[0][1].compressor_threshold_db).toBe(-22);
+    expect(save.mock.calls[0][1].compressor_ratio).toBe(3.5);
     expect(save.mock.calls[0][1].eq_enabled).toBe(true);
-    expect(save.mock.calls[0][1].eq_low_db).toBe(3);
+    expect(save.mock.calls[0][1].eq_low_db).toBe(-2);
     expect(save.mock.calls[0][1].eq_mid_db).toBe(-1);
     expect(save.mock.calls[0][1].eq_high_db).toBe(1);
+    expect(save.mock.calls[0][1].mastering_preset).toBe("voice");
     save.mockRestore();
     assets.mockRestore();
     job.mockRestore();
