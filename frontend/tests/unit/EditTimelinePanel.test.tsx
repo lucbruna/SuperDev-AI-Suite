@@ -232,12 +232,17 @@ it("edits a scene image from a text instruction and asks for a new MP4 render", 
     operation: "image_to_image",
     prompt: "Transforme o fundo em uma floresta ao amanhecer",
     render_required: true,
+    scene_clip: {
+      scene_index: 0, duration: 10, fps: 24, width: 1080, height: 1920,
+      output_url: "/downloads/scene_01_edited.mp4", bytes: 200, encode_engine: "ffmpeg",
+      status: "updated",
+    },
   });
   render(<EditTimelinePanel timeline={timeline} jobId="scene-image-job" />);
   const prompt = "Transforme o fundo em uma floresta ao amanhecer";
   fireEvent.change(screen.getAllByPlaceholderText(/transforme o fundo/i)[0], { target: { value: prompt } });
   fireEvent.click(screen.getAllByRole("button", { name: "Criar imagem por texto" })[0]);
   await waitFor(() => expect(edit).toHaveBeenCalledWith("scene-image-job", 0, { prompt }));
-  expect(await screen.findByText(/Imagem da cena 1 atualizada/)).toBeInTheDocument();
+  expect(await screen.findByText(/Imagem e clipe VidGrid de 10s da cena 1 atualizados/)).toBeInTheDocument();
   expect(screen.getByAltText("Imagem da cena 1")).toBeInTheDocument();
 });
