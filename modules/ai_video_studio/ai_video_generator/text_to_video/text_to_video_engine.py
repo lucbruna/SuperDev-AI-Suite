@@ -174,6 +174,13 @@ class TextToVideoEngine:
                 scene_duration = max(0.1, float(scene.get("duration") or duration / len(scenes)))
                 scene_frames = max(2, int(scene_duration * fps))
                 scene["camera"] = studio_camera_move(studio_id, scene_index, scene_frames)
+            if scene_index < len(scenes) - 1 and not scene.get("transition_out"):
+                # Historical scenes use a restrained crossfade; Whymentary
+                # keeps its fast-cut explainer rhythm unless explicitly changed.
+                if studio_id == "historical_documentary":
+                    scene["transition_out"] = {"type": "crossfade", "duration_frames": max(2, fps // 2)}
+                else:
+                    scene["transition_out"] = {"type": "cut", "duration_frames": 0}
 
         out = unique_filename(get_subsystem_dir("videos"), "text_to_video", "mp4")
 
