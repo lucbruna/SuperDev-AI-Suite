@@ -179,7 +179,7 @@ class ScenePlanner:
             system=self.SYSTEM_PROMPT,
             temperature=0.7,
             timeout=timeout,
-            max_tokens=1024,
+            max_tokens=min(8192, max(1024, num_scenes * 256)),
         )
 
     # ── Normalisation ─────────────────────────────────────────────
