@@ -169,6 +169,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
       const result = await videoStudioApi.updateJobTimeline(jobId, payload);
       setDraft(result.edit_timeline);
       setDirty(false);
+      setRenderQuality(null);
       onSaved?.(result.edit_timeline);
       setMessage("Rascunho salvo no SQLite local. Renderize para gerar o novo MP4.");
     } catch (error) {
@@ -269,6 +270,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
       setDraft(result.edit_timeline);
       setAudioDirty(false);
       setAudioAnalysis(null);
+      setRenderQuality(null);
       onSaved?.(result.edit_timeline);
       setMusicAsset("");
       setMusicLoop(false);
