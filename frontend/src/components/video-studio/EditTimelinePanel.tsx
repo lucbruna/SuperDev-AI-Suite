@@ -72,6 +72,8 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
   const [savingAudio, setSavingAudio] = useState(false);
   const [audioDirty, setAudioDirty] = useState(false);  const [audioAnalysis, setAudioAnalysis] = useState<Awaited<ReturnType<typeof videoStudioApi.analyzeJobAudio>> | null>(null);
   const [analyzingAudio, setAnalyzingAudio] = useState(false);
+  const [avSyncReport, setAvSyncReport] = useState<Awaited<ReturnType<typeof videoStudioApi.analyzeJobAvSync>> | null>(null);
+  const [analyzingAvSync, setAnalyzingAvSync] = useState(false);
   const [renderQuality, setRenderQuality] = useState<Awaited<ReturnType<typeof videoStudioApi.getJob>>["edit_render_quality"]>(null);
   const [duckingEnabled, setDuckingEnabled] = useState(true);
   const [duckingDb, setDuckingDb] = useState("9");
@@ -205,6 +207,17 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
     try { const result = await videoStudioApi.analyzeJobAudio(jobId); setAudioAnalysis(result); setMessage(result.message); }
     catch (error) { setMessage(error instanceof Error ? error.message : "Não foi possível analisar o áudio."); }
     finally { setAnalyzingAudio(false); }
+  }
+  async function analyzeAvSync() {
+    if (!jobId || dirty || audioDirty || saving || savingAudio || analyzingAvSync) return;
+    setAnalyzingAvSync(true); setMessage("");
+    try {
+      const report = await videoStudioApi.analyzeJobAvSync(jobId);
+      setAvSyncReport(report);
+      setMessage(report.status === "passed" ? "Sincronização da timeline aprovada." : "Análise de sincronização concluída; revise os alertas.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Não foi possível analisar a sincronização.");
+    } finally { setAnalyzingAvSync(false); }
   }
   async function saveAudioDraft() {
     if (!jobId || dirty || saving) return;
@@ -517,11 +530,24 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
             <button type="button" onClick={analyzeAudio} disabled={!jobId || dirty || audioDirty || saving || savingAudio || analyzingAudio} className="rounded-md border border-primary-300 px-3 py-2 text-xs font-semibold disabled:opacity-40 dark:border-primary-700">
               {analyzingAudio ? "Analisando áudio…" : "Analisar áudio"}
             </button>
+            <button type="button" onClick={analyzeAvSync} disabled={!jobId || dirty || audioDirty || saving || savingAudio || analyzingAvSync} className="rounded-md border border-primary-300 px-3 py-2 text-xs font-semibold disabled:opacity-40 dark:border-primary-700">
+              {analyzingAvSync ? "Verificando sincronização…" : "Verificar A/V"}
+            </button>
             <button type="button" onClick={saveAudioDraft} disabled={savingAudio || dirty || saving || (!audioDirty && !musicAsset.trim() && !sfxAsset.trim())} className="rounded-md border border-surface-300 px-3 py-2 text-xs font-semibold disabled:opacity-40 dark:border-surface-600">
               {savingAudio ? "Salvando áudio…" : audioDirty ? "Salvar alterações de áudio" : "Salvar faixas de áudio"}
             </button>
             <span className="text-[11px] text-surface-400">A lista mostra arquivos gerados em music, effects, voice, dubbing e mix. Caminhos externos são bloqueados.</span>
           </div>
+          {avSyncReport && <div className="rounded-md border border-surface-200 p-3 text-xs dark:border-surface-700 sm:col-span-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <strong>Sincronização de áudio e vídeo</strong>
+              <span className={avSyncReport.status === "passed" ? "text-emerald-600" : avSyncReport.status === "blocked" ? "text-red-600" : "text-amber-600"}>{avSyncReport.status.replaceAll("_", " ")}</span>
+            </div>
+            <p className="mt-1 text-surface-500">{avSyncReport.video_scene_count} cenas · {avSyncReport.narration_clip_count} clipes de narração · {avSyncReport.fps} FPS</p>
+            {avSyncReport.scene_comparisons.length > 0 && <ul className="mt-2 space-y-1">{avSyncReport.scene_comparisons.map((item) => <li key={item.scene_index}>Cena {item.scene_index + 1}: início {item.start_delta_ms > 0 ? "+" : ""}{item.start_delta_ms} ms · fim {item.end_delta_ms > 0 ? "+" : ""}{item.end_delta_ms} ms · {item.aligned ? "alinhada" : "revisar"}</li>)}</ul>}
+            {avSyncReport.warnings.length > 0 && <ul className="mt-2 list-disc space-y-1 pl-5 text-amber-600">{avSyncReport.warnings.map((warning, index) => <li key={index}>{warning.code.replaceAll("_", " ")}</li>)}</ul>}
+            <p className="mt-2 text-surface-400">Verificação baseada nos frames da timeline; não mede sincronização labial nem o início acústico real da fala.</p>
+          </div>}
           {audioAnalysis && <div className="rounded-md border border-surface-200 p-3 text-xs dark:border-surface-700 sm:col-span-2">
             <div className="flex flex-wrap items-center justify-between gap-2"><strong>Relatório de inteligência de áudio</strong><span>{audioAnalysis.sources_analyzed} arquivo(s) analisado(s)</span></div>
             {audioAnalysis.warnings.length > 0 ? <ul className="mt-2 list-disc space-y-1 pl-5 text-amber-600">{audioAnalysis.warnings.map((warning, index) => <li key={index}>{warning.role}: {warning.code.replaceAll("_", " ")}</li>)}</ul> : <p className="mt-2 text-emerald-600">Nenhum alerta detectado nas fontes analisadas.</p>}
