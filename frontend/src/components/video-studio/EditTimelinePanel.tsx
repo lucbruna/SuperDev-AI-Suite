@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { videoStudioApi, type EditTimeline, type EditTimelineClip } from "@/api/videoStudio";
 
 type Props = {
@@ -17,6 +17,25 @@ function formatTime(seconds: number): string {
   return `${String(minutes).padStart(2, "0")}:${remainder.toFixed(1).padStart(4, "0")}`;
 }
 
+function reflowTimeline(timeline: EditTimeline): EditTimeline {
+  let cursor = 0;
+  const tracks = timeline.tracks.map((track) => {
+    if (track.type !== "video") return track;
+    const clips = track.clips.map((clip, index) => {
+      const start = cursor;
+      const end = start + clip.duration_frames;
+      const next = track.clips[index + 1];
+      const overlap = clip.transition_out?.type === "crossfade" && next
+        ? Math.min(clip.transition_out.duration_frames, Math.floor(clip.duration_frames / 2), Math.floor(next.duration_frames / 2))
+        : 0;
+      cursor = end - overlap;
+      return { ...clip, start_frame: start, end_frame: end, start_seconds: start / timeline.fps, end_seconds: end / timeline.fps,
+        transition_out: clip.transition_out ? { ...clip.transition_out, overlap_frames: overlap } : undefined };
+    });
+    return { ...track, clips };
+  });
+  return { ...timeline, tracks, duration_frames: cursor, duration_seconds: cursor / timeline.fps };
+}
 function clipLabel(clip: EditTimelineClip, trackType: string): string {
   if (clip.text) return clip.text;
   if (clip.shot_type) return `Cena ${(clip.scene_index ?? 0) + 1} · ${clip.shot_type}`;
@@ -36,6 +55,8 @@ export default function EditTimelinePanel({ timeline, jobId, title = "Editor de 
   const duration = Math.max(1, draft.duration_frames);
   const selectedClip = clips[selected] ?? null;
 
+  useEffect(() => { setDraft(timeline); setDirty(false); setSelected(0); }, [timeline]);
+
   const sceneOrder = useMemo(
     () => clips.map((clip, index) => clip.source_scene_index ?? clip.scene_index ?? index),
     [clips],
@@ -43,13 +64,13 @@ export default function EditTimelinePanel({ timeline, jobId, title = "Editor de 
 
   function updateClip(position: number, patch: Partial<EditTimelineClip>) {
     setDirty(true);
-    setDraft((current) => {
-      const tracks = current.tracks.map((track) => track.type !== "video" ? track : {
+    setDraft((current) => reflowTimeline({
+      ...current,
+      tracks: current.tracks.map((track) => track.type !== "video" ? track : {
         ...track,
         clips: track.clips.map((clip, index) => index === position ? { ...clip, ...patch } : clip),
-      });
-      return { ...current, tracks };
-    });
+      }),
+    }));
   }
 
   function moveClip(position: number, delta: number) {
@@ -63,7 +84,7 @@ export default function EditTimelinePanel({ timeline, jobId, title = "Editor de 
         [next[position], next[target]] = [next[target], next[position]];
         return { ...track, clips: next };
       });
-      return { ...current, tracks };
+      return reflowTimeline({ ...current, tracks });
     });
     setSelected(target);
   }
