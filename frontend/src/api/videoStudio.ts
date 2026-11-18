@@ -140,6 +140,18 @@ export interface StudioJob {
     warnings?: { role: string; source: string; code: string }[];
     ducking_recommendation?: { available: boolean; recommended_ducking_db?: number; recommended_threshold_db?: number; reason?: string };
   } | null;
+  av_sync_analysis?: {
+    status: "passed" | "needs_review" | "blocked" | "no_narration";
+    fps: number;
+    video_duration_seconds: number;
+    video_scene_count: number;
+    narration_clip_count: number;
+    scene_comparisons: { scene_index: number; start_delta_ms: number; end_delta_ms: number; aligned: boolean }[];
+    warnings: { code: string; severity: string; [key: string]: unknown }[];
+    export_blocked: boolean;
+    analysis_method: string;
+    limitations: string[];
+  } | null;
   audio_settings?: { ducking_enabled?: boolean; ducking_db?: number; ducking_threshold_db?: number; ducking_attack?: number; ducking_release?: number; normalization_enabled?: boolean; normalization_target_dbfs?: number; normalization_max_gain_db?: number; loudness_normalization_enabled?: boolean; target_lufs?: number; compressor_enabled?: boolean; compressor_threshold_db?: number; compressor_ratio?: number; compressor_attack?: number; compressor_release?: number; compressor_makeup_db?: number; eq_enabled?: boolean; eq_low_db?: number; eq_mid_db?: number; eq_high_db?: number; mastering_preset?: "custom" | "voice" | "documentary" | "music" | "cinematic_sfx" } | null;
   edit_render_ducking?: { enabled?: boolean; reduction_db?: number; threshold_db?: number; speech_detected?: boolean } | null;
   edit_render_normalization?: { enabled?: boolean; target_dbfs?: number; gain_db?: number; pre_rms?: number } | null;
@@ -263,6 +275,10 @@ export const videoStudioApi = {
     message: string;
   }> {
     const { data } = await apiClient.post(`${STUDIO_BASE}/videos/jobs/${jobId}/audio-analysis`);
+    return data;
+  },
+  async analyzeJobAvSync(jobId: string): Promise<NonNullable<StudioJob["av_sync_analysis"]>> {
+    const { data } = await apiClient.post(`${STUDIO_BASE}/videos/jobs/${jobId}/av-sync-analysis`);
     return data;
   },
   async updateJobAudio(jobId: string, payload: {
