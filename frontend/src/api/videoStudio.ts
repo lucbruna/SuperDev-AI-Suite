@@ -283,7 +283,7 @@ export const videoStudioApi = {
     ducking?: { enabled?: boolean; reduction_db?: number; speech_detected?: boolean } | null;
     normalization?: { enabled?: boolean; target_dbfs?: number; gain_db?: number; pre_rms?: number } | null;
     loudness?: { enabled?: boolean; target_lufs?: number; true_peak_db?: number; input_i?: number; input_tp?: number; input_lra?: number; output_i?: number; output_tp?: number; output_lra?: number; normalization_pass_i?: number; passes?: number; verified?: boolean } | null;
-  quality?: {
+    quality?: {
     status?: "passed" | "needs_review" | "blocked";
     export_allowed?: boolean;
     duration_seconds?: number;
