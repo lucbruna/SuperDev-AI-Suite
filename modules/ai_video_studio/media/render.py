@@ -8,13 +8,49 @@ from typing import Any, Callable
 import numpy as np
 
 from modules.ai_video_studio.media.canvas import SceneCanvas
+from modules.ai_video_studio.media.characters import add_character_performance
 from modules.ai_video_studio.media.studio_profiles import apply_studio_profile
 from modules.ai_video_studio.media.video import frames_to_video, stream_frames_to_video
 
 
-def _prepare_scene(scene: dict[str, Any], studio_id: str | None) -> dict[str, Any]:
-    """Apply a studio visual contract when a studio is explicitly selected."""
-    return apply_studio_profile(studio_id, scene) if studio_id else scene
+def _prepare_scene(
+    scene: dict[str, Any], studio_id: str | None, *, fps: int = 30
+) -> dict[str, Any]:
+    """Resolve declarative character performances before canvas rendering.
+
+    Scene metadata uses character_performances entries with character_id,
+    narration_clip, cues, x and y. Cue timestamps are local to the scene
+    timeline, matching the frame index passed by the scene renderer.
+    """
+    prepared = dict(scene)
+    performances = prepared.pop("character_performances", [])
+    if not isinstance(performances, list):
+        raise ValueError("character_performances must be a list")
+    for performance in performances:
+        if not isinstance(performance, dict):
+            raise ValueError("each character performance must be an object")
+        required = {"character_id", "narration_clip", "cues", "x", "y"}
+        missing = required.difference(performance)
+        if missing:
+            raise ValueError(
+                "character performance missing fields: " + ", ".join(sorted(missing))
+            )
+        options = {
+            key: performance[key]
+            for key in ("scale", "initial_pose", "initial_expression")
+            if key in performance
+        }
+        prepared = add_character_performance(
+            prepared,
+            str(performance["character_id"]),
+            narration_clip=performance["narration_clip"],
+            cues=performance["cues"],
+            x=float(performance["x"]),
+            y=float(performance["y"]),
+            fps=fps,
+            **options,
+        )
+    return apply_studio_profile(studio_id, prepared) if studio_id else prepared
 
 
 def render_still(
@@ -28,7 +64,7 @@ def render_still(
 ) -> Path:
     """Render one PNG, optionally enforcing a studio visual profile."""
     canvas = SceneCanvas(width=width, height=height, seed=seed)
-    frame = canvas.render_scene(_prepare_scene(scene, studio_id), 0)
+    frame = canvas.render_scene(_prepare_scene(scene, studio_id, fps=30), 0)
     out = Path(output_path)
     out.parent.mkdir(parents=True, exist_ok=True)
     from PIL import Image
@@ -50,7 +86,7 @@ def render_scene_video(
     studio_id: str | None = None,
 ) -> dict[str, Any]:
     """Render one scene, optionally enforcing a studio visual profile."""
-    scene = _prepare_scene(scene, studio_id)
+    scene = _prepare_scene(scene, studio_id, fps=fps)
     canvas = SceneCanvas(width=width, height=height, fps=fps, seed=seed)
     total = max(1, int(duration * fps))
     frames: list[np.ndarray] = []
@@ -80,7 +116,7 @@ def render_multi_scene_video(
     canvas = SceneCanvas(width=width, height=height, fps=fps, seed=seed)
     if not scenes:
         raise ValueError("No scenes to render")
-    prepared_scenes = [_prepare_scene(scene, studio_id) for scene in scenes]
+    prepared_scenes = [_prepare_scene(scene, studio_id, fps=fps) for scene in scenes]
 
     total_frames = 0
     for scene in prepared_scenes:
