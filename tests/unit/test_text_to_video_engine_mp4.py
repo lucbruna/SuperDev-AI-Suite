@@ -117,8 +117,8 @@ def test_generate_async_can_write_timed_srt_sidecar(monkeypatch, tmp_path) -> No
     )
 
     assert captured["scenes"] == [
-        {"text": "Esta é a fala.", "duration": 2.0},
-        {"text": "Segunda fala.", "duration": 1.0},
+        {"text": "Esta é a fala.", "duration": 2.0, "start_offset": 0.0},
+        {"text": "Segunda fala.", "duration": 1.0, "start_offset": 2.0},
     ]
     assert result["subtitles"]["format"] == "srt"
     assert result["subtitles"]["cue_count"] == 2
