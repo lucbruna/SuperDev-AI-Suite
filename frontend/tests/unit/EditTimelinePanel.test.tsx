@@ -170,6 +170,7 @@ describe("EditTimelinePanel", () => {
       animated_primitives: 3,
       unique_shot_types: 2,
       shot_counts: { wide: 2, medium: 2 },
+      transition_counts: { crossfade: 2, cut: 1 },
       character_continuity_changes: 0,
       scenes: [],
       warnings: [{ code: "low_shot_variety", severity: "warning", unique_shots: 2 }],
