@@ -28,6 +28,7 @@ from modules.ai_video_studio.media.characters import (
     add_character,
     add_character_motion,
     character_primitives,
+    build_character_cue_timeline,
 )
 from modules.ai_video_studio.media.studio_profiles import (
     HISTORICAL_DOCUMENTARY,
@@ -51,6 +52,7 @@ __all__ = [
     "add_character",
     "add_character_motion",
     "character_primitives",
+    "build_character_cue_timeline",
     "WHYMENTARY",
     "HISTORICAL_DOCUMENTARY",
     "apply_studio_profile",
