@@ -156,3 +156,12 @@ def test_character_performance_switches_pose_and_expression_by_frame() -> None:
     explaining = canvas.render_scene(scene, 25)
     assert not np.array_equal(neutral, pointing)
     assert not np.array_equal(pointing, explaining)
+
+
+def test_mia_and_leo_keep_distinct_visual_signatures() -> None:
+    leo = character_primitives("leo", x=100, y=200)
+    mia = character_primitives("mia", x=100, y=200)
+    assert leo["rects"][1]["color"] == "#2563EB"
+    assert mia["rects"][1]["color"] == "#DC2626"
+    assert len(mia["rects"]) == 3
+    assert len(mia["circles"]) == len(leo["circles"]) + 1
