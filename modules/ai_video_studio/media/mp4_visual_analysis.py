@@ -223,7 +223,7 @@ def analyze_mp4_visuals(
     if not ffmpeg:
         raise RuntimeError("FFmpeg is required for MP4 visual analysis")
     duration = _probe_duration(path, timeout)
-    sample_rate = min(1.0, max_frames / duration)
+    sample_rate = min(4.0, max_frames / duration)
     with tempfile.TemporaryDirectory(prefix="darkstudio-visual-") as tmp:
         pattern = str(Path(tmp) / "frame-%04d.jpg")
         result = subprocess.run(
