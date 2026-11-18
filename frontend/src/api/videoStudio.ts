@@ -375,6 +375,26 @@ export const videoStudioApi = {
     return data;
   },
 
+  async regenerateSelectedSceneImages(jobId: string, scenes: {
+    scene_index: number;
+    prompt: string;
+    negative_prompt?: string;
+  }[]): Promise<{
+    job_id: string;
+    status: "completed" | "partial" | "failed";
+    requested: number;
+    succeeded: number;
+    failed: number;
+    results: { scene_index: number; status: "edited" | "failed"; error?: string; result?: SceneImageAsset & { image_url?: string; scene_clip?: SceneVideoClip } }[];
+    message: string;
+  }> {
+    const { data } = await apiClient.post(
+      `${STUDIO_BASE}/videos/jobs/${jobId}/scenes/regenerate`,
+      { scenes },
+    );
+    return data;
+  },
+
   async editSceneImage(jobId: string, sceneIndex: number, payload: {
     prompt: string;
     negative_prompt?: string;
