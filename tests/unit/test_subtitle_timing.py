@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import pytest
 
-from modules.ai_video_studio.services.subtitle_studio import cues_for_scene
+from modules.ai_video_studio.services.subtitle_studio import SubtitleStudioService, cues_for_scene
 
 
 def test_short_scene_subtitle_cues_never_exceed_scene_duration():
@@ -23,3 +23,17 @@ def test_short_scene_subtitle_cues_never_exceed_scene_duration():
 
 def test_zero_duration_scene_has_no_subtitle_cues():
     assert cues_for_scene("Texto de teste", duration=0.0) == []
+
+
+def test_srt_service_respects_explicit_scene_start_offsets(tmp_path):
+    output = tmp_path / "offsets.srt"
+    result = SubtitleStudioService().generate_srt(
+        [
+            {"text": "Primeira cena.", "duration": 2.0, "start_offset": 0.0},
+            {"text": "Segunda cena.", "duration": 1.0, "start_offset": 1.5},
+        ],
+        output_path=str(output),
+    )
+    srt = output.read_text(encoding="utf-8")
+    assert "00:00:01,500 --> 00:00:02,500" in srt
+    assert result["duration"] == pytest.approx(2.5)
