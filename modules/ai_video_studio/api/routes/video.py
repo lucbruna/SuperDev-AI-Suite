@@ -152,6 +152,11 @@ class VideoStatusResponse(BaseModel):
     voiceover: VoiceoverInfo | None = None
     subtitles: dict | None = None
     edit_timeline: dict | None = None
+    edit_draft_status: str | None = None
+    edit_render_status: str | None = None
+    edited_output_url: str | None = None
+    edited_video_duration: float | None = None
+    edit_render_audio: str | None = None
     error: str | None = None
 
 
