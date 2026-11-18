@@ -245,3 +245,65 @@ def test_single_scene_clip_uses_streaming_multi_scene_renderer(monkeypatch, tmp_
     assert captured["kwargs"]["require_mp4"] is True
     assert result["frames"] == 240
     assert source_scene["duration"] == 4
+
+
+def test_mixed_scene_renderer_applies_crossfade_and_fade_through_black(monkeypatch, tmp_path):
+    from pathlib import Path
+    from modules.ai_video_studio.media import output_paths
+
+    video_root = tmp_path / "videos"
+    video_root.mkdir()
+    sources = {}
+    for index in range(3):
+        source = video_root / f"generated_{index}.mp4"
+        source.write_bytes(b"source")
+        sources[index] = str(source)
+
+    monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda name: video_root)
+    monkeypatch.setattr("shutil.which", lambda name: "/usr/bin/ffmpeg")
+    commands = []
+
+    class Completed:
+        returncode = 0
+        stderr = ""
+
+    def fake_run(command, **kwargs):
+        commands.append(command)
+        Path(command[-1]).write_bytes(b"encoded")
+        return Completed()
+
+    monkeypatch.setattr("subprocess.run", fake_run)
+    scenes = [
+        {"duration": 2.0, "_source_scene_index": 0,
+         "transition_out": {"type": "crossfade", "duration_frames": 12}},
+        {"duration": 2.0, "_source_scene_index": 1,
+         "transition_out": {"type": "fade_through_black", "duration_frames": 12}},
+        {"duration": 2.0, "_source_scene_index": 2,
+         "transition_out": {"type": "cut", "duration_frames": 0}},
+    ]
+    result = render.render_mixed_scene_video(
+        scenes, tmp_path / "mixed.mp4", generated_clips=sources,
+        fps=24, width=320, height=180,
+    )
+
+    final_command = commands[-1]
+    filter_graph = final_command[final_command.index("-filter_complex") + 1]
+    assert "xfade=transition=fade" in filter_graph
+    assert "fade=t=out" in filter_graph
+    assert "fade=t=in" in filter_graph
+    assert "concat=n=2" in filter_graph
+    assert result["frames"] == 132
+    assert result["transition_policy"] == "frame_accurate"
+    assert [item["type"] for item in result["transitions_applied"]] == [
+        "crossfade", "fade_through_black",
+    ]
+    assert (tmp_path / "mixed.mp4").read_bytes() == b"encoded"
+
+
+def test_mixed_scene_renderer_rejects_final_crossfade(monkeypatch, tmp_path):
+    monkeypatch.setattr("shutil.which", lambda name: "/usr/bin/ffmpeg")
+    with pytest.raises(ValueError, match="final scene"):
+        render.render_mixed_scene_video(
+            [{"duration": 2.0, "transition_out": {"type": "crossfade", "duration_frames": 12}}],
+            tmp_path / "invalid.mp4", generated_clips={}, fps=24, width=320, height=180,
+        )
