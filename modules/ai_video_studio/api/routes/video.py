@@ -574,6 +574,7 @@ async def render_video_job_edits(job_id: str):
         audio_inputs.extend({**clip, "kind": "music"} for clip in configured_audio.get("music", []))
         audio_inputs.extend({**clip, "kind": "sound_effect"} for clip in configured_audio.get("sfx", []))
         mix_result = None
+        final_quality = None
         if audio_inputs:
             total_duration = int(round(result["frames"])) / fps
             audio_path = unique_filename(get_subsystem_dir("mix"), "edited_audio_mix", "wav")
@@ -582,6 +583,7 @@ async def render_video_job_edits(job_id: str):
                 **(record.get("_audio_settings") or {}),
             )
             quality_report = mix_result.get("quality") or {}
+            final_quality = quality_report
             if quality_report and not quality_report.get("export_allowed", True):
                 record["edit_render_quality"] = quality_report
                 _persist_job(record)
@@ -619,6 +621,7 @@ async def render_video_job_edits(job_id: str):
                             "message": "O áudio decodificado do MP4 ultrapassou o alvo de true peak; revise a masterização.",
                         })
                         record["edit_render_quality"] = prior_quality
+                        final_quality = prior_quality
                 except Exception as measure_exc:
                     record["edit_render_encoded_audio"] = {
                         "verified": False, "measurement": "failed", "reason": str(measure_exc)[:300]
@@ -678,7 +681,7 @@ async def render_video_job_edits(job_id: str):
             edit_render_normalization=(mix_result.get("normalization") if isinstance(mix_result, dict) else None),
             edit_render_loudness=(mix_result.get("loudness") if isinstance(mix_result, dict) else None),
             edit_render_encoded_audio=record.get("edit_render_encoded_audio"),
-            edit_render_quality=(mix_result.get("quality") if isinstance(mix_result, dict) else None),
+            edit_render_quality=final_quality,
             edit_render_status="completed",
             edit_render_audio=audio_status,
             edit_render_subtitles=subtitle_status,
