@@ -175,6 +175,21 @@ class TimelineEditRequest(BaseModel):
     scene_edits: list[SceneEdit] = Field(default_factory=list)
 
 
+class AudioTimelineClip(BaseModel):
+    asset: str = Field(..., min_length=1, max_length=2048)
+    start: float = Field(default=0, ge=0, le=36000)
+    end: float = Field(..., gt=0, le=36000)
+    trim_start: float = Field(default=0, ge=0, le=36000)
+    volume: float = Field(default=1, ge=0, le=2)
+    fade_in: float = Field(default=0, ge=0, le=36000)
+    fade_out: float = Field(default=0, ge=0, le=36000)
+
+
+class AudioTimelineEditRequest(BaseModel):
+    music_clips: list[AudioTimelineClip] = Field(default_factory=list, max_length=30)
+    sfx_clips: list[AudioTimelineClip] = Field(default_factory=list, max_length=100)
+
+
 def _persist_job(record: dict) -> None:
     from modules.ai_video_studio.media.job_store import save_job
 
@@ -329,6 +344,40 @@ async def update_video_job_timeline(job_id: str, req: TimelineEditRequest):
         "message": "Rascunho salvo no banco SQLite local. O novo MP4 ainda precisa ser renderizado.",
     }
 
+
+
+
+@router.patch("/jobs/{job_id}/audio")
+async def update_video_job_audio(job_id: str, req: AudioTimelineEditRequest):
+    """Save music/SFX placements and their independent gain/fade controls."""
+    record = _jobs.get(job_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+    if record.get("status") != "completed" or not record.get("_edited_scenes"):
+        raise HTTPException(status_code=409, detail="Save a valid video timeline before editing audio")
+
+    from modules.ai_video_studio.media.audio_timeline import validate_audio_asset
+    from modules.ai_video_studio.media.timeline import build_edit_timeline
+
+    music = [clip.model_dump() for clip in req.music_clips]
+    effects = [clip.model_dump() for clip in req.sfx_clips]
+    try:
+        for clip in music + effects:
+            validate_audio_asset(clip["asset"])
+        params = record.get("params") or {}
+        fps = int(params.get("frame_rate") or record.get("frame_rate") or 24)
+        width, height = _parse_resolution(params.get("resolution") or record.get("resolution") or "1280x720")
+        timeline = build_edit_timeline(record["_edited_scenes"], fps=fps, width=width, height=height, music_clips=music, sfx_clips=effects)
+        previous = record.get("edit_timeline") or {}
+        timeline["tracks"].extend(track for track in previous.get("tracks", []) if track.get("type") != "video" and track.get("role") not in {"music", "sound_effect"})
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    record["_audio_clips"] = {"music": music, "sfx": effects}
+    record["edit_timeline"] = timeline
+    record["audio_draft_status"] = "saved"
+    _persist_job(record)
+    return {"job_id": job_id, "edit_timeline": timeline, "audio_draft_status": "saved", "message": "Faixas de música e efeitos salvas. Renderize para aplicar a mixagem ao novo MP4."}
 
 @router.post("/jobs/{job_id}/render-edits")
 async def render_video_job_edits(job_id: str):
