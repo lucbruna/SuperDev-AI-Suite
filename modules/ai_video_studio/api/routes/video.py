@@ -229,6 +229,7 @@ class VideoStatusResponse(BaseModel):
     edit_render_audio: str | None = None
     edit_render_subtitles: str | None = None
     edited_subtitles: dict | None = None
+    output_validation: dict | None = None
     error: str | None = None
 
 
