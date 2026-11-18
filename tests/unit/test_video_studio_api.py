@@ -892,3 +892,62 @@ class TestSceneObjectSelection:
             },
         )
         assert response.status_code == 422
+
+
+class TestSceneVisualDirection:
+    @pytest.mark.asyncio
+    async def test_returns_scene_direction_without_exposing_internal_paths(
+        self, client: AsyncClient, monkeypatch,
+    ):
+        from modules.ai_video_studio.api.routes import video
+
+        monkeypatch.setitem(video._jobs, "visual_job", {
+            "job_id": "visual_job",
+            "status": "completed",
+            "params": {"studio_id": "historical_documentary"},
+            "_source_scenes": [
+                {
+                    "narration": "A descoberta revelou uma evidência importante.",
+                    "visual_prompt": "",
+                    "visual_prompt_suggestion": "Representar a evidência em primeiro plano.",
+                    "visual_direction": "isole o documento; luz atmosférica.",
+                    "narrative_beat": "revelation",
+                    "shot_type": "detail",
+                    "background_image_path": "/private/path/scene.png",
+                },
+            ],
+            "scene_assets": [{
+                "scene_index": 0,
+                "image_url": "/downloads/images/scene.png",
+                "status": "generated",
+            }],
+        })
+        response = await client.get(
+            "/api/v1/video-studio/videos/jobs/visual_job/visual-direction"
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert body["studio_id"] == "historical_documentary"
+        assert body["scene_count"] == 1
+        scene = body["scenes"][0]
+        assert scene["narrative_beat"] == "revelation"
+        assert scene["shot_type"] == "detail"
+        assert scene["visual_prompt_suggestion"] == "Representar a evidência em primeiro plano."
+        assert scene["image_url"] == "/downloads/images/scene.png"
+        assert "background_image_path" not in scene
+        assert "/private/path" not in response.text
+
+    @pytest.mark.asyncio
+    async def test_rejects_visual_direction_before_job_completion(self, client: AsyncClient, monkeypatch):
+        from modules.ai_video_studio.api.routes import video
+
+        monkeypatch.setitem(video._jobs, "processing_visual_job", {
+            "job_id": "processing_visual_job",
+            "status": "processing",
+            "params": {},
+            "_source_scenes": [],
+        })
+        response = await client.get(
+            "/api/v1/video-studio/videos/jobs/processing_visual_job/visual-direction"
+        )
+        assert response.status_code == 409
