@@ -48,6 +48,13 @@ def test_final_mix_quality_report_detects_masking_silence_and_pre_limiter_peak()
     }
 
 
+def test_final_mix_quality_does_not_mistake_phase_inverted_stereo_for_silence():
+    mono = np.full(2000, 0.1, dtype=np.float32)
+    stereo = np.column_stack([mono, -mono])
+    report = audio_timeline.build_audio_quality_report(stereo, sample_rate=1000)
+    assert report["silence_gaps"] == []
+    assert report["rms_dbfs"] < 0
+
 def test_final_mix_quality_report_blocks_actual_output_clipping():
     samples = np.zeros((1000, 2), dtype=np.float32)
     samples[500:510] = 1.0
