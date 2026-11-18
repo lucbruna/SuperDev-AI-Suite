@@ -103,6 +103,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
     videoStudioApi.getJob(jobId).then((job) => {
       if (job.edit_render_quality) setRenderQuality(job.edit_render_quality);
       if (job.audio_analysis) setAudioAnalysis(job.audio_analysis as Awaited<ReturnType<typeof videoStudioApi.analyzeJobAudio>>);
+      if (job.av_sync_analysis) setAvSyncReport(job.av_sync_analysis as Awaited<ReturnType<typeof videoStudioApi.analyzeJobAvSync>>);
       if (job.audio_settings) {
         setDuckingEnabled(job.audio_settings.ducking_enabled ?? true);
         setDuckingDb(String(job.audio_settings.ducking_db ?? 9));
