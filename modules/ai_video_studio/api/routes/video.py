@@ -380,6 +380,11 @@ async def update_video_job_audio(job_id: str, req: AudioTimelineEditRequest):
         fps = int(params.get("frame_rate") or record.get("frame_rate") or 24)
         width, height = _parse_resolution(params.get("resolution") or record.get("resolution") or "1280x720")
         timeline = build_edit_timeline(record["_edited_scenes"], fps=fps, width=width, height=height, music_clips=music, sfx_clips=effects)
+        video_duration = timeline["duration_seconds"]
+        for clip in music + effects:
+            effective_duration = min(clip["end"], video_duration) - clip["start"]
+            if effective_duration > 0 and (clip["fade_in"] > effective_duration or clip["fade_out"] > effective_duration):
+                raise ValueError("audio fade duration cannot exceed the visible clip duration")
         previous = record.get("edit_timeline") or {}
         timeline["tracks"].extend(track for track in previous.get("tracks", []) if track.get("type") != "video" and track.get("role") not in {"music", "sound_effect"})
     except (TypeError, ValueError) as exc:
