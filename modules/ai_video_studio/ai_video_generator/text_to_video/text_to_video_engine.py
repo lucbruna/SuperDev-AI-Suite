@@ -271,7 +271,8 @@ class TextToVideoEngine:
         try:
             from modules.ai_video_studio.media.timeline import build_edit_timeline
             timeline_subtitles: list[dict[str, Any]] = []
-            if result.get("subtitles", {}).get("file_path"):
+            subtitle_metadata = result.get("subtitles") or {}
+            if subtitle_metadata.get("file_path"):
                 from modules.ai_video_studio.media.scene_narration import compute_scene_offsets, scene_narration_text
                 from modules.ai_video_studio.services.subtitle_studio import cues_for_scene
 
