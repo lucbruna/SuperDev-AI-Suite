@@ -52,3 +52,57 @@ def direct_storyboard(
             else:
                 raise ValueError(f"Unknown studio '{studio_id}'")
     return directed
+
+
+def build_editing_report(
+    scenes: list[dict[str, Any]], *, fps: int, fallback_duration: float,
+    target_words_per_minute: int = 145,
+) -> dict[str, Any]:
+    """Summarize pacing, shot variety and transition choices for QA/UI."""
+    if fps < 1 or target_words_per_minute < 1:
+        raise ValueError("fps and target_words_per_minute must be positive")
+    rows: list[dict[str, Any]] = []
+    warnings: list[str] = []
+    shot_counts: dict[str, int] = {}
+    transition_counts: dict[str, int] = {}
+    timeline_cursor = 0.0
+    for index, scene in enumerate(scenes):
+        duration = max(1, int(max(0.1, float(scene.get("duration") or fallback_duration)) * fps)) / fps
+        speech = str(scene.get("voiceover_text") or scene.get("narration") or scene.get("dialogue") or "").strip()
+        words = len(speech.split())
+        wpm = round(words / duration * 60, 1) if words else 0.0
+        shot = str(scene.get("shot_type") or "medium")
+        shot_counts[shot] = shot_counts.get(shot, 0) + 1
+        transition = scene.get("transition_out") or {"type": "cut"}
+        transition_type = str(transition.get("type", "cut"))
+        transition_counts[transition_type] = transition_counts.get(transition_type, 0) + 1
+        rows.append({
+            "scene_index": index,
+            "start_seconds": round(timeline_cursor, 3),
+            "duration_seconds": round(duration, 3),
+            "shot_type": shot,
+            "speech_words": words,
+            "speech_wpm": wpm,
+            "pacing": "fast" if wpm > target_words_per_minute * 1.25 else "slow" if words and wpm < target_words_per_minute * 0.65 else "balanced",
+            "transition_out": transition_type,
+        })
+        if words and wpm > target_words_per_minute * 1.5:
+            warnings.append(f"Scene {index + 1}: narration is dense ({wpm} words/min); consider extending or splitting the scene")
+        if duration < 1.0:
+            warnings.append(f"Scene {index + 1}: shot is shorter than one second")
+        timeline_cursor += duration
+        if transition_type == "crossfade" and index < len(scenes) - 1:
+            overlap = min(int(transition.get("duration_frames", 0)), max(0, int(duration * fps) // 2))
+            timeline_cursor -= overlap / fps
+    unique_shots = len(shot_counts)
+    if len(scenes) >= 4 and unique_shots < 3:
+        warnings.append("Low shot variety: use at least three different shot scales or compositions")
+    return {
+        "scene_count": len(scenes),
+        "timeline_duration_seconds": round(max(0.0, timeline_cursor), 3),
+        "target_words_per_minute": target_words_per_minute,
+        "shot_counts": shot_counts,
+        "transition_counts": transition_counts,
+        "scenes": rows,
+        "warnings": warnings,
+    }
