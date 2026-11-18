@@ -72,12 +72,16 @@ def test_update_audio_timeline_persists_music_and_sfx_controls(completed_job, mo
         sfx_clips=[video.AudioTimelineClip(
             asset=str(tmp_path / "impact.wav"), start=1.0, end=1.5, volume=0.8,
         )],
+        ducking_enabled=True, ducking_db=12, ducking_threshold_db=-38,
+        ducking_attack=0.06, ducking_release=0.4,
     )
     result = asyncio.run(video.update_video_job_audio(completed_job, request))
     record = video._jobs[completed_job]
     assert result["audio_draft_status"] == "saved"
     assert record["_audio_clips"]["music"][0]["volume"] == 0.25
     assert record["_audio_clips"]["sfx"][0]["start"] == 1.0
+    assert record["_audio_settings"]["ducking_db"] == 12
+    assert record["audio_settings"]["ducking_threshold_db"] == -38
     music_track = next(track for track in result["edit_timeline"]["tracks"] if track.get("role") == "music")
     assert music_track["clips"][0]["fade_in"] == 0.5
 
