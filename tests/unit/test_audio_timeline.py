@@ -96,6 +96,21 @@ def test_mix_audio_timeline_ducks_music_during_narration(tmp_path, monkeypatch):
     assert result["clips"][0]["ducking_applied"] is True
     assert during < before * 0.4
 
+def test_mix_audio_timeline_normalizes_rms_with_gain_cap_and_limiter(tmp_path, monkeypatch):
+    _audio_roots(tmp_path, monkeypatch)
+    sample_rate = 8000
+    quiet = np.full(sample_rate, 0.01, dtype=np.float32)
+    output = tmp_path / "normalized.wav"
+    result = audio_timeline.mix_audio_timeline(
+        [{"samples": quiet, "start": 0, "end": 1}],
+        output, total_duration=1, sample_rate=sample_rate,
+        normalization_enabled=True, normalization_target_dbfs=-20, normalization_max_gain_db=6,
+    )
+    rendered, _ = dsp.read_audio(output, target_sr=sample_rate)
+    assert result["normalization"]["gain_db"] == 6
+    assert 0.018 <= dsp.rms(rendered) <= 0.022
+    assert result["peak"] <= 0.97
+
 def test_mix_audio_timeline_accepts_pre_aligned_narration_samples(tmp_path, monkeypatch):
     _audio_roots(tmp_path, monkeypatch)
     output = tmp_path / "narration_mix.wav"
