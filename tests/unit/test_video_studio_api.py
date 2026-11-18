@@ -913,6 +913,11 @@ class TestSceneVisualDirection:
                     "visual_direction": "isole o documento; luz atmosférica.",
                     "narrative_beat": "revelation",
                     "shot_type": "detail",
+                    "storyboard_scene_id": "scene-003-abc123",
+                    "visual_prompt_full": "Prompt cinematográfico completo.",
+                    "negative_prompt": "sem texto, sem marca d'água",
+                    "continuity": {"characters": ["historical_narrator"], "objects": ["parchment_map"]},
+                    "storyboard_status": "ready",
                     "background_image_path": "/private/path/scene.png",
                     "_source_scene_index": 2,
                 },
@@ -935,6 +940,11 @@ class TestSceneVisualDirection:
         assert scene["narrative_beat"] == "revelation"
         assert scene["shot_type"] == "detail"
         assert scene["visual_prompt_suggestion"] == "Representar a evidência em primeiro plano."
+        assert scene["storyboard_scene_id"] == "scene-003-abc123"
+        assert scene["visual_prompt_full"] == "Prompt cinematográfico completo."
+        assert scene["negative_prompt"] == "sem texto, sem marca d'água"
+        assert scene["continuity"]["characters"] == ["historical_narrator"]
+        assert scene["storyboard_status"] == "ready"
         assert scene["image_url"] == "/downloads/images/scene.png"
         assert "background_image_path" not in scene
         assert "/private/path" not in response.text
