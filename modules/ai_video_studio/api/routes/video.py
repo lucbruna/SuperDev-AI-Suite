@@ -336,22 +336,23 @@ async def render_video_job_edits(job_id: str):
             render_multi_scene_video, scenes, output_path, fps=fps, width=width, height=height,
             require_mp4=True, studio_id=params.get("studio_id") or "whymentary",
         )
+        edited_url = to_download_url(result["output_path"])
+        edited_duration = round(result["frames"] / fps, 3)
+        edited_bytes = result.get("bytes", 0)
         record.update(
-            output_path=result["output_path"],
-            output_url=to_download_url(result["output_path"]),
-            file_size_bytes=result.get("bytes", 0),
-            video_duration=round(result["frames"] / fps, 3),
-            frames_rendered=result["frames"],
-            total_frames=result["frames"],
+            edited_output_path=result["output_path"],
+            edited_output_url=edited_url,
+            edited_file_size_bytes=edited_bytes,
+            edited_video_duration=edited_duration,
             edit_render_status="completed",
             edit_render_audio="not_retimed",
         )
         return {
             "job_id": job_id,
             "status": "completed",
-            "output_url": record["output_url"],
-            "video_duration": record["video_duration"],
-            "file_size_bytes": record["file_size_bytes"],
+            "output_url": edited_url,
+            "video_duration": edited_duration,
+            "file_size_bytes": edited_bytes,
             "audio_status": "not_retimed",
             "message": "Novo MP4 renderizado. A narração original não foi reposicionada para as novas durações/ordem; este arquivo deve ser tratado como prévia visual sem áudio sincronizado.",
         }
