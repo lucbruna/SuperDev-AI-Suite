@@ -350,7 +350,7 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
     if record.get("vidgrid_compatible"):
         try:
             from modules.ai_video_studio.media.output_paths import unique_filename
-            from modules.ai_video_studio.media.render import render_scene_video
+            from modules.ai_video_studio.media.render import render_single_scene_clip
 
             width, height = _parse_resolution(record.get("resolution") or params.get("resolution", "1280x720"))
             fps = max(1, int(record.get("frame_rate") or params.get("frame_rate") or 24))
@@ -361,7 +361,7 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
                 "mp4",
             )
             rendered_clip = await asyncio.to_thread(
-                render_scene_video, scene, clip_path,
+                render_single_scene_clip, scene, clip_path,
                 duration=10.0, fps=fps, width=width, height=height,
                 require_mp4=True, studio_id=studio_id,
             )
