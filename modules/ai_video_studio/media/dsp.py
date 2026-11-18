@@ -365,6 +365,77 @@ def limiter(samples: np.ndarray, threshold: float = 0.98, *, release: float = 0.
     delayed = np.concatenate([np.zeros((la,) + audio.shape[1:], dtype=np.float32), audio[:-la]], axis=0)
     return (delayed * (gain[:, None] if audio.ndim == 2 else gain)).astype(np.float32)
 
+def compressor(
+    samples: np.ndarray, *, threshold_db: float = -18.0, ratio: float = 3.0,
+    attack: float = 0.01, release: float = 0.12, makeup_db: float = 0.0,
+    sample_rate: int = SAMPLE_RATE,
+) -> np.ndarray:
+    """Apply a linked-channel RMS compressor with smoothed 10 ms gain blocks."""
+    audio = np.asarray(samples, dtype=np.float32)
+    if audio.ndim not in (1, 2):
+        raise ValueError("compressor expects mono or stereo audio")
+    if not all(math.isfinite(v) for v in (threshold_db, ratio, attack, release, makeup_db)):
+        raise ValueError("compressor controls must be finite")
+    if not -60 <= threshold_db <= 0 or not 1 <= ratio <= 20 or not 0.001 <= attack <= 2 or not 0.001 <= release <= 5 or not -12 <= makeup_db <= 24:
+        raise ValueError("compressor controls are outside supported ranges")
+    if audio.size == 0:
+        return audio.copy()
+    frames = audio if audio.ndim == 2 else audio[:, None]
+    block = max(1, int(round(sample_rate * 0.01)))
+    padded = np.pad(frames, ((0, (-len(frames)) % block), (0, 0)))
+    blocks = padded.reshape(-1, block, frames.shape[1])
+    rms = np.sqrt(np.mean(blocks.astype(np.float64) ** 2, axis=(1, 2)) + 1e-12)
+    level_db = 20 * np.log10(np.maximum(rms, 1e-8))
+    over = np.maximum(0.0, level_db - threshold_db)
+    reduction_db = over * (1.0 - 1.0 / ratio)
+    target_gain = 10 ** (-reduction_db / 20.0)
+    gain = np.ones_like(target_gain)
+    current = 1.0
+    attack_coeff = math.exp(-block / (sample_rate * attack))
+    release_coeff = math.exp(-block / (sample_rate * release))
+    for index, target in enumerate(target_gain):
+        coefficient = attack_coeff if target < current else release_coeff
+        current = float(target) + coefficient * (current - float(target))
+        gain[index] = current
+    shaped = np.repeat(gain, block)[:len(frames)]
+    shaped *= 10 ** (makeup_db / 20.0)
+    result = frames * shaped[:, None]
+    return result.astype(np.float32) if audio.ndim == 2 else result[:, 0].astype(np.float32)
+
+
+def three_band_eq(
+    samples: np.ndarray, *, low_db: float = 0.0, mid_db: float = 0.0,
+    high_db: float = 0.0, sample_rate: int = SAMPLE_RATE,
+) -> np.ndarray:
+    """Apply a smooth three-band EQ using linked spectral gains (120/4 kHz splits)."""
+    audio = np.asarray(samples, dtype=np.float32)
+    if audio.ndim not in (1, 2):
+        raise ValueError("EQ expects mono or stereo audio")
+    if not all(math.isfinite(v) for v in (low_db, mid_db, high_db)):
+        raise ValueError("EQ gains must be finite")
+    if any(not -12 <= value <= 12 for value in (low_db, mid_db, high_db)):
+        raise ValueError("EQ gains must be between -12 and +12 dB")
+    if audio.size == 0:
+        return audio.copy()
+    frames = audio if audio.ndim == 2 else audio[:, None]
+    if len(frames) < 4:
+        return audio.copy()
+    frequencies = np.fft.rfftfreq(len(frames), d=1.0 / sample_rate)
+    # Smooth crossovers prevent abrupt spectral edges; bands sum to unity.
+    low_weight = 1.0 / (1.0 + (frequencies / 160.0) ** 4)
+    high_weight = 1.0 / (1.0 + (4000.0 / np.maximum(frequencies, 1.0)) ** 4)
+    mid_weight = np.maximum(0.0, 1.0 - low_weight - high_weight)
+    gains = (
+        low_weight * (10 ** (low_db / 20.0))
+        + mid_weight * (10 ** (mid_db / 20.0))
+        + high_weight * (10 ** (high_db / 20.0))
+    )
+    spectrum = np.fft.rfft(frames, axis=0)
+    processed = np.fft.irfft(spectrum * gains[:, None], n=len(frames), axis=0)
+    result = processed.astype(np.float32)
+    return result if audio.ndim == 2 else result[:, 0]
+
+
 def f0_autocorr(x: np.ndarray, *, sample_rate: int = SAMPLE_RATE, fmin: float = 60.0, fmax: float = 500.0) -> float:
     """Fundamental frequency via autocorrelation (returns 0 when unvoiced)."""
     n = len(x)
