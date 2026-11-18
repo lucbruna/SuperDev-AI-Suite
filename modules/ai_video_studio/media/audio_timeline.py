@@ -181,9 +181,8 @@ def build_audio_quality_report(
     rms_db = float(20 * np.log10(max(rms, 1e-9)))
     clipped = float(np.mean(np.abs(audio) >= 0.999))
     block = max(1, int(round(sample_rate * window_seconds)))
-    mono = np.mean(audio, axis=1, dtype=np.float32)
-    padded = np.pad(mono, (0, (-len(mono)) % block))
-    frame_rms = np.sqrt(np.mean(padded.reshape(-1, block).astype(np.float64) ** 2, axis=1))
+    padded = np.pad(audio, ((0, (-len(audio)) % block), (0, 0)))
+    frame_rms = np.sqrt(np.mean(padded.reshape(-1, block, audio.shape[1]).astype(np.float64) ** 2, axis=(1, 2)))
     frame_db = 20 * np.log10(np.maximum(frame_rms, 1e-9))
     silence = frame_db < -55.0
     silence_segments = []
