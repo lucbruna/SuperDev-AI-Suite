@@ -287,6 +287,10 @@ async def update_video_job_timeline(job_id: str, req: TimelineEditRequest):
         )
         width, height = _parse_resolution(params.get("resolution") or record.get("resolution") or "1280x720")
         timeline = build_edit_timeline(edited, fps=fps, width=width, height=height)
+        previous = record.get("edit_timeline") or {}
+        timeline["tracks"].extend(
+            track for track in previous.get("tracks", []) if track.get("type") != "video"
+        )
     except (TypeError, ValueError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
