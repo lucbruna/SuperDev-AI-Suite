@@ -472,3 +472,41 @@ def test_scene_image_edit_rejects_path_outside_image_library(completed_job, monk
             completed_job, 0, video.SceneImageEditRequest(prompt="Change the sky"),
         ))
     assert exc.value.status_code == 422
+
+
+def test_scene_image_edit_refreshes_vidgrid_clip_export(completed_job, monkeypatch, tmp_path):
+    from modules.ai_video_studio.ai_image_generator.providers import local_diffusion
+    from modules.ai_video_studio.media import output_paths, render
+
+    source = tmp_path / "source.png"
+    source.write_bytes(b"old")
+    record = video._jobs[completed_job]
+    record["vidgrid_compatible"] = True
+    record["frame_rate"] = 24
+    record["resolution"] = "640x360"
+    record["params"] = {"studio_id": "whymentary", "character_ids": []}
+    record["_edited_scenes"][0]["background_image_path"] = str(source)
+    record["scene_clips"] = [{
+        "scene_index": 0, "duration": 10.0, "output_path": str(tmp_path / "old.mp4"),
+        "output_url": "/downloads/old.mp4", "bytes": 100, "fps": 24,
+        "width": 640, "height": 360, "encode_engine": "ffmpeg",
+    }]
+    edited_image = tmp_path / "edited.png"
+    edited_image.write_bytes(b"edited")
+    monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda _name: tmp_path)
+    monkeypatch.setattr(output_paths, "unique_filename", lambda directory, prefix, extension: tmp_path / f"{prefix}.{extension}")
+    monkeypatch.setattr(local_diffusion, "edit_image", lambda *args, **kwargs: {
+        "image_path": str(edited_image), "provider": "automatic1111_compatible",
+    })
+    def fake_render(scene, output_path, **kwargs):
+        output_path.write_bytes(b"mp4")
+        return {"output_path": str(output_path), "frames": 240, "bytes": 3, "engine": "ffmpeg"}
+    monkeypatch.setattr(render, "render_scene_video", fake_render)
+    monkeypatch.setattr(video, "_persist_job", lambda item: None)
+
+    result = asyncio.run(video.edit_video_job_scene_image(
+        completed_job, 0, video.SceneImageEditRequest(prompt="Novo cenário de praia"),
+    ))
+    assert result["scene_clip"]["status"] == "updated"
+    assert record["scene_clips"][0]["duration"] == 10.0
+    assert record["scene_clips"][0]["output_path"].endswith("scene_01_edited.mp4")
