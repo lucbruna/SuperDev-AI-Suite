@@ -700,8 +700,17 @@ async def update_video_job_timeline(job_id: str, req: TimelineEditRequest):
                 detail=f"VidGrid mode requires exactly 10 seconds ({expected_frames} frames) per scene; invalid scenes: {invalid_durations}",
             )
     try:
+        source_scenes = record["_source_scenes"]
+        # Rebuild the source-order storyboard from the latest edited draft so
+        # image edits and persisted ComfyUI MP4s survive subsequent timeline saves.
+        base_by_source = {index: dict(scene) for index, scene in enumerate(source_scenes)}
+        for position, current_scene in enumerate(record.get("_edited_scenes") or []):
+            source_index = int(current_scene.get("_source_scene_index", position))
+            if 0 <= source_index < len(source_scenes):
+                base_by_source[source_index] = dict(current_scene)
+        base_scenes = [base_by_source[index] for index in range(len(source_scenes))]
         edited = apply_scene_edits(
-            record["_source_scenes"],
+            base_scenes,
             scene_order=req.scene_order,
             scene_edits=[item.model_dump(exclude_none=True) for item in req.scene_edits],
             fps=fps,
