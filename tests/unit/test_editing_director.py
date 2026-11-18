@@ -88,3 +88,26 @@ def test_editing_report_rejects_invalid_timing_settings() -> None:
 
     with pytest.raises(ValueError):
         build_editing_report([], fps=0, fallback_duration=2.0)
+
+
+def test_director_classifies_narrative_beats_and_suggests_missing_visuals() -> None:
+    from modules.ai_video_studio.media.editing_director import (
+        classify_narrative_beat, build_editing_report,
+    )
+
+    assert classify_narrative_beat({"narration": "A descoberta revelou uma evidência decisiva"}) == "revelation"
+    assert classify_narrative_beat({"narration": "Isso provocou uma consequência inesperada"}) == "cause_effect"
+    scenes = [
+        {"duration": 10.0, "narration": "Primeiro, veja como funciona o processo."},
+        {"duration": 10.0, "narration": "Compare o cenário antes e depois."},
+    ]
+    directed = direct_storyboard(
+        scenes, studio_id="historical_documentary", fps=24, fallback_duration=10.0,
+    )
+    assert directed[0]["narrative_beat"] == "process"
+    assert directed[1]["narrative_beat"] == "comparison"
+    assert "visual_prompt_suggestion" in directed[0]
+    assert "profundidade em camadas" in directed[0]["visual_direction"]
+    report = build_editing_report(directed, fps=24, fallback_duration=10.0)
+    assert report["scenes"][0]["narrative_beat"] == "process"
+    assert report["scenes"][0]["visual_prompt_suggestion"]
