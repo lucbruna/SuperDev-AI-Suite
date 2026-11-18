@@ -1716,7 +1716,11 @@ async def render_video_job_edits(job_id: str):
             "subtitle_status": subtitle_status,
             "subtitles": subtitle_info,
             "message": (
-                f"MP4 misto renderizado com {len(generated_scene_clips)} cena(s) ComfyUI e transições aplicadas."
+                f"MP4 VidGrid montado com {len(vidgrid_clip_paths)} clipes existentes por concatenação sem reencodificação de vídeo."
+                if vidgrid_stream_copy_used else
+                f"MP4 VidGrid montado com {len(vidgrid_clip_paths)} clipes existentes e renderização das transições."
+                if vidgrid_clip_paths else
+                f"MP4 misto renderizado com {len(generated_scene_clips)} cena(s) generativa(s) e transições aplicadas."
                 if generated_scene_clips else
                 "MP4 editado renderizado com as faixas configuradas mixadas."
                 if audio_status == "mixed_audio" else
