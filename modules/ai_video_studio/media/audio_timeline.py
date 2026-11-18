@@ -18,7 +18,7 @@ from modules.ai_video_studio.media.output_paths import get_downloads_dir, get_su
 _AUDIO_DIRS = ("voice", "music", "effects", "dubbing", "mix")
 
 
-def _asset_path(value: Any) -> Path:
+def validate_audio_asset(value: Any) -> Path:
     if not isinstance(value, str) or not value.strip():
         raise ValueError("audio clip asset must be a non-empty path")
     candidate = Path(value).expanduser().resolve()
@@ -59,7 +59,7 @@ def mix_audio_timeline(
     for index, clip in enumerate(clips):
         if not isinstance(clip, dict):
             raise ValueError(f"audio clip {index} must be an object")
-        asset = _asset_path(clip.get("asset") or clip.get("audio_path") or clip.get("path"))
+        asset = validate_audio_asset(clip.get("asset") or clip.get("audio_path") or clip.get("path"))
         start = float(clip.get("start", 0))
         end = float(clip.get("end", total_duration))
         trim_start = float(clip.get("trim_start", 0))
