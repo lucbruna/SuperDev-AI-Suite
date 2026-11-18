@@ -20,7 +20,7 @@ from typing import Any, Callable
 from modules.ai_video_studio.core.exceptions import ValidationError
 from modules.ai_video_studio.media.llm import get_scene_planner
 from modules.ai_video_studio.media.output_paths import get_subsystem_dir, unique_filename
-from modules.ai_video_studio.media.render import render_multi_scene_video, render_scene_video
+from modules.ai_video_studio.media.render import render_multi_scene_video, render_single_scene_clip
 from modules.ai_video_studio.media.characters import add_character
 from modules.ai_video_studio.media.scene_library import OBJECTS, compose_scene_object
 from modules.ai_video_studio.ai_video_generator.generation_statistics import get_generation_statistics
@@ -307,7 +307,7 @@ class TextToVideoEngine:
             for scene_index, scene in enumerate(scenes):
                 clip_path = unique_filename(clip_dir, f"scene_{scene_index + 1:02d}", "mp4")
                 clip_result = await asyncio.to_thread(
-                    render_scene_video,
+                    render_single_scene_clip,
                     scene,
                     clip_path,
                     duration=10.0,
