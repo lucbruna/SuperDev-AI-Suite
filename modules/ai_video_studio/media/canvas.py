@@ -94,7 +94,7 @@ class SceneCanvas:
             self._draw_text(draw, text)
 
         img = self._apply_camera(img, scene.get("camera") or {}, frame_index)
-        img = self._apply_grading(img, scene.get("palette") or [])
+        img = self._apply_grading(\n            img,\n            scene.get("palette") or [],\n            strength=float(scene.get("grading_strength", 0.08)),\n        )
 
         return np.asarray(img, dtype=np.uint8)
 
@@ -225,7 +225,7 @@ class SceneCanvas:
         img = img.filter(ImageFilter.GaussianBlur(radius=0.2))
         arr = np.asarray(img, dtype=np.float32)
         tint = np.array(rgb, dtype=np.float32)
-        arr = arr * 0.92 + tint * 0.08
+        arr = arr * (1.0 - strength) + tint * strength
         return Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8))
 
     # ── Convenience ───────────────────────────────────────────────
