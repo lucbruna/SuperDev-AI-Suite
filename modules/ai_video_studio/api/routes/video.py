@@ -158,6 +158,7 @@ class VideoStatusResponse(BaseModel):
     audio_settings: dict | None = None
     edit_render_ducking: dict | None = None
     edit_render_normalization: dict | None = None
+    edit_render_loudness: dict | None = None
     edit_render_status: str | None = None
     edited_output_url: str | None = None
     edited_video_duration: float | None = None
@@ -202,6 +203,10 @@ class AudioTimelineEditRequest(BaseModel):
     normalization_enabled: bool = True
     normalization_target_dbfs: float = Field(default=-18.0, ge=-60, le=0)
     normalization_max_gain_db: float = Field(default=6.0, ge=0, le=24)
+    loudness_normalization_enabled: bool = False
+    target_lufs: float = Field(default=-14.0, ge=-36, le=-5)
+    true_peak_db: float = Field(default=-1.0, ge=-9, le=0)
+    loudness_range: float = Field(default=11.0, ge=1, le=20)
 
 
 def _persist_job(record: dict) -> None:
@@ -553,6 +558,7 @@ async def render_video_job_edits(job_id: str):
             edited_video_duration=edited_duration,
             edit_render_ducking=(mix_result.get("ducking") if isinstance(mix_result, dict) else None),
             edit_render_normalization=(mix_result.get("normalization") if isinstance(mix_result, dict) else None),
+            edit_render_loudness=(mix_result.get("loudness") if isinstance(mix_result, dict) else None),
             edit_render_status="completed",
             edit_render_audio=audio_status,
             edit_render_subtitles=subtitle_status,
@@ -570,6 +576,7 @@ async def render_video_job_edits(job_id: str):
             "message": "MP4 editado renderizado com as faixas configuradas mixadas." if audio_status == "mixed_audio" else "MP4 editado renderizado com música/efeitos; a narração original em faixa única foi omitida." if audio_status == "mixed_audio_single_track_omitted" else "MP4 editado renderizado; a faixa única original não foi reposicionada automaticamente." if audio_status == "single_track_not_retimed" else "MP4 editado renderizado sem faixas de áudio configuradas." if audio_status == "silent" else "MP4 visual renderizado, mas a muxagem de áudio falhou; consulte o status do áudio.",
             "ducking": (mix_result.get("ducking") if isinstance(mix_result, dict) else None),
             "normalization": (mix_result.get("normalization") if isinstance(mix_result, dict) else None),
+            "loudness": (mix_result.get("loudness") if isinstance(mix_result, dict) else None),
         }
     except Exception as exc:
         record["edit_render_status"] = "failed"
