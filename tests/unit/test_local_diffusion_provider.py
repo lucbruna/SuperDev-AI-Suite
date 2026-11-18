@@ -31,7 +31,7 @@ def test_text_to_image_uses_local_diffusion_api_and_saves_png(monkeypatch, tmp_p
     assert captured["url"].endswith("/sdapi/v1/txt2img")
     assert captured["payload"]["prompt"] == "A felt-clay forest"
     assert captured["payload"]["steps"] == 12
-    assert output.read_bytes().startswith(b"\\x89PNG")
+    assert output.read_bytes().startswith(bytes([137, 80, 78, 71]))
     assert result["provider"] == "automatic1111_compatible"
 
 
