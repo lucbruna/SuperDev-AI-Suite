@@ -195,3 +195,62 @@ def test_generate_async_composes_selected_characters_into_every_scene(monkeypatc
     for scene in captured["scenes"]:
         assert len(scene["rects"]) == 6
         assert len(scene["circles"]) >= 11
+
+
+def test_generate_async_composes_selected_objects_into_every_scene(monkeypatch, tmp_path) -> None:
+    captured: dict = {}
+
+    class Planner:
+        def plan(self, prompt, *, num_scenes, duration, timeout):
+            return {
+                "scenes": [{"duration": 1.0, "description": "Cena com objeto"}],
+                "provider": "deterministic",
+                "ai_generated": False,
+            }
+
+    class Stats:
+        def record(self, **kwargs):
+            pass
+
+    def fake_render(scenes, output_path, **kwargs):
+        captured["scenes"] = scenes
+        return {"output_path": str(output_path), "frames": 24, "bytes": 123, "engine": "ffmpeg"}
+
+    monkeypatch.setattr(engine_module, "get_scene_planner", lambda: Planner())
+    monkeypatch.setattr(engine_module, "get_subsystem_dir", lambda _name: tmp_path)
+    monkeypatch.setattr(engine_module, "unique_filename", lambda *_args: tmp_path / "props.mp4")
+    monkeypatch.setattr(engine_module, "render_multi_scene_video", fake_render)
+    monkeypatch.setattr(engine_module, "get_generation_statistics", lambda: Stats())
+
+    result = asyncio.run(engine_module.TextToVideoEngine().generate_async({
+        "prompt": "Uma cena com copo de água.",
+        "params": {
+            "duration": 1.0, "num_scenes": 1, "fps": 24,
+            "width": 640, "height": 360, "studio_id": "whymentary",
+            "object_ids": ["water_glass", "thermometer"],
+        },
+    }))
+
+    scene = captured["scenes"][0]
+    assert result["studio_id"] == "whymentary"
+    assert scene["object_ids"] == ["water_glass", "thermometer"]
+    assert len(scene["rects"]) == 4
+    assert len(scene["circles"]) == 1
+
+
+def test_generate_async_rejects_objects_from_another_studio(monkeypatch) -> None:
+    class Planner:
+        def plan(self, prompt, *, num_scenes, duration, timeout):
+            return {"scenes": [{"duration": 1.0}], "provider": "deterministic", "ai_generated": False}
+
+    monkeypatch.setattr(engine_module, "get_scene_planner", lambda: Planner())
+    with pytest.raises(Exception, match="do not belong to studio"):
+        asyncio.run(engine_module.TextToVideoEngine().generate_async({
+            "prompt": "Uma cena histórica.",
+            "params": {
+                "duration": 1.0, "num_scenes": 1, "fps": 24,
+                "width": 640, "height": 360,
+                "studio_id": "historical_documentary",
+                "object_ids": ["water_glass"],
+            },
+        }))
