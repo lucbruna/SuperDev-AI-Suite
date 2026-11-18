@@ -38,6 +38,14 @@ Video jobs, source scenes, edited scenes, and timeline metadata are stored in SQ
 
 The database uses SQLite WAL mode. It survives API process restarts when the host keeps the downloads directory on persistent storage. It is a local single-server store, not a replicated database; container deployments must mount `modules/downloads` on a persistent volume and should plan a migration to the platform's shared database before horizontal scaling.
 
+## Audio timeline and stereo mix
+
+The audio draft endpoint accepts separate music and sound-effect clips. The renderer mixes mono sources to dual-mono and preserves stereo sources, with per-clip left/right balance (pan: -1 left, 0 center, +1 right), trim, fades, volume and optional music looping. Speech activity can duck background music; sound effects and narration are not ducked. A linked stereo lookahead limiter reduces peaks without independently changing the left/right image.
+
+Optional EBU R128 loudness normalization uses FFmpeg's two-pass loudnorm filter and measures the encoded WAV again after processing. Defaults are -14 LUFS integrated and -1 dBTP true peak. LUFS mode bypasses the separate RMS gain stage. This requires an FFmpeg build with the loudnorm filter; a missing filter is reported as an audio-render failure rather than silently skipped.
+
+Per-clip pan is saved with the timeline metadata. Mono sources are duplicated to both channels before balance is applied; stereo sources retain their channel separation. The mix output is a two-channel WAV.
+
 ## Edited render limitation
 
 The render endpoint creates a separate MP4 file and does not overwrite the original generated/narrated output. It currently renders the edited visual scenes with strict FFmpeg MP4 encoding. It does **not** yet retime narration, music, sound effects, or subtitle cues after scene reorder/duration changes. The API returns `audio_status: "not_retimed"`; treat the edited MP4 as a silent visual preview until the audio timeline renderer is implemented.
