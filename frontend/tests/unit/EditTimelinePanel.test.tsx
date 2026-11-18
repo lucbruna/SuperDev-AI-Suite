@@ -293,4 +293,17 @@ it("generates a separate 10-second ComfyUI motion clip from a scene image", asyn
   })));
   expect(await screen.findByText(/Clipe generativo da cena 1 integrado ao projeto/)).toBeInTheDocument();
   expect(screen.getByText(/Abrir clipe generativo da cena 1/)).toBeInTheDocument();
+
+  it("creates and plays a low-resolution visual preview of the saved timeline", async () => {
+    vi.spyOn(videoStudioApi, "previewJobEdits").mockResolvedValue({
+      status: "completed", preview_url: "/downloads/preview.mp4",
+      width: 640, height: 360, fps: 12, duration: 4,
+      generated_scene_count: 1, message: "Prévia concluída.",
+    });
+    render(<EditTimelinePanel timeline={timeline} jobId="preview-job" />);
+    fireEvent.click(screen.getByRole("button", { name: "Pré-visualizar montagem" }));
+    expect(await screen.findByText("Prévia visual da montagem")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Abrir prévia" })).toHaveAttribute("href", "/downloads/preview.mp4");
+    expect(screen.getByText(/640×360 · 12 FPS/)).toBeInTheDocument();
+  });
 });
