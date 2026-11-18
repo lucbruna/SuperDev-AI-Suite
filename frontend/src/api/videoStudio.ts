@@ -355,6 +355,24 @@ export interface GenerateVideoParams {
   vidgrid_compatible?: boolean;
 }
 
+export interface VideoPreflight {
+  status: "ready" | "ready_with_warnings" | "blocked";
+  can_queue: boolean;
+  project_id: string;
+  studio_id: StudioProfile["id"];
+  scene_count: number;
+  duration_seconds: number;
+  clip_duration_seconds: number | null;
+  total_frames: number;
+  resolution: string;
+  fps: number;
+  vidgrid_compatible: boolean;
+  checks: { id: string; status: string; message: string }[];
+  blockers: { id: string; status: string; message: string }[];
+  warnings: string[];
+  limitations: string[];
+}
+
 export const videoStudioApi = {
   async listStudios(): Promise<StudioProfile[]> {
     const { data } = await apiClient.get(`${STUDIO_BASE}/studios`);
@@ -478,6 +496,11 @@ export const videoStudioApi = {
     negative_prompt?: string;
   }): Promise<{ success: boolean; data: { output_path: string; output_url?: string; download_url: string; provider?: string; duration: number; fps: number } }> {
     const { data } = await apiClient.post(`${STUDIO_BASE}/videos/image-to-video`, payload);
+    return data;
+  },
+
+  async preflightVideo(params: GenerateVideoParams): Promise<VideoPreflight> {
+    const { data } = await apiClient.post(`${STUDIO_BASE}/videos/preflight`, params);
     return data;
   },
 
