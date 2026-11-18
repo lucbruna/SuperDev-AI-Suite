@@ -143,6 +143,10 @@ export interface StudioJob {
     generate_subtitles?: boolean;
     character_ids?: string[];
     object_ids?: string[];
+    scene_image_mode?: "procedural" | "ai" | "auto";
+    scene_image_steps?: number;
+    scene_image_timeout?: number;
+    vidgrid_compatible?: boolean;
     llm_timeout?: number;
   } | null;
   ai_planner?: string | null;
