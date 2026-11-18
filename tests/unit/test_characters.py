@@ -5,7 +5,11 @@ import numpy as np
 import pytest
 
 from modules.ai_video_studio.media.canvas import SceneCanvas
-from modules.ai_video_studio.media.characters import add_character, character_primitives
+from modules.ai_video_studio.media.characters import (
+    add_character,
+    add_character_motion,
+    character_primitives,
+)
 
 
 def test_character_identity_and_geometry_are_deterministic() -> None:
@@ -59,3 +63,41 @@ def test_add_character_integrates_with_scene_canvas_without_mutation() -> None:
     assert frame.shape == (240, 320, 3)
     assert frame.dtype == np.uint8
     assert np.unique(frame.reshape(-1, 3), axis=0).shape[0] > 4
+
+
+
+def test_character_motion_is_eased_finite_and_rendered_by_canvas() -> None:
+    scene = add_character_motion(
+        {"background_type": "solid", "background_colors": ["#FFFFFF"]},
+        "whymentary_host",
+        from_x=70,
+        from_y=205,
+        to_x=230,
+        to_y=205,
+        duration_frames=20,
+        start_frame=5,
+    )
+    head = scene["circles"][0]
+    assert head["motion_start_frame"] == 5
+    assert head["motion_frames"] == 20
+    canvas = SceneCanvas(width=320, height=240)
+    before = canvas.render_scene(scene, 0)
+    middle = canvas.render_scene(scene, 15)
+    after = canvas.render_scene(scene, 30)
+    assert not np.array_equal(before, middle)
+    assert not np.array_equal(middle, after)
+    assert np.array_equal(after, canvas.render_scene(scene, 60))
+
+
+def test_character_motion_rejects_invalid_timing() -> None:
+    base = {"rects": []}
+    with pytest.raises(ValueError, match="duration_frames"):
+        add_character_motion(
+            base, "whymentary_host", from_x=0, from_y=0,
+            to_x=10, to_y=10, duration_frames=0,
+        )
+    with pytest.raises(ValueError, match="start_frame"):
+        add_character_motion(
+            base, "whymentary_host", from_x=0, from_y=0,
+            to_x=10, to_y=10, duration_frames=10, start_frame=-1,
+        )
