@@ -577,6 +577,17 @@ async def update_video_job_timeline(job_id: str, req: TimelineEditRequest):
 
     params = record.get("params") or {}
     fps = int(params.get("frame_rate") or record.get("frame_rate") or 24)
+    if record.get("vidgrid_compatible"):
+        expected_frames = fps * 10
+        invalid_durations = [
+            item.scene_index for item in req.scene_edits
+            if item.duration_frames is not None and item.duration_frames != expected_frames
+        ]
+        if invalid_durations:
+            raise HTTPException(
+                status_code=422,
+                detail=f"VidGrid mode requires exactly 10 seconds ({expected_frames} frames) per scene; invalid scenes: {invalid_durations}",
+            )
     try:
         edited = apply_scene_edits(
             record["_source_scenes"],
