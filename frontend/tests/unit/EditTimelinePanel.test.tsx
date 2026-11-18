@@ -242,7 +242,7 @@ it("edits a scene image from a text instruction and asks for a new MP4 render", 
   const prompt = "Transforme o fundo em uma floresta ao amanhecer";
   fireEvent.change(screen.getAllByPlaceholderText(/transforme o fundo/i)[0], { target: { value: prompt } });
   fireEvent.click(screen.getAllByRole("button", { name: "Criar imagem por texto" })[0]);
-  await waitFor(() => expect(edit).toHaveBeenCalledWith("scene-image-job", 0, { prompt }));
+  await waitFor(() => expect(edit).toHaveBeenCalledWith("scene-image-job", 0, { prompt, denoising_strength: 0.45 }));
   expect(await screen.findByText(/Imagem e clipe VidGrid de 10s da cena 1 atualizados/)).toBeInTheDocument();
   expect(screen.getByAltText("Imagem da cena 1")).toBeInTheDocument();
 });
