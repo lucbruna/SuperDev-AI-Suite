@@ -184,3 +184,36 @@ describe("EditTimelinePanel", () => {
     expect(screen.getByText(/low shot variety/)).toBeInTheDocument();
     expect(screen.getByText(/não é análise de pixels do MP4/i)).toBeInTheDocument();
   });
+
+
+it("analyzes sampled frames from the rendered MP4 and displays static sections", async () => {
+  vi.spyOn(videoStudioApi, "getJob").mockResolvedValue({
+    job_id: "mp4-visual-job", project_id: "p1", status: "completed", progress: 1,
+  });
+  const analyze = vi.spyOn(videoStudioApi, "analyzeJobMp4Visuals").mockResolvedValue({
+    status: "needs_review",
+    sample_count: 8,
+    comparison_count: 7,
+    duplicate_pair_count: 2,
+    low_change_pair_count: 3,
+    static_runs: [{ start_seconds: 2, end_seconds: 5, comparison_count: 3 }],
+    scene_summaries: [{
+      scene_index: 1, start_seconds: 2, end_seconds: 6,
+      sampled_comparisons: 3, mean_pixel_change: 0.8,
+      repeated_frame_pairs: 2, low_change_pairs: 3,
+    }],
+    comparisons: [],
+    warnings: [{ code: "near_duplicate_sampled_frames", count: 2 }],
+    analysis_method: "ffmpeg_sampled_frames_pillow_numpy",
+    limitations: ["Não reconhece personagens."],
+    video_duration_seconds: 12,
+    sample_interval_seconds: 1.5,
+    video_source: "original",
+  });
+  render(<EditTimelinePanel timeline={timeline} jobId="mp4-visual-job" />);
+  fireEvent.click(screen.getByRole("button", { name: "Analisar MP4 renderizado" }));
+  await waitFor(() => expect(analyze).toHaveBeenCalledWith("mp4-visual-job"));
+  expect(await screen.findByText(/frames reais do MP4/)).toBeInTheDocument();
+  expect(screen.getByText(/2s–5s/)).toBeInTheDocument();
+  expect(screen.getByText(/near duplicate sampled frames/)).toBeInTheDocument();
+});
