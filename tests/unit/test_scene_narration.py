@@ -312,3 +312,13 @@ def test_remap_narration_omits_scenes_without_audio_and_rejects_bad_source_index
         scene_narration.remap_narration_clips_for_edits(
             [{"_source_scene_index": "bad", "duration": 1.0}], original
         )
+
+
+def test_scene_offsets_round_duration_to_the_same_frame_grid_as_video_rendering():
+    from modules.ai_video_studio.media.scene_narration import compute_scene_offsets
+
+    offsets = compute_scene_offsets(
+        [{"duration": 1.03}, {"duration": 1.0}],
+        fps=24,
+    )
+    assert offsets[1] == 25 / 24
