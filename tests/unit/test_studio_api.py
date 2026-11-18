@@ -110,6 +110,7 @@ def test_scene_object_preview_composes_editable_primitives_without_mutation() ->
     assert len(result["scene"]["rects"]) == 3
     assert result["scene"]["rects"][1]["x"] == 100
     assert result["scene"]["rects"][1]["y"] == 50
+    assert result["scene"]["rects"][1]["motion_frames"] == 12
     assert len(source["rects"]) == 1
 
 
