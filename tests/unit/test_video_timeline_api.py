@@ -145,8 +145,9 @@ def test_render_edits_mixes_saved_audio_tracks(completed_job, monkeypatch, tmp_p
         Path(output_path).write_bytes(b"visual-mp4")
         return {"output_path": str(output_path), "frames": 96, "bytes": 1234, "engine": "ffmpeg"}
 
-    def fake_mix(clips, output_path, *, total_duration):
+    def fake_mix(clips, output_path, *, total_duration, **settings):
         assert clips[0]["asset"].endswith("bed.wav")
+        assert settings["ducking_db"] == 11
         assert total_duration == 4
         from pathlib import Path
         Path(output_path).write_bytes(b"mixed-wav")
@@ -164,6 +165,7 @@ def test_render_edits_mixes_saved_audio_tracks(completed_job, monkeypatch, tmp_p
         "music": [{"asset": str(tmp_path / "music" / "bed.wav"), "start": 0, "end": 4, "volume": 0.3}],
         "sfx": [],
     }
+    video._jobs[completed_job]["_audio_settings"] = {"ducking_enabled": True, "ducking_db": 11, "ducking_threshold_db": -36, "ducking_attack": 0.08, "ducking_release": 0.35}
 
     result = asyncio.run(video.render_video_job_edits(completed_job))
     assert result["audio_status"] == "mixed_audio"
