@@ -130,7 +130,9 @@ async def synthesize_scene_narration_async(
     synthesized_any = False
     for index, (scene, start) in enumerate(zip(scenes, offsets, strict=False)):
         text = scene_narration_text(scene)
-        end = start + max(0.1, float(scene.get("duration") or 3.0))
+        scene_duration = max(0.1, float(scene.get("duration") or 3.0))
+        scene_duration = max(1, int(scene_duration * fps)) / fps
+        end = start + scene_duration
         clip: dict[str, Any] = {
             "index": scene.get("index", index),
             "text": text[:120],
