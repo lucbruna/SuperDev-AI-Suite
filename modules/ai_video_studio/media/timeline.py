@@ -33,6 +33,10 @@ def _asset_clips(items: list[dict[str, Any]], fps: int, *, track_type: str) -> l
         end = _seconds_to_frames(item.get("end"), fps, field=f"{track_type}[{index}].end")
         if end <= start:
             raise ValueError(f"{track_type} clip {index} must have positive duration")
+        if item.get("pan") is not None:
+            pan = float(item["pan"])
+            if not np.isfinite(pan) or not -1 <= pan <= 1:
+                raise ValueError(f"{track_type} clip {index} pan must be between -1 and 1")
         clips.append({
             "asset": str(asset),
             "start_frame": start,
