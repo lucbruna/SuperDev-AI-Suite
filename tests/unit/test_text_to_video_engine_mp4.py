@@ -315,6 +315,7 @@ def test_generate_async_uses_real_scene_images_and_vidgrid_ten_second_clips(monk
     monkeypatch.setattr(engine_module, "render_multi_scene_video", fake_render)
     monkeypatch.setattr(engine_module, "get_generation_statistics", lambda: Stats())
 
+    scene_events = []
     result = asyncio.run(engine_module.TextToVideoEngine().generate_async({
         "prompt": "Documentário cinematográfico sobre a natureza.",
         "params": {
@@ -324,7 +325,7 @@ def test_generate_async_uses_real_scene_images_and_vidgrid_ten_second_clips(monk
             "scene_image_mode": "ai",
             "vidgrid_compatible": True,
         },
-    }))
+    }, scene_callback=scene_events.append))
 
     assert len(captured["prompts"]) == 2
     assert "cinematic historical illustration" in captured["prompts"][0]
@@ -337,6 +338,10 @@ def test_generate_async_uses_real_scene_images_and_vidgrid_ten_second_clips(monk
     assert len(result["scene_clips"]) == 2
     assert all(clip["duration"] == 10.0 for clip in result["scene_clips"])
     assert all(item["kwargs"]["duration"] == 10.0 for item in captured["clip_renders"])
+    assert [event["scene_index"] for event in scene_events if event["stage"] == "storyboard"] == [0, 1]
+    assert len([event for event in scene_events if event["stage"] == "image_ready"]) == 2
+    assert len([event for event in scene_events if event["stage"] == "clip_ready"]) == 2
+    assert all(event["status"] == "completed" for event in scene_events if event["stage"] in {"image_ready", "clip_ready"})
 
 
 def test_vidgrid_scene_clips_receive_matching_per_scene_narration(monkeypatch, tmp_path):
