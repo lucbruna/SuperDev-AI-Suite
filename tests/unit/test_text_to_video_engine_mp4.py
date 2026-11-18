@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import asyncio
 
+import pytest
+
 from modules.ai_video_studio.ai_video_generator.text_to_video import text_to_video_engine as engine_module
 
 
