@@ -398,6 +398,8 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
                 "output_url": to_download_url(clip_output_path),
                 "bytes": Path(clip_output_path).stat().st_size,
                 "encode_engine": rendered_clip["engine"], "audio_status": audio_status,
+                "visual_prompt": scene.get("visual_prompt") or scene.get("description", ""),
+                "narration_text": scene.get("voiceover_text") or scene.get("narration") or "",
                 "status": "updated",
             }
             clips = record.setdefault("scene_clips", [])
