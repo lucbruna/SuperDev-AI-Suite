@@ -162,6 +162,7 @@ class TextToVideoEngine:
                     scenes[scene_index] = compose_scene_object(
                         scenes[scene_index], object_id,
                         x=x, y=y, scale=object_scale,
+                        motion_start_frame=object_index * max(1, fps // 3),
                     )
 
         out = unique_filename(get_subsystem_dir("videos"), "text_to_video", "mp4")
