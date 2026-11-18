@@ -98,7 +98,7 @@ async def synthesize_scene_narration_async(
 
     offsets = compute_scene_offsets(scenes)
     voice_id = str(params.get("voice_id", "default"))
-    language = str(params.get("voice_language", "en"))
+    language = str(params.get("voice_language", "pt-BR"))
     speed = float(params.get("voice_speed", 1.0))
     pitch = float(params.get("voice_pitch", 1.0))
 
