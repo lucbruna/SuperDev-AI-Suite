@@ -345,12 +345,73 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
         "operation": operation, "prompt": req.prompt,
     })
     record["scene_image_mode"] = "ai_generated"
+    scene_clip_result: dict[str, Any] | None = None
+    if record.get("vidgrid_compatible"):
+        try:
+            from modules.ai_video_studio.media.output_paths import unique_filename
+            from modules.ai_video_studio.media.render import render_scene_video
+
+            width, height = _parse_resolution(record.get("resolution") or params.get("resolution", "1280x720"))
+            fps = max(1, int(record.get("frame_rate") or params.get("frame_rate") or 24))
+            scene["duration"] = 10.0
+            clip_path = unique_filename(
+                get_subsystem_dir("videos") / "vidgrid_clips",
+                f"scene_{scene_index + 1:02d}_edited",
+                "mp4",
+            )
+            rendered_clip = await asyncio.to_thread(
+                render_scene_video, scene, clip_path,
+                duration=10.0, fps=fps, width=width, height=height,
+                require_mp4=True, studio_id=studio_id,
+            )
+            clip_output_path = rendered_clip["output_path"]
+            audio_status = "silent_or_tts_unavailable"
+            voiceover = record.get("voiceover") or {}
+            if voiceover.get("narration_style") == "per_scene":
+                narration = next(
+                    (item for item in voiceover.get("clips", [])
+                     if int(item.get("index", -1)) == scene_index and item.get("audio_path")),
+                    None,
+                )
+                if narration:
+                    from modules.ai_video_studio.media.audio import mux_audio_into_video
+
+                    voiced_path = unique_filename(
+                        get_subsystem_dir("videos") / "vidgrid_clips",
+                        f"scene_{scene_index + 1:02d}_edited_voiced",
+                        "mp4",
+                    )
+                    muxed = await asyncio.to_thread(
+                        mux_audio_into_video, clip_output_path, narration["audio_path"], voiced_path,
+                    )
+                    if muxed.get("muxed"):
+                        clip_output_path = muxed["output_path"]
+                        audio_status = "per_scene_narration_muxed"
+                    else:
+                        audio_status = "narration_mux_failed"
+            elif voiceover.get("narration_style") == "single_track":
+                audio_status = "single_track_not_split"
+            scene_clip_result = {
+                "scene_index": scene_index, "duration": 10.0, "fps": fps,
+                "width": width, "height": height, "output_path": clip_output_path,
+                "output_url": to_download_url(clip_output_path),
+                "bytes": Path(clip_output_path).stat().st_size,
+                "encode_engine": rendered_clip["engine"], "audio_status": audio_status,
+                "status": "updated",
+            }
+            clips = record.setdefault("scene_clips", [])
+            clips[:] = [item for item in clips if int(item.get("scene_index", -1)) != scene_index]
+            clips.append(scene_clip_result)
+            clips.sort(key=lambda item: int(item.get("scene_index", 0)))
+        except Exception as exc:  # noqa: BLE001 — image edit remains saved if clip render fails
+            scene_clip_result = {"status": "stale", "reason": str(exc)[:240]}
     _persist_job(record)
     return {
         "job_id": job_id, "scene_index": scene_index,
         "image_path": result["image_path"], "image_url": to_download_url(result["image_path"]),
         "operation": operation, "provider": result["provider"],
         "status": "edited", "prompt": req.prompt, "render_required": True,
+        "scene_clip": scene_clip_result,
     }
 
 
