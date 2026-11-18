@@ -151,7 +151,7 @@ def test_render_edits_mixes_saved_audio_tracks(completed_job, monkeypatch, tmp_p
         assert total_duration == 4
         from pathlib import Path
         Path(output_path).write_bytes(b"mixed-wav")
-        return {"output_path": str(output_path), "duration": total_duration}
+        return {"output_path": str(output_path), "duration": total_duration, "ducking": {"enabled": True, "reduction_db": 11, "speech_detected": True}}
 
     def fake_mux(video_path, audio_path, output_path):
         from pathlib import Path
@@ -169,6 +169,7 @@ def test_render_edits_mixes_saved_audio_tracks(completed_job, monkeypatch, tmp_p
 
     result = asyncio.run(video.render_video_job_edits(completed_job))
     assert result["audio_status"] == "mixed_audio"
+    assert result["ducking"]["reduction_db"] == 11
     assert result["output_url"] == "/downloads/edited-final.mp4"
     assert video._jobs[completed_job]["edit_render_audio"] == "mixed_audio"
 
