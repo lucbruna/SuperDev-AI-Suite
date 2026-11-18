@@ -132,3 +132,27 @@ def test_narration_cue_timeline_rejects_out_of_range_and_invalid_cues() -> None:
         build_character_cue_timeline(
             {"start": 2.0, "end": 4.0}, [{"offset_seconds": 1.0, "pose": "dance"}]
         )
+
+
+
+def test_character_performance_switches_pose_and_expression_by_frame() -> None:
+    from modules.ai_video_studio.media.characters import add_character_performance
+    from modules.ai_video_studio.media.canvas import SceneCanvas
+    import numpy as np
+
+    scene = add_character_performance(
+        {"background_type": "solid", "background_colors": ["#FFFFFF"], "noise": 0},
+        "historical_narrator",
+        narration_clip={"start": 0, "end": 3},
+        cues=[
+            {"offset_seconds": 1, "pose": "point", "expression": "surprised"},
+            {"offset_seconds": 2, "pose": "explain", "expression": "happy"},
+        ],
+        x=80, y=175, fps=10, scale=0.5,
+    )
+    canvas = SceneCanvas(width=160, height=190, fps=10)
+    neutral = canvas.render_scene(scene, 5)
+    pointing = canvas.render_scene(scene, 15)
+    explaining = canvas.render_scene(scene, 25)
+    assert not np.array_equal(neutral, pointing)
+    assert not np.array_equal(pointing, explaining)
