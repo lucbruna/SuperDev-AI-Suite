@@ -67,6 +67,7 @@ export interface EditTimelineClip {
   trim_start?: number;
   fade_in?: number;
   fade_out?: number;
+  loop?: boolean;
 }
 
 export interface EditTimelineTrack {
@@ -227,7 +228,7 @@ export const videoStudioApi = {
   },
 
   async updateJobAudio(jobId: string, payload: {
-    music_clips: { asset: string; start: number; end: number; trim_start?: number; volume?: number; fade_in?: number; fade_out?: number }[];
+    music_clips: { asset: string; start: number; end: number; trim_start?: number; volume?: number; fade_in?: number; fade_out?: number; loop?: boolean }[];
     sfx_clips: { asset: string; start: number; end: number; trim_start?: number; volume?: number; fade_in?: number; fade_out?: number }[];
   }): Promise<{ edit_timeline: EditTimeline; audio_draft_status: string; message: string }> {
     const { data } = await apiClient.patch(`${STUDIO_BASE}/videos/jobs/${jobId}/audio`, payload);
