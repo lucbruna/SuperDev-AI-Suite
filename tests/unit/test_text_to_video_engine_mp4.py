@@ -38,6 +38,7 @@ def test_generate_async_requires_mp4_output(monkeypatch, tmp_path) -> None:
         engine_module, "unique_filename", lambda *_args: tmp_path / "strict.mp4"
     )
     monkeypatch.setattr(engine_module, "render_multi_scene_video", fake_render)
+    monkeypatch.setattr(engine_module, "render_scene_video", fake_scene_render)
     monkeypatch.setattr(engine_module, "get_generation_statistics", lambda: Stats())
 
     result = asyncio.run(
@@ -300,6 +301,10 @@ def test_generate_async_uses_real_scene_images_and_vidgrid_ten_second_clips(monk
         captured["scenes"] = scenes
         return {"output_path": str(output_path), "frames": 480, "bytes": 100, "engine": "ffmpeg"}
 
+    def fake_scene_render(scene, output_path, **kwargs):
+        captured.setdefault("clip_renders", []).append({"scene": scene, "kwargs": kwargs})
+        return {"output_path": str(output_path), "frames": 240, "bytes": 50, "engine": "ffmpeg"}
+
     from modules.ai_video_studio.ai_image_generator.providers import local_diffusion
     monkeypatch.setattr(engine_module, "get_scene_planner", lambda: Planner())
     monkeypatch.setattr(local_diffusion, "generate_scene_image", fake_image)
@@ -327,3 +332,6 @@ def test_generate_async_uses_real_scene_images_and_vidgrid_ten_second_clips(monk
     assert result["clip_duration_seconds"] == 10.0
     assert result["scene_image_mode"] == "ai_generated"
     assert len(result["scene_assets"]) == 2
+    assert len(result["scene_clips"]) == 2
+    assert all(clip["duration"] == 10.0 for clip in result["scene_clips"])
+    assert all(item["kwargs"]["duration"] == 10.0 for item in captured["clip_renders"])
