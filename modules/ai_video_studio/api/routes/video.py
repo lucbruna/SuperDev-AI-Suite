@@ -47,6 +47,7 @@ class VideoGenerateRequest(BaseModel):
     frame_rate: int = Field(default=24, ge=1, le=120)
     num_scenes: int = Field(default=3, ge=1, le=20)
     voiceover: bool = Field(default=False, description="Add AI narration (edge-tts/gTTS/pyttsx3)")
+    generate_subtitles: bool = Field(default=False, description="Generate a timed SRT sidecar from scene narration")
     voice_id: str = Field(default="default")
     voice_language: str = Field(default="pt-BR")
     voice_speed: float = Field(default=1.0, ge=0.5, le=2.0)
@@ -183,6 +184,7 @@ async def generate_video(req: VideoGenerateRequest, background_tasks: Background
                         "width": width,
                         "height": height,
                         "voiceover": r.voiceover,
+                        "generate_subtitles": r.generate_subtitles,
                         "voice_id": r.voice_id,
                         "voice_language": r.voice_language,
                         "voice_speed": r.voice_speed,
