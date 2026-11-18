@@ -47,7 +47,7 @@ class VideoGenerateRequest(BaseModel):
     duration_seconds: float = Field(default=6.0, ge=1.0, le=600.0, description="Video length in seconds (up to 10 minutes)")
     resolution: str = Field(default="1280x720")
     frame_rate: int = Field(default=24, ge=1, le=120)
-    num_scenes: int = Field(default=3, ge=1, le=20)
+    num_scenes: int = Field(default=3, ge=1, le=60, description="Up to 60 scenes; VidGrid mode uses 10 seconds per scene")
     voiceover: bool = Field(default=False, description="Add AI narration (edge-tts/gTTS/pyttsx3)")
     generate_subtitles: bool = Field(default=False, description="Generate a timed SRT sidecar from scene narration")
     voice_id: str = Field(default="default")
