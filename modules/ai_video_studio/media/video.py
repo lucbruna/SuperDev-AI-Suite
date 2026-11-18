@@ -158,6 +158,10 @@ def stream_frames_to_video(
             process.stdin.write(arr.tobytes())
             encoded += 1
         process.stdin.close()
+        # communicate() flushes stdin when the handle is present. It is already
+        # closed after streaming, so detach it before communicate() drains the
+        # output pipes and waits for FFmpeg.
+        process.stdin = None
         _, stderr = process.communicate(timeout=encode_timeout)
         if process.returncode != 0:
             raise RuntimeError(f"FFmpeg encode failed: {stderr.decode()[-1000:]}")
