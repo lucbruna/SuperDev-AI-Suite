@@ -411,6 +411,11 @@ export const videoStudioApi = {
     return data;
   },
 
+  async discardSceneImageCandidate(jobId: string, sceneIndex: number, candidateId: string): Promise<{ status: "discarded"; active_image_unchanged: boolean }> {
+    const { data } = await apiClient.post(STUDIO_BASE + "/videos/jobs/" + jobId + "/scenes/" + sceneIndex + "/image-candidates/" + candidateId + "/discard");
+    return data;
+  },
+
   async approveSceneImageCandidate(jobId: string, sceneIndex: number, candidateId: string): Promise<{ job_id: string; scene_index: number; status: "approved"; image_url: string; render_required: boolean; message: string }> {
     const { data } = await apiClient.post(`${STUDIO_BASE}/videos/jobs/${jobId}/scenes/${sceneIndex}/image-candidates/${candidateId}/approve`);
     return data;
