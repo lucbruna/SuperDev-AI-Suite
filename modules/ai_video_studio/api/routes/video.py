@@ -408,6 +408,7 @@ async def update_video_job_audio(job_id: str, req: AudioTimelineEditRequest):
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
     record["_audio_clips"] = {"music": music, "sfx": effects}
+    record["_audio_settings"] = req.model_dump(exclude={"music_clips", "sfx_clips"})
     record["edit_timeline"] = timeline
     record["audio_draft_status"] = "saved"
     _persist_job(record)
