@@ -198,3 +198,17 @@ For Wan, use an API-exported workflow that is already installed and tested in
 your ComfyUI environment. On a GTX 1060 6 GB, modern Wan video workflows are
 not a realistic local-generation target; use a remote ComfyUI server or a
 smaller compatible model. The backend adapter itself adds no model weights.
+
+
+## Integração de clipes generativos à timeline
+
+A geração de movimento ComfyUI pode ser iniciada dentro de uma cena já existente:
+- `POST /videos/jobs/{job_id}/scenes/{scene_index}/motion` recebe o prompt de movimento e usa a imagem da própria cena.
+- O MP4 normalizado é associado à cena em `_edited_scenes` e persistido no SQLite; o status do trabalho expõe os metadados em `scene_clips`.
+- Ao renderizar a edição, cenas com `generative_video_path` usam o MP4 ComfyUI; as demais são renderizadas pelo motor de cenas do DARKSTUDIO.
+- Todos os clipes são normalizados para resolução, FPS e contagem de frames da cena antes da concatenação. No modo VidGrid, a cena continua com 10 segundos exatos.
+- O MP4 editado é um novo arquivo; o MP4 original não é sobrescrito.
+
+**Limitação atual de montagem mista:** o assembler concatena com cortes secos. Se a timeline tiver crossfade ou fade-through-black, esses efeitos são convertidos em cortes secos quando há pelo menos um clipe generativo. A EDL, os offsets de narração por cena e as legendas são recalculados com esse mesmo tempo de corte para evitar dessincronização. O renderer tradicional continua aplicando as transições quando nenhuma cena usa clipe generativo.
+
+A geração exige ComfyUI e workflow API configurados no servidor. O endpoint não inicia nem instala o ComfyUI automaticamente.
