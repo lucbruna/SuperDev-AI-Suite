@@ -130,6 +130,10 @@ describe("DARKSTUDIO visual edit timeline", () => {
       project_id: "p1",
       status: "completed",
       progress: 1,
+      scene_clips: [{
+        scene_index: 0, duration: 10, fps: 24, width: 1080, height: 1920,
+        output_url: "/downloads/vidgrid_clips/scene_01.mp4", bytes: 100, encode_engine: "ffmpeg",
+      }],
       edit_timeline: {
         version: "1.0",
         timebase: "frames",
@@ -151,6 +155,7 @@ describe("DARKSTUDIO visual edit timeline", () => {
     expect(screen.getByText(/Editor visual · job_time/)).toBeInTheDocument();
     expect(screen.getByText("🎬 Vídeo")).toBeInTheDocument();
     expect(screen.getByRole("slider", { name: "Posição do cursor da timeline" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Cena 1 · 10s/ })).toHaveAttribute("href", "/downloads/vidgrid_clips/scene_01.mp4");
   });
 });
 
