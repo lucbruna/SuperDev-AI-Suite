@@ -51,8 +51,14 @@ def analyze_av_sync(
                 warnings.append({"code": "narration_gap", "severity": "warning", "start_frame": previous_end,
                                  "end_frame": start, "duration_seconds": round(gap / fps, 3)})
             elif gap < -tolerance_frames:
-                warnings.append({"code": "narration_overlap", "severity": "warning", "clip_index": index,
-                                 "overlap_frames": -gap})
+                allowed_overlap = 0
+                if index - 1 < len(video):
+                    transition = video[index - 1].get("transition_out") or {}
+                    if transition.get("type") == "crossfade":
+                        allowed_overlap = int(transition.get("overlap_frames") or 0)
+                if -gap > allowed_overlap + tolerance_frames:
+                    warnings.append({"code": "narration_overlap", "severity": "warning", "clip_index": index,
+                                     "overlap_frames": -gap})
         previous_end = max(previous_end or end, end)
 
     if len(narration) == len(video) and narration:
@@ -61,13 +67,15 @@ def analyze_av_sync(
             voice_start, voice_end = bounds(voice)
             start_delta = voice_start - scene_start
             end_delta = voice_end - scene_end
+            transition = scene.get("transition_out") or {}
+            allowed_end_overlap = int(transition.get("overlap_frames") or 0) if transition.get("type") == "crossfade" else 0
             item = {
                 "scene_index": int(scene.get("scene_index", index)),
                 "start_delta_frames": start_delta,
                 "end_delta_frames": end_delta,
                 "start_delta_ms": round(start_delta * 1000 / fps, 1),
                 "end_delta_ms": round(end_delta * 1000 / fps, 1),
-                "aligned": abs(start_delta) <= tolerance_frames and abs(end_delta) <= tolerance_frames,
+                "aligned": abs(start_delta) <= tolerance_frames and abs(end_delta) <= tolerance_frames + allowed_end_overlap,
             }
             comparisons.append(item)
             if not item["aligned"]:
