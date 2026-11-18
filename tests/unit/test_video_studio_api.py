@@ -879,3 +879,16 @@ class TestSceneObjectSelection:
             },
         )
         assert response.status_code == 422
+
+
+    @pytest.mark.asyncio
+    async def test_duplicate_object_selection_is_rejected(self, client: AsyncClient):
+        response = await client.post(
+            "/api/v1/video-studio/videos/generate",
+            json={
+                "project_id": "p1",
+                "prompt": "Teste",
+                "object_ids": ["water_glass", "water_glass"],
+            },
+        )
+        assert response.status_code == 422
