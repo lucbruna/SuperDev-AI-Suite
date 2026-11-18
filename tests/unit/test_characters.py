@@ -101,3 +101,34 @@ def test_character_motion_rejects_invalid_timing() -> None:
             base, "whymentary_host", from_x=0, from_y=0,
             to_x=10, to_y=10, duration_frames=10, start_frame=-1,
         )
+
+
+
+def test_narration_cues_map_to_absolute_video_frames() -> None:
+    from modules.ai_video_studio.media.characters import build_character_cue_timeline
+
+    events = build_character_cue_timeline(
+        {"start": 4.0, "end": 8.0},
+        [
+            {"offset_seconds": 2.0, "pose": "point", "expression": "surprised"},
+            {"offset_seconds": 0.5, "pose": "explain", "expression": "happy"},
+        ],
+        fps=30,
+    )
+    assert events == [
+        {"frame": 135, "time_seconds": 4.5, "pose": "explain", "expression": "happy"},
+        {"frame": 180, "time_seconds": 6.0, "pose": "point", "expression": "surprised"},
+    ]
+
+
+def test_narration_cue_timeline_rejects_out_of_range_and_invalid_cues() -> None:
+    from modules.ai_video_studio.media.characters import build_character_cue_timeline
+
+    with pytest.raises(ValueError, match="within narration clip"):
+        build_character_cue_timeline(
+            {"start": 2.0, "end": 4.0}, [{"offset_seconds": 3.0}]
+        )
+    with pytest.raises(ValueError, match="Unknown pose"):
+        build_character_cue_timeline(
+            {"start": 2.0, "end": 4.0}, [{"offset_seconds": 1.0, "pose": "dance"}]
+        )
