@@ -135,6 +135,20 @@ class TextToVideoEngine:
             for scene in scenes:
                 scene["duration"] = 10.0
 
+        # Direct the storyboard before image generation so scene-specific
+        # visual prompt suggestions actually influence each generated image.
+        from modules.ai_video_studio.media.editing_director import (
+            build_editing_report, direct_storyboard,
+        )
+
+        scene_fallback_duration = duration / len(scenes)
+        scenes = direct_storyboard(
+            scenes,
+            studio_id=studio_id,
+            fps=fps,
+            fallback_duration=scene_fallback_duration,
+        )
+
         # Preserve identity metadata for downstream continuity diagnostics.
         for scene in scenes:
             scene["_darkstudio_characters"] = list(character_ids)
@@ -161,7 +175,12 @@ class TextToVideoEngine:
                 "dramatic natural lighting, painterly detail"
             )
             for scene_index, scene in enumerate(scenes):
-                visual_prompt = str(scene.get("visual_prompt") or scene.get("description") or prompt)
+                visual_prompt = str(
+                    scene.get("visual_prompt")
+                    or scene.get("visual_prompt_suggestion")
+                    or scene.get("description")
+                    or prompt
+                )
                 character_reservation = (
                     " Background plate only: do not depict people, humans or characters; "
                     "leave clear foreground space for the separately animated cast."
@@ -261,18 +280,8 @@ class TextToVideoEngine:
                         motion_start_frame=object_index * max(1, fps // 3),
                     )
 
-        # Apply deterministic shot selection, camera motion and transitions.
-        from modules.ai_video_studio.media.editing_director import (
-            build_editing_report, direct_storyboard,
-        )
-
-        scene_fallback_duration = duration / len(scenes)
-        scenes = direct_storyboard(
-            scenes,
-            studio_id=studio_id,
-            fps=fps,
-            fallback_duration=scene_fallback_duration,
-        )
+        # Produce the final pacing and visual-coverage report from the
+        # already-directed storyboard used by the image and video renderers.
         editing_report = build_editing_report(
             scenes, fps=fps, fallback_duration=scene_fallback_duration,
             target_words_per_minute=int(params.get("target_words_per_minute", 145)),
