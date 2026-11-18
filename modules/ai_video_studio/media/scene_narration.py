@@ -63,6 +63,46 @@ def compute_scene_offsets(
             cursor -= overlap / fps
     return offsets
 
+def remap_narration_clips_for_edits(
+    scenes: list[dict[str, Any]],
+    original_clips: list[dict[str, Any]],
+    *,
+    fps: int = 24,
+    fallback_duration: float = 3.0,
+) -> list[dict[str, Any]]:
+    """Map original per-scene audio assets onto an edited storyboard.
+
+    Scene identity is carried by _source_scene_index (assigned by
+    apply_scene_edits); clip array position is the original scene index.
+    Returned clips use the edited scene's frame-accurate slot and order.
+    """
+    if fps < 1:
+        raise ValueError("fps must be at least 1")
+    offsets = compute_scene_offsets(
+        scenes, fallback_duration=fallback_duration, fps=fps
+    )
+    remapped: list[dict[str, Any]] = []
+    for position, (scene, start) in enumerate(zip(scenes, offsets, strict=False)):
+        source_index = scene.get("_source_scene_index", position)
+        if not isinstance(source_index, int) or isinstance(source_index, bool):
+            raise ValueError("scene source index must be an integer")
+        if not 0 <= source_index < len(original_clips):
+            continue
+        original = original_clips[source_index]
+        if not isinstance(original, dict) or not original.get("audio_path"):
+            continue
+        duration = max(0.1, float(scene.get("duration") or fallback_duration))
+        duration_frames = max(1, int(round(duration * fps)))
+        remapped.append({
+            "index": source_index,
+            "text": str(original.get("text") or ""),
+            "start": round(start, 6),
+            "end": round(start + duration_frames / fps, 6),
+            "audio_path": original["audio_path"],
+        })
+    return remapped
+
+
 def build_narration_tracks(
     clips: list[dict[str, Any]],
     *,
