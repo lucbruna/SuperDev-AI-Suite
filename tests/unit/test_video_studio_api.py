@@ -1323,3 +1323,70 @@ class TestSceneAssetRenderLock:
             assert "regeneration" in str(error.value.detail).lower()
         finally:
             video._scene_batch_jobs.discard("batch-render-job")
+
+
+class TestSelectiveVidGridClipRebuild:
+    @pytest.mark.asyncio
+    async def test_rebuilds_only_stale_clip_and_reuses_approved_image(self, tmp_path, monkeypatch):
+        from modules.ai_video_studio.api.routes import video
+        from modules.ai_video_studio.media import output_paths, render
+
+        image_root, video_root = tmp_path / "images", tmp_path / "videos"
+        image_root.mkdir()
+        (video_root / "vidgrid_clips").mkdir(parents=True)
+        approved_image = image_root / "approved.png"
+        approved_image.write_bytes(b"image")
+        monkeypatch.setattr(output_paths, "get_subsystem_dir",
+                            lambda name: image_root if name == "images" else video_root)
+
+        def fake_unique(directory, prefix, extension):
+            Path(directory).mkdir(parents=True, exist_ok=True)
+            return Path(directory) / f"{prefix}.{extension}"
+
+        monkeypatch.setattr(output_paths, "unique_filename", fake_unique)
+        calls = []
+
+        def fake_render(scene, output_path, **kwargs):
+            calls.append(scene["description"])
+            Path(output_path).write_bytes(b"rebuilt-mp4")
+            return {"output_path": str(output_path), "engine": "test"}
+
+        monkeypatch.setattr(render, "render_single_scene_clip", fake_render)
+        monkeypatch.setattr(video, "_persist_job", lambda _record: None)
+        video._jobs["selective-vidgrid-job"] = {
+            "job_id": "selective-vidgrid-job", "status": "completed",
+            "vidgrid_compatible": True, "resolution": "1280x720", "frame_rate": 30,
+            "params": {"studio_id": "whymentary"},
+            "_edited_scenes": [
+                {"_source_scene_index": 0, "description": "scene zero",
+                 "background_image_path": str(approved_image), "duration": 10},
+                {"_source_scene_index": 1, "description": "scene one",
+                 "background_image_path": str(approved_image), "duration": 10},
+            ],
+            "scene_clips": [
+                {"scene_index": 0, "status": "stale", "output_path": "old-0.mp4"},
+                {"scene_index": 1, "status": "updated", "output_path": "current-1.mp4"},
+            ],
+            "voiceover": {"narration_style": "none", "clips": []},
+        }
+        result = await video.rebuild_stale_video_job_scene_clips("selective-vidgrid-job")
+        assert result["status"] == "completed"
+        assert result["rebuilt"] == 1
+        assert calls == ["scene zero"]
+        clips = video._jobs["selective-vidgrid-job"]["scene_clips"]
+        assert next(x for x in clips if x["scene_index"] == 1)["output_path"] == "current-1.mp4"
+        assert next(x for x in clips if x["scene_index"] == 0)["status"] == "updated"
+        assert result["full_mp4_render_required"] is True
+
+    @pytest.mark.asyncio
+    async def test_rebuild_rejects_while_another_render_is_active(self):
+        from fastapi import HTTPException
+        from modules.ai_video_studio.api.routes import video
+
+        video._jobs["busy-vidgrid-job"] = {
+            "job_id": "busy-vidgrid-job", "status": "completed",
+            "vidgrid_compatible": True, "_rendering_edits": True,
+        }
+        with pytest.raises(HTTPException) as error:
+            await video.rebuild_stale_video_job_scene_clips("busy-vidgrid-job")
+        assert error.value.status_code == 409
