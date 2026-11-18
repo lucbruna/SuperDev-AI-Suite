@@ -656,7 +656,7 @@ export default function VideoStudioPage() {
       {(() => {
         const activeJob = jobs.find((job) => job.job_id === activeTimelineJobId);
         if (!activeJob?.edit_timeline) return null;
-        return <EditTimelinePanel timeline={activeJob.edit_timeline} title={`Editor visual · ${activeJob.job_id.slice(0, 8)}`} />;
+        return <EditTimelinePanel jobId={activeJob.job_id} timeline={activeJob.edit_timeline} title={`Editor visual · ${activeJob.job_id.slice(0, 8)}`} />;
       })()}
 
       {/* ─── Jobs ────────────────────────────────────────────────────── */}
