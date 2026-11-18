@@ -280,7 +280,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
     }
   }
 
-  async function generateSceneMotion(sceneIndex: number, asset: SceneImageAsset, durationFrames: number) {
+  async function generateSceneMotion(sceneIndex: number, asset: SceneImageAsset) {
     if (!asset.image_path || generatingMotionScene !== null) return;
     setGeneratingMotionScene(sceneIndex);
     setMessage("");
@@ -457,7 +457,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
               <button type="button" onClick={() => editSceneImage(index)} disabled={!sceneImagePrompts[index]?.trim() || editingImageScene !== null} className="mt-2 rounded-md border border-primary-300 px-3 py-1.5 text-xs font-semibold disabled:opacity-40 dark:border-primary-700">
                 {editingImageScene === index ? "Gerando imagem…" : asset ? "Alterar imagem por texto" : "Criar imagem por texto"}
               </button>
-              <button type="button" onClick={() => asset && generateSceneMotion(index, asset, clip.duration_frames)} disabled={!asset?.image_path || generatingMotionScene !== null} className="ml-2 mt-2 rounded-md border border-violet-300 px-3 py-1.5 text-xs font-semibold disabled:opacity-40 dark:border-violet-700">
+              <button type="button" onClick={() => asset && generateSceneMotion(index, asset)} disabled={!asset?.image_path || generatingMotionScene !== null} className="ml-2 mt-2 rounded-md border border-violet-300 px-3 py-1.5 text-xs font-semibold disabled:opacity-40 dark:border-violet-700">
                 {generatingMotionScene === index ? "Gerando vídeo IA…" : "Animar com IA · ComfyUI"}
               </button>
               {generatedMotionClips[sceneOrder[index] ?? index] && <div className="mt-2 space-y-1">
