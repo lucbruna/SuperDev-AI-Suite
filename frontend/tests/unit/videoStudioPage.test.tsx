@@ -123,6 +123,37 @@ describe("VideoStudioPage", () => {
 });
 
 
+describe("DARKSTUDIO visual edit timeline", () => {
+  it("opens the real timeline for a completed job that includes edit metadata", async () => {
+    mockedApi.listJobs.mockResolvedValue([{
+      job_id: "job_timeline_1",
+      project_id: "p1",
+      status: "completed",
+      progress: 1,
+      edit_timeline: {
+        version: "1.0",
+        timebase: "frames",
+        fps: 24,
+        width: 1080,
+        height: 1920,
+        duration_frames: 48,
+        duration_seconds: 2,
+        tracks: [{
+          id: "video-main",
+          type: "video",
+          clips: [{ scene_index: 0, start_frame: 0, end_frame: 48, duration_frames: 48, shot_type: "wide" }],
+        }],
+      },
+    }]);
+    render(<VideoStudioPage />);
+    const openButton = await screen.findByRole("button", { name: "Abrir editor" });
+    fireEvent.click(openButton);
+    expect(screen.getByText(/Editor visual · job_time/)).toBeInTheDocument();
+    expect(screen.getByText("🎬 Vídeo")).toBeInTheDocument();
+    expect(screen.getByRole("slider", { name: "Posição do cursor da timeline" })).toBeInTheDocument();
+  });
+});
+
 describe("DARKSTUDIO scene object picker", () => {
   it("loads studio objects and includes selected object IDs in generation", async () => {
     mockedApi.listSceneObjects.mockResolvedValue([
