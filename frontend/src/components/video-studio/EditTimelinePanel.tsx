@@ -57,10 +57,14 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
   const [musicStart, setMusicStart] = useState("0");
   const [musicEnd, setMusicEnd] = useState("10");
   const [musicVolume, setMusicVolume] = useState("0.25");
+  const [musicFadeIn, setMusicFadeIn] = useState("1");
+  const [musicFadeOut, setMusicFadeOut] = useState("1");
   const [sfxAsset, setSfxAsset] = useState("");
   const [sfxStart, setSfxStart] = useState("0");
   const [sfxEnd, setSfxEnd] = useState("1");
   const [sfxVolume, setSfxVolume] = useState("0.8");
+  const [sfxFadeIn, setSfxFadeIn] = useState("0");
+  const [sfxFadeOut, setSfxFadeOut] = useState("0.2");
   const [savingAudio, setSavingAudio] = useState(false);
   const videoTrack = draft.tracks.find((track) => track.type === "video");
   const clips = videoTrack?.clips ?? [];
@@ -130,16 +134,19 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
 
   async function saveAudioDraft() {
     if (!jobId || dirty || saving) return;
-    const parseClip = (asset: string, start: string, end: string, volume: string) => {
+    const parseClip = (asset: string, start: string, end: string, volume: string, fadeIn: string, fadeOut: string) => {
       if (!asset.trim()) return null;
       const startValue = Number(start);
       const endValue = Number(end);
       const volumeValue = Number(volume);
-      if (!Number.isFinite(startValue) || !Number.isFinite(endValue) || !Number.isFinite(volumeValue) ||
-          startValue < 0 || endValue <= startValue || volumeValue < 0 || volumeValue > 2) {
+      const fadeInValue = Number(fadeIn);
+      const fadeOutValue = Number(fadeOut);
+      if (![startValue, endValue, volumeValue, fadeInValue, fadeOutValue].every(Number.isFinite) ||
+          startValue < 0 || endValue <= startValue || volumeValue < 0 || volumeValue > 2 ||
+          fadeInValue < 0 || fadeOutValue < 0 || fadeInValue > endValue - startValue || fadeOutValue > endValue - startValue) {
         throw new Error("Confira posição, fim e volume das faixas de áudio.");
       }
-      return { asset: asset.trim(), start: startValue, end: endValue, volume: volumeValue };
+      return { asset: asset.trim(), start: startValue, end: endValue, volume: volumeValue, fade_in: fadeInValue, fade_out: fadeOutValue };
     };
     setSavingAudio(true);
     setMessage("");
@@ -156,8 +163,8 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
         end: clip.end_seconds ?? clip.end_frame / draft.fps, volume: clip.volume ?? 1,
         trim_start: clip.trim_start ?? 0, fade_in: clip.fade_in ?? 0, fade_out: clip.fade_out ?? 0,
       })).filter((clip) => clip.asset);
-      const nextMusic = parseClip(musicAsset, musicStart, musicEnd, musicVolume);
-      const nextSfx = parseClip(sfxAsset, sfxStart, sfxEnd, sfxVolume);
+      const nextMusic = parseClip(musicAsset, musicStart, musicEnd, musicVolume, musicFadeIn, musicFadeOut);
+      const nextSfx = parseClip(sfxAsset, sfxStart, sfxEnd, sfxVolume, sfxFadeIn, sfxFadeOut);
       if (nextMusic) music.push(nextMusic);
       if (nextSfx) sfx.push(nextSfx);
       const result = await videoStudioApi.updateJobAudio(jobId, { music_clips: music, sfx_clips: sfx });
@@ -290,6 +297,8 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
               <label className="text-xs text-surface-500">Início (s)<input type="number" min="0" value={musicStart} onChange={(event) => setMusicStart(event.target.value)} className="mt-1 w-full rounded border bg-transparent px-2 py-1" /></label>
               <label className="text-xs text-surface-500">Fim (s)<input type="number" min="0.1" value={musicEnd} onChange={(event) => setMusicEnd(event.target.value)} className="mt-1 w-full rounded border bg-transparent px-2 py-1" /></label>
               <label className="text-xs text-surface-500">Volume (0–2)<input type="number" min="0" max="2" step="0.05" value={musicVolume} onChange={(event) => setMusicVolume(event.target.value)} className="mt-1 w-full rounded border bg-transparent px-2 py-1" /></label>
+              <label className="text-xs text-surface-500">Fade-in (s)<input type="number" min="0" step="0.1" value={musicFadeIn} onChange={(event) => setMusicFadeIn(event.target.value)} className="mt-1 w-full rounded border bg-transparent px-2 py-1" /></label>
+              <label className="text-xs text-surface-500">Fade-out (s)<input type="number" min="0" step="0.1" value={musicFadeOut} onChange={(event) => setMusicFadeOut(event.target.value)} className="mt-1 w-full rounded border bg-transparent px-2 py-1" /></label>
             </div>
           </div>
           <div className="space-y-2">
@@ -301,6 +310,8 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
               <label className="text-xs text-surface-500">Início (s)<input type="number" min="0" value={sfxStart} onChange={(event) => setSfxStart(event.target.value)} className="mt-1 w-full rounded border bg-transparent px-2 py-1" /></label>
               <label className="text-xs text-surface-500">Fim (s)<input type="number" min="0.1" value={sfxEnd} onChange={(event) => setSfxEnd(event.target.value)} className="mt-1 w-full rounded border bg-transparent px-2 py-1" /></label>
               <label className="text-xs text-surface-500">Volume (0–2)<input type="number" min="0" max="2" step="0.05" value={sfxVolume} onChange={(event) => setSfxVolume(event.target.value)} className="mt-1 w-full rounded border bg-transparent px-2 py-1" /></label>
+              <label className="text-xs text-surface-500">Fade-in (s)<input type="number" min="0" step="0.1" value={sfxFadeIn} onChange={(event) => setSfxFadeIn(event.target.value)} className="mt-1 w-full rounded border bg-transparent px-2 py-1" /></label>
+              <label className="text-xs text-surface-500">Fade-out (s)<input type="number" min="0" step="0.1" value={sfxFadeOut} onChange={(event) => setSfxFadeOut(event.target.value)} className="mt-1 w-full rounded border bg-transparent px-2 py-1" /></label>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
