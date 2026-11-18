@@ -435,3 +435,27 @@ def test_mix_audio_timeline_rejects_invalid_clip_controls(tmp_path, monkeypatch,
 
     with pytest.raises(ValueError):
         audio_timeline.mix_audio_timeline([clip], tmp_path / "mix.wav", total_duration=1)
+
+
+def test_quality_report_blocks_true_peak_over_configured_ceiling():
+    samples = np.full((800, 2), 0.1, dtype=np.float32)
+    report = audio_timeline.build_audio_quality_report(
+        samples, sample_rate=8000,
+        measured_true_peak_dbTP=-0.4,
+        target_true_peak_dbTP=-1.0,
+    )
+    assert report["status"] == "blocked"
+    assert report["export_allowed"] is False
+    assert report["true_peak_dbTP"] == -0.4
+    assert any(item["code"] == "true_peak_target_exceeded" for item in report["warnings"])
+
+
+def test_quality_report_accepts_true_peak_within_tolerance():
+    samples = np.full((800, 2), 0.1, dtype=np.float32)
+    report = audio_timeline.build_audio_quality_report(
+        samples, sample_rate=8000,
+        measured_true_peak_dbTP=-0.9,
+        target_true_peak_dbTP=-1.0,
+    )
+    assert report["export_allowed"] is True
+    assert report["true_peak_dbTP"] == -0.9
