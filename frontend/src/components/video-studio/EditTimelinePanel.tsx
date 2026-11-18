@@ -77,6 +77,13 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
   const [normalizationTarget, setNormalizationTarget] = useState("-18");
   const [loudnessEnabled, setLoudnessEnabled] = useState(false);
   const [targetLufs, setTargetLufs] = useState("-14");
+  const [compressorEnabled, setCompressorEnabled] = useState(false);
+  const [compressorThreshold, setCompressorThreshold] = useState("-18");
+  const [compressorRatio, setCompressorRatio] = useState("3");
+  const [eqEnabled, setEqEnabled] = useState(false);
+  const [eqLow, setEqLow] = useState("0");
+  const [eqMid, setEqMid] = useState("0");
+  const [eqHigh, setEqHigh] = useState("0");
   const videoTrack = draft.tracks.find((track) => track.type === "video");
   const clips = videoTrack?.clips ?? [];
   const duration = Math.max(1, draft.duration_frames);
@@ -95,6 +102,13 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
         setNormalizationTarget(String(job.audio_settings.normalization_target_dbfs ?? -18));
         setLoudnessEnabled(job.audio_settings.loudness_normalization_enabled ?? false);
         setTargetLufs(String(job.audio_settings.target_lufs ?? -14));
+        setCompressorEnabled(job.audio_settings.compressor_enabled ?? false);
+        setCompressorThreshold(String(job.audio_settings.compressor_threshold_db ?? -18));
+        setCompressorRatio(String(job.audio_settings.compressor_ratio ?? 3));
+        setEqEnabled(job.audio_settings.eq_enabled ?? false);
+        setEqLow(String(job.audio_settings.eq_low_db ?? 0));
+        setEqMid(String(job.audio_settings.eq_mid_db ?? 0));
+        setEqHigh(String(job.audio_settings.eq_high_db ?? 0));
       }
     }).catch(() => undefined);
   }, [jobId]);
@@ -209,6 +223,15 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
       setMessage("O alvo LUFS deve ficar entre -36 e -5 LUFS.");
       return;
     }
+    const compressorThresholdValue = Number(compressorThreshold);
+    const compressorRatioValue = Number(compressorRatio);
+    const eqValues = [Number(eqLow), Number(eqMid), Number(eqHigh)];
+    if (!Number.isFinite(compressorThresholdValue) || compressorThresholdValue < -60 || compressorThresholdValue > 0 ||
+        !Number.isFinite(compressorRatioValue) || compressorRatioValue < 1 || compressorRatioValue > 20 ||
+        !eqValues.every((value) => Number.isFinite(value) && value >= -12 && value <= 12)) {
+      setMessage("Confira compressor (-60 a 0 dB, ratio 1 a 20) e EQ (-12 a +12 dB).");
+      return;
+    }
     setSavingAudio(true);
     setMessage("");
     try {
@@ -228,7 +251,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
       const nextSfx = parseClip(sfxAsset, sfxStart, sfxEnd, sfxVolume, sfxFadeIn, sfxFadeOut, false, sfxPan);
       if (nextMusic) music.push(nextMusic);
       if (nextSfx) sfx.push(nextSfx);
-      const result = await videoStudioApi.updateJobAudio(jobId, { music_clips: music, sfx_clips: sfx, ducking_enabled: duckingEnabled, ducking_db: Number(duckingDb), ducking_threshold_db: -36, ducking_attack: 0.08, ducking_release: 0.35, normalization_enabled: normalizationEnabled, normalization_target_dbfs: Number(normalizationTarget), normalization_max_gain_db: 6, loudness_normalization_enabled: loudnessEnabled, target_lufs: Number(targetLufs), true_peak_db: -1, loudness_range: 11 });
+      const result = await videoStudioApi.updateJobAudio(jobId, { music_clips: music, sfx_clips: sfx, ducking_enabled: duckingEnabled, ducking_db: Number(duckingDb), ducking_threshold_db: -36, ducking_attack: 0.08, ducking_release: 0.35, normalization_enabled: normalizationEnabled, normalization_target_dbfs: Number(normalizationTarget), normalization_max_gain_db: 6, loudness_normalization_enabled: loudnessEnabled, target_lufs: Number(targetLufs), true_peak_db: -1, loudness_range: 11, compressor_enabled: compressorEnabled, compressor_threshold_db: compressorThresholdValue, compressor_ratio: compressorRatioValue, compressor_attack: 0.01, compressor_release: 0.12, compressor_makeup_db: 0, eq_enabled: eqEnabled, eq_low_db: eqValues[0], eq_mid_db: eqValues[1], eq_high_db: eqValues[2] });
       setDraft(result.edit_timeline);
       setAudioDirty(false);
       onSaved?.(result.edit_timeline);
@@ -408,6 +431,28 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
               <div><strong className="text-sm">📊 Loudness EBU R128 (LUFS)</strong><p className="text-xs text-surface-500">Duas passagens FFmpeg + verificação final; alvo de true peak em -1 dBTP. Requer FFmpeg com filtro loudnorm.</p></div>
               <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={loudnessEnabled} onChange={(event) => { setLoudnessEnabled(event.target.checked); setAudioDirty(true); }} /> Ativar LUFS</label>
               <label className="text-xs text-surface-500">Alvo LUFS<input type="number" min="-36" max="-5" step="1" value={targetLufs} onChange={(event) => { setTargetLufs(event.target.value); setAudioDirty(true); }} className="ml-2 w-20 rounded border bg-transparent px-2 py-1" /></label>
+            </div>
+          </div>
+          <div className="rounded-md border border-surface-200 p-3 dark:border-surface-700 sm:col-span-2">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <div><strong className="text-sm">🎛️ Compressor de dinâmica</strong><p className="text-xs text-surface-500">Controla picos e reduz variações de volume com ganho estéreo vinculado.</p></div>
+              <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={compressorEnabled} onChange={(event) => { setCompressorEnabled(event.target.checked); setAudioDirty(true); }} /> Ativar compressor</label>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="text-xs text-surface-500">Threshold (dB)<input type="number" min="-60" max="0" value={compressorThreshold} onChange={(event) => { setCompressorThreshold(event.target.value); setAudioDirty(true); }} className="mt-1 w-full rounded border bg-transparent px-2 py-1" /></label>
+              <label className="text-xs text-surface-500">Ratio (1:1 a 20:1)<input type="number" min="1" max="20" step="0.5" value={compressorRatio} onChange={(event) => { setCompressorRatio(event.target.value); setAudioDirty(true); }} className="mt-1 w-full rounded border bg-transparent px-2 py-1" /></label>
+            </div>
+            <p className="mt-2 text-[11px] text-surface-500">Attack 10 ms · Release 120 ms · Makeup 0 dB.</p>
+          </div>
+          <div className="rounded-md border border-surface-200 p-3 dark:border-surface-700 sm:col-span-2">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <div><strong className="text-sm">🎚️ Equalizador de 3 bandas</strong><p className="text-xs text-surface-500">Graves, médios e agudos com transições suaves; ajuste de -12 a +12 dB.</p></div>
+              <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={eqEnabled} onChange={(event) => { setEqEnabled(event.target.checked); setAudioDirty(true); }} /> Ativar EQ</label>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <label className="text-xs text-surface-500">Graves: {Number(eqLow).toFixed(1)} dB<input aria-label="Graves" type="range" min="-12" max="12" step="0.5" value={eqLow} onChange={(event) => { setEqLow(event.target.value); setAudioDirty(true); }} className="mt-2 w-full" /></label>
+              <label className="text-xs text-surface-500">Médios: {Number(eqMid).toFixed(1)} dB<input aria-label="Médios" type="range" min="-12" max="12" step="0.5" value={eqMid} onChange={(event) => { setEqMid(event.target.value); setAudioDirty(true); }} className="mt-2 w-full" /></label>
+              <label className="text-xs text-surface-500">Agudos: {Number(eqHigh).toFixed(1)} dB<input aria-label="Agudos" type="range" min="-12" max="12" step="0.5" value={eqHigh} onChange={(event) => { setEqHigh(event.target.value); setAudioDirty(true); }} className="mt-2 w-full" /></label>
             </div>
           </div>
           {(["music", "sound_effect"] as const).map((role) => {
