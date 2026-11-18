@@ -59,6 +59,7 @@ class VideoGenerateRequest(BaseModel):
     format: str = Field(default="custom", max_length=32)
     studio_id: str = Field(default="whymentary", pattern="^(whymentary|historical_documentary)$")
     character_ids: list[str] = Field(default_factory=list, max_length=2, description="Stable character IDs to include in every scene")
+    object_ids: list[str] = Field(default_factory=list, max_length=6, description="Reusable scene object IDs to include in every scene")
 
     @field_validator("resolution")
     @classmethod
@@ -202,6 +203,7 @@ async def generate_video(req: VideoGenerateRequest, background_tasks: Background
                         "llm_timeout": r.llm_timeout,
                         "studio_id": r.studio_id,
                         "character_ids": r.character_ids,
+                        "object_ids": r.object_ids,
                     },
                 },
                 progress_callback=_on_render_progress,
