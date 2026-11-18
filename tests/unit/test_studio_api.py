@@ -54,3 +54,35 @@ def test_scene_preview_rejects_unknown_studio() -> None:
     with pytest.raises(HTTPException) as error:
         asyncio.run(preview_scene_profile("unknown", {"text": {"content": "x"}}))
     assert error.value.status_code == 404
+
+
+def test_character_catalog_keeps_mia_and_leo_identity_contracts() -> None:
+    from modules.ai_video_studio.api.routes.studios import list_studio_characters
+
+    result = asyncio.run(list_studio_characters("whymentary"))
+    assert result["count"] == 2
+    by_id = {item["id"]: item for item in result["characters"]}
+    assert by_id["leo"]["appearance"]["hair"] == "blonde"
+    assert by_id["leo"]["appearance"]["clothing_color"] == "#2563EB"
+    assert by_id["mia"]["appearance"]["hair"] == "brown hair tied up"
+    assert by_id["mia"]["appearance"]["outfit"] == "red dress"
+
+
+def test_character_preview_returns_editable_scene_without_mutating_source() -> None:
+    from modules.ai_video_studio.api.routes.studios import preview_studio_character
+
+    source = {"background_type": "solid", "background_colors": ["#FFFFFF"]}
+    result = asyncio.run(preview_studio_character(
+        "mia", {"scene": source, "x": 100, "y": 200, "pose": "point"}
+    ))
+    assert result["character_id"] == "mia"
+    assert len(result["scene"]["rects"]) == 3
+    assert len(source.get("rects", [])) == 0
+
+
+def test_character_preview_rejects_invalid_pose() -> None:
+    from modules.ai_video_studio.api.routes.studios import preview_studio_character
+
+    with pytest.raises(HTTPException) as error:
+        asyncio.run(preview_studio_character("leo", {"scene": {}, "pose": "dance"}))
+    assert error.value.status_code == 422
