@@ -82,6 +82,14 @@ jobs:
         continue-on-error: true
       - name: Run media-engine regression tests (strict)
         run: pytest tests/unit/test_media_video.py tests/unit/test_scene_narration.py -q --timeout=60
+      - name: Render and validate two-scene DARKSTUDIO MP4
+        run: python scripts/darkstudio_render_smoke.py --output /tmp/darkstudio-two-scene-demo.mp4
+      - name: Upload two-scene MP4 proof
+        uses: actions/upload-artifact@v4
+        with:
+          name: darkstudio-two-scene-mp4
+          path: /tmp/darkstudio-two-scene-demo.mp4
+          if-no-files-found: error
 
   test-frontend:
     name: Frontend Tests
