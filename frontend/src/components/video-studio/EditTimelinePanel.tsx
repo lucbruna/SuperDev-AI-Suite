@@ -71,6 +71,8 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
   const [audioDirty, setAudioDirty] = useState(false);
   const [duckingEnabled, setDuckingEnabled] = useState(true);
   const [duckingDb, setDuckingDb] = useState("9");
+  const [normalizationEnabled, setNormalizationEnabled] = useState(true);
+  const [normalizationTarget, setNormalizationTarget] = useState("-18");
   const videoTrack = draft.tracks.find((track) => track.type === "video");
   const clips = videoTrack?.clips ?? [];
   const duration = Math.max(1, draft.duration_frames);
@@ -85,6 +87,8 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
       if (job.audio_settings) {
         setDuckingEnabled(job.audio_settings.ducking_enabled ?? true);
         setDuckingDb(String(job.audio_settings.ducking_db ?? 9));
+        setNormalizationEnabled(job.audio_settings.normalization_enabled ?? true);
+        setNormalizationTarget(String(job.audio_settings.normalization_target_dbfs ?? -18));
       }
     }).catch(() => undefined);
   }, [jobId]);
@@ -184,8 +188,13 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
       return { asset: asset.trim(), start: startValue, end: endValue, volume: volumeValue, trim_start: 0, fade_in: fadeInValue, fade_out: fadeOutValue, loop };
     };
     const duckingValue = Number(duckingDb);
+    const normalizationValue = Number(normalizationTarget);
     if (!Number.isFinite(duckingValue) || duckingValue < 0 || duckingValue > 24) {
       setMessage("A redução do ducking deve ficar entre 0 e 24 dB.");
+      return;
+    }
+    if (!Number.isFinite(normalizationValue) || normalizationValue < -60 || normalizationValue > 0) {
+      setMessage("O alvo de normalização deve ficar entre -60 e 0 dBFS.");
       return;
     }
     setSavingAudio(true);
@@ -207,7 +216,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
       const nextSfx = parseClip(sfxAsset, sfxStart, sfxEnd, sfxVolume, sfxFadeIn, sfxFadeOut);
       if (nextMusic) music.push(nextMusic);
       if (nextSfx) sfx.push(nextSfx);
-      const result = await videoStudioApi.updateJobAudio(jobId, { music_clips: music, sfx_clips: sfx, ducking_enabled: duckingEnabled, ducking_db: Number(duckingDb), ducking_threshold_db: -36, ducking_attack: 0.08, ducking_release: 0.35 });
+      const result = await videoStudioApi.updateJobAudio(jobId, { music_clips: music, sfx_clips: sfx, ducking_enabled: duckingEnabled, ducking_db: Number(duckingDb), ducking_threshold_db: -36, ducking_attack: 0.08, ducking_release: 0.35, normalization_enabled: normalizationEnabled, normalization_target_dbfs: Number(normalizationTarget), normalization_max_gain_db: 6 });
       setDraft(result.edit_timeline);
       setAudioDirty(false);
       onSaved?.(result.edit_timeline);
@@ -365,6 +374,13 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
               <div><strong className="text-sm">🎚️ Ducking automático da música</strong><p className="text-xs text-surface-500">Reduz a trilha quando a narração está ativa.</p></div>
               <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={duckingEnabled} onChange={(event) => { setDuckingEnabled(event.target.checked); setAudioDirty(true); }} /> Ativar</label>
               <label className="text-xs text-surface-500">Redução (dB)<input type="number" min="0" max="24" step="1" value={duckingDb} onChange={(event) => { setDuckingDb(event.target.value); setAudioDirty(true); }} className="ml-2 w-20 rounded border bg-transparent px-2 py-1" /></label>
+            </div>
+          </div>
+          <div className="rounded-md border border-surface-200 p-3 dark:border-surface-700 sm:col-span-2">
+            <div className="flex flex-wrap items-center gap-4">
+              <div><strong className="text-sm">🎚️ Normalização do volume final</strong><p className="text-xs text-surface-500">Ajusta o RMS médio antes do limitador de pico; não é medição LUFS.</p></div>
+              <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={normalizationEnabled} onChange={(event) => { setNormalizationEnabled(event.target.checked); setAudioDirty(true); }} /> Ativar</label>
+              <label className="text-xs text-surface-500">Alvo (dBFS)<input type="number" min="-60" max="0" step="1" value={normalizationTarget} onChange={(event) => { setNormalizationTarget(event.target.value); setAudioDirty(true); }} className="ml-2 w-20 rounded border bg-transparent px-2 py-1" /></label>
             </div>
           </div>
           {(["music", "sound_effect"] as const).map((role) => {
