@@ -81,6 +81,9 @@ class TextToVideoEngine:
 
         num_scenes = max(1, int(params.get("num_scenes", 3)))
         duration = max(1.0, float(params.get("duration", 6.0)))
+        vidgrid_compatible = bool(params.get("vidgrid_compatible", False))
+        if vidgrid_compatible:
+            duration = num_scenes * 10.0
         fps = max(1, int(params.get("fps", 24)))
         width = int(params.get("width", 1280))
         height = int(params.get("height", 720))
@@ -128,6 +131,9 @@ class TextToVideoEngine:
         scenes = plan["scenes"]
         if not scenes:
             raise ValidationError("Scene planner returned no scenes", field="prompt")
+        if vidgrid_compatible:
+            for scene in scenes:
+                scene["duration"] = 10.0
 
         # Preserve identity metadata for downstream continuity diagnostics.
         for scene in scenes:
@@ -268,6 +274,8 @@ class TextToVideoEngine:
             "studio_id": studio_id,
             "scene_image_mode": image_mode,
             "scene_assets": scene_assets,
+            "vidgrid_compatible": vidgrid_compatible,
+            "clip_duration_seconds": 10.0 if vidgrid_compatible else None,
             "ai_planner": plan["provider"] or "deterministic",
             "ai_generated": plan["ai_generated"],
             "scenes": scenes,
