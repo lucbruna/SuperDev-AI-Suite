@@ -64,6 +64,7 @@ def test_image_to_image_rejects_missing_source(tmp_path):
 
 
 def test_fit_image_dimensions_preserves_landscape_and_portrait_aspect_ratio():
-    assert local_diffusion.fit_image_dimensions(1920, 1080) == (1024, 576)
-    assert local_diffusion.fit_image_dimensions(720, 1280) == (576, 1024)
+    assert local_diffusion.fit_image_dimensions(1920, 1080) == (768, 432)
+    assert local_diffusion.fit_image_dimensions(720, 1280) == (432, 768)
     assert local_diffusion.fit_image_dimensions(640, 360) == (640, 360)
+    assert local_diffusion.fit_image_dimensions(1920, 1080, max_edge=1024) == (1024, 576)
