@@ -270,12 +270,14 @@ def concat_vidgrid_scene_clips(
 
     if not clip_paths:
         return {"used": False, "reason": "no_scene_clips"}
+    if not 1 <= fps <= 120 or width < 2 or height < 2:
+        return {"used": False, "reason": "invalid_output_profile"}
     ffmpeg, ffprobe = shutil.which("ffmpeg"), shutil.which("ffprobe")
     if not ffmpeg or not ffprobe:
         return {"used": False, "reason": "ffmpeg_or_ffprobe_unavailable"}
 
     expected = {
-        "codec_name": None, "width": width, "height": height,
+        "width": width, "height": height,
         "avg_frame_rate": f"{fps}/1", "pix_fmt": "yuv420p",
     }
     from modules.ai_video_studio.media.output_paths import get_subsystem_dir
