@@ -17,6 +17,7 @@ pixels, which keeps tests stable and videos temporally consistent.
 from __future__ import annotations
 
 import random
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -108,6 +109,28 @@ class SceneCanvas:
 
     # ── Background ────────────────────────────────────────────────
     def _background(self, scene: dict[str, Any], rng: random.Random) -> np.ndarray:
+        image_path = scene.get("background_image_path")
+        if image_path:
+            from modules.ai_video_studio.media.output_paths import get_subsystem_dir
+
+            source = Path(str(image_path)).resolve()
+            image_root = Path(get_subsystem_dir("images")).resolve()
+            if image_root not in source.parents or not source.is_file():
+                raise ValueError("background image must be an existing DARKSTUDIO image asset")
+            with Image.open(source) as opened:
+                image = opened.convert("RGB")
+                ratio = max(self.width / image.width, self.height / image.height)
+                resized = image.resize(
+                    (max(self.width, int(image.width * ratio)), max(self.height, int(image.height * ratio))),
+                    Image.Resampling.LANCZOS,
+                )
+                left = (resized.width - self.width) // 2
+                top = (resized.height - self.height) // 2
+                return np.asarray(
+                    resized.crop((left, top, left + self.width, top + self.height)),
+                    dtype=np.uint8,
+                )
+
         bg_type = scene.get("background_type", "gradient")
         colors = [c for c in scene.get("background_colors", []) if c]
 
