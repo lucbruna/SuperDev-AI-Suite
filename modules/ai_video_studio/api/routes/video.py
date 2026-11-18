@@ -1438,11 +1438,24 @@ async def render_video_job_edits(job_id: str):
         if not 1 <= fps <= 120:
             raise ValueError("frame_rate must be between 1 and 120")
         from modules.ai_video_studio.media.output_paths import get_subsystem_dir, unique_filename
-        from modules.ai_video_studio.media.render import render_multi_scene_video, render_mixed_scene_video
+        from modules.ai_video_studio.media.render import (
+            concat_vidgrid_scene_clips, render_multi_scene_video, render_mixed_scene_video,
+        )
         generated_scene_clips = {
             int(scene.get("_source_scene_index", index)): str(scene["generative_video_path"])
             for index, scene in enumerate(scenes) if scene.get("generative_video_path")
         }
+        vidgrid_clip_paths: list[str] = []
+        if record.get("vidgrid_compatible"):
+            clips_by_index = {
+                int(item.get("scene_index", -1)): item
+                for item in (record.get("scene_clips") or [])
+                if item.get("status") in {"updated", "completed", "ready"} and item.get("output_path")
+            }
+            ordered_indices = [int(scene.get("_source_scene_index", index)) for index, scene in enumerate(scenes)]
+            if ordered_indices and all(index in clips_by_index for index in ordered_indices):
+                vidgrid_clip_paths = [str(clips_by_index[index]["output_path"]) for index in ordered_indices]
+                generated_scene_clips = dict(zip(ordered_indices, vidgrid_clip_paths))
         output_path = unique_filename(get_subsystem_dir("videos"), "text_to_video_edited", "mp4")
     except (TypeError, ValueError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
@@ -1493,12 +1506,39 @@ async def render_video_job_edits(job_id: str):
                 and track.get("type") != "subtitle"
             )
             record["edit_timeline"] = mixed_timeline
-            result = await asyncio.to_thread(
-                render_mixed_scene_video, scenes, output_path, generated_clips=generated_scene_clips,
-                fps=fps, width=width, height=height, require_mp4=True,
-                studio_id=params.get("studio_id") or "whymentary",
-            )
-            record["edit_render_transition_policy"] = {
+            result = None
+            if vidgrid_clip_paths:
+                from modules.ai_video_studio.media.transitions import transition_spec
+                hard_cuts_only = all(transition_spec(scene).get("type") == "cut" for scene in scenes)
+                if hard_cuts_only:
+                    concat_result = await asyncio.to_thread(
+                        concat_vidgrid_scene_clips, vidgrid_clip_paths, output_path,
+                        fps=fps, width=width, height=height, expected_scene_duration=10.0,
+                    )
+                    if concat_result.get("used"):
+                        result = {
+                            "output_path": concat_result["output_path"],
+                            "frames": concat_result["frames"],
+                            "bytes": concat_result["bytes"],
+                            "engine": concat_result["engine"],
+                            "transition_policy": "vidgrid_stream_copy",
+                            "transitions_applied": [],
+                        }
+                        record["edit_render_transition_policy"] = {
+                            "mode": "vidgrid_stream_copy",
+                            "transitions_applied": [],
+                            "message": "Clipes VidGrid compatíveis concatenados sem reencodificar vídeo; áudio será mixado na etapa final.",
+                        }
+                    else:
+                        record["edit_render_assembly_fallback"] = concat_result.get("reason", "incompatible_clips")
+            if result is None:
+                result = await asyncio.to_thread(
+                    render_mixed_scene_video, scenes, output_path, generated_clips=generated_scene_clips,
+                    fps=fps, width=width, height=height, require_mp4=True,
+                    studio_id=params.get("studio_id") or "whymentary",
+                )
+            if "edit_render_transition_policy" not in record or record["edit_render_transition_policy"].get("mode") != "vidgrid_stream_copy":
+                record["edit_render_transition_policy"] = {
                 "mode": result.get("transition_policy", "frame_accurate"),
                 "transitions_applied": result.get("transitions_applied", []),
                 "message": "Transições aplicadas no render misto; crossfades descontam os mesmos frames na timeline e no áudio/legendas.",
