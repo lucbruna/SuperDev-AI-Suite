@@ -167,3 +167,72 @@ def build_edit_timeline(
         "duration_seconds": round(cursor / fps, 6),
         "tracks": tracks,
     }
+
+
+def apply_scene_edits(
+    scenes: list[dict[str, Any]],
+    *,
+    scene_order: list[int] | None = None,
+    scene_edits: list[dict[str, Any]] | None = None,
+    fps: int = 24,
+) -> list[dict[str, Any]]:
+    """Return a validated, reordered storyboard with frame-accurate edits.
+
+    The input is never mutated. Scene indices refer to the original storyboard,
+    not to positions after reordering.
+    """
+    import copy
+
+    if not isinstance(fps, int) or fps < 1:
+        raise ValueError("fps must be a positive integer")
+    if not scenes:
+        raise ValueError("scenes cannot be empty")
+    total = len(scenes)
+    order = list(range(total)) if scene_order is None else list(scene_order)
+    if len(order) != total or set(order) != set(range(total)):
+        raise ValueError("scene_order must contain every scene index exactly once")
+
+    edits_by_index: dict[int, dict[str, Any]] = {}
+    for edit in scene_edits or []:
+        if not isinstance(edit, dict):
+            raise ValueError("each scene edit must be an object")
+        index = edit.get("scene_index")
+        if not isinstance(index, int) or isinstance(index, bool) or not 0 <= index < total:
+            raise ValueError("scene edit has an invalid scene_index")
+        if index in edits_by_index:
+            raise ValueError(f"duplicate edit for scene {index}")
+        edits_by_index[index] = edit
+
+    result = [copy.deepcopy(scenes[index]) for index in order]
+    for position, scene in enumerate(result):
+        original_index = order[position]
+        edit = edits_by_index.get(original_index)
+        if not edit:
+            continue
+        if "duration_frames" in edit:
+            frames = edit["duration_frames"]
+            if not isinstance(frames, int) or isinstance(frames, bool) or not fps // 2 <= frames <= fps * 60:
+                raise ValueError("duration_frames must be between 0.5 and 60 seconds")
+            scene["duration"] = frames / fps
+        transition = edit.get("transition_type")
+        if transition is not None:
+            if transition not in {"cut", "crossfade", "fade_through_black"}:
+                raise ValueError("unsupported transition_type")
+            if position == total - 1 and transition != "cut":
+                raise ValueError("the final scene must use cut")
+            if transition == "cut":
+                scene["transition_out"] = {"type": "cut", "duration_frames": 0}
+            else:
+                frames = edit.get("transition_duration_frames", max(2, round(fps * 0.5)))
+                if not isinstance(frames, int) or isinstance(frames, bool) or not 2 <= frames <= fps * 5:
+                    raise ValueError("transition duration must be between 2 frames and 5 seconds")
+                scene["transition_out"] = {"type": transition, "duration_frames": frames}
+        elif position == total - 1:
+            # A scene moved to the end cannot retain an outgoing crossfade.
+            current = scene.get("transition_out") or {}
+            if current.get("type") != "cut":
+                scene["transition_out"] = {"type": "cut", "duration_frames": 0}
+
+    # Validate the complete resulting timeline, including transition overlap.
+    build_edit_timeline(result, fps=fps)
+    return result
