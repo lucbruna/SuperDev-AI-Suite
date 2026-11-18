@@ -75,6 +75,8 @@ Every edited render with mixed audio now returns and persists an `edit_render_qu
 - `needs_review`: export is allowed, but silence gaps, possible narration masking or pre-limiter overload should be reviewed.
 - `blocked`: the final encoded mix contains full-scale clipped samples; MP4 muxing is stopped with HTTP 422 until the mix is corrected.
 
+The report also includes explicit correction suggestions. When narration may be masked, the editor offers a one-click increase to ducking depth; it changes only the editable audio draft and must be saved before another render. Gain-reduction suggestions remain advisory, and silence gaps are never removed automatically.
+
 The editor displays the report after rendering and can restore it from job status. Expected pauses may be intentional; users should review the listed timestamps rather than automatically deleting silence. Pre-limiter overload is a warning because the final limiter may correct it; actual clipping in the final mix is the export-blocking condition.
 
 ## API response statuses
