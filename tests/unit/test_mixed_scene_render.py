@@ -113,7 +113,8 @@ def test_mixed_renderer_normalizes_and_concatenates_ai_and_procedural_scenes(tmp
     assert output.read_bytes() == b"encoded-mp4"
     assert result["frames"] == 48
     assert result["generated_scene_indices"] == [1]
-    assert result["engine"] == "ffmpeg_mixed_scene_concat"
+    assert result["engine"] == "ffmpeg_mixed_scene_transitions"
+    assert result["transition_policy"] == "frame_accurate"
     assert len(commands) == 3  # normalize both sources, then assemble the timeline
-    concat_input = Path(commands[-1][commands[-1].index("-i") + 1])
-    assert concat_input.read_text(encoding="utf-8").count("file '") == 2
+    filter_graph = commands[-1][commands[-1].index("-filter_complex") + 1]
+    assert "concat=n=2:v=1:a=0" in filter_graph
