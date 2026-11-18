@@ -111,6 +111,32 @@ def test_mix_audio_timeline_normalizes_rms_with_gain_cap_and_limiter(tmp_path, m
     assert 0.018 <= dsp.rms(rendered) <= 0.022
     assert result["peak"] <= 0.97
 
+
+def test_normalize_loudness_file_uses_two_pass_ebu_r128(tmp_path, monkeypatch):
+    source = tmp_path / "mix.wav"
+    source.write_bytes(b"source")
+    calls = []
+    report = '{"input_i":"-19.0", "input_tp":"-3.0", "input_lra":"5.0", "input_thresh":"-29.0", "target_offset":"0.2"}'
+    def fake_run(command, **kwargs):
+        calls.append(command)
+        if command[-1] != "-":
+            from pathlib import Path
+            Path(command[-1]).write_bytes(b"normalized")
+        return type("Result", (), {"returncode": 0, "stderr": report, "stdout": ""})()
+    monkeypatch.setattr(audio_timeline.subprocess, "run", fake_run)
+    monkeypatch.setattr(dsp, "read_audio", lambda path, target_sr: (np.full(4410, 0.1, dtype=np.float32), 44100))
+    monkeypatch.setattr(dsp, "limiter", lambda samples, **kwargs: samples)
+    written = []
+    monkeypatch.setattr(dsp, "write_audio", lambda path, samples, sample_rate: written.append((path, sample_rate)) or Path(path))
+    result = audio_timeline.normalize_loudness_file(source, target_lufs=-14, true_peak_db=-1, lra=11)
+    assert len(calls) == 2
+    assert "loudnorm=I=-14:TP=-1:LRA=11" in calls[0][calls[0].index("-af") + 1]
+    assert "measured_I=-19.0" in calls[1][calls[1].index("-af") + 1]
+    assert result["input_i"] == -19
+    assert result["output_i"] == -19
+    assert result["passes"] == 2
+    assert written and written[0][0] == source
+
 def test_mix_audio_timeline_accepts_pre_aligned_narration_samples(tmp_path, monkeypatch):
     _audio_roots(tmp_path, monkeypatch)
     output = tmp_path / "narration_mix.wav"
