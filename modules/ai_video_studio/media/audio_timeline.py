@@ -59,11 +59,15 @@ def mix_audio_timeline(
     for index, clip in enumerate(clips):
         if not isinstance(clip, dict):
             raise ValueError(f"audio clip {index} must be an object")
-        asset = validate_audio_asset(clip.get("asset") or clip.get("audio_path") or clip.get("path"))
-        start = float(clip.get("start", 0))
-        end = float(clip.get("end", total_duration))
+        raw_samples = clip.get("samples")
+        asset = None if raw_samples is not None else validate_audio_asset(
+            clip.get("asset") or clip.get("audio_path") or clip.get("path")
+        )
+        start = float(clip.get("start", clip.get("offset", 0)))
+        default_end = start + len(raw_samples) / sample_rate if raw_samples is not None else total_duration
+        end = float(clip.get("end", default_end))
         trim_start = float(clip.get("trim_start", 0))
-        volume = float(clip.get("volume", 1))
+        volume = float(clip.get("volume", clip.get("gain", 1)))
         fade_in = float(clip.get("fade_in", 0))
         fade_out = float(clip.get("fade_out", 0))
         values = (start, end, trim_start, volume, fade_in, fade_out)
@@ -80,9 +84,13 @@ def mix_audio_timeline(
         if fade_in < 0 or fade_out < 0 or fade_in > duration or fade_out > duration:
             raise ValueError(f"audio clip {index} fade exceeds its timeline duration")
 
-        samples, source_rate = dsp.read_audio(asset, target_sr=sample_rate)
-        if source_rate != sample_rate:
-            samples = dsp.resample(samples, int(round(len(samples) * sample_rate / source_rate)))
+        if raw_samples is not None:
+            samples = np.asarray(raw_samples, dtype=np.float32).reshape(-1)
+            source_rate = sample_rate
+        else:
+            samples, source_rate = dsp.read_audio(asset, target_sr=sample_rate)
+            if source_rate != sample_rate:
+                samples = dsp.resample(samples, int(round(len(samples) * sample_rate / source_rate)))
         source_start = int(round(trim_start * sample_rate))
         count = int(round(duration * sample_rate))
         segment = np.asarray(samples[source_start:source_start + count], dtype=np.float32)
@@ -107,7 +115,7 @@ def mix_audio_timeline(
         reports.append({
             "index": index,
             "status": "mixed",
-            "asset": asset.name,
+            "asset": asset.name if asset is not None else "narration",
             "start": round(start, 3),
             "duration": round(duration, 3),
             "volume": volume,
