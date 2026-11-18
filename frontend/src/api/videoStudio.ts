@@ -120,7 +120,7 @@ export const videoStudioApi = {
   },
 
   async listCharacters(studioId: StudioProfile["id"]): Promise<StudioCharacter[]> {
-    const { data } = await apiClient.get(`${STUDIO_BASE}/studios/character-library`, {
+    const { data } = await apiClient.get(`${STUDIO_BASE}/studios/library/characters`, {
       params: { studio_id: studioId },
     });
     return data?.characters ?? [];
