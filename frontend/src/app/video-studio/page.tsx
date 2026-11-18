@@ -89,7 +89,9 @@ export default function VideoStudioPage() {
   const [voiceId, setVoiceId] = useState("default");
   const [mode, setMode] = useState<"per_scene" | "single">("per_scene");
   const [numScenes, setNumScenes] = useState(3);
+  const [vidgridCompatible, setVidgridCompatible] = useState(true);
   const [duration, setDuration] = useState(6);
+  const effectiveDuration = vidgridCompatible ? numScenes * 10 : duration;
   const [resolution, setResolution] = useState<string>(RESOLUTION_PRESETS[0].value);
   const [frameRate, setFrameRate] = useState<number>(FPS_PRESETS[0]);
   // Active platform format preset ("custom" once the user tweaks any dimension).
@@ -99,8 +101,8 @@ export default function VideoStudioPage() {
   const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Estimated render time for the current resolution/fps/duration combo.
-  const estimatedSeconds = estimateRenderSeconds(duration, frameRate, parseResolutionPixels(resolution));
-  const isLongVideo = estimatedSeconds >= 180 || duration >= 300;
+  const estimatedSeconds = estimateRenderSeconds(effectiveDuration, frameRate, parseResolutionPixels(resolution));
+  const isLongVideo = estimatedSeconds >= 180 || effectiveDuration >= 300;
   // Active platform format (if any) and the duration it recommends, used to
   // highlight the matching DURATION_PRESETS chip.
   const activeFormat = formatPresetFor(format);
@@ -225,7 +227,8 @@ export default function VideoStudioPage() {
         voice_id: voiceId,
         voiceover_mode: mode,
         num_scenes: Math.min(20, Math.max(1, numScenes)),
-        duration_seconds: Math.min(MAX_DURATION_SECONDS, Math.max(1, duration)),
+        duration_seconds: Math.min(MAX_DURATION_SECONDS, Math.max(1, effectiveDuration)),
+        vidgrid_compatible: vidgridCompatible,
         resolution,
         frame_rate: frameRate,
         llm_timeout: 60,
@@ -383,8 +386,16 @@ export default function VideoStudioPage() {
             )}
           </div>
 
+          <label className="flex items-start gap-3 rounded-xl border border-primary-200 bg-primary-50/50 p-3 dark:border-primary-900 dark:bg-primary-950/20">
+            <input type="checkbox" checked={vidgridCompatible} onChange={(event) => setVidgridCompatible(event.target.checked)} className="mt-0.5 h-4 w-4 accent-primary-600" />
+            <span>
+              <span className="block text-sm font-semibold text-surface-900 dark:text-surface-100">Modo compatível com VidGrid — clipes de 10 segundos</span>
+              <span className="mt-1 block text-xs text-surface-500">Cada cena será gerada com exatamente 10 segundos. Com {numScenes} cenas, o vídeo terá {numScenes * 10} segundos no total.</span>
+            </span>
+          </label>
+
           {/* ── Duration presets ─────────────────────────────────── */}
-          <div>
+          {!vidgridCompatible && <div>
             <p className="mb-2 text-xs font-medium text-surface-500">
               ⏱️ Duração do vídeo
             </p>
@@ -416,14 +427,14 @@ export default function VideoStudioPage() {
               })}
             </div>
             <p className="mt-2 text-xs text-surface-400">
-              Atual: <span className="font-semibold text-surface-600 dark:text-surface-300">{fmtDuration(duration)}</span> · limite de 10 minutos
+              Atual: <span className="font-semibold text-surface-600 dark:text-surface-300">{fmtDuration(effectiveDuration)}</span> · {vidgridCompatible ? "10s por cena" : "limite de 10 minutos"}
             </p>
             {activeFormat && recommendedDuration != null && (
               <p className="mt-1 text-xs font-medium text-primary-600 dark:text-primary-400">
                 ✨ {activeFormat.label} sugere {fmtDuration(recommendedDuration)} — preset de duração destacado acima
               </p>
             )}
-          </div>
+          </div>}
 
           <section className="rounded-xl border border-surface-200 p-4 dark:border-surface-700" aria-labelledby="scene-object-library-title">
             <div className="mb-3 flex items-center justify-between gap-3">
@@ -532,7 +543,7 @@ export default function VideoStudioPage() {
               <span className="ml-1">— vídeo longo pode levar vários minutos. A geração roda em background; você pode fechar esta página e voltar depois.</span>
             )}
             <span className="block text-xs opacity-70 mt-0.5">
-              {duration}s × {frameRate}fps × {resolutionLabel(resolution)} = {Math.round(duration * frameRate).toLocaleString("pt-BR")} frames
+              {effectiveDuration}s × {frameRate}fps × {resolutionLabel(resolution)} = {Math.round(effectiveDuration * frameRate).toLocaleString("pt-BR")} frames
             </span>
           </div>
 
