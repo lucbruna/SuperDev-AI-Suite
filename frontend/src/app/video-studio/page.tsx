@@ -593,12 +593,13 @@ export default function VideoStudioPage() {
                 />
               </label>
               <label className="block rounded-lg border border-surface-200 p-3 dark:border-surface-700">
-                <span className="text-xs text-surface-500">Duração (s)</span>
+                <span className="text-xs text-surface-500">Duração total (s)</span>
                 <input
                   type="number"
                   min={1}
                   max={MAX_DURATION_SECONDS}
-                  value={duration}
+                  disabled={vidgridCompatible}
+                  value={effectiveDuration}
                   onChange={(e) => {
                     setDuration(Number(e.target.value));
                     setFormat("custom");
