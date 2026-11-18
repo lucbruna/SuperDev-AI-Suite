@@ -501,7 +501,7 @@ def test_scene_image_edit_refreshes_vidgrid_clip_export(completed_job, monkeypat
     def fake_render(scene, output_path, **kwargs):
         output_path.write_bytes(b"mp4")
         return {"output_path": str(output_path), "frames": 240, "bytes": 3, "engine": "ffmpeg"}
-    monkeypatch.setattr(render, "render_scene_video", fake_render)
+    monkeypatch.setattr(render, "render_single_scene_clip", fake_render)
     monkeypatch.setattr(video, "_persist_job", lambda item: None)
 
     result = asyncio.run(video.edit_video_job_scene_image(
