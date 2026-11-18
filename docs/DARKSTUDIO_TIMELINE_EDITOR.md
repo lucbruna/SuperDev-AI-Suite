@@ -1,6 +1,13 @@
 # DARKSTUDIO AI — Timeline editor
 
 
+
+### Pré-visualização da montagem
+
+O botão **Pré-visualizar montagem** gera um proxy MP4 do rascunho salvo, limitado a 640 px na maior dimensão e 12 FPS. A prévia usa o mesmo renderizador de cenas procedurais ou misto com clipes ComfyUI, incluindo as transições configuradas. Ela é salva como arquivo separado e não substitui o vídeo original nem o render final.
+
+A prévia é visual: não faz mixagem de narração, música ou efeitos e não queima legendas no vídeo. Use-a para revisar ordem, imagens, enquadramentos e transições; valide áudio e legendas no MP4 final. O botão exige que o rascunho visual e as alterações de áudio estejam salvos.
+
 ### Transições em projetos com cenas ComfyUI
 
 Quando uma ou mais cenas usam vídeo generativo do ComfyUI, o renderizador misto preserva as transições da timeline:
