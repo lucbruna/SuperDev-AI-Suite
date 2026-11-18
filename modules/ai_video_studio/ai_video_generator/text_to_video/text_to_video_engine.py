@@ -134,6 +134,61 @@ class TextToVideoEngine:
             scene["_darkstudio_characters"] = list(character_ids)
             scene["_darkstudio_objects"] = list(object_ids)
 
+        # Generate a unique still image for each storyboard scene when the
+        # user explicitly selects the local diffusion provider. Auto mode is
+        # allowed to fall back, but records every fallback in the job manifest.
+        image_mode = str(params.get("scene_image_mode") or "procedural")
+        if image_mode not in {"procedural", "ai", "auto"}:
+            raise ValidationError("scene_image_mode must be procedural, ai or auto", field="scene_image_mode")
+        scene_assets: list[dict[str, Any]] = []
+        if image_mode in {"ai", "auto"}:
+            from modules.ai_video_studio.ai_image_generator.providers.local_diffusion import generate_scene_image
+
+            image_style = (
+                "handcrafted felt-clay stop motion, tactile wool fibers, soft studio lighting, "
+                "bright clean educational composition"
+                if studio_id == "whymentary"
+                else "cinematic historical illustration, atmospheric depth, period-accurate environment, "
+                "dramatic natural lighting, painterly detail"
+            )
+            for scene_index, scene in enumerate(scenes):
+                visual_prompt = str(scene.get("visual_prompt") or scene.get("description") or prompt)
+                full_prompt = f"{image_style}. {visual_prompt}. No captions, no typography, no watermark."
+                try:
+                    generated = await asyncio.to_thread(
+                        generate_scene_image,
+                        full_prompt,
+                        negative_prompt=str(scene.get("negative_prompt") or ""),
+                        width=min(1024, max(256, width)),
+                        height=min(1024, max(256, height)),
+                        steps=int(params.get("scene_image_steps", 20)),
+                        timeout=float(params.get("scene_image_timeout", 240)),
+                    )
+                    scene["background_image_path"] = generated["image_path"]
+                    scene["image_asset_provider"] = generated["provider"]
+                    scene_assets.append({
+                        "scene_index": scene_index,
+                        "image_path": generated["image_path"],
+                        "provider": generated["provider"],
+                        "status": "generated",
+                    })
+                except Exception as exc:
+                    if image_mode == "ai":
+                        raise ValidationError(
+                            f"AI image generation failed for scene {scene_index + 1}: {str(exc)[:240]}",
+                            field="scene_image_mode",
+                        ) from exc
+                    scene_assets.append({
+                        "scene_index": scene_index,
+                        "provider": "procedural_fallback",
+                        "status": "fallback",
+                        "reason": str(exc)[:240],
+                    })
+            if image_mode == "auto" and any(item["status"] == "fallback" for item in scene_assets):
+                image_mode = "auto_with_fallback"
+            elif image_mode in {"ai", "auto"}:
+                image_mode = "ai_generated"
+
         # Apply the same registered character identities to every scene.
         # Pose/expression variations are deterministic across the storyboard.
         if character_ids:
@@ -211,6 +266,8 @@ class TextToVideoEngine:
         result: dict[str, Any] = {
             "mode": "text_to_video",
             "studio_id": studio_id,
+            "scene_image_mode": image_mode,
+            "scene_assets": scene_assets,
             "ai_planner": plan["provider"] or "deterministic",
             "ai_generated": plan["ai_generated"],
             "scenes": scenes,
