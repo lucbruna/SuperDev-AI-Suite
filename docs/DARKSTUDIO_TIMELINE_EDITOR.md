@@ -271,3 +271,8 @@ O lote aceita até 60 cenas por solicitação e rejeita índices duplicados. A e
 ## Aprovação de imagens candidatas
 
 A regeneração individual e em lote pode operar em modo de pré-visualização. Nesse modo, a imagem gerada é salva como candidata pendente e não substitui a imagem ativa da cena. A interface mostra a imagem atual e a candidata lado a lado; somente **Aprovar nova imagem** chama `POST /videos/jobs/{job_id}/scenes/{scene_index}/image-candidates/{candidate_id}/approve` e promove o arquivo para a cena. Candidatas não aprovadas permanecem separadas da timeline. Após a aprovação, o clipe VidGrid daquela cena é marcado como desatualizado e o MP4 completo precisa ser renderizado novamente. A aprovação é persistida no registro do job.
+
+
+## Detecção de imagens repetidas por pixels
+
+A ação **Detectar imagens repetidas** compara os arquivos de imagem ativos das cenas, não os textos dos prompts. O serviço calcula SHA-256 para duplicatas binariamente idênticas e um difference hash (dHash) de 64 bits para sinalizar imagens estruturalmente semelhantes, com distância de Hamming configurável (padrão 6). A execução é CPU/Pillow e não requer GPU nem serviço de IA. O relatório lista os pares de cenas e o percentual de similaridade estrutural. Isso não é reconhecimento semântico: imagens diferentes do mesmo assunto podem ser sinalizadas, e imagens visualmente relacionadas com composição alterada podem escapar. A análise é consultiva e não exclui nem substitui arquivos automaticamente.
