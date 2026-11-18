@@ -327,3 +327,11 @@ def test_job_status_exposes_persisted_edit_render_metadata(completed_job) -> Non
     assert result.edit_render_quality["warning_count"] == 1
     assert result.edit_render_subtitles == "regenerated"
     assert result.edited_subtitles["download_url"] == "/downloads/edited.srt"
+
+
+def test_encoded_audio_measurement_is_exposed_in_status_model():
+    response = video.VideoStatusResponse(
+        job_id="job", status="completed", progress=1,
+        edit_render_encoded_audio={"verified": True},
+    )
+    assert response.edit_render_encoded_audio["verified"] is True
