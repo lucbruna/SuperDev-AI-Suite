@@ -60,6 +60,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
   const [musicVolume, setMusicVolume] = useState("0.25");
   const [musicFadeIn, setMusicFadeIn] = useState("1");
   const [musicFadeOut, setMusicFadeOut] = useState("1");
+  const [musicLoop, setMusicLoop] = useState(false);
   const [sfxAsset, setSfxAsset] = useState("");
   const [sfxStart, setSfxStart] = useState("0");
   const [sfxEnd, setSfxEnd] = useState("1");
@@ -160,7 +161,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
   }
   async function saveAudioDraft() {
     if (!jobId || dirty || saving) return;
-    const parseClip = (asset: string, start: string, end: string, volume: string, fadeIn: string, fadeOut: string) => {
+    const parseClip = (asset: string, start: string, end: string, volume: string, fadeIn: string, fadeOut: string, loop = false) => {
       if (!asset.trim()) return null;
       const startValue = Number(start);
       const endValue = Number(end);
@@ -172,7 +173,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
           fadeInValue < 0 || fadeOutValue < 0 || fadeInValue > endValue - startValue || fadeOutValue > endValue - startValue) {
         throw new Error("Confira posição, fim e volume das faixas de áudio.");
       }
-      return { asset: asset.trim(), start: startValue, end: endValue, volume: volumeValue, trim_start: 0, fade_in: fadeInValue, fade_out: fadeOutValue };
+      return { asset: asset.trim(), start: startValue, end: endValue, volume: volumeValue, trim_start: 0, fade_in: fadeInValue, fade_out: fadeOutValue, loop };
     };
     setSavingAudio(true);
     setMessage("");
@@ -182,14 +183,14 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
       const music = existingMusic.map((clip) => ({
         asset: clip.asset ?? "", start: clip.start_seconds ?? clip.start_frame / draft.fps,
         end: clip.end_seconds ?? clip.end_frame / draft.fps, volume: clip.volume ?? 1,
-        trim_start: clip.trim_start ?? 0, fade_in: clip.fade_in ?? 0, fade_out: clip.fade_out ?? 0,
+        trim_start: clip.trim_start ?? 0, fade_in: clip.fade_in ?? 0, fade_out: clip.fade_out ?? 0, loop: clip.loop ?? false,
       })).filter((clip) => clip.asset);
       const sfx = existingSfx.map((clip) => ({
         asset: clip.asset ?? "", start: clip.start_seconds ?? clip.start_frame / draft.fps,
         end: clip.end_seconds ?? clip.end_frame / draft.fps, volume: clip.volume ?? 1,
         trim_start: clip.trim_start ?? 0, fade_in: clip.fade_in ?? 0, fade_out: clip.fade_out ?? 0,
       })).filter((clip) => clip.asset);
-      const nextMusic = parseClip(musicAsset, musicStart, musicEnd, musicVolume, musicFadeIn, musicFadeOut);
+      const nextMusic = parseClip(musicAsset, musicStart, musicEnd, musicVolume, musicFadeIn, musicFadeOut, musicLoop);
       const nextSfx = parseClip(sfxAsset, sfxStart, sfxEnd, sfxVolume, sfxFadeIn, sfxFadeOut);
       if (nextMusic) music.push(nextMusic);
       if (nextSfx) sfx.push(nextSfx);
@@ -198,6 +199,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
       setAudioDirty(false);
       onSaved?.(result.edit_timeline);
       setMusicAsset("");
+      setMusicLoop(false);
       setSfxAsset("");
       setMessage(result.message);
     } catch (error) {
@@ -324,6 +326,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
               <label className="text-xs text-surface-500">Início (s)<input type="number" min="0" value={musicStart} onChange={(event) => setMusicStart(event.target.value)} className="mt-1 w-full rounded border bg-transparent px-2 py-1" /></label>
               <label className="text-xs text-surface-500">Fim (s)<input type="number" min="0.1" value={musicEnd} onChange={(event) => setMusicEnd(event.target.value)} className="mt-1 w-full rounded border bg-transparent px-2 py-1" /></label>
               <label className="text-xs text-surface-500">Volume (0–2)<input type="number" min="0" max="2" step="0.05" value={musicVolume} onChange={(event) => setMusicVolume(event.target.value)} className="mt-1 w-full rounded border bg-transparent px-2 py-1" /></label>
+              <label className="flex items-center gap-1 text-xs text-surface-500"><input type="checkbox" checked={musicLoop} onChange={(event) => setMusicLoop(event.target.checked)} /> Repetir até o fim do clipe</label>
               <label className="text-xs text-surface-500">Fade-in (s)<input type="number" min="0" step="0.1" value={musicFadeIn} onChange={(event) => setMusicFadeIn(event.target.value)} className="mt-1 w-full rounded border bg-transparent px-2 py-1" /></label>
               <label className="text-xs text-surface-500">Fade-out (s)<input type="number" min="0" step="0.1" value={musicFadeOut} onChange={(event) => setMusicFadeOut(event.target.value)} className="mt-1 w-full rounded border bg-transparent px-2 py-1" /></label>
             </div>
@@ -349,6 +352,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
                 <label className="text-[11px] text-surface-500">Início (s)<input type="number" min="0" step="0.1" value={clip.start_seconds ?? clip.start_frame / draft.fps} onChange={(event) => updateAudioClip(role, index, { start_seconds: Number(event.target.value) })} className="mt-1 w-full rounded border bg-transparent px-2 py-1" /></label>
                 <label className="text-[11px] text-surface-500">Fim (s)<input type="number" min="0.1" step="0.1" value={clip.end_seconds ?? clip.end_frame / draft.fps} onChange={(event) => updateAudioClip(role, index, { end_seconds: Number(event.target.value) })} className="mt-1 w-full rounded border bg-transparent px-2 py-1" /></label>
                 <label className="text-[11px] text-surface-500">Volume<input type="number" min="0" max="2" step="0.05" value={clip.volume ?? 1} onChange={(event) => updateAudioClip(role, index, { volume: Number(event.target.value) })} className="mt-1 w-full rounded border bg-transparent px-2 py-1" /></label>
+                {role === "music" && <label className="flex items-center gap-1 self-end text-[11px] text-surface-500"><input type="checkbox" checked={clip.loop ?? false} onChange={(event) => updateAudioClip(role, index, { loop: event.target.checked })} /> Repetir</label>}
                 <label className="text-[11px] text-surface-500">Corte (s)<input type="number" min="0" step="0.1" value={clip.trim_start ?? 0} onChange={(event) => updateAudioClip(role, index, { trim_start: Number(event.target.value) })} className="mt-1 w-full rounded border bg-transparent px-2 py-1" /></label>
                 <label className="text-[11px] text-surface-500">Fade-in (s)<input type="number" min="0" step="0.1" value={clip.fade_in ?? 0} onChange={(event) => updateAudioClip(role, index, { fade_in: Number(event.target.value) })} className="mt-1 w-full rounded border bg-transparent px-2 py-1" /></label>
                 <button type="button" onClick={() => removeAudioClip(role, index)} className="self-end rounded border border-red-300 px-2 py-1 text-xs text-red-600">Remover</button>
