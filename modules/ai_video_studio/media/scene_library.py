@@ -99,8 +99,8 @@ OBJECTS: dict[str, dict[str, Any]] = {
         "primitives": {
             "rects": [{"x": 0, "y": 70, "w": 120, "h": 18, "color": "#78350F"},
                       {"x": 57, "y": 8, "w": 5, "h": 64, "color": "#451A03"}],
-            "polygons": [{"points": [[62, 10], [62, 62], [104, 62]], "color": "#F5E6C8"},
-                         {"points": [[55, 20], [55, 64], [20, 64]], "color": "#E7D8B1"}],
+            "rects": [{"x": 64, "y": 16, "w": 38, "h": 46, "color": "#F5E6C8"},
+                      {"x": 22, "y": 24, "w": 30, "h": 40, "color": "#E7D8B1"}],
         },
     },
 }
