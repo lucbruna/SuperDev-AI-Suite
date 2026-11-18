@@ -140,7 +140,19 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
 
   function updateAudioClip(role: "music" | "sound_effect", index: number, patch: Partial<EditTimelineClip>) {
     setAudioDirty(true);
-    setDraft((current) => ({ ...current, tracks: current.tracks.map((track) => track.role !== role ? track : { ...track, clips: track.clips.map((clip, clipIndex) => clipIndex === index ? { ...clip, ...patch } : clip) }) }));
+    setDraft((current) => ({
+      ...current,
+      tracks: current.tracks.map((track) => track.role !== role ? track : {
+        ...track,
+        clips: track.clips.map((clip, clipIndex) => {
+          if (clipIndex !== index) return clip;
+          const updated = { ...clip, ...patch };
+          const startFrame = patch.start_seconds !== undefined ? Math.round(patch.start_seconds * current.fps) : clip.start_frame;
+          const endFrame = patch.end_seconds !== undefined ? Math.round(patch.end_seconds * current.fps) : clip.end_frame;
+          return { ...updated, start_frame: startFrame, end_frame: endFrame, duration_frames: Math.max(0, endFrame - startFrame) };
+        }),
+      }),
+    }));
   }
   function removeAudioClip(role: "music" | "sound_effect", index: number) {
     setAudioDirty(true);
