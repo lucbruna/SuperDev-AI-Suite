@@ -158,6 +158,7 @@ class VideoStatusResponse(BaseModel):
     audio_settings: dict | None = None
     audio_analysis: dict | None = None
     av_sync_analysis: dict | None = None
+    visual_intelligence: dict | None = None
     edit_render_ducking: dict | None = None
     edit_render_normalization: dict | None = None
     edit_render_loudness: dict | None = None
@@ -400,6 +401,29 @@ async def list_video_job_audio_assets(job_id: str):
     from modules.ai_video_studio.media.audio_timeline import list_audio_assets
 
     return {"job_id": job_id, "assets": list_audio_assets()}
+
+
+@router.post("/jobs/{job_id}/visual-analysis")
+async def analyze_video_job_visuals(job_id: str):
+    """Score the saved storyboard using studio-specific scene metadata."""
+    record = _jobs.get(job_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+    scenes = record.get("_edited_scenes") or record.get("_source_scenes") or []
+    if not scenes:
+        raise HTTPException(status_code=409, detail="O trabalho ainda não possui cenas para análise visual")
+    params = record.get("params") or {}
+    studio_id = str(params.get("studio_id") or record.get("studio_id") or "whymentary")
+    fps = int(params.get("frame_rate") or record.get("frame_rate") or 24)
+    from modules.ai_video_studio.media.visual_intelligence import analyze_visual_quality
+    try:
+        report = analyze_visual_quality(scenes, studio_id=studio_id, fps=fps)
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    result = {"job_id": job_id, **report}
+    record["visual_intelligence"] = result
+    _persist_job(record)
+    return result
 
 
 @router.post("/jobs/{job_id}/av-sync-analysis")
