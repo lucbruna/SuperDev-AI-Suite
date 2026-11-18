@@ -10,6 +10,12 @@ from modules.ai_video_studio.media.studio_profiles import (
     apply_studio_profile,
     get_studio_profile,
 )
+from modules.ai_video_studio.media.characters import (
+    PRESETS as CHARACTER_PRESETS,
+    VALID_EXPRESSIONS,
+    VALID_POSES,
+    add_character,
+)
 
 router = APIRouter()
 
@@ -62,3 +68,83 @@ async def preview_scene_profile(
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     return {"studio_id": studio_id, "scene": prepared}
+
+
+@router.get("/characters", tags=["DARKSTUDIO"])
+async def list_studio_characters(studio_id: str | None = None) -> dict[str, Any]:
+    """List stable procedural character identities and their visual contracts."""
+    catalog = {
+        "leo": {
+            "id": "leo", "name": "Leo", "studio_id": "whymentary",
+            "appearance": {
+                "hair": "blonde",
+                "outfit": "blue shirt and dark trousers",
+                "hair_color": CHARACTER_PRESETS["leo"].hair,
+                "clothing_color": CHARACTER_PRESETS["leo"].clothing,
+                "trousers_color": CHARACTER_PRESETS["leo"].trousers,
+            },
+            "supported_poses": sorted(VALID_POSES),
+            "supported_expressions": sorted(VALID_EXPRESSIONS),
+        },
+        "mia": {
+            "id": "mia", "name": "Mia", "studio_id": "whymentary",
+            "appearance": {
+                "hair": "brown hair tied up", "outfit": "red dress",
+                "hair_color": CHARACTER_PRESETS["mia"].hair,
+                "clothing_color": CHARACTER_PRESETS["mia"].clothing,
+                "hair_tied": True,
+            },
+            "supported_poses": sorted(VALID_POSES),
+            "supported_expressions": sorted(VALID_EXPRESSIONS),
+        },
+        "historical_narrator": {
+            "id": "historical_narrator", "name": "Narrador histórico",
+            "studio_id": "historical_documentary",
+            "appearance": {
+                "hair_color": CHARACTER_PRESETS["historical_narrator"].hair,
+                "clothing_color": CHARACTER_PRESETS["historical_narrator"].clothing,
+            },
+            "supported_poses": sorted(VALID_POSES),
+            "supported_expressions": sorted(VALID_EXPRESSIONS),
+        },
+    }
+    if studio_id is not None and studio_id not in PROFILES:
+        raise HTTPException(status_code=404, detail=f"Unknown studio '{studio_id}'")
+    items = [
+        item for item in catalog.values()
+        if studio_id is None or item["studio_id"] == studio_id
+    ]
+    return {"count": len(items), "characters": items}
+
+
+@router.get("/characters/{character_id}", tags=["DARKSTUDIO"])
+async def get_studio_character(character_id: str) -> dict[str, Any]:
+    """Return one reusable character identity."""
+    result = await list_studio_characters()
+    character = next(
+        (item for item in result["characters"] if item["id"] == character_id), None
+    )
+    if character is None:
+        raise HTTPException(status_code=404, detail=f"Unknown character '{character_id}'")
+    return character
+
+
+@router.post("/characters/{character_id}/scene-preview", tags=["DARKSTUDIO"])
+async def preview_studio_character(
+    character_id: str, payload: dict[str, Any]
+) -> dict[str, Any]:
+    """Compose a character into editable scene primitives."""
+    await get_studio_character(character_id)
+    try:
+        scene = add_character(
+            payload.get("scene") or {},
+            character_id,
+            x=float(payload.get("x", 160)),
+            y=float(payload.get("y", 300)),
+            scale=float(payload.get("scale", 1.0)),
+            pose=str(payload.get("pose", "neutral")),
+            expression=str(payload.get("expression", "neutral")),
+        )
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return {"character_id": character_id, "scene": scene}
