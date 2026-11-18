@@ -125,7 +125,9 @@ def build_edit_timeline(
         narration_items = list(narration.get("clips") or [])
     elif isinstance(narration, list):
         narration_items = narration
-    # Per-scene TTS reports include silent/failed scenes without audio_path.\n    narration_items = [item for item in narration_items if item.get("audio_path") or item.get("asset") or item.get("path")]\n    narration_clips = _asset_clips(narration_items, fps, track_type="narration")
+    # Per-scene TTS reports include silent/failed scenes without audio_path.
+    narration_items = [item for item in narration_items if item.get("audio_path") or item.get("asset") or item.get("path")]
+    narration_clips = _asset_clips(narration_items, fps, track_type="narration")
     if narration_clips:
         tracks.append({"id": "audio-narration", "type": "audio", "role": "narration", "clips": narration_clips})
 
