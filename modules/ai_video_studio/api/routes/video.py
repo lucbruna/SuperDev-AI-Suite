@@ -199,6 +199,7 @@ class VideoStatusResponse(BaseModel):
     edit_render_encoded_audio: dict | None = None
     edit_render_quality: dict | None = None
     edit_render_status: str | None = None
+    edit_render_transition_policy: dict | None = None
     edited_output_url: str | None = None
     edited_video_duration: float | None = None
     edit_render_audio: str | None = None
