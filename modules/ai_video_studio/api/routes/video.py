@@ -983,15 +983,36 @@ async def render_video_job_edits(job_id: str):
             record["_edited_scenes"] = scenes
             from modules.ai_video_studio.media.timeline import build_edit_timeline
             configured_audio = record.get("_audio_clips") or {}
+            from modules.ai_video_studio.media.scene_narration import (
+                compute_scene_offsets, remap_narration_clips_for_edits, scene_narration_text,
+            )
+            voiceover_for_timeline = record.get("voiceover") or {}
+            original_narration = voiceover_for_timeline.get("clips", []) if isinstance(voiceover_for_timeline, dict) else []
+            remapped_narration = (
+                remap_narration_clips_for_edits(scenes, original_narration, fps=fps)
+                if isinstance(original_narration, list) and voiceover_for_timeline.get("narration_style") == "per_scene"
+                else []
+            )
+            offsets = compute_scene_offsets(scenes, fps=fps)
+            subtitle_cues = []
+            for index, scene in enumerate(scenes):
+                text_value = scene_narration_text(scene)
+                if text_value:
+                    start_seconds = offsets[index]
+                    end_seconds = start_seconds + max(1, int(round(float(scene.get("duration") or 3.0) * fps))) / fps
+                    subtitle_cues.append({"index": index + 1, "text": text_value, "start": start_seconds, "end": end_seconds})
             mixed_timeline = build_edit_timeline(
                 scenes, fps=fps, width=width, height=height,
+                narration=remapped_narration, subtitle_cues=subtitle_cues,
                 music_clips=configured_audio.get("music", []),
                 sfx_clips=configured_audio.get("sfx", []),
             )
             previous = record.get("edit_timeline") or {}
             mixed_timeline["tracks"].extend(
                 track for track in previous.get("tracks", [])
-                if track.get("type") != "video" and track.get("role") not in {"music", "sound_effect"}
+                if track.get("type") != "video"
+                and track.get("role") not in {"narration", "music", "sound_effect"}
+                and track.get("type") != "subtitle"
             )
             record["edit_timeline"] = mixed_timeline
             result = await asyncio.to_thread(
@@ -1171,6 +1192,8 @@ async def render_video_job_edits(job_id: str):
             "loudness": (mix_result.get("loudness") if isinstance(mix_result, dict) else None),
             "quality": (mix_result.get("quality") if isinstance(mix_result, dict) else None),
             "mastering": (mix_result.get("mastering") if isinstance(mix_result, dict) else None),
+            "generated_scene_count": len(generated_scene_clips),
+            "transition_policy": record.get("edit_render_transition_policy") if generated_scene_clips else None,
         }
     except HTTPException:
         record["edit_render_status"] = "quality_blocked" if record.get("edit_render_quality", {}).get("export_allowed") is False else "failed"
