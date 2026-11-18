@@ -94,7 +94,11 @@ class SceneCanvas:
             self._draw_text(draw, text)
 
         img = self._apply_camera(img, scene.get("camera") or {}, frame_index)
-        img = self._apply_grading(\n            img,\n            scene.get("palette") or [],\n            strength=float(scene.get("grading_strength", 0.08)),\n        )
+        img = self._apply_grading(
+            img,
+            scene.get("palette") or [],
+            strength=float(scene.get("grading_strength", 0.08)),
+        )
 
         return np.asarray(img, dtype=np.uint8)
 
