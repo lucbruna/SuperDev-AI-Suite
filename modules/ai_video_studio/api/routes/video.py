@@ -58,12 +58,20 @@ class VideoGenerateRequest(BaseModel):
     # youtube/square) or "custom" when the user tweaked a dimension manually.
     format: str = Field(default="custom", max_length=32)
     studio_id: str = Field(default="whymentary", pattern="^(whymentary|historical_documentary)$")
+    character_ids: list[str] = Field(default_factory=list, max_length=2, description="Stable character IDs to include in every scene")
 
     @field_validator("resolution")
     @classmethod
     def _validate_resolution(cls, v: str) -> str:
         _parse_resolution(v)
         return v
+
+    @field_validator("character_ids")
+    @classmethod
+    def _validate_character_ids(cls, values: list[str]) -> list[str]:
+        if len(values) != len(set(values)):
+            raise ValueError("character_ids must not contain duplicates")
+        return values
 
 
 class VideoGenerateResponse(BaseModel):
@@ -193,6 +201,7 @@ async def generate_video(req: VideoGenerateRequest, background_tasks: Background
                         "voiceover_mode": r.voiceover_mode,
                         "llm_timeout": r.llm_timeout,
                         "studio_id": r.studio_id,
+                        "character_ids": r.character_ids,
                     },
                 },
                 progress_callback=_on_render_progress,
