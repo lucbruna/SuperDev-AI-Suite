@@ -183,6 +183,11 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
       }
       return { asset: asset.trim(), start: startValue, end: endValue, volume: volumeValue, trim_start: 0, fade_in: fadeInValue, fade_out: fadeOutValue, loop };
     };
+    const duckingValue = Number(duckingDb);
+    if (!Number.isFinite(duckingValue) || duckingValue < 0 || duckingValue > 24) {
+      setMessage("A redução do ducking deve ficar entre 0 e 24 dB.");
+      return;
+    }
     setSavingAudio(true);
     setMessage("");
     try {
