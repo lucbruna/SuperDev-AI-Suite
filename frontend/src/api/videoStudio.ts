@@ -144,6 +144,21 @@ export interface StudioJob {
   edit_render_ducking?: { enabled?: boolean; reduction_db?: number; threshold_db?: number; speech_detected?: boolean } | null;
   edit_render_normalization?: { enabled?: boolean; target_dbfs?: number; gain_db?: number; pre_rms?: number } | null;
   edit_render_loudness?: { enabled?: boolean; target_lufs?: number; true_peak_db?: number; input_i?: number; input_tp?: number; input_lra?: number; output_i?: number; output_tp?: number; output_lra?: number; normalization_pass_i?: number; passes?: number; verified?: boolean } | null;
+  edit_render_quality?: {
+    status?: "passed" | "needs_review" | "blocked";
+    export_allowed?: boolean;
+    duration_seconds?: number;
+    peak_dbfs?: number;
+    pre_limiter_peak_dbfs?: number;
+    rms_dbfs?: number;
+    clipping_ratio?: number;
+    silence_gaps?: { start: number; end: number; duration: number }[];
+    narration_music_masking?: { start: number; end: number; duration: number; voice_music_gap_db: number }[];
+    masking_method?: string;
+    warnings?: { code: string; severity: "warning" | "critical"; message: string }[];
+    critical_count?: number;
+    warning_count?: number;
+  } | null;
   edit_render_status?: string | null;
   edited_output_url?: string | null;
   edited_video_duration?: number | null;
@@ -268,6 +283,21 @@ export const videoStudioApi = {
     ducking?: { enabled?: boolean; reduction_db?: number; speech_detected?: boolean } | null;
     normalization?: { enabled?: boolean; target_dbfs?: number; gain_db?: number; pre_rms?: number } | null;
     loudness?: { enabled?: boolean; target_lufs?: number; true_peak_db?: number; input_i?: number; input_tp?: number; input_lra?: number; output_i?: number; output_tp?: number; output_lra?: number; normalization_pass_i?: number; passes?: number; verified?: boolean } | null;
+  quality?: {
+    status?: "passed" | "needs_review" | "blocked";
+    export_allowed?: boolean;
+    duration_seconds?: number;
+    peak_dbfs?: number;
+    pre_limiter_peak_dbfs?: number;
+    rms_dbfs?: number;
+    clipping_ratio?: number;
+    silence_gaps?: { start: number; end: number; duration: number }[];
+    narration_music_masking?: { start: number; end: number; duration: number; voice_music_gap_db: number }[];
+    masking_method?: string;
+    warnings?: { code: string; severity: "warning" | "critical"; message: string }[];
+    critical_count?: number;
+    warning_count?: number;
+  } | null;
     mastering?: { compressor_enabled?: boolean; compressor_threshold_db?: number; compressor_ratio?: number; compressor_attack?: number; compressor_release?: number; compressor_makeup_db?: number; eq_enabled?: boolean; eq_low_db?: number; eq_mid_db?: number; eq_high_db?: number; mastering_preset?: "custom" | "voice" | "documentary" | "music" | "cinematic_sfx" } | null;
     message: string;
   }> {
