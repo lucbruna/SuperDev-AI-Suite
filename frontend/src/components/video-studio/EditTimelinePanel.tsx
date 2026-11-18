@@ -6,6 +6,7 @@ import { videoStudioApi, type EditTimeline, type EditTimelineClip } from "@/api/
 type Props = {
   timeline: EditTimeline;
   jobId?: string;
+  editedOutputUrl?: string | null;
   title?: string;
   onSaved?: (timeline: EditTimeline) => void;
 };
@@ -43,13 +44,13 @@ function clipLabel(clip: EditTimelineClip, trackType: string): string {
   return trackType === "video" ? `Cena ${(clip.scene_index ?? 0) + 1}` : "Mídia";
 }
 
-export default function EditTimelinePanel({ timeline, jobId, title = "Editor de timeline", onSaved }: Props) {
+export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, title = "Editor de timeline", onSaved }: Props) {
   const [draft, setDraft] = useState<EditTimeline>(timeline);
   const [selected, setSelected] = useState<number>(0);
   const [playheadFrame, setPlayheadFrame] = useState(0);
   const [saving, setSaving] = useState(false);
   const [rendering, setRendering] = useState(false);
-  const [renderUrl, setRenderUrl] = useState("");
+  const [renderUrl, setRenderUrl] = useState(editedOutputUrl ?? "");
   const [message, setMessage] = useState("");
   const [dirty, setDirty] = useState(false);
   const videoTrack = draft.tracks.find((track) => track.type === "video");
@@ -58,6 +59,7 @@ export default function EditTimelinePanel({ timeline, jobId, title = "Editor de 
   const selectedClip = clips[selected] ?? null;
 
   useEffect(() => { setDraft(timeline); setDirty(false); setSelected(0); }, [timeline]);
+  useEffect(() => { setRenderUrl(editedOutputUrl ?? ""); }, [editedOutputUrl]);
 
   const sceneOrder = useMemo(
     () => clips.map((clip, index) => clip.source_scene_index ?? clip.scene_index ?? index),
