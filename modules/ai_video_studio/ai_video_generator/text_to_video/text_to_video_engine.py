@@ -72,6 +72,7 @@ class TextToVideoEngine:
         self,
         job: dict[str, Any],
         progress_callback: Callable[[int, int], None] | None = None,
+        scene_callback: Callable[[dict[str, Any]], None] | None = None,
     ) -> dict[str, Any]:
         prompt = str(job.get("prompt", "")).strip()
         if not prompt:
@@ -131,6 +132,25 @@ class TextToVideoEngine:
         scenes = plan["scenes"]
         if not scenes:
             raise ValidationError("Scene planner returned no scenes", field="prompt")
+
+        def _notify_scene(index: int, status: str, stage: str, **details: Any) -> None:
+            if scene_callback is None:
+                return
+            try:
+                scene_callback({
+                    "scene_index": index, "status": status, "stage": stage,
+                    "updated_at": time.time(), **details,
+                })
+            except Exception:
+                # Progress telemetry must never abort the media pipeline.
+                pass
+
+        for scene_index, scene in enumerate(scenes):
+            _notify_scene(
+                scene_index, "pending", "storyboard",
+                title=str(scene.get("title") or scene.get("description") or f"Cena {scene_index + 1}")[:180],
+                visual_prompt=str(scene.get("visual_prompt_full") or scene.get("visual_prompt") or scene.get("description") or "")[:1200],
+            )
         if vidgrid_compatible:
             for scene in scenes:
                 scene["duration"] = 10.0
@@ -184,6 +204,7 @@ class TextToVideoEngine:
                 "dramatic natural lighting, painterly detail"
             )
             for scene_index, scene in enumerate(scenes):
+                _notify_scene(scene_index, "processing", "image_generation")
                 visual_prompt = str(
                     scene.get("visual_prompt_full")
                     or scene.get("visual_prompt")
@@ -212,6 +233,7 @@ class TextToVideoEngine:
                     )
                     scene["background_image_path"] = generated["image_path"]
                     scene["image_asset_provider"] = generated["provider"]
+                    _notify_scene(scene_index, "completed", "image_ready", image_provider=generated["provider"])
                     scene_assets.append({
                         "scene_index": scene_index,
                         "image_path": generated["image_path"],
@@ -225,6 +247,7 @@ class TextToVideoEngine:
                             f"AI image generation failed for scene {scene_index + 1}: {str(exc)[:240]}",
                             field="scene_image_mode",
                         ) from exc
+                    _notify_scene(scene_index, "fallback", "image_fallback", error=str(exc)[:240])
                     scene_assets.append({
                         "scene_index": scene_index,
                         "provider": "procedural_fallback",
@@ -324,6 +347,7 @@ class TextToVideoEngine:
         if vidgrid_compatible:
             clip_dir = get_subsystem_dir("videos") / "vidgrid_clips"
             for scene_index, scene in enumerate(scenes):
+                _notify_scene(scene_index, "processing", "clip_render")
                 clip_path = unique_filename(clip_dir, f"scene_{scene_index + 1:02d}", "mp4")
                 clip_result = await asyncio.to_thread(
                     render_single_scene_clip,
@@ -336,6 +360,7 @@ class TextToVideoEngine:
                     require_mp4=True,
                     studio_id=studio_id,
                 )
+                _notify_scene(scene_index, "completed", "clip_ready", clip_path=clip_result["output_path"])
                 scene_clips.append({
                     "scene_index": scene_index,
                     "duration": 10.0,
