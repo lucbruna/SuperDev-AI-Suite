@@ -16,6 +16,7 @@ def completed_job():
         "job_id": job_id,
         "project_id": "test-project",
         "status": "completed",
+        "output_url": "/downloads/original.mp4",
         "resolution": "1280x720",
         "frame_rate": 24,
         "params": {
@@ -83,6 +84,8 @@ def test_render_edits_returns_new_mp4_and_discloses_audio_limitation(completed_j
     assert result["output_url"] == "/downloads/edited.mp4"
     assert result["audio_status"] == "not_retimed"
     assert video._jobs[completed_job]["edit_render_status"] == "completed"
+    assert video._jobs[completed_job]["output_url"] == "/downloads/original.mp4"
+    assert video._jobs[completed_job]["edited_output_url"] == "/downloads/edited.mp4"
 
 
 def test_render_edits_rejects_job_without_saved_scene_draft() -> None:
@@ -94,3 +97,17 @@ def test_render_edits_rejects_job_without_saved_scene_draft() -> None:
         assert error.value.status_code == 409
     finally:
         video._jobs.pop(job_id, None)
+
+
+def test_job_status_exposes_persisted_edit_render_metadata(completed_job) -> None:
+    video._jobs[completed_job].update(
+        edit_draft_status="saved",
+        edit_render_status="completed",
+        edited_output_url="/downloads/edited.mp4",
+        edited_video_duration=4.0,
+        edit_render_audio="not_retimed",
+    )
+    result = asyncio.run(video.get_video_job_status(completed_job))
+    assert result.edited_output_url == "/downloads/edited.mp4"
+    assert result.edit_render_status == "completed"
+    assert result.edit_render_audio == "not_retimed"
