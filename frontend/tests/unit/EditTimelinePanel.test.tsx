@@ -66,7 +66,7 @@ describe("EditTimelinePanel", () => {
       ],
     };
     const assets = vi.spyOn(videoStudioApi, "listJobAudioAssets").mockResolvedValue([]);
-    const job = vi.spyOn(videoStudioApi, "getJob").mockResolvedValue({ job_id: "audio-job", project_id: "p1", status: "completed", progress: 1, audio_settings: { ducking_enabled: false, ducking_db: 14, normalization_enabled: false, normalization_target_dbfs: -22 } });
+    const job = vi.spyOn(videoStudioApi, "getJob").mockResolvedValue({ job_id: "audio-job", project_id: "p1", status: "completed", progress: 1, audio_settings: { ducking_enabled: false, ducking_db: 14, normalization_enabled: false, normalization_target_dbfs: -22, loudness_normalization_enabled: true, target_lufs: -16 } });
     const save = vi.spyOn(videoStudioApi, "updateJobAudio").mockResolvedValue({
       edit_timeline: audioTimeline, audio_draft_status: "saved", message: "Faixas salvas",
     });
@@ -74,6 +74,8 @@ describe("EditTimelinePanel", () => {
     await waitFor(() => expect(videoStudioApi.listJobAudioAssets).toHaveBeenCalledWith("audio-job"));
     await waitFor(() => expect(screen.getByRole("checkbox", { name: "Ativar ducking" })).not.toBeChecked());
     expect(screen.getByRole("checkbox", { name: "Ativar normalização" })).not.toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Ativar LUFS" })).toBeChecked();
+    expect(screen.getByLabelText("Alvo LUFS")).toHaveValue(-16);
     fireEvent.click(screen.getByRole("checkbox", { name: "Repetir" }));
     fireEvent.click(screen.getByRole("button", { name: "Remover" }));
     fireEvent.click(screen.getByRole("button", { name: "Salvar alterações de áudio" }));
