@@ -333,6 +333,17 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
     finally { setApprovingImageScene(null); }
   }
 
+  async function discardSceneImage(sceneIndex: number) {
+    if (!jobId) return;
+    const candidate = sceneImageCandidates[sceneIndex];
+    if (!candidate) return;
+    try {
+      await videoStudioApi.discardSceneImageCandidate(jobId, sceneIndex, candidate.candidate_id);
+      setSceneImageCandidates((current) => { const next = { ...current }; delete next[sceneIndex]; return next; });
+      setMessage("Candidata descartada. A imagem atual da cena foi mantida.");
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Não foi possível descartar a candidata."); }
+  }
+
   async function regenerateSelectedImages() {
     if (!jobId || regeneratingImageBatch || editingImageScene !== null) return;
     const selectedScenes = selectedImageScenes.map((sceneIndex) => ({
@@ -567,6 +578,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
                   <div><img src={asset?.image_url ?? visualDirections[sourceIndex]?.image_url ?? ""} alt={`Imagem atual da cena ${index + 1}`} className="aspect-video w-full rounded object-cover" /><p className="mt-1 text-center text-[10px]">Atual</p></div>
                   <div><img src={sceneImageCandidates[sourceIndex].image_url} alt={`Imagem candidata da cena ${index + 1}`} className="aspect-video w-full rounded object-cover" /><p className="mt-1 text-center text-[10px]">Candidata</p></div>
                 </div>
+                <button type="button" onClick={() => discardSceneImage(sourceIndex)} className="ml-2 mt-2 rounded-md border border-surface-300 px-3 py-1.5 text-xs font-semibold dark:border-surface-600">Manter imagem atual</button>
                 <button type="button" onClick={() => approveSceneImage(sourceIndex)} disabled={approvingImageScene !== null} className="mt-2 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40">{approvingImageScene === sourceIndex ? "Aprovando…" : "Aprovar nova imagem"}</button>
               </div>}
               <label className="mb-2 flex items-center gap-2 text-xs font-semibold text-surface-700 dark:text-surface-300">
