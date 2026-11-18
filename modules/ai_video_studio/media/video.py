@@ -30,6 +30,7 @@ def frames_to_video(
     crf: int = 23,
     preset: str = "medium",
     progress: bool = False,
+    require_mp4: bool = False,
 ) -> dict[str, Any]:
     """Encode a list of numpy frames into a real video file.
 
@@ -42,10 +43,14 @@ def frames_to_video(
     if fps <= 0:
         raise ValueError("fps must be positive")
 
+    out = Path(output_path)
+    if require_mp4 and out.suffix.lower() != ".mp4":
+        raise ValueError("MP4 output required: output_path must end with .mp4")
     if not ffmpeg_available():
+        if require_mp4:
+            raise RuntimeError("FFmpeg is required to produce MP4; install FFmpeg or disable require_mp4")
         return _encode_gif(frames, output_path, fps=fps)
 
-    out = Path(output_path)
     out.parent.mkdir(parents=True, exist_ok=True)
 
     def _iter() -> Any:
@@ -54,6 +59,7 @@ def frames_to_video(
 
     return stream_frames_to_video(
         _iter(), output_path, fps=fps, codec=codec, crf=crf, preset=preset, total_frames=len(frames),
+        require_mp4=require_mp4,
     )
 
 
@@ -67,6 +73,7 @@ def stream_frames_to_video(
     preset: str = "medium",
     total_frames: int | None = None,
     encode_timeout: float = 1800.0,
+    require_mp4: bool = False,
 ) -> dict[str, Any]:
     """Encode frames from an iterator, streaming raw RGB24 to FFmpeg stdin.
 
@@ -82,7 +89,11 @@ def stream_frames_to_video(
     out = Path(output_path)
     out.parent.mkdir(parents=True, exist_ok=True)
 
+    if require_mp4 and out.suffix.lower() != ".mp4":
+        raise ValueError("MP4 output required: output_path must end with .mp4")
     if not ffmpeg_available():
+        if require_mp4:
+            raise RuntimeError("FFmpeg is required to produce MP4; install FFmpeg or disable require_mp4")
         # GIF fallback needs all frames materialized (short videos only).
         return _encode_gif(list(frame_iter), output_path, fps=fps)
 
