@@ -190,6 +190,7 @@ class VideoStatusResponse(BaseModel):
     mp4_visual_analysis: dict | None = None
     scene_image_mode: str | None = None
     scene_assets: list[dict] | None = None
+    storyboard_report: dict | None = None
     vidgrid_compatible: bool | None = None
     clip_duration_seconds: float | None = None
     scene_clips: list[dict] | None = None
@@ -665,6 +666,7 @@ async def generate_video(req: VideoGenerateRequest, background_tasks: Background
                 edit_timeline=result.get("edit_timeline"),
                 scene_image_mode=result.get("scene_image_mode", "procedural"),
                 scene_assets=result.get("scene_assets", []),
+                storyboard_report=result.get("storyboard_report"),
                 vidgrid_compatible=result.get("vidgrid_compatible", False),
                 clip_duration_seconds=result.get("clip_duration_seconds"),
                 scene_clips=scene_clips,
@@ -1339,6 +1341,11 @@ async def get_video_job_visual_direction(job_id: str):
         output.append({
             "scene_index": source_index,
             "narration": str(scene.get("voiceover_text") or scene.get("narration") or scene.get("dialogue") or ""),
+            "storyboard_scene_id": str(scene.get("storyboard_scene_id") or ""),
+            "visual_prompt_full": str(scene.get("visual_prompt_full") or ""),
+            "negative_prompt": str(scene.get("negative_prompt") or ""),
+            "continuity": scene.get("continuity") or {},
+            "storyboard_status": str(scene.get("storyboard_status") or "ready"),
             "visual_prompt": str(scene.get("visual_prompt") or ""),
             "visual_prompt_suggestion": str(scene.get("visual_prompt_suggestion") or ""),
             "visual_direction": str(scene.get("visual_direction") or ""),
