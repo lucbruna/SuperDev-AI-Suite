@@ -278,9 +278,13 @@ def concat_vidgrid_scene_clips(
         "codec_name": None, "width": width, "height": height,
         "avg_frame_rate": f"{fps}/1", "pix_fmt": "yuv420p",
     }
+    from modules.ai_video_studio.media.output_paths import get_subsystem_dir
+    video_root = Path(get_subsystem_dir("videos")).resolve()
     signatures: list[dict[str, Any]] = []
     for raw_path in clip_paths:
         source = Path(raw_path).resolve()
+        if video_root not in source.parents:
+            return {"used": False, "reason": "clip_outside_video_asset_root"}
         if not source.is_file() or source.stat().st_size <= 0:
             return {"used": False, "reason": "missing_or_empty_clip"}
         probe = subprocess.run(
