@@ -255,7 +255,7 @@ export interface StudioJob {
     warning_count?: number;
   } | null;
   edit_render_status?: string | null;
-  edit_render_transition_policy?: { mode?: string; flattened_scenes?: number[]; message?: string } | null;
+  edit_render_transition_policy?: { mode?: string; transitions_applied?: { scene_index: number; type: string; duration_frames: number }[]; message?: string } | null;
   edit_preview_url?: string | null;
   edit_preview_duration?: number | null;
   edit_preview_width?: number | null;
