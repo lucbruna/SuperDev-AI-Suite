@@ -372,29 +372,14 @@ async def render_video_job_edits(job_id: str):
             isinstance(clip, dict) and clip.get("audio_path") for clip in narration_clips
         ):
             from pathlib import Path
-            from modules.ai_video_studio.media.scene_narration import compute_scene_offsets, build_narration_tracks
+            from modules.ai_video_studio.media.scene_narration import remap_narration_clips_for_edits, build_narration_tracks
             from modules.ai_video_studio.ai_dubbing.export_dubbing import export_audio_track
             from modules.ai_video_studio.media.audio import mux_audio_into_video
             from modules.ai_video_studio.media.output_paths import get_subsystem_dir, unique_filename
 
-            offsets = compute_scene_offsets(scenes, fps=fps)
-            placed_clips = []
-            for position, (scene, start) in enumerate(zip(scenes, offsets, strict=False)):
-                source_index = scene.get("_source_scene_index", position)
-                if not isinstance(source_index, int) or not 0 <= source_index < len(narration_clips):
-                    continue
-                original = narration_clips[source_index]
-                if not isinstance(original, dict) or not original.get("audio_path"):
-                    continue
-                scene_frames = max(1, int(round(float(scene.get("duration") or 3.0) * fps)))
-                placed_clips.append({
-                    "index": source_index,
-                    "text": original.get("text", ""),
-                    "start": round(start, 6),
-                    "end": round(start + scene_frames / fps, 6),
-                    "audio_path": original["audio_path"],
-                })
-
+            placed_clips = remap_narration_clips_for_edits(
+                scenes, narration_clips, fps=fps
+            )
             if placed_clips:
                 audio_path = unique_filename(get_subsystem_dir("jobs"), "edited_narration", "wav")
                 total_duration = int(round(result["frames"])) / fps
