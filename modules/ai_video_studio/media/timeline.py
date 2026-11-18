@@ -103,7 +103,7 @@ def build_edit_timeline(
                 raise ValueError("Scenes are too short for the requested crossfade")
         video_clips.append({
             "scene_index": index,
-            "source_scene_index": scene.get("index", index),
+            "source_scene_index": scene.get("_source_scene_index", index),
             "start_frame": start,
             "end_frame": end,
             "duration_frames": frame_counts[index],
@@ -205,7 +205,11 @@ def apply_scene_edits(
             raise ValueError(f"duplicate edit for scene {index}")
         edits_by_index[index] = edit
 
-    result = [copy.deepcopy(scenes[index]) for index in order]
+    result = []
+    for original_index in order:
+        scene = copy.deepcopy(scenes[original_index])
+        scene["_source_scene_index"] = original_index
+        result.append(scene)
     for position, scene in enumerate(result):
         original_index = order[position]
         edit = edits_by_index.get(original_index)
