@@ -76,6 +76,7 @@ export default function VideoStudioPage() {
   // Generation form state
   const [prompt, setPrompt] = useState("A cinematic drone shot over a misty mountain range at sunrise, with a voiceover narration");
   const [voiceover, setVoiceover] = useState(true);
+  const [generateSubtitles, setGenerateSubtitles] = useState(false);
   const [voiceId, setVoiceId] = useState("default");
   const [mode, setMode] = useState<"per_scene" | "single">("per_scene");
   const [numScenes, setNumScenes] = useState(3);
@@ -185,6 +186,7 @@ export default function VideoStudioPage() {
         prompt,
         studio_id: studioId,
         voiceover,
+        generate_subtitles: generateSubtitles,
         voice_id: voiceId,
         voiceover_mode: mode,
         num_scenes: Math.min(20, Math.max(1, numScenes)),
@@ -436,6 +438,10 @@ export default function VideoStudioPage() {
             <label className="flex items-center gap-2 rounded-lg border border-surface-200 p-3 dark:border-surface-700">
               <input type="checkbox" checked={voiceover} onChange={(e) => setVoiceover(e.target.checked)} className="h-4 w-4 accent-primary-600" />
               <span className="text-sm text-surface-700 dark:text-surface-300">🎙️ Narração</span>
+            </label>
+            <label className="flex items-center gap-2 rounded-lg border border-surface-200 p-3 dark:border-surface-700">
+              <input type="checkbox" checked={generateSubtitles} onChange={(e) => setGenerateSubtitles(e.target.checked)} className="h-4 w-4 accent-primary-600" />
+              <span className="text-sm text-surface-700 dark:text-surface-300">💬 Gerar legendas SRT</span>
             </label>
 
             <label className="block rounded-lg border border-surface-200 p-3 dark:border-surface-700">
