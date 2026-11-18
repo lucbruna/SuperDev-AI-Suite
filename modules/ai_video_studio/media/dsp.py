@@ -300,6 +300,8 @@ def resample(x: np.ndarray, target_len: int) -> np.ndarray:
     x0 = np.floor(idx).astype(int)
     x1 = np.minimum(x0 + 1, len(x) - 1)
     frac = (idx - x0).astype(np.float32)
+    if x.ndim > 1:
+        frac = frac.reshape((-1,) + (1,) * (x.ndim - 1))
     return (x[x0] * (1 - frac) + x[x1] * frac).astype(np.float32)
 
 
