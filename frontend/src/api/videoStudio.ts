@@ -124,7 +124,9 @@ export interface SceneImageAsset {
   image_path?: string;
   image_url?: string;
   provider?: string;
-  status: "generated" | "edited" | "fallback";
+  status: "generated" | "edited" | "fallback" | "candidate";
+  candidate_id?: string;
+  approval_required?: boolean;
   operation?: "text_to_image" | "image_to_image";
   prompt?: string;
   visual_prompt?: string;
@@ -385,7 +387,7 @@ export const videoStudioApi = {
     requested: number;
     succeeded: number;
     failed: number;
-    results: { scene_index: number; status: "edited" | "failed"; error?: string; result?: SceneImageAsset & { image_url?: string; scene_clip?: SceneVideoClip } }[];
+    results: { scene_index: number; status: "candidate" | "failed"; error?: string; result?: SceneImageAsset & { image_url?: string; candidate_id?: string; approval_required?: boolean } }[];
     message: string;
   }> {
     const { data } = await apiClient.post(
@@ -395,13 +397,21 @@ export const videoStudioApi = {
     return data;
   },
 
+  async approveSceneImageCandidate(jobId: string, sceneIndex: number, candidateId: string): Promise<{ job_id: string; scene_index: number; status: "approved"; image_url: string; render_required: boolean; message: string }> {
+    const { data } = await apiClient.post(`${STUDIO_BASE}/videos/jobs/${jobId}/scenes/${sceneIndex}/image-candidates/${candidateId}/approve`);
+    return data;
+  },
+
   async editSceneImage(jobId: string, sceneIndex: number, payload: {
     prompt: string;
     negative_prompt?: string;
     denoising_strength?: number;
     steps?: number;
     cfg_scale?: number;
+    stage_only?: boolean;
   }): Promise<SceneImageAsset & {
+    candidate_id?: string;
+    approval_required?: boolean;
     job_id: string;
     render_required: boolean;
     scene_clip?: SceneVideoClip & { status?: "updated" | "stale"; reason?: string };
