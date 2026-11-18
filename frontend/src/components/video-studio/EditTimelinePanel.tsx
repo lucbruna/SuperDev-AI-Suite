@@ -460,9 +460,9 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
               <button type="button" onClick={() => asset && generateSceneMotion(index, asset, clip.duration_frames)} disabled={!asset?.image_path || generatingMotionScene !== null} className="ml-2 mt-2 rounded-md border border-violet-300 px-3 py-1.5 text-xs font-semibold disabled:opacity-40 dark:border-violet-700">
                 {generatingMotionScene === index ? "Gerando vídeo IA…" : "Animar com IA · ComfyUI"}
               </button>
-              {generatedMotionClips[index] && <div className="mt-2 space-y-1">
-                <video controls preload="metadata" src={generatedMotionClips[index]} className="w-full rounded-md" />
-                <a href={generatedMotionClips[index]} target="_blank" rel="noreferrer" className="text-xs font-medium text-primary-600 underline">Abrir clipe generativo da cena {index + 1}</a>
+              {generatedMotionClips[sceneOrder[index] ?? index] && <div className="mt-2 space-y-1">
+                <video controls preload="metadata" src={generatedMotionClips[sceneOrder[index] ?? index]} className="w-full rounded-md" />
+                <a href={generatedMotionClips[sceneOrder[index] ?? index]} target="_blank" rel="noreferrer" className="text-xs font-medium text-primary-600 underline">Abrir clipe generativo da cena {index + 1}</a>
               </div>}
               {asset?.status === "edited" && <p className="mt-1 text-[10px] text-emerald-600">Imagem atualizada · {asset.operation === "image_to_image" ? "edição da imagem anterior" : "imagem criada do zero"}</p>}
             </div>;
