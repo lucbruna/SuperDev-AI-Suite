@@ -14,6 +14,7 @@ vi.mock("@/api/videoStudio", () => ({
     listJobs: vi.fn(),
     getJob: vi.fn(),
     generateVideo: vi.fn(),
+    preflightVideo: vi.fn(),
   },
 }));
 
@@ -55,6 +56,7 @@ beforeEach(() => {
   mockedApi.listJobs.mockReset();
   mockedApi.getJob.mockReset();
   mockedApi.generateVideo.mockReset();
+  mockedApi.preflightVideo.mockReset();
 
   mockedApi.health.mockResolvedValue({
     status: "healthy",
@@ -66,6 +68,12 @@ beforeEach(() => {
   mockedApi.listSceneObjects.mockResolvedValue([]);
   mockedApi.listVoices.mockResolvedValue([]);
   mockedApi.listJobs.mockResolvedValue([]);
+  mockedApi.preflightVideo.mockResolvedValue({
+    status: "ready_with_warnings", can_queue: true, project_id: "p1", studio_id: "whymentary",
+    scene_count: 3, duration_seconds: 30, clip_duration_seconds: 10, total_frames: 720,
+    resolution: "1280x720", fps: 24, vidgrid_compatible: true,
+    checks: [], blockers: [], warnings: ["ComfyUI não configurado"], limitations: [],
+  });
 
   // AuthGuard only renders children when hydrated + authenticated.
   useAuthStore.setState({
