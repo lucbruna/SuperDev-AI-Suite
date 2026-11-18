@@ -914,10 +914,11 @@ class TestSceneVisualDirection:
                     "narrative_beat": "revelation",
                     "shot_type": "detail",
                     "background_image_path": "/private/path/scene.png",
+                    "_source_scene_index": 2,
                 },
             ],
             "scene_assets": [{
-                "scene_index": 0,
+                "scene_index": 2,
                 "image_url": "/downloads/images/scene.png",
                 "status": "generated",
             }],
@@ -930,6 +931,7 @@ class TestSceneVisualDirection:
         assert body["studio_id"] == "historical_documentary"
         assert body["scene_count"] == 1
         scene = body["scenes"][0]
+        assert scene["scene_index"] == 2
         assert scene["narrative_beat"] == "revelation"
         assert scene["shot_type"] == "detail"
         assert scene["visual_prompt_suggestion"] == "Representar a evidência em primeiro plano."
