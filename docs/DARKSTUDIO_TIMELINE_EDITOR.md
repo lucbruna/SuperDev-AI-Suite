@@ -266,3 +266,8 @@ O editor permite marcar cenas individualmente ou selecionar todas e solicitar re
 - A regeneração de imagens não atualiza automaticamente o MP4 completo: é necessário renderizar a edição após revisar as imagens.
 
 O lote aceita até 60 cenas por solicitação e rejeita índices duplicados. A execução é sequencial, não transacional: resultados concluídos são preservados mesmo se outra cena falhar.
+
+
+## Aprovação de imagens candidatas
+
+A regeneração individual e em lote pode operar em modo de pré-visualização. Nesse modo, a imagem gerada é salva como candidata pendente e não substitui a imagem ativa da cena. A interface mostra a imagem atual e a candidata lado a lado; somente **Aprovar nova imagem** chama `POST /videos/jobs/{job_id}/scenes/{scene_index}/image-candidates/{candidate_id}/approve` e promove o arquivo para a cena. Candidatas não aprovadas permanecem separadas da timeline. Após a aprovação, o clipe VidGrid daquela cena é marcado como desatualizado e o MP4 completo precisa ser renderizado novamente. A aprovação é persistida no registro do job.
