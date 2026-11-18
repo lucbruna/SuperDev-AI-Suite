@@ -1547,10 +1547,10 @@ async def render_video_job_edits(job_id: str):
                 )
             if not vidgrid_stream_copy_used:
                 record["edit_render_transition_policy"] = {
-                "mode": result.get("transition_policy", "frame_accurate"),
-                "transitions_applied": result.get("transitions_applied", []),
-                "message": "Transições aplicadas no render misto; crossfades descontam os mesmos frames na timeline e no áudio/legendas.",
-            }
+                    "mode": result.get("transition_policy", "frame_accurate"),
+                    "transitions_applied": result.get("transitions_applied", []),
+                    "message": "Transições aplicadas no render misto; crossfades descontam os mesmos frames na timeline e no áudio/legendas.",
+                }
             _persist_job(record)
         else:
             # Procedural-only projects still use the original multi-scene renderer.
