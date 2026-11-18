@@ -44,6 +44,8 @@ class _FakeEngine:
 
     async def generate_async(self, job: dict, progress_callback=None) -> dict:
         self.received = job
+        if progress_callback is not None:
+            progress_callback(12, 24)
         from modules.ai_video_studio.media.output_paths import get_subsystem_dir
 
         out = get_subsystem_dir("videos") / "fake_voiced_0001.mp4"
@@ -289,6 +291,27 @@ class TestResolutionValidation:
 # ── GET /videos/jobs/{job_id} ─────────────────────────────────────
 
 class TestJobStatus:
+    @pytest.mark.asyncio
+    async def test_render_progress_is_saved_as_a_job_checkpoint(
+        self, client: AsyncClient, fake_engine: _FakeEngine, monkeypatch
+    ):
+        from modules.ai_video_studio.api.routes import video as video_routes
+
+        saved_steps: list[str] = []
+        original_persist = video_routes._persist_job
+
+        def capture_persist(record: dict) -> None:
+            saved_steps.append(str(record.get("current_step") or ""))
+            original_persist(record)
+
+        monkeypatch.setattr(video_routes, "_persist_job", capture_persist)
+        response = await client.post(
+            "/api/v1/video-studio/videos/generate",
+            json={"project_id": "p1", "prompt": "render progress checkpoint"},
+        )
+        assert response.status_code == 202
+        assert "Rendering frames" in saved_steps
+
     @pytest.mark.asyncio
     async def test_job_completes_with_output_url_and_voiceover(
         self, client: AsyncClient, fake_engine: _FakeEngine
