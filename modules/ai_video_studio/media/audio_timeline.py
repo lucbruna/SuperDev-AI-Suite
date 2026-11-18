@@ -142,6 +142,7 @@ def mix_audio_timeline(
             "start": round(start, 3),
             "duration": round(duration, 3),
             "volume": volume,
+            "loop": bool(clip.get("loop", False)),
         })
 
     limited = dsp.limiter(mix.astype(np.float32), threshold=0.97, sample_rate=sample_rate)
