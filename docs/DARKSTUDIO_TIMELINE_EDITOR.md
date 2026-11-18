@@ -314,6 +314,12 @@ The dashboard provides a **Validar MP4** action next to the download link. A rep
 
 This check confirms container/stream readability, not visual quality, narration intelligibility, subtitle correctness, or whether the scene images match the script. Those require separate semantic and human review.
 
+## Bloqueio seguro entre regeneração e render
+
+A API agora impede alterações de imagens/candidatas enquanto o MP4 editado está sendo renderizado e impede iniciar o render final enquanto uma regeneração em lote ainda está ativa. A aprovação de candidatas também é bloqueada durante uma operação de lote. Essas respostas usam HTTP 409 para que a interface possa orientar o usuário a aguardar, em vez de permitir que o render leia um storyboard que está sendo alterado simultaneamente.
+
+Isso protege a consistência do snapshot de cenas usado pelo FFmpeg. Não implementa fila automática nem cancelamento: o usuário deve repetir a ação depois que a operação ativa terminar.
+
 ## Progresso e recuperação por cena
 
 Cada job expõe agora `scene_progress`, uma lista persistida de estados individuais. O motor emite eventos após planejar o storyboard, durante a geração de imagem e durante a exportação de cada clipe VidGrid. O backend atualiza o registro do job em cada evento; falhas de persistência do telemetria não interrompem o render.
