@@ -307,3 +307,41 @@ it("generates a separate 10-second ComfyUI motion clip from a scene image", asyn
     expect(screen.getByText(/640×360 · 12 FPS/)).toBeInTheDocument();
   });
 });
+
+
+  it("loads the director's shot rationale and pre-fills the suggested scene prompt", async () => {
+    const direction = vi.spyOn(videoStudioApi, "getJobVisualDirection").mockResolvedValue({
+      job_id: "director-job",
+      studio_id: "historical_documentary",
+      scene_count: 2,
+      scenes: [
+        {
+          scene_index: 0,
+          narration: "A descoberta revelou uma evidência importante.",
+          visual_prompt: "",
+          visual_prompt_suggestion: "Documento antigo em primeiro plano, luz lateral dramática.",
+          visual_direction: "Isole a evidência em close de detalhe.",
+          narrative_beat: "revelation",
+          shot_type: "detail",
+          image_url: "/downloads/images/evidence.png",
+          image_status: "generated",
+        },
+        {
+          scene_index: 1,
+          narration: "A cidade cresceu ao longo do rio.",
+          visual_prompt: "",
+          visual_prompt_suggestion: "Plano geral da cidade histórica junto ao rio.",
+          visual_direction: "Mostre escala e geografia.",
+          narrative_beat: "context",
+          shot_type: "establishing",
+          image_status: "generated",
+        },
+      ],
+    });
+    render(<EditTimelinePanel timeline={timeline} jobId="director-job" />);
+    await waitFor(() => expect(direction).toHaveBeenCalledWith("director-job"));
+    expect(await screen.findByText("revelation")).toBeInTheDocument();
+    expect(screen.getByText(/Isole a evidência em close de detalhe/)).toBeInTheDocument();
+    const prompt = screen.getAllByLabelText("Prompt visual · edite antes de regenerar")[0] as HTMLTextAreaElement;
+    expect(prompt.value).toBe("Documento antigo em primeiro plano, luz lateral dramática.");
+  });
