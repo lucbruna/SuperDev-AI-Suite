@@ -73,7 +73,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
   const duration = Math.max(1, draft.duration_frames);
   const selectedClip = clips[selected] ?? null;
 
-  useEffect(() => { setDraft(timeline); setDirty(false); setSelected(0); }, [timeline]);
+  useEffect(() => { setDraft(timeline); setDirty(false); setAudioDirty(false); setSelected(0); }, [timeline]);
   useEffect(() => { setRenderUrl(editedOutputUrl ?? ""); }, [editedOutputUrl]);
   useEffect(() => {
     if (!jobId) return;
@@ -362,7 +362,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
           <span className="w-14 text-right tabular-nums">{formatTime(playheadFrame / draft.fps)}</span>
         </label>
         {jobId && <>
-          <button type="button" onClick={saveDraft} disabled={saving || !dirty} className="rounded-md border border-surface-300 px-3 py-2 text-xs font-semibold disabled:opacity-40 dark:border-surface-600">
+          <button type="button" onClick={saveDraft} disabled={saving || !dirty || audioDirty} className="rounded-md border border-surface-300 px-3 py-2 text-xs font-semibold disabled:opacity-40 dark:border-surface-600">
             {saving ? "Salvando…" : "Salvar rascunho"}
           </button>
           <button type="button" onClick={renderEdits} disabled={rendering || saving || dirty || audioDirty || savingAudio} className="rounded-md bg-primary-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-40">
