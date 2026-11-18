@@ -103,6 +103,7 @@ class TextToVideoEngine:
         # Run the CPU-bound render in a worker thread: keeps the event loop
         # free so job polling (progress bar) stays responsive during 5–10 min
         # videos instead of blocking the whole server.
+        studio_id = str(params.get("studio_id") or "whymentary")
         video_result = await asyncio.to_thread(
             render_multi_scene_video,
             scenes,
@@ -111,10 +112,12 @@ class TextToVideoEngine:
             width=width,
             height=height,
             on_frame=_on_frame,
+            studio_id=studio_id,
         )
 
         result: dict[str, Any] = {
             "mode": "text_to_video",
+            "studio_id": studio_id,
             "ai_planner": plan["provider"] or "deterministic",
             "ai_generated": plan["ai_generated"],
             "scenes": scenes,
