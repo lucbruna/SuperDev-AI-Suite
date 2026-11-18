@@ -84,6 +84,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
   const [eqLow, setEqLow] = useState("0");
   const [eqMid, setEqMid] = useState("0");
   const [eqHigh, setEqHigh] = useState("0");
+  const [masteringPreset, setMasteringPreset] = useState<"custom" | "voice" | "documentary" | "music" | "cinematic_sfx">("custom");
   const videoTrack = draft.tracks.find((track) => track.type === "video");
   const clips = videoTrack?.clips ?? [];
   const duration = Math.max(1, draft.duration_frames);
@@ -109,6 +110,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
         setEqLow(String(job.audio_settings.eq_low_db ?? 0));
         setEqMid(String(job.audio_settings.eq_mid_db ?? 0));
         setEqHigh(String(job.audio_settings.eq_high_db ?? 0));
+        setMasteringPreset((job.audio_settings.mastering_preset as typeof masteringPreset) ?? "custom");
       }
     }).catch(() => undefined);
   }, [jobId]);
@@ -251,7 +253,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
       const nextSfx = parseClip(sfxAsset, sfxStart, sfxEnd, sfxVolume, sfxFadeIn, sfxFadeOut, false, sfxPan);
       if (nextMusic) music.push(nextMusic);
       if (nextSfx) sfx.push(nextSfx);
-      const result = await videoStudioApi.updateJobAudio(jobId, { music_clips: music, sfx_clips: sfx, ducking_enabled: duckingEnabled, ducking_db: Number(duckingDb), ducking_threshold_db: -36, ducking_attack: 0.08, ducking_release: 0.35, normalization_enabled: normalizationEnabled, normalization_target_dbfs: Number(normalizationTarget), normalization_max_gain_db: 6, loudness_normalization_enabled: loudnessEnabled, target_lufs: Number(targetLufs), true_peak_db: -1, loudness_range: 11, compressor_enabled: compressorEnabled, compressor_threshold_db: compressorThresholdValue, compressor_ratio: compressorRatioValue, compressor_attack: 0.01, compressor_release: 0.12, compressor_makeup_db: 0, eq_enabled: eqEnabled, eq_low_db: eqValues[0], eq_mid_db: eqValues[1], eq_high_db: eqValues[2] });
+      const result = await videoStudioApi.updateJobAudio(jobId, { music_clips: music, sfx_clips: sfx, ducking_enabled: duckingEnabled, ducking_db: Number(duckingDb), ducking_threshold_db: -36, ducking_attack: 0.08, ducking_release: 0.35, normalization_enabled: normalizationEnabled, normalization_target_dbfs: Number(normalizationTarget), normalization_max_gain_db: 6, loudness_normalization_enabled: loudnessEnabled, target_lufs: Number(targetLufs), true_peak_db: -1, loudness_range: 11, compressor_enabled: compressorEnabled, compressor_threshold_db: compressorThresholdValue, compressor_ratio: compressorRatioValue, compressor_attack: 0.01, compressor_release: 0.12, compressor_makeup_db: 0, eq_enabled: eqEnabled, eq_low_db: eqValues[0], eq_mid_db: eqValues[1], eq_high_db: eqValues[2], mastering_preset: masteringPreset });
       setDraft(result.edit_timeline);
       setAudioDirty(false);
       onSaved?.(result.edit_timeline);
@@ -435,6 +437,20 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
               <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={loudnessEnabled} onChange={(event) => { setLoudnessEnabled(event.target.checked); setAudioDirty(true); }} /> Ativar LUFS</label>
               <label className="text-xs text-surface-500">Alvo LUFS<input type="number" min="-36" max="-5" step="1" value={targetLufs} onChange={(event) => { setTargetLufs(event.target.value); setAudioDirty(true); }} className="ml-2 w-20 rounded border bg-transparent px-2 py-1" /></label>
             </div>
+          </div>
+          <div className="rounded-md border border-surface-200 p-3 dark:border-surface-700 sm:col-span-2">
+            <label className="block text-xs font-medium text-surface-600 dark:text-surface-300">Preset de masterização
+              <select aria-label="Preset de masterização" value={masteringPreset} onChange={(event) => {
+                const preset = event.target.value as typeof masteringPreset;
+                setMasteringPreset(preset);
+                const values = { custom: [-18, 3, 0, 0, 0], voice: [-22, 3.5, -2, 1.5, 2], documentary: [-20, 2.5, -1, 1, 1], music: [-16, 2, 1, 0, 1], cinematic_sfx: [-14, 3, 2, -1, 1] }[preset];
+                setCompressorEnabled(preset !== "custom"); setCompressorThreshold(String(values[0])); setCompressorRatio(String(values[1]));
+                setEqEnabled(preset !== "custom"); setEqLow(String(values[2])); setEqMid(String(values[3])); setEqHigh(String(values[4])); setAudioDirty(true);
+              }} className="mt-1 w-full rounded border bg-transparent px-2 py-2">
+                <option value="custom">Personalizado</option><option value="voice">Voz clara</option><option value="documentary">Documentário</option><option value="music">Música</option><option value="cinematic_sfx">Efeitos cinematográficos</option>
+              </select>
+            </label>
+            <p className="mt-2 text-[11px] text-surface-500">Os presets aplicam compressor e EQ automaticamente. Escolha Personalizado para ajustar manualmente.</p>
           </div>
           <div className="rounded-md border border-surface-200 p-3 dark:border-surface-700 sm:col-span-2">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
