@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import pytest
 
-from modules.ai_video_studio.media.timeline import build_edit_timeline
+from modules.ai_video_studio.media.timeline import apply_scene_edits, build_edit_timeline
 
 
 def test_video_timeline_uses_integer_frames_and_crossfade_overlap() -> None:
@@ -66,3 +66,47 @@ def test_timeline_rejects_invalid_audio_and_subtitle_ranges() -> None:
         build_edit_timeline([{"duration": 1}], narration=[{"start": 2, "end": 1, "asset": "bad.wav"}])
     with pytest.raises(ValueError, match="requires text"):
         build_edit_timeline([{"duration": 1}], subtitle_cues=[{"start": 0, "end": 0.5, "text": " "}])
+
+
+
+def test_apply_scene_edits_reorders_and_updates_duration_and_transition_without_mutating_source() -> None:
+    source = [
+        {"index": 0, "duration": 2.0, "transition_out": {"type": "crossfade", "duration_frames": 12}},
+        {"index": 1, "duration": 3.0},
+    ]
+    edited = apply_scene_edits(
+        source,
+        scene_order=[1, 0],
+        scene_edits=[
+            {"scene_index": 1, "duration_frames": 72, "transition_type": "cut"},
+            {"scene_index": 0, "duration_frames": 48},
+        ],
+        fps=24,
+    )
+    assert [scene["index"] for scene in edited] == [1, 0]
+    assert edited[0]["duration"] == 3.0
+    assert edited[1]["duration"] == 2.0
+    assert edited[0]["transition_out"]["type"] == "cut"
+    assert source[0]["duration"] == 2.0
+    assert source[0]["transition_out"]["type"] == "crossfade"
+
+
+@pytest.mark.parametrize("kwargs", [
+    {"scene_order": [0, 0]},
+    {"scene_order": [0]},
+    {"scene_edits": [{"scene_index": 4, "duration_frames": 24}]},
+    {"scene_edits": [{"scene_index": 0, "duration_frames": 1}]},
+    {"scene_edits": [{"scene_index": 0, "transition_type": "wipe"}]},
+])
+def test_apply_scene_edits_rejects_invalid_edits(kwargs) -> None:
+    with pytest.raises(ValueError):
+        apply_scene_edits([{"duration": 2}, {"duration": 2}], fps=24, **kwargs)
+
+
+def test_apply_scene_edits_requires_cut_for_last_scene() -> None:
+    with pytest.raises(ValueError, match="final scene"):
+        apply_scene_edits(
+            [{"duration": 2}, {"duration": 2}],
+            scene_edits=[{"scene_index": 1, "transition_type": "crossfade"}],
+            fps=24,
+        )
