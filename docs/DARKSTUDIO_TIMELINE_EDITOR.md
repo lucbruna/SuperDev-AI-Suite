@@ -339,6 +339,13 @@ Estados observáveis: `pending`, `processing`, `completed`, `fallback` e `failed
 Limite atual: este lote implementa rastreamento e diagnóstico por cena, não a repetição isolada de uma cena. A regeneração seletiva exige ainda uma operação que reutilize o storyboard/ativos originais, invalide somente o ativo escolhido e remonte o vídeo final; não deve ser confundida com o status visual já disponível.
 
 
+
+### Montagem final otimizada do VidGrid
+
+Quando todas as cenas possuem clipes atualizados, cada clipe é validado com FFprobe (arquivo, codec, resolução, FPS, pixel format e duração de 10 segundos). Se a edição usar apenas cortes secos e os arquivos forem compatíveis, o motor concatena os fluxos de vídeo com FFmpeg em modo stream-copy, sem reencodificar os clipes. O áudio embutido nos clipes individuais é descartado nessa junção; narração por cena, música e efeitos são mixados novamente na timeline final para evitar duplicação de voz.
+
+Se houver transições, incompatibilidade técnica ou metadados fora do padrão, o sistema usa o renderizador misto com os próprios clipes VidGrid como fontes, reencodificando somente a montagem necessária para aplicar transições. Clipes ausentes ou marcados como stale bloqueiam a exportação final e exigem reconstrução seletiva antes de continuar. Entradas do caminho stream-copy são confinadas ao diretório de vídeos do DARKSTUDIO.
+
 ### Ação na interface
 
 O painel da timeline consulta os clipes do job e exibe **Reconstruir N clipe(s) VidGrid** somente quando há clipes marcados como desatualizados. A ação chama o endpoint seletivo, bloqueia edição/render concorrente, atualiza a contagem após a operação e apresenta o resumo de sucesso parcial/falha. A aprovação de uma imagem candidata atualiza a contagem sem exigir recarregar a página.
