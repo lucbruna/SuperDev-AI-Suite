@@ -372,7 +372,7 @@ async def render_video_job_edits(job_id: str):
             isinstance(clip, dict) and clip.get("audio_path") for clip in narration_clips
         ):
             from pathlib import Path
-            from modules.ai_video_studio.media.scene_narration import compute_scene_offsets
+            from modules.ai_video_studio.media.scene_narration import compute_scene_offsets, build_narration_tracks
             from modules.ai_video_studio.ai_dubbing.export_dubbing import export_audio_track
             from modules.ai_video_studio.media.audio import mux_audio_into_video
             from modules.ai_video_studio.media.output_paths import get_subsystem_dir, unique_filename
@@ -400,7 +400,7 @@ async def render_video_job_edits(job_id: str):
                 total_duration = int(round(result["frames"])) / fps
                 await asyncio.to_thread(
                     export_audio_track,
-                    [{"clips": placed_clips}],
+                    build_narration_tracks(placed_clips),
                     audio_path,
                     total_duration=total_duration,
                 )
