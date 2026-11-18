@@ -1116,3 +1116,53 @@ class TestSceneImageCandidateDiscard:
         assert response.json()["active_image_unchanged"] is True
         assert video._jobs["discard_candidate_job"]["_source_scenes"][0]["background_image_path"] == "/active/current.png"
         assert video._jobs["discard_candidate_job"]["scene_image_candidates"] == {}
+
+
+# ── POST /videos/preflight ────────────────────────────────────────
+
+class TestVideoPreflight:
+    @pytest.mark.asyncio
+    async def test_vidgrid_preflight_reports_exact_ten_second_clips(
+        self, client: AsyncClient, monkeypatch
+    ):
+        monkeypatch.setattr(
+            "modules.ai_video_studio.api.routes.video.shutil.which",
+            lambda name: f"/usr/bin/{name}",
+        )
+        resp = await client.post(
+            "/api/v1/video-studio/videos/preflight",
+            json={
+                "project_id": "preflight-project",
+                "prompt": "documentary about ancient Egypt",
+                "num_scenes": 42,
+                "vidgrid_compatible": True,
+                "frame_rate": 30,
+            },
+        )
+        assert resp.status_code == 200, resp.text
+        body = resp.json()
+        assert body["can_queue"] is True
+        assert body["scene_count"] == 42
+        assert body["duration_seconds"] == 420
+        assert body["clip_duration_seconds"] == 10
+        assert body["total_frames"] == 12600
+        assert body["vidgrid_compatible"] is True
+        assert any(item["id"] == "ffmpeg" and item["status"] == "ready" for item in body["checks"])
+
+    @pytest.mark.asyncio
+    async def test_preflight_blocks_mp4_generation_without_ffmpeg(
+        self, client: AsyncClient, monkeypatch
+    ):
+        monkeypatch.setattr(
+            "modules.ai_video_studio.api.routes.video.shutil.which",
+            lambda name: None,
+        )
+        resp = await client.post(
+            "/api/v1/video-studio/videos/preflight",
+            json={"project_id": "preflight-project", "prompt": "a short film"},
+        )
+        assert resp.status_code == 200, resp.text
+        body = resp.json()
+        assert body["status"] == "blocked"
+        assert body["can_queue"] is False
+        assert any(item["id"] == "ffmpeg" for item in body["blockers"])
