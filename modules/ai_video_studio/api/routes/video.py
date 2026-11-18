@@ -1474,6 +1474,7 @@ async def render_video_job_edits(job_id: str):
     record["_rendering_edits"] = True
     record["edit_render_status"] = "rendering"
     record["edit_render_quality"] = None
+    record.pop("edit_render_assembly_fallback", None)
     _persist_job(record)
     try:
         if generated_scene_clips:
