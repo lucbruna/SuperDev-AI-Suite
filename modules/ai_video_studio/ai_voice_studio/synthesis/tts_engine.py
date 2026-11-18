@@ -10,6 +10,7 @@ The chain never fails: the last engine is fully local and deterministic.
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 
 from modules.ai_video_studio.ai_voice_studio.synthesis.offline_tts import OfflineTTS
 from modules.ai_video_studio.ai_voice_studio.profiles import build_catalog
@@ -70,10 +71,13 @@ class TTSEngine:
         # and must never be mislabeled or muxed as narration.
         try:
             local_path = str(Path(output_path).with_suffix(".wav")) if output_path else None
-            return self.offline.synthesize(
+            result = self.offline.synthesize(
                 text, output_path=local_path, rate=speed, pitch=pitch,
                 allow_formant=False,
             )
+            if result.get("engine") == "formant":
+                raise RuntimeError("Formant audio is not intelligible spoken narration")
+            return result
         except Exception as e:  # noqa: BLE001
             errors.append(f"offline speech: {e}")
 
