@@ -963,3 +963,61 @@ class TestSceneVisualDirection:
             "/api/v1/video-studio/videos/jobs/processing_visual_job/visual-direction"
         )
         assert response.status_code == 409
+
+class TestBatchSceneImageRegeneration:
+    @pytest.mark.asyncio
+    async def test_regenerates_selected_scenes_sequentially_and_reports_partial_failures(
+        self, client: AsyncClient, monkeypatch,
+    ):
+        from modules.ai_video_studio.api.routes import video
+
+        monkeypatch.setitem(video._jobs, "batch_job", {
+            "job_id": "batch_job", "status": "completed",
+            "_source_scenes": [{"narration": "Cena 1"}, {"narration": "Cena 2"}],
+        })
+        calls: list[int] = []
+
+        async def fake_edit(job_id, scene_index, req):
+            calls.append(scene_index)
+            if scene_index == 1:
+                raise video.HTTPException(status_code=503, detail="image provider offline")
+            return {
+                "job_id": job_id, "scene_index": scene_index,
+                "image_url": f"/images/{scene_index}.png", "status": "edited",
+            }
+
+        monkeypatch.setattr(video, "edit_video_job_scene_image", fake_edit)
+        response = await client.post(
+            "/api/v1/video-studio/videos/jobs/batch_job/scenes/regenerate",
+            json={"scenes": [
+                {"scene_index": 0, "prompt": "Plano geral da cena um"},
+                {"scene_index": 1, "prompt": "Detalhe da cena dois"},
+            ]},
+        )
+
+        assert response.status_code == 200
+        body = response.json()
+        assert calls == [0, 1]
+        assert body["status"] == "partial"
+        assert body["requested"] == 2
+        assert body["succeeded"] == 1
+        assert body["failed"] == 1
+        assert body["results"][1]["error"] == "image provider offline"
+        assert video._jobs["batch_job"].get("_scene_batch_running") is None
+
+    @pytest.mark.asyncio
+    async def test_rejects_duplicate_scene_indices_in_batch(self, client: AsyncClient, monkeypatch):
+        from modules.ai_video_studio.api.routes import video
+
+        monkeypatch.setitem(video._jobs, "duplicate_batch_job", {
+            "job_id": "duplicate_batch_job", "status": "completed",
+            "_source_scenes": [{"narration": "Cena 1"}],
+        })
+        response = await client.post(
+            "/api/v1/video-studio/videos/jobs/duplicate_batch_job/scenes/regenerate",
+            json={"scenes": [
+                {"scene_index": 0, "prompt": "Primeira versão"},
+                {"scene_index": 0, "prompt": "Segunda versão"},
+            ]},
+        )
+        assert response.status_code == 422
