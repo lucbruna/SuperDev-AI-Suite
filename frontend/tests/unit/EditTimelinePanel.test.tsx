@@ -246,3 +246,53 @@ it("edits a scene image from a text instruction and asks for a new MP4 render", 
   expect(await screen.findByText(/Imagem e clipe VidGrid de 10s da cena 1 atualizados/)).toBeInTheDocument();
   expect(screen.getByAltText("Imagem da cena 1")).toBeInTheDocument();
 });
+
+
+it("generates a separate 10-second ComfyUI motion clip from a scene image", async () => {
+  vi.spyOn(videoStudioApi, "getJob").mockResolvedValue({
+    job_id: "motion-job", project_id: "p1", status: "completed", progress: 1,
+  });
+  vi.spyOn(videoStudioApi, "listJobAudioAssets").mockResolvedValue([]);
+  const generate = vi.spyOn(videoStudioApi, "generateImageToVideo").mockResolvedValue({
+    success: true,
+    data: {
+      output_path: "/downloads/videos/ai-motion.mp4",
+      download_url: "/api/v1/downloads/videos/ai-motion.mp4",
+      duration: 10,
+      fps: 24,
+      provider: "comfyui_workflow",
+    },
+  });
+  const vidgridTimeline: EditTimeline = {
+    ...timeline,
+    duration_frames: 480,
+    duration_seconds: 20,
+    tracks: timeline.tracks.map((track) => track.type === "video"
+      ? { ...track, clips: [
+          { scene_index: 0, start_frame: 0, end_frame: 240, duration_frames: 240, shot_type: "wide" },
+          { scene_index: 1, start_frame: 240, end_frame: 480, duration_frames: 240, shot_type: "close_up" },
+        ] }
+      : track),
+  };
+  render(<EditTimelinePanel
+    timeline={vidgridTimeline}
+    jobId="motion-job"
+    sceneAssets={[{
+      scene_index: 0,
+      image_path: "/downloads/images/scene-01.png",
+      image_url: "/api/v1/downloads/images/scene-01.png",
+      status: "generated",
+      visual_prompt: "A historical ship crossing the sea",
+    }]}
+  />);
+  fireEvent.click(screen.getByRole("button", { name: "Animar com IA · ComfyUI" }));
+  await waitFor(() => expect(generate).toHaveBeenCalledWith(expect.objectContaining({
+    image_ref: "/downloads/images/scene-01.png",
+    duration_seconds: 10,
+    fps: 24,
+    motion_provider: "comfyui",
+    motion_prompt: "A historical ship crossing the sea",
+  })));
+  expect(await screen.findByText(/Clipe generativo da cena 1 concluído/)).toBeInTheDocument();
+  expect(screen.getByText(/Abrir clipe generativo da cena 1/)).toBeInTheDocument();
+});
