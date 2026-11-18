@@ -87,6 +87,8 @@ describe("EditTimelinePanel", () => {
     expect(save.mock.calls[0][1].ducking_db).toBe(14);
     expect(save.mock.calls[0][1].normalization_enabled).toBe(false);
     expect(save.mock.calls[0][1].normalization_target_dbfs).toBe(-22);
+    expect(save.mock.calls[0][1].loudness_normalization_enabled).toBe(true);
+    expect(save.mock.calls[0][1].target_lufs).toBe(-16);
     save.mockRestore();
     assets.mockRestore();
     job.mockRestore();
