@@ -5,6 +5,7 @@ are retained as derived metadata for clients that need human-readable timing.
 """
 from __future__ import annotations
 
+import math
 from typing import Any
 
 
@@ -35,7 +36,7 @@ def _asset_clips(items: list[dict[str, Any]], fps: int, *, track_type: str) -> l
             raise ValueError(f"{track_type} clip {index} must have positive duration")
         if item.get("pan") is not None:
             pan = float(item["pan"])
-            if not np.isfinite(pan) or not -1 <= pan <= 1:
+            if not math.isfinite(pan) or not -1 <= pan <= 1:
                 raise ValueError(f"{track_type} clip {index} pan must be between -1 and 1")
         clips.append({
             "asset": str(asset),
