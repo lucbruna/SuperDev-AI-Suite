@@ -70,7 +70,8 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
   const [sfxFadeIn, setSfxFadeIn] = useState("0");
   const [sfxFadeOut, setSfxFadeOut] = useState("0.2");
   const [savingAudio, setSavingAudio] = useState(false);
-  const [audioDirty, setAudioDirty] = useState(false);
+  const [audioDirty, setAudioDirty] = useState(false);  const [audioAnalysis, setAudioAnalysis] = useState<Awaited<ReturnType<typeof videoStudioApi.analyzeJobAudio>> | null>(null);
+  const [analyzingAudio, setAnalyzingAudio] = useState(false);
   const [duckingEnabled, setDuckingEnabled] = useState(true);
   const [duckingDb, setDuckingDb] = useState("9");
   const [normalizationEnabled, setNormalizationEnabled] = useState(true);
@@ -192,6 +193,13 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
   function removeAudioClip(role: "music" | "sound_effect", index: number) {
     setAudioDirty(true);
     setDraft((current) => ({ ...current, tracks: current.tracks.map((track) => track.role !== role ? track : { ...track, clips: track.clips.filter((_, clipIndex) => clipIndex !== index) }) }));
+  }
+  async function analyzeAudio() {
+    if (!jobId || dirty || audioDirty || saving || savingAudio || analyzingAudio) return;
+    setAnalyzingAudio(true); setMessage("");
+    try { const result = await videoStudioApi.analyzeJobAudio(jobId); setAudioAnalysis(result); setMessage(result.message); }
+    catch (error) { setMessage(error instanceof Error ? error.message : "Não foi possível analisar o áudio."); }
+    finally { setAnalyzingAudio(false); }
   }
   async function saveAudioDraft() {
     if (!jobId || dirty || saving) return;
@@ -492,11 +500,23 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
             ));
           })}
           <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
+            <button type="button" onClick={analyzeAudio} disabled={!jobId || dirty || audioDirty || saving || savingAudio || analyzingAudio} className="rounded-md border border-primary-300 px-3 py-2 text-xs font-semibold disabled:opacity-40 dark:border-primary-700">
+              {analyzingAudio ? "Analisando áudio…" : "Analisar áudio"}
+            </button>
             <button type="button" onClick={saveAudioDraft} disabled={savingAudio || dirty || saving || (!audioDirty && !musicAsset.trim() && !sfxAsset.trim())} className="rounded-md border border-surface-300 px-3 py-2 text-xs font-semibold disabled:opacity-40 dark:border-surface-600">
               {savingAudio ? "Salvando áudio…" : audioDirty ? "Salvar alterações de áudio" : "Salvar faixas de áudio"}
             </button>
             <span className="text-[11px] text-surface-400">A lista mostra arquivos gerados em music, effects, voice, dubbing e mix. Caminhos externos são bloqueados.</span>
           </div>
+          {audioAnalysis && <div className="rounded-md border border-surface-200 p-3 text-xs dark:border-surface-700 sm:col-span-2">
+            <div className="flex flex-wrap items-center justify-between gap-2"><strong>Relatório de inteligência de áudio</strong><span>{audioAnalysis.sources_analyzed} arquivo(s) analisado(s)</span></div>
+            {audioAnalysis.warnings.length > 0 ? <ul className="mt-2 list-disc space-y-1 pl-5 text-amber-600">{audioAnalysis.warnings.map((warning, index) => <li key={index}>{warning.role}: {warning.code.replaceAll("_", " ")}</li>)}</ul> : <p className="mt-2 text-emerald-600">Nenhum alerta detectado nas fontes analisadas.</p>}
+            {audioAnalysis.ducking_recommendation.available && <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded bg-surface-50 p-2 dark:bg-surface-800">
+              <span>Redução sugerida: <strong>{audioAnalysis.ducking_recommendation.recommended_ducking_db} dB</strong> · Limiar: <strong>{audioAnalysis.ducking_recommendation.recommended_threshold_db} dB</strong></span>
+              <button type="button" onClick={() => { setDuckingEnabled(true); setDuckingDb(String(audioAnalysis.ducking_recommendation.recommended_ducking_db)); setAudioDirty(true); setMessage("Sugestão de ducking aplicada ao rascunho. Salve as faixas para persistir."); }} className="rounded border px-2 py-1 font-semibold">Aplicar sugestão</button>
+            </div>}
+            <p className="mt-2 text-[11px] text-surface-500">{audioAnalysis.ducking_recommendation.reason}</p>
+          </div>}
         </div>
       )}
 
