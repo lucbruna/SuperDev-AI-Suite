@@ -45,6 +45,26 @@ def completed_job():
     video._jobs.pop(job_id, None)
 
 
+def test_update_timeline_preserves_comfyui_clip_after_reordering(completed_job, monkeypatch) -> None:
+    monkeypatch.setattr(video, "_persist_job", lambda record: None)
+    record = video._jobs[completed_job]
+    record["_edited_scenes"] = [
+        {"index": 0, "_source_scene_index": 0, "duration": 2.0, "generative_video_path": "/downloads/videos/scene0.mp4"},
+        {"index": 1, "_source_scene_index": 1, "duration": 2.0},
+    ]
+    request = video.TimelineEditRequest(
+        scene_order=[1, 0],
+        scene_edits=[
+            video.SceneEdit(scene_index=0, duration_frames=48, transition_type="cut"),
+            video.SceneEdit(scene_index=1, duration_frames=48, transition_type="cut"),
+        ],
+    )
+    asyncio.run(video.update_video_job_timeline(completed_job, request))
+    reordered = video._jobs[completed_job]["_edited_scenes"]
+    assert reordered[1]["_source_scene_index"] == 0
+    assert reordered[1]["generative_video_path"] == "/downloads/videos/scene0.mp4"
+
+
 def test_update_timeline_draft_keeps_non_video_tracks(completed_job, monkeypatch) -> None:
     monkeypatch.setattr(video, "_persist_job", lambda record: None)
     request = video.TimelineEditRequest(
