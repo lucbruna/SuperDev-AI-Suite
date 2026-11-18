@@ -191,6 +191,11 @@ class AudioTimelineClip(BaseModel):
 class AudioTimelineEditRequest(BaseModel):
     music_clips: list[AudioTimelineClip] = Field(default_factory=list, max_length=30)
     sfx_clips: list[AudioTimelineClip] = Field(default_factory=list, max_length=100)
+    ducking_enabled: bool = True
+    ducking_db: float = Field(default=9.0, ge=0, le=24)
+    ducking_threshold_db: float = Field(default=-36.0, ge=-60, le=-12)
+    ducking_attack: float = Field(default=0.08, gt=0, le=2)
+    ducking_release: float = Field(default=0.35, gt=0, le=5)
 
 
 def _persist_job(record: dict) -> None:
