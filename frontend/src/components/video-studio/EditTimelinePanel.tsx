@@ -97,6 +97,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
     if (!jobId) return;
     videoStudioApi.listJobAudioAssets(jobId).then(setAudioAssets).catch(() => setAudioAssets([]));
     videoStudioApi.getJob(jobId).then((job) => {
+      if (job.audio_analysis) setAudioAnalysis(job.audio_analysis as Awaited<ReturnType<typeof videoStudioApi.analyzeJobAudio>>);
       if (job.audio_settings) {
         setDuckingEnabled(job.audio_settings.ducking_enabled ?? true);
         setDuckingDb(String(job.audio_settings.ducking_db ?? 9));
@@ -264,6 +265,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
       const result = await videoStudioApi.updateJobAudio(jobId, { music_clips: music, sfx_clips: sfx, ducking_enabled: duckingEnabled, ducking_db: Number(duckingDb), ducking_threshold_db: -36, ducking_attack: 0.08, ducking_release: 0.35, normalization_enabled: normalizationEnabled, normalization_target_dbfs: Number(normalizationTarget), normalization_max_gain_db: 6, loudness_normalization_enabled: loudnessEnabled, target_lufs: Number(targetLufs), true_peak_db: -1, loudness_range: 11, compressor_enabled: compressorEnabled, compressor_threshold_db: compressorThresholdValue, compressor_ratio: compressorRatioValue, compressor_attack: 0.01, compressor_release: 0.12, compressor_makeup_db: 0, eq_enabled: eqEnabled, eq_low_db: eqValues[0], eq_mid_db: eqValues[1], eq_high_db: eqValues[2], mastering_preset: masteringPreset });
       setDraft(result.edit_timeline);
       setAudioDirty(false);
+      setAudioAnalysis(null);
       onSaved?.(result.edit_timeline);
       setMusicAsset("");
       setMusicLoop(false);
