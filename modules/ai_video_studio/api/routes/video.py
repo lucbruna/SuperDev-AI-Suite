@@ -515,7 +515,7 @@ async def approve_video_job_scene_image(job_id: str, scene_index: int, candidate
     record = _jobs.get(job_id)
     if record is None:
         raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
-    if record.get("_rendering_edits") or job_id in _scene_batch_jobs:
+    if record.get("_rendering_edits") or record.get("_rebuilding_scene_clips") or job_id in _scene_batch_jobs:
         raise HTTPException(status_code=409, detail="Scene assets are locked by another operation")
     if record.get("status") != "completed":
         raise HTTPException(status_code=409, detail="Only completed jobs can approve scene images")
@@ -563,6 +563,118 @@ async def approve_video_job_scene_image(job_id: str, scene_index: int, candidate
             "status": "approved", "image_path": str(candidate_path),
             "image_url": to_download_url(str(candidate_path)), "render_required": True,
             "message": "Imagem aprovada e aplicada à cena. Renderize a edição para atualizar o MP4 completo."}
+
+
+@router.post("/jobs/{job_id}/scenes/rebuild-stale-clips")
+async def rebuild_stale_video_job_scene_clips(job_id: str):
+    """Re-render stale VidGrid clips using the currently approved image and narration."""
+    record = _jobs.get(job_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+    if record.get("status") != "completed" or not record.get("vidgrid_compatible"):
+        raise HTTPException(status_code=409, detail="Selective clip rebuild requires a completed VidGrid job")
+    if record.get("_rendering_edits") or record.get("_rebuilding_scene_clips") or job_id in _scene_batch_jobs:
+        raise HTTPException(status_code=409, detail="Scene assets are locked by another operation")
+
+    scenes = [dict(item) for item in (record.get("_edited_scenes") or record.get("_source_scenes") or [])]
+    stale = sorted({
+        int(item.get("scene_index", -1))
+        for item in (record.get("scene_clips") or [])
+        if item.get("status") == "stale"
+    })
+    if not stale:
+        return {"job_id": job_id, "status": "unchanged", "rebuilt": 0, "failed": 0, "results": []}
+
+    from modules.ai_video_studio.media.output_paths import get_subsystem_dir, unique_filename
+    from modules.ai_video_studio.media.render import render_single_scene_clip
+    image_root = Path(get_subsystem_dir("images")).resolve()
+    params = record.get("params") or {}
+    try:
+        width, height = _parse_resolution(record.get("resolution") or params.get("resolution") or "1280x720")
+        fps = int(record.get("frame_rate") or params.get("frame_rate") or 24)
+        if not 1 <= fps <= 120:
+            raise ValueError("frame_rate must be between 1 and 120")
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    record["_rebuilding_scene_clips"] = True
+    record["scene_clip_rebuild_status"] = "processing"
+    _persist_job(record)
+    results: list[dict[str, Any]] = []
+    try:
+        for scene_index in stale:
+            position = next((i for i, item in enumerate(scenes)
+                             if int(item.get("_source_scene_index", i)) == scene_index), None)
+            if position is None and 0 <= scene_index < len(scenes):
+                position = scene_index
+            if position is None:
+                results.append({"scene_index": scene_index, "status": "failed", "error": "Scene index not found"})
+                continue
+            scene = scenes[position]
+            image_value = scene.get("background_image_path")
+            image_path = Path(str(image_value)).resolve() if image_value else None
+            if image_path is None or image_root not in image_path.parents or not image_path.is_file():
+                results.append({"scene_index": scene_index, "status": "failed", "error": "Approved image missing or outside asset directory"})
+                continue
+            try:
+                scene["duration"] = 10.0
+                clip_path = unique_filename(get_subsystem_dir("videos") / "vidgrid_clips",
+                                            f"scene_{scene_index + 1:02d}_rebuilt", "mp4")
+                rendered = await asyncio.to_thread(
+                    render_single_scene_clip, scene, clip_path, duration=10.0, fps=fps,
+                    width=width, height=height, require_mp4=True,
+                    studio_id=params.get("studio_id") or "whymentary",
+                )
+                final_path = rendered["output_path"]
+                audio_status = "silent_or_tts_unavailable"
+                voiceover = record.get("voiceover") or {}
+                if isinstance(voiceover, dict) and voiceover.get("narration_style") == "per_scene":
+                    narration = next((item for item in voiceover.get("clips", [])
+                                      if int(item.get("index", -1)) == scene_index and item.get("audio_path")), None)
+                    if narration:
+                        from modules.ai_video_studio.media.audio import mux_audio_into_video
+                        voiced_path = unique_filename(get_subsystem_dir("videos") / "vidgrid_clips",
+                                                       f"scene_{scene_index + 1:02d}_rebuilt_voiced", "mp4")
+                        muxed = await asyncio.to_thread(mux_audio_into_video, final_path, narration["audio_path"], voiced_path)
+                        if muxed.get("muxed"):
+                            final_path = muxed["output_path"]
+                            audio_status = "per_scene_narration_muxed"
+                        else:
+                            audio_status = "narration_mux_failed"
+                clip = {
+                    "scene_index": scene_index, "duration": 10.0, "fps": fps,
+                    "width": width, "height": height, "output_path": final_path,
+                    "output_url": to_download_url(final_path), "bytes": Path(final_path).stat().st_size,
+                    "encode_engine": rendered.get("engine"), "audio_status": audio_status,
+                    "visual_prompt": scene.get("visual_prompt") or scene.get("description", ""),
+                    "narration_text": scene.get("voiceover_text") or scene.get("narration") or "",
+                    "status": "updated",
+                }
+                clips = record.setdefault("scene_clips", [])
+                clips[:] = [item for item in clips if int(item.get("scene_index", -1)) != scene_index]
+                clips.append(clip)
+                clips.sort(key=lambda item: int(item.get("scene_index", 0)))
+                results.append({"scene_index": scene_index, "status": "completed",
+                                "output_url": clip["output_url"], "audio_status": audio_status})
+            except Exception as exc:  # noqa: BLE001
+                results.append({"scene_index": scene_index, "status": "failed", "error": str(exc)[:300]})
+            record["scene_clip_rebuild_results"] = list(results)
+            _persist_job(record)
+    finally:
+        record["_rebuilding_scene_clips"] = False
+        rebuilt = sum(item["status"] == "completed" for item in results)
+        record["scene_clip_rebuild_status"] = (
+            "completed" if rebuilt == len(stale) else "partial" if rebuilt else "failed"
+        )
+        _persist_job(record)
+
+    rebuilt = sum(item["status"] == "completed" for item in results)
+    return {
+        "job_id": job_id, "status": record["scene_clip_rebuild_status"],
+        "requested": len(stale), "rebuilt": rebuilt, "failed": len(stale) - rebuilt,
+        "results": results, "full_mp4_render_required": True,
+        "message": f"{rebuilt} de {len(stale)} clipes regenerados reutilizando imagens aprovadas e narração existente. O MP4 completo ainda precisa ser renderizado.",
+    }
 
 
 @router.post("/jobs/{job_id}/scenes/regenerate")
@@ -1313,7 +1425,7 @@ async def render_video_job_edits(job_id: str):
         raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
     if record.get("status") != "completed" or not record.get("_edited_scenes"):
         raise HTTPException(status_code=409, detail="Save a valid timeline draft before rendering")
-    if record.get("_rendering_edits"):
+    if record.get("_rendering_edits") or record.get("_rebuilding_scene_clips"):
         raise HTTPException(status_code=409, detail="An edited render is already running")
     if job_id in _scene_batch_jobs:
         raise HTTPException(status_code=409, detail="Wait for scene regeneration to finish before rendering")
