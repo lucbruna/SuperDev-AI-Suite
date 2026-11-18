@@ -83,9 +83,9 @@ async def synthesize_scene_narration_async(
 
     Fails soft (``muxed=False`` + ``reason``) so TTS problems never break
     video generation — consistent with the module's pipeline patterns. TTS
-    runs through the full ``ai_voice_studio`` chain (edge-tts → gTTS →
-    pyttsx3 → formant) whose last resort is fully local, so narration always
-    synthesizes even with no network.
+    runs through the ``ai_voice_studio`` chain (edge-tts → gTTS →
+    pyttsx3). If no speech engine is available, the scene is marked as failed;
+    synthetic formant effects are not accepted as spoken narration.
 
     Returns ``{muxed, output_path, bytes, clips, total_duration, ...}`` where
     ``clips`` lists each scene's ``{index, text, start, end, audio_path,
