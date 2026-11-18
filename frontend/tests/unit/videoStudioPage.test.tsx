@@ -212,12 +212,12 @@ describe("DARKSTUDIO scene object picker", () => {
     expect(screen.getByRole("checkbox", { name: /Modo compatível com VidGrid/ })).toBeChecked();
     fireEvent.click(screen.getByRole("button", { name: /Gerar vídeo/ }));
 
-    expect(mockedApi.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
+    await waitFor(() => expect(mockedApi.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
       object_ids: ["water_glass"],
       scene_image_mode: "ai",
       vidgrid_compatible: true,
       duration_seconds: 30,
-    }));
+    })));
   });
 });
 
@@ -232,10 +232,10 @@ describe("DARKSTUDIO long-form VidGrid generation", () => {
     fireEvent.change(scenesInput, { target: { value: "42" } });
     expect(screen.getByText(/Com 42 cenas, o vídeo terá 420 segundos/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Gerar vídeo/ }));
-    expect(mockedApi.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
+    await waitFor(() => expect(mockedApi.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
       num_scenes: 42,
       vidgrid_compatible: true,
       duration_seconds: 420,
-    }));
+    })));
   });
 });
