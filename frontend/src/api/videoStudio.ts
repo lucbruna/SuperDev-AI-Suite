@@ -87,6 +87,13 @@ export interface EditTimeline {
   tracks: EditTimelineTrack[];
 }
 
+export interface StudioAudioAsset {
+  asset: string;
+  name: string;
+  folder: string;
+  size_bytes: number;
+}
+
 export interface StudioJob {
   job_id: string;
   project_id: string;
@@ -212,6 +219,11 @@ export const videoStudioApi = {
   }): Promise<{ edit_timeline: EditTimeline; edit_draft_status: string; message: string }> {
     const { data } = await apiClient.patch(`${STUDIO_BASE}/videos/jobs/${jobId}/timeline`, payload);
     return data;
+  },
+
+  async listJobAudioAssets(jobId: string): Promise<StudioAudioAsset[]> {
+    const { data } = await apiClient.get(`${STUDIO_BASE}/videos/jobs/${jobId}/audio-assets`);
+    return data?.assets ?? [];
   },
 
   async updateJobAudio(jobId: string, payload: {
