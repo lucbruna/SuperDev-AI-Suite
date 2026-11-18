@@ -178,7 +178,18 @@ class TextToVideoEngine:
                 # Historical scenes use a restrained crossfade; Whymentary
                 # keeps its fast-cut explainer rhythm unless explicitly changed.
                 if studio_id == "historical_documentary":
-                    scene["transition_out"] = {"type": "crossfade", "duration_frames": max(2, fps // 2)}
+                    current_chapter = scene.get("chapter")
+                    next_chapter = scenes[scene_index + 1].get("chapter")
+                    if current_chapter and next_chapter and current_chapter != next_chapter:
+                        scene["transition_out"] = {
+                            "type": "fade_through_black",
+                            "duration_frames": max(2, fps // 3),
+                        }
+                    else:
+                        scene["transition_out"] = {
+                            "type": "crossfade",
+                            "duration_frames": max(2, fps // 2),
+                        }
                 else:
                     scene["transition_out"] = {"type": "cut", "duration_frames": 0}
 
