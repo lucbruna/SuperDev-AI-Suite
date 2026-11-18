@@ -225,3 +225,23 @@ def test_render_still_deterministic(tmp_path) -> None:
     a = render.render_still(scene, tmp_path / "a.png", seed=7)
     b = render.render_still(scene, tmp_path / "b.png", seed=7)
     assert a.read_bytes() == b.read_bytes()
+
+
+def test_single_scene_clip_uses_streaming_multi_scene_renderer(monkeypatch, tmp_path):
+    captured = {}
+    def fake_render(scenes, output_path, **kwargs):
+        captured["scenes"] = scenes
+        captured["output_path"] = output_path
+        captured["kwargs"] = kwargs
+        return {"output_path": str(output_path), "frames": 240, "bytes": 100, "engine": "ffmpeg"}
+    monkeypatch.setattr(render, "render_multi_scene_video", fake_render)
+    source_scene = {"duration": 4, "transition_out": {"type": "crossfade", "duration_frames": 12}}
+    result = render.render_single_scene_clip(
+        source_scene, tmp_path / "clip.mp4", duration=10, fps=24,
+        width=640, height=360, require_mp4=True, studio_id="whymentary",
+    )
+    assert captured["scenes"][0]["duration"] == 10
+    assert captured["scenes"][0]["transition_out"]["type"] == "cut"
+    assert captured["kwargs"]["require_mp4"] is True
+    assert result["frames"] == 240
+    assert source_scene["duration"] == 4
