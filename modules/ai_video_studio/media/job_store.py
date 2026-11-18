@@ -86,3 +86,30 @@ def load_jobs(project_id: str | None = None) -> dict[str, dict[str, Any]]:
         if isinstance(record, dict):
             result[str(job_id)] = record
     return result
+
+
+def mark_interrupted_jobs(jobs: dict[str, dict[str, Any]]) -> list[str]:
+    """Mark queued/processing jobs as interrupted after an API process restart.
+
+    Rendering is not resumed automatically because FFmpeg/provider subprocess
+    state is not checkpointed. This prevents stale jobs from appearing active
+    forever and preserves their last durable progress for inspection.
+    """
+    recovered: list[str] = []
+    for job_id, record in jobs.items():
+        if record.get("status") not in {"queued", "processing"}:
+            continue
+        record.update(
+            status="failed",
+            current_step="Interrupted",
+            error="A geração foi interrompida por reinicialização do servidor. Inicie um novo job; o progresso salvo foi preservado.",
+            interrupted=True,
+        )
+        try:
+            save_job(record)
+        except Exception:
+            # Keep the in-memory record truthful even if the database is
+            # temporarily unavailable during startup recovery.
+            pass
+        recovered.append(str(job_id))
+    return recovered
