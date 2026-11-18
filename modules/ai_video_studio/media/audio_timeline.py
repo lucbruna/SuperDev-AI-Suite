@@ -38,6 +38,47 @@ def validate_audio_asset(value: Any) -> Path:
     return candidate
 
 
+
+
+def measure_encoded_audio(path: str | Path, *, timeout: int = 180) -> dict[str, Any]:
+    """Measure loudness and true peak of the encoded audio stream in a final media file.
+
+    FFmpeg loudnorm's analysis mode measures the decoded stream, so AAC encoder
+    overshoot is included. This is a measurement, not a normalization pass.
+    """
+    import re
+    import shutil
+
+    media_path = Path(path)
+    if not media_path.is_file():
+        raise FileNotFoundError(f"encoded media file not found: {media_path}")
+    if shutil.which("ffmpeg") is None:
+        raise RuntimeError("FFmpeg is required to measure encoded audio")
+    command = [
+        "ffmpeg", "-hide_banner", "-nostats", "-i", str(media_path),
+        "-map", "0:a:0", "-af", "loudnorm=I=-14:TP=-1:LRA=11:print_format=json",
+        "-f", "null", "-",
+    ]
+    result = subprocess.run(command, capture_output=True, text=True, timeout=timeout)
+    if result.returncode != 0:
+        raise RuntimeError(f"FFmpeg encoded-audio analysis failed: {result.stderr[-500:]}")
+    matches = re.findall(r"\\{[^{}]*\\}", result.stderr, flags=re.DOTALL)
+    if not matches:
+        raise RuntimeError("FFmpeg did not return loudness measurement JSON")
+    try:
+        data = json.loads(matches[-1])
+        measured = {
+            "integrated_lufs": float(data["input_i"]),
+            "true_peak_dbTP": float(data["input_tp"]),
+            "loudness_range_lu": float(data["input_lra"]),
+        }
+    except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        raise RuntimeError("FFmpeg returned an invalid loudness measurement") from exc
+    if not all(np.isfinite(value) for value in measured.values()):
+        raise RuntimeError("FFmpeg returned non-finite loudness measurements")
+    return {"measured": measured, "measurement": "ffmpeg_loudnorm_decoded_stream", "verified": True}
+
+
 def list_audio_assets() -> list[dict[str, Any]]:
     """List generated audio assets using download-root-relative identifiers."""
     downloads = get_downloads_dir().resolve()
