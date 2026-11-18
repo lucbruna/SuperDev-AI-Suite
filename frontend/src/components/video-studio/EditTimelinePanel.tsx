@@ -184,7 +184,10 @@ export default function EditTimelinePanel({ timeline, jobId, title = "Editor de 
       {selectedClip && (
         <div className="mb-3 rounded-lg border border-surface-200 p-3 dark:border-surface-700">
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-            <strong className="text-sm">Editar cena {selected + 1}</strong>
+            <div>
+              <strong className="text-sm">Editar cena {selected + 1}</strong>
+              <p className="mt-1 text-xs text-surface-500">Selecionado: Cena {selected + 1} · {selectedClip.shot_type ?? "plano personalizado"}</p>
+            </div>
             <div className="flex gap-2">
               <button type="button" onClick={() => moveClip(selected, -1)} disabled={selected === 0} className="rounded border px-2 py-1 text-xs disabled:opacity-40">↑ Mover</button>
               <button type="button" onClick={() => moveClip(selected, 1)} disabled={selected === clips.length - 1} className="rounded border px-2 py-1 text-xs disabled:opacity-40">↓ Mover</button>
