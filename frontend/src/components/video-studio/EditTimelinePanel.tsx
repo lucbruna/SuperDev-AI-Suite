@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { videoStudioApi, type EditTimeline, type EditTimelineClip, type StudioAudioAsset, type SceneImageAsset, type SceneVisualDirection } from "@/api/videoStudio";
+import { videoStudioApi, type EditTimeline, type EditTimelineClip, type StudioAudioAsset, type SceneImageAsset, type SceneVisualDirection, type SceneImageSimilarityReport } from "@/api/videoStudio";
 
 type Props = {
   timeline: EditTimeline;
@@ -91,6 +91,8 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
   const [visualReport, setVisualReport] = useState<Awaited<ReturnType<typeof videoStudioApi.analyzeJobVisuals>> | null>(null);
   const [analyzingVisuals, setAnalyzingVisuals] = useState(false);
   const [mp4VisualReport, setMp4VisualReport] = useState<Awaited<ReturnType<typeof videoStudioApi.analyzeJobMp4Visuals>> | null>(null);
+  const [imageSimilarityReport, setImageSimilarityReport] = useState<SceneImageSimilarityReport | null>(null);
+  const [analyzingImageSimilarity, setAnalyzingImageSimilarity] = useState(false);
   const [analyzingMp4Visuals, setAnalyzingMp4Visuals] = useState(false);
 
   const [renderQuality, setRenderQuality] = useState<Awaited<ReturnType<typeof videoStudioApi.getJob>>["edit_render_quality"]>(null);
@@ -275,6 +277,17 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
       setMessage(error instanceof Error ? error.message : "Não foi possível analisar a qualidade visual.");
     } finally { setAnalyzingVisuals(false); }
   }
+  async function analyzeSceneImageSimilarity() {
+    if (!jobId || dirty || audioDirty || saving || savingAudio || analyzingImageSimilarity) return;
+    setAnalyzingImageSimilarity(true); setMessage("");
+    try {
+      const report = await videoStudioApi.analyzeJobSceneImageSimilarity(jobId);
+      setImageSimilarityReport(report);
+      setMessage(report.status === "duplicates_found" ? "Foram encontrados " + report.duplicate_pairs.length + " pares de imagens semelhantes. Revise antes de substituir." : "Nenhum par duplicado foi detectado nas imagens disponíveis.");
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Não foi possível comparar as imagens das cenas."); }
+    finally { setAnalyzingImageSimilarity(false); }
+  }
+
   async function analyzeMp4Visuals() {
     if (!jobId || dirty || audioDirty || saving || savingAudio || analyzingMp4Visuals) return;
     setAnalyzingMp4Visuals(true); setMessage("");
@@ -778,6 +791,9 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
             <button type="button" onClick={analyzeVisuals} disabled={!jobId || dirty || audioDirty || saving || savingAudio || analyzingVisuals} className="rounded-md border border-primary-300 px-3 py-2 text-xs font-semibold disabled:opacity-40 dark:border-primary-700">
               {analyzingVisuals ? "Analisando visual…" : "Analisar qualidade visual"}
             </button>
+            <button type="button" onClick={analyzeSceneImageSimilarity} disabled={!jobId || dirty || audioDirty || saving || savingAudio || analyzingImageSimilarity} className="rounded-md border border-primary-300 px-3 py-2 text-xs font-semibold disabled:opacity-40 dark:border-primary-700">
+              {analyzingImageSimilarity ? "Comparando imagens…" : "Detectar imagens repetidas"}
+            </button>
             <button type="button" onClick={analyzeMp4Visuals} disabled={!jobId || dirty || audioDirty || saving || savingAudio || analyzingMp4Visuals} className="rounded-md border border-primary-300 px-3 py-2 text-xs font-semibold disabled:opacity-40 dark:border-primary-700">
               {analyzingMp4Visuals ? "Extraindo frames…" : "Analisar MP4 renderizado"}
             </button>
@@ -789,6 +805,12 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
             </button>
             <span className="text-[11px] text-surface-400">A lista mostra arquivos gerados em music, effects, voice, dubbing e mix. Caminhos externos são bloqueados.</span>
           </div>
+          {imageSimilarityReport && <div className="rounded-md border border-surface-200 p-3 text-xs dark:border-surface-700 sm:col-span-2">
+            <div className="flex flex-wrap items-center justify-between gap-2"><strong>Comparação real das imagens das cenas</strong><span className={imageSimilarityReport.duplicate_pairs.length ? "text-amber-600" : "text-emerald-600"}>{imageSimilarityReport.duplicate_pairs.length ? imageSimilarityReport.duplicate_pairs.length + " pares semelhantes" : "Nenhuma duplicata detectada"}</span></div>
+            <p className="mt-1 text-surface-500">{imageSimilarityReport.image_count} imagens · {imageSimilarityReport.compared_pairs} comparações · método {imageSimilarityReport.method}</p>
+            {imageSimilarityReport.duplicate_pairs.length > 0 ? <ul className="mt-2 list-disc space-y-1 pl-5">{imageSimilarityReport.duplicate_pairs.map((pair, index) => <li key={index}>Cenas {pair.scene_indices[0] + 1} e {pair.scene_indices[1] + 1}: {pair.match_type === "exact" ? "arquivos idênticos" : "possível duplicata visual"} · {pair.similarity_percent}% de similaridade estrutural</li>)}</ul> : <p className="mt-2 text-emerald-600">Nenhum par ultrapassou o limite de semelhança configurado.</p>}
+            <p className="mt-2 text-surface-400">Usa SHA-256 e difference hash perceptual de 64 bits sobre os pixels. Sem reconhecimento semântico; confirme visualmente antes de excluir ou substituir imagens.</p>
+          </div>}
           {mp4VisualReport && <div className="rounded-md border border-surface-200 p-3 text-xs dark:border-surface-700 sm:col-span-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <strong>Scene Intelligence · frames reais do MP4</strong>
