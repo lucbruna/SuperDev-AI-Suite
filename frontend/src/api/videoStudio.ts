@@ -256,6 +256,11 @@ export interface StudioJob {
   } | null;
   edit_render_status?: string | null;
   edit_render_transition_policy?: { mode?: string; flattened_scenes?: number[]; message?: string } | null;
+  edit_preview_url?: string | null;
+  edit_preview_duration?: number | null;
+  edit_preview_width?: number | null;
+  edit_preview_height?: number | null;
+  edit_preview_fps?: number | null;
   edited_output_url?: string | null;
   edited_video_duration?: number | null;
   edit_render_audio?: string | null;
@@ -431,6 +436,20 @@ export const videoStudioApi = {
     ducking_attack?: number; ducking_release?: number; normalization_enabled?: boolean; normalization_target_dbfs?: number; normalization_max_gain_db?: number; loudness_normalization_enabled?: boolean; target_lufs?: number; true_peak_db?: number; loudness_range?: number; compressor_enabled?: boolean; compressor_threshold_db?: number; compressor_ratio?: number; compressor_attack?: number; compressor_release?: number; compressor_makeup_db?: number; eq_enabled?: boolean; eq_low_db?: number; eq_mid_db?: number; eq_high_db?: number; mastering_preset?: "custom" | "voice" | "documentary" | "music" | "cinematic_sfx";
   }): Promise<{ edit_timeline: EditTimeline; audio_draft_status: string; message: string }> {
     const { data } = await apiClient.patch(`${STUDIO_BASE}/videos/jobs/${jobId}/audio`, payload);
+    return data;
+  },
+
+  async previewJobEdits(jobId: string): Promise<{
+    status: string;
+    preview_url: string;
+    width: number;
+    height: number;
+    fps: number;
+    duration: number;
+    generated_scene_count: number;
+    message: string;
+  }> {
+    const { data } = await apiClient.post(`${STUDIO_BASE}/videos/jobs/${jobId}/preview`);
     return data;
   },
 
