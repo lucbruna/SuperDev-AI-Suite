@@ -1453,7 +1453,13 @@ async def render_video_job_edits(job_id: str):
                 if item.get("status") in {"updated", "completed", "ready"} and item.get("output_path")
             }
             ordered_indices = [int(scene.get("_source_scene_index", index)) for index, scene in enumerate(scenes)]
-            if ordered_indices and all(index in clips_by_index for index in ordered_indices):
+            if record.get("scene_clips"):
+                missing_indices = [index for index in ordered_indices if index not in clips_by_index]
+                if missing_indices:
+                    raise HTTPException(
+                        status_code=409,
+                        detail=f"VidGrid clips are missing or stale for scenes {missing_indices}. Rebuild stale clips before final export.",
+                    )
                 vidgrid_clip_paths = [str(clips_by_index[index]["output_path"]) for index in ordered_indices]
                 generated_scene_clips = dict(zip(ordered_indices, vidgrid_clip_paths))
         output_path = unique_filename(get_subsystem_dir("videos"), "text_to_video_edited", "mp4")
