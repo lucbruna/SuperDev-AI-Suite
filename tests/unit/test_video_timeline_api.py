@@ -42,7 +42,8 @@ def completed_job():
     video._jobs.pop(job_id, None)
 
 
-def test_update_timeline_draft_keeps_non_video_tracks(completed_job) -> None:
+def test_update_timeline_draft_keeps_non_video_tracks(completed_job, monkeypatch) -> None:
+    monkeypatch.setattr(video, "_persist_job", lambda record: None)
     request = video.TimelineEditRequest(
         scene_order=[1, 0],
         scene_edits=[
@@ -52,7 +53,7 @@ def test_update_timeline_draft_keeps_non_video_tracks(completed_job) -> None:
     )
     result = asyncio.run(video.update_video_job_timeline(completed_job, request))
     record = video._jobs[completed_job]
-    assert result["edit_draft_status"] == "in_memory_only"
+    assert result["edit_draft_status"] == "persisted_local_sqlite"
     assert [scene["index"] for scene in record["_edited_scenes"]] == [1, 0]
     assert [track["type"] for track in result["edit_timeline"]["tracks"]] == ["video", "audio"]
 
@@ -64,6 +65,7 @@ def test_update_timeline_draft_rejects_unknown_job() -> None:
 
 
 def test_render_edits_returns_new_mp4_and_discloses_audio_limitation(completed_job, monkeypatch, tmp_path) -> None:
+    monkeypatch.setattr(video, "_persist_job", lambda record: None)
     from modules.ai_video_studio.media import output_paths, render
 
     monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda *_: tmp_path)
