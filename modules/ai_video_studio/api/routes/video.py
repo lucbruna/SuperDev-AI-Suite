@@ -74,6 +74,13 @@ class VideoGenerateRequest(BaseModel):
             raise ValueError("character_ids must not contain duplicates")
         return values
 
+    @field_validator("object_ids")
+    @classmethod
+    def _validate_object_ids(cls, values: list[str]) -> list[str]:
+        if len(values) != len(set(values)):
+            raise ValueError("object_ids must not contain duplicates")
+        return values
+
 
 class VideoGenerateResponse(BaseModel):
     job_id: str
