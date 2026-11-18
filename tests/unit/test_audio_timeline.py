@@ -58,6 +58,19 @@ def test_mix_audio_timeline_places_trimmed_clip_with_fades_and_fixed_duration(tm
         assert rendered.getframerate() == dsp.SAMPLE_RATE
 
 
+def test_mix_audio_timeline_loops_short_music_only_when_requested(tmp_path, monkeypatch):
+    downloads = _audio_roots(tmp_path, monkeypatch)
+    source = downloads / "music" / "short.wav"
+    dsp.write_audio(source, np.full(dsp.SAMPLE_RATE // 4, 0.12, dtype=np.float32))
+    output = tmp_path / "looped.wav"
+    audio_timeline.mix_audio_timeline(
+        [{"asset": str(source), "start": 0, "end": 1, "loop": True}],
+        output, total_duration=1.0,
+    )
+    samples, rate = dsp.read_audio(output, target_sr=dsp.SAMPLE_RATE)
+    assert rate == dsp.SAMPLE_RATE
+    assert np.max(np.abs(samples[rate // 2:])) > 0.08
+
 def test_mix_audio_timeline_accepts_pre_aligned_narration_samples(tmp_path, monkeypatch):
     _audio_roots(tmp_path, monkeypatch)
     output = tmp_path / "narration_mix.wav"
