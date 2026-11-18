@@ -67,8 +67,18 @@ Audio statuses:
 
 Subtitle statuses are returned separately; when regeneration succeeds, the edited SRT follows the edited scene timing. The edited video remains a separate output from the original generated MP4.
 
+## Final audio quality control
+
+Every edited render with mixed audio now returns and persists an `edit_render_quality` report. It measures the final stereo mix after ducking, compressor, EQ, normalization and limiting. The report includes final peak/RMS, clipping ratio, internal silence gaps of at least 500 ms, and windows where the music stem is less than 6 dB below active narration. Stem comparison uses 100 ms RMS energy windows and is explicitly heuristic; it is not speech recognition or a perceptual masking model.
+
+- `passed`: no configured quality warnings were detected.
+- `needs_review`: export is allowed, but silence gaps, possible narration masking or pre-limiter overload should be reviewed.
+- `blocked`: the final encoded mix contains full-scale clipped samples; MP4 muxing is stopped with HTTP 422 until the mix is corrected.
+
+The editor displays the report after rendering and can restore it from job status. Expected pauses may be intentional; users should review the listed timestamps rather than automatically deleting silence. Pre-limiter overload is a warning because the final limiter may correct it; actual clipping in the final mix is the export-blocking condition.
+
 ## API response statuses
 
 - edit_draft_status: persisted_local_sqlite means scene edits were stored in the local SQLite database.
-- edit_render_status: rendering | completed | failed describes the edited MP4 lifecycle.
+- edit_render_status: rendering | completed | failed | quality_blocked describes the edited MP4 lifecycle.
 - audio_status: use the values above; it is not a generic guarantee that the original narration was retained.
