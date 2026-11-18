@@ -63,7 +63,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install -e ".[dev]" 2>/dev/null || pip install fastapi uvicorn sqlalchemy asyncpg psycopg2-binary pydantic pydantic-settings python-jose[cryptography] passlib[bcrypt] python-multipart pytest pytest-asyncio httpx redis python-dateutil alembic
+          pip install -e ".[dev]" 2>/dev/null || pip install fastapi uvicorn 'sqlalchemy[asyncio]' asyncpg psycopg2-binary pydantic pydantic-settings python-jose[cryptography] passlib[bcrypt] python-multipart pytest pytest-asyncio httpx redis python-dateutil alembic
       - name: Run backend tests
         env:
           DATABASE_URL: postgresql+asyncpg://superdev:superdev@localhost:5432/superdev_test
