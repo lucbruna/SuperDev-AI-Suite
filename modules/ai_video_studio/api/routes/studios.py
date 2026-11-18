@@ -70,7 +70,7 @@ async def preview_scene_profile(
     return {"studio_id": studio_id, "scene": prepared}
 
 
-@router.get("/characters", tags=["DARKSTUDIO"])
+@router.get("/character-library", tags=["DARKSTUDIO"])
 async def list_studio_characters(studio_id: str | None = None) -> dict[str, Any]:
     """List stable procedural character identities and their visual contracts."""
     catalog = {
@@ -117,7 +117,7 @@ async def list_studio_characters(studio_id: str | None = None) -> dict[str, Any]
     return {"count": len(items), "characters": items}
 
 
-@router.get("/characters/{character_id}", tags=["DARKSTUDIO"])
+@router.get("/character-library/{character_id}", tags=["DARKSTUDIO"])
 async def get_studio_character(character_id: str) -> dict[str, Any]:
     """Return one reusable character identity."""
     result = await list_studio_characters()
@@ -129,7 +129,7 @@ async def get_studio_character(character_id: str) -> dict[str, Any]:
     return character
 
 
-@router.post("/characters/{character_id}/scene-preview", tags=["DARKSTUDIO"])
+@router.post("/character-library/{character_id}/scene-preview", tags=["DARKSTUDIO"])
 async def preview_studio_character(
     character_id: str, payload: dict[str, Any]
 ) -> dict[str, Any]:
