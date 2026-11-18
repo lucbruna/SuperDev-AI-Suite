@@ -334,8 +334,9 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
       setSceneImageAssets((current) => [...current.filter((asset) => asset.scene_index !== sceneIndex), { ...candidate, status: "edited", approval_required: false }]);
       setVisualDirections((current) => current[sceneIndex] ? { ...current, [sceneIndex]: { ...current[sceneIndex], image_url: result.image_url, image_status: "edited" } } : current);
       setSceneImageCandidates((current) => { const next = { ...current }; delete next[sceneIndex]; return next; });
-      const latestJob = await videoStudioApi.getJob(jobId);
-      setStaleVidGridClipCount(latestJob.scene_clips?.filter((clip) => clip.status === "stale").length ?? 0);
+      videoStudioApi.getJob(jobId).then((latestJob) => {
+        setStaleVidGridClipCount(latestJob.scene_clips?.filter((clip) => clip.status === "stale").length ?? 0);
+      }).catch(() => undefined);
       setMessage(result.message);
     } catch (error) { setMessage(error instanceof Error ? error.message : "Não foi possível aprovar a imagem candidata."); }
     finally { setApprovingImageScene(null); }
