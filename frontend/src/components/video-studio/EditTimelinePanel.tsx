@@ -95,6 +95,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
   useEffect(() => { setDraft(timeline); setDirty(false); setAudioDirty(false); setSelected(0); }, [timeline]);
   useEffect(() => { setRenderUrl(editedOutputUrl ?? ""); }, [editedOutputUrl]);
   useEffect(() => {
+    setRenderQuality(null);
     if (!jobId) return;
     videoStudioApi.listJobAudioAssets(jobId).then(setAudioAssets).catch(() => setAudioAssets([]));
     videoStudioApi.getJob(jobId).then((job) => {
