@@ -71,18 +71,29 @@ def cues_for_scene(text: str, duration: float, start_offset: float = 0.0, max_ch
     if not lines:
         return []
 
-    # Ideal cue duration from reading speed, clamped to sane bounds.
-    ideal = [max(MIN_CUE_SECONDS, min(MAX_CUE_SECONDS, len(line) / CHARS_PER_SECOND)) for line in lines]
+    # Allocate the exact scene duration proportionally to reading effort.
+    # Minimum/maximum cue lengths are advisory: clamping each cue independently
+    # can make the sum exceed a short scene and push later subtitles out of sync.
+    scene_duration = max(0.0, float(duration))
+    if scene_duration <= 0:
+        return []
+    ideal = [
+        max(MIN_CUE_SECONDS, min(MAX_CUE_SECONDS, len(line) / CHARS_PER_SECOND))
+        for line in lines
+    ]
     total_ideal = sum(ideal)
-
-    # Distribute the scene duration across cues proportionally to their ideal.
-    scale = duration / total_ideal if total_ideal > 0 else 1.0
     cues: list[SubtitleCue] = []
-    t = start_offset
-    for i, (line, dur) in enumerate(zip(lines, ideal, strict=False)):
-        cue_duration = max(MIN_CUE_SECONDS, min(MAX_CUE_SECONDS, dur * scale))
+    t = float(start_offset)
+    elapsed = 0.0
+    for i, (line, weight) in enumerate(zip(lines, ideal, strict=False)):
+        if i == len(lines) - 1:
+            cue_duration = scene_duration - elapsed
+        else:
+            cue_duration = scene_duration * weight / total_ideal
+        cue_duration = max(0.0, cue_duration)
         cues.append(SubtitleCue(index=i + 1, start=t, end=t + cue_duration, text=line))
         t += cue_duration
+        elapsed += cue_duration
     return cues
 
 
