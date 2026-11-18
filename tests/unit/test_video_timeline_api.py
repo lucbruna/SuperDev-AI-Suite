@@ -335,3 +335,32 @@ def test_encoded_audio_measurement_is_exposed_in_status_model():
         edit_render_encoded_audio={"verified": True},
     )
     assert response.edit_render_encoded_audio["verified"] is True
+
+
+def test_av_sync_endpoint_persists_frame_alignment_report(completed_job, monkeypatch):
+    monkeypatch.setattr(video, "_persist_job", lambda record: None)
+    record = video._jobs[completed_job]
+    record["edit_timeline"] = {
+        "fps": 24,
+        "tracks": [
+            {"id": "video-main", "type": "video", "clips": [
+                {"scene_index": 0, "start_frame": 0, "end_frame": 48},
+                {"scene_index": 1, "start_frame": 48, "end_frame": 96},
+            ]},
+            {"id": "audio-narration", "type": "audio", "role": "narration", "clips": [
+                {"start_frame": 0, "end_frame": 48},
+                {"start_frame": 48, "end_frame": 96},
+            ]},
+        ],
+    }
+    result = asyncio.run(video.analyze_video_job_av_sync(completed_job))
+    assert result["status"] == "passed"
+    assert len(result["scene_comparisons"]) == 2
+    assert record["av_sync_analysis"]["export_blocked"] is False
+
+
+def test_av_sync_endpoint_requires_video_timeline(completed_job):
+    video._jobs[completed_job]["edit_timeline"] = {"tracks": []}
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(video.analyze_video_job_av_sync(completed_job))
+    assert exc.value.status_code == 409
