@@ -138,7 +138,8 @@ class ScenePlanner:
         "Each scene must include name, description, visual_prompt (a detailed standalone "
         "image-generation prompt describing subject, environment, action, composition, "
         "lighting, lens/framing and visual style), negative_prompt, voiceover_text, "
-        "shot_type, duration, background_colors, particles, circles, rects, lines, "
+        "shot_type, character_pose (neutral/explain/point), character_expression "
+        "(neutral/happy/surprised/concerned), duration, background_colors, particles, circles, rects, lines, "
         "text and camera. Vary shot sizes and angles; do not repeat the same composition. "
         "Never invent facts when the brief is historical or documentary."
     )
@@ -201,6 +202,8 @@ class ScenePlanner:
                     "negative_prompt": str(item.get("negative_prompt") or "")[:1000],
                     "voiceover_text": str(item.get("voiceover_text") or item.get("narration") or "")[:2000],
                     "shot_type": str(item.get("shot_type") or "medium")[:32],
+                    "character_pose": str(item.get("character_pose") or "neutral")[:24],
+                    "character_expression": str(item.get("character_expression") or "neutral")[:24],
                     "duration": max(0.5, s_duration),
                     "background_colors": self._coerce_colors(item.get("background_colors")),
                     "particles": self._coerce_list(item.get("particles")),
@@ -246,6 +249,8 @@ class ScenePlanner:
                     "negative_prompt": "blurry, low quality, distorted anatomy, unreadable text, watermark, logo",
                     "voiceover_text": chunk[:1000],
                     "shot_type": ("establishing", "wide", "medium", "close_up", "detail")[i % 5],
+                    "character_pose": ("explain", "point", "neutral")[i % 3],
+                    "character_expression": ("neutral", "happy", "surprised")[i % 3],
                     "duration": per_scene,
                     "background_colors": [palette[i % len(palette)], palette[(i + 1) % len(palette)]],
                     "particles": [
