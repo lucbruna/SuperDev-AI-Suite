@@ -23,6 +23,10 @@ from modules.ai_video_studio.media.render import (
     render_still,
 )
 from modules.ai_video_studio.media.video import frames_to_video
+from modules.ai_video_studio.media.characters import (
+    add_character_to_scene,
+    build_character,
+)
 from modules.ai_video_studio.media.studio_profiles import (
     HISTORICAL_DOCUMENTARY,
     WHYMENTARY,
@@ -41,6 +45,8 @@ __all__ = [
     "render_sim_frames",
     "render_still",
     "frames_to_video",
+    "build_character",
+    "add_character_to_scene",
     "WHYMENTARY",
     "HISTORICAL_DOCUMENTARY",
     "apply_studio_profile",
