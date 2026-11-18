@@ -226,7 +226,7 @@ export default function VideoStudioPage() {
         generate_subtitles: generateSubtitles,
         voice_id: voiceId,
         voiceover_mode: mode,
-        num_scenes: Math.min(20, Math.max(1, numScenes)),
+        num_scenes: Math.min(60, Math.max(1, numScenes)),
         duration_seconds: Math.min(MAX_DURATION_SECONDS, Math.max(1, effectiveDuration)),
         vidgrid_compatible: vidgridCompatible,
         resolution,
@@ -583,7 +583,7 @@ export default function VideoStudioPage() {
                 <input
                   type="number"
                   min={1}
-                  max={10}
+                  max={60}
                   value={numScenes}
                   onChange={(e) => {
                     setNumScenes(Number(e.target.value));
