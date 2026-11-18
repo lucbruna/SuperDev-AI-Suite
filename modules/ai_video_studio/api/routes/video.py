@@ -467,11 +467,11 @@ async def render_video_job_edits(job_id: str):
                 remap_narration_clips_for_edits,
             )
             remapped_narration = remap_narration_clips_for_edits(scenes, narration_clips, fps=fps)
-            audio_inputs.extend(build_narration_tracks(remapped_narration))
+            audio_inputs.extend({**track, "kind": "narration"} for track in build_narration_tracks(remapped_narration))
 
         configured_audio = record.get("_audio_clips") or {}
-        audio_inputs.extend(configured_audio.get("music", []))
-        audio_inputs.extend(configured_audio.get("sfx", []))
+        audio_inputs.extend({**clip, "kind": "music"} for clip in configured_audio.get("music", []))
+        audio_inputs.extend({**clip, "kind": "sound_effect"} for clip in configured_audio.get("sfx", []))
         if audio_inputs:
             total_duration = int(round(result["frames"])) / fps
             audio_path = unique_filename(get_subsystem_dir("mix"), "edited_audio_mix", "wav")
