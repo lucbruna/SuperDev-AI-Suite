@@ -65,6 +65,14 @@ def test_update_timeline_draft_keeps_non_video_tracks(completed_job, monkeypatch
     ("true_peak_db", -12),
     ("loudness_range", 25),
 ])
+
+
+@pytest.mark.parametrize("pan", [-1.1, 1.1])
+def test_audio_timeline_rejects_pan_outside_stereo_range(pan):
+    with pytest.raises(ValueError):
+        video.AudioTimelineClip(asset="music/theme.wav", start=0, end=2, pan=pan)
+
+
 def test_audio_timeline_rejects_invalid_loudness_controls(field, value):
     with pytest.raises(ValueError):
         video.AudioTimelineEditRequest(**{field: value})
