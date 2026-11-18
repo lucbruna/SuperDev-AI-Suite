@@ -648,6 +648,14 @@ export default function VideoStudioPage() {
                         )}
                       </p>
                     )}
+                    {job.subtitles?.cue_count != null && (
+                      <p className="mt-1 text-xs text-surface-400">
+                        💬 {job.subtitles.cue_count} legendas SRT geradas
+                      </p>
+                    )}
+                    {job.subtitles?.reason && (
+                      <p className="mt-1 text-xs text-amber-500">Legendas: {job.subtitles.reason}</p>
+                    )}
                     {job.error && <p className="mt-1 text-xs text-red-500">{job.error}</p>}
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
@@ -660,6 +668,11 @@ export default function VideoStudioPage() {
                     {job.output_url && job.status === "completed" && (
                       <Button variant="secondary" size="sm" onClick={() => window.open(job.output_url as string, "_blank")}>
                         ⬇ Baixar MP4
+                      </Button>
+                    )}
+                    {job.subtitles?.download_url && job.status === "completed" && (
+                      <Button variant="secondary" size="sm" onClick={() => window.open(job.subtitles?.download_url as string, "_blank")}>
+                        ⬇ Baixar SRT
                       </Button>
                     )}
                   </div>
