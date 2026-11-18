@@ -1021,3 +1021,42 @@ class TestBatchSceneImageRegeneration:
             ]},
         )
         assert response.status_code == 422
+
+
+class TestSceneImageCandidateApproval:
+    @pytest.mark.asyncio
+    async def test_candidate_is_only_applied_after_explicit_approval(self, client: AsyncClient, monkeypatch, tmp_path):
+        from modules.ai_video_studio.api.routes import video
+        from modules.ai_video_studio.media import output_paths
+
+        image_root = tmp_path / "images"
+        image_root.mkdir()
+        candidate_path = image_root / "candidate.png"
+        candidate_path.write_bytes(b"test-image-bytes")
+        monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda name: image_root if name == "images" else tmp_path / name)
+        monkeypatch.setitem(video._jobs, "approval_job", {
+            "job_id": "approval_job", "status": "completed",
+            "_source_scenes": [{"_source_scene_index": 0, "background_image_path": str(image_root / "old.png")}],
+            "scene_image_candidates": {"0": [{"candidate_id": "candidate-123", "scene_index": 0,
+                "image_path": str(candidate_path), "provider": "mock", "operation": "image_to_image",
+                "prompt": "Uma floresta ao amanhecer", "negative_prompt": "texto, marca d'água",
+                "status": "pending_approval"}]},
+        })
+        response = await client.post("/api/v1/video-studio/videos/jobs/approval_job/scenes/0/image-candidates/candidate-123/approve")
+        assert response.status_code == 200
+        assert response.json()["status"] == "approved"
+        assert response.json()["render_required"] is True
+        assert video._jobs["approval_job"]["_edited_scenes"][0]["background_image_path"] == str(candidate_path)
+        assert video._jobs["approval_job"]["scene_image_candidates"] == {}
+
+    @pytest.mark.asyncio
+    async def test_unknown_candidate_cannot_replace_scene_image(self, client: AsyncClient, monkeypatch):
+        from modules.ai_video_studio.api.routes import video
+        monkeypatch.setitem(video._jobs, "missing_candidate_job", {
+            "job_id": "missing_candidate_job", "status": "completed",
+            "_source_scenes": [{"background_image_path": "/old.png"}],
+            "scene_image_candidates": {"0": []},
+        })
+        response = await client.post("/api/v1/video-studio/videos/jobs/missing_candidate_job/scenes/0/image-candidates/not-found/approve")
+        assert response.status_code == 404
+        assert video._jobs["missing_candidate_job"]["_source_scenes"][0]["background_image_path"] == "/old.png"
