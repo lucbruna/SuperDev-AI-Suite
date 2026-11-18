@@ -378,6 +378,7 @@ async def update_video_job_timeline(job_id: str, req: TimelineEditRequest):
     record["_edited_scenes"] = edited
     record["edit_timeline"] = timeline
     record["edit_draft_status"] = "saved"
+    record["edit_render_quality"] = None
     _persist_job(record)
     return {
         "job_id": job_id,
@@ -502,6 +503,7 @@ async def update_video_job_audio(job_id: str, req: AudioTimelineEditRequest):
     record["audio_settings"] = record["_audio_settings"]
     record["edit_timeline"] = timeline
     record["audio_draft_status"] = "saved"
+    record["edit_render_quality"] = None
     _persist_job(record)
     return {"job_id": job_id, "edit_timeline": timeline, "audio_draft_status": "saved", "message": "Faixas de música e efeitos salvas. Renderize para aplicar a mixagem ao novo MP4."}
 
