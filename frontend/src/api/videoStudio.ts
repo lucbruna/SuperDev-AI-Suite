@@ -255,6 +255,7 @@ export interface StudioJob {
     warning_count?: number;
   } | null;
   edit_render_status?: string | null;
+  edit_render_transition_policy?: { mode?: string; flattened_scenes?: number[]; message?: string } | null;
   edited_output_url?: string | null;
   edited_video_duration?: number | null;
   edit_render_audio?: string | null;
