@@ -188,6 +188,7 @@ class TextToVideoEngine:
                         "image_path": generated["image_path"],
                         "provider": generated["provider"],
                         "status": "generated",
+                        "prompt": full_prompt,
                     })
                 except Exception as exc:
                     if image_mode == "ai":
@@ -325,6 +326,8 @@ class TextToVideoEngine:
                     "output_path": clip_result["output_path"],
                     "bytes": clip_result["bytes"],
                     "encode_engine": clip_result["engine"],
+                    "visual_prompt": scene.get("visual_prompt") or scene.get("description", ""),
+                    "narration_text": scene.get("voiceover_text") or scene.get("narration") or "",
                 })
 
         result: dict[str, Any] = {
