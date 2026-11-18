@@ -96,6 +96,16 @@ class SceneImageEditRequest(BaseModel):
     cfg_scale: float = Field(default=7.0, ge=1.0, le=20.0)
 
 
+class SceneImageBatchItem(BaseModel):
+    scene_index: int = Field(..., ge=0)
+    prompt: str = Field(..., min_length=1, max_length=4000)
+    negative_prompt: str = Field(default="", max_length=2000)
+
+
+class SceneImageBatchEditRequest(BaseModel):
+    scenes: list[SceneImageBatchItem] = Field(..., min_length=1, max_length=60)
+
+
 class SceneMotionRequest(BaseModel):
     motion_prompt: str = Field(..., min_length=1, max_length=4000)
     negative_prompt: str = Field(default="", max_length=2000)
@@ -288,6 +298,8 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
     record = _jobs.get(job_id)
     if record is None:
         raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+    if record.get("_scene_batch_running") and not record.get("_scene_batch_dispatching"):
+        raise HTTPException(status_code=409, detail="A batch scene regeneration is already running")
     if record.get("status") != "completed":
         raise HTTPException(status_code=409, detail="Scene images can only be changed after generation completes")
     source_scenes = record.get("_edited_scenes") or record.get("_source_scenes") or []
@@ -437,6 +449,71 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
         "operation": operation, "provider": result["provider"],
         "status": "edited", "prompt": req.prompt, "render_required": True,
         "scene_clip": scene_clip_result,
+    }
+
+
+@router.post("/jobs/{job_id}/scenes/regenerate")
+async def regenerate_video_job_scene_images(job_id: str, req: SceneImageBatchEditRequest):
+    """Regenerate selected scene images sequentially; preserve per-scene outcomes."""
+    record = _jobs.get(job_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+    if record.get("status") != "completed":
+        raise HTTPException(status_code=409, detail="Scene images can only be changed after generation completes")
+    if record.get("_scene_batch_running"):
+        raise HTTPException(status_code=409, detail="A batch scene regeneration is already running")
+    indices = [item.scene_index for item in req.scenes]
+    if len(indices) != len(set(indices)):
+        raise HTTPException(status_code=422, detail="Duplicate scene indices are not allowed")
+
+    record["_scene_batch_running"] = True
+    record["_scene_batch_total"] = len(req.scenes)
+    record["_scene_batch_completed"] = 0
+    _persist_job(record)
+    results: list[dict[str, Any]] = []
+    try:
+        for item in req.scenes:
+            record["_scene_batch_dispatching"] = True
+            try:
+                result = await edit_video_job_scene_image(
+                    job_id, item.scene_index,
+                    SceneImageEditRequest(
+                        prompt=item.prompt,
+                        negative_prompt=item.negative_prompt,
+                    ),
+                )
+                results.append({"scene_index": item.scene_index, "status": "edited", "result": result})
+            except HTTPException as exc:
+                results.append({
+                    "scene_index": item.scene_index,
+                    "status": "failed",
+                    "error": str(exc.detail),
+                    "http_status": exc.status_code,
+                })
+            except Exception as exc:  # noqa: BLE001 — report failure without losing completed scenes
+                results.append({
+                    "scene_index": item.scene_index,
+                    "status": "failed",
+                    "error": str(exc)[:300],
+                })
+            finally:
+                record["_scene_batch_dispatching"] = False
+                record["_scene_batch_completed"] = len(results)
+                _persist_job(record)
+    finally:
+        record.pop("_scene_batch_dispatching", None)
+        record.pop("_scene_batch_running", None)
+        _persist_job(record)
+
+    succeeded = sum(item["status"] == "edited" for item in results)
+    return {
+        "job_id": job_id,
+        "status": "completed" if succeeded == len(results) else "partial" if succeeded else "failed",
+        "requested": len(results),
+        "succeeded": succeeded,
+        "failed": len(results) - succeeded,
+        "results": results,
+        "message": f"{succeeded} de {len(results)} cenas atualizadas; a exportação final ainda precisa ser renderizada.",
     }
 
 
