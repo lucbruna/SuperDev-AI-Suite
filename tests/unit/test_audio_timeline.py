@@ -43,6 +43,8 @@ def test_final_mix_quality_report_detects_masking_silence_and_pre_limiter_peak()
     assert report["export_allowed"] is True
     assert report["silence_gaps"] == [{"start": 1.0, "end": 2.0, "duration": 1.0}]
     assert report["narration_music_masking"][0]["start"] == 0.0
+    assert report["recommendations"][0]["action"] == "increase_ducking"
+    assert report["recommendations"][0]["recommended_ducking_db"] == 12.0
     assert {item["code"] for item in report["warnings"]} == {
         "pre_limiter_clipping", "internal_silence_gaps", "narration_may_be_masked",
     }
