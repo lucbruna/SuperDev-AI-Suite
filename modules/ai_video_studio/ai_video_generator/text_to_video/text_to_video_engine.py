@@ -166,13 +166,20 @@ class TextToVideoEngine:
                     )
 
         # Apply deterministic shot selection, camera motion and transitions.
-        from modules.ai_video_studio.media.editing_director import direct_storyboard
+        from modules.ai_video_studio.media.editing_director import (
+            build_editing_report, direct_storyboard,
+        )
 
+        scene_fallback_duration = duration / len(scenes)
         scenes = direct_storyboard(
             scenes,
             studio_id=studio_id,
             fps=fps,
-            fallback_duration=duration / len(scenes),
+            fallback_duration=scene_fallback_duration,
+        )
+        editing_report = build_editing_report(
+            scenes, fps=fps, fallback_duration=scene_fallback_duration,
+            target_words_per_minute=int(params.get("target_words_per_minute", 145)),
         )
 
         out = unique_filename(get_subsystem_dir("videos"), "text_to_video", "mp4")
@@ -202,6 +209,7 @@ class TextToVideoEngine:
             "ai_planner": plan["provider"] or "deterministic",
             "ai_generated": plan["ai_generated"],
             "scenes": scenes,
+            "editing_report": editing_report,
             "frames": video_result["frames"],
             "fps": fps,
             "duration": round(video_result["frames"] / fps, 3),
