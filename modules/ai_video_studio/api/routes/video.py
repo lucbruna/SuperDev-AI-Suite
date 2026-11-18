@@ -305,6 +305,63 @@ async def update_video_job_timeline(job_id: str, req: TimelineEditRequest):
     }
 
 
+@router.post("/jobs/{job_id}/render-edits")
+async def render_video_job_edits(job_id: str):
+    """Render the current edited storyboard to a new MP4; audio is not re-timed yet."""
+    record = _jobs.get(job_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+    if record.get("status") != "completed" or not record.get("_edited_scenes"):
+        raise HTTPException(status_code=409, detail="Save a valid timeline draft before rendering")
+    if record.get("_rendering_edits"):
+        raise HTTPException(status_code=409, detail="An edited render is already running")
+
+    params = record.get("params") or {}
+    scenes = record["_edited_scenes"]
+    try:
+        width, height = _parse_resolution(params.get("resolution") or record.get("resolution") or "1280x720")
+        fps = int(params.get("frame_rate") or record.get("frame_rate") or 24)
+        if not 1 <= fps <= 120:
+            raise ValueError("frame_rate must be between 1 and 120")
+        from modules.ai_video_studio.media.output_paths import get_subsystem_dir, unique_filename
+        from modules.ai_video_studio.media.render import render_multi_scene_video
+        output_path = unique_filename(get_subsystem_dir("videos"), "text_to_video_edited", "mp4")
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    record["_rendering_edits"] = True
+    record["edit_render_status"] = "rendering"
+    try:
+        result = await asyncio.to_thread(
+            render_multi_scene_video, scenes, output_path, fps=fps, width=width, height=height,
+            require_mp4=True, studio_id=params.get("studio_id") or "whymentary",
+        )
+        record.update(
+            output_path=result["output_path"],
+            output_url=to_download_url(result["output_path"]),
+            file_size_bytes=result.get("bytes", 0),
+            video_duration=round(result["frames"] / fps, 3),
+            frames_rendered=result["frames"],
+            total_frames=result["frames"],
+            edit_render_status="completed",
+            edit_render_audio="not_retimed",
+        )
+        return {
+            "job_id": job_id,
+            "status": "completed",
+            "output_url": record["output_url"],
+            "video_duration": record["video_duration"],
+            "file_size_bytes": record["file_size_bytes"],
+            "audio_status": "not_retimed",
+            "message": "Novo MP4 renderizado. A narração original não foi reposicionada para as novas durações/ordem; este arquivo deve ser tratado como prévia visual sem áudio sincronizado.",
+        }
+    except Exception as exc:
+        record["edit_render_status"] = "failed"
+        record["edit_render_error"] = str(exc)[:500]
+        raise HTTPException(status_code=500, detail="Edited video render failed") from exc
+    finally:
+        record["_rendering_edits"] = False
+
 @router.get("/jobs/{job_id}", response_model=VideoStatusResponse)
 async def get_video_job_status(job_id: str):
     if job_id not in _jobs:
