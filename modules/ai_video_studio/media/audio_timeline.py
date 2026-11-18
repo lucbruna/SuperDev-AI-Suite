@@ -57,12 +57,49 @@ def list_audio_assets() -> list[dict[str, Any]]:
     return assets
 
 
+def _narration_activity_envelope(clips, *, total_samples, sample_rate, threshold_db, attack_seconds, release_seconds):
+    """Return a smoothed speech-activity envelope for side-chain ducking."""
+    block = max(1, int(round(sample_rate * 0.01)))
+    activity = np.zeros(total_samples, dtype=np.float32)
+    for clip in clips:
+        if not isinstance(clip, dict) or clip.get("kind") != "narration":
+            continue
+        samples = clip.get("samples")
+        if samples is None:
+            continue
+        audio = np.asarray(samples, dtype=np.float32).reshape(-1)
+        start = max(0, int(round(float(clip.get("offset", clip.get("start", 0))) * sample_rate)))
+        end = min(total_samples, start + len(audio))
+        if end <= start: continue
+        source = audio[:end - start]
+        padded = np.pad(source, (0, (-len(source)) % block))
+        if len(padded) == 0: continue
+        rms = np.sqrt(np.mean(padded.reshape(-1, block) ** 2, axis=1))
+        db = 20.0 * np.log10(np.maximum(rms, 1e-8))
+        active = np.repeat((db >= threshold_db).astype(np.float32), block)[:len(source)]
+        activity[start:end] = np.maximum(activity[start:end], active)
+    if not np.any(activity): return activity
+    attack = max(1, int(round(attack_seconds * sample_rate)))
+    release = max(1, int(round(release_seconds * sample_rate)))
+    envelope = np.zeros(total_samples, dtype=np.float32)
+    current = 0.0
+    for index, target in enumerate(activity):
+        coefficient = 1.0 / (attack if target > current else release)
+        current += (float(target) - current) * coefficient
+        envelope[index] = current
+    return envelope
+
 def mix_audio_timeline(
     clips: list[dict[str, Any]],
     output_path: str | Path,
     *,
     total_duration: float,
     sample_rate: int = dsp.SAMPLE_RATE,
+    ducking_enabled: bool = True,
+    ducking_db: float = 9.0,
+    ducking_threshold_db: float = -36.0,
+    ducking_attack: float = 0.08,
+    ducking_release: float = 0.35,
 ) -> dict[str, Any]:
     """Mix music/SFX/narration clips into one mono WAV with bounded envelopes.
 
@@ -74,9 +111,15 @@ def mix_audio_timeline(
         raise ValueError("total_duration must be a positive finite number")
     if not isinstance(sample_rate, int) or sample_rate < 8000:
         raise ValueError("sample_rate must be an integer >= 8000")
+    ducking_values = (ducking_db, ducking_threshold_db, ducking_attack, ducking_release)
+    if not all(np.isfinite(value) for value in ducking_values): raise ValueError("ducking controls must be finite")
+    if not 0 <= ducking_db <= 24 or ducking_attack <= 0 or ducking_release <= 0:
+        raise ValueError("ducking reduction must be 0..24 dB and attack/release must be positive")
     total_samples = int(round(total_duration * sample_rate))
     mix = np.zeros(total_samples, dtype=np.float64)
     reports: list[dict[str, Any]] = []
+    speech_envelope = (_narration_activity_envelope(clips, total_samples=total_samples, sample_rate=sample_rate, threshold_db=ducking_threshold_db, attack_seconds=ducking_attack, release_seconds=ducking_release) if ducking_enabled and ducking_db > 0 else np.zeros(total_samples, dtype=np.float32))
+    duck_floor = float(10 ** (-ducking_db / 20.0))
 
     for index, clip in enumerate(clips):
         if not isinstance(clip, dict):
@@ -134,7 +177,11 @@ def mix_audio_timeline(
         destination_start = int(round(start * sample_rate))
         destination_end = min(total_samples, destination_start + count)
         if destination_end > destination_start:
-            mix[destination_start:destination_end] += placed[:destination_end - destination_start]
+            visible = placed[:destination_end - destination_start]
+            if clip.get("kind") == "music" and ducking_enabled and ducking_db > 0:
+                speech = speech_envelope[destination_start:destination_end]
+                visible = visible * (1.0 - speech * (1.0 - duck_floor))
+            mix[destination_start:destination_end] += visible
         reports.append({
             "index": index,
             "status": "mixed",
@@ -143,6 +190,8 @@ def mix_audio_timeline(
             "duration": round(duration, 3),
             "volume": volume,
             "loop": bool(clip.get("loop", False)),
+            "kind": str(clip.get("kind", "unspecified")),
+            "ducking_applied": bool(clip.get("kind") == "music" and ducking_enabled and ducking_db > 0 and np.any(speech_envelope)),
         })
 
     limited = dsp.limiter(mix.astype(np.float32), threshold=0.97, sample_rate=sample_rate)
@@ -154,4 +203,5 @@ def mix_audio_timeline(
         "clip_count": len(reports),
         "clips": reports,
         "peak": round(dsp.peak(limited), 4),
+        "ducking": {"enabled": bool(ducking_enabled and ducking_db > 0), "reduction_db": float(ducking_db), "threshold_db": float(ducking_threshold_db), "attack_seconds": float(ducking_attack), "release_seconds": float(ducking_release), "speech_detected": bool(np.any(speech_envelope))},
     }
