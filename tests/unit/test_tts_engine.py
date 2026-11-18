@@ -1,14 +1,15 @@
 """Regression tests for truthful TTS fallback and language-aware default voice."""
 from __future__ import annotations
 
+import asyncio
+
 import pytest
 
 from modules.ai_video_studio.ai_voice_studio.synthesis.tts_engine import TTSEngine
 from modules.ai_video_studio.services.voice_studio import _lookup_voice
 
 
-@pytest.mark.asyncio
-async def test_formant_fallback_is_not_reported_as_spoken_narration(monkeypatch):
+def test_formant_fallback_is_not_reported_as_spoken_narration(monkeypatch):
     class NetworkUnavailable:
         async def synthesize(self, *args, **kwargs):
             raise RuntimeError("network unavailable")
@@ -26,11 +27,10 @@ async def test_formant_fallback_is_not_reported_as_spoken_narration(monkeypatch)
     engine.offline = FormantOnly()
 
     with pytest.raises(RuntimeError, match="not available|formant audio|speech voice"):
-        await engine.synthesize("Olá, mundo", language="pt-BR")
+        asyncio.run(engine.synthesize("Olá, mundo", language="pt-BR"))
 
 
-@pytest.mark.asyncio
-async def test_real_offline_speech_engine_is_accepted(monkeypatch):
+def test_real_offline_speech_engine_is_accepted(monkeypatch):
     class NetworkUnavailable:
         async def synthesize(self, *args, **kwargs):
             raise RuntimeError("network unavailable")
@@ -47,7 +47,7 @@ async def test_real_offline_speech_engine_is_accepted(monkeypatch):
     engine = TTSEngine()
     engine.offline = LocalSpeech()
 
-    result = await engine.synthesize("Olá, mundo", language="pt-BR")
+    result = asyncio.run(engine.synthesize("Olá, mundo", language="pt-BR"))
     assert result["engine"] == "pyttsx3"
     assert result["duration"] > 0
 
