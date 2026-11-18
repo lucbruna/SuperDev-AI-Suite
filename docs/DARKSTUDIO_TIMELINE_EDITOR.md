@@ -304,3 +304,12 @@ Use the same request body as `POST /videos/generate`. A successful preflight doe
 The generation API persists periodic render-progress checkpoints in SQLite (first checkpoint, approximately every two seconds / two seconds of frames, and the final frame). This reduces the amount of progress lost if the API process stops during a long render without creating a database transaction for every frame.
 
 On API startup, jobs left in `queued` or `processing` are marked `failed` with `interrupted=true`, preserving their last saved progress and an explanation. This is explicit recovery, not automatic render resumption: FFmpeg and external model subprocess state is not checkpointed, so a new job must be started. Completed jobs and editable timelines are not changed by this recovery pass.
+
+
+## Final MP4 validation
+
+Completed jobs expose `POST /videos/jobs/{job_id}/validate-output`. The endpoint confines inspection to the DARKSTUDIO video output directory and invokes FFprobe with an argument list (no shell) to inspect the container, duration, video stream, dimensions/FPS metadata and audio stream count. The report is persisted on the job and includes file size, errors and warnings.
+
+The dashboard provides a **Validar MP4** action next to the download link. A report is marked valid only when the file exists, is non-empty, FFprobe is available, and a video stream plus positive duration are confirmed. Audio is reported but not required, because silent videos are legitimate outputs. A duration mismatch is a warning, not an automatic rejection: transitions and timeline edits can change the final runtime.
+
+This check confirms container/stream readability, not visual quality, narration intelligibility, subtitle correctness, or whether the scene images match the script. Those require separate semantic and human review.
