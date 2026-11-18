@@ -238,6 +238,9 @@ def test_generate_async_composes_selected_objects_into_every_scene(monkeypatch, 
     assert scene["object_ids"] == ["water_glass", "thermometer"]
     assert len(scene["rects"]) == 4
     assert len(scene["circles"]) == 1
+    assert scene["rects"][0]["motion_frames"] == 12
+    assert scene["rects"][0]["motion_start_frame"] == 0
+    assert scene["rects"][2]["motion_start_frame"] == 8
 
 
 def test_generate_async_rejects_objects_from_another_studio(monkeypatch) -> None:
