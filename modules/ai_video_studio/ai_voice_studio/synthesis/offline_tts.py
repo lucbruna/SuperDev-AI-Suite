@@ -41,8 +41,9 @@ class OfflineTTS:
         rate: float = 1.0,
         pitch: float = 1.0,
         sample_rate: int = dsp.SAMPLE_RATE,
+        allow_formant: bool = True,
     ) -> dict:
-        """Return ``{output_path, duration, engine}``, never raising."""
+        """Return audio metadata; disable formants when intelligible speech is required."""
         if output_path is None:
             output_path = str(Path(__file__).resolve().parent.parent.parent.parent
                               / "downloads" / "voice" / "offline_voice.wav")
@@ -66,7 +67,9 @@ class OfflineTTS:
         except Exception as e:  # noqa: BLE001
             logger.warning("pyttsx3 unavailable (%s), using formant synthesizer", e)
 
-        # 2) Pure numpy formant synthesizer.
+        # 2) Pure numpy formant synthesizer (sound effect/demo only).
+        if not allow_formant:
+            raise RuntimeError("pyttsx3 speech is unavailable and formant fallback is disabled")
         samples = formant_synth(text, rate=rate, pitch=pitch, sample_rate=sample_rate)
         dsp.write_audio(out, samples, sample_rate=sample_rate)
         duration = len(samples) / sample_rate
