@@ -59,6 +59,16 @@ def test_update_timeline_draft_keeps_non_video_tracks(completed_job, monkeypatch
     assert [track["type"] for track in result["edit_timeline"]["tracks"]] == ["video", "audio"]
 
 
+
+@pytest.mark.parametrize("field,value", [
+    ("target_lufs", -40),
+    ("true_peak_db", -12),
+    ("loudness_range", 25),
+])
+def test_audio_timeline_rejects_invalid_loudness_controls(field, value):
+    with pytest.raises(ValueError):
+        video.AudioTimelineEditRequest(**{field: value})
+
 def test_update_audio_timeline_persists_music_and_sfx_controls(completed_job, monkeypatch, tmp_path) -> None:
     monkeypatch.setattr(video, "_persist_job", lambda record: None)
     from modules.ai_video_studio.media import audio_timeline
