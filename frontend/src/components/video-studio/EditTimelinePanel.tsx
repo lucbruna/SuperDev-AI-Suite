@@ -72,6 +72,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
   const [savingAudio, setSavingAudio] = useState(false);
   const [audioDirty, setAudioDirty] = useState(false);  const [audioAnalysis, setAudioAnalysis] = useState<Awaited<ReturnType<typeof videoStudioApi.analyzeJobAudio>> | null>(null);
   const [analyzingAudio, setAnalyzingAudio] = useState(false);
+  const [renderQuality, setRenderQuality] = useState<Awaited<ReturnType<typeof videoStudioApi.getJob>>["edit_render_quality"]>(null);
   const [duckingEnabled, setDuckingEnabled] = useState(true);
   const [duckingDb, setDuckingDb] = useState("9");
   const [normalizationEnabled, setNormalizationEnabled] = useState(true);
@@ -97,6 +98,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
     if (!jobId) return;
     videoStudioApi.listJobAudioAssets(jobId).then(setAudioAssets).catch(() => setAudioAssets([]));
     videoStudioApi.getJob(jobId).then((job) => {
+      if (job.edit_render_quality) setRenderQuality(job.edit_render_quality);
       if (job.audio_analysis) setAudioAnalysis(job.audio_analysis as Awaited<ReturnType<typeof videoStudioApi.analyzeJobAudio>>);
       if (job.audio_settings) {
         setDuckingEnabled(job.audio_settings.ducking_enabled ?? true);
@@ -285,6 +287,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
     try {
       const result = await videoStudioApi.renderJobEdits(jobId);
       setRenderUrl(result.output_url);
+      setRenderQuality(result.quality ?? null);
       const duckingNote = result.ducking?.speech_detected
         ? ` Ducking aplicado: redução de ${result.ducking.reduction_db ?? 0} dB durante a narração.`
         : "";
@@ -300,6 +303,10 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
       setMessage(result.message + duckingNote + normalizationNote + loudnessNote + masteringNote);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Falha ao renderizar a edição.");
+      try {
+        const latest = await videoStudioApi.getJob(jobId);
+        if (latest.edit_render_quality) setRenderQuality(latest.edit_render_quality);
+      } catch { /* Keep the original render error visible. */ }
     } finally {
       setRendering(false);
     }
@@ -541,6 +548,24 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
       </div>
       {message && <p role="status" className="mt-2 text-xs text-surface-500">{message}</p>}
       {renderUrl && <p className="mt-2 text-xs"><a className="text-primary-600 underline" href={renderUrl} target="_blank" rel="noreferrer">Abrir MP4 renderizado</a></p>}
+      {renderQuality && <div className="mt-3 rounded-md border border-surface-200 p-3 text-xs dark:border-surface-700" aria-label="Qualidade do áudio exportado">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <strong>Controle de qualidade do áudio</strong>
+          <span className={renderQuality.status === "blocked" ? "font-semibold text-red-600" : renderQuality.status === "needs_review" ? "font-semibold text-amber-600" : "font-semibold text-emerald-600"}>
+            {renderQuality.status === "blocked" ? "Exportação bloqueada" : renderQuality.status === "needs_review" ? "Revisão recomendada" : "Verificação aprovada"}
+          </span>
+        </div>
+        <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <span>Pico final: <strong>{renderQuality.peak_dbfs ?? "—"} dBFS</strong></span>
+          <span>RMS: <strong>{renderQuality.rms_dbfs ?? "—"} dBFS</strong></span>
+          <span>Clipping: <strong>{renderQuality.clipping_ratio ?? "—"}</strong></span>
+          <span>Alertas: <strong>{renderQuality.warnings?.length ?? 0}</strong></span>
+        </div>
+        {!!renderQuality.warnings?.length && <ul className="mt-2 list-disc space-y-1 pl-5 text-amber-600">{renderQuality.warnings.map((warning, index) => <li key={index}>{warning.message}</li>)}</ul>}
+        {!!renderQuality.silence_gaps?.length && <p className="mt-2">Silêncios internos: {renderQuality.silence_gaps.map((gap) => String(gap.start) + "s–" + String(gap.end) + "s").join(", ")}</p>}
+        {!!renderQuality.narration_music_masking?.length && <p className="mt-2">Possível voz encoberta: {renderQuality.narration_music_masking.map((gap) => String(gap.start) + "s–" + String(gap.end) + "s").join(", ")}</p>}
+        <p className="mt-2 text-[10px] text-surface-500">{renderQuality.masking_method}</p>
+      </div>}
       <p className="mt-2 text-[11px] text-surface-400">
         O rascunho fica no SQLite local. Música, efeitos e narração por cena são mixados na renderização; uma faixa única original não é reposicionada automaticamente.
       </p>
