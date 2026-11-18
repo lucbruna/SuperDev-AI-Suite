@@ -117,8 +117,8 @@ export interface SceneVideoClip {
   height: number;
   output_path?: string;
   output_url?: string;
-  bytes: number;
-  encode_engine: string;
+  bytes?: number;
+  encode_engine?: string;
   visual_prompt?: string;
   narration_text?: string;
   audio_status?: "per_scene_narration_muxed" | "no_scene_narration" | "narration_mux_failed" | "single_track_not_split" | "silent_or_tts_unavailable";
@@ -440,6 +440,8 @@ export const videoStudioApi = {
     video_duration: number;
     file_size_bytes: number;
     audio_status: string;
+    generated_scene_count?: number;
+    transition_policy?: { mode?: string; flattened_scenes?: number[]; message?: string } | null;
     ducking?: { enabled?: boolean; reduction_db?: number; speech_detected?: boolean } | null;
     normalization?: { enabled?: boolean; target_dbfs?: number; gain_db?: number; pre_rms?: number } | null;
     loudness?: { enabled?: boolean; target_lufs?: number; true_peak_db?: number; input_i?: number; input_tp?: number; input_lra?: number; output_i?: number; output_tp?: number; output_lra?: number; normalization_pass_i?: number; passes?: number; verified?: boolean } | null;
