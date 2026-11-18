@@ -76,6 +76,7 @@ describe("EditTimelinePanel", () => {
     expect(screen.getByRole("checkbox", { name: "Ativar normalização" })).not.toBeChecked();
     expect(screen.getByRole("checkbox", { name: "Ativar LUFS" })).toBeChecked();
     expect(screen.getByLabelText("Alvo LUFS")).toHaveValue(-16);
+    fireEvent.change(screen.getAllByRole("slider")[0], { target: { value: "-0.5" } });
     fireEvent.click(screen.getByRole("checkbox", { name: "Repetir" }));
     fireEvent.click(screen.getByRole("button", { name: "Remover" }));
     fireEvent.click(screen.getByRole("button", { name: "Salvar alterações de áudio" }));
@@ -83,6 +84,7 @@ describe("EditTimelinePanel", () => {
     expect(save.mock.calls[0][1].sfx_clips).toEqual([]);
     expect(save.mock.calls[0][1].music_clips).toHaveLength(1);
     expect(save.mock.calls[0][1].music_clips[0].loop).toBe(true);
+    expect(save.mock.calls[0][1].music_clips[0].pan).toBe(-0.5);
     expect(save.mock.calls[0][1].ducking_enabled).toBe(false);
     expect(save.mock.calls[0][1].ducking_db).toBe(14);
     expect(save.mock.calls[0][1].normalization_enabled).toBe(false);
