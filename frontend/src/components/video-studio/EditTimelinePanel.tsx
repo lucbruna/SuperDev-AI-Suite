@@ -30,11 +30,11 @@ export default function EditTimelinePanel({ timeline, jobId, title = "Editor de 
   const [playheadFrame, setPlayheadFrame] = useState(0);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [dirty, setDirty] = useState(false);
   const videoTrack = draft.tracks.find((track) => track.type === "video");
   const clips = videoTrack?.clips ?? [];
   const duration = Math.max(1, draft.duration_frames);
   const selectedClip = clips[selected] ?? null;
-  const dirty = draft !== timeline;
 
   const sceneOrder = useMemo(
     () => clips.map((clip, index) => clip.source_scene_index ?? clip.scene_index ?? index),
@@ -42,6 +42,7 @@ export default function EditTimelinePanel({ timeline, jobId, title = "Editor de 
   );
 
   function updateClip(position: number, patch: Partial<EditTimelineClip>) {
+    setDirty(true);
     setDraft((current) => {
       const tracks = current.tracks.map((track) => track.type !== "video" ? track : {
         ...track,
@@ -52,6 +53,7 @@ export default function EditTimelinePanel({ timeline, jobId, title = "Editor de 
   }
 
   function moveClip(position: number, delta: number) {
+    setDirty(true);
     const target = position + delta;
     if (target < 0 || target >= clips.length) return;
     setDraft((current) => {
@@ -82,6 +84,7 @@ export default function EditTimelinePanel({ timeline, jobId, title = "Editor de 
       };
       const result = await videoStudioApi.updateJobTimeline(jobId, payload);
       setDraft(result.edit_timeline);
+      setDirty(false);
       onSaved?.(result.edit_timeline);
       setMessage("Rascunho atualizado no servidor. Ele ainda é temporário e não gera um novo MP4.");
     } catch (error) {
