@@ -349,6 +349,16 @@ async def update_video_job_timeline(job_id: str, req: TimelineEditRequest):
 
 
 
+@router.get("/jobs/{job_id}/audio-assets")
+async def list_video_job_audio_assets(job_id: str):
+    """Return selectable audio assets from approved generated-media folders."""
+    if job_id not in _jobs:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+    from modules.ai_video_studio.media.audio_timeline import list_audio_assets
+
+    return {"job_id": job_id, "assets": list_audio_assets()}
+
+
 @router.patch("/jobs/{job_id}/audio")
 async def update_video_job_audio(job_id: str, req: AudioTimelineEditRequest):
     """Save music/SFX placements and their independent gain/fade controls."""
