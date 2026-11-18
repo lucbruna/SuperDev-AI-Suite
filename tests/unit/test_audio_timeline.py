@@ -129,12 +129,13 @@ def test_normalize_loudness_file_uses_two_pass_ebu_r128(tmp_path, monkeypatch):
     written = []
     monkeypatch.setattr(dsp, "write_audio", lambda path, samples, sample_rate: written.append((path, sample_rate)) or path)
     result = audio_timeline.normalize_loudness_file(source, target_lufs=-14, true_peak_db=-1, lra=11)
-    assert len(calls) == 2
+    assert len(calls) == 3  # analysis, normalization, and final-output verification
     assert "loudnorm=I=-14:TP=-1:LRA=11" in calls[0][calls[0].index("-af") + 1]
     assert "measured_I=-19.0" in calls[1][calls[1].index("-af") + 1]
     assert result["input_i"] == -19
     assert result["output_i"] == -19
     assert result["passes"] == 2
+    assert result["verified"] is True
     assert written and written[0][0] == source
 
 def test_mix_audio_timeline_accepts_pre_aligned_narration_samples(tmp_path, monkeypatch):
