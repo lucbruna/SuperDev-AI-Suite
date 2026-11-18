@@ -62,6 +62,7 @@ describe("EditTimelinePanel", () => {
     const renderJob = vi.spyOn(videoStudioApi, "renderJobEdits").mockResolvedValue({
       status: "completed", output_url: "/downloads/final.mp4", video_duration: 4, file_size_bytes: 1000, audio_status: "mixed_audio",
       quality: { status: "needs_review", export_allowed: true, peak_dbfs: -1.5, rms_dbfs: -18, clipping_ratio: 0, warning_count: 1, critical_count: 0, warnings: [{ code: "internal_silence_gaps", severity: "warning", message: "Silêncio interno detectado" }], silence_gaps: [{ start: 1, end: 1.8, duration: 0.8 }], narration_music_masking: [{ start: 2, end: 3, duration: 1, voice_music_gap_db: -2 }], masking_method: "RMS heuristic" },
+      message: "Render concluído com revisão recomendada.",
     });
     render(<EditTimelinePanel timeline={timeline} jobId="quality-job" />);
     fireEvent.click(screen.getByRole("button", { name: "Renderizar edição" }));
