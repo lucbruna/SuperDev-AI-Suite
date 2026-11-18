@@ -848,3 +848,34 @@ class TestCharacterSelection:
             },
         )
         assert response.status_code == 422
+
+
+class TestSceneObjectSelection:
+    @pytest.mark.asyncio
+    async def test_selected_objects_are_forwarded_to_generation_engine(
+        self, client: AsyncClient, fake_engine: _FakeEngine
+    ):
+        response = await client.post(
+            "/api/v1/video-studio/videos/generate",
+            json={
+                "project_id": "p1",
+                "prompt": "Mia mostra um copo de água.",
+                "studio_id": "whymentary",
+                "object_ids": ["water_glass", "thermometer"],
+            },
+        )
+        assert response.status_code == 202
+        assert fake_engine.received is not None
+        assert fake_engine.received["params"]["object_ids"] == ["water_glass", "thermometer"]
+
+    @pytest.mark.asyncio
+    async def test_more_than_six_objects_are_rejected(self, client: AsyncClient):
+        response = await client.post(
+            "/api/v1/video-studio/videos/generate",
+            json={
+                "project_id": "p1",
+                "prompt": "Teste",
+                "object_ids": ["a", "b", "c", "d", "e", "f", "g"],
+            },
+        )
+        assert response.status_code == 422
