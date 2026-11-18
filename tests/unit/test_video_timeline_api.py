@@ -190,13 +190,15 @@ def test_job_status_exposes_persisted_edit_render_metadata(completed_job) -> Non
         edit_render_status="completed",
         edited_output_url="/downloads/edited.mp4",
         edited_video_duration=4.0,
-        edit_render_audio="silent",
+        edit_render_audio="mixed_audio",
+        edit_render_ducking={"enabled": True, "reduction_db": 12, "speech_detected": True},
         edit_render_subtitles="regenerated",
         edited_subtitles={"format": "srt", "download_url": "/downloads/edited.srt"},
     )
     result = asyncio.run(video.get_video_job_status(completed_job))
     assert result.edited_output_url == "/downloads/edited.mp4"
     assert result.edit_render_status == "completed"
-    assert result.edit_render_audio == "silent"
+    assert result.edit_render_audio == "mixed_audio"
+    assert result.edit_render_ducking["reduction_db"] == 12
     assert result.edit_render_subtitles == "regenerated"
     assert result.edited_subtitles["download_url"] == "/downloads/edited.srt"
