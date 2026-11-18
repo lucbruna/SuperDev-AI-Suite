@@ -1582,6 +1582,7 @@ async def get_video_job_visual_direction(job_id: str):
         "studio_id": str((record.get("params") or {}).get("studio_id") or "whymentary"),
         "scenes": output,
         "scene_count": len(output),
+        "storyboard_report": record.get("storyboard_report") or {},
     }
 
 
