@@ -21,9 +21,10 @@ _AUDIO_DIRS = ("voice", "music", "effects", "dubbing", "mix")
 def validate_audio_asset(value: Any) -> Path:
     if not isinstance(value, str) or not value.strip():
         raise ValueError("audio clip asset must be a non-empty path")
-    candidate = Path(value).expanduser().resolve()
-    roots = [get_subsystem_dir(name).resolve() for name in _AUDIO_DIRS]
     downloads = get_downloads_dir().resolve()
+    raw_path = Path(value).expanduser()
+    candidate = (downloads / raw_path if not raw_path.is_absolute() else raw_path).resolve()
+    roots = [get_subsystem_dir(name).resolve() for name in _AUDIO_DIRS]
     # Resolve symlinks before containment checks; reject arbitrary local files.
     if not any(candidate == root or root in candidate.parents for root in roots):
         raise ValueError("audio asset must be inside an approved generated-audio folder")
@@ -32,6 +33,28 @@ def validate_audio_asset(value: Any) -> Path:
     if not candidate.is_file():
         raise ValueError(f"audio asset does not exist: {candidate.name}")
     return candidate
+
+
+def list_audio_assets() -> list[dict[str, Any]]:
+    """List generated audio assets using download-root-relative identifiers."""
+    downloads = get_downloads_dir().resolve()
+    allowed_extensions = {".wav", ".mp3", ".flac", ".ogg", ".m4a", ".aiff", ".aif"}
+    assets: list[dict[str, Any]] = []
+    for folder in _AUDIO_DIRS:
+        root = get_subsystem_dir(folder).resolve()
+        for path in sorted(root.rglob("*")):
+            if not path.is_file() or path.suffix.lower() not in allowed_extensions:
+                continue
+            resolved = path.resolve()
+            if root not in resolved.parents or downloads not in resolved.parents:
+                continue
+            assets.append({
+                "asset": resolved.relative_to(downloads).as_posix(),
+                "name": resolved.name,
+                "folder": folder,
+                "size_bytes": resolved.stat().st_size,
+            })
+    return assets
 
 
 def mix_audio_timeline(
