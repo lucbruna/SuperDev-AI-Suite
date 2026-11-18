@@ -518,14 +518,16 @@ async def render_video_job_edits(job_id: str):
             "subtitle_status": subtitle_status,
             "subtitles": subtitle_info,
             "message": (
-                "MP4 editado renderizado com a narração por cena reposicionada."
-                if audio_status == "narration_retimed"
-                else "MP4 editado renderizado sem copiar a faixa única original, pois ela não pode ser reposicionada com segurança."
+                "MP4 editado renderizado com narração, música e efeitos mixados."
+                if audio_status == "mixed_narration_music_sfx"
+                else "MP4 editado renderizado com música e efeitos mixados."
+                if audio_status == "mixed_music_sfx"
+                else "MP4 editado renderizado; a faixa única original não foi reposicionada automaticamente."
                 if audio_status == "single_track_not_retimed"
-                else "MP4 editado renderizado. Não havia narração por cena disponível para sincronizar."
+                else "MP4 editado renderizado sem faixas de áudio configuradas."
                 if audio_status == "silent"
-                else "MP4 visual renderizado, mas a muxagem da narração falhou; consulte o status do áudio."
-            ),
+                else "MP4 visual renderizado, mas a muxagem de áudio falhou; consulte o status do áudio."
+            ),,
         }
     except Exception as exc:
         record["edit_render_status"] = "failed"
