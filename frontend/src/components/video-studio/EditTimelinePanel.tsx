@@ -109,7 +109,7 @@ export default function EditTimelinePanel({ timeline, jobId, title = "Editor de 
       setDraft(result.edit_timeline);
       setDirty(false);
       onSaved?.(result.edit_timeline);
-      setMessage("Rascunho atualizado no servidor. Ele ainda é temporário e não gera um novo MP4.");
+      setMessage("Rascunho salvo no SQLite local. Renderize para gerar o novo MP4.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Não foi possível salvar o rascunho.");
     } finally {
@@ -243,7 +243,7 @@ export default function EditTimelinePanel({ timeline, jobId, title = "Editor de 
       {message && <p role="status" className="mt-2 text-xs text-surface-500">{message}</p>}
       {renderUrl && <p className="mt-2 text-xs"><a className="text-primary-600 underline" href={renderUrl} target="_blank" rel="noreferrer">Abrir MP4 renderizado</a></p>}
       <p className="mt-2 text-[11px] text-surface-400">
-        O rascunho e o resultado ainda dependem da memória do servidor. A renderização atual gera uma prévia visual; narração e demais faixas de áudio ainda não são reposicionadas automaticamente.
+        O rascunho fica no SQLite local do servidor. A prévia MP4 é salva separadamente; narração e demais faixas de áudio ainda não são reposicionadas automaticamente.
       </p>
     </section>
   );
