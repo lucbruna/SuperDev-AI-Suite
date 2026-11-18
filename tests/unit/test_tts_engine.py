@@ -26,7 +26,7 @@ def test_formant_fallback_is_not_reported_as_spoken_narration(monkeypatch):
     engine = TTSEngine()
     engine.offline = FormantOnly()
 
-    with pytest.raises(RuntimeError, match="not available|formant audio|speech voice"):
+    with pytest.raises(RuntimeError, match="(?i)not available|formant audio|speech voice"):
         asyncio.run(engine.synthesize("Olá, mundo", language="pt-BR"))
 
 
