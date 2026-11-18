@@ -459,3 +459,18 @@ def test_quality_report_accepts_true_peak_within_tolerance():
     )
     assert report["export_allowed"] is True
     assert report["true_peak_dbTP"] == -0.9
+
+
+def test_measure_encoded_audio_parses_decoded_stream_loudness(monkeypatch, tmp_path):
+    from modules.ai_video_studio.media import audio_timeline
+    media = tmp_path / "final.mp4"
+    media.write_bytes(b"fake mp4")
+    monkeypatch.setattr(audio_timeline.shutil, "which", lambda name: "/usr/bin/ffmpeg")
+    class Result:
+        returncode = 0
+        stderr = 'frame=1\\n{\\n "input_i" : "-14.2",\\n "input_tp" : "-1.3",\\n "input_lra" : "4.1"\\n}\\n'
+    monkeypatch.setattr(audio_timeline.subprocess, "run", lambda *args, **kwargs: Result())
+    report = audio_timeline.measure_encoded_audio(media)
+    assert report["verified"] is True
+    assert report["measured"]["integrated_lufs"] == -14.2
+    assert report["measured"]["true_peak_dbTP"] == -1.3
