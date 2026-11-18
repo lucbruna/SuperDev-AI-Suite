@@ -162,6 +162,7 @@ def build_audio_quality_report(
     music_energy: np.ndarray | None = None,
     music_counts: np.ndarray | None = None,
     pre_limiter_peak: float | None = None,
+    ducking_db: float = 9.0,
     window_seconds: float = 0.1,
 ) -> dict[str, Any]:
     """Evaluate final mix and estimate narration/music masking by short windows.
@@ -226,6 +227,7 @@ def build_audio_quality_report(
                 })
 
     warnings = []
+    recommendations = []
     pre_peak = float(pre_limiter_peak) if pre_limiter_peak is not None else peak
     if pre_peak >= 0.999:
         warnings.append({"code": "pre_limiter_clipping", "severity": "warning", "message": "A mixagem atingiu clipping antes do limitador."})
@@ -237,6 +239,22 @@ def build_audio_quality_report(
         warnings.append({"code": "internal_silence_gaps", "severity": "warning", "message": "Foram encontrados intervalos silenciosos internos; confirme se são intencionais."})
     if masking_windows:
         warnings.append({"code": "narration_may_be_masked", "severity": "warning", "message": "A música está próxima ou acima do nível da narração em alguns trechos."})
+        recommendations.append({
+            "action": "increase_ducking",
+            "recommended_ducking_db": round(min(24.0, max(0.0, float(ducking_db)) + 3.0), 1),
+            "message": "Aumente a redução automática da música em 3 dB durante a narração.",
+        })
+    if silence_segments:
+        recommendations.append({
+            "action": "review_silence",
+            "message": "Revise os intervalos listados; não remova pausas automaticamente porque podem ser intencionais.",
+        })
+    if pre_peak >= 0.999 or clipped > 0 or peak_db > -1.0:
+        recommendations.append({
+            "action": "reduce_mix_gain",
+            "recommended_reduction_db": 2.0,
+            "message": "Reduza o ganho das faixas mais altas em aproximadamente 2 dB e gere uma nova prévia.",
+        })
     return {
         "status": "blocked" if clipped > 0 else ("needs_review" if warnings else "passed"),
         "export_allowed": bool(clipped == 0),
@@ -249,6 +267,7 @@ def build_audio_quality_report(
         "clipping_ratio": round(clipped, 7),
         "silence_gaps": silence_segments,
         "narration_music_masking": masking_windows,
+        "recommendations": recommendations,
         "masking_method": "100ms RMS energy comparison; heuristic, not speech recognition",
         "warnings": warnings,
         "critical_count": sum(item["severity"] == "critical" for item in warnings),
@@ -564,7 +583,7 @@ def mix_audio_timeline(
         limited, sample_rate=sample_rate,
         narration_energy=narration_energy, narration_counts=narration_counts,
         music_energy=music_energy, music_counts=music_counts,
-        pre_limiter_peak=pre_limiter_peak,
+        pre_limiter_peak=pre_limiter_peak, ducking_db=ducking_db,
     )
     return {
         "output_path": str(out),
