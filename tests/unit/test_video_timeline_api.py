@@ -116,6 +116,45 @@ def test_render_edits_returns_new_mp4_and_regenerates_subtitle_sidecar(completed
     assert video._jobs[completed_job]["edited_output_url"] == "/downloads/edited.mp4"
 
 
+def test_render_edits_mixes_saved_audio_tracks(completed_job, monkeypatch, tmp_path) -> None:
+    monkeypatch.setattr(video, "_persist_job", lambda record: None)
+    from modules.ai_video_studio.media import audio, audio_timeline, output_paths, render
+
+    monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda *_: tmp_path)
+    monkeypatch.setattr(output_paths, "unique_filename", lambda directory, prefix, extension: tmp_path / f"{prefix}.{extension}")
+    monkeypatch.setattr(video, "to_download_url", lambda path: "/downloads/edited-final.mp4")
+
+    def fake_render(scenes, output_path, **kwargs):
+        from pathlib import Path
+        Path(output_path).write_bytes(b"visual-mp4")
+        return {"output_path": str(output_path), "frames": 96, "bytes": 1234, "engine": "ffmpeg"}
+
+    def fake_mix(clips, output_path, *, total_duration):
+        assert clips[0]["asset"].endswith("bed.wav")
+        assert total_duration == 4
+        from pathlib import Path
+        Path(output_path).write_bytes(b"mixed-wav")
+        return {"output_path": str(output_path), "duration": total_duration}
+
+    def fake_mux(video_path, audio_path, output_path):
+        from pathlib import Path
+        Path(output_path).write_bytes(b"final-mp4")
+        return {"output_path": str(output_path), "muxed": True}
+
+    monkeypatch.setattr(render, "render_multi_scene_video", fake_render)
+    monkeypatch.setattr(audio_timeline, "mix_audio_timeline", fake_mix)
+    monkeypatch.setattr(audio, "mux_audio_into_video", fake_mux)
+    video._jobs[completed_job]["_audio_clips"] = {
+        "music": [{"asset": str(tmp_path / "music" / "bed.wav"), "start": 0, "end": 4, "volume": 0.3}],
+        "sfx": [],
+    }
+
+    result = asyncio.run(video.render_video_job_edits(completed_job))
+    assert result["audio_status"] == "mixed_audio"
+    assert result["output_url"] == "/downloads/edited-final.mp4"
+    assert video._jobs[completed_job]["edit_render_audio"] == "mixed_audio"
+
+
 def test_render_edits_rejects_job_without_saved_scene_draft() -> None:
     job_id = "no-draft-job"
     video._jobs[job_id] = {"job_id": job_id, "status": "processing"}
