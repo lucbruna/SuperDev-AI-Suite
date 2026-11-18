@@ -160,6 +160,7 @@ class VideoStatusResponse(BaseModel):
     edit_render_ducking: dict | None = None
     edit_render_normalization: dict | None = None
     edit_render_loudness: dict | None = None
+    edit_render_encoded_audio: dict | None = None
     edit_render_quality: dict | None = None
     edit_render_status: str | None = None
     edited_output_url: str | None = None
@@ -554,7 +555,7 @@ async def render_video_job_edits(job_id: str):
             audio_status = "single_track_not_retimed"
 
         from modules.ai_video_studio.media.audio import mux_audio_into_video
-        from modules.ai_video_studio.media.audio_timeline import mix_audio_timeline
+        from modules.ai_video_studio.media.audio_timeline import measure_encoded_audio, mix_audio_timeline
         from modules.ai_video_studio.media.output_paths import get_subsystem_dir, unique_filename
 
         audio_inputs = []
@@ -595,6 +596,33 @@ async def render_video_job_edits(job_id: str):
             if mux_result.get("muxed"):
                 final_path = mux_result["output_path"]
                 audio_status = "mixed_audio_single_track_omitted" if single_track and not has_per_scene_narration else "mixed_audio"
+                try:
+                    encoded_report = await asyncio.to_thread(measure_encoded_audio, final_path)
+                    settings = record.get("_audio_settings") or {}
+                    target_lufs = float(settings.get("target_lufs", -14.0))
+                    target_tp = float(settings.get("true_peak_db", -1.0))
+                    measured = encoded_report["measured"]
+                    encoded_report.update({
+                        "target_lufs": target_lufs if settings.get("loudness_normalization_enabled") else None,
+                        "target_true_peak_dbTP": target_tp if settings.get("loudness_normalization_enabled") else None,
+                        "loudness_delta_lu": round(measured["integrated_lufs"] - target_lufs, 2) if settings.get("loudness_normalization_enabled") else None,
+                        "true_peak_over_target": bool(settings.get("loudness_normalization_enabled") and measured["true_peak_dbTP"] > target_tp + 0.2),
+                    })
+                    record["edit_render_encoded_audio"] = encoded_report
+                    if encoded_report["true_peak_over_target"]:
+                        prior_quality = dict(mix_result.get("quality") or {})
+                        prior_quality["status"] = "needs_review"
+                        prior_quality["export_allowed"] = True
+                        prior_quality.setdefault("warnings", []).append({
+                            "code": "encoded_aac_true_peak_over_target",
+                            "severity": "warning",
+                            "message": "O áudio decodificado do MP4 ultrapassou o alvo de true peak; revise a masterização.",
+                        })
+                        record["edit_render_quality"] = prior_quality
+                except Exception as measure_exc:
+                    record["edit_render_encoded_audio"] = {
+                        "verified": False, "measurement": "failed", "reason": str(measure_exc)[:300]
+                    }
             else:
                 audio_status = "audio_mux_failed"
 
@@ -649,6 +677,7 @@ async def render_video_job_edits(job_id: str):
             edit_render_ducking=(mix_result.get("ducking") if isinstance(mix_result, dict) else None),
             edit_render_normalization=(mix_result.get("normalization") if isinstance(mix_result, dict) else None),
             edit_render_loudness=(mix_result.get("loudness") if isinstance(mix_result, dict) else None),
+            edit_render_encoded_audio=record.get("edit_render_encoded_audio"),
             edit_render_quality=(mix_result.get("quality") if isinstance(mix_result, dict) else None),
             edit_render_status="completed",
             edit_render_audio=audio_status,
@@ -662,6 +691,7 @@ async def render_video_job_edits(job_id: str):
             "video_duration": edited_duration,
             "file_size_bytes": edited_bytes,
             "audio_status": audio_status,
+            "encoded_audio_quality": record.get("edit_render_encoded_audio"),
             "subtitle_status": subtitle_status,
             "subtitles": subtitle_info,
             "message": "MP4 editado renderizado com as faixas configuradas mixadas." if audio_status == "mixed_audio" else "MP4 editado renderizado com música/efeitos; a narração original em faixa única foi omitida." if audio_status == "mixed_audio_single_track_omitted" else "MP4 editado renderizado; a faixa única original não foi reposicionada automaticamente." if audio_status == "single_track_not_retimed" else "MP4 editado renderizado sem faixas de áudio configuradas." if audio_status == "silent" else "MP4 visual renderizado, mas a muxagem de áudio falhou; consulte o status do áudio.",
