@@ -62,7 +62,7 @@ def measure_encoded_audio(path: str | Path, *, timeout: int = 180) -> dict[str, 
     result = subprocess.run(command, capture_output=True, text=True, timeout=timeout)
     if result.returncode != 0:
         raise RuntimeError(f"FFmpeg encoded-audio analysis failed: {result.stderr[-500:]}")
-    matches = re.findall(r"\\{[^{}]*\\}", result.stderr, flags=re.DOTALL)
+    matches = re.findall(r"\{[^{}]*\}", result.stderr, flags=re.DOTALL)
     if not matches:
         raise RuntimeError("FFmpeg did not return loudness measurement JSON")
     try:
