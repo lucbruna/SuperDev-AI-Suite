@@ -96,6 +96,14 @@ export interface StudioAudioAsset {
   size_bytes: number;
 }
 
+export interface SceneContinuityReport {
+  status: string;
+  checked_scenes: number;
+  method: string;
+  warnings: { type: string; scene_indices: number[]; severity: string; message: string; character_id?: string; variants?: { description: string; scene_numbers: number[] }[] }[];
+  limitations: string[];
+}
+
 export interface SceneVisualDirection {
   scene_index: number;
   storyboard_scene_id?: string;
