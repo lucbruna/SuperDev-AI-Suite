@@ -38,7 +38,7 @@ def test_generate_async_requires_mp4_output(monkeypatch, tmp_path) -> None:
         engine_module, "unique_filename", lambda *_args: tmp_path / "strict.mp4"
     )
     monkeypatch.setattr(engine_module, "render_multi_scene_video", fake_render)
-    monkeypatch.setattr(engine_module, "render_scene_video", fake_scene_render)
+    monkeypatch.setattr(engine_module, "render_single_scene_clip", fake_scene_render)
     monkeypatch.setattr(engine_module, "get_generation_statistics", lambda: Stats())
 
     result = asyncio.run(
