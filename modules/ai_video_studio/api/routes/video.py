@@ -48,7 +48,7 @@ class VideoGenerateRequest(BaseModel):
     num_scenes: int = Field(default=3, ge=1, le=20)
     voiceover: bool = Field(default=False, description="Add AI narration (edge-tts/gTTS/pyttsx3)")
     voice_id: str = Field(default="default")
-    voice_language: str = Field(default="en")
+    voice_language: str = Field(default="pt-BR")
     voice_speed: float = Field(default=1.0, ge=0.5, le=2.0)
     voice_pitch: float = Field(default=1.0, ge=0.5, le=2.0)
     voiceover_mode: str = Field(default="per_scene", pattern="^(per_scene|single)$", description="per_scene = one clip per scene, single = one flat track")
