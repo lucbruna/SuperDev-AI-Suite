@@ -230,6 +230,7 @@ class VideoStatusResponse(BaseModel):
     edit_render_subtitles: str | None = None
     edited_subtitles: dict | None = None
     output_validation: dict | None = None
+    scene_progress: list[dict[str, Any]] | None = None
     error: str | None = None
 
 
@@ -824,6 +825,7 @@ async def generate_video(req: VideoGenerateRequest, background_tasks: Background
         # the list can label the job and re-run it with identical settings.
         "params": req.model_dump(exclude={"project_id"}),
         "voiceover": None, "subtitles": None, "edit_timeline": None, "error": None,
+        "scene_progress": [],
     }
 
     _persist_job(_jobs[job_id])
@@ -869,6 +871,23 @@ async def generate_video(req: VideoGenerateRequest, background_tasks: Background
                         # A transient checkpoint failure must not abort FFmpeg.
                         record["progress_persistence_warning"] = str(persist_error)[:240]
 
+            def _on_scene_progress(event: dict[str, Any]) -> None:
+                index = int(event.get("scene_index", -1))
+                if index < 0:
+                    return
+                items = list(record.get("scene_progress") or [])
+                while len(items) <= index:
+                    items.append({"scene_index": len(items), "status": "pending", "stage": "queued"})
+                items[index] = {**items[index], **event}
+                record["scene_progress"] = items
+                record["current_step"] = (
+                    f"Cena {index + 1}: {str(event.get('stage') or 'processando').replace('_', ' ')}"
+                )
+                try:
+                    _persist_job(record)
+                except Exception as persist_error:  # noqa: BLE001
+                    record["progress_persistence_warning"] = str(persist_error)[:240]
+
             result = await TextToVideoEngine().generate_async(
                 {
                     "prompt": r.prompt,
@@ -896,6 +915,7 @@ async def generate_video(req: VideoGenerateRequest, background_tasks: Background
                     },
                 },
                 progress_callback=_on_render_progress,
+                scene_callback=_on_scene_progress,
             )
             output_path = result["output_path"]
             subtitle_info = result.get("subtitles")
@@ -929,12 +949,22 @@ async def generate_video(req: VideoGenerateRequest, background_tasks: Background
                 vidgrid_compatible=result.get("vidgrid_compatible", False),
                 clip_duration_seconds=result.get("clip_duration_seconds"),
                 scene_clips=scene_clips,
+                scene_progress=[
+                    {**item, "status": "completed", "stage": "exported"}
+                    for item in (record.get("scene_progress") or [])
+                ],
                 _source_scenes=result.get("scenes"),
                 _edited_scenes=result.get("scenes"),
             )
             _persist_job(record)
         except Exception as e:  # noqa: BLE001 — surface any failure on the job
-            record.update(status="failed", error=str(e))
+            progress_items = list(record.get("scene_progress") or [])
+            active = next((item for item in reversed(progress_items) if item.get("status") == "processing"), None)
+            if active is not None:
+                active["status"] = "failed"
+                active["stage"] = "failed"
+                active["error"] = str(e)[:300]
+            record.update(status="failed", error=str(e), scene_progress=progress_items)
             _persist_job(record)
 
     background_tasks.add_task(_run, job_id, req)
