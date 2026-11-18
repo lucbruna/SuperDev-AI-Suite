@@ -817,3 +817,34 @@ class TestSubtitleDownload:
         downloaded = await client.get(subtitle["download_url"])
         assert downloaded.status_code == 200
         assert "Legenda de teste." in downloaded.text
+
+
+class TestCharacterSelection:
+    @pytest.mark.asyncio
+    async def test_selected_characters_are_forwarded_to_generation_engine(
+        self, client: AsyncClient, fake_engine: _FakeEngine
+    ):
+        response = await client.post(
+            "/api/v1/video-studio/videos/generate",
+            json={
+                "project_id": "p1",
+                "prompt": "Mia e Leo explicam uma descoberta.",
+                "studio_id": "whymentary",
+                "character_ids": ["mia", "leo"],
+            },
+        )
+        assert response.status_code == 202
+        assert fake_engine.received is not None
+        assert fake_engine.received["params"]["character_ids"] == ["mia", "leo"]
+
+    @pytest.mark.asyncio
+    async def test_duplicate_character_selection_is_rejected(self, client: AsyncClient):
+        response = await client.post(
+            "/api/v1/video-studio/videos/generate",
+            json={
+                "project_id": "p1",
+                "prompt": "Teste",
+                "character_ids": ["mia", "mia"],
+            },
+        )
+        assert response.status_code == 422
