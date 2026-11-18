@@ -350,7 +350,7 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
         "job_id": job_id, "scene_index": scene_index,
         "image_path": result["image_path"], "image_url": to_download_url(result["image_path"]),
         "operation": operation, "provider": result["provider"],
-        "prompt": req.prompt, "render_required": True,
+        "status": "edited", "prompt": req.prompt, "render_required": True,
     }
 
 
