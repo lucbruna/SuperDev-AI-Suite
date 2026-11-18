@@ -259,7 +259,9 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
       setMessage(
         result.scene_clip?.status === "updated"
           ? `Imagem e clipe VidGrid de 10s da cena ${sceneIndex + 1} atualizados. Renderize a edição para atualizar o MP4 completo.`
-          : `Imagem da cena ${sceneIndex + 1} atualizada. Renderize a edição para aplicar ao MP4 completo.`,
+          : result.scene_clip?.status === "stale"
+            ? `Imagem atualizada, mas o clipe VidGrid não foi refeito: ${result.scene_clip.reason ?? "falha de render"}. O MP4 completo ainda precisa ser renderizado.`
+            : `Imagem da cena ${sceneIndex + 1} atualizada. Renderize a edição para aplicar ao MP4 completo.`,
       );
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Não foi possível alterar a imagem da cena.");
