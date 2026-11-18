@@ -203,6 +203,7 @@ export interface StudioJob {
   vidgrid_compatible?: boolean | null;
   clip_duration_seconds?: number | null;
   file_size_bytes?: number | null;
+  output_validation?: VideoOutputValidation | null;
   video_duration?: number | null;
   resolution?: string | null;
   frame_rate?: number | null;
