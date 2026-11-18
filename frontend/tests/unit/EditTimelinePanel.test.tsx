@@ -72,6 +72,8 @@ describe("EditTimelinePanel", () => {
     });
     render(<EditTimelinePanel timeline={audioTimeline} jobId="audio-job" />);
     await waitFor(() => expect(videoStudioApi.listJobAudioAssets).toHaveBeenCalledWith("audio-job"));
+    await waitFor(() => expect(screen.getByRole("checkbox", { name: "Ativar ducking" })).not.toBeChecked());
+    expect(screen.getByRole("checkbox", { name: "Ativar normalização" })).not.toBeChecked();
     fireEvent.click(screen.getByRole("checkbox", { name: "Repetir" }));
     fireEvent.click(screen.getByRole("button", { name: "Remover" }));
     fireEvent.click(screen.getByRole("button", { name: "Salvar alterações de áudio" }));
