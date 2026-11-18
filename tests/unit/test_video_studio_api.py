@@ -744,3 +744,35 @@ class TestToDownloadUrl:
     def test_returns_none_outside_tree(self):
         assert urls.to_download_url("C:/other/output.mp4") is None
         assert urls.to_download_url("") is None
+
+
+class TestDarkstudioProfileSelection:
+    @pytest.mark.asyncio
+    async def test_selected_studio_profile_reaches_render_engine(
+        self, client: AsyncClient, fake_engine: _FakeEngine
+    ):
+        resp = await client.post(
+            "/api/v1/video-studio/videos/generate",
+            json={
+                "project_id": "p1",
+                "prompt": "Uma cidade histórica ao amanhecer",
+                "studio_id": "historical_documentary",
+            },
+        )
+        assert resp.status_code == 202
+        assert fake_engine.received is not None
+        assert fake_engine.received["params"]["studio_id"] == "historical_documentary"
+
+    @pytest.mark.asyncio
+    async def test_unknown_studio_profile_is_rejected(
+        self, client: AsyncClient
+    ):
+        resp = await client.post(
+            "/api/v1/video-studio/videos/generate",
+            json={
+                "project_id": "p1",
+                "prompt": "Uma cena de teste",
+                "studio_id": "unknown",
+            },
+        )
+        assert resp.status_code == 422
