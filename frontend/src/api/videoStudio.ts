@@ -98,9 +98,20 @@ export interface StudioAudioAsset {
 
 export interface SceneVisualDirection {
   scene_index: number;
+  storyboard_scene_id?: string;
   narration: string;
   visual_prompt: string;
+  visual_prompt_full?: string;
   visual_prompt_suggestion: string;
+  negative_prompt?: string;
+  continuity?: {
+    characters?: string[];
+    objects?: string[];
+    environment?: string;
+    costume?: string;
+    time_of_day?: string;
+  };
+  storyboard_status?: "ready" | "needs_review" | string;
   visual_direction: string;
   narrative_beat: string;
   shot_type: string;
