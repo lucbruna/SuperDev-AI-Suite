@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import asyncio
 
+import numpy as np
+
 import pytest
 from fastapi import HTTPException
 
@@ -122,6 +124,36 @@ def test_update_audio_timeline_persists_music_and_sfx_controls(completed_job, mo
     assert record["_audio_settings"]["mastering_preset"] == "custom"
     music_track = next(track for track in result["edit_timeline"]["tracks"] if track.get("role") == "music")
     assert music_track["clips"][0]["fade_in"] == 0.5
+
+
+def test_audio_analysis_endpoint_returns_warnings_and_ducking_suggestion(completed_job, tmp_path, monkeypatch):
+    from modules.ai_video_studio.media import audio_timeline, dsp
+
+    downloads = tmp_path / "downloads"
+    music_dir = downloads / "music"
+    voice_dir = downloads / "voice"
+    music_dir.mkdir(parents=True)
+    voice_dir.mkdir(parents=True)
+    music_path = music_dir / "bed.wav"
+    voice_path = voice_dir / "voice.wav"
+    sample_rate = 44100
+    time = np.arange(sample_rate, dtype=np.float32) / sample_rate
+    voice = (0.12 * np.sin(2 * np.pi * 220 * time)).astype(np.float32)
+    music = (0.25 * np.sin(2 * np.pi * 110 * time)).astype(np.float32)
+    dsp.write_audio(voice_path, voice)
+    dsp.write_audio(music_path, music)
+    monkeypatch.setattr(audio_timeline, "get_downloads_dir", lambda: downloads)
+    monkeypatch.setattr(audio_timeline, "get_subsystem_dir", lambda name: downloads / name)
+    monkeypatch.setattr(video, "_persist_job", lambda record: None)
+    video._jobs[completed_job]["_audio_clips"] = {"music": [{"asset": "music/bed.wav"}], "sfx": []}
+    video._jobs[completed_job]["voiceover"] = {"clips": [{"audio_path": "voice/voice.wav"}]}
+
+    result = asyncio.run(video.analyze_video_job_audio(completed_job))
+    assert result["sources_analyzed"] == 2
+    assert len(result["reports"]["narration"]) == 1
+    assert len(result["reports"]["music"]) == 1
+    assert result["ducking_recommendation"]["available"] is True
+    assert video._jobs[completed_job]["audio_analysis"]["sources_analyzed"] == 2
 
 
 @pytest.mark.parametrize("preset", ["custom", "voice", "documentary", "music", "cinematic_sfx"])
