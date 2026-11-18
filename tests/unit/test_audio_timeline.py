@@ -468,7 +468,13 @@ def test_measure_encoded_audio_parses_decoded_stream_loudness(monkeypatch, tmp_p
     monkeypatch.setattr(audio_timeline.shutil, "which", lambda name: "/usr/bin/ffmpeg")
     class Result:
         returncode = 0
-        stderr = 'frame=1\\n{\\n "input_i" : "-14.2",\\n "input_tp" : "-1.3",\\n "input_lra" : "4.1"\\n}\\n'
+        stderr = """frame=1
+{
+ "input_i" : "-14.2",
+ "input_tp" : "-1.3",
+ "input_lra" : "4.1"
+}
+"""
     monkeypatch.setattr(audio_timeline.subprocess, "run", lambda *args, **kwargs: Result())
     report = audio_timeline.measure_encoded_audio(media)
     assert report["verified"] is True
