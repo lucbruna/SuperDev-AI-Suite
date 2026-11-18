@@ -151,6 +151,7 @@ export interface StudioJob {
     animated_primitives: number;
     unique_shot_types: number;
     shot_counts: Record<string, number>;
+    transition_counts: Record<string, number>;
     character_continuity_changes: number;
     scenes: { scene_index: number; shot_type: string; camera_motion: boolean; animated_primitive_count: number; primitive_count: number; character_ids: string[] }[];
     warnings: { code: string; severity: string; scene_index?: number; [key: string]: unknown }[];
