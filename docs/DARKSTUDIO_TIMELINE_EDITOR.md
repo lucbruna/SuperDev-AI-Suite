@@ -276,3 +276,4 @@ A regeneração individual e em lote pode operar em modo de pré-visualização.
 ## Detecção de imagens repetidas por pixels
 
 A ação **Detectar imagens repetidas** compara os arquivos de imagem ativos das cenas, não os textos dos prompts. O serviço calcula SHA-256 para duplicatas binariamente idênticas e um difference hash (dHash) de 64 bits para sinalizar imagens estruturalmente semelhantes, com distância de Hamming configurável (padrão 6). A execução é CPU/Pillow e não requer GPU nem serviço de IA. O relatório lista os pares de cenas e o percentual de similaridade estrutural. Isso não é reconhecimento semântico: imagens diferentes do mesmo assunto podem ser sinalizadas, e imagens visualmente relacionadas com composição alterada podem escapar. A análise é consultiva e não exclui nem substitui arquivos automaticamente.
+ O botão **Manter imagem atual** descarta a candidata pendente sem alterar a imagem ativa da cena.
