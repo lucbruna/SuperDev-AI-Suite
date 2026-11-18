@@ -63,10 +63,11 @@ def test_mix_audio_timeline_loops_short_music_only_when_requested(tmp_path, monk
     source = downloads / "music" / "short.wav"
     dsp.write_audio(source, np.full(dsp.SAMPLE_RATE // 4, 0.12, dtype=np.float32))
     output = tmp_path / "looped.wav"
-    audio_timeline.mix_audio_timeline(
+    result = audio_timeline.mix_audio_timeline(
         [{"asset": str(source), "start": 0, "end": 1, "loop": True}],
         output, total_duration=1.0,
     )
+    assert result["clips"][0]["loop"] is True
     samples, rate = dsp.read_audio(output, target_sr=dsp.SAMPLE_RATE)
     assert rate == dsp.SAMPLE_RATE
     assert np.max(np.abs(samples[rate // 2:])) > 0.08
