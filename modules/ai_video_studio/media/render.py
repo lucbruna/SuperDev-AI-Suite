@@ -325,7 +325,7 @@ def concat_vidgrid_scene_clips(
         for raw_path in clip_paths:
             safe_path = Path(raw_path).resolve().as_posix().replace("'", "'\\''")
             lines.append(f"file '{safe_path}'")
-        listing.write_text("\\n".join(lines) + "\\n", encoding="utf-8")
+        listing.write_text("\n".join(lines) + "\n", encoding="utf-8")
         completed = subprocess.run(
             [ffmpeg, "-hide_banner", "-loglevel", "error", "-y",
              "-f", "concat", "-safe", "0", "-i", str(listing),
