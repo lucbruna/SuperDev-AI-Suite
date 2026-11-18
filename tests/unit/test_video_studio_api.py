@@ -1189,3 +1189,60 @@ class TestVideoPreflight:
         assert body["status"] == "blocked"
         assert body["can_queue"] is False
         assert any(item["id"] == "ffmpeg" for item in body["blockers"])
+
+
+# ── Completed MP4 output validation ───────────────────────────────
+
+class TestCompletedOutputValidation:
+    @pytest.mark.asyncio
+    async def test_validates_video_and_audio_streams_with_ffprobe(
+        self, tmp_path, monkeypatch
+    ):
+        from types import SimpleNamespace
+        from modules.ai_video_studio.api.routes import video as video_routes
+        from modules.ai_video_studio.media import output_paths
+
+        video_root = tmp_path / "videos"
+        video_root.mkdir()
+        output = video_root / "final.mp4"
+        output.write_bytes(b"test-mp4")
+        monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda _name: video_root)
+        monkeypatch.setattr(video_routes.shutil, "which", lambda name: f"/usr/bin/{name}")
+        monkeypatch.setattr(
+            video_routes.subprocess, "run",
+            lambda *args, **kwargs: SimpleNamespace(
+                returncode=0, stderr="", stdout='{"format":{"duration":"30","format_name":"mov,mp4"},"streams":[{"codec_type":"video","width":1280,"height":720,"r_frame_rate":"24/1"},{"codec_type":"audio"}]}',
+            ),
+        )
+        monkeypatch.setattr(video_routes, "_persist_job", lambda _record: None)
+        video_routes._jobs["validate-job"] = {
+            "job_id": "validate-job", "project_id": "p1", "status": "completed",
+            "output_path": str(output), "video_duration": 30,
+        }
+
+        report = await video_routes.validate_video_job_output("validate-job")
+        assert report["valid"] is True
+        assert report["duration_seconds"] == 30
+        assert report["video_streams"] == 1
+        assert report["audio_streams"] == 1
+        assert video_routes._jobs["validate-job"]["output_validation"]["valid"] is True
+
+    @pytest.mark.asyncio
+    async def test_rejects_output_path_outside_video_directory(self, tmp_path, monkeypatch):
+        from modules.ai_video_studio.api.routes import video as video_routes
+        from modules.ai_video_studio.media import output_paths
+        from fastapi import HTTPException
+
+        video_root = tmp_path / "videos"
+        video_root.mkdir()
+        outside = tmp_path / "outside.mp4"
+        outside.write_bytes(b"not-allowed")
+        monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda _name: video_root)
+        video_routes._jobs["unsafe-validate-job"] = {
+            "job_id": "unsafe-validate-job", "project_id": "p1",
+            "status": "completed", "output_path": str(outside),
+        }
+
+        with pytest.raises(HTTPException) as error:
+            await video_routes.validate_video_job_output("unsafe-validate-job")
+        assert error.value.status_code == 422
