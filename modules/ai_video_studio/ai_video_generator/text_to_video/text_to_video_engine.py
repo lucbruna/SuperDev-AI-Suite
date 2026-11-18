@@ -344,6 +344,48 @@ class TextToVideoEngine:
                 result["output_path"] = voice["output_path"]
                 result["output_bytes"] = voice.get("bytes", result["output_bytes"])
 
+            # Keep VidGrid scene exports self-contained: mux the matching
+            # per-scene narration clip into each ten-second MP4 independently.
+            if vidgrid_compatible and scene_clips:
+                if voice and voice.get("narration_style") == "per_scene":
+                    from modules.ai_video_studio.media.audio import mux_audio_into_video
+
+                    narration_by_index = {
+                        int(item.get("index", -1)): item
+                        for item in (voice.get("clips") or [])
+                        if isinstance(item, dict)
+                    }
+                    for scene_clip in scene_clips:
+                        narration_clip = narration_by_index.get(scene_clip["scene_index"])
+                        audio_path = narration_clip.get("audio_path") if narration_clip else None
+                        if not audio_path:
+                            scene_clip["audio_status"] = "no_scene_narration"
+                            continue
+                        voiced_path = unique_filename(
+                            get_subsystem_dir("videos") / "vidgrid_clips",
+                            f"scene_{scene_clip['scene_index'] + 1:02d}_voiced",
+                            "mp4",
+                        )
+                        mux_result = await asyncio.to_thread(
+                            mux_audio_into_video,
+                            scene_clip["output_path"],
+                            audio_path,
+                            voiced_path,
+                        )
+                        if mux_result.get("muxed"):
+                            scene_clip["output_path"] = mux_result["output_path"]
+                            scene_clip["bytes"] = mux_result.get("bytes", scene_clip["bytes"])
+                            scene_clip["audio_status"] = "per_scene_narration_muxed"
+                        else:
+                            scene_clip["audio_status"] = "narration_mux_failed"
+                            scene_clip["audio_error"] = str(mux_result.get("reason") or "audio mux failed")[:200]
+                elif voice and voice.get("narration_style") == "single_track":
+                    for scene_clip in scene_clips:
+                        scene_clip["audio_status"] = "single_track_not_split"
+                else:
+                    for scene_clip in scene_clips:
+                        scene_clip["audio_status"] = "silent_or_tts_unavailable"
+
         # Optional timed SRT sidecar. Keep subtitles as a separate deliverable
         # so callers can review/edit them before any burn-in/export decision.
         if params.get("generate_subtitles") or params.get("subtitles"):
