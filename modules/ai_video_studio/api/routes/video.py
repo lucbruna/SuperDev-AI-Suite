@@ -87,6 +87,15 @@ class VideoGenerateRequest(BaseModel):
         return values
 
 
+class ImageEditRequest(BaseModel):
+    source_path: str = Field(..., min_length=1, max_length=2048)
+    prompt: str = Field(..., min_length=1, max_length=4000)
+    negative_prompt: str = Field(default="", max_length=2000)
+    denoising_strength: float = Field(default=0.45, ge=0.05, le=0.95)
+    steps: int = Field(default=20, ge=1, le=60)
+    cfg_scale: float = Field(default=7.0, ge=1.0, le=20.0)
+
+
 class VideoGenerateResponse(BaseModel):
     job_id: str
     project_id: str
@@ -250,6 +259,37 @@ except Exception:
     _jobs = {}
 
 
+@router.post("/images/edit")
+async def edit_generated_scene_image(req: ImageEditRequest):
+    """Apply a text instruction to an existing DARKSTUDIO image asset."""
+    from modules.ai_video_studio.media.output_paths import get_subsystem_dir
+    from modules.ai_video_studio.ai_image_generator.providers.local_diffusion import edit_image
+
+    image_root = Path(get_subsystem_dir("images")).resolve()
+    source = Path(req.source_path).resolve()
+    if image_root not in source.parents or not source.is_file():
+        raise HTTPException(status_code=422, detail="A source image from the DARKSTUDIO image library is required")
+    try:
+        result = await asyncio.to_thread(
+            edit_image,
+            source,
+            req.prompt,
+            negative_prompt=req.negative_prompt,
+            denoising_strength=req.denoising_strength,
+            steps=req.steps,
+            cfg_scale=req.cfg_scale,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    return {
+        **result,
+        "image_url": to_download_url(result["image_path"]),
+        "source_url": to_download_url(str(source)),
+    }
+
+
 @router.post("/generate", response_model=VideoGenerateResponse, status_code=202)
 async def generate_video(req: VideoGenerateRequest, background_tasks: BackgroundTasks):
     job_id = str(uuid.uuid4())
@@ -322,6 +362,10 @@ async def generate_video(req: VideoGenerateRequest, background_tasks: Background
                     **subtitle_info,
                     "download_url": to_download_url(subtitle_info["file_path"]),
                 }
+            scene_assets = result.get("scene_assets") or []
+            for asset in scene_assets:
+                if asset.get("image_path") and asset.get("status") == "generated":
+                    asset["image_url"] = to_download_url(asset["image_path"])
             record.update(
                 status="completed",
                 progress=1.0,
