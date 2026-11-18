@@ -73,6 +73,8 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
   const [duckingDb, setDuckingDb] = useState("9");
   const [normalizationEnabled, setNormalizationEnabled] = useState(true);
   const [normalizationTarget, setNormalizationTarget] = useState("-18");
+  const [loudnessEnabled, setLoudnessEnabled] = useState(false);
+  const [targetLufs, setTargetLufs] = useState("-14");
   const videoTrack = draft.tracks.find((track) => track.type === "video");
   const clips = videoTrack?.clips ?? [];
   const duration = Math.max(1, draft.duration_frames);
@@ -89,6 +91,8 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
         setDuckingDb(String(job.audio_settings.ducking_db ?? 9));
         setNormalizationEnabled(job.audio_settings.normalization_enabled ?? true);
         setNormalizationTarget(String(job.audio_settings.normalization_target_dbfs ?? -18));
+        setLoudnessEnabled(job.audio_settings.loudness_normalization_enabled ?? false);
+        setTargetLufs(String(job.audio_settings.target_lufs ?? -14));
       }
     }).catch(() => undefined);
   }, [jobId]);
@@ -197,6 +201,11 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
       setMessage("O alvo de normalização deve ficar entre -60 e 0 dBFS.");
       return;
     }
+    const lufsValue = Number(targetLufs);
+    if (!Number.isFinite(lufsValue) || lufsValue < -36 || lufsValue > -5) {
+      setMessage("O alvo LUFS deve ficar entre -36 e -5 LUFS.");
+      return;
+    }
     setSavingAudio(true);
     setMessage("");
     try {
@@ -216,7 +225,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
       const nextSfx = parseClip(sfxAsset, sfxStart, sfxEnd, sfxVolume, sfxFadeIn, sfxFadeOut);
       if (nextMusic) music.push(nextMusic);
       if (nextSfx) sfx.push(nextSfx);
-      const result = await videoStudioApi.updateJobAudio(jobId, { music_clips: music, sfx_clips: sfx, ducking_enabled: duckingEnabled, ducking_db: Number(duckingDb), ducking_threshold_db: -36, ducking_attack: 0.08, ducking_release: 0.35, normalization_enabled: normalizationEnabled, normalization_target_dbfs: Number(normalizationTarget), normalization_max_gain_db: 6 });
+      const result = await videoStudioApi.updateJobAudio(jobId, { music_clips: music, sfx_clips: sfx, ducking_enabled: duckingEnabled, ducking_db: Number(duckingDb), ducking_threshold_db: -36, ducking_attack: 0.08, ducking_release: 0.35, normalization_enabled: normalizationEnabled, normalization_target_dbfs: Number(normalizationTarget), normalization_max_gain_db: 6, loudness_normalization_enabled: loudnessEnabled, target_lufs: Number(targetLufs), true_peak_db: -1, loudness_range: 11 });
       setDraft(result.edit_timeline);
       setAudioDirty(false);
       onSaved?.(result.edit_timeline);
@@ -244,7 +253,10 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
       const normalizationNote = result.normalization?.enabled
         ? ` Normalização RMS: ${result.normalization.gain_db ?? 0} dB de ajuste, com limitador de pico.`
         : "";
-      setMessage(result.message + duckingNote + normalizationNote);
+      const loudnessNote = result.loudness?.enabled
+        ? ` Loudness medido: ${result.loudness.output_i ?? "—"} LUFS; true peak: ${result.loudness.output_tp ?? "—"} dBTP.`
+        : "";
+      setMessage(result.message + duckingNote + normalizationNote + loudnessNote);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Falha ao renderizar a edição.");
     } finally {
@@ -384,6 +396,13 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
               <div><strong className="text-sm">🎚️ Normalização do volume final</strong><p className="text-xs text-surface-500">Ajusta o RMS médio antes do limitador de pico; não é medição LUFS.</p></div>
               <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={normalizationEnabled} onChange={(event) => { setNormalizationEnabled(event.target.checked); setAudioDirty(true); }} /> Ativar normalização</label>
               <label className="text-xs text-surface-500">Alvo (dBFS)<input type="number" min="-60" max="0" step="1" value={normalizationTarget} onChange={(event) => { setNormalizationTarget(event.target.value); setAudioDirty(true); }} className="ml-2 w-20 rounded border bg-transparent px-2 py-1" /></label>
+            </div>
+          </div>
+          <div className="rounded-md border border-surface-200 p-3 dark:border-surface-700 sm:col-span-2">
+            <div className="flex flex-wrap items-center gap-4">
+              <div><strong className="text-sm">📊 Loudness EBU R128 (LUFS)</strong><p className="text-xs text-surface-500">Duas passagens FFmpeg; true peak limitado a -1 dBTP. Requer FFmpeg com filtro loudnorm.</p></div>
+              <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={loudnessEnabled} onChange={(event) => { setLoudnessEnabled(event.target.checked); setAudioDirty(true); }} /> Ativar LUFS</label>
+              <label className="text-xs text-surface-500">Alvo LUFS<input type="number" min="-36" max="-5" step="1" value={targetLufs} onChange={(event) => { setTargetLufs(event.target.value); setAudioDirty(true); }} className="ml-2 w-20 rounded border bg-transparent px-2 py-1" /></label>
             </div>
           </div>
           {(["music", "sound_effect"] as const).map((role) => {
