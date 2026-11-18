@@ -65,7 +65,7 @@ describe("EditTimelinePanel", () => {
         { id: "audio-sfx", type: "audio", role: "sound_effect", clips: [{ asset: "effects/hit.wav", start_frame: 24, end_frame: 36, duration_frames: 12, start_seconds: 1, end_seconds: 1.5, volume: 0.8 }] },
       ],
     };
-    vi.spyOn(videoStudioApi, "listJobAudioAssets").mockResolvedValue([]);
+    const assets = vi.spyOn(videoStudioApi, "listJobAudioAssets").mockResolvedValue([]);
     const save = vi.spyOn(videoStudioApi, "updateJobAudio").mockResolvedValue({
       edit_timeline: audioTimeline, audio_draft_status: "saved", message: "Faixas salvas",
     });
@@ -77,6 +77,6 @@ describe("EditTimelinePanel", () => {
     expect(save.mock.calls[0][1].sfx_clips).toEqual([]);
     expect(save.mock.calls[0][1].music_clips).toHaveLength(1);
     save.mockRestore();
-    vi.mocked(videoStudioApi.listJobAudioAssets).mockRestore?.();
+    assets.mockRestore();
   });
 });
