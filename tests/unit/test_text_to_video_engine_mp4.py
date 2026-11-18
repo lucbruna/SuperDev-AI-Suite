@@ -335,3 +335,61 @@ def test_generate_async_uses_real_scene_images_and_vidgrid_ten_second_clips(monk
     assert len(result["scene_clips"]) == 2
     assert all(clip["duration"] == 10.0 for clip in result["scene_clips"])
     assert all(item["kwargs"]["duration"] == 10.0 for item in captured["clip_renders"])
+
+
+def test_vidgrid_scene_clips_receive_matching_per_scene_narration(monkeypatch, tmp_path):
+    class Planner:
+        def plan(self, prompt, *, num_scenes, duration, timeout):
+            return {"scenes": [
+                {"duration": 10, "description": "Cena um", "voiceover_text": "Narração da cena um."},
+                {"duration": 10, "description": "Cena dois", "voiceover_text": "Narração da cena dois."},
+            ], "provider": "deterministic", "ai_generated": False}
+
+    class Stats:
+        def record(self, **kwargs):
+            pass
+
+    async def fake_voice(self, prompt, scenes, *, video_path, params):
+        return {
+            "muxed": True, "narration_style": "per_scene",
+            "output_path": video_path, "bytes": 500,
+            "clips": [
+                {"index": 0, "audio_path": str(tmp_path / "voice-0.wav")},
+                {"index": 1, "audio_path": str(tmp_path / "voice-1.wav")},
+            ],
+        }
+
+    def fake_render(scenes, output_path, **kwargs):
+        return {"output_path": str(output_path), "frames": 480, "bytes": 300, "engine": "ffmpeg"}
+
+    def fake_scene_render(scene, output_path, **kwargs):
+        return {"output_path": str(output_path), "frames": 240, "bytes": 100, "engine": "ffmpeg"}
+
+    mux_calls = []
+    def fake_mux(video_path, audio_path, output_path):
+        mux_calls.append((video_path, audio_path))
+        return {"muxed": True, "output_path": str(output_path), "bytes": 200}
+
+    monkeypatch.setattr(engine_module, "get_scene_planner", lambda: Planner())
+    monkeypatch.setattr(engine_module, "get_subsystem_dir", lambda _name: tmp_path)
+    monkeypatch.setattr(engine_module, "unique_filename", lambda directory, prefix, extension: tmp_path / f"{prefix}.{extension}")
+    monkeypatch.setattr(engine_module, "render_multi_scene_video", fake_render)
+    monkeypatch.setattr(engine_module, "render_scene_video", fake_scene_render)
+    monkeypatch.setattr(engine_module.TextToVideoEngine, "_add_voiceover", fake_voice)
+    monkeypatch.setattr("modules.ai_video_studio.media.audio.mux_audio_into_video", fake_mux)
+    monkeypatch.setattr(engine_module, "get_generation_statistics", lambda: Stats())
+
+    result = asyncio.run(engine_module.TextToVideoEngine().generate_async({
+        "prompt": "Vídeo em blocos de dez segundos.",
+        "params": {
+            "duration": 6, "num_scenes": 2, "fps": 24,
+            "width": 640, "height": 360, "voiceover": True,
+            "vidgrid_compatible": True,
+        },
+    }))
+    assert len(mux_calls) == 2
+    assert [call[1] for call in mux_calls] == [
+        str(tmp_path / "voice-0.wav"), str(tmp_path / "voice-1.wav"),
+    ]
+    assert all(clip["audio_status"] == "per_scene_narration_muxed" for clip in result["scene_clips"])
+    assert all(clip["output_path"].endswith("_voiced.mp4") for clip in result["scene_clips"])
