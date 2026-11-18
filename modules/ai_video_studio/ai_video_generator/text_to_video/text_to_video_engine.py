@@ -229,7 +229,7 @@ class TextToVideoEngine:
                     expression = str(scene.get("character_expression") or "")
                     if expression not in {"neutral", "happy", "surprised", "concerned"}:
                         expression = (
-                            "surprised" if any(word in scene_words for word in ("surprised", "surpresa", "espant"))
+                            "surprised" if any(word in scene_words for word in ("surprised", "surpresa", "surpres", "espant"))
                             else "concerned" if any(word in scene_words for word in ("concern", "preocup", "alerta"))
                             else "happy" if any(word in scene_words for word in ("happy", "feliz", "sorr"))
                             else "neutral"
