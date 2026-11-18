@@ -267,3 +267,63 @@ def test_generate_async_rejects_objects_from_another_studio(monkeypatch) -> None
                 "object_ids": ["water_glass"],
             },
         }))
+
+
+def test_generate_async_uses_real_scene_images_and_vidgrid_ten_second_clips(monkeypatch, tmp_path) -> None:
+    captured: dict = {}
+
+    class Planner:
+        def plan(self, prompt, *, num_scenes, duration, timeout):
+            assert num_scenes == 2
+            assert duration == 20.0
+            return {
+                "scenes": [
+                    {"duration": 1.0, "description": "Floresta", "visual_prompt": "A detailed forest at dawn"},
+                    {"duration": 1.0, "description": "Rio", "visual_prompt": "A wide river in a valley"},
+                ],
+                "provider": "ollama", "ai_generated": True,
+            }
+
+    class Stats:
+        def record(self, **kwargs):
+            pass
+
+    def fake_image(prompt, **kwargs):
+        captured.setdefault("prompts", []).append(prompt)
+        return {
+            "image_path": str(tmp_path / f"scene-{len(captured['prompts'])}.png"),
+            "provider": "automatic1111_compatible",
+            "image_bytes": 100,
+        }
+
+    def fake_render(scenes, output_path, **kwargs):
+        captured["scenes"] = scenes
+        return {"output_path": str(output_path), "frames": 480, "bytes": 100, "engine": "ffmpeg"}
+
+    from modules.ai_video_studio.ai_image_generator.providers import local_diffusion
+    monkeypatch.setattr(engine_module, "get_scene_planner", lambda: Planner())
+    monkeypatch.setattr(local_diffusion, "generate_scene_image", fake_image)
+    monkeypatch.setattr(engine_module, "get_subsystem_dir", lambda _name: tmp_path)
+    monkeypatch.setattr(engine_module, "unique_filename", lambda *_args: tmp_path / "vidgrid.mp4")
+    monkeypatch.setattr(engine_module, "render_multi_scene_video", fake_render)
+    monkeypatch.setattr(engine_module, "get_generation_statistics", lambda: Stats())
+
+    result = asyncio.run(engine_module.TextToVideoEngine().generate_async({
+        "prompt": "Documentário cinematográfico sobre a natureza.",
+        "params": {
+            "duration": 6, "num_scenes": 2, "fps": 24,
+            "width": 640, "height": 360,
+            "studio_id": "historical_documentary",
+            "scene_image_mode": "ai",
+            "vidgrid_compatible": True,
+        },
+    }))
+
+    assert len(captured["prompts"]) == 2
+    assert "cinematic historical illustration" in captured["prompts"][0]
+    assert [scene["duration"] for scene in captured["scenes"]] == [10.0, 10.0]
+    assert all(scene["background_image_path"].endswith(".png") for scene in captured["scenes"])
+    assert result["vidgrid_compatible"] is True
+    assert result["clip_duration_seconds"] == 10.0
+    assert result["scene_image_mode"] == "ai_generated"
+    assert len(result["scene_assets"]) == 2
