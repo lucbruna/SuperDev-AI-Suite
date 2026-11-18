@@ -87,6 +87,7 @@ def analyze_visual_quality(
     rows: list[dict[str, Any]] = []
     warnings: list[dict[str, Any]] = []
     shots: list[str] = []
+    transition_types: list[str] = []
     signatures: list[tuple[Any, ...]] = []
     camera_moving = 0
     animated_primitives = 0
@@ -102,6 +103,9 @@ def analyze_visual_quality(
         text = scene.get("text") or {}
         text_present = bool(text.get("content") if isinstance(text, dict) else text)
         shot = str(scene.get("shot_type") or "medium")
+        transition = scene.get("transition_out") or {"type": "cut"}
+        transition_type = str(transition.get("type") or "cut")
+        transition_types.append(transition_type)
         duration = max(1 / fps, float(scene.get("duration") or 0))
         character_ids = tuple(sorted(str(value) for value in (
             scene.get("_darkstudio_characters") or scene.get("character_ids") or []
@@ -126,6 +130,7 @@ def analyze_visual_quality(
         row = {
             "scene_index": index,
             "shot_type": shot,
+            "transition_out": transition_type,
             "duration_seconds": round(duration, 3),
             "camera_motion": moving,
             "camera_delta": {key: round(value, 4) for key, value in camera_delta.items()},
@@ -147,10 +152,14 @@ def analyze_visual_quality(
                              "scene_index": index})
 
     shot_counts = dict(Counter(shots))
+    transition_counts = dict(Counter(transition_types))
     unique_shots = len(shot_counts)
     if len(scenes) >= 4 and unique_shots < 3:
         warnings.append({"code": "low_shot_variety", "severity": "warning", "unique_shots": unique_shots})
     if studio_id == "historical_documentary":
+        if len(scenes) >= 4 and len(transition_counts) < 2:
+            warnings.append({"code": "low_transition_variety", "severity": "info",
+                             "transition_types": list(transition_counts)})
         if camera_moving < max(1, len(scenes) * 0.6):
             warnings.append({"code": "cinematic_camera_coverage_low", "severity": "warning",
                              "moving_scenes": camera_moving, "scene_count": len(scenes)})
@@ -187,6 +196,7 @@ def analyze_visual_quality(
         "animated_primitives": animated_primitives,
         "unique_shot_types": unique_shots,
         "shot_counts": shot_counts,
+        "transition_counts": transition_counts,
         "character_continuity_changes": character_changes,
         "scenes": rows,
         "warnings": warnings,
