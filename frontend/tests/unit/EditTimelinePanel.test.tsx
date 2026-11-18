@@ -66,7 +66,7 @@ describe("EditTimelinePanel", () => {
       ],
     };
     const assets = vi.spyOn(videoStudioApi, "listJobAudioAssets").mockResolvedValue([]);
-    const job = vi.spyOn(videoStudioApi, "getJob").mockResolvedValue({ job_id: "audio-job", project_id: "p1", status: "completed", progress: 1, audio_settings: { ducking_enabled: false, ducking_db: 14 } });
+    const job = vi.spyOn(videoStudioApi, "getJob").mockResolvedValue({ job_id: "audio-job", project_id: "p1", status: "completed", progress: 1, audio_settings: { ducking_enabled: false, ducking_db: 14, normalization_enabled: false, normalization_target_dbfs: -22 } });
     const save = vi.spyOn(videoStudioApi, "updateJobAudio").mockResolvedValue({
       edit_timeline: audioTimeline, audio_draft_status: "saved", message: "Faixas salvas",
     });
@@ -81,6 +81,8 @@ describe("EditTimelinePanel", () => {
     expect(save.mock.calls[0][1].music_clips[0].loop).toBe(true);
     expect(save.mock.calls[0][1].ducking_enabled).toBe(false);
     expect(save.mock.calls[0][1].ducking_db).toBe(14);
+    expect(save.mock.calls[0][1].normalization_enabled).toBe(false);
+    expect(save.mock.calls[0][1].normalization_target_dbfs).toBe(-22);
     save.mockRestore();
     assets.mockRestore();
     job.mockRestore();
