@@ -217,3 +217,27 @@ it("analyzes sampled frames from the rendered MP4 and displays static sections",
   expect(screen.getByText(/2s–5s/)).toBeInTheDocument();
   expect(screen.getByText(/near duplicate sampled frames/)).toBeInTheDocument();
 });
+
+
+it("edits a scene image from a text instruction and asks for a new MP4 render", async () => {
+  vi.spyOn(videoStudioApi, "getJob").mockResolvedValue({
+    job_id: "scene-image-job", project_id: "p1", status: "completed", progress: 1,
+  });
+  const edit = vi.spyOn(videoStudioApi, "editSceneImage").mockResolvedValue({
+    job_id: "scene-image-job", scene_index: 0,
+    image_path: "/downloads/images/edited.png",
+    image_url: "/api/v1/downloads/images/edited.png",
+    provider: "automatic1111_compatible",
+    status: "edited",
+    operation: "image_to_image",
+    prompt: "Transforme o fundo em uma floresta ao amanhecer",
+    render_required: true,
+  });
+  render(<EditTimelinePanel timeline={timeline} jobId="scene-image-job" />);
+  const prompt = "Transforme o fundo em uma floresta ao amanhecer";
+  fireEvent.change(screen.getAllByPlaceholderText(/transforme o fundo/i)[0], { target: { value: prompt } });
+  fireEvent.click(screen.getAllByRole("button", { name: "Criar imagem por texto" })[0]);
+  await waitFor(() => expect(edit).toHaveBeenCalledWith("scene-image-job", 0, { prompt }));
+  expect(await screen.findByText(/Imagem da cena 1 atualizada/)).toBeInTheDocument();
+  expect(screen.getByAltText("Imagem da cena 1")).toBeInTheDocument();
+});
