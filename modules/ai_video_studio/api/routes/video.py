@@ -156,6 +156,7 @@ class VideoStatusResponse(BaseModel):
     edit_draft_status: str | None = None
     audio_draft_status: str | None = None
     audio_settings: dict | None = None
+    edit_render_ducking: dict | None = None
     edit_render_status: str | None = None
     edited_output_url: str | None = None
     edited_video_duration: float | None = None
