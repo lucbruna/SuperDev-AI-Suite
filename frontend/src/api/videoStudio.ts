@@ -133,7 +133,7 @@ export interface StudioJob {
   edit_timeline?: EditTimeline | null;
   edit_draft_status?: string | null;
   audio_draft_status?: string | null;
-  audio_settings?: { ducking_enabled?: boolean; ducking_db?: number; ducking_threshold_db?: number; ducking_attack?: number; ducking_release?: number } | null;
+  audio_settings?: { ducking_enabled?: boolean; ducking_db?: number; ducking_threshold_db?: number; ducking_attack?: number; ducking_release?: number; normalization_enabled?: boolean; normalization_target_dbfs?: number; normalization_max_gain_db?: number } | null;
   edit_render_ducking?: { enabled?: boolean; reduction_db?: number; threshold_db?: number; speech_detected?: boolean } | null;
   edit_render_status?: string | null;
   edited_output_url?: string | null;
@@ -233,7 +233,7 @@ export const videoStudioApi = {
     music_clips: { asset: string; start: number; end: number; trim_start?: number; volume?: number; fade_in?: number; fade_out?: number; loop?: boolean }[];
     sfx_clips: { asset: string; start: number; end: number; trim_start?: number; volume?: number; fade_in?: number; fade_out?: number }[];
     ducking_enabled?: boolean; ducking_db?: number; ducking_threshold_db?: number;
-    ducking_attack?: number; ducking_release?: number;
+    ducking_attack?: number; ducking_release?: number; normalization_enabled?: boolean; normalization_target_dbfs?: number; normalization_max_gain_db?: number;
   }): Promise<{ edit_timeline: EditTimeline; audio_draft_status: string; message: string }> {
     const { data } = await apiClient.patch(`${STUDIO_BASE}/videos/jobs/${jobId}/audio`, payload);
     return data;
