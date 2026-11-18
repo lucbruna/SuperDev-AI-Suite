@@ -76,6 +76,8 @@ def test_render_edits_returns_new_mp4_and_regenerates_subtitle_sidecar(completed
     def fake_render(scenes, output_path, **kwargs):
         assert [scene["index"] for scene in scenes] == [0, 1]
         assert kwargs["require_mp4"] is True
+        from pathlib import Path
+        Path(output_path).write_bytes(b"fake-edited-mp4")
         return {"output_path": str(output_path), "frames": 96, "bytes": 1234, "engine": "ffmpeg"}
 
     monkeypatch.setattr(render, "render_multi_scene_video", fake_render)
