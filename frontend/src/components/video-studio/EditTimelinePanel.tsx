@@ -346,12 +346,15 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
     } catch (error) { setMessage(error instanceof Error ? error.message : "Não foi possível descartar a candidata."); }
   }
 
-  async function regenerateSelectedImages() {
+  async function regenerateSelectedImages(sceneIndices: number[] = selectedImageScenes) {
     if (!jobId || regeneratingImageBatch || editingImageScene !== null) return;
-    const selectedScenes = selectedImageScenes.map((sceneIndex) => ({
-      scene_index: sceneIndex,
-      prompt: (sceneImagePrompts[sceneIndex] ?? visualDirections[sceneIndex]?.visual_prompt_suggestion ?? visualDirections[sceneIndex]?.visual_prompt ?? "").trim(),
-    }));
+    const selectedScenes = sceneIndices.map((sceneIndex) => {
+      const direction = visualDirections[sceneIndex];
+      const authored = sceneImagePrompts[sceneIndex];
+      const prompt = authored ?? direction?.visual_prompt_full ?? direction?.visual_prompt_suggestion ?? direction?.visual_prompt
+        ?? (direction?.narration ? `Ilustração fiel desta narração: ${direction.narration}. ${direction.visual_direction ?? ""}` : "");
+      return { scene_index: sceneIndex, prompt: prompt.trim() };
+    });
     const missing = selectedScenes.filter((scene) => !scene.prompt);
     if (missing.length) { setMessage(`Adicione um prompt para as cenas: ${missing.map((scene) => scene.scene_index + 1).join(", ")}.`); return; }
     if (!selectedScenes.length) return;
@@ -563,9 +566,14 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
             <input type="checkbox" checked={clips.length > 0 && clips.every((clip, index) => selectedImageScenes.includes(clip.source_scene_index ?? clip.scene_index ?? index))} onChange={(event) => setSelectedImageScenes(event.target.checked ? clips.map((clip, index) => clip.source_scene_index ?? clip.scene_index ?? index) : [])} />
             Selecionar todas as cenas
           </label>
-          <button type="button" onClick={regenerateSelectedImages} disabled={!selectedImageScenes.length || regeneratingImageBatch || editingImageScene !== null} className="rounded-md bg-primary-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-40">
-            {regeneratingImageBatch ? "Regenerando cenas…" : `Regenerar selecionadas (${selectedImageScenes.length})`}
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => regenerateSelectedImages(clips.map((clip, index) => clip.source_scene_index ?? clip.scene_index ?? index))} disabled={!clips.length || regeneratingImageBatch || editingImageScene !== null} className="rounded-md border border-primary-600 px-3 py-2 text-xs font-semibold text-primary-700 dark:text-primary-300 disabled:opacity-40">
+              Gerar imagens de todas as cenas pelo roteiro
+            </button>
+            <button type="button" onClick={() => regenerateSelectedImages()} disabled={!selectedImageScenes.length || regeneratingImageBatch || editingImageScene !== null} className="rounded-md bg-primary-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-40">
+              {regeneratingImageBatch ? "Regenerando cenas…" : `Regenerar selecionadas (${selectedImageScenes.length})`}
+            </button>
+          </div>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           {(draft.tracks.find((track) => track.type === "video")?.clips ?? []).map((clip) => {
