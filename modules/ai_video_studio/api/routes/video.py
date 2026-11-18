@@ -155,6 +155,19 @@ class VideoStatusResponse(BaseModel):
     error: str | None = None
 
 
+
+class SceneEdit(BaseModel):
+    scene_index: int = Field(..., ge=0)
+    duration_frames: int | None = Field(default=None, ge=1)
+    transition_type: str | None = Field(default=None, pattern="^(cut|crossfade|fade_through_black)$")
+    transition_duration_frames: int | None = Field(default=None, ge=2)
+
+
+class TimelineEditRequest(BaseModel):
+    scene_order: list[int] | None = None
+    scene_edits: list[SceneEdit] = Field(default_factory=list)
+
+
 _jobs: dict[str, dict] = {}
 
 
@@ -235,6 +248,8 @@ async def generate_video(req: VideoGenerateRequest, background_tasks: Background
                 voiceover=result.get("voiceover"),
                 subtitles=subtitle_info,
                 edit_timeline=result.get("edit_timeline"),
+                _source_scenes=result.get("scenes"),
+                _edited_scenes=result.get("scenes"),
             )
         except Exception as e:  # noqa: BLE001 — surface any failure on the job
             record.update(status="failed", error=str(e))
@@ -248,6 +263,42 @@ async def generate_video(req: VideoGenerateRequest, background_tasks: Background
         message="Video generation queued",
         format=req.format,
     )
+
+
+
+@router.patch("/jobs/{job_id}/timeline")
+async def update_video_job_timeline(job_id: str, req: TimelineEditRequest):
+    """Save a validated edit draft in the current API process (not durable storage)."""
+    record = _jobs.get(job_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+    if record.get("status") != "completed" or not record.get("_source_scenes"):
+        raise HTTPException(status_code=409, detail="Only completed jobs with a scene plan can be edited")
+    from modules.ai_video_studio.media.timeline import apply_scene_edits, build_edit_timeline
+
+    params = record.get("params") or {}
+    fps = int(params.get("frame_rate") or record.get("frame_rate") or 24)
+    try:
+        edited = apply_scene_edits(
+            record["_source_scenes"],
+            scene_order=req.scene_order,
+            scene_edits=[item.model_dump(exclude_none=True) for item in req.scene_edits],
+            fps=fps,
+        )
+        width, height = _parse_resolution(params.get("resolution") or record.get("resolution") or "1280x720")
+        timeline = build_edit_timeline(edited, fps=fps, width=width, height=height)
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    record["_edited_scenes"] = edited
+    record["edit_timeline"] = timeline
+    record["edit_draft_status"] = "unsaved_to_disk"
+    return {
+        "job_id": job_id,
+        "edit_timeline": timeline,
+        "edit_draft_status": "in_memory_only",
+        "message": "Rascunho atualizado no processo atual; ainda não foi salvo permanentemente nem renderizado.",
+    }
 
 
 @router.get("/jobs/{job_id}", response_model=VideoStatusResponse)
