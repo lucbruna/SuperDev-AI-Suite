@@ -141,3 +141,57 @@ def test_narration_builder_prefers_authored_speech_to_visual_description() -> No
         "A cidade despertou antes do amanhecer. "
         "As rotas comerciais ligavam os reinos."
     )
+
+
+def test_generate_async_composes_selected_characters_into_every_scene(monkeypatch, tmp_path) -> None:
+    captured: dict = {}
+
+    class Planner:
+        def plan(self, prompt, *, num_scenes, duration, timeout):
+            return {
+                "scenes": [
+                    {"duration": 1.0, "description": "Cena um"},
+                    {"duration": 1.0, "description": "Cena dois"},
+                ],
+                "provider": "deterministic",
+                "ai_generated": False,
+            }
+
+    class Stats:
+        def record(self, **kwargs):
+            pass
+
+    def fake_render(scenes, output_path, **kwargs):
+        captured["scenes"] = scenes
+        return {"output_path": str(output_path), "frames": 48, "bytes": 123, "engine": "ffmpeg"}
+
+    monkeypatch.setattr(engine_module, "get_scene_planner", lambda: Planner())
+    monkeypatch.setattr(engine_module, "get_subsystem_dir", lambda _name: tmp_path)
+    monkeypatch.setattr(
+        engine_module, "unique_filename", lambda *_args: tmp_path / "characters.mp4"
+    )
+    monkeypatch.setattr(engine_module, "render_multi_scene_video", fake_render)
+    monkeypatch.setattr(engine_module, "get_generation_statistics", lambda: Stats())
+
+    result = asyncio.run(
+        engine_module.TextToVideoEngine().generate_async(
+            {
+                "prompt": "Mia e Leo explicam uma ideia.",
+                "params": {
+                    "duration": 2.0,
+                    "num_scenes": 2,
+                    "fps": 24,
+                    "width": 640,
+                    "height": 360,
+                    "studio_id": "whymentary",
+                    "character_ids": ["mia", "leo"],
+                },
+            }
+        )
+    )
+
+    assert result["studio_id"] == "whymentary"
+    assert len(captured["scenes"]) == 2
+    for scene in captured["scenes"]:
+        assert len(scene["rects"]) == 6
+        assert len(scene["circles"]) >= 11
