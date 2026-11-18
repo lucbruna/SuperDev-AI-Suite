@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 from PIL import Image
 
+from modules.ai_video_studio.core.exceptions import ValidationError
 from modules.ai_video_studio.ai_video_generator.image_to_video.image_to_video_engine import (
     ImageToVideoEngine,
 )
@@ -66,7 +67,7 @@ def test_image_to_video_streams_exact_frame_budget_and_requires_mp4(tmp_path, mo
 
 
 def test_image_to_video_rejects_unknown_motion_preset():
-    with pytest.raises(Exception, match="Unsupported camera_motion"):
+    with pytest.raises(ValidationError, match="Unsupported camera_motion"):
         ImageToVideoEngine().generate({
             "id": "invalid-motion",
             "prompt": "reference.png",
