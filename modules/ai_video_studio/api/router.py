@@ -25,6 +25,7 @@ from modules.ai_video_studio.api.routes import (
     scene,
     skills,
     subtitles,
+    studios,
     suite_integration,
     timeline,
     video,
@@ -46,7 +47,7 @@ api_router.include_router(audio.router, prefix="/audio", tags=["Audio"])
 api_router.include_router(avatar.router, prefix="/avatars", tags=["Avatars"])
 api_router.include_router(avatar_engine.router, prefix="/avatar-engine", tags=["Avatar Engine (Volume 6)"])
 api_router.include_router(export.router, prefix="/export", tags=["Export"])
-api_router.include_router(subtitles.router, prefix="/subtitles", tags=["Subtitles"])
+api_router.include_router(subtitles.router, prefix="/subtitles", tags=["Subtitles"])\napi_router.include_router(studios.router, prefix="/studios", tags=["DARKSTUDIO"])
 api_router.include_router(integration.router, prefix="/integration", tags=["Integration"])
 api_router.include_router(skills.router, prefix="/skills", tags=["Skills"])
 api_router.include_router(generation.router, prefix="", tags=["Generation"])
