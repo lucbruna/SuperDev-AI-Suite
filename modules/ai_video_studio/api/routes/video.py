@@ -201,6 +201,7 @@ class VideoStatusResponse(BaseModel):
     mp4_visual_analysis: dict | None = None
     scene_image_mode: str | None = None
     scene_assets: list[dict] | None = None
+    scene_image_candidates: dict[str, list[dict]] | None = None
     storyboard_report: dict | None = None
     vidgrid_compatible: bool | None = None
     clip_duration_seconds: float | None = None
