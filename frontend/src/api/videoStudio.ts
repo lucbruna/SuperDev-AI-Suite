@@ -168,6 +168,17 @@ export interface SceneVideoClip {
   reason?: string;
 }
 
+export interface VidGridClipRebuildResult {
+  job_id: string;
+  status: "completed" | "partial" | "failed" | "unchanged" | string;
+  requested?: number;
+  rebuilt: number;
+  failed: number;
+  results: { scene_index: number; status: "completed" | "failed" | string; output_url?: string; audio_status?: string; error?: string }[];
+  full_mp4_render_required?: boolean;
+  message?: string;
+}
+
 export interface SceneImageSimilarityReport {
   job_id: string;
   status: "duplicates_found" | "no_duplicates_detected";
@@ -473,6 +484,13 @@ export const videoStudioApi = {
 
   async approveSceneImageCandidate(jobId: string, sceneIndex: number, candidateId: string): Promise<{ job_id: string; scene_index: number; status: "approved"; image_url: string; render_required: boolean; message: string }> {
     const { data } = await apiClient.post(`${STUDIO_BASE}/videos/jobs/${jobId}/scenes/${sceneIndex}/image-candidates/${candidateId}/approve`);
+    return data;
+  },
+
+  async rebuildStaleVidGridClips(jobId: string): Promise<VidGridClipRebuildResult> {
+    const { data } = await apiClient.post(
+      `${STUDIO_BASE}/videos/jobs/${jobId}/scenes/rebuild-stale-clips`,
+    );
     return data;
   },
 
