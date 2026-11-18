@@ -82,6 +82,18 @@ def test_update_audio_timeline_persists_music_and_sfx_controls(completed_job, mo
     assert music_track["clips"][0]["fade_in"] == 0.5
 
 
+def test_update_audio_timeline_rejects_looping_sound_effect(completed_job, monkeypatch, tmp_path) -> None:
+    monkeypatch.setattr(video, "_persist_job", lambda record: None)
+    from modules.ai_video_studio.media import audio_timeline
+    monkeypatch.setattr(audio_timeline, "validate_audio_asset", lambda value: tmp_path / "validated.wav")
+    request = video.AudioTimelineEditRequest(sfx_clips=[video.AudioTimelineClip(
+        asset="effects/hit.wav", start=0, end=1, loop=True,
+    )])
+    with pytest.raises(HTTPException) as error:
+        asyncio.run(video.update_video_job_audio(completed_job, request))
+    assert error.value.status_code == 422
+    assert "music only" in str(error.value.detail)
+
 def test_update_timeline_draft_rejects_unknown_job() -> None:
     with pytest.raises(HTTPException) as error:
         asyncio.run(video.update_video_job_timeline("missing-job", video.TimelineEditRequest()))
