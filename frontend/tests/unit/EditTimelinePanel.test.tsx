@@ -71,11 +71,13 @@ describe("EditTimelinePanel", () => {
     });
     render(<EditTimelinePanel timeline={audioTimeline} jobId="audio-job" />);
     await waitFor(() => expect(videoStudioApi.listJobAudioAssets).toHaveBeenCalledWith("audio-job"));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Repetir" }));
     fireEvent.click(screen.getByRole("button", { name: "Remover" }));
     fireEvent.click(screen.getByRole("button", { name: "Salvar alterações de áudio" }));
     await waitFor(() => expect(save).toHaveBeenCalled());
     expect(save.mock.calls[0][1].sfx_clips).toEqual([]);
     expect(save.mock.calls[0][1].music_clips).toHaveLength(1);
+    expect(save.mock.calls[0][1].music_clips[0].loop).toBe(true);
     save.mockRestore();
     assets.mockRestore();
   });
