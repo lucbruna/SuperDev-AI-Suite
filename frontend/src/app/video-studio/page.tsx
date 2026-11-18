@@ -833,17 +833,17 @@ export default function VideoStudioPage() {
                     {outputValidation[job.job_id]?.error && (
                       <p role="alert" className="mt-1 text-xs text-red-500">{outputValidation[job.job_id]?.error}</p>
                     )}
-                    {outputValidation[job.job_id]?.report && (
+                    {(outputValidation[job.job_id]?.report ?? job.output_validation) && (
                       <div role="status" className="mt-2 rounded-md border border-surface-200 p-2 text-xs dark:border-surface-700">
-                        <p className={outputValidation[job.job_id]?.report?.valid ? "font-semibold text-emerald-600" : "font-semibold text-amber-600"}>
-                          {outputValidation[job.job_id]?.report?.valid ? "MP4 validado" : "Validação incompleta"}
+                        <p className={(outputValidation[job.job_id]?.report ?? job.output_validation)?.valid ? "font-semibold text-emerald-600" : "font-semibold text-amber-600"}>
+                          {(outputValidation[job.job_id]?.report ?? job.output_validation)?.valid ? "MP4 validado" : "Validação incompleta"}
                         </p>
                         <p className="text-surface-500">
-                          {outputValidation[job.job_id]?.report?.duration_seconds != null ? `${outputValidation[job.job_id]?.report?.duration_seconds?.toFixed(2)}s · ` : ""}
-                          {outputValidation[job.job_id]?.report?.video_streams ?? 0} vídeo · {outputValidation[job.job_id]?.report?.audio_streams ?? 0} áudio
+                          {(outputValidation[job.job_id]?.report ?? job.output_validation)?.duration_seconds != null ? `${(outputValidation[job.job_id]?.report ?? job.output_validation)?.duration_seconds?.toFixed(2)}s · ` : ""}
+                          {(outputValidation[job.job_id]?.report ?? job.output_validation)?.video_streams ?? 0} vídeo · {(outputValidation[job.job_id]?.report ?? job.output_validation)?.audio_streams ?? 0} áudio
                         </p>
-                        {outputValidation[job.job_id]?.report?.errors.map((message, index) => <p key={index} className="text-red-500">{message}</p>)}
-                        {outputValidation[job.job_id]?.report?.warnings.map((message, index) => <p key={index} className="text-amber-600">{message}</p>)}
+                        {(outputValidation[job.job_id]?.report ?? job.output_validation)?.errors.map((message, index) => <p key={index} className="text-red-500">{message}</p>)}
+                        {(outputValidation[job.job_id]?.report ?? job.output_validation)?.warnings.map((message, index) => <p key={index} className="text-amber-600">{message}</p>)}
                       </div>
                     )}
 
