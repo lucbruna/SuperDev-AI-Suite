@@ -397,6 +397,71 @@ async def list_video_job_audio_assets(job_id: str):
     return {"job_id": job_id, "assets": list_audio_assets()}
 
 
+@router.post("/jobs/{job_id}/audio-analysis")
+async def analyze_video_job_audio(job_id: str):
+    """Inspect current narration/music/SFX sources and recommend safe mix corrections."""
+    record = _jobs.get(job_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+
+    from modules.ai_video_studio.media.audio_timeline import (
+        analyze_audio_file, recommend_ducking, validate_audio_asset,
+    )
+
+    configured = record.get("_audio_clips") or {}
+    sources: list[tuple[str, str, Path]] = []
+    skipped: list[dict[str, str]] = []
+    for role, clips in (
+        ("music", configured.get("music", [])),
+        ("sound_effect", configured.get("sfx", [])),
+    ):
+        for index, clip in enumerate(clips):
+            try:
+                asset = validate_audio_asset(clip.get("asset"))
+                sources.append((role, f"{role}_{index}", asset))
+            except (TypeError, ValueError) as exc:
+                skipped.append({"role": role, "reason": str(exc)})
+
+    voiceover = record.get("voiceover") or {}
+    narration_clips = voiceover.get("clips", []) if isinstance(voiceover, dict) else []
+    for index, clip in enumerate(narration_clips if isinstance(narration_clips, list) else []):
+        if not isinstance(clip, dict) or not clip.get("audio_path"):
+            continue
+        try:
+            asset = validate_audio_asset(clip["audio_path"])
+            sources.append(("narration", f"narration_{index}", asset))
+        except (TypeError, ValueError) as exc:
+            skipped.append({"role": "narration", "reason": str(exc)})
+
+    reports: dict[str, list[dict]] = {"narration": [], "music": [], "sound_effect": []}
+    for role, label, asset in sources:
+        try:
+            report = await asyncio.to_thread(analyze_audio_file, asset)
+            report["source"] = label
+            reports[role].append(report)
+        except (OSError, RuntimeError, ValueError) as exc:
+            skipped.append({"role": role, "source": label, "reason": str(exc)})
+
+    warnings = []
+    for role, items in reports.items():
+        for item in items:
+            for warning in item["warnings"]:
+                warnings.append({"role": role, "source": item["source"], "code": warning})
+    recommendation = recommend_ducking(reports["narration"], reports["music"])
+    result = {
+        "job_id": job_id,
+        "sources_analyzed": sum(len(items) for items in reports.values()),
+        "reports": reports,
+        "warnings": warnings,
+        "skipped": skipped,
+        "ducking_recommendation": recommendation,
+        "message": "Análise concluída. As recomendações não alteram a mixagem até serem salvas no editor.",
+    }
+    record["audio_analysis"] = result
+    _persist_job(record)
+    return result
+
+
 @router.patch("/jobs/{job_id}/audio")
 async def update_video_job_audio(job_id: str, req: AudioTimelineEditRequest):
     """Save music/SFX placements and their independent gain/fade controls."""
