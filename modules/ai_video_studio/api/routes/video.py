@@ -199,6 +199,7 @@ class VideoStatusResponse(BaseModel):
     av_sync_analysis: dict | None = None
     visual_intelligence: dict | None = None
     mp4_visual_analysis: dict | None = None
+    image_similarity_analysis: dict | None = None
     scene_image_mode: str | None = None
     scene_assets: list[dict] | None = None
     scene_image_candidates: dict[str, list[dict]] | None = None
@@ -952,6 +953,49 @@ async def analyze_video_job_visuals(job_id: str):
     _persist_job(record)
     return result
 
+
+
+
+@router.post("/jobs/{job_id}/image-similarity-analysis")
+async def analyze_video_job_image_similarity(job_id: str, max_hamming_distance: int = 6):
+    """Compare active scene image pixels to find exact and perceptual duplicates."""
+    record = _jobs.get(job_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+    if not 0 <= max_hamming_distance <= 16:
+        raise HTTPException(status_code=422, detail="max_hamming_distance must be between 0 and 16")
+    scenes = record.get("_edited_scenes") or record.get("_source_scenes") or []
+    if not scenes:
+        raise HTTPException(status_code=409, detail="O trabalho ainda não possui cenas para análise")
+    from modules.ai_video_studio.media.output_paths import get_subsystem_dir
+    image_root = Path(get_subsystem_dir("images")).resolve()
+    images: list[dict[str, Any]] = []
+    rejected: list[dict[str, Any]] = []
+    for index, scene in enumerate(scenes):
+        scene_index = int(scene.get("_source_scene_index", index))
+        raw_path = scene.get("background_image_path")
+        if not raw_path:
+            continue
+        image_path = Path(str(raw_path)).resolve()
+        if image_root not in image_path.parents:
+            rejected.append({"scene_index": scene_index, "reason": "image_path_outside_asset_directory"})
+            continue
+        images.append({"scene_index": scene_index, "path": str(image_path)})
+    try:
+        from modules.ai_video_studio.media.image_similarity import analyze_scene_image_similarity
+        report = await asyncio.to_thread(
+            analyze_scene_image_similarity, images,
+            max_hamming_distance=max_hamming_distance,
+        )
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    report["skipped_images"].extend(rejected)
+    result = {"job_id": job_id, **report}
+    record["image_similarity_analysis"] = result
+    _persist_job(record)
+    return result
 
 @router.post("/jobs/{job_id}/mp4-visual-analysis")
 async def analyze_video_job_mp4_visuals(job_id: str, max_frames: int = 48):
