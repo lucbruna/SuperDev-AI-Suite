@@ -392,6 +392,7 @@ export const videoStudioApi = {
 
   async getJobVisualDirection(jobId: string): Promise<{
     job_id: string; studio_id: StudioProfile["id"]; scene_count: number; scenes: SceneVisualDirection[];
+    storyboard_report?: { continuity_report?: SceneContinuityReport };
   }> {
     const { data } = await apiClient.get(
       `${STUDIO_BASE}/videos/jobs/${jobId}/visual-direction`,
