@@ -61,6 +61,9 @@ class VideoGenerateRequest(BaseModel):
     studio_id: str = Field(default="whymentary", pattern="^(whymentary|historical_documentary)$")
     character_ids: list[str] = Field(default_factory=list, max_length=2, description="Stable character IDs to include in every scene")
     object_ids: list[str] = Field(default_factory=list, max_length=6, description="Reusable scene object IDs to include in every scene")
+    scene_image_mode: str = Field(default="procedural", pattern="^(procedural|ai|auto)$", description="Procedural scenes or per-scene local diffusion image generation")
+    scene_image_steps: int = Field(default=20, ge=1, le=60)
+    scene_image_timeout: float = Field(default=240.0, ge=1.0, le=900.0)
 
     @field_validator("resolution")
     @classmethod
@@ -160,6 +163,8 @@ class VideoStatusResponse(BaseModel):
     av_sync_analysis: dict | None = None
     visual_intelligence: dict | None = None
     mp4_visual_analysis: dict | None = None
+    scene_image_mode: str | None = None
+    scene_assets: list[dict] | None = None
     edit_render_ducking: dict | None = None
     edit_render_normalization: dict | None = None
     edit_render_loudness: dict | None = None
@@ -299,6 +304,9 @@ async def generate_video(req: VideoGenerateRequest, background_tasks: Background
                         "studio_id": r.studio_id,
                         "character_ids": r.character_ids,
                         "object_ids": r.object_ids,
+                        "scene_image_mode": r.scene_image_mode,
+                        "scene_image_steps": r.scene_image_steps,
+                        "scene_image_timeout": r.scene_image_timeout,
                     },
                 },
                 progress_callback=_on_render_progress,
@@ -322,6 +330,8 @@ async def generate_video(req: VideoGenerateRequest, background_tasks: Background
                 voiceover=result.get("voiceover"),
                 subtitles=subtitle_info,
                 edit_timeline=result.get("edit_timeline"),
+                scene_image_mode=result.get("scene_image_mode", "procedural"),
+                scene_assets=result.get("scene_assets", []),
                 _source_scenes=result.get("scenes"),
                 _edited_scenes=result.get("scenes"),
             )
