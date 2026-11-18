@@ -16,6 +16,10 @@ from modules.ai_video_studio.media.characters import (
     VALID_POSES,
     add_character,
 )
+from modules.ai_video_studio.media.scene_library import (
+    compose_scene_object,
+    list_scene_objects,
+)
 
 router = APIRouter()
 
@@ -148,3 +152,32 @@ async def preview_studio_character(
     except (TypeError, ValueError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     return {"character_id": character_id, "scene": scene}
+
+
+
+@router.get("/library/objects", tags=["DARKSTUDIO"])
+async def list_studio_objects(studio_id: str | None = None) -> dict[str, Any]:
+    """List reusable props and environment objects for a studio."""
+    try:
+        objects = list_scene_objects(studio_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return {"count": len(objects), "objects": objects}
+
+
+@router.post("/library/objects/{object_id}/scene-preview", tags=["DARKSTUDIO"])
+async def preview_scene_object(
+    object_id: str, payload: dict[str, Any]
+) -> dict[str, Any]:
+    """Compose one library object into editable SceneCanvas primitives."""
+    try:
+        scene = compose_scene_object(
+            payload.get("scene") or {},
+            object_id,
+            x=float(payload.get("x", 0)),
+            y=float(payload.get("y", 0)),
+            scale=float(payload.get("scale", 1.0)),
+        )
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return {"object_id": object_id, "scene": scene}
