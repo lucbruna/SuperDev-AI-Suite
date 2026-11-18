@@ -121,3 +121,23 @@ def test_generate_async_can_write_timed_srt_sidecar(monkeypatch, tmp_path) -> No
     assert result["subtitles"]["format"] == "srt"
     assert result["subtitles"]["cue_count"] == 2
     assert result["subtitles"]["file_path"].endswith(".srt")
+
+
+def test_narration_builder_prefers_authored_speech_to_visual_description() -> None:
+    narration = engine_module.TextToVideoEngine._build_narration(
+        "Prompt fallback.",
+        [
+            {
+                "description": "Wide shot of a medieval castle at sunrise.",
+                "voiceover_text": "A cidade despertou antes do amanhecer.",
+            },
+            {
+                "description": "A map moves across the screen.",
+                "narration": "As rotas comerciais ligavam os reinos.",
+            },
+        ],
+    )
+    assert narration == (
+        "A cidade despertou antes do amanhecer. "
+        "As rotas comerciais ligavam os reinos."
+    )
