@@ -139,6 +139,22 @@ def test_normalize_loudness_file_uses_two_pass_ebu_r128(tmp_path, monkeypatch):
     assert result["verified"] is True
     assert written and written[0][0] == source
 
+
+def test_mix_audio_timeline_bypasses_rms_limiter_when_lufs_is_enabled(tmp_path, monkeypatch):
+    _audio_roots(tmp_path, monkeypatch)
+    limiter_calls = []
+    monkeypatch.setattr(dsp, "limiter", lambda samples, **kwargs: limiter_calls.append(True) or samples)
+    monkeypatch.setattr(audio_timeline, "normalize_loudness_file", lambda path, **kwargs: {"target_lufs": -14, "output_i": -14, "output_tp": -1, "output_lra": 6, "passes": 2, "verified": True})
+    result = audio_timeline.mix_audio_timeline(
+        [{"samples": np.full(8000, 0.8, dtype=np.float32), "kind": "narration", "offset": 0}],
+        tmp_path / "lufs_mix.wav", total_duration=1, sample_rate=8000,
+        loudness_normalization_enabled=True, normalization_enabled=True,
+    )
+    assert limiter_calls == []
+    assert result["normalization"]["bypassed_for_loudness"] is True
+    assert result["normalization"]["enabled"] is False
+    assert result["loudness"]["verified"] is True
+
 def test_mix_audio_timeline_accepts_pre_aligned_narration_samples(tmp_path, monkeypatch):
     _audio_roots(tmp_path, monkeypatch)
     output = tmp_path / "narration_mix.wav"
