@@ -200,6 +200,11 @@ class VideoStatusResponse(BaseModel):
     edit_render_quality: dict | None = None
     edit_render_status: str | None = None
     edit_render_transition_policy: dict | None = None
+    edit_preview_url: str | None = None
+    edit_preview_duration: float | None = None
+    edit_preview_width: int | None = None
+    edit_preview_height: int | None = None
+    edit_preview_fps: int | None = None
     edited_output_url: str | None = None
     edited_video_duration: float | None = None
     edit_render_audio: str | None = None
@@ -1233,6 +1238,75 @@ async def render_video_job_edits(job_id: str):
         raise HTTPException(status_code=500, detail="Edited video render failed") from exc
     finally:
         record["_rendering_edits"] = False
+
+@router.post("/jobs/{job_id}/preview")
+async def preview_video_job_edits(job_id: str):
+    """Render a lightweight visual preview of the saved edit without touching the final MP4."""
+    record = _jobs.get(job_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+    if record.get("status") != "completed" or not record.get("_edited_scenes"):
+        raise HTTPException(status_code=409, detail="Save a valid timeline draft before previewing")
+    if record.get("_rendering_edits") or record.get("_rendering_preview"):
+        raise HTTPException(status_code=409, detail="Another render is already running")
+
+    params = record.get("params") or {}
+    scenes = [dict(scene) for scene in record["_edited_scenes"]]
+    try:
+        source_width, source_height = _parse_resolution(
+            params.get("resolution") or record.get("resolution") or "1280x720"
+        )
+        scale = min(640 / source_width, 640 / source_height, 1.0)
+        width = max(64, int(source_width * scale) // 2 * 2)
+        height = max(64, int(source_height * scale) // 2 * 2)
+        fps = min(12, int(params.get("frame_rate") or record.get("frame_rate") or 24))
+        from modules.ai_video_studio.media.output_paths import get_subsystem_dir, unique_filename
+        from modules.ai_video_studio.media.render import render_multi_scene_video, render_mixed_scene_video
+        generated_scene_clips = {
+            int(scene.get("_source_scene_index", index)): str(scene["generative_video_path"])
+            for index, scene in enumerate(scenes) if scene.get("generative_video_path")
+        }
+        output_path = unique_filename(get_subsystem_dir("videos"), "text_to_video_preview", "mp4")
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    record["_rendering_preview"] = True
+    _persist_job(record)
+    try:
+        renderer = render_mixed_scene_video if generated_scene_clips else render_multi_scene_video
+        kwargs = {
+            "fps": fps, "width": width, "height": height, "require_mp4": True,
+            "studio_id": params.get("studio_id") or "whymentary",
+        }
+        if generated_scene_clips:
+            kwargs["generated_clips"] = generated_scene_clips
+        result = await asyncio.to_thread(renderer, scenes, output_path, **kwargs)
+        preview_url = to_download_url(result["output_path"])
+        record.update(
+            edit_preview_path=result["output_path"],
+            edit_preview_url=preview_url,
+            edit_preview_width=width,
+            edit_preview_height=height,
+            edit_preview_fps=fps,
+            edit_preview_duration=round(result["frames"] / fps, 3),
+            edit_preview_generated_scene_count=len(generated_scene_clips),
+        )
+        _persist_job(record)
+        return {
+            "job_id": job_id, "status": "completed", "preview_url": preview_url,
+            "width": width, "height": height, "fps": fps,
+            "duration": round(result["frames"] / fps, 3),
+            "generated_scene_count": len(generated_scene_clips),
+            "message": "Prévia visual em baixa resolução concluída. Áudio e legendas devem ser conferidos na exportação final.",
+        }
+    except Exception as exc:
+        record["edit_preview_error"] = str(exc)[:400]
+        _persist_job(record)
+        raise HTTPException(status_code=500, detail="Timeline preview render failed") from exc
+    finally:
+        record["_rendering_preview"] = False
+        _persist_job(record)
+
 
 @router.get("/jobs/{job_id}", response_model=VideoStatusResponse)
 async def get_video_job_status(job_id: str):
