@@ -247,7 +247,7 @@ class TextToVideoEngine:
                             f"AI image generation failed for scene {scene_index + 1}: {str(exc)[:240]}",
                             field="scene_image_mode",
                         ) from exc
-                    _notify_scene(scene_index, "fallback", "image_fallback", error=str(exc)[:240])
+                    _notify_scene(scene_index, "fallback", "image_fallback", image_fallback=True, error=str(exc)[:240])
                     scene_assets.append({
                         "scene_index": scene_index,
                         "provider": "procedural_fallback",
@@ -360,7 +360,7 @@ class TextToVideoEngine:
                     require_mp4=True,
                     studio_id=studio_id,
                 )
-                _notify_scene(scene_index, "completed", "clip_ready", clip_path=clip_result["output_path"])
+                _notify_scene(scene_index, "completed", "clip_ready")
                 scene_clips.append({
                     "scene_index": scene_index,
                     "duration": 10.0,
