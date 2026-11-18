@@ -228,23 +228,28 @@ it("edits a scene image from a text instruction and asks for a new MP4 render", 
     image_path: "/downloads/images/edited.png",
     image_url: "/api/v1/downloads/images/edited.png",
     provider: "automatic1111_compatible",
-    status: "edited",
+    status: "candidate",
+    candidate_id: "candidate-1",
+    approval_required: true,
     operation: "image_to_image",
     prompt: "Transforme o fundo em uma floresta ao amanhecer",
-    render_required: true,
+    render_required: false,
     scene_clip: {
       scene_index: 0, duration: 10, fps: 24, width: 1080, height: 1920,
       output_url: "/downloads/scene_01_edited.mp4", bytes: 200, encode_engine: "ffmpeg",
       status: "updated",
     },
   });
+  const approve = vi.spyOn(videoStudioApi, "approveSceneImageCandidate").mockResolvedValue({ job_id: "scene-image-job", scene_index: 0, status: "approved", image_url: "/api/v1/downloads/images/edited.png", render_required: true, message: "Imagem aprovada e aplicada à cena. Renderize a edição para atualizar o MP4 completo." });
   render(<EditTimelinePanel timeline={timeline} jobId="scene-image-job" />);
   const prompt = "Transforme o fundo em uma floresta ao amanhecer";
   fireEvent.change(screen.getAllByPlaceholderText(/transforme o fundo/i)[0], { target: { value: prompt } });
   fireEvent.click(screen.getAllByRole("button", { name: "Criar imagem por texto" })[0]);
-  await waitFor(() => expect(edit).toHaveBeenCalledWith("scene-image-job", 0, { prompt, denoising_strength: 0.45 }));
-  expect(await screen.findByText(/Imagem e clipe VidGrid de 10s da cena 1 atualizados/)).toBeInTheDocument();
-  expect(screen.getByAltText("Imagem da cena 1")).toBeInTheDocument();
+  await waitFor(() => expect(edit).toHaveBeenCalledWith("scene-image-job", 0, { prompt, denoising_strength: 0.45, stage_only: true }));
+  expect(await screen.findByAltText("Imagem candidata da cena 1")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Aprovar nova imagem" }));
+  await waitFor(() => expect(approve).toHaveBeenCalledWith("scene-image-job", 0, "candidate-1"));
+  expect(await screen.findByText(/Imagem aprovada e aplicada à cena/)).toBeInTheDocument();
 });
 
 
@@ -356,12 +361,13 @@ it("generates a separate 10-second ComfyUI motion clip from a scene image", asyn
     });
     const batch = vi.spyOn(videoStudioApi, "regenerateSelectedSceneImages").mockResolvedValue({
       job_id: "batch-ui-job", status: "completed", requested: 2, succeeded: 2, failed: 0,
-      message: "2 de 2 cenas atualizadas; a exportação final ainda precisa ser renderizada.",
+      message: "2 de 2 imagens geradas como candidatas. Compare e aprove cada uma antes de renderizar.",
       results: [
-        { scene_index: 0, status: "edited", result: { scene_index: 0, image_path: "/images/0.png", image_url: "/images/0.png", provider: "mock", status: "edited", operation: "text_to_image", prompt: "Plano geral da cidade junto ao rio." } },
-        { scene_index: 1, status: "edited", result: { scene_index: 1, image_path: "/images/1.png", image_url: "/images/1.png", provider: "mock", status: "edited", operation: "text_to_image", prompt: "Navios entrando no porto ao amanhecer." } },
+        { scene_index: 0, status: "candidate", result: { scene_index: 0, candidate_id: "c0", image_path: "/images/0.png", image_url: "/images/0.png", provider: "mock", status: "candidate", operation: "text_to_image", prompt: "Plano geral da cidade junto ao rio." } },
+        { scene_index: 1, status: "candidate", result: { scene_index: 1, candidate_id: "c1", image_path: "/images/1.png", image_url: "/images/1.png", provider: "mock", status: "candidate", operation: "text_to_image", prompt: "Navios entrando no porto ao amanhecer." } },
       ],
     });
+    vi.spyOn(videoStudioApi, "approveSceneImageCandidate").mockResolvedValue({ job_id: "batch-ui-job", scene_index: 0, status: "approved", image_url: "/images/0.png", render_required: true, message: "Imagem aprovada." });
     render(<EditTimelinePanel timeline={timeline} jobId="batch-ui-job" />);
     await waitFor(() => expect(screen.getByText("revelation")).toBeInTheDocument());
     fireEvent.click(screen.getByRole("checkbox", { name: "Selecionar cena 1" }));
@@ -371,7 +377,7 @@ it("generates a separate 10-second ComfyUI motion clip from a scene image", asyn
       { scene_index: 0, prompt: "Plano geral da cidade junto ao rio." },
       { scene_index: 1, prompt: "Navios entrando no porto ao amanhecer." },
     ]));
-    expect(await screen.findByText(/2 de 2 cenas atualizadas/)).toBeInTheDocument();
-    expect(screen.getByAltText("Imagem da cena 1")).toHaveAttribute("src", "/images/0.png");
-    expect(screen.getByAltText("Imagem da cena 2")).toHaveAttribute("src", "/images/1.png");
+    expect(await screen.findByText(/2 de 2 imagens geradas como candidatas/)).toBeInTheDocument();
+    expect(screen.getByAltText("Imagem candidata da cena 1")).toHaveAttribute("src", "/images/0.png");
+    expect(screen.getByAltText("Imagem candidata da cena 2")).toHaveAttribute("src", "/images/1.png");
   });
