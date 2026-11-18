@@ -119,7 +119,7 @@ def list_scene_objects(studio_id: str | None = None) -> list[dict[str, Any]]:
 
 def compose_scene_object(
     scene: dict[str, Any], object_id: str, *, x: float = 0, y: float = 0,
-    scale: float = 1.0,
+    scale: float = 1.0, motion_start_frame: int = 0,
 ) -> dict[str, Any]:
     """Copy a scene and append translated/scaled primitives for one library object."""
     if object_id not in OBJECTS:
@@ -151,6 +151,11 @@ def compose_scene_object(
                     [x + float(px) * scale, y + float(py) * scale]
                     for px, py in current["points"]
                 ]
+            # Staggered eased entrance: objects rise into place instead of
+            # appearing as a static slide. SceneCanvas consumes these keys.
+            current["motion_dy"] = -18.0 * scale
+            current["motion_frames"] = 12
+            current["motion_start_frame"] = max(0, int(motion_start_frame))
             transformed.append(current)
         result.setdefault(layer, []).extend(transformed)
     return result
