@@ -7,6 +7,9 @@ duration and uses per-clip trim, gain and fade envelopes.
 from __future__ import annotations
 
 from pathlib import Path
+import json
+import subprocess
+import tempfile
 from typing import Any
 
 import numpy as np
@@ -91,6 +94,60 @@ def _narration_activity_envelope(clips, *, total_samples, sample_rate, threshold
         block_envelope[index] = current
     return np.repeat(block_envelope, block)[:total_samples]
 
+
+def _ffmpeg_loudnorm_pass(input_path: Path, output_path: Path | None, *, target_lufs: float, true_peak_db: float, lra: float, measured: dict[str, float] | None = None) -> dict[str, float]:
+    """Run FFmpeg loudnorm once and return its measured loudness JSON."""
+    if measured is None:
+        filt = f"loudnorm=I={target_lufs}:TP={true_peak_db}:LRA={lra}:print_format=json"
+    else:
+        filt = (
+            f"loudnorm=I={target_lufs}:TP={true_peak_db}:LRA={lra}:"
+            f"measured_I={measured['input_i']}:measured_TP={measured['input_tp']}:"
+            f"measured_LRA={measured['input_lra']}:measured_thresh={measured['input_thresh']}:"
+            f"offset={measured['target_offset']}:linear=true:print_format=json"
+        )
+    command = ["ffmpeg", "-hide_banner", "-nostats", "-i", str(input_path), "-af", filt]
+    if output_path is None:
+        command += ["-f", "null", "-"]
+    else:
+        command += ["-ar", "44100", "-c:a", "pcm_s24le", "-y", str(output_path)]
+    result = subprocess.run(command, capture_output=True, text=True, check=False)
+    if result.returncode != 0:
+        raise RuntimeError(f"FFmpeg loudnorm failed: {(result.stderr or result.stdout)[-1200:]}")
+    stderr = result.stderr or ""
+    end = stderr.rfind("}")
+    start = stderr.rfind("{", 0, end)
+    if start < 0 or end < 0:
+        raise RuntimeError("FFmpeg loudnorm did not return its measurement report")
+    try:
+        report = json.loads(stderr[start:end + 1])
+        keys = ("input_i", "input_tp", "input_lra", "input_thresh", "target_offset")
+        return {key: float(report[key]) for key in keys}
+    except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        raise RuntimeError("FFmpeg loudnorm returned an invalid measurement report") from exc
+
+
+def normalize_loudness_file(path: str | Path, *, target_lufs: float = -14.0, true_peak_db: float = -1.0, lra: float = 11.0) -> dict[str, float]:
+    """Apply FFmpeg two-pass EBU R128 loudness normalization in-place."""
+    source = Path(path)
+    if not source.is_file():
+        raise FileNotFoundError(source)
+    if not all(np.isfinite(value) for value in (target_lufs, true_peak_db, lra)):
+        raise ValueError("LUFS normalization values must be finite")
+    if not -36 <= target_lufs <= -5 or not -9 <= true_peak_db <= 0 or not 1 <= lra <= 20:
+        raise ValueError("LUFS target must be -36..-5, true peak -9..0 dBTP, and LRA 1..20")
+    measured = _ffmpeg_loudnorm_pass(source, None, target_lufs=target_lufs, true_peak_db=true_peak_db, lra=lra)
+    with tempfile.NamedTemporaryFile(suffix=".wav", dir=str(source.parent), delete=False) as tmp:
+        temporary = Path(tmp.name)
+    try:
+        output_report = _ffmpeg_loudnorm_pass(source, temporary, target_lufs=target_lufs, true_peak_db=true_peak_db, lra=lra, measured=measured)
+        normalized, rate = dsp.read_audio(temporary, target_sr=44100)
+        safe = dsp.limiter(normalized, threshold=float(10 ** (true_peak_db / 20.0)), sample_rate=rate)
+        dsp.write_audio(source, safe, sample_rate=rate)
+        return {"target_lufs": target_lufs, "true_peak_db": true_peak_db, "input_i": measured["input_i"], "input_tp": measured["input_tp"], "input_lra": measured["input_lra"], "output_i": output_report["input_i"], "output_tp": output_report["input_tp"], "output_lra": output_report["input_lra"], "passes": 2.0}
+    finally:
+        temporary.unlink(missing_ok=True)
+
 def mix_audio_timeline(
     clips: list[dict[str, Any]],
     output_path: str | Path,
@@ -105,6 +162,10 @@ def mix_audio_timeline(
     normalization_enabled: bool = True,
     normalization_target_dbfs: float = -18.0,
     normalization_max_gain_db: float = 6.0,
+    loudness_normalization_enabled: bool = False,
+    target_lufs: float = -14.0,
+    true_peak_db: float = -1.0,
+    loudness_range: float = 11.0,
 ) -> dict[str, Any]:
     """Mix music/SFX/narration clips into one mono WAV with bounded envelopes.
 
@@ -122,6 +183,8 @@ def mix_audio_timeline(
         raise ValueError("ducking reduction must be 0..24 dB and attack/release must be positive")
     if not -60 <= normalization_target_dbfs <= 0 or not 0 <= normalization_max_gain_db <= 24:
         raise ValueError("normalization target must be -60..0 dBFS and max gain 0..24 dB")
+    if not all(np.isfinite(value) for value in (target_lufs, true_peak_db, loudness_range)) or not -36 <= target_lufs <= -5 or not -9 <= true_peak_db <= 0 or not 1 <= loudness_range <= 20:
+        raise ValueError("LUFS target must be -36..-5, true peak -9..0 dBTP, and LRA 1..20")
     total_samples = int(round(total_duration * sample_rate))
     mix = np.zeros(total_samples, dtype=np.float64)
     reports: list[dict[str, Any]] = []
@@ -211,6 +274,10 @@ def mix_audio_timeline(
         mixed = (mixed * float(10 ** (normalization_gain_db / 20.0))).astype(np.float32)
     limited = dsp.limiter(mixed, threshold=0.97, sample_rate=sample_rate)
     out = dsp.write_audio(output_path, limited, sample_rate=sample_rate)
+    loudness_report = None
+    if loudness_normalization_enabled:
+        loudness_report = normalize_loudness_file(out, target_lufs=target_lufs, true_peak_db=true_peak_db, lra=loudness_range)
+        limited, _ = dsp.read_audio(out, target_sr=sample_rate)
     return {
         "output_path": str(out),
         "duration": round(len(limited) / sample_rate, 3),
@@ -219,5 +286,6 @@ def mix_audio_timeline(
         "clips": reports,
         "peak": round(dsp.peak(limited), 4),
         "normalization": {"enabled": bool(normalization_enabled), "target_dbfs": float(normalization_target_dbfs), "gain_db": round(normalization_gain_db, 3), "pre_rms": round(pre_normalization_rms, 6)},
+        "loudness": {"enabled": bool(loudness_normalization_enabled), **(loudness_report or {})},
         "ducking": {"enabled": bool(ducking_enabled and ducking_db > 0), "reduction_db": float(ducking_db), "threshold_db": float(ducking_threshold_db), "attack_seconds": float(ducking_attack), "release_seconds": float(ducking_release), "speech_detected": bool(np.any(speech_envelope))},
     }
