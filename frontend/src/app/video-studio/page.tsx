@@ -776,6 +776,16 @@ export default function VideoStudioPage() {
                     {job.subtitles?.reason && (
                       <p className="mt-1 text-xs text-amber-500">Legendas: {job.subtitles.reason}</p>
                     )}
+                    {job.scene_clips && job.scene_clips.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                        <span className="text-surface-500">Clipes VidGrid:</span>
+                        {job.scene_clips.map((clip) => (
+                          clip.output_url ? <a key={clip.scene_index} href={clip.output_url} target="_blank" rel="noreferrer" className="font-medium text-primary-600 hover:underline dark:text-primary-400">
+                            Cena {clip.scene_index + 1} · {clip.duration}s
+                          </a> : <span key={clip.scene_index} className="text-surface-400">Cena {clip.scene_index + 1} · link indisponível</span>
+                        ))}
+                      </div>
+                    )}
                     {job.error && <p className="mt-1 text-xs text-red-500">{job.error}</p>}
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
