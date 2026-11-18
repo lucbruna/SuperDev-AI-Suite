@@ -1,8 +1,8 @@
 """Voice Engine — orchestrates real TTS synthesis for the AI Voice Studio.
 
-Pipeline: normalize text → emotion prosody → cache lookup → chained synthesis
-(edge-tts → gTTS → pyttsx3 → local formant synthesizer) → stats. Output is a
-real audio file (WAV/MP3) under ``modules/downloads/voice/``.
+Pipeline: normalize text → emotion prosody → cache lookup → chained speech
+synthesis (edge-tts → gTTS → pyttsx3) → stats. Formant sound effects are not
+accepted as spoken narration. Output is a real WAV/MP3 speech file.
 """
 from __future__ import annotations
 
