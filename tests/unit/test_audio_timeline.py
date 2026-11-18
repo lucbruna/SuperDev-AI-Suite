@@ -134,6 +134,7 @@ def test_normalize_loudness_file_uses_two_pass_ebu_r128(tmp_path, monkeypatch):
     assert "measured_I=-19.0" in calls[1][calls[1].index("-af") + 1]
     assert result["input_i"] == -19
     assert result["output_i"] == -19
+    assert result["normalization_pass_i"] == -19
     assert result["passes"] == 2
     assert result["verified"] is True
     assert written and written[0][0] == source
