@@ -35,21 +35,38 @@ def camera_state_at_frame(camera: dict[str, Any], frame_index: int) -> dict[str,
     return frames[-1][1]
 
 
-def studio_camera_move(studio_id: str, scene_index: int, total_frames: int) -> dict[str, Any]:
-    """Create a restrained, alternating move suited to the selected visual style."""
+def studio_camera_move(
+    studio_id: str, scene_index: int, total_frames: int, shot_type: str = "medium"
+) -> dict[str, Any]:
+    """Create a shot-aware camera move, alternating direction between scenes."""
     if total_frames < 2:
         total_frames = 2
     direction = -1 if scene_index % 2 else 1
     if studio_id == "historical_documentary":
-        start_zoom, end_zoom = 1.015, 1.085
-        pan = 18.0 * direction
-        roll = 0.18 * direction
+        ranges = {
+            "establishing": (1.005, 1.045, 24.0, 0.08),
+            "wide": (1.0, 1.03, 12.0, 0.0),
+            "medium": (1.015, 1.075, 18.0, 0.12),
+            "close_up": (1.035, 1.12, 8.0, 0.08),
+            "detail": (1.06, 1.15, 5.0, 0.04),
+            "tracking": (1.01, 1.065, 34.0, 0.1),
+        }
     elif studio_id == "whymentary":
-        start_zoom, end_zoom = 1.0, 1.025
-        pan = 5.0 * direction
-        roll = 0.0
+        ranges = {
+            "establishing": (1.0, 1.015, 7.0, 0.0),
+            "wide": (1.0, 1.01, 3.0, 0.0),
+            "medium": (1.0, 1.02, 5.0, 0.0),
+            "close_up": (1.005, 1.03, 2.0, 0.0),
+            "detail": (1.01, 1.035, 1.0, 0.0),
+            "tracking": (1.0, 1.02, 9.0, 0.0),
+        }
     else:
         raise ValueError(f"Unknown studio '{studio_id}'")
+    if shot_type not in ranges:
+        raise ValueError(f"Unknown shot type '{shot_type}'")
+    start_zoom, end_zoom, pan, roll = ranges[shot_type]
+    pan *= direction
+    roll *= direction
     return {
         "keyframes": [
             {"frame": 0, "dx": -pan, "dy": 2.0 * direction, "zoom": start_zoom, "roll": -roll},
