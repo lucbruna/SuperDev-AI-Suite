@@ -57,6 +57,8 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
   const [playheadFrame, setPlayheadFrame] = useState(0);
   const [saving, setSaving] = useState(false);
   const [rendering, setRendering] = useState(false);
+  const [previewing, setPreviewing] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState("");
   const [renderUrl, setRenderUrl] = useState(editedOutputUrl ?? "");
   const [message, setMessage] = useState("");
   const [dirty, setDirty] = useState(false);
@@ -385,6 +387,22 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
       setMessage(error instanceof Error ? error.message : "Não foi possível salvar as faixas de áudio.");
     } finally {
       setSavingAudio(false);
+    }
+  }
+
+  async function previewEdits() {
+    if (!jobId || dirty || audioDirty || saving || savingAudio || rendering) return;
+    setPreviewing(true);
+    setPreviewUrl("");
+    setMessage("");
+    try {
+      const result = await videoStudioApi.previewJobEdits(jobId);
+      setPreviewUrl(result.preview_url);
+      setMessage(`${result.message} ${result.width}×${result.height} · ${result.fps} FPS · ${formatTime(result.duration)}.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Falha ao gerar a prévia visual.");
+    } finally {
+      setPreviewing(false);
     }
   }
 
@@ -735,13 +753,25 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
           <button type="button" onClick={saveDraft} disabled={saving || !dirty || audioDirty} className="rounded-md border border-surface-300 px-3 py-2 text-xs font-semibold disabled:opacity-40 dark:border-surface-600">
             {saving ? "Salvando…" : "Salvar rascunho"}
           </button>
-          <button type="button" onClick={renderEdits} disabled={rendering || saving || dirty || audioDirty || savingAudio} className="rounded-md bg-primary-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-40">
+          <button type="button" onClick={previewEdits} disabled={previewing || rendering || saving || dirty || audioDirty || savingAudio} className="rounded-md border border-violet-300 px-3 py-2 text-xs font-semibold disabled:opacity-40 dark:border-violet-700">
+            {previewing ? "Gerando prévia…" : "Pré-visualizar montagem"}
+          </button>
+          <button type="button" onClick={renderEdits} disabled={rendering || previewing || saving || dirty || audioDirty || savingAudio} className="rounded-md bg-primary-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-40">
             {rendering ? "Renderizando MP4…" : "Renderizar edição"}
           </button>
         </>}
       </div>
       {message && <p role="status" className="mt-2 text-xs text-surface-500">{message}</p>}
       {renderUrl && <p className="mt-2 text-xs"><a className="text-primary-600 underline" href={renderUrl} target="_blank" rel="noreferrer">Abrir MP4 renderizado</a></p>}
+      {previewUrl && <div className="mt-3 max-w-3xl rounded-lg border border-violet-200 p-3 dark:border-violet-800">
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <strong>Prévia visual da montagem</strong>
+          <a className="text-primary-600 underline" href={previewUrl} target="_blank" rel="noreferrer">Abrir prévia</a>
+        </div>
+        <video src={previewUrl} controls preload="metadata" className="max-h-[520px] w-full rounded-md bg-black" />
+        <p className="mt-2 text-[11px] text-surface-500">Proxy de baixa resolução para revisar ordem, imagens e transições. A mixagem de áudio e as legendas devem ser conferidas no MP4 final.</p>
+      </div>}
+
       {renderQuality && <div className="mt-3 rounded-md border border-surface-200 p-3 text-xs dark:border-surface-700" aria-label="Qualidade do áudio exportado">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <strong>Controle de qualidade do áudio</strong>
