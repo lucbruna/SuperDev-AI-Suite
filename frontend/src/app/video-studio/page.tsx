@@ -395,9 +395,9 @@ export default function VideoStudioPage() {
           </label>
 
           {/* ── Duration presets ─────────────────────────────────── */}
-          {!vidgridCompatible && <div>
+          <div>
             <p className="mb-2 text-xs font-medium text-surface-500">
-              ⏱️ Duração do vídeo
+              ⏱️ Duração livre do vídeo {vidgridCompatible ? "(desative o modo VidGrid para editar)" : ""}
             </p>
             <div className="flex flex-wrap gap-2">
               {DURATION_PRESETS.map((preset) => {
@@ -407,6 +407,7 @@ export default function VideoStudioPage() {
                   <button
                     key={preset.seconds}
                     type="button"
+                    disabled={vidgridCompatible}
                     aria-pressed={active}
                     title={suggested ? `${preset.label} — recomendado para ${activeFormat?.label}` : undefined}
                     onClick={() => applyDurationPreset(preset.seconds)}
@@ -429,12 +430,13 @@ export default function VideoStudioPage() {
             <p className="mt-2 text-xs text-surface-400">
               Atual: <span className="font-semibold text-surface-600 dark:text-surface-300">{fmtDuration(effectiveDuration)}</span> · {vidgridCompatible ? "10s por cena" : "limite de 10 minutos"}
             </p>
+            {vidgridCompatible && <p className="mt-1 text-xs text-surface-400">Os presets ficam visíveis como referência, mas a duração é calculada automaticamente em blocos de 10 segundos.</p>}
             {activeFormat && recommendedDuration != null && (
               <p className="mt-1 text-xs font-medium text-primary-600 dark:text-primary-400">
                 ✨ {activeFormat.label} sugere {fmtDuration(recommendedDuration)} — preset de duração destacado acima
               </p>
             )}
-          </div>}
+          </div>
 
           <section className="rounded-xl border border-surface-200 p-4 dark:border-surface-700" aria-labelledby="scene-object-library-title">
             <div className="mb-3 flex items-center justify-between gap-3">
