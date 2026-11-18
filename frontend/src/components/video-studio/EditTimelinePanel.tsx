@@ -287,6 +287,9 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
         { scene_index: sceneIndex, image_path: result.image_path, image_url: result.image_url,
           provider: result.provider, status: "edited", operation: result.operation, prompt: result.prompt },
       ]);
+      setVisualDirections((current) => current[sceneIndex]
+        ? { ...current, [sceneIndex]: { ...current[sceneIndex], visual_prompt: prompt, visual_prompt_suggestion: prompt, image_url: result.image_url, image_status: "edited" } }
+        : current);
       setMessage(
         result.scene_clip?.status === "updated"
           ? `Imagem e clipe VidGrid de 10s da cena ${sceneIndex + 1} atualizados. Renderize a edição para atualizar o MP4 completo.`
