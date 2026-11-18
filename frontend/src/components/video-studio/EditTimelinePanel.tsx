@@ -282,7 +282,10 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
       const loudnessNote = result.loudness?.enabled
         ? ` Loudness medido: ${result.loudness.output_i ?? "—"} LUFS; true peak: ${result.loudness.output_tp ?? "—"} dBTP.`
         : "";
-      setMessage(result.message + duckingNote + normalizationNote + loudnessNote);
+      const masteringNote = result.mastering
+        ? ` Compressor: ${result.mastering.compressor_enabled ? "ativo" : "desativado"}; EQ: ${result.mastering.eq_enabled ? "ativo" : "desativado"}.`
+        : "";
+      setMessage(result.message + duckingNote + normalizationNote + loudnessNote + masteringNote);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Falha ao renderizar a edição.");
     } finally {
