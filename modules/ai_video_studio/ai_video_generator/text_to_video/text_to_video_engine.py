@@ -21,7 +21,8 @@ from modules.ai_video_studio.core.exceptions import ValidationError
 from modules.ai_video_studio.media.llm import get_scene_planner
 from modules.ai_video_studio.media.output_paths import get_subsystem_dir, unique_filename
 from modules.ai_video_studio.media.render import render_multi_scene_video
-from modules.ai_video_studio.media.characters import PRESETS as CHARACTER_PRESETS, add_character
+from modules.ai_video_studio.media.characters import add_character
+from modules.ai_video_studio.media.scene_library import OBJECTS, compose_scene_object
 from modules.ai_video_studio.ai_video_generator.generation_statistics import get_generation_statistics
 
 logger = logging.getLogger(__name__)
@@ -85,6 +86,7 @@ class TextToVideoEngine:
         height = int(params.get("height", 720))
 
         character_ids = list(params.get("character_ids") or [])
+        object_ids = list(params.get("object_ids") or [])
         if character_ids:
             allowed_characters = {
                 "whymentary": {"leo", "mia"},
@@ -102,6 +104,19 @@ class TextToVideoEngine:
                 raise ValidationError("Duplicate character IDs are not allowed", field="character_ids")
             if len(character_ids) > 2:
                 raise ValidationError("At most two characters can be selected", field="character_ids")
+
+        studio_id = str(params.get("studio_id") or "whymentary")
+        if len(object_ids) > 6 or len(object_ids) != len(set(object_ids)):
+            raise ValidationError("Select up to six unique scene objects", field="object_ids")
+        invalid_objects = [
+            object_id for object_id in object_ids
+            if object_id not in OBJECTS or OBJECTS[object_id]["studio_id"] != studio_id
+        ]
+        if invalid_objects:
+            raise ValidationError(
+                f"Objects {invalid_objects} do not belong to studio '{studio_id}'",
+                field="object_ids",
+            )
 
         # Ollama on CPU needs time for the first model load (~90s); callers
         # may override with ``llm_timeout``. Falls back to the deterministic
@@ -136,6 +151,19 @@ class TextToVideoEngine:
                         expression=expression,
                     )
 
+        # Add selected reusable props to every scene. Spread them across the
+        # lower-middle visual field so they remain visible beside characters.
+        if object_ids:
+            object_scale = max(0.35, min(width, height) / 720.0)
+            for scene_index, scene in enumerate(scenes):
+                for object_index, object_id in enumerate(object_ids):
+                    x = width * (0.12 + 0.14 * (object_index % 6))
+                    y = height * (0.48 + 0.04 * (object_index % 2))
+                    scenes[scene_index] = compose_scene_object(
+                        scenes[scene_index], object_id,
+                        x=x, y=y, scale=object_scale,
+                    )
+
         out = unique_filename(get_subsystem_dir("videos"), "text_to_video", "mp4")
 
         def _on_frame(rendered: int, total: int) -> None:
@@ -145,7 +173,6 @@ class TextToVideoEngine:
         # Run the CPU-bound render in a worker thread: keeps the event loop
         # free so job polling (progress bar) stays responsive during 5–10 min
         # videos instead of blocking the whole server.
-        studio_id = str(params.get("studio_id") or "whymentary")
         video_result = await asyncio.to_thread(
             render_multi_scene_video,
             scenes,
