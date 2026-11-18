@@ -1325,6 +1325,24 @@ class TestSceneAssetRenderLock:
             video._scene_batch_jobs.discard("batch-render-job")
 
 
+
+    @pytest.mark.asyncio
+    async def test_final_export_rejects_stale_vidgrid_clips(self):
+        from fastapi import HTTPException
+        from modules.ai_video_studio.api.routes import video
+
+        video._jobs["stale-final-export-job"] = {
+            "job_id": "stale-final-export-job", "status": "completed",
+            "vidgrid_compatible": True, "resolution": "1280x720", "frame_rate": 30,
+            "params": {"resolution": "1280x720", "frame_rate": 30},
+            "_edited_scenes": [{"_source_scene_index": 0, "duration": 10}],
+            "scene_clips": [{"scene_index": 0, "status": "stale", "output_path": "old.mp4"}],
+        }
+        with pytest.raises(HTTPException) as error:
+            await video.render_video_job_edits("stale-final-export-job")
+        assert error.value.status_code == 409
+        assert "stale" in str(error.value.detail).lower()
+
 class TestSelectiveVidGridClipRebuild:
     @pytest.mark.asyncio
     async def test_rebuilds_only_stale_clip_and_reuses_approved_image(self, tmp_path, monkeypatch):
