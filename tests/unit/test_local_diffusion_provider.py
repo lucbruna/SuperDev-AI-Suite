@@ -52,3 +52,9 @@ def test_image_to_image_rejects_missing_source(tmp_path):
 
     with pytest.raises(ValueError, match="existing PNG"):
         local_diffusion.edit_image(tmp_path / "missing.png", "Change the scene")
+
+
+def test_fit_image_dimensions_preserves_landscape_and_portrait_aspect_ratio():
+    assert local_diffusion.fit_image_dimensions(1920, 1080) == (1024, 576)
+    assert local_diffusion.fit_image_dimensions(720, 1280) == (576, 1024)
+    assert local_diffusion.fit_image_dimensions(640, 360) == (640, 360)
