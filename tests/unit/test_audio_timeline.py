@@ -206,6 +206,33 @@ def test_mix_audio_timeline_normalizes_rms_with_gain_cap_and_limiter(tmp_path, m
     assert result["peak"] <= 0.97
 
 
+def test_audio_mixer_voice_preset_applies_known_mastering_curve(tmp_path, monkeypatch):
+    _audio_roots(tmp_path, monkeypatch)
+    result = audio_timeline.mix_audio_timeline(
+        [{"samples": np.full((8000, 2), 0.1, dtype=np.float32), "start": 0, "end": 1, "kind": "narration"}],
+        tmp_path / "voice_preset.wav", total_duration=1, sample_rate=8000,
+        mastering_preset="voice", normalization_enabled=False,
+    )
+    mastering = result["mastering"]
+    assert mastering["preset"] == "voice"
+    assert mastering["compressor_enabled"] is True
+    assert mastering["compressor_threshold_db"] == -22
+    assert mastering["compressor_ratio"] == 3.5
+    assert mastering["eq_low_db"] == -2
+    assert mastering["eq_mid_db"] == 1.5
+    assert mastering["eq_high_db"] == 2
+
+
+def test_audio_mixer_rejects_unknown_mastering_preset(tmp_path, monkeypatch):
+    _audio_roots(tmp_path, monkeypatch)
+    with pytest.raises(ValueError, match="mastering_preset"):
+        audio_timeline.mix_audio_timeline(
+            [{"samples": np.zeros(800, dtype=np.float32), "start": 0, "end": 0.1}],
+            tmp_path / "invalid_preset.wav", total_duration=0.1, sample_rate=8000,
+            mastering_preset="not-a-preset",
+        )
+
+
 def test_normalize_loudness_file_uses_two_pass_ebu_r128(tmp_path, monkeypatch):
     source = tmp_path / "mix.wav"
     source.write_bytes(b"source")
