@@ -155,6 +155,7 @@ class VideoStatusResponse(BaseModel):
     edit_timeline: dict | None = None
     edit_draft_status: str | None = None
     audio_draft_status: str | None = None
+    audio_settings: dict | None = None
     edit_render_status: str | None = None
     edited_output_url: str | None = None
     edited_video_duration: float | None = None
@@ -409,6 +410,7 @@ async def update_video_job_audio(job_id: str, req: AudioTimelineEditRequest):
 
     record["_audio_clips"] = {"music": music, "sfx": effects}
     record["_audio_settings"] = req.model_dump(exclude={"music_clips", "sfx_clips"})
+    record["audio_settings"] = record["_audio_settings"]
     record["edit_timeline"] = timeline
     record["audio_draft_status"] = "saved"
     _persist_job(record)
