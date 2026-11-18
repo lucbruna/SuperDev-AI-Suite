@@ -435,8 +435,12 @@ async def render_video_job_edits(job_id: str):
             isinstance(clip, dict) and clip.get("audio_path") for clip in narration_clips
         )
         if has_per_scene_narration:
-            from modules.ai_video_studio.media.scene_narration import remap_narration_clips_for_edits
-            audio_inputs.extend(remap_narration_clips_for_edits(scenes, narration_clips, fps=fps))
+            from modules.ai_video_studio.media.scene_narration import (
+                build_narration_tracks,
+                remap_narration_clips_for_edits,
+            )
+            remapped_narration = remap_narration_clips_for_edits(scenes, narration_clips, fps=fps)
+            audio_inputs.extend(build_narration_tracks(remapped_narration))
 
         configured_audio = record.get("_audio_clips") or {}
         audio_inputs.extend(configured_audio.get("music", []))
