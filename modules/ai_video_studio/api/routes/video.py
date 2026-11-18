@@ -96,6 +96,12 @@ class SceneImageEditRequest(BaseModel):
     cfg_scale: float = Field(default=7.0, ge=1.0, le=20.0)
 
 
+class SceneMotionRequest(BaseModel):
+    motion_prompt: str = Field(..., min_length=1, max_length=4000)
+    negative_prompt: str = Field(default="", max_length=2000)
+    provider_timeout: float = Field(default=900.0, ge=5.0, le=3600.0)
+
+
 class ImageEditRequest(BaseModel):
     source_path: str = Field(..., min_length=1, max_length=2048)
     prompt: str = Field(..., min_length=1, max_length=4000)
@@ -415,6 +421,110 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
         "operation": operation, "provider": result["provider"],
         "status": "edited", "prompt": req.prompt, "render_required": True,
         "scene_clip": scene_clip_result,
+    }
+
+
+@router.post("/jobs/{job_id}/scenes/{scene_index}/motion")
+async def generate_video_job_scene_motion(job_id: str, scene_index: int, req: SceneMotionRequest):
+    """Generate and persist a ComfyUI MP4 as the visual source for one timeline scene."""
+    record = _jobs.get(job_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+    if record.get("status") != "completed":
+        raise HTTPException(status_code=409, detail="Scene motion can only be generated for completed jobs")
+
+    scenes = record.get("_edited_scenes") or record.get("_source_scenes") or []
+    position = next(
+        (i for i, item in enumerate(scenes)
+         if int(item.get("_source_scene_index", i)) == scene_index),
+        None,
+    )
+    if position is None and 0 <= scene_index < len(scenes):
+        position = scene_index
+    if position is None:
+        raise HTTPException(status_code=404, detail="Scene index not found")
+
+    from modules.ai_video_studio.media.output_paths import get_subsystem_dir
+    image_root = Path(get_subsystem_dir("images")).resolve()
+    scene = dict(scenes[position])
+    image_value = scene.get("background_image_path")
+    if not image_value:
+        asset = next(
+            (item for item in record.get("scene_assets", [])
+             if int(item.get("scene_index", -1)) == scene_index and item.get("image_path")),
+            None,
+        )
+        image_value = asset.get("image_path") if asset else None
+    image_path = Path(str(image_value)).resolve() if image_value else None
+    if image_path is None or image_root not in image_path.parents or not image_path.is_file():
+        raise HTTPException(status_code=422, detail="A valid DARKSTUDIO scene image is required before generating motion")
+
+    params = record.get("params") or {}
+    try:
+        width, height = _parse_resolution(params.get("resolution") or record.get("resolution") or "1280x720")
+        fps = int(params.get("frame_rate") or record.get("frame_rate") or 24)
+        duration = 10.0 if record.get("vidgrid_compatible") else float(scene.get("duration") or 3.0)
+        from modules.ai_video_studio.ai_video_generator.image_to_video.image_to_video_engine import ImageToVideoEngine
+        result = await asyncio.to_thread(
+            ImageToVideoEngine().generate,
+            {
+                "id": f"{job_id}-scene-{scene_index}",
+                "prompt": str(image_path),
+                "params": {
+                    "duration": duration, "fps": fps, "width": width, "height": height,
+                    "motion_provider": "comfyui", "motion_prompt": req.motion_prompt,
+                    "negative_prompt": req.negative_prompt, "provider_timeout": req.provider_timeout,
+                },
+            },
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception as exc:
+        from modules.ai_video_studio.core.exceptions import VideoStudioError
+        if isinstance(exc, VideoStudioError):
+            raise HTTPException(status_code=exc.status_code, detail=exc.to_dict()) from exc
+        raise HTTPException(status_code=502, detail=f"ComfyUI scene generation failed: {str(exc)[:300]}") from exc
+
+    scene["generative_video_path"] = result["output_path"]
+    scene["generative_video_provider"] = result.get("provider", "comfyui_workflow")
+    scene["generative_video_prompt"] = req.motion_prompt
+    scene["generative_video_metadata"] = {
+        "provider_prompt_id": result.get("provider_prompt_id"),
+        "duration": result.get("duration"),
+        "fps": result.get("fps"),
+        "frames": result.get("frames"),
+        "width": width,
+        "height": height,
+        "source_image": str(image_path),
+    }
+    edited = [dict(item) for item in scenes]
+    edited[position] = scene
+    record["_edited_scenes"] = edited
+
+    clip_records = record.setdefault("scene_clips", [])
+    existing = next((item for item in clip_records if int(item.get("scene_index", -1)) == scene_index), None)
+    if existing is None:
+        existing = {"scene_index": scene_index}
+        clip_records.append(existing)
+    existing.update({
+        "generative_video_path": result["output_path"],
+        "generative_video_url": to_download_url(result["output_path"]),
+        "generative_video_provider": result.get("provider", "comfyui_workflow"),
+        "generative_video_prompt": req.motion_prompt,
+        "generative_video_duration": result.get("duration"),
+        "generative_video_frames": result.get("frames"),
+        "generative_video_fps": result.get("fps"),
+        "generative_video_status": "ready",
+    })
+    clip_records.sort(key=lambda item: int(item.get("scene_index", 0)))
+    record["edit_render_status"] = None
+    _persist_job(record)
+    return {
+        "job_id": job_id, "scene_index": scene_index, "status": "ready",
+        "provider": result.get("provider"), "provider_prompt_id": result.get("provider_prompt_id"),
+        "duration": result.get("duration"), "frames": result.get("frames"), "fps": result.get("fps"),
+        "output_path": result["output_path"], "download_url": to_download_url(result["output_path"]),
+        "message": "Clipe generativo salvo na cena do projeto e será usado no próximo render da timeline.",
     }
 
 
@@ -852,7 +962,11 @@ async def render_video_job_edits(job_id: str):
         if not 1 <= fps <= 120:
             raise ValueError("frame_rate must be between 1 and 120")
         from modules.ai_video_studio.media.output_paths import get_subsystem_dir, unique_filename
-        from modules.ai_video_studio.media.render import render_multi_scene_video
+        from modules.ai_video_studio.media.render import render_multi_scene_video, render_mixed_scene_video
+        generated_scene_clips = {
+            int(scene.get("_source_scene_index", index)): str(scene["generative_video_path"])
+            for index, scene in enumerate(scenes) if scene.get("generative_video_path")
+        }
         output_path = unique_filename(get_subsystem_dir("videos"), "text_to_video_edited", "mp4")
     except (TypeError, ValueError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
@@ -862,10 +976,39 @@ async def render_video_job_edits(job_id: str):
     record["edit_render_quality"] = None
     _persist_job(record)
     try:
-        result = await asyncio.to_thread(
-            render_multi_scene_video, scenes, output_path, fps=fps, width=width, height=height,
-            require_mp4=True, studio_id=params.get("studio_id") or "whymentary",
-        )
+        if generated_scene_clips:
+            # The first mixed-media assembler uses exact hard cuts. Flatten authored
+            # overlaps explicitly so audio, subtitles and the EDL share one timebase.
+            scenes = [dict(scene, transition_out={"type": "cut", "duration_frames": 0}) for scene in scenes]
+            record["_edited_scenes"] = scenes
+            from modules.ai_video_studio.media.timeline import build_edit_timeline
+            configured_audio = record.get("_audio_clips") or {}
+            mixed_timeline = build_edit_timeline(
+                scenes, fps=fps, width=width, height=height,
+                music_clips=configured_audio.get("music", []),
+                sfx_clips=configured_audio.get("sfx", []),
+            )
+            previous = record.get("edit_timeline") or {}
+            mixed_timeline["tracks"].extend(
+                track for track in previous.get("tracks", [])
+                if track.get("type") != "video" and track.get("role") not in {"music", "sound_effect"}
+            )
+            record["edit_timeline"] = mixed_timeline
+            result = await asyncio.to_thread(
+                render_mixed_scene_video, scenes, output_path, generated_clips=generated_scene_clips,
+                fps=fps, width=width, height=height, require_mp4=True,
+                studio_id=params.get("studio_id") or "whymentary",
+            )
+            record["edit_render_transition_policy"] = {
+                "mode": "hard_cut", "flattened_scenes": result.get("transitions_flattened", []),
+                "message": "Transições com sobreposição foram convertidas em cortes secos para manter a duração exata dos clipes IA.",
+            }
+            _persist_job(record)
+        else:
+            result = await asyncio.to_thread(
+                render_multi_scene_video, scenes, output_path, fps=fps, width=width, height=height,
+                require_mp4=True, studio_id=params.get("studio_id") or "whymentary",
+            )
         rendered_path = result["output_path"]
         audio_status = "silent"
         final_path = rendered_path
@@ -1022,7 +1165,7 @@ async def render_video_job_edits(job_id: str):
             "encoded_audio_quality": record.get("edit_render_encoded_audio"),
             "subtitle_status": subtitle_status,
             "subtitles": subtitle_info,
-            "message": "MP4 editado renderizado com as faixas configuradas mixadas." if audio_status == "mixed_audio" else "MP4 editado renderizado com música/efeitos; a narração original em faixa única foi omitida." if audio_status == "mixed_audio_single_track_omitted" else "MP4 editado renderizado; a faixa única original não foi reposicionada automaticamente." if audio_status == "single_track_not_retimed" else "MP4 editado renderizado sem faixas de áudio configuradas." if audio_status == "silent" else "MP4 visual renderizado, mas a muxagem de áudio falhou; consulte o status do áudio.",
+            "message": ("MP4 misto renderizado: clipes generativos ComfyUI e cenas animadas combinados." if generated_scene_clips else "MP4 editado renderizado com as faixas configuradas mixadas.") if audio_status == "mixed_audio" else "MP4 editado renderizado com música/efeitos; a narração original em faixa única foi omitida." if audio_status == "mixed_audio_single_track_omitted" else "MP4 editado renderizado; a faixa única original não foi reposicionada automaticamente." if audio_status == "single_track_not_retimed" else "MP4 editado renderizado sem faixas de áudio configuradas." if audio_status == "silent" else "MP4 visual renderizado, mas a muxagem de áudio falhou; consulte o status do áudio.",
             "ducking": (mix_result.get("ducking") if isinstance(mix_result, dict) else None),
             "normalization": (mix_result.get("normalization") if isinstance(mix_result, dict) else None),
             "loudness": (mix_result.get("loudness") if isinstance(mix_result, dict) else None),
