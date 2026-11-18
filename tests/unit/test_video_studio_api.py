@@ -1240,6 +1240,12 @@ class TestCompletedOutputValidation:
             output_validation=report,
         )
         assert response.model_dump()["output_validation"] == report
+        scene_progress = [{"scene_index": 0, "status": "completed", "stage": "exported"}]
+        response_with_scenes = VideoStatusResponse(
+            job_id="persisted-job", status="completed", progress=1.0,
+            scene_progress=scene_progress,
+        )
+        assert response_with_scenes.model_dump()["scene_progress"] == scene_progress
 
     @pytest.mark.asyncio
     async def test_rejects_output_path_outside_video_directory(self, tmp_path, monkeypatch):
