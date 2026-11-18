@@ -104,6 +104,8 @@ export interface SceneImageAsset {
   status: "generated" | "edited" | "fallback";
   operation?: "text_to_image" | "image_to_image";
   prompt?: string;
+  visual_prompt?: string;
+  narration_text?: string;
   reason?: string;
 }
 
@@ -117,6 +119,8 @@ export interface SceneVideoClip {
   output_url?: string;
   bytes: number;
   encode_engine: string;
+  visual_prompt?: string;
+  narration_text?: string;
   audio_status?: "per_scene_narration_muxed" | "no_scene_narration" | "narration_mux_failed" | "single_track_not_split" | "silent_or_tts_unavailable";
   audio_error?: string;
   status?: "updated" | "stale";
