@@ -96,6 +96,17 @@ export interface StudioAudioAsset {
   size_bytes: number;
 }
 
+export interface SceneImageAsset {
+  scene_index: number;
+  image_path?: string;
+  image_url?: string;
+  provider?: string;
+  status: "generated" | "edited" | "fallback";
+  operation?: "text_to_image" | "image_to_image";
+  prompt?: string;
+  reason?: string;
+}
+
 export interface StudioJob {
   job_id: string;
   project_id: string;
@@ -104,6 +115,10 @@ export interface StudioJob {
   current_step?: string | null;
   output_url?: string | null;
   output_path?: string | null;
+  scene_image_mode?: string | null;
+  scene_assets?: SceneImageAsset[] | null;
+  vidgrid_compatible?: boolean | null;
+  clip_duration_seconds?: number | null;
   file_size_bytes?: number | null;
   video_duration?: number | null;
   resolution?: string | null;
@@ -279,6 +294,20 @@ export const videoStudioApi = {
   async listVoices(): Promise<StudioVoice[]> {
     const { data } = await apiClient.get(`${STUDIO_BASE}/audio/voices`);
     return data?.data?.voices ?? [];
+  },
+
+  async editSceneImage(jobId: string, sceneIndex: number, payload: {
+    prompt: string;
+    negative_prompt?: string;
+    denoising_strength?: number;
+    steps?: number;
+    cfg_scale?: number;
+  }): Promise<SceneImageAsset & { job_id: string; render_required: boolean }> {
+    const { data } = await apiClient.post(
+      `${STUDIO_BASE}/videos/jobs/${jobId}/scenes/${sceneIndex}/image-edit`,
+      payload,
+    );
+    return data;
   },
 
   async generateVideo(params: GenerateVideoParams): Promise<StudioJob> {
