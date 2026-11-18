@@ -1,5 +1,16 @@
 # DARKSTUDIO AI — Timeline editor
 
+
+### Transições em projetos com cenas ComfyUI
+
+Quando uma ou mais cenas usam vídeo generativo do ComfyUI, o renderizador misto preserva as transições da timeline:
+
+- **Corte seco:** concatena os clipes sem remover quadros.
+- **Crossfade:** mistura os últimos quadros da cena anterior com os primeiros da próxima; a sobreposição reduz a duração total pelo mesmo número de quadros na timeline.
+- **Fade through black:** escurece a saída e revela a próxima cena a partir do preto, sem alterar a duração total.
+
+A timeline, a narração por cena e as legendas usam o mesmo cálculo de sobreposição do crossfade. As transições são aplicadas pelo FFmpeg após normalizar todos os clipes para a mesma resolução, FPS e formato de pixel. O MP4 original permanece intacto; o render editado é salvo como um novo arquivo.
+
 ## Current workflow
 
 1. Generate a video with `POST /api/v1/video-studio/videos/generate`.
