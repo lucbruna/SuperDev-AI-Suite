@@ -102,6 +102,9 @@ def mix_audio_timeline(
     ducking_threshold_db: float = -36.0,
     ducking_attack: float = 0.08,
     ducking_release: float = 0.35,
+    normalization_enabled: bool = True,
+    normalization_target_dbfs: float = -18.0,
+    normalization_max_gain_db: float = 6.0,
 ) -> dict[str, Any]:
     """Mix music/SFX/narration clips into one mono WAV with bounded envelopes.
 
@@ -113,7 +116,7 @@ def mix_audio_timeline(
         raise ValueError("total_duration must be a positive finite number")
     if not isinstance(sample_rate, int) or sample_rate < 8000:
         raise ValueError("sample_rate must be an integer >= 8000")
-    ducking_values = (ducking_db, ducking_threshold_db, ducking_attack, ducking_release)
+    ducking_values = (ducking_db, ducking_threshold_db, ducking_attack, ducking_release, normalization_target_dbfs, normalization_max_gain_db)
     if not all(np.isfinite(value) for value in ducking_values): raise ValueError("ducking controls must be finite")
     if not 0 <= ducking_db <= 24 or ducking_attack <= 0 or ducking_release <= 0:
         raise ValueError("ducking reduction must be 0..24 dB and attack/release must be positive")
@@ -196,7 +199,15 @@ def mix_audio_timeline(
             "ducking_applied": bool(clip.get("kind") == "music" and ducking_enabled and ducking_db > 0 and np.any(speech_envelope)),
         })
 
-    limited = dsp.limiter(mix.astype(np.float32), threshold=0.97, sample_rate=sample_rate)
+    mixed = mix.astype(np.float32)
+    pre_normalization_rms = dsp.rms(mixed)
+    normalization_gain_db = 0.0
+    if normalization_enabled and pre_normalization_rms > 1e-9:
+        target_rms = float(10 ** (normalization_target_dbfs / 20.0))
+        requested_gain_db = 20.0 * np.log10(target_rms / pre_normalization_rms)
+        normalization_gain_db = min(float(normalization_max_gain_db), float(requested_gain_db))
+        mixed = (mixed * float(10 ** (normalization_gain_db / 20.0))).astype(np.float32)
+    limited = dsp.limiter(mixed, threshold=0.97, sample_rate=sample_rate)
     out = dsp.write_audio(output_path, limited, sample_rate=sample_rate)
     return {
         "output_path": str(out),
@@ -205,5 +216,6 @@ def mix_audio_timeline(
         "clip_count": len(reports),
         "clips": reports,
         "peak": round(dsp.peak(limited), 4),
+        "normalization": {"enabled": bool(normalization_enabled), "target_dbfs": float(normalization_target_dbfs), "gain_db": round(normalization_gain_db, 3), "pre_rms": round(pre_normalization_rms, 6)},
         "ducking": {"enabled": bool(ducking_enabled and ducking_db > 0), "reduction_db": float(ducking_db), "threshold_db": float(ducking_threshold_db), "attack_seconds": float(ducking_attack), "release_seconds": float(ducking_release), "speech_detected": bool(np.any(speech_envelope))},
     }
