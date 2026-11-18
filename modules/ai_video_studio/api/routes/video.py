@@ -157,6 +157,7 @@ class VideoStatusResponse(BaseModel):
     audio_draft_status: str | None = None
     audio_settings: dict | None = None
     audio_analysis: dict | None = None
+    av_sync_analysis: dict | None = None
     edit_render_ducking: dict | None = None
     edit_render_normalization: dict | None = None
     edit_render_loudness: dict | None = None
@@ -399,6 +400,42 @@ async def list_video_job_audio_assets(job_id: str):
     from modules.ai_video_studio.media.audio_timeline import list_audio_assets
 
     return {"job_id": job_id, "assets": list_audio_assets()}
+
+
+@router.post("/jobs/{job_id}/av-sync-analysis")
+async def analyze_video_job_av_sync(job_id: str):
+    """Compare narration clip timing against scene timing in the saved edit timeline."""
+    record = _jobs.get(job_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+    timeline = record.get("edit_timeline") or {}
+    tracks = timeline.get("tracks") or []
+    video_track = next((track for track in tracks if track.get("type") == "video"), None)
+    narration_track = next((track for track in tracks if track.get("role") == "narration"), None)
+    if not video_track:
+        raise HTTPException(status_code=409, detail="Salve uma timeline de vídeo antes de analisar a sincronização")
+    params = record.get("params") or {}
+    fps = int(timeline.get("fps") or params.get("frame_rate") or record.get("frame_rate") or 24)
+    from modules.ai_video_studio.media.av_sync import analyze_av_sync
+    try:
+        report = analyze_av_sync(
+            video_track.get("clips") or [],
+            narration_track.get("clips") or [] if narration_track else [],
+            fps=fps,
+        )
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    if not narration_track:
+        report["status"] = "no_narration"
+        report["warnings"].append({
+            "code": "narration_track_missing",
+            "severity": "info",
+            "message": "A timeline não contém faixa de narração por cena.",
+        })
+    result = {"job_id": job_id, **report}
+    record["av_sync_analysis"] = result
+    _persist_job(record)
+    return result
 
 
 @router.post("/jobs/{job_id}/audio-analysis")
