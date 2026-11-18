@@ -60,6 +60,7 @@ export interface EditTimelineClip {
   asset?: string;
   text?: string;
   scene_index?: number;
+  source_scene_index?: number;
   shot_type?: string;
   transition_out?: { type: string; duration_frames: number; overlap_frames: number };
 }
@@ -192,6 +193,14 @@ export const videoStudioApi = {
 
   async getJob(jobId: string): Promise<StudioJob> {
     const { data } = await apiClient.get(`${STUDIO_BASE}/videos/jobs/${jobId}`);
+    return data;
+  },
+
+  async updateJobTimeline(jobId: string, payload: {
+    scene_order: number[];
+    scene_edits: { scene_index: number; duration_frames: number; transition_type: string; transition_duration_frames?: number }[];
+  }): Promise<{ edit_timeline: EditTimeline; edit_draft_status: string; message: string }> {
+    const { data } = await apiClient.patch(`${STUDIO_BASE}/videos/jobs/${jobId}/timeline`, payload);
     return data;
   },
 
