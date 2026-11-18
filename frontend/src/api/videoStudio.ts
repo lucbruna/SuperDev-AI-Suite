@@ -28,6 +28,14 @@ export interface StudioCharacter {
   supported_expressions: string[];
 }
 
+export interface StudioSceneObject {
+  id: string;
+  name: string;
+  studio_id: StudioProfile["id"];
+  category: string;
+  description: string;
+}
+
 export interface StudioHealth {
   status: string;
   service: string;
@@ -74,6 +82,7 @@ export interface StudioJob {
     voiceover_mode?: string;
     generate_subtitles?: boolean;
     character_ids?: string[];
+    object_ids?: string[];
     llm_timeout?: number;
   } | null;
   ai_planner?: string | null;
@@ -103,6 +112,7 @@ export interface GenerateVideoParams {
   voiceover_mode?: "per_scene" | "single";
   generate_subtitles?: boolean;
   character_ids?: string[];
+  object_ids?: string[];
   llm_timeout?: number;
   format?: string;
   studio_id?: StudioProfile["id"];
@@ -124,6 +134,13 @@ export const videoStudioApi = {
       params: { studio_id: studioId },
     });
     return data?.characters ?? [];
+  },
+
+  async listSceneObjects(studioId: StudioProfile["id"]): Promise<StudioSceneObject[]> {
+    const { data } = await apiClient.get(`${STUDIO_BASE}/studios/library/objects`, {
+      params: { studio_id: studioId },
+    });
+    return data?.objects ?? [];
   },
 
   async health(): Promise<StudioHealth> {
