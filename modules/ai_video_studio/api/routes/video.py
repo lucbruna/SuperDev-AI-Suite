@@ -368,6 +368,12 @@ async def render_video_job_edits(job_id: str):
         # A single flat narration track cannot be safely retimed.
         voiceover = record.get("voiceover") or {}
         narration_clips = voiceover.get("clips") if isinstance(voiceover, dict) else None
+        if (
+            isinstance(voiceover, dict)
+            and voiceover.get("muxed")
+            and voiceover.get("narration_style") == "single_track"
+        ):
+            audio_status = "single_track_not_retimed"
         if isinstance(narration_clips, list) and any(
             isinstance(clip, dict) and clip.get("audio_path") for clip in narration_clips
         ):
@@ -419,6 +425,8 @@ async def render_video_job_edits(job_id: str):
             "message": (
                 "MP4 editado renderizado com a narração por cena reposicionada."
                 if audio_status == "narration_retimed"
+                else "MP4 editado renderizado sem copiar a faixa única original, pois ela não pode ser reposicionada com segurança."
+                if audio_status == "single_track_not_retimed"
                 else "MP4 editado renderizado. Não havia narração por cena disponível para sincronizar."
                 if audio_status == "silent"
                 else "MP4 visual renderizado, mas a muxagem da narração falhou; consulte o status do áudio."
