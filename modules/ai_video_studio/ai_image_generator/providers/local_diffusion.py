@@ -32,10 +32,19 @@ def _api_base_url() -> str:
     return value
 
 
-def fit_image_dimensions(width: int, height: int, max_edge: int = 1024) -> tuple[int, int]:
-    """Fit dimensions to a diffusion-friendly maximum edge while preserving aspect ratio."""
-    if width < 1 or height < 1 or max_edge < 64:
-        raise ValueError("image dimensions and max_edge must be positive")
+def fit_image_dimensions(width: int, height: int, max_edge: int | None = None) -> tuple[int, int]:
+    """Fit dimensions to a diffusion-friendly maximum edge while preserving aspect ratio.
+
+    The default 768px cap is conservative for local GPUs with 6GB VRAM.
+    Override it with DARKSTUDIO_IMAGE_MAX_EDGE for stronger hardware.
+    """
+    if max_edge is None:
+        try:
+            max_edge = int(os.getenv("DARKSTUDIO_IMAGE_MAX_EDGE", "768"))
+        except ValueError as exc:
+            raise ValueError("DARKSTUDIO_IMAGE_MAX_EDGE must be an integer") from exc
+    if width < 1 or height < 1 or max_edge < 64 or max_edge > 2048:
+        raise ValueError("image dimensions must be positive and max_edge between 64 and 2048")
     scale = min(1.0, max_edge / max(width, height))
     fitted_width = max(64, int(width * scale) // 8 * 8)
     fitted_height = max(64, int(height * scale) // 8 * 8)
