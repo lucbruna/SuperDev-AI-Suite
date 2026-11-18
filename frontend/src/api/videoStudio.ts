@@ -119,6 +119,11 @@ export interface StudioJob {
   } | null;
   ai_planner?: string | null;
   edit_timeline?: EditTimeline | null;
+  edit_draft_status?: string | null;
+  edit_render_status?: string | null;
+  edited_output_url?: string | null;
+  edited_video_duration?: number | null;
+  edit_render_audio?: string | null;
   subtitles?: { format?: string; file_path?: string; download_url?: string | null; cue_count?: number; duration?: number; generated?: boolean; reason?: string } | null;
   voiceover?: {
     muxed?: boolean;
