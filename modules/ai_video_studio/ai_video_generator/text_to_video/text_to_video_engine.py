@@ -165,6 +165,16 @@ class TextToVideoEngine:
                         motion_start_frame=object_index * max(1, fps // 3),
                     )
 
+        # Give every planned scene a real, eased camera move unless the
+        # storyboard already authored its own camera controls.
+        from modules.ai_video_studio.media.camera_motion import studio_camera_move
+
+        for scene in scenes:
+            if not scene.get("camera"):
+                scene_duration = max(0.1, float(scene.get("duration") or duration / len(scenes)))
+                scene_frames = max(2, int(scene_duration * fps))
+                scene["camera"] = studio_camera_move(studio_id, scenes.index(scene), scene_frames)
+
         out = unique_filename(get_subsystem_dir("videos"), "text_to_video", "mp4")
 
         def _on_frame(rendered: int, total: int) -> None:
