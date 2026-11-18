@@ -119,8 +119,20 @@ def test_update_audio_timeline_persists_music_and_sfx_controls(completed_job, mo
     assert record["_audio_settings"]["compressor_ratio"] == 3
     assert record["_audio_settings"]["eq_enabled"] is False
     assert record["_audio_settings"]["eq_low_db"] == 0
+    assert record["_audio_settings"]["mastering_preset"] == "custom"
     music_track = next(track for track in result["edit_timeline"]["tracks"] if track.get("role") == "music")
     assert music_track["clips"][0]["fade_in"] == 0.5
+
+
+@pytest.mark.parametrize("preset", ["custom", "voice", "documentary", "music", "cinematic_sfx"])
+def test_audio_timeline_accepts_supported_mastering_presets(preset):
+    request = video.AudioTimelineEditRequest(mastering_preset=preset)
+    assert request.mastering_preset == preset
+
+
+def test_audio_timeline_rejects_unknown_mastering_preset():
+    with pytest.raises(Exception):
+        video.AudioTimelineEditRequest(mastering_preset="broadcast_magic")
 
 
 def test_update_audio_timeline_rejects_looping_sound_effect(completed_job, monkeypatch, tmp_path) -> None:
