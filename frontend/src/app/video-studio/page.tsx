@@ -7,7 +7,7 @@ import { Card, CardHeader, CardBody } from "@/components/cards/Card";
 import { Badge } from "@/components/badges/Badge";
 import { Button } from "@/components/buttons/Button";
 import { useAuthStore } from "@/stores/authStore";
-import { videoStudioApi, type StudioJob, type StudioVoice } from "@/api/videoStudio";
+import { videoStudioApi, type StudioJob, type StudioVoice, type StudioProfile } from "@/api/videoStudio";
 import { extractErrorMessage } from "@/utils/apiError";
 import { fmtBytes, fmtDuration, fmtEstimate, jobStatusVariant, studioHealthVariant } from "@/utils/format";
 import {
@@ -69,6 +69,9 @@ export default function VideoStudioPage() {
   const [version, setVersion] = useState<string>("");
   const [voices, setVoices] = useState<StudioVoice[]>([]);
   const [jobs, setJobs] = useState<StudioJob[]>([]);
+  const [studioProfiles, setStudioProfiles] = useState<StudioProfile[]>([]);
+  const [studioId, setStudioId] = useState<StudioProfile["id"]>("whymentary");
+  const [studioLoadError, setStudioLoadError] = useState<string | null>(null);
 
   // Generation form state
   const [prompt, setPrompt] = useState("A cinematic drone shot over a misty mountain range at sunrise, with a voiceover narration");
@@ -112,6 +115,12 @@ export default function VideoStudioPage() {
         }
       } catch {
         if (!cancelled) setHealth("offline");
+      }
+      try {
+        const profiles = await videoStudioApi.listStudios();
+        if (!cancelled) setStudioProfiles(profiles);
+      } catch (e) {
+        if (!cancelled) setStudioLoadError(extractErrorMessage(e, "Não foi possível carregar os estúdios"));
       }
       try {
         const v = await videoStudioApi.listVoices();
@@ -174,6 +183,7 @@ export default function VideoStudioPage() {
       const job = await videoStudioApi.generateVideo({
         project_id: projectId,
         prompt,
+        studio_id: studioId,
         voiceover,
         voice_id: voiceId,
         voiceover_mode: mode,
@@ -243,6 +253,25 @@ export default function VideoStudioPage() {
           <Badge variant="primary" size="sm">Text to Video + TTS</Badge>
         </CardHeader>
         <CardBody>
+          <section className="mb-5 rounded-xl border border-surface-200 bg-surface-50 p-4 dark:border-surface-700 dark:bg-surface-900/50" aria-labelledby="darkstudio-profile-title">
+            <div className="mb-3">
+              <h3 id="darkstudio-profile-title" className="text-sm font-semibold text-surface-900 dark:text-surface-100">DARKSTUDIO AI · Escolha seu estúdio</h3>
+              <p className="mt-1 text-xs text-surface-500">O perfil selecionado define a linguagem visual aplicada durante a renderização.</p>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              {[{ id: "whymentary" as const, title: "Whymentary", subtitle: "Explicações 2D · fundo branco · cores chapadas", mark: "✍️" }, { id: "historical_documentary" as const, title: "Documentário Histórico", subtitle: "Ilustração cinematográfica · profundidade · luz dramática", mark: "🏛️" }].map((profile) => {
+                const active = studioId === profile.id;
+                return (
+                  <button key={profile.id} type="button" aria-pressed={active} onClick={() => setStudioId(profile.id)} className={active ? "rounded-lg border border-primary-500 bg-primary-50 p-3 text-left ring-2 ring-primary-500/20 dark:bg-primary-950/30" : "rounded-lg border border-surface-200 bg-white p-3 text-left hover:border-primary-300 dark:border-surface-700 dark:bg-surface-800"}>
+                    <span className="flex items-center gap-2 text-sm font-semibold text-surface-900 dark:text-surface-100"><span aria-hidden="true">{profile.mark}</span>{profile.title}{active && <span className="ml-auto text-xs text-primary-600 dark:text-primary-300">Selecionado</span>}</span>
+                    <span className="mt-1 block text-xs text-surface-500">{profile.subtitle}</span>
+                  </button>
+                );
+              })}
+            </div>
+            {studioLoadError && <p role="status" className="mt-2 text-xs text-amber-600">{studioLoadError} · seleção local disponível.</p>}
+            {studioProfiles.length > 0 && <p className="mt-2 text-xs text-surface-400">{studioProfiles.length} perfis carregados da API.</p>}
+          </section>
           <textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
