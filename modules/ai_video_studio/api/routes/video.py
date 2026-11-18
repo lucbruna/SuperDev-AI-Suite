@@ -1038,6 +1038,13 @@ async def render_video_job_edits(job_id: str):
                 "message": "Transições aplicadas no render misto; crossfades descontam os mesmos frames na timeline e no áudio/legendas.",
             }
             _persist_job(record)
+        else:
+            # Procedural-only projects still use the original multi-scene renderer.
+            result = await asyncio.to_thread(
+                render_multi_scene_video, scenes, output_path,
+                fps=fps, width=width, height=height, require_mp4=True,
+                studio_id=params.get("studio_id") or "whymentary",
+            )
         rendered_path = result["output_path"]
         audio_status = "silent"
         final_path = rendered_path
@@ -1195,7 +1202,7 @@ async def render_video_job_edits(job_id: str):
             "subtitle_status": subtitle_status,
             "subtitles": subtitle_info,
             "message": (
-                f"MP4 misto renderizado com {len(generated_scene_clips)} cena(s) ComfyUI; transições de sobreposição convertidas em cortes secos."
+                f"MP4 misto renderizado com {len(generated_scene_clips)} cena(s) ComfyUI e transições aplicadas."
                 if generated_scene_clips else
                 "MP4 editado renderizado com as faixas configuradas mixadas."
                 if audio_status == "mixed_audio" else
