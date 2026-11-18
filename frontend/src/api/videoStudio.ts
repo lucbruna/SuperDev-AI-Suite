@@ -63,6 +63,10 @@ export interface EditTimelineClip {
   source_scene_index?: number;
   shot_type?: string;
   transition_out?: { type: string; duration_frames: number; overlap_frames: number };
+  volume?: number;
+  trim_start?: number;
+  fade_in?: number;
+  fade_out?: number;
 }
 
 export interface EditTimelineTrack {
@@ -206,6 +210,14 @@ export const videoStudioApi = {
     scene_edits: { scene_index: number; duration_frames: number; transition_type: string; transition_duration_frames?: number }[];
   }): Promise<{ edit_timeline: EditTimeline; edit_draft_status: string; message: string }> {
     const { data } = await apiClient.patch(`${STUDIO_BASE}/videos/jobs/${jobId}/timeline`, payload);
+    return data;
+  },
+
+  async updateJobAudio(jobId: string, payload: {
+    music_clips: { asset: string; start: number; end: number; trim_start?: number; volume?: number; fade_in?: number; fade_out?: number }[];
+    sfx_clips: { asset: string; start: number; end: number; trim_start?: number; volume?: number; fade_in?: number; fade_out?: number }[];
+  }): Promise<{ edit_timeline: EditTimeline; audio_draft_status: string; message: string }> {
+    const { data } = await apiClient.patch(`${STUDIO_BASE}/videos/jobs/${jobId}/audio`, payload);
     return data;
   },
 
