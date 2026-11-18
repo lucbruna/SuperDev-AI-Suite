@@ -285,7 +285,7 @@ async def generate_video(req: VideoGenerateRequest, background_tasks: Background
 
 @router.patch("/jobs/{job_id}/timeline")
 async def update_video_job_timeline(job_id: str, req: TimelineEditRequest):
-    """Save a validated edit draft in the current API process (not durable storage)."""
+    """Persist a validated edit draft to the local SQLite job store."""
     record = _jobs.get(job_id)
     if record is None:
         raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
@@ -318,8 +318,8 @@ async def update_video_job_timeline(job_id: str, req: TimelineEditRequest):
     return {
         "job_id": job_id,
         "edit_timeline": timeline,
-        "edit_draft_status": "in_memory_only",
-        "message": "Rascunho atualizado no processo atual; ainda não foi salvo permanentemente nem renderizado.",
+        "edit_draft_status": "persisted_local_sqlite",
+        "message": "Rascunho salvo no banco SQLite local. O novo MP4 ainda precisa ser renderizado.",
     }
 
 
