@@ -20,6 +20,48 @@ def _audio_roots(tmp_path, monkeypatch):
     return downloads
 
 
+def test_audio_intelligence_flags_clipping_silence_and_stereo_imbalance(tmp_path, monkeypatch):
+    downloads = _audio_roots(tmp_path, monkeypatch)
+    path = downloads / "music" / "analysis.wav"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    audio = np.zeros((44100, 2), dtype=np.float32)
+    audio[:22050, 0] = 1.0
+    audio[:22050, 1] = 0.1
+    dsp.write_audio(path, audio)
+    report = audio_timeline.analyze_audio_file(path)
+    assert report["channels"] == 2
+    assert report["duration_seconds"] == pytest.approx(1.0, abs=0.01)
+    assert report["clipping_ratio"] > 0
+    assert report["silence_ratio"] >= 0.4
+    assert "clipping_or_near_full_scale_peak" in report["warnings"]
+    assert "strong_left_right_imbalance" in report["warnings"]
+
+
+def test_audio_intelligence_detects_phase_cancellation_risk(tmp_path, monkeypatch):
+    downloads = _audio_roots(tmp_path, monkeypatch)
+    path = downloads / "music" / "phase.wav"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    mono = np.sin(np.arange(44100, dtype=np.float32) * 0.04)
+    dsp.write_audio(path, np.column_stack([mono, -mono]))
+    report = audio_timeline.analyze_audio_file(path)
+    assert report["stereo_correlation"] == pytest.approx(-1.0, abs=0.01)
+    assert "possible_stereo_phase_cancellation" in report["warnings"]
+
+
+def test_ducking_recommendation_uses_measured_narration_and_music_levels():
+    recommendation = audio_timeline.recommend_ducking(
+        [{"rms_dbfs": -24.0}, {"rms_dbfs": -26.0}],
+        [{"rms_dbfs": -18.0}],
+    )
+    assert recommendation["available"] is True
+    assert recommendation["recommended_ducking_db"] == 9.5
+    assert recommendation["recommended_threshold_db"] == -35.0
+
+
+def test_ducking_recommendation_requires_voice_and_music():
+    assert audio_timeline.recommend_ducking([], [{"rms_dbfs": -20}])["available"] is False
+
+
 def test_list_audio_assets_returns_only_approved_generated_files(tmp_path, monkeypatch):
     downloads = _audio_roots(tmp_path, monkeypatch)
     music = downloads / "music" / "theme.wav"
