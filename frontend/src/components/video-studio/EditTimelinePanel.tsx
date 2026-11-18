@@ -146,7 +146,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
           fadeInValue < 0 || fadeOutValue < 0 || fadeInValue > endValue - startValue || fadeOutValue > endValue - startValue) {
         throw new Error("Confira posição, fim e volume das faixas de áudio.");
       }
-      return { asset: asset.trim(), start: startValue, end: endValue, volume: volumeValue, fade_in: fadeInValue, fade_out: fadeOutValue };
+      return { asset: asset.trim(), start: startValue, end: endValue, volume: volumeValue, trim_start: 0, fade_in: fadeInValue, fade_out: fadeOutValue };
     };
     setSavingAudio(true);
     setMessage("");
