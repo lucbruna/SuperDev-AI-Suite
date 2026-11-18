@@ -41,6 +41,7 @@ def render_scene_video(
     width: int = 1280,
     height: int = 720,
     seed: int = 42,
+    require_mp4: bool = False,
 ) -> dict[str, Any]:
     """Render a single scene descriptor into a real video file."""
     canvas = SceneCanvas(width=width, height=height, fps=fps, seed=seed)
@@ -48,7 +49,7 @@ def render_scene_video(
     frames: list[np.ndarray] = []
     for i in range(total):
         frames.append(canvas.render_scene(scene, i))
-    return frames_to_video(frames, output_path, fps=fps)
+    return frames_to_video(frames, output_path, fps=fps, require_mp4=require_mp4)
 
 
 def render_multi_scene_video(
@@ -60,6 +61,7 @@ def render_multi_scene_video(
     height: int = 720,
     seed: int = 42,
     on_frame: Callable[[int, int], None] | None = None,
+    require_mp4: bool = False,
 ) -> dict[str, Any]:
     """Render a storyboard (list of scenes) into one continuous video.
 
@@ -94,6 +96,7 @@ def render_multi_scene_video(
 
     return stream_frames_to_video(
         _frame_iter(), output_path, fps=fps, total_frames=total_frames,
+        require_mp4=require_mp4,
     )
 
 
@@ -103,6 +106,7 @@ def render_sim_frames(
     *,
     frames: int = 60,
     fps: int = 24,
+    require_mp4: bool = False,
 ) -> dict[str, Any]:
     """Render videos from an arbitrary frame callback.
 
@@ -117,7 +121,7 @@ def render_sim_frames(
         rendered.append(np.asarray(frame, dtype=np.uint8))
     if not rendered:
         raise ValueError("Frame callback produced no frames")
-    return frames_to_video(rendered, output_path, fps=fps)
+    return frames_to_video(rendered, output_path, fps=fps, require_mp4=require_mp4)
 
 
 def timeit(fn: Callable[[], Any]) -> tuple[Any, float]:
