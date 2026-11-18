@@ -111,7 +111,7 @@ def _ffmpeg_loudnorm_pass(input_path: Path, output_path: Path | None, *, target_
         command += ["-f", "null", "-"]
     else:
         command += ["-ar", "44100", "-c:a", "pcm_s24le", "-y", str(output_path)]
-    result = subprocess.run(command, capture_output=True, text=True, check=False)
+    result = subprocess.run(command, capture_output=True, text=True, check=False, timeout=120)
     if result.returncode != 0:
         raise RuntimeError(f"FFmpeg loudnorm failed: {(result.stderr or result.stdout)[-1200:]}")
     stderr = result.stderr or ""
@@ -130,7 +130,7 @@ def _ffmpeg_loudnorm_pass(input_path: Path, output_path: Path | None, *, target_
         raise RuntimeError("FFmpeg loudnorm returned an invalid measurement report") from exc
 
 
-def normalize_loudness_file(path: str | Path, *, target_lufs: float = -14.0, true_peak_db: float = -1.0, lra: float = 11.0) -> dict[str, float]:
+def normalize_loudness_file(path: str | Path, *, target_lufs: float = -14.0, true_peak_db: float = -1.0, lra: float = 11.0) -> dict[str, float | bool]:
     """Apply FFmpeg two-pass EBU R128 loudness normalization in-place."""
     source = Path(path)
     if not source.is_file():
@@ -148,7 +148,7 @@ def normalize_loudness_file(path: str | Path, *, target_lufs: float = -14.0, tru
         safe = dsp.limiter(normalized, threshold=float(10 ** (true_peak_db / 20.0)), sample_rate=rate)
         dsp.write_audio(source, safe, sample_rate=rate)
         verified = _ffmpeg_loudnorm_pass(source, None, target_lufs=target_lufs, true_peak_db=true_peak_db, lra=lra)
-        return {"target_lufs": target_lufs, "true_peak_db": true_peak_db, "input_i": measured["input_i"], "input_tp": measured["input_tp"], "input_lra": measured["input_lra"], "output_i": verified["input_i"], "output_tp": verified["input_tp"], "output_lra": verified["input_lra"], "passes": 2.0, "verified": True}
+        return {"target_lufs": target_lufs, "true_peak_db": true_peak_db, "input_i": measured["input_i"], "input_tp": measured["input_tp"], "input_lra": measured["input_lra"], "output_i": verified["input_i"], "output_tp": verified["input_tp"], "output_lra": verified["input_lra"], "normalization_pass_i": output_report["input_i"], "passes": 2.0, "verified": True}
     finally:
         temporary.unlink(missing_ok=True)
 
