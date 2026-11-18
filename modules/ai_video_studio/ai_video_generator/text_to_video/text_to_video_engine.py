@@ -21,6 +21,7 @@ from modules.ai_video_studio.core.exceptions import ValidationError
 from modules.ai_video_studio.media.llm import get_scene_planner
 from modules.ai_video_studio.media.output_paths import get_subsystem_dir, unique_filename
 from modules.ai_video_studio.media.render import render_multi_scene_video
+from modules.ai_video_studio.media.characters import PRESETS as CHARACTER_PRESETS, add_character
 from modules.ai_video_studio.ai_video_generator.generation_statistics import get_generation_statistics
 
 logger = logging.getLogger(__name__)
@@ -83,6 +84,25 @@ class TextToVideoEngine:
         width = int(params.get("width", 1280))
         height = int(params.get("height", 720))
 
+        character_ids = list(params.get("character_ids") or [])
+        if character_ids:
+            allowed_characters = {
+                "whymentary": {"leo", "mia"},
+                "historical_documentary": {"historical_narrator"},
+            }
+            unknown = set(character_ids) - allowed_characters.get(
+                str(params.get("studio_id") or "whymentary"), set()
+            )
+            if unknown:
+                raise ValidationError(
+                    f"Characters {sorted(unknown)} do not belong to the selected studio",
+                    field="character_ids",
+                )
+            if len(character_ids) != len(set(character_ids)):
+                raise ValidationError("Duplicate character IDs are not allowed", field="character_ids")
+            if len(character_ids) > 2:
+                raise ValidationError("At most two characters can be selected", field="character_ids")
+
         # Ollama on CPU needs time for the first model load (~90s); callers
         # may override with ``llm_timeout``. Falls back to the deterministic
         # planner automatically on timeout.
@@ -93,6 +113,28 @@ class TextToVideoEngine:
         scenes = plan["scenes"]
         if not scenes:
             raise ValidationError("Scene planner returned no scenes", field="prompt")
+
+        # Apply the same registered character identities to every scene.
+        # Pose/expression variations are deterministic across the storyboard.
+        if character_ids:
+            scale = max(0.35, min(width, height) / 720.0)
+            for scene_index, scene in enumerate(scenes):
+                for character_index, character_id in enumerate(character_ids):
+                    if len(character_ids) == 1:
+                        x = width * 0.5
+                    else:
+                        x = width * (0.34 if character_index == 0 else 0.66)
+                    pose = ("explain", "point", "neutral")[scene_index % 3]
+                    expression = ("neutral", "happy", "surprised")[scene_index % 3]
+                    scenes[scene_index] = add_character(
+                        scenes[scene_index],
+                        character_id,
+                        x=x,
+                        y=height * 0.88,
+                        scale=scale,
+                        pose=pose,
+                        expression=expression,
+                    )
 
         out = unique_filename(get_subsystem_dir("videos"), "text_to_video", "mp4")
 
