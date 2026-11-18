@@ -253,3 +253,16 @@ O pipeline de texto para vídeo agora executa um planejador de storyboard antes 
 - A API `GET /videos/jobs/{job_id}/visual-direction` expõe o ID da cena, prompt completo, prompt negativo, continuidade e estado de revisão sem revelar caminhos internos.
 
 O relatório fica disponível em `storyboard_report` no estado do job. A detecção de repetição é textual/determinística; ela não é análise visual por visão computacional e não garante que duas imagens geradas sejam visualmente diferentes.
+
+## Regeneração em lote de cenas selecionadas
+
+O editor permite marcar cenas individualmente ou selecionar todas e solicitar regeneração em lote. A interface envia apenas os índices selecionados e os prompts correspondentes para `POST /videos/jobs/{job_id}/scenes/regenerate`.
+
+- O servidor processa as cenas sequencialmente para evitar picos simultâneos de VRAM e carga no provedor de imagens.
+- Cada cena mantém seu próprio resultado; uma falha não apaga as imagens que já foram atualizadas.
+- A resposta informa quantidade solicitada, sucessos, falhas e erro por cena.
+- O editor atualiza as miniaturas das cenas concluídas e mantém as falhas identificadas.
+- Em modo VidGrid, cada cena atualizada tenta reconstruir seu clipe de exatamente 10 segundos; se essa renderização falhar, a imagem continua salva e o clipe é marcado como desatualizado.
+- A regeneração de imagens não atualiza automaticamente o MP4 completo: é necessário renderizar a edição após revisar as imagens.
+
+O lote aceita até 60 cenas por solicitação e rejeita índices duplicados. A execução é sequencial, não transacional: resultados concluídos são preservados mesmo se outra cena falhar.
