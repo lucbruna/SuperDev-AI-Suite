@@ -247,15 +247,19 @@ class TextToVideoEngine:
         # so callers can review/edit them before any burn-in/export decision.
         if params.get("generate_subtitles") or params.get("subtitles"):
             try:
-                from modules.ai_video_studio.media.scene_narration import scene_narration_text
+                from modules.ai_video_studio.media.scene_narration import (
+                    compute_scene_offsets, scene_narration_text,
+                )
                 from modules.ai_video_studio.services.subtitle_studio import SubtitleStudioService
 
+                subtitle_offsets = compute_scene_offsets(scenes, fallback_duration=duration / len(scenes), fps=fps)
                 subtitle_scenes = [
                     {
                         "text": scene_narration_text(scene),
-                        "duration": max(0.1, float(scene.get("duration") or duration / len(scenes))),
+                        "duration": max(1, int(float(scene.get("duration") or duration / len(scenes)) * fps)) / fps,
+                        "start_offset": subtitle_offsets[index],
                     }
-                    for scene in scenes
+                    for index, scene in enumerate(scenes)
                 ]
                 subtitle_path = unique_filename(
                     get_subsystem_dir("subtitles"), "text_to_video_subtitles", "srt"
