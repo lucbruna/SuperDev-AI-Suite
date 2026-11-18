@@ -228,10 +228,18 @@ class SceneCanvas:
 
     # ── Camera & grading ──────────────────────────────────────────
     def _apply_camera(self, img: Image.Image, camera: dict[str, Any], frame_index: int) -> Image.Image:
-        dx = float(camera.get("dx", 0)) * frame_index
-        dy = float(camera.get("dy", 0)) * frame_index
-        zoom = float(camera.get("zoom", 1.0))
-        roll = float(camera.get("roll", 0)) * frame_index
+        from modules.ai_video_studio.media.camera_motion import camera_state_at_frame
+
+        if camera.get("keyframes"):
+            state = camera_state_at_frame(camera, frame_index)
+            dx, dy = state["dx"], state["dy"]
+            zoom, roll = state["zoom"], state["roll"]
+        else:
+            # Backwards-compatible linear camera controls for existing scenes.
+            dx = float(camera.get("dx", 0)) * frame_index
+            dy = float(camera.get("dy", 0)) * frame_index
+            zoom = float(camera.get("zoom", 1.0))
+            roll = float(camera.get("roll", 0)) * frame_index
         if zoom != 1.0:
             # Zoom-in: scale UP then crop the centre back to canvas size so the
             # output frame always keeps the exact canvas dimensions.
