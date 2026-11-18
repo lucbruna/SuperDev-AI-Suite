@@ -217,10 +217,14 @@ class SceneCanvas:
             )
         return img
 
-    def _apply_grading(self, img: Image.Image, palette: list[str]) -> Image.Image:
-        """Simple cinematic grade: tint shadows toward the first palette color."""
-        if not palette:
+    def _apply_grading(
+        self, img: Image.Image, palette: list[str], *, strength: float = 0.08
+    ) -> Image.Image:
+        """Tint the image toward the first palette color by a bounded amount."""
+        if not palette or strength <= 0:
             return img
+        if not 0 <= strength <= 1:
+            raise ValueError("grading strength must be between 0 and 1")
         rgb = _hex_to_rgb(palette[0])
         img = img.filter(ImageFilter.GaussianBlur(radius=0.2))
         arr = np.asarray(img, dtype=np.float32)
