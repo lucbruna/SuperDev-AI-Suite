@@ -1450,7 +1450,7 @@ async def render_video_job_edits(job_id: str):
             clips_by_index = {
                 int(item.get("scene_index", -1)): item
                 for item in (record.get("scene_clips") or [])
-                if item.get("status") in {"updated", "completed", "ready"} and item.get("output_path")
+                if (not item.get("status") or item.get("status") in {"updated", "completed", "ready"}) and item.get("output_path")
             }
             ordered_indices = [int(scene.get("_source_scene_index", index)) for index, scene in enumerate(scenes)]
             if record.get("scene_clips"):
