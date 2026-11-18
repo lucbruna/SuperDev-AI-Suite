@@ -112,6 +112,7 @@ class TextToVideoEngine:
             width=width,
             height=height,
             on_frame=_on_frame,
+            require_mp4=True,
             studio_id=studio_id,
         )
 
