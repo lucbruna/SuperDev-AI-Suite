@@ -7,7 +7,7 @@ import { Card, CardHeader, CardBody } from "@/components/cards/Card";
 import { Badge } from "@/components/badges/Badge";
 import { Button } from "@/components/buttons/Button";
 import { useAuthStore } from "@/stores/authStore";
-import { videoStudioApi, type StudioJob, type StudioVoice, type StudioProfile, type StudioCharacter } from "@/api/videoStudio";
+import { videoStudioApi, type StudioJob, type StudioVoice, type StudioProfile, type StudioCharacter, type StudioSceneObject } from "@/api/videoStudio";
 import { extractErrorMessage } from "@/utils/apiError";
 import { fmtBytes, fmtDuration, fmtEstimate, jobStatusVariant, studioHealthVariant } from "@/utils/format";
 import {
@@ -75,6 +75,9 @@ export default function VideoStudioPage() {
   const [characters, setCharacters] = useState<StudioCharacter[]>([]);
   const [selectedCharacterIds, setSelectedCharacterIds] = useState<string[]>([]);
   const [characterLoadError, setCharacterLoadError] = useState<string | null>(null);
+  const [sceneObjects, setSceneObjects] = useState<StudioSceneObject[]>([]);
+  const [selectedObjectIds, setSelectedObjectIds] = useState<string[]>([]);
+  const [objectLoadError, setObjectLoadError] = useState<string | null>(null);
 
   // Generation form state
   const [prompt, setPrompt] = useState("A cinematic drone shot over a misty mountain range at sunrise, with a voiceover narration");
@@ -143,6 +146,12 @@ export default function VideoStudioPage() {
   useEffect(() => {
     let cancelled = false;
     setSelectedCharacterIds([]);
+    setSelectedObjectIds([]);
+    videoStudioApi.listSceneObjects(studioId).then((items) => {
+      if (!cancelled) { setSceneObjects(items); setObjectLoadError(null); }
+    }).catch((error) => {
+      if (!cancelled) { setSceneObjects([]); setObjectLoadError(extractErrorMessage(error, "Não foi possível carregar os objetos")); }
+    });
     videoStudioApi.listCharacters(studioId).then((items) => {
       if (!cancelled) {
         setCharacters(items);
@@ -206,6 +215,7 @@ export default function VideoStudioPage() {
         prompt,
         studio_id: studioId,
         character_ids: selectedCharacterIds,
+        object_ids: selectedObjectIds,
         voiceover,
         generate_subtitles: generateSubtitles,
         voice_id: voiceId,
@@ -410,6 +420,29 @@ export default function VideoStudioPage() {
               </p>
             )}
           </div>
+
+          <section className="rounded-xl border border-surface-200 p-4 dark:border-surface-700" aria-labelledby="scene-object-library-title">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div>
+                <h3 id="scene-object-library-title" className="text-sm font-semibold text-surface-900 dark:text-surface-100">Objetos e elementos de cena</h3>
+                <p className="mt-1 text-xs text-surface-500">Até seis objetos editáveis serão inseridos automaticamente em cada cena.</p>
+              </div>
+              <span className="text-xs tabular-nums text-surface-400">{selectedObjectIds.length}/6</span>
+            </div>
+            {objectLoadError && <p className="mb-2 text-xs text-amber-600">{objectLoadError}</p>}
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {sceneObjects.map((item) => {
+                const checked = selectedObjectIds.includes(item.id);
+                return (
+                  <label key={item.id} className="flex cursor-pointer items-start gap-2 rounded-lg border border-surface-200 p-3 text-sm dark:border-surface-700">
+                    <input type="checkbox" checked={checked} disabled={!checked && selectedObjectIds.length >= 6} onChange={(event) => setSelectedObjectIds((current) => event.target.checked ? [...current, item.id] : current.filter((id) => id !== item.id))} className="mt-0.5 h-4 w-4 accent-primary-600" />
+                    <span className="min-w-0"><span className="block font-medium text-surface-800 dark:text-surface-200">{item.name}</span><span className="block text-xs text-surface-400">{item.description}</span></span>
+                  </label>
+                );
+              })}
+            </div>
+            {!sceneObjects.length && !objectLoadError && <p className="text-xs text-surface-400">Nenhum objeto cadastrado para este estúdio.</p>}
+          </section>
 
           {/* ── Resolution + FPS ─────────────────────────────────── */}
           <div className="grid gap-4 sm:grid-cols-2">
