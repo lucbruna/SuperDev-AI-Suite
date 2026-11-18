@@ -7,6 +7,8 @@ import type { StudioJob } from "@/api/videoStudio";
 vi.mock("@/api/videoStudio", () => ({
   videoStudioApi: {
     health: vi.fn(),
+    listStudios: vi.fn(),
+    listCharacters: vi.fn(),
     listVoices: vi.fn(),
     listJobs: vi.fn(),
     getJob: vi.fn(),
@@ -45,6 +47,8 @@ const legacyJob: StudioJob = {
 
 beforeEach(() => {
   mockedApi.health.mockReset();
+  mockedApi.listStudios.mockReset();
+  mockedApi.listCharacters.mockReset();
   mockedApi.listVoices.mockReset();
   mockedApi.listJobs.mockReset();
   mockedApi.getJob.mockReset();
@@ -55,6 +59,8 @@ beforeEach(() => {
     service: "video-studio",
     version: "6.0.0",
   });
+  mockedApi.listStudios.mockResolvedValue([]);
+  mockedApi.listCharacters.mockResolvedValue([]);
   mockedApi.listVoices.mockResolvedValue([]);
   mockedApi.listJobs.mockResolvedValue([]);
 
