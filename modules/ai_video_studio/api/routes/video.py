@@ -62,7 +62,7 @@ class VideoGenerateRequest(BaseModel):
     studio_id: str = Field(default="whymentary", pattern="^(whymentary|historical_documentary)$")
     character_ids: list[str] = Field(default_factory=list, max_length=2, description="Stable character IDs to include in every scene")
     object_ids: list[str] = Field(default_factory=list, max_length=6, description="Reusable scene object IDs to include in every scene")
-    scene_image_mode: str = Field(default="procedural", pattern="^(procedural|ai|auto)$", description="Procedural scenes or per-scene local diffusion image generation")
+    scene_image_mode: str = Field(default="auto", pattern="^(procedural|ai|auto)$", description="Procedural scenes or per-scene local diffusion image generation")
     scene_image_steps: int = Field(default=20, ge=1, le=60)
     scene_image_timeout: float = Field(default=240.0, ge=1.0, le=900.0)
     vidgrid_compatible: bool = Field(default=False, description="Render every storyboard clip at exactly 10 seconds for VidGrid")
