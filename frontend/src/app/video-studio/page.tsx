@@ -829,6 +829,38 @@ export default function VideoStudioPage() {
                         ))}
                       </div>
                     )}
+                    {job.scene_progress && job.scene_progress.length > 0 && (
+                      <div className="mt-2 rounded-md border border-surface-200 p-2 dark:border-surface-700" aria-label="Progresso por cena">
+                        <div className="mb-2 flex items-center justify-between text-xs">
+                          <span className="font-medium text-surface-700 dark:text-surface-200">Progresso das cenas</span>
+                          <span className="text-surface-500">
+                            {job.scene_progress.filter((scene) => scene.status === "completed").length}/{job.scene_progress.length} concluídas
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {job.scene_progress.map((scene) => (
+                            <span
+                              key={scene.scene_index}
+                              title={`Cena ${scene.scene_index + 1}: ${scene.stage || scene.status}${scene.error ? " — " + scene.error : ""}`}
+                              className={`inline-flex h-7 min-w-7 items-center justify-center rounded px-2 text-[11px] font-semibold ${
+                                scene.status === "completed" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" :
+                                scene.status === "failed" ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300" :
+                                scene.status === "processing" ? "bg-primary-100 text-primary-700 dark:bg-primary-950 dark:text-primary-300" :
+                                scene.status === "fallback" ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300" :
+                                "bg-surface-100 text-surface-500 dark:bg-surface-800"
+                              }`}
+                            >
+                              {scene.scene_index + 1}
+                            </span>
+                          ))}
+                        </div>
+                        {job.scene_progress.some((scene) => scene.status === "failed" && scene.error) && (
+                          <p className="mt-2 text-xs text-red-500">
+                            {job.scene_progress.find((scene) => scene.status === "failed" && scene.error)?.error}
+                          </p>
+                        )}
+                      </div>
+                    )}
                     {job.error && <p className="mt-1 text-xs text-red-500">{job.error}</p>}
                     {outputValidation[job.job_id]?.error && (
                       <p role="alert" className="mt-1 text-xs text-red-500">{outputValidation[job.job_id]?.error}</p>
