@@ -115,6 +115,10 @@ def test_update_audio_timeline_persists_music_and_sfx_controls(completed_job, mo
     assert record["_audio_settings"]["normalization_target_dbfs"] == -18
     assert record["_audio_settings"]["loudness_normalization_enabled"] is False
     assert record["_audio_settings"]["target_lufs"] == -14
+    assert record["_audio_settings"]["compressor_enabled"] is False
+    assert record["_audio_settings"]["compressor_ratio"] == 3
+    assert record["_audio_settings"]["eq_enabled"] is False
+    assert record["_audio_settings"]["eq_low_db"] == 0
     music_track = next(track for track in result["edit_timeline"]["tracks"] if track.get("role") == "music")
     assert music_track["clips"][0]["fade_in"] == 0.5
 
