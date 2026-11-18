@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import os
 import shutil
+import time
 import uuid
 from pathlib import Path
 from math import gcd
@@ -833,12 +834,34 @@ async def generate_video(req: VideoGenerateRequest, background_tasks: Background
             # Live render progress → job record (read by the polling endpoint).
             # Rendering maps to 10%–85% of overall progress; the remaining
             # 15% covers voiceover/muxing before the job flips to 100%.
+            last_persisted_frames = 0
+            last_persisted_at = time.monotonic()
+
             def _on_render_progress(rendered: int, total: int) -> None:
+                nonlocal last_persisted_frames, last_persisted_at
                 record["frames_rendered"] = rendered
                 record["total_frames"] = total
                 record["current_step"] = "Rendering frames"
                 if total > 0:
                     record["progress"] = 0.1 + 0.75 * min(rendered, total) / total
+                now = time.monotonic()
+                # Persist an occasional checkpoint without forcing a SQLite
+                # transaction for every encoded frame. A first checkpoint and
+                # the final frame are always saved.
+                should_persist = (
+                    last_persisted_frames == 0
+                    or rendered >= total
+                    or rendered - last_persisted_frames >= max(1, r.frame_rate * 2)
+                    or now - last_persisted_at >= 2.0
+                )
+                if should_persist:
+                    try:
+                        _persist_job(record)
+                        last_persisted_frames = rendered
+                        last_persisted_at = now
+                    except Exception as persist_error:  # noqa: BLE001
+                        # A transient checkpoint failure must not abort FFmpeg.
+                        record["progress_persistence_warning"] = str(persist_error)[:240]
 
             result = await TextToVideoEngine().generate_async(
                 {
