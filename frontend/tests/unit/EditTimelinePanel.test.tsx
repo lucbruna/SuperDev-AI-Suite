@@ -102,8 +102,8 @@ describe("EditTimelinePanel", () => {
     expect(save.mock.calls[0][1].compressor_ratio).toBe(3.5);
     expect(save.mock.calls[0][1].eq_enabled).toBe(true);
     expect(save.mock.calls[0][1].eq_low_db).toBe(-2);
-    expect(save.mock.calls[0][1].eq_mid_db).toBe(-1);
-    expect(save.mock.calls[0][1].eq_high_db).toBe(1);
+    expect(save.mock.calls[0][1].eq_mid_db).toBe(1.5);
+    expect(save.mock.calls[0][1].eq_high_db).toBe(2);
     expect(save.mock.calls[0][1].mastering_preset).toBe("voice");
     save.mockRestore();
     assets.mockRestore();
