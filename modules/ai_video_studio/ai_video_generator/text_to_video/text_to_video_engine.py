@@ -267,6 +267,44 @@ class TextToVideoEngine:
                 logger.warning("Subtitle generation failed: %s", e)
                 result["subtitles"] = {"generated": False, "reason": str(e)[:200]}
 
+        # Persist the same frame-accurate EDL used by rendering and sidecar generation.
+        try:
+            from modules.ai_video_studio.media.timeline import build_edit_timeline
+            timeline_subtitles: list[dict[str, Any]] = []
+            if result.get("subtitles", {}).get("file_path"):
+                from modules.ai_video_studio.media.scene_narration import compute_scene_offsets, scene_narration_text
+                from modules.ai_video_studio.services.subtitle_studio import cues_for_scene
+
+                subtitle_offsets = compute_scene_offsets(
+                    scenes, fallback_duration=scene_fallback_duration, fps=fps
+                )
+                for scene_index, scene in enumerate(scenes):
+                    scene_duration = max(
+                        1, int(float(scene.get("duration") or scene_fallback_duration) * fps)
+                    ) / fps
+                    for cue in cues_for_scene(
+                        scene_narration_text(scene), scene_duration,
+                        start_offset=subtitle_offsets[scene_index],
+                    ):
+                        timeline_subtitles.append({
+                            "index": cue.index,
+                            "start": cue.start,
+                            "end": cue.end,
+                            "text": cue.text,
+                        })
+            result["edit_timeline"] = build_edit_timeline(
+                scenes,
+                fps=fps,
+                width=width,
+                height=height,
+                fallback_duration=scene_fallback_duration,
+                narration=result.get("voiceover"),
+                subtitle_cues=timeline_subtitles,
+            )
+        except Exception as e:  # noqa: BLE001 — EDL is diagnostic metadata, not a render blocker
+            logger.warning("Edit timeline metadata could not be built: %s", e)
+            result["edit_timeline"] = None
+
         elapsed = (time.time() - started) * 1000
         get_generation_statistics().record(
             mode="text_to_video", duration_ms=elapsed, quality_score=0.8,
