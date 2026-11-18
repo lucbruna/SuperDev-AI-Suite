@@ -9,6 +9,7 @@ import { Button } from "@/components/buttons/Button";
 import { useAuthStore } from "@/stores/authStore";
 import { videoStudioApi, type StudioJob, type StudioVoice, type StudioProfile, type StudioCharacter, type StudioSceneObject } from "@/api/videoStudio";
 import { extractErrorMessage } from "@/utils/apiError";
+import EditTimelinePanel from "@/components/video-studio/EditTimelinePanel";
 import { fmtBytes, fmtDuration, fmtEstimate, jobStatusVariant, studioHealthVariant } from "@/utils/format";
 import {
   DURATION_PRESETS,
@@ -69,6 +70,7 @@ export default function VideoStudioPage() {
   const [version, setVersion] = useState<string>("");
   const [voices, setVoices] = useState<StudioVoice[]>([]);
   const [jobs, setJobs] = useState<StudioJob[]>([]);
+  const [activeTimelineJobId, setActiveTimelineJobId] = useState<string | null>(null);
   const [studioProfiles, setStudioProfiles] = useState<StudioProfile[]>([]);
   const [studioId, setStudioId] = useState<StudioProfile["id"]>("whymentary");
   const [studioLoadError, setStudioLoadError] = useState<string | null>(null);
@@ -650,6 +652,13 @@ export default function VideoStudioPage() {
         </div>
       </div>
 
+      {/* ─── Visual edit timeline ──────────────────────────────────── */}
+      {(() => {
+        const activeJob = jobs.find((job) => job.job_id === activeTimelineJobId);
+        if (!activeJob?.edit_timeline) return null;
+        return <EditTimelinePanel timeline={activeJob.edit_timeline} title={`Editor visual · ${activeJob.job_id.slice(0, 8)}`} />;
+      })()}
+
       {/* ─── Jobs ────────────────────────────────────────────────────── */}
       <Card>
         <CardHeader>
@@ -748,6 +757,11 @@ export default function VideoStudioPage() {
                     )}
                     {job.file_size_bytes != null && job.file_size_bytes > 0 && (
                       <span className="text-xs text-surface-400">{fmtBytes(job.file_size_bytes)}</span>
+                    )}
+                    {job.edit_timeline && job.status === "completed" && (
+                      <Button variant="secondary" size="sm" onClick={() => setActiveTimelineJobId((current) => current === job.job_id ? null : job.job_id)}>
+                        {activeTimelineJobId === job.job_id ? "Fechar editor" : "Abrir editor"}
+                      </Button>
                     )}
                     {job.output_url && job.status === "completed" && (
                       <Button variant="secondary" size="sm" onClick={() => window.open(job.output_url as string, "_blank")}>
