@@ -120,6 +120,8 @@ def mix_audio_timeline(
     if not all(np.isfinite(value) for value in ducking_values): raise ValueError("ducking controls must be finite")
     if not 0 <= ducking_db <= 24 or ducking_attack <= 0 or ducking_release <= 0:
         raise ValueError("ducking reduction must be 0..24 dB and attack/release must be positive")
+    if not -60 <= normalization_target_dbfs <= 0 or not 0 <= normalization_max_gain_db <= 24:
+        raise ValueError("normalization target must be -60..0 dBFS and max gain 0..24 dB")
     total_samples = int(round(total_duration * sample_rate))
     mix = np.zeros(total_samples, dtype=np.float64)
     reports: list[dict[str, Any]] = []
