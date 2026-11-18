@@ -80,7 +80,7 @@ describe("EditTimelinePanel", () => {
     expect(await screen.findByText(/clipping or near full scale peak/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Aplicar sugestão" }));
     expect(screen.getByRole("checkbox", { name: "Ativar ducking" })).toBeChecked();
-    expect(screen.getByLabelText("Redução do ducking (dB)")).toHaveValue(12);
+    expect(screen.getByLabelText("Redução (dB)")).toHaveValue(12);
   });
 
   it("allows removing a sound effect and persists the remaining audio clips", async () => {
