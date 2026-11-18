@@ -7,7 +7,7 @@ import { Card, CardHeader, CardBody } from "@/components/cards/Card";
 import { Badge } from "@/components/badges/Badge";
 import { Button } from "@/components/buttons/Button";
 import { useAuthStore } from "@/stores/authStore";
-import { videoStudioApi, type StudioJob, type StudioVoice, type StudioProfile, type StudioCharacter, type StudioSceneObject } from "@/api/videoStudio";
+import { videoStudioApi, type StudioJob, type StudioVoice, type StudioProfile, type StudioCharacter, type StudioSceneObject, type VideoPreflight } from "@/api/videoStudio";
 import { extractErrorMessage } from "@/utils/apiError";
 import EditTimelinePanel from "@/components/video-studio/EditTimelinePanel";
 import { fmtBytes, fmtDuration, fmtEstimate, jobStatusVariant, studioHealthVariant } from "@/utils/format";
@@ -98,6 +98,7 @@ export default function VideoStudioPage() {
   const [format, setFormat] = useState<string>("custom");
   const [generating, setGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
+  const [preflightReport, setPreflightReport] = useState<VideoPreflight | null>(null);
   const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Estimated render time for the current resolution/fps/duration combo.
@@ -214,8 +215,9 @@ export default function VideoStudioPage() {
   const handleGenerate = async () => {
     setGenerating(true);
     setGenerationError(null);
+    setPreflightReport(null);
     try {
-      const job = await videoStudioApi.generateVideo({
+      const params = {
         project_id: projectId,
         prompt,
         studio_id: studioId,
@@ -233,7 +235,14 @@ export default function VideoStudioPage() {
         frame_rate: frameRate,
         llm_timeout: 60,
         format,
-      });
+      };
+      const preflight = await videoStudioApi.preflightVideo(params);
+      setPreflightReport(preflight);
+      if (!preflight.can_queue) {
+        setGenerationError(preflight.blockers.map((item) => item.message).join(" "));
+        return;
+      }
+      const job = await videoStudioApi.generateVideo(params);
       setJobs((prev) => [job, ...prev]);
       pollUntilDone(job.job_id);
     } catch (e) {
@@ -614,6 +623,22 @@ export default function VideoStudioPage() {
             <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-950/40 dark:text-red-400">
               {generationError}
             </p>
+          )}
+
+          {preflightReport && (
+            <section className="rounded-lg border border-surface-200 p-3 text-xs dark:border-surface-700" aria-live="polite">
+              <p className="font-semibold text-surface-900 dark:text-surface-100">
+                Pré-verificação: {preflightReport.status === "blocked" ? "bloqueada" : preflightReport.status === "ready" ? "pronta" : "pronta com avisos"}
+              </p>
+              <p className="mt-1 text-surface-500">
+                {preflightReport.scene_count} cenas · {preflightReport.duration_seconds}s · {preflightReport.total_frames.toLocaleString("pt-BR")} quadros · {preflightReport.resolution} a {preflightReport.fps} FPS
+              </p>
+              {preflightReport.warnings.length > 0 && (
+                <ul className="mt-2 list-disc space-y-1 pl-4 text-amber-700 dark:text-amber-300">
+                  {preflightReport.warnings.map((warning, index) => <li key={index}>{warning}</li>)}
+                </ul>
+              )}
+            </section>
           )}
 
           <div className="flex items-center justify-between">
