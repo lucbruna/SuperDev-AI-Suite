@@ -69,15 +69,11 @@ class TTSEngine:
         # to a formant sound generator; that output is not intelligible speech
         # and must never be mislabeled or muxed as narration.
         try:
-            result = self.offline.synthesize(
-                text, output_path=output_path, rate=speed, pitch=pitch,
+            local_path = str(Path(output_path).with_suffix(".wav")) if output_path else None
+            return self.offline.synthesize(
+                text, output_path=local_path, rate=speed, pitch=pitch,
+                allow_formant=False,
             )
-            if result.get("engine") == "formant":
-                raise RuntimeError(
-                    "Only synthetic formant audio was available; install a local "
-                    "speech voice (pyttsx3/SAPI) or enable a network TTS provider."
-                )
-            return result
         except Exception as e:  # noqa: BLE001
             errors.append(f"offline speech: {e}")
 
