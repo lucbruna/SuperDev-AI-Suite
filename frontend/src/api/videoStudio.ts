@@ -339,6 +339,20 @@ export const videoStudioApi = {
     return data;
   },
 
+  async generateImageToVideo(payload: {
+    image_ref: string;
+    duration_seconds: number;
+    fps: number;
+    width: number;
+    height: number;
+    motion_provider: "camera" | "comfyui";
+    motion_prompt?: string;
+    negative_prompt?: string;
+  }): Promise<{ success: boolean; data: { output_path: string; output_url?: string; download_url: string; provider?: string; duration: number; fps: number } }> {
+    const { data } = await apiClient.post(`${STUDIO_BASE}/videos/image-to-video`, payload);
+    return data;
+  },
+
   async generateVideo(params: GenerateVideoParams): Promise<StudioJob> {
     const { data } = await apiClient.post(`${STUDIO_BASE}/videos/generate`, params);
     return data;
