@@ -13,6 +13,7 @@ import os
 import urllib.error
 import urllib.request
 from pathlib import Path
+from urllib.parse import urlparse
 from typing import Any
 
 from modules.ai_video_studio.media.output_paths import get_subsystem_dir, unique_filename
@@ -20,9 +21,25 @@ from modules.ai_video_studio.media.output_paths import get_subsystem_dir, unique
 
 def _api_base_url() -> str:
     value = os.getenv("DARKSTUDIO_IMAGE_API_URL", "http://127.0.0.1:7860").strip().rstrip("/")
-    if not value.startswith(("http://127.0.0.1:", "http://localhost:", "https://")):
-        raise ValueError("DARKSTUDIO_IMAGE_API_URL must point to a configured local or trusted HTTPS image API")
+    parsed = urlparse(value)
+    local_hosts = {"127.0.0.1", "localhost", "host.docker.internal"}
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname or parsed.username or parsed.password:
+        raise ValueError("DARKSTUDIO_IMAGE_API_URL must be a valid local or trusted HTTPS image API URL")
+    if parsed.scheme == "http" and parsed.hostname not in local_hosts:
+        raise ValueError("Plain HTTP image APIs are only allowed on localhost or host.docker.internal")
+    if parsed.query or parsed.fragment:
+        raise ValueError("DARKSTUDIO_IMAGE_API_URL cannot contain a query string or fragment")
     return value
+
+
+def fit_image_dimensions(width: int, height: int, max_edge: int = 1024) -> tuple[int, int]:
+    """Fit dimensions to a diffusion-friendly maximum edge while preserving aspect ratio."""
+    if width < 1 or height < 1 or max_edge < 64:
+        raise ValueError("image dimensions and max_edge must be positive")
+    scale = min(1.0, max_edge / max(width, height))
+    fitted_width = max(64, int(width * scale) // 8 * 8)
+    fitted_height = max(64, int(height * scale) // 8 * 8)
+    return fitted_width, fitted_height
 
 
 def _post_json(url: str, payload: dict[str, Any], timeout: float) -> dict[str, Any]:
@@ -98,7 +115,7 @@ def generate_scene_image(
     }
     result = _post_json(f"{_api_base_url()}/sdapi/v1/txt2img", payload, timeout)
     output = _decode_image(result, "darkstudio_scene")
-    output.update({"seed": result.get("info"), "operation": "text_to_image"})
+    output.update({"generation_info": result.get("info"), "operation": "text_to_image"})
     return output
 
 
