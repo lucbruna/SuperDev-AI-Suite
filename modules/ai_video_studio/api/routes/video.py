@@ -478,11 +478,13 @@ async def render_video_job_edits(job_id: str):
         configured_audio = record.get("_audio_clips") or {}
         audio_inputs.extend({**clip, "kind": "music"} for clip in configured_audio.get("music", []))
         audio_inputs.extend({**clip, "kind": "sound_effect"} for clip in configured_audio.get("sfx", []))
+        mix_result = None
         if audio_inputs:
             total_duration = int(round(result["frames"])) / fps
             audio_path = unique_filename(get_subsystem_dir("mix"), "edited_audio_mix", "wav")
             mix_result = await asyncio.to_thread(
-                mix_audio_timeline, audio_inputs, audio_path, total_duration=total_duration
+                mix_audio_timeline, audio_inputs, audio_path, total_duration=total_duration,
+                **(record.get("_audio_settings") or {}),
             )
             muxed_path = unique_filename(get_subsystem_dir("videos"), "text_to_video_edited_final", "mp4")
             mux_result = await asyncio.to_thread(
@@ -542,6 +544,7 @@ async def render_video_job_edits(job_id: str):
             edited_output_url=edited_url,
             edited_file_size_bytes=edited_bytes,
             edited_video_duration=edited_duration,
+            edit_render_ducking=(mix_result.get("ducking") if isinstance(mix_result, dict) else None),
             edit_render_status="completed",
             edit_render_audio=audio_status,
             edit_render_subtitles=subtitle_status,
