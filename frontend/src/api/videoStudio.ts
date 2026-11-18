@@ -107,6 +107,18 @@ export interface SceneImageAsset {
   reason?: string;
 }
 
+export interface SceneVideoClip {
+  scene_index: number;
+  duration: number;
+  fps: number;
+  width: number;
+  height: number;
+  output_path?: string;
+  output_url?: string;
+  bytes: number;
+  encode_engine: string;
+}
+
 export interface StudioJob {
   job_id: string;
   project_id: string;
@@ -117,6 +129,7 @@ export interface StudioJob {
   output_path?: string | null;
   scene_image_mode?: string | null;
   scene_assets?: SceneImageAsset[] | null;
+  scene_clips?: SceneVideoClip[] | null;
   vidgrid_compatible?: boolean | null;
   clip_duration_seconds?: number | null;
   file_size_bytes?: number | null;
