@@ -39,6 +39,7 @@ from modules.ai_video_studio.media.studio_profiles import (
 )
 from modules.ai_video_studio.media.llm import ScenePlanner, get_scene_planner
 from modules.ai_video_studio.media import audio, dsp, scene_narration, style_scenes
+from modules.ai_video_studio.media.timeline import build_edit_timeline
 
 __all__ = [
     "SceneCanvas",
@@ -65,4 +66,5 @@ __all__ = [
     "dsp",
     "scene_narration",
     "style_scenes",
+    "build_edit_timeline",
 ]
