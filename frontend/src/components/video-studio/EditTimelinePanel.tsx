@@ -110,6 +110,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
     if (!jobId) return;
     videoStudioApi.listJobAudioAssets(jobId).then(setAudioAssets).catch(() => setAudioAssets([]));
     videoStudioApi.getJob(jobId).then((job) => {
+      if (job.scene_assets) setSceneImageAssets(job.scene_assets);
       if (job.edit_render_quality) setRenderQuality(job.edit_render_quality);
       if (job.audio_analysis) setAudioAnalysis(job.audio_analysis as Awaited<ReturnType<typeof videoStudioApi.analyzeJobAudio>>);
       if (job.av_sync_analysis) setAvSyncReport(job.av_sync_analysis as Awaited<ReturnType<typeof videoStudioApi.analyzeJobAvSync>>);
