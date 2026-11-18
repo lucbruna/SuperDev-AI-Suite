@@ -174,7 +174,7 @@ file in ComfyUI history under `outputs[*].videos` or `outputs[*].gifs`.
 Workflows that only output PNG frames are rejected rather than mislabeled as
 video generation.
 
-Example request to `POST /api/v1/generation/videos/image-to-video`:
+Example request to `POST /videos/image-to-video` (under the API prefix configured by the application):
 
 ```json
 {
