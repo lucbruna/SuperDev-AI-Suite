@@ -22,10 +22,12 @@ _MAX_SCENE_CHARS = 400
 
 
 def scene_narration_text(scene: dict[str, Any]) -> str:
-    """The narration text for one scene (description > name > empty)."""
+    """Prefer authored speech text; use visual description only as a fallback."""
     return str(
-        scene.get("description")
-        or scene.get("voiceover_text")
+        scene.get("voiceover_text")
+        or scene.get("narration")
+        or scene.get("dialogue")
+        or scene.get("description")
         or scene.get("name")
         or ""
     ).strip()[:_MAX_SCENE_CHARS]
