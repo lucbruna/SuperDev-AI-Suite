@@ -24,6 +24,8 @@ def test_list_audio_assets_returns_only_approved_generated_files(tmp_path, monke
     downloads = _audio_roots(tmp_path, monkeypatch)
     music = downloads / "music" / "theme.wav"
     effects = downloads / "effects" / "whoosh.mp3"
+    music.parent.mkdir(parents=True, exist_ok=True)
+    effects.parent.mkdir(parents=True, exist_ok=True)
     dsp.write_audio(music, np.zeros(100, dtype=np.float32))
     effects.write_bytes(b"fake-mp3")
     outside = tmp_path / "secret.wav"
