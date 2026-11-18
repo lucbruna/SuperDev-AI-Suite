@@ -286,6 +286,8 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
   async function renderEdits() {
     if (!jobId || dirty || saving) return;
     setRendering(true);
+    setRenderUrl("");
+    setRenderQuality(null);
     setMessage("");
     try {
       const result = await videoStudioApi.renderJobEdits(jobId);
