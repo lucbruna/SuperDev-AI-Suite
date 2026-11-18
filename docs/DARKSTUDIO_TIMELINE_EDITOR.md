@@ -138,3 +138,19 @@ The editor exposes per-scene text instructions. It edits the existing scene imag
 ### Prompt-driven scene imagery
 
 New video jobs default to `scene_image_mode=auto`. The storyboard planner supplies a separate visual description for each scene; the engine sends each description to the configured local Stable Diffusion WebUI-compatible image API and stores the generated image as that scene's background plate. If the local image service is unavailable, automatic mode records a procedural fallback for that scene. Choose `ai` to require image generation and fail rather than silently falling back, or `procedural` to avoid a diffusion server. The recurring Mia/Leo vector cast remains a separate optional overlay, not the source of every scene image.
+
+## Image-to-video motion engine
+
+The image-to-video engine now streams frames directly to FFmpeg instead of
+materializing an entire clip in memory. It supports eased camera moves:
+`push_in`, `pull_out`, `pan_left`, `pan_right`, `tilt_up`, `tilt_down`,
+`orbit`, `parallax`, and `handheld` (the older `zoom` and `pan` names
+remain aliases). The engine validates the preset and requires an MP4 encoder
+for this output path.
+
+These are deterministic pixel/camera animations of the supplied still image,
+not diffusion-generated motion. They do not synthesize new body movement,
+facial acting, lip-sync, or new objects between frames. A true generative
+image-to-video provider (for example a configured Wan workflow) is not yet
+connected to this production pipeline. This distinction is intentional: the
+UI and job metadata must not label a camera move as AI-generated video.
