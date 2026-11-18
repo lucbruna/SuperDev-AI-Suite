@@ -93,3 +93,16 @@ The editor exposes `POST /videos/jobs/{job_id}/av-sync-analysis` and the **Verif
 The report is persisted on the job as `av_sync_analysis` and is restored when reopening the editor. Critical narration ranges outside the video are reported as blocked; ordinary timing mismatches and long gaps require review.
 
 **Scope limitation:** this is timeline metadata validation only. It does not inspect acoustic speech onsets, lip movements, dialogue semantics, or actual mouth synchronization. A waveform/forced-alignment or audiovisual model would be required for those checks. It does not silently shift or trim clips.
+
+
+## Visual Intelligence Engine
+
+The editor adds **Analisar qualidade visual**, backed by `POST /videos/jobs/{job_id}/visual-analysis`. The report is persisted as `visual_intelligence` on the job and is restored when reopening the editor.
+
+The deterministic metadata heuristic is studio-aware:
+- **Whymentary:** explanatory text/primitive clarity, animated elements, shot variety, and restrained camera motion.
+- **Historical Documentary:** camera movement coverage, composition richness, shot variety, and scene continuity metadata.
+
+Per-scene diagnostics include shot type, camera keyframe deltas, animated primitive counts, primitive/particle counts, text presence, and character IDs. Warnings include static scene descriptors, long unchanged shots, consecutive repeated compositions, low shot variety, and character-ID changes. The engine records selected character and prop IDs on every planned scene to make identity changes auditable.
+
+The 0–100 score is explicitly a heuristic over scene descriptors. It is **not** computer vision: it does not inspect encoded MP4 pixels, assess actual artistic quality, verify faces, or prove visual continuity. Review the rendered video before publication; the report never edits scenes automatically.
