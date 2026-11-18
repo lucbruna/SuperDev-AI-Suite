@@ -48,6 +48,8 @@ function clipLabel(clip: EditTimelineClip, trackType: string): string {
 export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sceneAssets, title = "Editor de timeline", onSaved }: Props) {
   const [draft, setDraft] = useState<EditTimeline>(timeline);
   const [sceneImageAssets, setSceneImageAssets] = useState<SceneImageAsset[]>(sceneAssets ?? []);
+  const [sceneImageCandidates, setSceneImageCandidates] = useState<Record<number, SceneImageAsset & { candidate_id: string }>>({});
+  const [approvingImageScene, setApprovingImageScene] = useState<number | null>(null);
   const [sceneImagePrompts, setSceneImagePrompts] = useState<Record<number, string>>({});
   const [visualDirections, setVisualDirections] = useState<Record<number, SceneVisualDirection>>({});
   const [editingImageScene, setEditingImageScene] = useState<number | null>(null);
@@ -281,30 +283,33 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
     if (!jobId) return;
     const prompt = (sceneImagePrompts[sceneIndex] ?? "").trim();
     if (!prompt || editingImageScene !== null) return;
-    setEditingImageScene(sceneIndex);
-    setMessage("");
+    setEditingImageScene(sceneIndex); setMessage("");
     try {
-      const result = await videoStudioApi.editSceneImage(jobId, sceneIndex, { prompt, denoising_strength: imageDenoisingStrength });
-      setSceneImageAssets((current) => [
-        ...current.filter((asset) => asset.scene_index !== sceneIndex),
-        { scene_index: sceneIndex, image_path: result.image_path, image_url: result.image_url,
-          provider: result.provider, status: "edited", operation: result.operation, prompt: result.prompt },
-      ]);
-      setVisualDirections((current) => current[sceneIndex]
-        ? { ...current, [sceneIndex]: { ...current[sceneIndex], visual_prompt: prompt, visual_prompt_suggestion: prompt, image_url: result.image_url, image_status: "edited" } }
-        : current);
-      setMessage(
-        result.scene_clip?.status === "updated"
-          ? `Imagem e clipe VidGrid de 10s da cena ${sceneIndex + 1} atualizados. Renderize a edição para atualizar o MP4 completo.`
-          : result.scene_clip?.status === "stale"
-            ? `Imagem atualizada, mas o clipe VidGrid não foi refeito: ${result.scene_clip.reason ?? "falha de render"}. O MP4 completo ainda precisa ser renderizado.`
-            : `Imagem da cena ${sceneIndex + 1} atualizada. Renderize a edição para aplicar ao MP4 completo.`,
-      );
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Não foi possível alterar a imagem da cena.");
-    } finally {
-      setEditingImageScene(null);
-    }
+      const result = await videoStudioApi.editSceneImage(jobId, sceneIndex, { prompt, denoising_strength: imageDenoisingStrength, stage_only: true });
+      if (!result.candidate_id) throw new Error("O servidor não retornou o identificador da imagem candidata.");
+      setSceneImageCandidates((current) => ({ ...current, [sceneIndex]: {
+        scene_index: sceneIndex, candidate_id: result.candidate_id!, image_path: result.image_path,
+        image_url: result.image_url, provider: result.provider, status: "candidate",
+        operation: result.operation, prompt: result.prompt, approval_required: true,
+      } }));
+      setMessage(`Nova imagem da cena ${sceneIndex + 1} gerada como candidata. Compare com a atual e aprove para aplicar.`);
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Não foi possível gerar a imagem candidata."); }
+    finally { setEditingImageScene(null); }
+  }
+
+  async function approveSceneImage(sceneIndex: number) {
+    if (!jobId || approvingImageScene !== null) return;
+    const candidate = sceneImageCandidates[sceneIndex];
+    if (!candidate) return;
+    setApprovingImageScene(sceneIndex);
+    try {
+      const result = await videoStudioApi.approveSceneImageCandidate(jobId, sceneIndex, candidate.candidate_id);
+      setSceneImageAssets((current) => [...current.filter((asset) => asset.scene_index !== sceneIndex), { ...candidate, status: "edited", approval_required: false }]);
+      setVisualDirections((current) => current[sceneIndex] ? { ...current, [sceneIndex]: { ...current[sceneIndex], image_url: result.image_url, image_status: "edited" } } : current);
+      setSceneImageCandidates((current) => { const next = { ...current }; delete next[sceneIndex]; return next; });
+      setMessage(result.message);
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Não foi possível aprovar a imagem candidata."); }
+    finally { setApprovingImageScene(null); }
   }
 
   async function regenerateSelectedImages() {
@@ -314,57 +319,27 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
       prompt: (sceneImagePrompts[sceneIndex] ?? visualDirections[sceneIndex]?.visual_prompt_suggestion ?? visualDirections[sceneIndex]?.visual_prompt ?? "").trim(),
     }));
     const missing = selectedScenes.filter((scene) => !scene.prompt);
-    if (missing.length) {
-      setMessage(`Adicione um prompt para as cenas: ${missing.map((scene) => scene.scene_index + 1).join(", ")}.`);
-      return;
-    }
+    if (missing.length) { setMessage(`Adicione um prompt para as cenas: ${missing.map((scene) => scene.scene_index + 1).join(", ")}.`); return; }
     if (!selectedScenes.length) return;
-    setRegeneratingImageBatch(true);
-    setMessage("");
+    setRegeneratingImageBatch(true); setMessage("");
     try {
       const response = await videoStudioApi.regenerateSelectedSceneImages(jobId, selectedScenes);
-      const successful = response.results.filter((item) => item.status === "edited" && item.result);
-      setSceneImageAssets((current) => {
-        const next = [...current];
-        for (const item of successful) {
-          const result = item.result!;
-          const asset: SceneImageAsset = {
-            scene_index: item.scene_index,
-            image_path: result.image_path,
-            image_url: result.image_url,
-            provider: result.provider,
-            status: "edited",
-            operation: result.operation,
-            prompt: result.prompt,
-          };
-          const existing = next.findIndex((entry) => entry.scene_index === item.scene_index);
-          if (existing >= 0) next[existing] = asset;
-          else next.push(asset);
-        }
-        return next;
-      });
-      setVisualDirections((current) => {
+      const successful = response.results.filter((item) => item.status === "candidate" && item.result);
+      setSceneImageCandidates((current) => {
         const next = { ...current };
         for (const item of successful) {
-          if (!item.result) continue;
-          const prompt = selectedScenes.find((scene) => scene.scene_index === item.scene_index)?.prompt ?? "";
-          if (next[item.scene_index]) next[item.scene_index] = {
-            ...next[item.scene_index],
-            visual_prompt: prompt,
-            visual_prompt_suggestion: prompt,
-            image_url: item.result.image_url,
-            image_status: "edited",
-          };
+          const result = item.result!;
+          if (!result.candidate_id) continue;
+          next[item.scene_index] = { scene_index: item.scene_index, candidate_id: result.candidate_id,
+            image_path: result.image_path, image_url: result.image_url, provider: result.provider,
+            status: "candidate", operation: result.operation, prompt: result.prompt, approval_required: true };
         }
         return next;
       });
       setSelectedImageScenes([]);
-      setMessage(response.message + (response.failed ? ` Falhas: ${response.results.filter((item) => item.status === "failed").map((item) => `cena ${item.scene_index + 1}: ${item.error}`).join("; ")` : ""));
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Não foi possível regenerar as cenas selecionadas.");
-    } finally {
-      setRegeneratingImageBatch(false);
-    }
+      setMessage(response.message + (response.failed ? ` Falhas: ${response.results.filter((item) => item.status === "failed").map((item) => `cena ${item.scene_index + 1}: ${item.error}`).join("; ")}` : ""));
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Não foi possível regenerar as cenas selecionadas."); }
+    finally { setRegeneratingImageBatch(false); }
   }
 
   async function generateSceneMotion(sceneIndex: number, asset: SceneImageAsset) {
@@ -565,6 +540,14 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
             const asset = sceneImageAssets.find((item) => item.scene_index === sourceIndex);
             return <div key={index} className="rounded-lg border border-surface-200 p-2 dark:border-surface-700">
               {asset?.image_url ? <img src={asset.image_url} alt={`Imagem da cena ${index + 1}`} className="mb-2 aspect-video w-full rounded-md object-cover" /> : <div className="mb-2 flex aspect-video items-center justify-center rounded-md bg-surface-100 text-xs text-surface-500 dark:bg-surface-800">Cena {index + 1} · imagem procedural ou ainda não criada</div>}
+              {sceneImageCandidates[sourceIndex]?.image_url && <div className="mb-2 rounded-md border border-amber-400 p-2 dark:border-amber-700">
+                <p className="mb-1 text-xs font-semibold text-amber-700 dark:text-amber-300">Imagem candidata · ainda não aplicada</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div><img src={asset?.image_url ?? visualDirections[sourceIndex]?.image_url ?? ""} alt={`Imagem atual da cena ${index + 1}`} className="aspect-video w-full rounded object-cover" /><p className="mt-1 text-center text-[10px]">Atual</p></div>
+                  <div><img src={sceneImageCandidates[sourceIndex].image_url} alt={`Imagem candidata da cena ${index + 1}`} className="aspect-video w-full rounded object-cover" /><p className="mt-1 text-center text-[10px]">Candidata</p></div>
+                </div>
+                <button type="button" onClick={() => approveSceneImage(sourceIndex)} disabled={approvingImageScene !== null} className="mt-2 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40">{approvingImageScene === sourceIndex ? "Aprovando…" : "Aprovar nova imagem"}</button>
+              </div>}
               <label className="mb-2 flex items-center gap-2 text-xs font-semibold text-surface-700 dark:text-surface-300">
                 <input type="checkbox" checked={selectedImageScenes.includes(sourceIndex)} onChange={(event) => setSelectedImageScenes((current) => event.target.checked ? [...new Set([...current, sourceIndex])] : current.filter((value) => value !== sourceIndex))} />
                 Selecionar cena {index + 1}
