@@ -159,6 +159,7 @@ class VideoStatusResponse(BaseModel):
     audio_analysis: dict | None = None
     av_sync_analysis: dict | None = None
     visual_intelligence: dict | None = None
+    mp4_visual_analysis: dict | None = None
     edit_render_ducking: dict | None = None
     edit_render_normalization: dict | None = None
     edit_render_loudness: dict | None = None
@@ -422,6 +423,35 @@ async def analyze_video_job_visuals(job_id: str):
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     result = {"job_id": job_id, **report}
     record["visual_intelligence"] = result
+    _persist_job(record)
+    return result
+
+
+@router.post("/jobs/{job_id}/mp4-visual-analysis")
+async def analyze_video_job_mp4_visuals(job_id: str, max_frames: int = 48):
+    """Inspect sampled frames from the actual encoded MP4, not storyboard metadata."""
+    record = _jobs.get(job_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+    video_path = record.get("edited_output_path") or record.get("output_path")
+    if not video_path:
+        raise HTTPException(status_code=409, detail="O trabalho ainda não possui um MP4 renderizado")
+    if record.get("status") != "completed":
+        raise HTTPException(status_code=409, detail="A análise exige um vídeo concluído")
+    try:
+        from modules.ai_video_studio.media.mp4_visual_analysis import analyze_mp4_visuals
+        report = await asyncio.to_thread(
+            analyze_mp4_visuals,
+            video_path,
+            timeline=record.get("edit_timeline"),
+            max_frames=max_frames,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    result = {"job_id": job_id, "video_source": "edited" if record.get("edited_output_path") else "original", **report}
+    record["mp4_visual_analysis"] = result
     _persist_job(record)
     return result
 
