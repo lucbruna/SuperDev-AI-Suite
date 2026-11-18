@@ -291,14 +291,21 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
         raise HTTPException(status_code=409, detail="Scene images can only be changed after generation completes")
     source_scenes = record.get("_edited_scenes") or record.get("_source_scenes") or []
     scenes = [dict(item) for item in source_scenes]
-    if scene_index < 0 or scene_index >= len(scenes):
+    position = next(
+        (i for i, item in enumerate(scenes)
+         if int(item.get("_source_scene_index", i)) == scene_index),
+        None,
+    )
+    if position is None and 0 <= scene_index < len(scenes):
+        position = scene_index
+    if position is None:
         raise HTTPException(status_code=404, detail="Scene index not found")
     from modules.ai_video_studio.media.output_paths import get_subsystem_dir
     from modules.ai_video_studio.ai_image_generator.providers.local_diffusion import (
         edit_image, fit_image_dimensions, generate_scene_image,
     )
 
-    scene = scenes[scene_index]
+    scene = scenes[position]
     params = record.get("params") or {}
     studio_id = str(params.get("studio_id") or "whymentary")
     style_prompt = (
@@ -1324,12 +1331,13 @@ async def get_video_job_visual_direction(job_id: str):
     }
     output = []
     for index, scene in enumerate(scenes):
-        asset = assets.get(index, {})
+        source_index = int(scene.get("_source_scene_index", index))
+        asset = assets.get(source_index, {})
         image_url = asset.get("image_url")
         if not image_url and scene.get("background_image_path"):
             image_url = to_download_url(scene["background_image_path"])
         output.append({
-            "scene_index": index,
+            "scene_index": source_index,
             "narration": str(scene.get("voiceover_text") or scene.get("narration") or scene.get("dialogue") or ""),
             "visual_prompt": str(scene.get("visual_prompt") or ""),
             "visual_prompt_suggestion": str(scene.get("visual_prompt_suggestion") or ""),
