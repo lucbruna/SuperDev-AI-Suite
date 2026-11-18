@@ -121,10 +121,11 @@ class SubtitleStudioService:
         offset = 0.0
         for scene in scenes:
             text = scene.get("text") or scene.get("script") or scene.get("description") or ""
-            duration = float(scene.get("duration", 3.0))
+            duration = max(0.0, float(scene.get("duration", 3.0)))
+            start_offset = float(scene.get("start_offset", offset))
             if text.strip():
-                cues.extend(cues_for_scene(text, duration, start_offset=offset, max_chars=max_chars))
-            offset += duration
+                cues.extend(cues_for_scene(text, duration, start_offset=start_offset, max_chars=max_chars))
+            offset = max(offset, start_offset + duration)
 
         with open(path, "w", encoding="utf-8") as f:
             f.write("\n".join(c.to_srt() for c in cues))
