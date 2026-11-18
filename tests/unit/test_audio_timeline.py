@@ -89,10 +89,12 @@ def test_mix_audio_timeline_ducks_music_during_narration(tmp_path, monkeypatch):
     )
     mixed, _ = dsp.read_audio(output, target_sr=sample_rate)
     before = np.sqrt(np.mean(mixed[int(0.1 * sample_rate):int(0.4 * sample_rate)] ** 2))
-    during = np.sqrt(np.mean(mixed[int(0.9 * sample_rate):int(1.3 * sample_rate)] ** 2))
+    during_with_voice = mixed[int(0.9 * sample_rate):int(1.3 * sample_rate)]
+    during_music = during_with_voice - 0.2
+    during = np.sqrt(np.mean(during_music ** 2))
     assert result["ducking"]["speech_detected"] is True
     assert result["clips"][0]["ducking_applied"] is True
-    assert during < before * 0.7
+    assert during < before * 0.4
 
 def test_mix_audio_timeline_accepts_pre_aligned_narration_samples(tmp_path, monkeypatch):
     _audio_roots(tmp_path, monkeypatch)
