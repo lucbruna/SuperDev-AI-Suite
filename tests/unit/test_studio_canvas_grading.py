@@ -21,3 +21,28 @@ def test_grading_strength_is_bounded() -> None:
     original = Image.new("RGB", (4, 4), (10, 20, 30))
     with pytest.raises(ValueError, match="between 0 and 1"):
         canvas._apply_grading(original, ["#FFFFFF"], strength=1.2)
+
+
+def test_solid_background_preserves_single_profile_color() -> None:
+    canvas = SceneCanvas(width=3, height=2)
+    frame = canvas.render_scene(
+        {
+            "background_type": "solid",
+            "background_colors": ["#FFFFFF"],
+            "noise": 0.0,
+            "grading_strength": 0.0,
+        },
+        0,
+    )
+    expected = np.full((2, 3, 3), 255, dtype=np.uint8)
+    assert np.array_equal(frame, expected)
+
+
+def test_solid_background_without_color_uses_documented_fallback() -> None:
+    canvas = SceneCanvas(width=2, height=2)
+    frame = canvas.render_scene(
+        {"background_type": "solid", "background_colors": [], "grading_strength": 0.0},
+        0,
+    )
+    expected = np.full((2, 2, 3), (26, 26, 46), dtype=np.uint8)
+    assert np.array_equal(frame, expected)
