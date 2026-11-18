@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-from PIL import Image, ImageFilter, ImageStat
+from PIL import Image, ImageFilter
 
 
 def _probe_duration(path: Path, timeout: int) -> float:
