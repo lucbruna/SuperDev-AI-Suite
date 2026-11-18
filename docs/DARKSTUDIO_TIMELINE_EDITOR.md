@@ -240,3 +240,16 @@ A geração exige ComfyUI e workflow API configurados no servidor. O endpoint n�
 - A regeneração preserva o restante do storyboard e do MP4 original. O clipe VidGrid correspondente pode ser atualizado separadamente; para refletir a imagem no vídeo completo, é necessário renderizar a edição.
 - O diretor não inventa fatos históricos: sugestões visuais são derivadas do texto narrado e identificadas como instruções de composição, não como novas afirmações factuais.
 - O perfil Whymentary mantém fundo branco, formas 2D e cores chapadas; Historical Documentary mantém ilustração cinematográfica, profundidade e luz atmosférica.
+
+## Storyboard cinematográfico e continuidade visual
+
+O pipeline de texto para vídeo agora executa um planejador de storyboard antes da geração das imagens. Cada cena recebe um identificador estável, um prompt visual completo, restrições negativas e metadados de continuidade (personagens, objetos, ambiente, figurino e período do dia quando esses dados foram fornecidos no roteiro).
+
+- O texto de narração original é preservado; o planejador não o reescreve.
+- Prompts visuais são específicos por cena e incluem direção de composição do diretor cinematográfico.
+- O relatório do storyboard sinaliza cenas sem descrição/narração e conceitos visuais repetidos para revisão.
+- O estúdio Histórico inclui uma restrição explícita para não apresentar detalhes inventados como fatos históricos.
+- As restrições negativas são aplicadas tanto à geração inicial quanto à regeneração pontual da imagem.
+- A API `GET /videos/jobs/{job_id}/visual-direction` expõe o ID da cena, prompt completo, prompt negativo, continuidade e estado de revisão sem revelar caminhos internos.
+
+O relatório fica disponível em `storyboard_report` no estado do job. A detecção de repetição é textual/determinística; ela não é análise visual por visão computacional e não garante que duas imagens geradas sejam visualmente diferentes.
