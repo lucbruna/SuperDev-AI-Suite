@@ -589,3 +589,35 @@ def test_video_generation_defaults_to_automatic_per_scene_images():
     assert request.scene_image_mode == "auto"
     assert request.voice_language == "pt-BR"
     assert request.vidgrid_compatible is False
+
+
+def test_preview_job_edits_renders_low_resolution_without_overwriting_final(completed_job, monkeypatch, tmp_path):
+    from pathlib import Path
+    from modules.ai_video_studio.media import output_paths, render
+
+    monkeypatch.setattr(video, "_persist_job", lambda record: None)
+    monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda *_: tmp_path)
+    monkeypatch.setattr(output_paths, "unique_filename", lambda directory, prefix, extension: tmp_path / f"{prefix}.{extension}")
+    monkeypatch.setattr(video, "to_download_url", lambda path: "/downloads/preview.mp4")
+    record = video._jobs[completed_job]
+    record["output_url"] = "/downloads/original.mp4"
+    record["params"] = {"resolution": "1920x1080", "frame_rate": 30}
+    calls = {}
+
+    def fake_render(scenes, output_path, **kwargs):
+        calls.update(kwargs)
+        Path(output_path).write_bytes(b"preview-mp4")
+        return {"output_path": str(output_path), "frames": 48, "bytes": 100, "engine": "ffmpeg"}
+    monkeypatch.setattr(render, "render_multi_scene_video", fake_render)
+
+    result = asyncio.run(video.preview_video_job_edits(completed_job))
+    assert result["status"] == "completed"
+    assert result["preview_url"] == "/downloads/preview.mp4"
+    assert result["width"] == 640
+    assert result["height"] == 360
+    assert result["fps"] == 12
+    assert calls["require_mp4"] is True
+    assert calls["width"] == 640 and calls["height"] == 360
+    assert record["output_url"] == "/downloads/original.mp4"
+    assert record["edit_preview_url"] == "/downloads/preview.mp4"
+    assert record["_rendering_preview"] is False
