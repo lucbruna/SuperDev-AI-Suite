@@ -96,6 +96,18 @@ export interface StudioAudioAsset {
   size_bytes: number;
 }
 
+export interface SceneVisualDirection {
+  scene_index: number;
+  narration: string;
+  visual_prompt: string;
+  visual_prompt_suggestion: string;
+  visual_direction: string;
+  narrative_beat: string;
+  shot_type: string;
+  image_url?: string | null;
+  image_status: string;
+}
+
 export interface SceneImageAsset {
   scene_index: number;
   image_path?: string;
@@ -333,6 +345,15 @@ export const videoStudioApi = {
   async listVoices(): Promise<StudioVoice[]> {
     const { data } = await apiClient.get(`${STUDIO_BASE}/audio/voices`);
     return data?.data?.voices ?? [];
+  },
+
+  async getJobVisualDirection(jobId: string): Promise<{
+    job_id: string; studio_id: StudioProfile["id"]; scene_count: number; scenes: SceneVisualDirection[];
+  }> {
+    const { data } = await apiClient.get(
+      `${STUDIO_BASE}/videos/jobs/${jobId}/visual-direction`,
+    );
+    return data;
   },
 
   async editSceneImage(jobId: string, sceneIndex: number, payload: {
