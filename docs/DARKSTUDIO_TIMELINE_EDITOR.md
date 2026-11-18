@@ -124,7 +124,7 @@ The text-to-video pipeline now supports `scene_image_mode`:
 - `ai`: generate one independent image for each storyboard scene using a configured local AUTOMATIC1111-compatible Stable Diffusion WebUI API. A missing/unavailable model is an explicit job failure.
 - `auto`: attempt local image generation and record procedural fallbacks per scene when the image service is unavailable.
 
-Configure `DARKSTUDIO_IMAGE_API_URL` (default `http://127.0.0.1:7860`) and start the compatible WebUI with its API enabled. The adapter calls `/sdapi/v1/txt2img` for scene plates and `/sdapi/v1/img2img` for text-directed image edits. ComfyUI workflow JSON, cloud providers, and model downloads are not implemented by this adapter yet. No model is bundled with DARKSTUDIO.
+Configure `DARKSTUDIO_IMAGE_API_URL` (default `http://127.0.0.1:7860`) and start the compatible WebUI with its API enabled. The default image maximum edge is 768px for lower-VRAM GPUs; set `DARKSTUDIO_IMAGE_MAX_EDGE` to 1024 or higher only when the installed GPU/model can handle it. The adapter calls `/sdapi/v1/txt2img` for scene plates and `/sdapi/v1/img2img` for text-directed image edits. ComfyUI workflow JSON, cloud providers, and model downloads are not implemented by this adapter yet. No model is bundled with DARKSTUDIO.
 
 Every scene receives its own `visual_prompt`, `negative_prompt`, narration text and shot type from the storyboard. The generated still is rendered as a background image; SceneCanvas keeps camera moves, particles, overlays, and optional procedural cast on top. The background is cached per render canvas to avoid reopening the source image on every frame.
 
