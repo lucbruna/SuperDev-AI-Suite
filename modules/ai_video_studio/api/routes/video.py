@@ -317,8 +317,8 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
         raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
     if job_id in _scene_batch_jobs and asyncio.current_task() is not _scene_batch_tasks.get(job_id):
         raise HTTPException(status_code=409, detail="A batch scene regeneration is already running")
-    if record.get("_rendering_edits"):
-        raise HTTPException(status_code=409, detail="The edited video is rendering; scene assets are temporarily locked")
+    if record.get("_rendering_edits") or record.get("_rebuilding_scene_clips"):
+        raise HTTPException(status_code=409, detail="Scene assets are locked by an active render operation")
     if record.get("status") != "completed":
         raise HTTPException(status_code=409, detail="Scene images can only be changed after generation completes")
     source_scenes = record.get("_edited_scenes") or record.get("_source_scenes") or []
