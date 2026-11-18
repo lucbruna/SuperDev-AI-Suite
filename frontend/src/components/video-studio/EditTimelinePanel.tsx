@@ -161,6 +161,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
       if (job.av_sync_analysis) setAvSyncReport(job.av_sync_analysis as Awaited<ReturnType<typeof videoStudioApi.analyzeJobAvSync>>);
       if (job.visual_intelligence) setVisualReport(job.visual_intelligence as Awaited<ReturnType<typeof videoStudioApi.analyzeJobVisuals>>);
       if (job.mp4_visual_analysis) setMp4VisualReport(job.mp4_visual_analysis as Awaited<ReturnType<typeof videoStudioApi.analyzeJobMp4Visuals>>);
+      if (job.image_similarity_analysis) setImageSimilarityReport(job.image_similarity_analysis);
       if (job.audio_settings) {
         setDuckingEnabled(job.audio_settings.ducking_enabled ?? true);
         setDuckingDb(String(job.audio_settings.ducking_db ?? 9));
