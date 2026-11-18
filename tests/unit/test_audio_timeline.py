@@ -47,6 +47,16 @@ def test_dsp_round_trips_stereo_wav_without_collapsing_channels(tmp_path):
     assert np.mean(decoded[:, 0]) == pytest.approx(0.25, abs=0.001)
     assert np.mean(decoded[:, 1]) == pytest.approx(-0.1, abs=0.001)
 
+def test_dsp_resamples_stereo_frames_without_channel_broadcast_errors():
+    source = np.column_stack([np.linspace(0, 1, 100, dtype=np.float32), np.linspace(1, 0, 100, dtype=np.float32)])
+    result = dsp.resample(source, 200)
+    assert result.shape == (200, 2)
+    assert result[0, 0] == pytest.approx(0)
+    assert result[0, 1] == pytest.approx(1)
+    assert result[-1, 0] == pytest.approx(1)
+    assert result[-1, 1] == pytest.approx(0)
+
+
 def test_stereo_mixer_keeps_channels_and_applies_pan(tmp_path, monkeypatch):
     _audio_roots(tmp_path, monkeypatch)
     stereo = np.column_stack([np.full(8000, 0.2, dtype=np.float32), np.full(8000, 0.2, dtype=np.float32)])
