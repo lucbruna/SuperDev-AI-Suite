@@ -198,6 +198,9 @@ class AudioTimelineEditRequest(BaseModel):
     ducking_threshold_db: float = Field(default=-36.0, ge=-60, le=-12)
     ducking_attack: float = Field(default=0.08, gt=0, le=2)
     ducking_release: float = Field(default=0.35, gt=0, le=5)
+    normalization_enabled: bool = True
+    normalization_target_dbfs: float = Field(default=-18.0, ge=-60, le=0)
+    normalization_max_gain_db: float = Field(default=6.0, ge=0, le=24)
 
 
 def _persist_job(record: dict) -> None:
