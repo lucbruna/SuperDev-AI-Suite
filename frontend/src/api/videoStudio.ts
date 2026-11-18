@@ -63,9 +63,11 @@ export interface StudioJob {
     voice_speed?: number;
     voice_pitch?: number;
     voiceover_mode?: string;
+    generate_subtitles?: boolean;
     llm_timeout?: number;
   } | null;
   ai_planner?: string | null;
+  subtitles?: { format?: string; file_path?: string; cue_count?: number; duration?: number; generated?: boolean; reason?: string } | null;
   voiceover?: {
     muxed?: boolean;
     narration_style?: string;
@@ -89,6 +91,7 @@ export interface GenerateVideoParams {
   voice_speed?: number;
   voice_pitch?: number;
   voiceover_mode?: "per_scene" | "single";
+  generate_subtitles?: boolean;
   llm_timeout?: number;
   format?: string;
   studio_id?: StudioProfile["id"];
