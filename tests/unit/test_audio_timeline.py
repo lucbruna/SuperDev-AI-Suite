@@ -20,6 +20,20 @@ def _audio_roots(tmp_path, monkeypatch):
     return downloads
 
 
+def test_list_audio_assets_returns_only_approved_generated_files(tmp_path, monkeypatch):
+    downloads = _audio_roots(tmp_path, monkeypatch)
+    music = downloads / "music" / "theme.wav"
+    effects = downloads / "effects" / "whoosh.mp3"
+    dsp.write_audio(music, np.zeros(100, dtype=np.float32))
+    effects.write_bytes(b"fake-mp3")
+    outside = tmp_path / "secret.wav"
+    dsp.write_audio(outside, np.zeros(100, dtype=np.float32))
+
+    assets = audio_timeline.list_audio_assets()
+    assert {item["asset"] for item in assets} == {"music/theme.wav", "effects/whoosh.mp3"}
+    assert all("secret" not in item["asset"] for item in assets)
+
+
 def test_mix_audio_timeline_places_trimmed_clip_with_fades_and_fixed_duration(tmp_path, monkeypatch):
     downloads = _audio_roots(tmp_path, monkeypatch)
     source = downloads / "music" / "bed.wav"
