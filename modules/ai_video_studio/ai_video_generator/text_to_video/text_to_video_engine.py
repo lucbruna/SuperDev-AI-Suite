@@ -143,7 +143,7 @@ class TextToVideoEngine:
         # Generate a unique still image for each storyboard scene when the
         # user explicitly selects the local diffusion provider. Auto mode is
         # allowed to fall back, but records every fallback in the job manifest.
-        image_mode = str(params.get("scene_image_mode") or "procedural")
+        image_mode = str(params.get("scene_image_mode") or "auto")
         if image_mode not in {"procedural", "ai", "auto"}:
             raise ValidationError("scene_image_mode must be procedural, ai or auto", field="scene_image_mode")
         scene_assets: list[dict[str, Any]] = []
