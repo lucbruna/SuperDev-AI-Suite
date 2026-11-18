@@ -148,6 +148,7 @@ class TestGenerateVoiceover:
         params = fake_engine.received["params"]
         assert params["voiceover"] is False
         assert params["voice_id"] == "default"
+        assert params["voice_language"] == "pt-BR"
         assert params["voiceover_mode"] == "per_scene"
 
     @pytest.mark.asyncio
