@@ -80,7 +80,9 @@ def mix_audio_timeline(
         if fade_in < 0 or fade_out < 0 or fade_in > duration or fade_out > duration:
             raise ValueError(f"audio clip {index} fade exceeds its timeline duration")
 
-        samples, _source_rate = dsp.read_audio(asset, target_sr=sample_rate)
+        samples, source_rate = dsp.read_audio(asset, target_sr=sample_rate)
+        if source_rate != sample_rate:
+            samples = dsp.resample(samples, int(round(len(samples) * sample_rate / source_rate)))
         source_start = int(round(trim_start * sample_rate))
         count = int(round(duration * sample_rate))
         segment = np.asarray(samples[source_start:source_start + count], dtype=np.float32)
