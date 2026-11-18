@@ -414,45 +414,46 @@ async def render_video_job_edits(job_id: str):
         rendered_path = result["output_path"]
         audio_status = "silent"
         final_path = rendered_path
-
-        # Rebuild per-scene narration against the edited scene order/durations.
-        # A single flat narration track cannot be safely retimed.
         voiceover = record.get("voiceover") or {}
         narration_clips = voiceover.get("clips") if isinstance(voiceover, dict) else None
-        if (
+        single_track = (
             isinstance(voiceover, dict)
             and voiceover.get("muxed")
             and voiceover.get("narration_style") == "single_track"
-        ):
+        )
+        if single_track:
             audio_status = "single_track_not_retimed"
-        if isinstance(narration_clips, list) and any(
-            isinstance(clip, dict) and clip.get("audio_path") for clip in narration_clips
-        ):
-            from pathlib import Path
-            from modules.ai_video_studio.media.scene_narration import remap_narration_clips_for_edits, build_narration_tracks
-            from modules.ai_video_studio.ai_dubbing.export_dubbing import export_audio_track
-            from modules.ai_video_studio.media.audio import mux_audio_into_video
-            from modules.ai_video_studio.media.output_paths import get_subsystem_dir, unique_filename
 
-            placed_clips = remap_narration_clips_for_edits(
-                scenes, narration_clips, fps=fps
+        from modules.ai_video_studio.media.audio import mux_audio_into_video
+        from modules.ai_video_studio.media.audio_timeline import mix_audio_timeline
+        from modules.ai_video_studio.media.output_paths import get_subsystem_dir, unique_filename
+
+        audio_inputs = []
+        has_per_scene_narration = isinstance(narration_clips, list) and any(
+            isinstance(clip, dict) and clip.get("audio_path") for clip in narration_clips
+        )
+        if has_per_scene_narration:
+            from modules.ai_video_studio.media.scene_narration import remap_narration_clips_for_edits
+            audio_inputs.extend(remap_narration_clips_for_edits(scenes, narration_clips, fps=fps))
+
+        configured_audio = record.get("_audio_clips") or {}
+        audio_inputs.extend(configured_audio.get("music", []))
+        audio_inputs.extend(configured_audio.get("sfx", []))
+        if audio_inputs:
+            total_duration = int(round(result["frames"])) / fps
+            audio_path = unique_filename(get_subsystem_dir("mix"), "edited_audio_mix", "wav")
+            mix_result = await asyncio.to_thread(
+                mix_audio_timeline, audio_inputs, audio_path, total_duration=total_duration
             )
-            if placed_clips:
-                audio_path = unique_filename(get_subsystem_dir("jobs"), "edited_narration", "wav")
-                total_duration = int(round(result["frames"])) / fps
-                await asyncio.to_thread(
-                    export_audio_track,
-                    build_narration_tracks(placed_clips),
-                    audio_path,
-                    total_duration=total_duration,
-                )
-                muxed_path = unique_filename(get_subsystem_dir("videos"), "text_to_video_edited_final", "mp4")
-                mux_result = await asyncio.to_thread(mux_audio_into_video, rendered_path, audio_path, muxed_path)
-                if mux_result.get("muxed"):
-                    final_path = mux_result["output_path"]
-                    audio_status = "narration_retimed"
-                else:
-                    audio_status = "narration_mux_failed"
+            muxed_path = unique_filename(get_subsystem_dir("videos"), "text_to_video_edited_final", "mp4")
+            mux_result = await asyncio.to_thread(
+                mux_audio_into_video, rendered_path, mix_result["output_path"], muxed_path
+            )
+            if mux_result.get("muxed"):
+                final_path = mux_result["output_path"]
+                audio_status = "mixed_narration_music_sfx" if has_per_scene_narration else "mixed_music_sfx"
+            else:
+                audio_status = "audio_mux_failed"
 
         # Rebuild subtitle sidecar against the edited scene order and timing.
         subtitle_status = "not_generated"
