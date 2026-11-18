@@ -110,3 +110,12 @@ def test_apply_scene_edits_requires_cut_for_last_scene() -> None:
             scene_edits=[{"scene_index": 1, "transition_type": "crossfade"}],
             fps=24,
         )
+
+
+
+def test_apply_scene_edits_allows_final_fade_to_black() -> None:
+    edited = apply_scene_edits(
+        [{"duration": 2}, {"duration": 2, "transition_out": {"type": "fade_through_black", "duration_frames": 12}}],
+        fps=24,
+    )
+    assert edited[-1]["transition_out"]["type"] == "fade_through_black"
