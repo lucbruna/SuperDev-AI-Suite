@@ -1266,3 +1266,60 @@ class TestCompletedOutputValidation:
         with pytest.raises(HTTPException) as error:
             await video_routes.validate_video_job_output("unsafe-validate-job")
         assert error.value.status_code == 422
+
+
+class TestSceneAssetRenderLock:
+    @pytest.mark.asyncio
+    async def test_scene_image_edit_is_blocked_while_final_render_runs(self):
+        from fastapi import HTTPException
+        from modules.ai_video_studio.api.routes import video
+
+        video._jobs["locked-scene-job"] = {
+            "job_id": "locked-scene-job", "status": "completed",
+            "_rendering_edits": True,
+            "_source_scenes": [{"description": "scene", "background_image_path": None}],
+        }
+        with pytest.raises(HTTPException) as error:
+            await video.edit_video_job_scene_image(
+                "locked-scene-job", 0,
+                video.SceneImageEditRequest(prompt="new visual"),
+            )
+        assert error.value.status_code == 409
+        assert "rendering" in str(error.value.detail).lower()
+
+    @pytest.mark.asyncio
+    async def test_candidate_approval_is_blocked_while_batch_regeneration_runs(self):
+        from fastapi import HTTPException
+        from modules.ai_video_studio.api.routes import video
+
+        video._scene_batch_jobs.add("locked-candidate-job")
+        video._jobs["locked-candidate-job"] = {
+            "job_id": "locked-candidate-job", "status": "completed",
+            "scene_image_candidates": {"0": [{"candidate_id": "candidate-1"}]},
+        }
+        try:
+            with pytest.raises(HTTPException) as error:
+                await video.approve_video_job_scene_image(
+                    "locked-candidate-job", 0, "candidate-1"
+                )
+            assert error.value.status_code == 409
+        finally:
+            video._scene_batch_jobs.discard("locked-candidate-job")
+
+    @pytest.mark.asyncio
+    async def test_final_render_waits_for_scene_batch(self):
+        from fastapi import HTTPException
+        from modules.ai_video_studio.api.routes import video
+
+        video._scene_batch_jobs.add("batch-render-job")
+        video._jobs["batch-render-job"] = {
+            "job_id": "batch-render-job", "status": "completed",
+            "_edited_scenes": [{"description": "scene"}],
+        }
+        try:
+            with pytest.raises(HTTPException) as error:
+                await video.render_video_job_edits("batch-render-job")
+            assert error.value.status_code == 409
+            assert "regeneration" in str(error.value.detail).lower()
+        finally:
+            video._scene_batch_jobs.discard("batch-render-job")
