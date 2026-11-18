@@ -114,6 +114,13 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
     videoStudioApi.listJobAudioAssets(jobId).then(setAudioAssets).catch(() => setAudioAssets([]));
     videoStudioApi.getJob(jobId).then((job) => {
       if (job.scene_assets) setSceneImageAssets(job.scene_assets);
+      if (job.scene_clips?.length) {
+        setGeneratedMotionClips(Object.fromEntries(
+          job.scene_clips
+            .filter((clip) => clip.generative_video_url)
+            .map((clip) => [clip.scene_index, clip.generative_video_url as string]),
+        ));
+      }
       if (job.edit_render_quality) setRenderQuality(job.edit_render_quality);
       if (job.audio_analysis) setAudioAnalysis(job.audio_analysis as Awaited<ReturnType<typeof videoStudioApi.analyzeJobAudio>>);
       if (job.av_sync_analysis) setAvSyncReport(job.av_sync_analysis as Awaited<ReturnType<typeof videoStudioApi.analyzeJobAvSync>>);
@@ -278,18 +285,14 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
     setGeneratingMotionScene(sceneIndex);
     setMessage("");
     try {
-      const result = await videoStudioApi.generateImageToVideo({
-        image_ref: asset.image_path,
-        duration_seconds: Math.max(1, durationFrames / draft.fps),
-        fps: draft.fps,
-        width: draft.width,
-        height: draft.height,
-        motion_provider: "comfyui",
+      if (!jobId) throw new Error("Projeto não identificado.");
+      const sourceSceneIndex = sceneOrder[sceneIndex] ?? sceneIndex;
+      const result = await videoStudioApi.generateJobSceneMotion(jobId, sourceSceneIndex, {
         motion_prompt: (sceneImagePrompts[sceneIndex] || asset.visual_prompt || asset.prompt || "Create natural cinematic movement while preserving the scene subject").trim(),
         negative_prompt: "flicker, unstable identity, deformation, extra limbs, text, watermark",
       });
-      setGeneratedMotionClips((current) => ({ ...current, [sceneIndex]: result.data.download_url }));
-      setMessage(`Clipe generativo da cena ${sceneIndex + 1} concluído. Ele foi salvo como arquivo separado; a timeline principal ainda não foi substituída.`);
+      setGeneratedMotionClips((current) => ({ ...current, [sceneIndex]: result.download_url }));
+      setMessage(`Clipe generativo da cena ${sceneIndex + 1} integrado ao projeto. Salve a timeline e renderize para incluí-lo no MP4 final.`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Não foi possível gerar o movimento por IA. Verifique o ComfyUI e o workflow configurado.");
     } finally {
