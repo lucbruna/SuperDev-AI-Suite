@@ -297,3 +297,10 @@ Content-Type: application/json
 ```
 
 Use the same request body as `POST /videos/generate`. A successful preflight does not reserve resources or create a job; generation is still submitted separately.
+
+
+## Job checkpoints and restart recovery
+
+The generation API persists periodic render-progress checkpoints in SQLite (first checkpoint, approximately every two seconds / two seconds of frames, and the final frame). This reduces the amount of progress lost if the API process stops during a long render without creating a database transaction for every frame.
+
+On API startup, jobs left in `queued` or `processing` are marked `failed` with `interrupted=true`, preserving their last saved progress and an explanation. This is explicit recovery, not automatic render resumption: FFmpeg and external model subprocess state is not checkpointed, so a new job must be started. Completed jobs and editable timelines are not changed by this recovery pass.
