@@ -168,7 +168,19 @@ class TimelineEditRequest(BaseModel):
     scene_edits: list[SceneEdit] = Field(default_factory=list)
 
 
-_jobs: dict[str, dict] = {}
+def _persist_job(record: dict) -> None:
+    from modules.ai_video_studio.media.job_store import save_job
+
+    save_job(record)
+
+
+try:
+    from modules.ai_video_studio.media.job_store import load_jobs
+
+    _jobs: dict[str, dict] = load_jobs()
+except Exception:
+    # API startup remains available if the local job database needs repair.
+    _jobs = {}
 
 
 @router.post("/generate", response_model=VideoGenerateResponse, status_code=202)
@@ -187,9 +199,12 @@ async def generate_video(req: VideoGenerateRequest, background_tasks: Background
         "voiceover": None, "subtitles": None, "edit_timeline": None, "error": None,
     }
 
+    _persist_job(_jobs[job_id])
+
     async def _run(job_id: str, r: VideoGenerateRequest) -> None:
         record = _jobs[job_id]
         record.update(status="processing", current_step="Planning scenes", progress=0.1)
+        _persist_job(record)
         try:
             from modules.ai_video_studio.ai_video_generator.text_to_video.text_to_video_engine import TextToVideoEngine
 
@@ -251,8 +266,10 @@ async def generate_video(req: VideoGenerateRequest, background_tasks: Background
                 _source_scenes=result.get("scenes"),
                 _edited_scenes=result.get("scenes"),
             )
+            _persist_job(record)
         except Exception as e:  # noqa: BLE001 — surface any failure on the job
             record.update(status="failed", error=str(e))
+            _persist_job(record)
 
     background_tasks.add_task(_run, job_id, req)
     return VideoGenerateResponse(
@@ -296,7 +313,8 @@ async def update_video_job_timeline(job_id: str, req: TimelineEditRequest):
 
     record["_edited_scenes"] = edited
     record["edit_timeline"] = timeline
-    record["edit_draft_status"] = "unsaved_to_disk"
+    record["edit_draft_status"] = "saved"
+    _persist_job(record)
     return {
         "job_id": job_id,
         "edit_timeline": timeline,
@@ -331,6 +349,7 @@ async def render_video_job_edits(job_id: str):
 
     record["_rendering_edits"] = True
     record["edit_render_status"] = "rendering"
+    _persist_job(record)
     try:
         result = await asyncio.to_thread(
             render_multi_scene_video, scenes, output_path, fps=fps, width=width, height=height,
@@ -347,6 +366,7 @@ async def render_video_job_edits(job_id: str):
             edit_render_status="completed",
             edit_render_audio="not_retimed",
         )
+        _persist_job(record)
         return {
             "job_id": job_id,
             "status": "completed",
@@ -359,6 +379,7 @@ async def render_video_job_edits(job_id: str):
     except Exception as exc:
         record["edit_render_status"] = "failed"
         record["edit_render_error"] = str(exc)[:500]
+        _persist_job(record)
         raise HTTPException(status_code=500, detail="Edited video render failed") from exc
     finally:
         record["_rendering_edits"] = False
