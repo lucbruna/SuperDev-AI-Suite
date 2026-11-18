@@ -7,7 +7,7 @@ import { Card, CardHeader, CardBody } from "@/components/cards/Card";
 import { Badge } from "@/components/badges/Badge";
 import { Button } from "@/components/buttons/Button";
 import { useAuthStore } from "@/stores/authStore";
-import { videoStudioApi, type StudioJob, type StudioVoice, type StudioProfile, type StudioCharacter, type StudioSceneObject, type VideoPreflight } from "@/api/videoStudio";
+import { videoStudioApi, type StudioJob, type StudioVoice, type StudioProfile, type StudioCharacter, type StudioSceneObject, type VideoPreflight, type VideoOutputValidation } from "@/api/videoStudio";
 import { extractErrorMessage } from "@/utils/apiError";
 import EditTimelinePanel from "@/components/video-studio/EditTimelinePanel";
 import { fmtBytes, fmtDuration, fmtEstimate, jobStatusVariant, studioHealthVariant } from "@/utils/format";
@@ -99,6 +99,8 @@ export default function VideoStudioPage() {
   const [generating, setGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [preflightReport, setPreflightReport] = useState<VideoPreflight | null>(null);
+  const [outputValidation, setOutputValidation] = useState<Record<string, { loading: boolean; report?: VideoOutputValidation; error?: string }>>({});
+
   const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Estimated render time for the current resolution/fps/duration combo.
@@ -210,6 +212,20 @@ export default function VideoStudioPage() {
     setFrameRate(preset.fps);
     setDuration(preset.duration);
     setNumScenes(suggestedScenesFor(preset.duration));
+  };
+
+  const handleValidateOutput = async (jobId: string) => {
+    setOutputValidation((current) => ({ ...current, [jobId]: { ...current[jobId], loading: true, error: undefined } }));
+    try {
+      const report = await videoStudioApi.validateJobOutput(jobId);
+      setOutputValidation((current) => ({ ...current, [jobId]: { loading: false, report } }));
+      await refreshJobs();
+    } catch (error) {
+      setOutputValidation((current) => ({
+        ...current,
+        [jobId]: { loading: false, error: extractErrorMessage(error, "Falha ao validar o MP4") },
+      }));
+    }
   };
 
   const handleGenerate = async () => {
@@ -815,6 +831,23 @@ export default function VideoStudioPage() {
                       </div>
                     )}
                     {job.error && <p className="mt-1 text-xs text-red-500">{job.error}</p>}
+                    {outputValidation[job.job_id]?.error && (
+                      <p role="alert" className="mt-1 text-xs text-red-500">{outputValidation[job.job_id]?.error}</p>
+                    )}
+                    {outputValidation[job.job_id]?.report && (
+                      <div role="status" className="mt-2 rounded-md border border-surface-200 p-2 text-xs dark:border-surface-700">
+                        <p className={outputValidation[job.job_id]?.report?.valid ? "font-semibold text-emerald-600" : "font-semibold text-amber-600"}>
+                          {outputValidation[job.job_id]?.report?.valid ? "MP4 validado" : "Validação incompleta"}
+                        </p>
+                        <p className="text-surface-500">
+                          {outputValidation[job.job_id]?.report?.duration_seconds != null ? `${outputValidation[job.job_id]?.report?.duration_seconds?.toFixed(2)}s · ` : ""}
+                          {outputValidation[job.job_id]?.report?.video_streams ?? 0} vídeo · {outputValidation[job.job_id]?.report?.audio_streams ?? 0} áudio
+                        </p>
+                        {outputValidation[job.job_id]?.report?.errors.map((message, index) => <p key={index} className="text-red-500">{message}</p>)}
+                        {outputValidation[job.job_id]?.report?.warnings.map((message, index) => <p key={index} className="text-amber-600">{message}</p>)}
+                      </div>
+                    )}
+
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
                     {job.resolution && job.status === "completed" && (
@@ -831,6 +864,11 @@ export default function VideoStudioPage() {
                     {job.output_url && job.status === "completed" && (
                       <Button variant="secondary" size="sm" onClick={() => window.open(job.output_url as string, "_blank")}>
                         ⬇ Baixar MP4
+                      </Button>
+                    )}
+                    {job.output_url && job.status === "completed" && (
+                      <Button variant="secondary" size="sm" disabled={outputValidation[job.job_id]?.loading} onClick={() => handleValidateOutput(job.job_id)}>
+                        {outputValidation[job.job_id]?.loading ? "Validando…" : "Validar MP4"}
                       </Button>
                     )}
                     {job.subtitles?.download_url && job.status === "completed" && (
