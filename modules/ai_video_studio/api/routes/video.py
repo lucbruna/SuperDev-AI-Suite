@@ -87,6 +87,14 @@ class VideoGenerateRequest(BaseModel):
         return values
 
 
+class SceneImageEditRequest(BaseModel):
+    prompt: str = Field(..., min_length=1, max_length=4000)
+    negative_prompt: str = Field(default="", max_length=2000)
+    denoising_strength: float = Field(default=0.45, ge=0.05, le=0.95)
+    steps: int = Field(default=20, ge=1, le=60)
+    cfg_scale: float = Field(default=7.0, ge=1.0, le=20.0)
+
+
 class ImageEditRequest(BaseModel):
     source_path: str = Field(..., min_length=1, max_length=2048)
     prompt: str = Field(..., min_length=1, max_length=4000)
@@ -257,6 +265,75 @@ try:
 except Exception:
     # API startup remains available if the local job database needs repair.
     _jobs = {}
+
+
+@router.post("/jobs/{job_id}/scenes/{scene_index}/image-edit")
+async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneImageEditRequest):
+    """Regenerate or text-edit one scene image and attach it to the editable job."""
+    record = _jobs.get(job_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+    if record.get("status") != "completed":
+        raise HTTPException(status_code=409, detail="Scene images can only be changed after generation completes")
+    scenes = record.get("_edited_scenes") or record.get("_source_scenes") or []
+    if scene_index < 0 or scene_index >= len(scenes):
+        raise HTTPException(status_code=404, detail="Scene index not found")
+    from modules.ai_video_studio.media.output_paths import get_subsystem_dir
+    from modules.ai_video_studio.ai_image_generator.providers.local_diffusion import edit_image, generate_scene_image
+
+    scene = scenes[scene_index]
+    image_root = Path(get_subsystem_dir("images")).resolve()
+    source_value = scene.get("background_image_path")
+    source = Path(str(source_value)).resolve() if source_value else None
+    if source is not None and (image_root not in source.parents or not source.is_file()):
+        raise HTTPException(status_code=422, detail="Scene source image is not a valid DARKSTUDIO asset")
+    try:
+        if source is not None:
+            result = await asyncio.to_thread(
+                edit_image, source, req.prompt,
+                negative_prompt=req.negative_prompt,
+                denoising_strength=req.denoising_strength,
+                steps=req.steps, cfg_scale=req.cfg_scale,
+            )
+            operation = "image_to_image"
+        else:
+            params = record.get("params") or {}
+            width, height = _parse_resolution(record.get("resolution") or params.get("resolution", "1280x720"))
+            result = await asyncio.to_thread(
+                generate_scene_image,
+                req.prompt,
+                negative_prompt=req.negative_prompt,
+                width=min(1024, max(256, width)),
+                height=min(1024, max(256, height)),
+                steps=req.steps, cfg_scale=req.cfg_scale,
+            )
+            operation = "text_to_image"
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    scene["background_image_path"] = result["image_path"]
+    scene["image_asset_provider"] = result["provider"]
+    scene["visual_prompt"] = req.prompt
+    scene["image_edit_operation"] = operation
+    record["_edited_scenes"] = scenes
+    assets = record.setdefault("scene_assets", [])
+    assets[:] = [item for item in assets if item.get("scene_index") != scene_index]
+    assets.append({
+        "scene_index": scene_index, "image_path": result["image_path"],
+        "image_url": to_download_url(result["image_path"]),
+        "provider": result["provider"], "status": "edited",
+        "operation": operation, "prompt": req.prompt,
+    })
+    record["scene_image_mode"] = "ai_generated"
+    _persist_job(record)
+    return {
+        "job_id": job_id, "scene_index": scene_index,
+        "image_path": result["image_path"], "image_url": to_download_url(result["image_path"]),
+        "operation": operation, "provider": result["provider"],
+        "prompt": req.prompt, "render_required": True,
+    }
 
 
 @router.post("/images/edit")
