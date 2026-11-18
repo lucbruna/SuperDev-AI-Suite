@@ -79,7 +79,11 @@ class ComfyUIVideoProvider:
         if not isinstance(workflow, dict) or not workflow:
             raise ValidationError("ComfyUI workflow must be a non-empty API-format node object")
         uploaded = self._upload_image(source)
-        self._apply_mapping(workflow, uploaded, prompt, negative_prompt)
+        uploaded_name = str(uploaded.get("name") or "")
+        uploaded_subfolder = str(uploaded.get("subfolder") or "").strip("/")
+        if uploaded_subfolder:
+            uploaded_name = f"{uploaded_subfolder}/{uploaded_name}"
+        self._apply_mapping(workflow, {**uploaded, "name": uploaded_name}, prompt, negative_prompt)
         prompt_result = self._json_request(
             "POST", "/prompt", {"prompt": workflow, "client_id": f"darkstudio-{uuid.uuid4().hex}"}
         )
@@ -139,10 +143,7 @@ class ComfyUIVideoProvider:
     def _upload_image(self, image: Path) -> dict[str, Any]:
         boundary = f"----DarkStudio{uuid.uuid4().hex}"
         payload = image.read_bytes()
-        fields = [
-            (b"image", image.name.encode("utf-8")),
-            (b"overwrite", b"true"),
-        ]
+        fields = [(b"overwrite", b"true")]
         body = bytearray()
         for name, value in fields:
             body.extend(f"--{boundary}\r\n".encode())
