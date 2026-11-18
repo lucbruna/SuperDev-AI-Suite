@@ -1308,6 +1308,45 @@ async def preview_video_job_edits(job_id: str):
         _persist_job(record)
 
 
+@router.get("/jobs/{job_id}/visual-direction")
+async def get_video_job_visual_direction(job_id: str):
+    """Return safe, scene-level visual direction for the interactive scene editor."""
+    record = _jobs.get(job_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+    if record.get("status") != "completed":
+        raise HTTPException(status_code=409, detail="Visual direction is available after generation completes")
+    scenes = record.get("_edited_scenes") or record.get("_source_scenes") or []
+    assets = {
+        int(item.get("scene_index", -1)): item
+        for item in (record.get("scene_assets") or [])
+        if isinstance(item, dict)
+    }
+    output = []
+    for index, scene in enumerate(scenes):
+        asset = assets.get(index, {})
+        image_url = asset.get("image_url")
+        if not image_url and scene.get("background_image_path"):
+            image_url = to_download_url(scene["background_image_path"])
+        output.append({
+            "scene_index": index,
+            "narration": str(scene.get("voiceover_text") or scene.get("narration") or scene.get("dialogue") or ""),
+            "visual_prompt": str(scene.get("visual_prompt") or ""),
+            "visual_prompt_suggestion": str(scene.get("visual_prompt_suggestion") or ""),
+            "visual_direction": str(scene.get("visual_direction") or ""),
+            "narrative_beat": str(scene.get("narrative_beat") or "development"),
+            "shot_type": str(scene.get("shot_type") or "medium"),
+            "image_url": image_url,
+            "image_status": str(asset.get("status") or ("generated" if image_url else "missing")),
+        })
+    return {
+        "job_id": job_id,
+        "studio_id": str((record.get("params") or {}).get("studio_id") or "whymentary"),
+        "scenes": output,
+        "scene_count": len(output),
+    }
+
+
 @router.get("/jobs/{job_id}", response_model=VideoStatusResponse)
 async def get_video_job_status(job_id: str):
     if job_id not in _jobs:
