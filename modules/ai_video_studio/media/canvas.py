@@ -173,7 +173,15 @@ class SceneCanvas:
             float(item.get("motion_dy", 0.0)) * eased,
         )
 
+    @staticmethod
+    def _is_visible(item: dict[str, Any], frame_index: int) -> bool:
+        start = int(item.get("visible_from_frame", 0))
+        end = item.get("visible_until_frame")
+        return frame_index >= start and (end is None or frame_index < int(end))
+
     def _draw_rect(self, draw: ImageDraw.ImageDraw, r: dict[str, Any], frame_index: int) -> None:
+        if not self._is_visible(r, frame_index):
+            return
         motion_x, motion_y = self._motion_offset(r, frame_index)
         dx = float(r.get("dx", 0)) * frame_index + motion_x
         x0 = float(r.get("x", 0)) + dx
@@ -183,6 +191,8 @@ class SceneCanvas:
         draw.rectangle([x0, y0, x1, y1], fill=r.get("color", "#888888"), outline=r.get("outline"))
 
     def _draw_circle(self, draw: ImageDraw.ImageDraw, c: dict[str, Any], frame_index: int) -> None:
+        if not self._is_visible(c, frame_index):
+            return
         motion_x, motion_y = self._motion_offset(c, frame_index)
         cx = float(c.get("x", 0)) + float(c.get("dx", 0)) * frame_index + motion_x
         cy = float(c.get("y", 0)) + float(c.get("dy", 0)) * frame_index + motion_y
@@ -190,6 +200,8 @@ class SceneCanvas:
         draw.ellipse([cx - r, cy - r, cx + r, cy + r], fill=c.get("color", "#FFFFFF"))
 
     def _draw_line(self, draw: ImageDraw.ImageDraw, line: dict[str, Any], frame_index: int) -> None:
+        if not self._is_visible(line, frame_index):
+            return
         growth = min(1.0, max(0.0, (frame_index - float(line.get("start_frame", 0))) / max(1, float(line.get("grow_frames", 10)))))
         motion_x, motion_y = self._motion_offset(line, frame_index)
         x1 = float(line.get("x1", 0)) + float(line.get("dx1", 0)) * frame_index + motion_x
