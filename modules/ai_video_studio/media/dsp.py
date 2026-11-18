@@ -331,46 +331,37 @@ def normalize_rms(samples: np.ndarray, target: float = 0.2) -> np.ndarray:
 
 def limiter(samples: np.ndarray, threshold: float = 0.98, *, release: float = 0.1,
             lookahead: float = 0.005, sample_rate: int = SAMPLE_RATE) -> np.ndarray:
-    """Brickwall peak limiter with lookahead: output never exceeds threshold.
-
-    The signal is delayed by ``lookahead`` seconds and the gain is the
-    minimum ``threshold / envelope`` over that lookahead window, so a
-    transient is fully clamped *before* it reaches the output (a plain
-    feedback limiter lets the first peak leak through). Gain reduction is
-    instantaneous; only the release back to unity is smoothed to avoid
-    pumping. ``desired`` is capped at 1.0 so quiet passages are never
-    amplified by ``threshold / tiny``.
-    """
-    n = len(samples)
+    """Lookahead peak limiter with linked gain for stereo channel-image stability."""
+    audio = np.asarray(samples, dtype=np.float32)
+    if audio.ndim not in (1, 2):
+        raise ValueError("limiter expects mono or multi-channel frame arrays")
+    n = len(audio)
     if n == 0:
-        return samples.copy()
-    la = min(n - 1, max(1, int(lookahead * sample_rate)))
-    env = np.abs(samples.astype(np.float64))
-    desired = np.minimum(1.0, threshold / (env + 1e-9))
-    # Output index ``i`` plays original sample ``i - la``. Its gain is the
-    # minimum desired gain over the window ``[i - la, i]`` (original indices),
-    # so a transient at original index T is already fully clamped when it
-    # reaches the output at ``T + la`` — the clamp never leaks through.
+        return audio.copy()
+    la = min(n - 1, max(1, int(lookahead * sample_rate))) if n > 1 else 0
+    envelope = np.abs(audio.astype(np.float64))
+    if audio.ndim == 2:
+        envelope = np.max(envelope, axis=1)
+    desired = np.minimum(1.0, threshold / (envelope + 1e-9))
+    if la == 0:
+        return (audio * desired[:, None]).astype(np.float32) if audio.ndim == 2 else (audio * desired).astype(np.float32)
     if la + 1 < n:
         windows = np.lib.stride_tricks.sliding_window_view(desired, la + 1)
-        slide_min = np.min(windows, axis=1)  # slide_min[k] = min(desired[k..k+la])
+        slide_min = np.min(windows, axis=1)
     else:
         slide_min = np.array([float(np.min(desired))])
-    gain = np.ones(n)
-    # i < la: window starts at 0 → prefix minimum. i >= la: slide_min[i - la].
+    gain = np.ones(n, dtype=np.float64)
     gain[:la] = np.minimum.accumulate(desired[:la])
     tail_len = min(n - la, len(slide_min))
     gain[la:la + tail_len] = slide_min[:tail_len]
     rt = math.exp(-1.0 / (release * sample_rate))
-    g = 1.0
-    for i in range(n):
-        target = float(gain[i])
-        # instant reduction — lookahead makes it inaudible; release smoothed
-        g = target if target < g else rt * g + (1 - rt) * 1.0
-        gain[i] = g
-    delayed = np.concatenate([np.zeros(la, dtype=np.float32), samples[:-la]])
-    return (delayed * gain).astype(np.float32)
-
+    current = 1.0
+    for index in range(n):
+        target = float(gain[index])
+        current = target if target < current else rt * current + (1 - rt)
+        gain[index] = current
+    delayed = np.concatenate([np.zeros((la,) + audio.shape[1:], dtype=np.float32), audio[:-la]], axis=0)
+    return (delayed * (gain[:, None] if audio.ndim == 2 else gain)).astype(np.float32)
 
 def f0_autocorr(x: np.ndarray, *, sample_rate: int = SAMPLE_RATE, fmin: float = 60.0, fmax: float = 500.0) -> float:
     """Fundamental frequency via autocorrelation (returns 0 when unvoiced)."""
