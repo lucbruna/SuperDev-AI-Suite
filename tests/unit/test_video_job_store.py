@@ -44,3 +44,23 @@ def test_job_store_updates_existing_job_instead_of_duplicating(tmp_path, monkeyp
     assert len(loaded) == 1
     assert loaded["job-123"]["status"] == "completed"
     assert loaded["job-123"]["progress"] == 1.0
+
+
+def test_job_store_marks_only_in_flight_jobs_interrupted(tmp_path, monkeypatch) -> None:
+    database = tmp_path / "jobs.sqlite3"
+    monkeypatch.setattr(job_store, "_database_path", lambda: database)
+    jobs = {
+        "queued-job": {"job_id": "queued-job", "project_id": "p1", "status": "queued", "progress": 0.0},
+        "running-job": {"job_id": "running-job", "project_id": "p1", "status": "processing", "progress": 0.42},
+        "done-job": {"job_id": "done-job", "project_id": "p1", "status": "completed", "progress": 1.0},
+    }
+    recovered = job_store.mark_interrupted_jobs(jobs)
+
+    assert recovered == ["queued-job", "running-job"]
+    assert jobs["queued-job"]["status"] == "failed"
+    assert jobs["running-job"]["interrupted"] is True
+    assert jobs["running-job"]["progress"] == 0.42
+    assert jobs["done-job"]["status"] == "completed"
+    loaded = job_store.load_jobs()
+    assert loaded["running-job"]["status"] == "failed"
+    assert "reinicialização" in loaded["running-job"]["error"]
