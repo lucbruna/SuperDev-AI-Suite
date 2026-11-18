@@ -292,13 +292,17 @@ except Exception:
     _jobs = {}
 
 
+_scene_batch_jobs: set[str] = set()
+_scene_batch_dispatching: set[str] = set()
+
+
 @router.post("/jobs/{job_id}/scenes/{scene_index}/image-edit")
 async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneImageEditRequest):
     """Regenerate or text-edit one scene image and attach it to the editable job."""
     record = _jobs.get(job_id)
     if record is None:
         raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
-    if record.get("_scene_batch_running") and not record.get("_scene_batch_dispatching"):
+    if job_id in _scene_batch_jobs and job_id not in _scene_batch_dispatching:
         raise HTTPException(status_code=409, detail="A batch scene regeneration is already running")
     if record.get("status") != "completed":
         raise HTTPException(status_code=409, detail="Scene images can only be changed after generation completes")
@@ -460,20 +464,20 @@ async def regenerate_video_job_scene_images(job_id: str, req: SceneImageBatchEdi
         raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
     if record.get("status") != "completed":
         raise HTTPException(status_code=409, detail="Scene images can only be changed after generation completes")
-    if record.get("_scene_batch_running"):
+    if job_id in _scene_batch_jobs:
         raise HTTPException(status_code=409, detail="A batch scene regeneration is already running")
     indices = [item.scene_index for item in req.scenes]
     if len(indices) != len(set(indices)):
         raise HTTPException(status_code=422, detail="Duplicate scene indices are not allowed")
 
-    record["_scene_batch_running"] = True
+    _scene_batch_jobs.add(job_id)
     record["_scene_batch_total"] = len(req.scenes)
     record["_scene_batch_completed"] = 0
     _persist_job(record)
     results: list[dict[str, Any]] = []
     try:
         for item in req.scenes:
-            record["_scene_batch_dispatching"] = True
+            _scene_batch_dispatching.add(job_id)
             try:
                 result = await edit_video_job_scene_image(
                     job_id, item.scene_index,
@@ -497,12 +501,12 @@ async def regenerate_video_job_scene_images(job_id: str, req: SceneImageBatchEdi
                     "error": str(exc)[:300],
                 })
             finally:
-                record["_scene_batch_dispatching"] = False
+                _scene_batch_dispatching.discard(job_id)
                 record["_scene_batch_completed"] = len(results)
                 _persist_job(record)
     finally:
-        record.pop("_scene_batch_dispatching", None)
-        record.pop("_scene_batch_running", None)
+        _scene_batch_dispatching.discard(job_id)
+        _scene_batch_jobs.discard(job_id)
         _persist_job(record)
 
     succeeded = sum(item["status"] == "edited" for item in results)
