@@ -154,6 +154,8 @@ def test_audio_analysis_endpoint_returns_warnings_and_ducking_suggestion(complet
     assert len(result["reports"]["music"]) == 1
     assert result["ducking_recommendation"]["available"] is True
     assert video._jobs[completed_job]["audio_analysis"]["sources_analyzed"] == 2
+    status = asyncio.run(video.get_video_job_status(completed_job))
+    assert status.audio_analysis["sources_analyzed"] == 2
 
 
 @pytest.mark.parametrize("preset", ["custom", "voice", "documentary", "music", "cinematic_sfx"])
