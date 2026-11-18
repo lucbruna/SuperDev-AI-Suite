@@ -331,10 +331,12 @@ def render_mixed_scene_video(
             clip_paths.append(normalized)
 
         concat_file = temp_root / "concat.txt"
-        concat_file.write_text(
-            "".join(f"file '{str(path).replace(chr(39), chr(39)+chr(92)+chr(39)+chr(39))}'\n" for path in clip_paths),
-            encoding="utf-8",
-        )
+        concat_entries = []
+        for clip_path in clip_paths:
+            ffmpeg_path = str(clip_path.resolve()).replace(chr(92), "/")
+            ffmpeg_path = ffmpeg_path.replace(chr(39), chr(39) + chr(92) + chr(39) + chr(39))
+            concat_entries.append(f"file '{ffmpeg_path}'\n")
+        concat_file.write_text("".join(concat_entries), encoding="utf-8")
         command = [
             ffmpeg, "-hide_banner", "-loglevel", "error", "-y",
             "-f", "concat", "-safe", "0", "-i", str(concat_file),
