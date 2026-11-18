@@ -75,6 +75,8 @@ jobs:
             --ignore=tests/unit/test_ai_router.py \
             --ignore=tests/unit/test_git_tool.py 2>&1 || true
         continue-on-error: true
+      - name: Run media-engine regression tests (strict)
+        run: pytest tests/unit/test_media_video.py tests/unit/test_scene_narration.py -q --timeout=60
 
   test-frontend:
     name: Frontend Tests
