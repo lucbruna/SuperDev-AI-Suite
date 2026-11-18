@@ -153,3 +153,33 @@ describe("EditTimelinePanel", () => {
     job.mockRestore();
   });
 });
+
+
+  it("runs studio-aware visual quality analysis and shows the heuristic score", async () => {
+    vi.spyOn(videoStudioApi, "getJob").mockResolvedValue({
+      job_id: "visual-job", project_id: "p1", status: "completed", progress: 1,
+    });
+    const analyze = vi.spyOn(videoStudioApi, "analyzeJobVisuals").mockResolvedValue({
+      studio_id: "historical_documentary",
+      status: "needs_review",
+      score: 78,
+      score_label: "pontuação heurística de metadados",
+      components: { motion: 100, composition: 75, variety: 50, clarity: 87 },
+      scene_count: 4,
+      moving_camera_scenes: 4,
+      animated_primitives: 3,
+      unique_shot_types: 2,
+      shot_counts: { wide: 2, medium: 2 },
+      character_continuity_changes: 0,
+      scenes: [],
+      warnings: [{ code: "low_shot_variety", severity: "warning", unique_shots: 2 }],
+      analysis_method: "scene_descriptor_metadata",
+      limitations: ["Não inspeciona pixels do MP4 final."],
+    });
+    render(<EditTimelinePanel timeline={timeline} jobId="visual-job" />);
+    fireEvent.click(screen.getByRole("button", { name: "Analisar qualidade visual" }));
+    await waitFor(() => expect(analyze).toHaveBeenCalledWith("visual-job"));
+    expect(await screen.findByText("78/100 · needs review")).toBeInTheDocument();
+    expect(screen.getByText(/low shot variety/)).toBeInTheDocument();
+    expect(screen.getByText(/não é análise de pixels do MP4/i)).toBeInTheDocument();
+  });
