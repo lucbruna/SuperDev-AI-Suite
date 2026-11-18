@@ -256,7 +256,11 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
         { scene_index: sceneIndex, image_path: result.image_path, image_url: result.image_url,
           provider: result.provider, status: "edited", operation: result.operation, prompt: result.prompt },
       ]);
-      setMessage(`Imagem da cena ${sceneIndex + 1} atualizada. Renderize a edição para aplicar ao MP4.`);
+      setMessage(
+        result.scene_clip?.status === "updated"
+          ? `Imagem e clipe VidGrid de 10s da cena ${sceneIndex + 1} atualizados. Renderize a edição para atualizar o MP4 completo.`
+          : `Imagem da cena ${sceneIndex + 1} atualizada. Renderize a edição para aplicar ao MP4 completo.`,
+      );
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Não foi possível alterar a imagem da cena.");
     } finally {
