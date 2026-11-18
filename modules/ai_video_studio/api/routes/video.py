@@ -476,6 +476,27 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
 
 
 
+
+
+@router.post("/jobs/{job_id}/scenes/{scene_index}/image-candidates/{candidate_id}/discard")
+async def discard_video_job_scene_image(job_id: str, scene_index: int, candidate_id: str):
+    """Discard a pending candidate while keeping the active scene image unchanged."""
+    record = _jobs.get(job_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+    candidates = record.get("scene_image_candidates") or {}
+    scene_candidates = candidates.get(str(scene_index)) or []
+    candidate = next((item for item in scene_candidates if item.get("candidate_id") == candidate_id), None)
+    if candidate is None:
+        raise HTTPException(status_code=404, detail="Image candidate not found")
+    candidates[str(scene_index)] = [item for item in scene_candidates if item.get("candidate_id") != candidate_id]
+    if not candidates[str(scene_index)]:
+        candidates.pop(str(scene_index), None)
+    record["scene_image_candidates"] = candidates
+    _persist_job(record)
+    return {"job_id": job_id, "scene_index": scene_index, "candidate_id": candidate_id,
+            "status": "discarded", "active_image_unchanged": True}
+
 @router.post("/jobs/{job_id}/scenes/{scene_index}/image-candidates/{candidate_id}/approve")
 async def approve_video_job_scene_image(job_id: str, scene_index: int, candidate_id: str):
     """Promote one reviewed candidate to the active scene image."""
