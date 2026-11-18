@@ -52,6 +52,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
   const [approvingImageScene, setApprovingImageScene] = useState<number | null>(null);
   const [sceneImagePrompts, setSceneImagePrompts] = useState<Record<number, string>>({});
   const [visualDirections, setVisualDirections] = useState<Record<number, SceneVisualDirection>>({});
+  const [continuityReport, setContinuityReport] = useState<import("@/api/videoStudio").SceneContinuityReport | null>(null);
   const [editingImageScene, setEditingImageScene] = useState<number | null>(null);
   const [selectedImageScenes, setSelectedImageScenes] = useState<number[]>([]);
   const [regeneratingImageBatch, setRegeneratingImageBatch] = useState(false);
@@ -127,6 +128,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
         if (scene.visual_prompt_suggestion) suggestedPrompts[scene.scene_index] = scene.visual_prompt_suggestion;
       }
       setVisualDirections(byIndex);
+      setContinuityReport(result.storyboard_report?.continuity_report ?? null);
       setSceneImagePrompts((current) => ({ ...suggestedPrompts, ...current }));
     }).catch(() => {
       // Older jobs may not have retained scene direction metadata.
@@ -818,6 +820,12 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
             </button>
             <span className="text-[11px] text-surface-400">A lista mostra arquivos gerados em music, effects, voice, dubbing e mix. Caminhos externos são bloqueados.</span>
           </div>
+          {continuityReport && <div className="rounded-md border border-surface-200 p-3 text-xs dark:border-surface-700 sm:col-span-2">
+            <div className="flex flex-wrap items-center justify-between gap-2"><strong>Consistência de personagens e figurinos</strong><span className={continuityReport.warnings.length ? "text-amber-600" : "text-emerald-600"}>{continuityReport.warnings.length ? continuityReport.warnings.length + " pontos para revisar" : "Metadados consistentes"}</span></div>
+            <p className="mt-1 text-surface-500">{continuityReport.checked_scenes} cenas · validação {continuityReport.method}</p>
+            {continuityReport.warnings.length > 0 && <ul className="mt-2 list-disc space-y-1 pl-5">{continuityReport.warnings.map((warning, index) => <li key={index}>{warning.message} Cenas: {warning.scene_indices.map((value) => value + 1).join(", ")}.</li>)}</ul>}
+            <p className="mt-2 text-surface-400">A verificação atual compara metadados do storyboard; ainda não identifica automaticamente personagens nos pixels das imagens.</p>
+          </div>}
           {imageSimilarityReport && <div className="rounded-md border border-surface-200 p-3 text-xs dark:border-surface-700 sm:col-span-2">
             <div className="flex flex-wrap items-center justify-between gap-2"><strong>Comparação real das imagens das cenas</strong><span className={imageSimilarityReport.duplicate_pairs.length ? "text-amber-600" : "text-emerald-600"}>{imageSimilarityReport.duplicate_pairs.length ? imageSimilarityReport.duplicate_pairs.length + " pares semelhantes" : "Nenhuma duplicata detectada"}</span></div>
             <p className="mt-1 text-surface-500">{imageSimilarityReport.image_count} imagens · {imageSimilarityReport.compared_pairs} comparações · método {imageSimilarityReport.method}</p>
