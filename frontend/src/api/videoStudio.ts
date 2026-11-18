@@ -67,7 +67,7 @@ export interface StudioJob {
     llm_timeout?: number;
   } | null;
   ai_planner?: string | null;
-  subtitles?: { format?: string; file_path?: string; cue_count?: number; duration?: number; generated?: boolean; reason?: string } | null;
+  subtitles?: { format?: string; file_path?: string; download_url?: string | null; cue_count?: number; duration?: number; generated?: boolean; reason?: string } | null;
   voiceover?: {
     muxed?: boolean;
     narration_style?: string;
