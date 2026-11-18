@@ -135,6 +135,7 @@ export interface StudioJob {
   audio_draft_status?: string | null;
   audio_settings?: { ducking_enabled?: boolean; ducking_db?: number; ducking_threshold_db?: number; ducking_attack?: number; ducking_release?: number; normalization_enabled?: boolean; normalization_target_dbfs?: number; normalization_max_gain_db?: number } | null;
   edit_render_ducking?: { enabled?: boolean; reduction_db?: number; threshold_db?: number; speech_detected?: boolean } | null;
+  edit_render_normalization?: { enabled?: boolean; target_dbfs?: number; gain_db?: number; pre_rms?: number } | null;
   edit_render_status?: string | null;
   edited_output_url?: string | null;
   edited_video_duration?: number | null;
@@ -246,6 +247,7 @@ export const videoStudioApi = {
     file_size_bytes: number;
     audio_status: string;
     ducking?: { enabled?: boolean; reduction_db?: number; speech_detected?: boolean } | null;
+    normalization?: { enabled?: boolean; target_dbfs?: number; gain_db?: number; pre_rms?: number } | null;
     message: string;
   }> {
     const { data } = await apiClient.post(`${STUDIO_BASE}/videos/jobs/${jobId}/render-edits`);
