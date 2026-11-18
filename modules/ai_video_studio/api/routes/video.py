@@ -327,10 +327,19 @@ async def update_video_job_timeline(job_id: str, req: TimelineEditRequest):
             fps=fps,
         )
         width, height = _parse_resolution(params.get("resolution") or record.get("resolution") or "1280x720")
-        timeline = build_edit_timeline(edited, fps=fps, width=width, height=height)
+        audio_drafts = record.get("_audio_clips") or {}
+        timeline = build_edit_timeline(
+            edited,
+            fps=fps,
+            width=width,
+            height=height,
+            music_clips=audio_drafts.get("music", []),
+            sfx_clips=audio_drafts.get("sfx", []),
+        )
         previous = record.get("edit_timeline") or {}
         timeline["tracks"].extend(
-            track for track in previous.get("tracks", []) if track.get("type") != "video"
+            track for track in previous.get("tracks", [])
+            if track.get("type") != "video" and track.get("role") not in {"music", "sound_effect"}
         )
     except (TypeError, ValueError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
