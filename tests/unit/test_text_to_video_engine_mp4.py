@@ -126,6 +126,9 @@ def test_generate_async_can_write_timed_srt_sidecar(monkeypatch, tmp_path) -> No
     assert result["subtitles"]["format"] == "srt"
     assert result["subtitles"]["cue_count"] == 2
     assert result["subtitles"]["file_path"].endswith(".srt")
+    subtitle_track = next(track for track in result["edit_timeline"]["tracks"] if track["type"] == "subtitle")
+    assert len(subtitle_track["clips"]) == 2
+    assert subtitle_track["clips"][1]["start_frame"] == 48
 
 
 def test_narration_builder_prefers_authored_speech_to_visual_description() -> None:
