@@ -115,3 +115,21 @@ The editor adds **Analisar MP4 renderizado**, backed by `POST /videos/jobs/{job_
 The report flags near-duplicate sampled frames and sustained low-change runs, and maps sampled comparisons to video timeline clips when clip timing is present. The sampling is bounded and configurable from 3 to 120 frames at the API boundary.
 
 **Interpretation limits:** this is not semantic computer vision. It cannot identify Mia/Leo, recognize faces or props, infer whether motion is meaningful, or judge artistic quality. Pixel change may come from camera movement, object movement, compression noise, or scene cuts. Issues between sampled timestamps can be missed. Use the report to locate sections for human review, not as an automatic export gate.
+
+
+## Prompt-driven scene images and VidGrid clips
+
+The text-to-video pipeline now supports `scene_image_mode`:
+- `procedural`: existing SceneCanvas-generated scenes; no diffusion model required.
+- `ai`: generate one independent image for each storyboard scene using a configured local AUTOMATIC1111-compatible Stable Diffusion WebUI API. A missing/unavailable model is an explicit job failure.
+- `auto`: attempt local image generation and record procedural fallbacks per scene when the image service is unavailable.
+
+Configure `DARKSTUDIO_IMAGE_API_URL` (default `http://127.0.0.1:7860`) and start the compatible WebUI with its API enabled. The adapter calls `/sdapi/v1/txt2img` for scene plates and `/sdapi/v1/img2img` for text-directed image edits. ComfyUI workflow JSON, cloud providers, and model downloads are not implemented by this adapter yet. No model is bundled with DARKSTUDIO.
+
+Every scene receives its own `visual_prompt`, `negative_prompt`, narration text and shot type from the storyboard. The generated still is rendered as a background image; SceneCanvas keeps camera moves, particles, overlays, and optional procedural cast on top. The background is cached per render canvas to avoid reopening the source image on every frame.
+
+The editor exposes per-scene text instructions. It edits the existing scene image with img2img when available, or creates a new image with txt2img when the scene had no generated image. The updated asset is stored on the edited scene; the user must run **Renderizar edição** to produce a new MP4. The original render remains unchanged.
+
+**VidGrid compatibility:** the UI enables `vidgrid_compatible` by default. In this mode each storyboard clip is exactly 10 seconds and total duration is `scene_count × 10` seconds. Disabling the option restores free total-duration planning.
+
+**Honest capability boundary:** the existing style-specific image generators still use procedural SceneCanvas templates; their style names do not mean they run a diffusion model. The new local diffusion adapter is the actual text-to-image / image-to-image path. Stable character identity across diffusion-generated images is not yet guaranteed by this basic img2img integration; recurring vector characters remain a separate overlay system.
