@@ -58,6 +58,9 @@ def test_generate_async_requires_mp4_output(monkeypatch, tmp_path) -> None:
     assert captured["render"]["require_mp4"] is True
     assert result["encode_engine"] == "ffmpeg"
     assert result["output_path"].endswith(".mp4")
+    assert result["edit_timeline"]["fps"] == 24
+    assert result["edit_timeline"]["duration_frames"] == 24
+    assert result["edit_timeline"]["tracks"][0]["clips"][0]["end_frame"] == 24
 
 
 def test_generate_async_can_write_timed_srt_sidecar(monkeypatch, tmp_path) -> None:
