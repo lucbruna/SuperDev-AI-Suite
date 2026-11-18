@@ -8,7 +8,9 @@ old placeholder pipeline. Jobs run in the background and expose real
 from __future__ import annotations
 
 import asyncio
+import json
 import os
+import subprocess
 import shutil
 import time
 import uuid
@@ -1660,6 +1662,91 @@ async def get_video_job_visual_direction(job_id: str):
         "scene_count": len(output),
         "storyboard_report": record.get("storyboard_report") or {},
     }
+
+
+@router.post("/jobs/{job_id}/validate-output")
+async def validate_video_job_output(job_id: str):
+    """Probe the completed MP4 and persist an objective export-validation report."""
+    record = _jobs.get(job_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+    if record.get("status") != "completed":
+        raise HTTPException(status_code=409, detail="Only completed jobs can have their export validated")
+
+    from modules.ai_video_studio.media.output_paths import get_subsystem_dir
+
+    output_value = record.get("output_path")
+    if not output_value:
+        raise HTTPException(status_code=422, detail="The job has no output MP4 path")
+    output_path = Path(str(output_value)).resolve()
+    video_root = Path(get_subsystem_dir("videos")).resolve()
+    if video_root not in output_path.parents or not output_path.is_file():
+        raise HTTPException(status_code=422, detail="The output MP4 is missing or outside the DARKSTUDIO video directory")
+
+    report: dict[str, Any] = {
+        "job_id": job_id,
+        "path_exists": True,
+        "file_size_bytes": output_path.stat().st_size,
+        "ffprobe_available": bool(shutil.which("ffprobe")),
+        "valid": False,
+        "errors": [],
+        "warnings": [],
+    }
+    if report["file_size_bytes"] <= 0:
+        report["errors"].append("O arquivo MP4 está vazio.")
+    ffprobe = shutil.which("ffprobe")
+    if not ffprobe:
+        report["warnings"].append("FFprobe não está instalado; não foi possível validar streams e duração.")
+    elif report["file_size_bytes"] > 0:
+        try:
+            completed = await asyncio.to_thread(
+                subprocess.run,
+                [ffprobe, "-v", "error", "-show_entries",
+                 "format=duration,format_name:stream=codec_type,width,height,r_frame_rate",
+                 "-of", "json", str(output_path)],
+                capture_output=True, text=True, timeout=30, check=False,
+            )
+            if completed.returncode != 0:
+                report["errors"].append((completed.stderr or "FFprobe rejeitou o arquivo.")[:500])
+            else:
+                metadata = json.loads(completed.stdout or "{}")
+                streams = metadata.get("streams") or []
+                video_streams = [stream for stream in streams if stream.get("codec_type") == "video"]
+                format_info = metadata.get("format") or {}
+                duration = float(format_info.get("duration") or 0)
+                report.update(
+                    duration_seconds=duration,
+                    format_name=format_info.get("format_name"),
+                    video_streams=len(video_streams),
+                    audio_streams=sum(1 for stream in streams if stream.get("codec_type") == "audio"),
+                    video=video_streams[0] if video_streams else None,
+                )
+                if not video_streams:
+                    report["errors"].append("O arquivo não contém stream de vídeo.")
+                if duration <= 0:
+                    report["errors"].append("A duração do MP4 não pôde ser determinada.")
+                expected_duration = (
+                    float(record.get("clip_duration_seconds") or 10.0) * len(record.get("scene_clips") or [])
+                    if record.get("vidgrid_compatible") and record.get("scene_clips")
+                    else float(record.get("video_duration") or 0)
+                )
+                if expected_duration > 0 and duration > 0:
+                    tolerance = max(1.0, expected_duration * 0.03)
+                    report["expected_duration_seconds"] = expected_duration
+                    report["duration_tolerance_seconds"] = tolerance
+                    if abs(duration - expected_duration) > tolerance:
+                        report["warnings"].append(
+                            f"Duração medida ({duration:.2f}s) difere da referência ({expected_duration:.2f}s)."
+                        )
+        except (OSError, subprocess.TimeoutExpired, ValueError, json.JSONDecodeError) as exc:
+            report["errors"].append(f"Falha ao inspecionar MP4: {str(exc)[:300]}")
+    report["valid"] = bool(report["path_exists"] and report["file_size_bytes"] > 0
+                           and report["ffprobe_available"] and not report["errors"]
+                           and report.get("video_streams", 0) > 0
+                           and report.get("duration_seconds", 0) > 0)
+    record["output_validation"] = report
+    _persist_job(record)
+    return report
 
 
 @router.get("/jobs/{job_id}", response_model=VideoStatusResponse)
