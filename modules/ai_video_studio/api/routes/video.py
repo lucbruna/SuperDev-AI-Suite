@@ -345,7 +345,7 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
         "provider": result["provider"], "status": "edited",
         "operation": operation, "prompt": req.prompt,
     })
-    record["scene_image_mode"] = "ai_generated"
+    record["scene_image_mode"] = "mixed"
     scene_clip_result: dict[str, Any] | None = None
     if record.get("vidgrid_compatible"):
         try:
