@@ -25,11 +25,12 @@ def test_compute_scene_offsets_no_scenes() -> None:
     assert scene_narration.compute_scene_offsets([]) == []
 
 
-def test_scene_narration_text_priority() -> None:
+def test_scene_narration_text_prefers_authored_speech_over_visual_description() -> None:
     assert scene_narration.scene_narration_text(
-        {"description": "desc", "voiceover_text": "vo", "name": "n"}
-    ) == "desc"
-    assert scene_narration.scene_narration_text({"voiceover_text": "vo", "name": "n"}) == "vo"
+        {"description": "visual direction", "voiceover_text": "spoken line", "name": "scene"}
+    ) == "spoken line"
+    assert scene_narration.scene_narration_text({"narration": "narrated line", "description": "visual"}) == "narrated line"
+    assert scene_narration.scene_narration_text({"description": "desc", "name": "n"}) == "desc"
     assert scene_narration.scene_narration_text({"name": "n"}) == "n"
     assert scene_narration.scene_narration_text({}) == ""
 
