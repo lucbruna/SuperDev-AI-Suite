@@ -186,3 +186,45 @@ def add_character_motion(
         for primitive in result[layer][-count:]:
             primitive.update(displacement)
     return result
+
+
+
+def build_character_cue_timeline(
+    narration_clip: dict[str, Any],
+    cues: list[dict[str, Any]],
+    *,
+    fps: int = 30,
+) -> list[dict[str, Any]]:
+    """Convert narration-relative gesture cues into absolute video frames.
+
+    Each cue requires offset_seconds and may specify pose and expression.
+    The narration clip supplies its absolute start and end timestamps.
+    This creates a deterministic cue schedule; a renderer or timeline
+    orchestrator must still apply each cue to the character.
+    """
+    if fps <= 0:
+        raise ValueError("fps must be greater than zero")
+    start = float(narration_clip["start"])
+    end = float(narration_clip["end"])
+    if end <= start:
+        raise ValueError("narration clip end must be after start")
+
+    timeline: list[dict[str, Any]] = []
+    for cue in cues:
+        offset = float(cue["offset_seconds"])
+        if offset < 0 or start + offset > end:
+            raise ValueError("cue offset_seconds must fall within narration clip")
+        pose = str(cue.get("pose", "neutral"))
+        expression = str(cue.get("expression", "neutral"))
+        if pose not in VALID_POSES:
+            raise ValueError(f"Unknown pose '{pose}'")
+        if expression not in VALID_EXPRESSIONS:
+            raise ValueError(f"Unknown expression '{expression}'")
+        timestamp = start + offset
+        timeline.append({
+            "frame": round(timestamp * fps),
+            "time_seconds": round(timestamp, 3),
+            "pose": pose,
+            "expression": expression,
+        })
+    return sorted(timeline, key=lambda event: event["frame"])
