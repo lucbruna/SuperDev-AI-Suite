@@ -125,7 +125,8 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
       const suggestedPrompts: Record<number, string> = {};
       for (const scene of result.scenes) {
         byIndex[scene.scene_index] = scene;
-        if (scene.visual_prompt_suggestion) suggestedPrompts[scene.scene_index] = scene.visual_prompt_suggestion;
+        const preferredPrompt = scene.visual_prompt_full || scene.visual_prompt_suggestion || scene.visual_prompt;
+        if (preferredPrompt) suggestedPrompts[scene.scene_index] = preferredPrompt;
       }
       setVisualDirections(byIndex);
       setContinuityReport(result.storyboard_report?.continuity_report ?? null);
