@@ -7,7 +7,7 @@ import { Card, CardHeader, CardBody } from "@/components/cards/Card";
 import { Badge } from "@/components/badges/Badge";
 import { Button } from "@/components/buttons/Button";
 import { useAuthStore } from "@/stores/authStore";
-import { videoStudioApi, type StudioJob, type StudioVoice, type StudioProfile } from "@/api/videoStudio";
+import { videoStudioApi, type StudioJob, type StudioVoice, type StudioProfile, type StudioCharacter } from "@/api/videoStudio";
 import { extractErrorMessage } from "@/utils/apiError";
 import { fmtBytes, fmtDuration, fmtEstimate, jobStatusVariant, studioHealthVariant } from "@/utils/format";
 import {
@@ -72,6 +72,9 @@ export default function VideoStudioPage() {
   const [studioProfiles, setStudioProfiles] = useState<StudioProfile[]>([]);
   const [studioId, setStudioId] = useState<StudioProfile["id"]>("whymentary");
   const [studioLoadError, setStudioLoadError] = useState<string | null>(null);
+  const [characters, setCharacters] = useState<StudioCharacter[]>([]);
+  const [selectedCharacterIds, setSelectedCharacterIds] = useState<string[]>([]);
+  const [characterLoadError, setCharacterLoadError] = useState<string | null>(null);
 
   // Generation form state
   const [prompt, setPrompt] = useState("A cinematic drone shot over a misty mountain range at sunrise, with a voiceover narration");
@@ -137,6 +140,23 @@ export default function VideoStudioPage() {
     };
   }, [refreshJobs]);
 
+  useEffect(() => {
+    let cancelled = false;
+    setSelectedCharacterIds([]);
+    videoStudioApi.listCharacters(studioId).then((items) => {
+      if (!cancelled) {
+        setCharacters(items);
+        setCharacterLoadError(null);
+      }
+    }).catch((error) => {
+      if (!cancelled) {
+        setCharacters([]);
+        setCharacterLoadError(extractErrorMessage(error, "Não foi possível carregar os personagens"));
+      }
+    });
+    return () => { cancelled = true; };
+  }, [studioId]);
+
   const pollUntilDone = useCallback(async (jobId: string) => {
     if (pollTimer.current) clearInterval(pollTimer.current);
     let ticks = 0;
@@ -185,6 +205,7 @@ export default function VideoStudioPage() {
         project_id: projectId,
         prompt,
         studio_id: studioId,
+        character_ids: selectedCharacterIds,
         voiceover,
         generate_subtitles: generateSubtitles,
         voice_id: voiceId,
@@ -273,6 +294,36 @@ export default function VideoStudioPage() {
             </div>
             {studioLoadError && <p role="status" className="mt-2 text-xs text-amber-600">{studioLoadError} · seleção local disponível.</p>}
             {studioProfiles.length > 0 && <p className="mt-2 text-xs text-surface-400">{studioProfiles.length} perfis carregados da API.</p>}
+          </section>
+          <section className="mb-5 rounded-xl border border-surface-200 p-4 dark:border-surface-700" aria-labelledby="darkstudio-characters-title">
+            <div className="mb-3">
+              <h3 id="darkstudio-characters-title" className="text-sm font-semibold text-surface-900 dark:text-surface-100">Personagens recorrentes</h3>
+              <p className="mt-1 text-xs text-surface-500">Os personagens selecionados aparecem nas cenas com identidade visual consistente.</p>
+            </div>
+            {characters.length > 0 ? (
+              <div className="grid gap-2 sm:grid-cols-2">
+                {characters.map((character) => {
+                  const checked = selectedCharacterIds.includes(character.id);
+                  const disabled = !checked && selectedCharacterIds.length >= 2;
+                  return (
+                    <label key={character.id} className="flex cursor-pointer items-start gap-3 rounded-lg border border-surface-200 p-3 dark:border-surface-700">
+                      <input type="checkbox" checked={checked} disabled={disabled}
+                        onChange={(event) => setSelectedCharacterIds((current) =>
+                          event.target.checked ? [...current, character.id] : current.filter((id) => id !== character.id)
+                        )}
+                        className="mt-1 h-4 w-4 accent-primary-600" />
+                      <span>
+                        <span className="block text-sm font-medium text-surface-800 dark:text-surface-100">{character.name}</span>
+                        <span className="block text-xs text-surface-500">{character.appearance.outfit ?? character.appearance.clothing_color ?? "Personagem do estúdio"}</span>
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-xs text-surface-500">{characterLoadError ?? "Carregando personagens do estúdio…"}</p>
+            )}
+            <p className="mt-2 text-xs text-surface-400">Até 2 personagens por vídeo. A seleção é opcional.</p>
           </section>
           <textarea
             value={prompt}
