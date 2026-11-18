@@ -154,6 +154,7 @@ def test_stream_frames_to_video_gif_fallback(tmp_path) -> None:
     assert gif.stat().st_size > 0
 
 
+@pytest.mark.skipif(not ffmpeg_available(), reason="ffmpeg not installed; MP4 output cannot be asserted")
 def test_render_multi_scene_streams_and_reports_total_frames(tmp_path) -> None:
     """render_multi_scene_video streams frames and reports the exact count."""
     scenes = [
