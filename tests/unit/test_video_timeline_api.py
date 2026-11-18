@@ -95,6 +95,7 @@ def test_update_audio_timeline_persists_music_and_sfx_controls(completed_job, mo
     from modules.ai_video_studio.media import audio_timeline
 
     monkeypatch.setattr(audio_timeline, "validate_audio_asset", lambda value: tmp_path / "validated.wav")
+    video._jobs[completed_job]["edit_render_quality"] = {"status": "needs_review", "export_allowed": True}
     request = video.AudioTimelineEditRequest(
         music_clips=[video.AudioTimelineClip(
             asset=str(tmp_path / "music.wav"), start=0.5, end=3.0,
@@ -109,6 +110,7 @@ def test_update_audio_timeline_persists_music_and_sfx_controls(completed_job, mo
     result = asyncio.run(video.update_video_job_audio(completed_job, request))
     record = video._jobs[completed_job]
     assert result["audio_draft_status"] == "saved"
+    assert record["edit_render_quality"] is None
     assert record["_audio_clips"]["music"][0]["volume"] == 0.25
     assert record["_audio_clips"]["sfx"][0]["start"] == 1.0
     assert record["_audio_settings"]["ducking_db"] == 12
