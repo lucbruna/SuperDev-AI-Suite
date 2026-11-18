@@ -215,13 +215,16 @@ def mix_audio_timeline(
         volume = float(clip.get("volume", clip.get("gain", 1)))
         fade_in = float(clip.get("fade_in", 0))
         fade_out = float(clip.get("fade_out", 0))
-        values = (start, end, trim_start, volume, fade_in, fade_out)
+        pan = float(clip.get("pan", 0))
+        values = (start, end, trim_start, volume, fade_in, fade_out, pan)
         if not all(np.isfinite(v) for v in values):
             raise ValueError(f"audio clip {index} values must be finite")
         if start < 0 or end <= start or trim_start < 0:
             raise ValueError(f"audio clip {index} has invalid timing or trim")
         if not 0 <= volume <= 2:
             raise ValueError(f"audio clip {index} volume must be between 0 and 2")
+        if not -1 <= pan <= 1:
+            raise ValueError(f"audio clip {index} pan must be between -1 and 1")
         duration = min(end, total_duration) - start
         if duration <= 0:
             reports.append({"index": index, "status": "outside_video"})
@@ -258,7 +261,12 @@ def mix_audio_timeline(
             envelope[:fade_in_samples] *= np.linspace(0, 1, fade_in_samples, endpoint=True)
         if fade_out_samples:
             envelope[-fade_out_samples:] *= np.linspace(1, 0, fade_out_samples, endpoint=True)
-        placed *= envelope * volume
+        placed *= envelope[:, None] * volume
+        # Balance controls move the signal left/right without changing stereo phase.
+        if pan < 0:
+            placed[:, 1] *= 1.0 + pan
+        elif pan > 0:
+            placed[:, 0] *= 1.0 - pan
 
         destination_start = int(round(start * sample_rate))
         destination_end = min(total_samples, destination_start + count)
@@ -275,6 +283,7 @@ def mix_audio_timeline(
             "start": round(start, 3),
             "duration": round(duration, 3),
             "volume": volume,
+            "pan": pan,
             "loop": bool(clip.get("loop", False)),
             "kind": str(clip.get("kind", "unspecified")),
             "ducking_applied": bool(clip.get("kind") == "music" and ducking_enabled and ducking_db > 0 and np.any(speech_envelope)),
