@@ -208,6 +208,16 @@ class AudioTimelineEditRequest(BaseModel):
     target_lufs: float = Field(default=-14.0, ge=-36, le=-5)
     true_peak_db: float = Field(default=-1.0, ge=-9, le=0)
     loudness_range: float = Field(default=11.0, ge=1, le=20)
+    compressor_enabled: bool = False
+    compressor_threshold_db: float = Field(default=-18.0, ge=-60, le=0)
+    compressor_ratio: float = Field(default=3.0, ge=1, le=20)
+    compressor_attack: float = Field(default=0.01, ge=0.001, le=2)
+    compressor_release: float = Field(default=0.12, ge=0.001, le=5)
+    compressor_makeup_db: float = Field(default=0.0, ge=-12, le=24)
+    eq_enabled: bool = False
+    eq_low_db: float = Field(default=0.0, ge=-12, le=12)
+    eq_mid_db: float = Field(default=0.0, ge=-12, le=12)
+    eq_high_db: float = Field(default=0.0, ge=-12, le=12)
 
 
 def _persist_job(record: dict) -> None:
