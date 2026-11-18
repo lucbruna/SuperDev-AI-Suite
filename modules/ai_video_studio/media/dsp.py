@@ -515,80 +515,106 @@ def mix_tracks(
 
 # ── File IO ──────────────────────────────────────────────────────
 
-def read_audio(path: str | Path, *, target_sr: int = SAMPLE_RATE) -> tuple[np.ndarray, int]:
-    """Read any audio file into a mono float32 array (wav/flac/ogg/mp3)."""
+def read_audio(path: str | Path, *, target_sr: int = SAMPLE_RATE, preserve_channels: bool = False) -> tuple[np.ndarray, int]:
+    """Read audio as mono by default, or preserve its one/two channel layout."""
     p = Path(path)
     data: np.ndarray | None = None
     sr = target_sr
     if p.suffix.lower() in (".wav", ".flac", ".ogg", ".aiff", ".aif"):
         try:
             import soundfile as sf
-
-            data, sr = sf.read(str(p), dtype="float32", always_2d=False)
-        except Exception:  # noqa: BLE001 — fall back to stdlib wave
-            data = _read_wav_stdlib(p)
+            data, sr = sf.read(str(p), dtype="float32", always_2d=True)
+        except Exception:  # noqa: BLE001
+            data = _read_wav_stdlib(p, preserve_channels=True)
             sr = SAMPLE_RATE
     else:
-        # mp3/m4a/opus and anything else → decode with ffmpeg to wav
+        tmp_path = None
         try:
             with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
                 tmp_path = tmp.name
             result = subprocess.run(
-                ["ffmpeg", "-y", "-i", str(p), "-ac", "1", "-ar", str(target_sr), tmp_path],
+                ["ffmpeg", "-y", "-i", str(p), "-ac", "2" if preserve_channels else "1", "-ar", str(target_sr), tmp_path],
                 capture_output=True, text=True, timeout=120,
             )
             if result.returncode == 0:
-                data = _read_wav_stdlib(tmp_path)
+                data = _read_wav_stdlib(Path(tmp_path), preserve_channels=True)
                 sr = target_sr
-            Path(tmp_path).unlink(missing_ok=True)
         except Exception:  # noqa: BLE001
             data = None
+        finally:
+            if tmp_path:
+                Path(tmp_path).unlink(missing_ok=True)
     if data is None or len(data) == 0:
-        return np.zeros(1, dtype=np.float32), sr
-    data = np.asarray(data, dtype=np.float32).reshape(-1)
+        empty = np.zeros((1, 2), dtype=np.float32) if preserve_channels else np.zeros(1, dtype=np.float32)
+        return empty, sr
+    data = np.asarray(data, dtype=np.float32)
+    if data.ndim == 1:
+        data = data[:, None]
+    if data.shape[1] > 2:
+        data = data[:, :2]
+    if not preserve_channels:
+        data = np.mean(data, axis=1, dtype=np.float32)
     return data, sr
 
 
-def _read_wav_stdlib(p: Path) -> np.ndarray:
+def _read_wav_stdlib(p: Path, *, preserve_channels: bool = False) -> np.ndarray:
     with wave.open(str(p), "rb") as w:
-        n = w.getnframes()
-        raw = w.readframes(n)
-        data = np.frombuffer(raw, dtype=np.int16).astype(np.float32) / 32767.0
-    return data
+        frames, channels, width = w.getnframes(), w.getnchannels(), w.getsampwidth()
+        raw = w.readframes(frames)
+        if width == 1:
+            data = (np.frombuffer(raw, dtype=np.uint8).astype(np.float32) - 128.0) / 128.0
+        elif width == 2:
+            data = np.frombuffer(raw, dtype="<i2").astype(np.float32) / 32768.0
+        elif width == 3:
+            packed = np.frombuffer(raw, dtype=np.uint8).reshape(-1, 3)
+            values = packed[:, 0].astype(np.int32) | (packed[:, 1].astype(np.int32) << 8) | (packed[:, 2].astype(np.int32) << 16)
+            values = (values ^ 0x800000) - 0x800000
+            data = values.astype(np.float32) / 8388608.0
+        elif width == 4:
+            data = np.frombuffer(raw, dtype="<i4").astype(np.float32) / 2147483648.0
+        else:
+            raise ValueError(f"unsupported WAV sample width: {width}")
+        data = data.reshape(-1, channels)
+    return data if preserve_channels else np.mean(data, axis=1, dtype=np.float32)
 
 
 def write_audio(path: str | Path, samples: np.ndarray, *, sample_rate: int = SAMPLE_RATE,
                 bitrate: str = "192k") -> Path:
-    """Write float samples to a real audio file (wav via stdlib, else ffmpeg)."""
+    """Write mono or stereo float audio to WAV or an FFmpeg-supported format."""
     out = Path(path)
     out.parent.mkdir(parents=True, exist_ok=True)
-    mono = np.clip(samples.reshape(-1), -1.0, 1.0)
-    pcm = (mono * 32767).astype(np.int16)
-    if out.suffix.lower() == ".wav":
-        with wave.open(str(out), "wb") as w:
-            w.setnchannels(1)
+    audio = np.asarray(samples, dtype=np.float32)
+    if audio.ndim == 1:
+        audio = audio[:, None]
+    if audio.ndim != 2 or audio.shape[1] not in (1, 2):
+        raise ValueError("audio must have one or two channels")
+    audio = np.clip(audio, -1.0, 1.0)
+    pcm = (audio * 32767).astype(np.int16)
+    channels = audio.shape[1]
+    def write_wav(destination: str | Path) -> None:
+        with wave.open(str(destination), "wb") as w:
+            w.setnchannels(channels)
             w.setsampwidth(2)
             w.setframerate(sample_rate)
             w.writeframes(pcm.tobytes())
+    if out.suffix.lower() == ".wav":
+        write_wav(out)
         return out
-    # Compressed formats (mp3/flac/ogg) → pipe through ffmpeg.
     with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
         tmp_path = tmp.name
-    with wave.open(tmp_path, "wb") as w:
-        w.setnchannels(1)
-        w.setsampwidth(2)
-        w.setframerate(sample_rate)
-        w.writeframes(pcm.tobytes())
-    codec_map = {".mp3": "libmp3lame", ".flac": "flac", ".ogg": "libvorbis", ".m4a": "aac"}
-    codec = codec_map.get(out.suffix.lower())
-    cmd = ["ffmpeg", "-y", "-i", tmp_path]
-    if codec:
-        cmd += ["-c:a", codec]
-        if codec == "libmp3lame":
-            cmd += ["-b:a", bitrate]
-    cmd += [str(out)]
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
-    Path(tmp_path).unlink(missing_ok=True)
-    if result.returncode != 0 or not out.exists() or out.stat().st_size == 0:
-        raise RuntimeError(f"ffmpeg encode to {out.name} failed: {result.stderr[-200:]}")
+    try:
+        write_wav(tmp_path)
+        codec_map = {".mp3": "libmp3lame", ".flac": "flac", ".ogg": "libvorbis", ".m4a": "aac"}
+        codec = codec_map.get(out.suffix.lower())
+        cmd = ["ffmpeg", "-y", "-i", tmp_path]
+        if codec:
+            cmd += ["-c:a", codec]
+            if codec == "libmp3lame":
+                cmd += ["-b:a", bitrate]
+        cmd += [str(out)]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+        if result.returncode != 0 or not out.exists() or out.stat().st_size == 0:
+            raise RuntimeError(f"ffmpeg encode to {out.name} failed: {result.stderr[-200:]}")
+    finally:
+        Path(tmp_path).unlink(missing_ok=True)
     return out
