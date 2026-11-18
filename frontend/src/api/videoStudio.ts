@@ -51,6 +51,37 @@ export interface StudioVoice {
   description?: string;
 }
 
+export interface EditTimelineClip {
+  start_frame: number;
+  end_frame: number;
+  duration_frames: number;
+  start_seconds?: number;
+  end_seconds?: number;
+  asset?: string;
+  text?: string;
+  scene_index?: number;
+  shot_type?: string;
+  transition_out?: { type: string; duration_frames: number; overlap_frames: number };
+}
+
+export interface EditTimelineTrack {
+  id: string;
+  type: "video" | "audio" | "subtitle";
+  role?: "narration" | "music" | "sound_effect";
+  clips: EditTimelineClip[];
+}
+
+export interface EditTimeline {
+  version: string;
+  timebase: "frames";
+  fps: number;
+  width: number;
+  height: number;
+  duration_frames: number;
+  duration_seconds: number;
+  tracks: EditTimelineTrack[];
+}
+
 export interface StudioJob {
   job_id: string;
   project_id: string;
@@ -86,6 +117,7 @@ export interface StudioJob {
     llm_timeout?: number;
   } | null;
   ai_planner?: string | null;
+  edit_timeline?: EditTimeline | null;
   subtitles?: { format?: string; file_path?: string; download_url?: string | null; cue_count?: number; duration?: number; generated?: boolean; reason?: string } | null;
   voiceover?: {
     muxed?: boolean;
