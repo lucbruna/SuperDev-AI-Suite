@@ -162,6 +162,8 @@ def build_audio_quality_report(
     music_energy: np.ndarray | None = None,
     music_counts: np.ndarray | None = None,
     pre_limiter_peak: float | None = None,
+    measured_true_peak_dbTP: float | None = None,
+    target_true_peak_dbTP: float | None = None,
     ducking_db: float = 9.0,
     window_seconds: float = 0.1,
 ) -> dict[str, Any]:
@@ -235,6 +237,17 @@ def build_audio_quality_report(
         warnings.append({"code": "final_peak_above_minus_1_dbfs", "severity": "warning", "message": "O pico final está acima de -1 dBFS."})
     if clipped > 0:
         warnings.append({"code": "final_clipping_detected", "severity": "critical", "message": "Há amostras clipadas no áudio final."})
+    if measured_true_peak_dbTP is not None:
+        if not np.isfinite(measured_true_peak_dbTP):
+            raise ValueError("measured true peak must be finite")
+        if target_true_peak_dbTP is not None and not np.isfinite(target_true_peak_dbTP):
+            raise ValueError("target true peak must be finite")
+        if target_true_peak_dbTP is not None and measured_true_peak_dbTP > target_true_peak_dbTP + 0.2:
+            warnings.append({
+                "code": "true_peak_target_exceeded",
+                "severity": "critical",
+                "message": "O true peak medido ultrapassou o limite configurado após a normalização.",
+            })
     if silence_segments:
         warnings.append({"code": "internal_silence_gaps", "severity": "warning", "message": "Foram encontrados intervalos silenciosos internos; confirme se são intencionais."})
     if masking_windows:
@@ -262,6 +275,8 @@ def build_audio_quality_report(
         "sample_rate": int(sample_rate),
         "channels": int(audio.shape[1]),
         "peak_dbfs": round(peak_db, 2),
+        "true_peak_dbTP": round(float(measured_true_peak_dbTP), 2) if measured_true_peak_dbTP is not None else None,
+        "true_peak_target_dbTP": round(float(target_true_peak_dbTP), 2) if target_true_peak_dbTP is not None else None,
         "pre_limiter_peak_dbfs": round(20 * np.log10(max(pre_peak, 1e-9)), 2),
         "rms_dbfs": round(rms_db, 2),
         "clipping_ratio": round(clipped, 7),
@@ -584,6 +599,8 @@ def mix_audio_timeline(
         narration_energy=narration_energy, narration_counts=narration_counts,
         music_energy=music_energy, music_counts=music_counts,
         pre_limiter_peak=pre_limiter_peak, ducking_db=ducking_db,
+        measured_true_peak_dbTP=(float(loudness_report["output_tp"]) if loudness_report else None),
+        target_true_peak_dbTP=(true_peak_db if loudness_report else None),
     )
     return {
         "output_path": str(out),
