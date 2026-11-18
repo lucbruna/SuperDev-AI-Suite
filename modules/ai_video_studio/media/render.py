@@ -258,16 +258,17 @@ def render_mixed_scene_video(
     require_mp4: bool = True,
     studio_id: str | None = None,
 ) -> dict[str, Any]:
-    """Render a mixed timeline using AI-generated MP4s for selected source scenes.
+    """Render mixed AI/procedural scenes with frame-accurate FFmpeg transitions.
 
-    Every scene is normalized to the same H.264/yuv420p format and exact frame
-    count before concatenation. This first mixed-render path uses hard cuts:
-    transition metadata is deliberately flattened so the encoded duration and
-    downstream narration/subtitle offsets stay frame-accurate.
+    Crossfades overlap by their configured frame count. Fade-through-black
+    keeps the scene durations unchanged. Cuts are concatenated without
+    dropping frames, so downstream audio and subtitle offsets remain aligned.
     """
     import shutil
     import subprocess
     import tempfile
+
+    from modules.ai_video_studio.media.transitions import transition_spec
 
     if not scenes:
         raise ValueError("No scenes to render")
@@ -279,32 +280,46 @@ def render_mixed_scene_video(
     if not ffmpeg:
         raise RuntimeError("FFmpeg is required for mixed-scene rendering")
 
+    scene_frames = [max(1, int(round(float(scene.get("duration", 3.0)) * fps))) for scene in scenes]
+    specs = [transition_spec(scene) for scene in scenes]
+    effective: list[dict[str, Any]] = []
+    for index, spec in enumerate(specs):
+        frames = spec["duration_frames"]
+        if spec["type"] == "crossfade":
+            if index == len(scenes) - 1:
+                raise ValueError("The final scene cannot have an outgoing crossfade")
+            frames = min(frames, scene_frames[index] // 2, scene_frames[index + 1] // 2)
+            if frames < 2:
+                raise ValueError("Scenes are too short for the requested crossfade")
+        elif spec["type"] == "fade_through_black":
+            frames = min(frames, scene_frames[index] // 2, scene_frames[index + 1] // 2 if index + 1 < len(scenes) else scene_frames[index] // 2)
+            if frames < 2:
+                raise ValueError("Scenes are too short for the requested fade-through-black")
+        effective.append({"type": spec["type"], "duration_frames": frames})
+
+    total_frames = sum(scene_frames) - sum(
+        item["duration_frames"] for item in effective if item["type"] == "crossfade"
+    )
     out = Path(output_path)
     out.parent.mkdir(parents=True, exist_ok=True)
-    total_frames = 0
-    clip_paths: list[Path] = []
-    transition_scenes: list[int] = []
 
     with tempfile.TemporaryDirectory(prefix="darkstudio-mixed-", dir=str(out.parent)) as temp_dir:
         temp_root = Path(temp_dir)
         video_root = Path(__import__(
             "modules.ai_video_studio.media.output_paths", fromlist=["get_subsystem_dir"]
         ).get_subsystem_dir("videos")).resolve()
+        normalized_paths: list[Path] = []
 
         for position, scene in enumerate(scenes):
             source_index = int(scene.get("_source_scene_index", scene.get("index", position)))
-            duration = float(scene.get("duration", 3.0))
-            frame_count = max(1, int(round(duration * fps)))
-            total_frames += frame_count
-            transition = scene.get("transition_out") or {}
-            if transition.get("type", "cut") != "cut":
-                transition_scenes.append(source_index)
-
+            duration = scene_frames[position] / fps
             generated_path = generated_clips.get(source_index)
             if generated_path:
                 source = Path(generated_path).resolve()
                 if video_root not in source.parents or not source.is_file():
-                    raise ValueError(f"Generated clip for scene {source_index} is not a valid DARKSTUDIO video asset")
+                    raise ValueError(
+                        f"Generated clip for scene {source_index} is not a valid DARKSTUDIO video asset"
+                    )
             else:
                 source = temp_root / f"scene_{position:03d}_procedural.mp4"
                 render_single_scene_clip(
@@ -319,42 +334,92 @@ def render_mixed_scene_video(
                 "-an", "-vf",
                 f"fps={fps},scale={width}:{height}:force_original_aspect_ratio=decrease,"
                 f"pad={width}:{height}:(ow-iw)/2:(oh-ih)/2,setsar=1",
-                "-frames:v", str(frame_count), "-r", str(fps), "-c:v", "libx264",
+                "-frames:v", str(scene_frames[position]), "-r", str(fps), "-c:v", "libx264",
                 "-preset", "veryfast", "-pix_fmt", "yuv420p", "-movflags", "+faststart",
                 str(normalized),
             ]
-            completed = subprocess.run(command, capture_output=True, text=True, timeout=max(180, duration * 30))
+            completed = subprocess.run(
+                command, capture_output=True, text=True, timeout=max(180, duration * 30)
+            )
             if completed.returncode != 0 or not normalized.is_file() or normalized.stat().st_size == 0:
                 raise RuntimeError(
                     f"Could not normalize mixed scene {source_index}: {completed.stderr[-1200:]}"
                 )
-            clip_paths.append(normalized)
+            normalized_paths.append(normalized)
 
-        concat_file = temp_root / "concat.txt"
-        concat_entries = []
-        for clip_path in clip_paths:
-            ffmpeg_path = str(clip_path.resolve()).replace(chr(92), "/")
-            ffmpeg_path = ffmpeg_path.replace(chr(39), chr(39) + chr(92) + chr(39) + chr(39))
-            concat_entries.append(f"file '{ffmpeg_path}'\n")
-        concat_file.write_text("".join(concat_entries), encoding="utf-8")
+        inputs: list[str] = []
+        filters: list[str] = []
+        for index, clip_path in enumerate(normalized_paths):
+            inputs.extend(["-i", str(clip_path)])
+            filters.append(
+                f"[{index}:v]settb=AVTB,setpts=PTS-STARTPTS,format=yuv420p[v{index}]"
+            )
+
+        current_label = "v0"
+        current_frames = scene_frames[0]
+        for index in range(1, len(scenes)):
+            previous_transition = effective[index - 1]
+            kind = previous_transition["type"]
+            overlap_frames = previous_transition["duration_frames"]
+            incoming_label = f"v{index}"
+            output_label = f"mix{index}"
+            if kind == "crossfade":
+                duration_seconds = overlap_frames / fps
+                offset_seconds = (current_frames - overlap_frames) / fps
+                filters.append(
+                    f"[{current_label}][{incoming_label}]"
+                    f"xfade=transition=fade:duration={duration_seconds:.9f}:"
+                    f"offset={offset_seconds:.9f}[{output_label}]"
+                )
+                current_frames += scene_frames[index] - overlap_frames
+            else:
+                if kind == "fade_through_black":
+                    fade_seconds = overlap_frames / fps
+                    fade_start = (current_frames - overlap_frames) / fps
+                    faded_current = f"fadeout{index}"
+                    faded_incoming = f"fadein{index}"
+                    filters.append(
+                        f"[{current_label}]fade=t=out:st={fade_start:.9f}:"
+                        f"d={fade_seconds:.9f}:color=black[{faded_current}]"
+                    )
+                    filters.append(
+                        f"[{incoming_label}]fade=t=in:st=0:d={fade_seconds:.9f}:"
+                        f"color=black[{faded_incoming}]"
+                    )
+                    current_label = faded_current
+                    incoming_label = faded_incoming
+                filters.append(
+                    f"[{current_label}][{incoming_label}]concat=n=2:v=1:a=0[{output_label}]"
+                )
+                current_frames += scene_frames[index]
+            current_label = output_label
+
         command = [
-            ffmpeg, "-hide_banner", "-loglevel", "error", "-y",
-            "-f", "concat", "-safe", "0", "-i", str(concat_file),
+            ffmpeg, "-hide_banner", "-loglevel", "error", "-y", *inputs,
+            "-filter_complex", ";".join(filters), "-map", f"[{current_label}]",
             "-an", "-c:v", "libx264", "-preset", "veryfast", "-pix_fmt", "yuv420p",
             "-r", str(fps), "-frames:v", str(total_frames), "-movflags", "+faststart",
             str(out),
         ]
-        completed = subprocess.run(command, capture_output=True, text=True, timeout=max(300, total_frames / fps * 30))
+        completed = subprocess.run(
+            command, capture_output=True, text=True, timeout=max(300, total_frames / fps * 30)
+        )
         if completed.returncode != 0 or not out.is_file() or out.stat().st_size == 0:
             out.unlink(missing_ok=True)
-            raise RuntimeError(f"Could not assemble mixed DARKSTUDIO timeline: {completed.stderr[-1500:]}")
+            raise RuntimeError(
+                f"Could not assemble mixed DARKSTUDIO timeline: {completed.stderr[-1500:]}"
+            )
 
     return {
         "output_path": str(out),
         "frames": total_frames,
         "bytes": out.stat().st_size,
-        "engine": "ffmpeg_mixed_scene_concat",
+        "engine": "ffmpeg_mixed_scene_transitions",
         "generated_scene_indices": sorted(int(key) for key in generated_clips),
-        "transition_policy": "hard_cut",
-        "transitions_flattened": transition_scenes,
+        "transition_policy": "frame_accurate",
+        "transitions_applied": [
+            {"scene_index": int(scenes[index].get("_source_scene_index", index)),
+             "type": item["type"], "duration_frames": item["duration_frames"]}
+            for index, item in enumerate(effective) if item["type"] != "cut"
+        ],
     }
