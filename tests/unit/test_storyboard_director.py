@@ -63,3 +63,15 @@ def test_storyboard_rejects_unknown_studio_and_empty_input() -> None:
         build_cinematic_storyboard([], studio_id="whymentary")
     with pytest.raises(ValueError):
         build_cinematic_storyboard([{"narration": "Texto"}], studio_id="unknown")
+
+def test_storyboard_replaces_generic_prompt_with_directors_scene_suggestion() -> None:
+    scenes, _ = build_cinematic_storyboard(
+        [{
+            "narration": "O manuscrito foi encontrado dentro de uma caixa.",
+            "visual_prompt": "Cena",
+            "visual_prompt_suggestion": "Close detalhado de um manuscrito dentro de uma caixa de madeira.",
+        }],
+        studio_id="historical_documentary",
+    )
+    assert "Close detalhado de um manuscrito" in scenes[0]["visual_prompt_full"]
+    assert scenes[0]["visual_prompt"] != "Cena"
