@@ -987,10 +987,8 @@ async def render_video_job_edits(job_id: str):
     _persist_job(record)
     try:
         if generated_scene_clips:
-            # The first mixed-media assembler uses exact hard cuts. Flatten authored
-            # overlaps explicitly so audio, subtitles and the EDL share one timebase.
-            scenes = [dict(scene, transition_out={"type": "cut", "duration_frames": 0}) for scene in scenes]
-            record["_edited_scenes"] = scenes
+            # Keep authored transitions: the mixed renderer applies them in FFmpeg
+            # and the EDL uses the same crossfade overlap for narration/subtitles.
             from modules.ai_video_studio.media.timeline import build_edit_timeline
             configured_audio = record.get("_audio_clips") or {}
             from modules.ai_video_studio.media.scene_narration import (
@@ -1035,15 +1033,11 @@ async def render_video_job_edits(job_id: str):
                 studio_id=params.get("studio_id") or "whymentary",
             )
             record["edit_render_transition_policy"] = {
-                "mode": "hard_cut", "flattened_scenes": result.get("transitions_flattened", []),
-                "message": "Transições com sobreposição foram convertidas em cortes secos para manter a duração exata dos clipes IA.",
+                "mode": result.get("transition_policy", "frame_accurate"),
+                "transitions_applied": result.get("transitions_applied", []),
+                "message": "Transições aplicadas no render misto; crossfades descontam os mesmos frames na timeline e no áudio/legendas.",
             }
             _persist_job(record)
-        else:
-            result = await asyncio.to_thread(
-                render_multi_scene_video, scenes, output_path, fps=fps, width=width, height=height,
-                require_mp4=True, studio_id=params.get("studio_id") or "whymentary",
-            )
         rendered_path = result["output_path"]
         audio_status = "silent"
         final_path = rendered_path
