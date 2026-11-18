@@ -159,7 +159,15 @@ class TextToVideoEngine:
             )
             for scene_index, scene in enumerate(scenes):
                 visual_prompt = str(scene.get("visual_prompt") or scene.get("description") or prompt)
-                full_prompt = f"{image_style}. {visual_prompt}. No captions, no typography, no watermark."
+                character_reservation = (
+                    " Background plate only: do not depict people, humans or characters; "
+                    "leave clear foreground space for the separately animated cast."
+                    if character_ids else ""
+                )
+                full_prompt = (
+                    f"{image_style}. {visual_prompt}.{character_reservation} "
+                    "No captions, no typography, no watermark."
+                )
                 try:
                     generated = await asyncio.to_thread(
                         generate_scene_image,
