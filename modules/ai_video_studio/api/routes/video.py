@@ -198,6 +198,12 @@ async def generate_video(req: VideoGenerateRequest, background_tasks: Background
                 progress_callback=_on_render_progress,
             )
             output_path = result["output_path"]
+            subtitle_info = result.get("subtitles")
+            if isinstance(subtitle_info, dict) and subtitle_info.get("file_path"):
+                subtitle_info = {
+                    **subtitle_info,
+                    "download_url": to_download_url(subtitle_info["file_path"]),
+                }
             record.update(
                 status="completed",
                 progress=1.0,
@@ -208,7 +214,7 @@ async def generate_video(req: VideoGenerateRequest, background_tasks: Background
                 ai_planner=result.get("ai_planner"),
                 video_duration=await _probe_video_duration(output_path),
                 voiceover=result.get("voiceover"),
-                subtitles=result.get("subtitles"),
+                subtitles=subtitle_info,
             )
         except Exception as e:  # noqa: BLE001 — surface any failure on the job
             record.update(status="failed", error=str(e))
