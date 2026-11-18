@@ -185,6 +185,7 @@ def mix_audio_timeline(
     eq_low_db: float = 0.0,
     eq_mid_db: float = 0.0,
     eq_high_db: float = 0.0,
+    mastering_preset: str = "custom",
 ) -> dict[str, Any]:
     """Mix music/SFX/narration clips into a stereo WAV with bounded envelopes.
 
@@ -192,6 +193,27 @@ def mix_audio_timeline(
     fade_in, fade_out and explicit loop. Looping is opt-in and intended for
     background music; source audio is otherwise never repeated implicitly.
     """
+    presets = {
+        "custom": {},
+        "voice": {"compressor_enabled": True, "compressor_threshold_db": -22.0, "compressor_ratio": 3.5, "compressor_attack": 0.008, "compressor_release": 0.14, "compressor_makeup_db": 1.0, "eq_enabled": True, "eq_low_db": -2.0, "eq_mid_db": 1.5, "eq_high_db": 2.0},
+        "documentary": {"compressor_enabled": True, "compressor_threshold_db": -20.0, "compressor_ratio": 2.5, "compressor_attack": 0.015, "compressor_release": 0.18, "compressor_makeup_db": 0.5, "eq_enabled": True, "eq_low_db": -1.0, "eq_mid_db": 1.0, "eq_high_db": 1.0},
+        "music": {"compressor_enabled": True, "compressor_threshold_db": -16.0, "compressor_ratio": 2.0, "compressor_attack": 0.02, "compressor_release": 0.2, "compressor_makeup_db": 0.0, "eq_enabled": True, "eq_low_db": 1.0, "eq_mid_db": 0.0, "eq_high_db": 1.0},
+        "cinematic_sfx": {"compressor_enabled": True, "compressor_threshold_db": -14.0, "compressor_ratio": 3.0, "compressor_attack": 0.005, "compressor_release": 0.1, "compressor_makeup_db": 0.0, "eq_enabled": True, "eq_low_db": 2.0, "eq_mid_db": -1.0, "eq_high_db": 1.0},
+    }
+    if mastering_preset not in presets:
+        raise ValueError("mastering_preset must be custom, voice, documentary, music or cinematic_sfx")
+    if mastering_preset != "custom":
+        selected = presets[mastering_preset]
+        compressor_enabled = selected["compressor_enabled"]
+        compressor_threshold_db = selected["compressor_threshold_db"]
+        compressor_ratio = selected["compressor_ratio"]
+        compressor_attack = selected["compressor_attack"]
+        compressor_release = selected["compressor_release"]
+        compressor_makeup_db = selected["compressor_makeup_db"]
+        eq_enabled = selected["eq_enabled"]
+        eq_low_db = selected["eq_low_db"]
+        eq_mid_db = selected["eq_mid_db"]
+        eq_high_db = selected["eq_high_db"]
     if not np.isfinite(total_duration) or total_duration <= 0:
         raise ValueError("total_duration must be a positive finite number")
     if not isinstance(sample_rate, int) or sample_rate < 8000:
@@ -342,6 +364,7 @@ def mix_audio_timeline(
         "normalization": {"enabled": bool(normalization_enabled and not loudness_normalization_enabled), "bypassed_for_loudness": bool(loudness_normalization_enabled), "target_dbfs": float(normalization_target_dbfs), "gain_db": round(normalization_gain_db, 3), "pre_rms": round(pre_normalization_rms, 6)},
         "loudness": {"enabled": bool(loudness_normalization_enabled), **(loudness_report or {})},
         "mastering": {
+            "preset": mastering_preset,
             "compressor_enabled": bool(compressor_enabled),
             "compressor_threshold_db": float(compressor_threshold_db),
             "compressor_ratio": float(compressor_ratio),
