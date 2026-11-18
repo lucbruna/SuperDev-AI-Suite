@@ -56,3 +56,68 @@ def test_generate_async_requires_mp4_output(monkeypatch, tmp_path) -> None:
     assert captured["render"]["require_mp4"] is True
     assert result["encode_engine"] == "ffmpeg"
     assert result["output_path"].endswith(".mp4")
+
+
+def test_generate_async_can_write_timed_srt_sidecar(monkeypatch, tmp_path) -> None:
+    captured: dict = {}
+
+    class Planner:
+        def plan(self, prompt, *, num_scenes, duration, timeout):
+            return {
+                "scenes": [
+                    {"duration": 2.0, "description": "Direção visual", "voiceover_text": "Esta é a fala."},
+                    {"duration": 1.0, "narration": "Segunda fala."},
+                ],
+                "provider": "deterministic",
+                "ai_generated": False,
+            }
+
+    class Stats:
+        def record(self, **kwargs):
+            pass
+
+    class SubtitleService:
+        def generate_srt(self, scenes, *, output_path):
+            captured["scenes"] = scenes
+            captured["output_path"] = output_path
+            return {"file_path": output_path, "cue_count": 2, "duration": 3.0}
+
+    def fake_render(scenes, output_path, **kwargs):
+        return {"output_path": str(output_path), "frames": 72, "bytes": 123, "engine": "ffmpeg"}
+
+    monkeypatch.setattr(engine_module, "get_scene_planner", lambda: Planner())
+    monkeypatch.setattr(engine_module, "get_subsystem_dir", lambda _name: tmp_path)
+    monkeypatch.setattr(
+        engine_module, "unique_filename",
+        lambda directory, prefix, extension: tmp_path / f"test.{extension}",
+    )
+    monkeypatch.setattr(engine_module, "render_multi_scene_video", fake_render)
+    monkeypatch.setattr(engine_module, "get_generation_statistics", lambda: Stats())
+    monkeypatch.setattr(
+        "modules.ai_video_studio.services.subtitle_studio.SubtitleStudioService",
+        SubtitleService,
+    )
+
+    result = asyncio.run(
+        engine_module.TextToVideoEngine().generate_async(
+            {
+                "prompt": "Vídeo com legendas.",
+                "params": {
+                    "duration": 3.0,
+                    "num_scenes": 2,
+                    "fps": 24,
+                    "width": 64,
+                    "height": 36,
+                    "generate_subtitles": True,
+                },
+            }
+        )
+    )
+
+    assert captured["scenes"] == [
+        {"text": "Esta é a fala.", "duration": 2.0},
+        {"text": "Segunda fala.", "duration": 1.0},
+    ]
+    assert result["subtitles"]["format"] == "srt"
+    assert result["subtitles"]["cue_count"] == 2
+    assert result["subtitles"]["file_path"].endswith(".srt")
