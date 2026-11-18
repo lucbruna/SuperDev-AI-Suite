@@ -73,6 +73,17 @@ def test_audio_timeline_rejects_pan_outside_stereo_range(pan):
         video.AudioTimelineClip(asset="music/theme.wav", start=0, end=2, pan=pan)
 
 
+@pytest.mark.parametrize("field,value", [
+    ("compressor_ratio", 21),
+    ("compressor_threshold_db", -61),
+    ("eq_low_db", 13),
+    ("eq_mid_db", -13),
+])
+def test_audio_timeline_rejects_invalid_mastering_controls(field, value):
+    with pytest.raises(Exception):
+        video.AudioTimelineEditRequest(**{field: value})
+
+
 def test_audio_timeline_rejects_invalid_loudness_controls(field, value):
     with pytest.raises(ValueError):
         video.AudioTimelineEditRequest(**{field: value})
