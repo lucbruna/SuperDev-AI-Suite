@@ -342,6 +342,36 @@ it("generates a separate 10-second ComfyUI motion clip from a scene image", asyn
     await waitFor(() => expect(direction).toHaveBeenCalledWith("director-job"));
     expect(await screen.findByText("revelation")).toBeInTheDocument();
     expect(screen.getByText(/Isole a evidência em close de detalhe/)).toBeInTheDocument();
-    const prompt = screen.getAllByPlaceholderText("Ex.: transforme o fundo em uma floresta ao amanhecer, mantenha o personagem e mude a iluminação…")[0] as HTMLTextAreaElement;
+    const prompt = screen.getAllByPlaceholderText("Descreva o enquadramento, cenário e ação desta cena…")[0] as HTMLTextAreaElement;
     expect(prompt.value).toBe("Documento antigo em primeiro plano, luz lateral dramática.");
+  });
+
+  it("regenerates only the selected storyboard scenes and updates their thumbnails", async () => {
+    vi.spyOn(videoStudioApi, "getJobVisualDirection").mockResolvedValue({
+      job_id: "batch-ui-job", studio_id: "historical_documentary", scene_count: 2,
+      scenes: [
+        { scene_index: 0, narration: "A cidade surgiu junto ao rio.", visual_prompt: "", visual_prompt_suggestion: "Plano geral da cidade junto ao rio.", visual_direction: "Plano de estabelecimento.", narrative_beat: "context", shot_type: "wide", image_status: "generated" },
+        { scene_index: 1, narration: "Os navios chegaram ao porto.", visual_prompt: "", visual_prompt_suggestion: "Navios entrando no porto ao amanhecer.", visual_direction: "Travelling lateral.", narrative_beat: "development", shot_type: "tracking", image_status: "generated" },
+      ],
+    });
+    const batch = vi.spyOn(videoStudioApi, "regenerateSelectedSceneImages").mockResolvedValue({
+      job_id: "batch-ui-job", status: "completed", requested: 2, succeeded: 2, failed: 0,
+      message: "2 de 2 cenas atualizadas; a exportação final ainda precisa ser renderizada.",
+      results: [
+        { scene_index: 0, status: "edited", result: { scene_index: 0, image_path: "/images/0.png", image_url: "/images/0.png", provider: "mock", status: "edited", operation: "text_to_image", prompt: "Plano geral da cidade junto ao rio." } },
+        { scene_index: 1, status: "edited", result: { scene_index: 1, image_path: "/images/1.png", image_url: "/images/1.png", provider: "mock", status: "edited", operation: "text_to_image", prompt: "Navios entrando no porto ao amanhecer." } },
+      ],
+    });
+    render(<EditTimelinePanel timeline={timeline} jobId="batch-ui-job" />);
+    await waitFor(() => expect(screen.getByText("revelation")).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("checkbox", { name: "Selecionar cena 1" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Selecionar cena 2" }));
+    fireEvent.click(screen.getByRole("button", { name: "Regenerar selecionadas (2)" }));
+    await waitFor(() => expect(batch).toHaveBeenCalledWith("batch-ui-job", [
+      { scene_index: 0, prompt: "Plano geral da cidade junto ao rio." },
+      { scene_index: 1, prompt: "Navios entrando no porto ao amanhecer." },
+    ]));
+    expect(await screen.findByText(/2 de 2 cenas atualizadas/)).toBeInTheDocument();
+    expect(screen.getByAltText("Imagem da cena 1")).toHaveAttribute("src", "/images/0.png");
+    expect(screen.getByAltText("Imagem da cena 2")).toHaveAttribute("src", "/images/1.png");
   });
