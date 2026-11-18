@@ -82,8 +82,14 @@ def build_cinematic_storyboard(
         narration = _text(scene, "voiceover_text", "narration", "dialogue")
         description = _text(scene, "description", "name")
         authored_visual = _text(scene, "visual_prompt", "visualPrompt")
+        suggested_visual = _text(scene, "visual_prompt_suggestion")
         direction = _text(scene, "visual_direction")
-        visual_core = authored_visual or _text(scene, "visual_prompt_suggestion") or description or narration
+        generic_visuals = {"cena", "uma cena", "ilustração", "imagem", "mostrar", "visual"}
+        authored_is_generic = authored_visual.lower().strip(" .,!") in generic_visuals or len(authored_visual) < 28
+        visual_core = (
+            suggested_visual if authored_is_generic and suggested_visual
+            else authored_visual or suggested_visual or description or narration
+        )
         if not visual_core:
             visual_core = "Visualizar o conceito principal desta cena sem acrescentar fatos."
 
@@ -109,7 +115,7 @@ def build_cinematic_storyboard(
             prompt_fingerprints.setdefault(fingerprint, []).append(index)
 
         scene["storyboard_scene_id"] = _stable_scene_id(index, narration, description)
-        scene["visual_prompt"] = authored_visual or prompt
+        scene["visual_prompt"] = (authored_visual if authored_visual and not authored_is_generic else prompt)
         scene["visual_prompt_full"] = prompt
         scene["negative_prompt"] = _negative_prompt(studio_id, characters)
         scene["continuity"] = _continuity_tokens(scene, characters, objects)
