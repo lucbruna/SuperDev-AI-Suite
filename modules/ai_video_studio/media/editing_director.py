@@ -24,6 +24,60 @@ def classify_shot(scene: dict[str, Any], previous: str | None = None) -> str:
     return selected
 
 
+
+def classify_narrative_beat(scene: dict[str, Any]) -> str:
+    """Classify the role of a scene from its own text; never infer new facts."""
+    source = " ".join(
+        str(scene.get(key) or "")
+        for key in ("narration", "voiceover_text", "dialogue", "description", "visual_prompt")
+    ).lower()
+    rules = (
+        ("hook", ("imagine", "você sabia", "sabia que", "e se ", "mistério", "segredo")),
+        ("context", ("naquela época", "contexto", "durante o século", "no início", "era ", "origem")),
+        ("cause_effect", ("porque", "por causa", "provocou", "levou a", "resultou", "consequência", "causou")),
+        ("process", ("como funciona", "etapa", "processo", "primeiro", "depois", "em seguida")),
+        ("comparison", ("compar", "diferente", "enquanto", "ao contrário", "versus", "antes e depois")),
+        ("revelation", ("descobriu", "revelou", "evidência", "prova", "documento mostra")),
+        ("conclusion", ("portanto", "em resumo", "concluindo", "lição", "hoje sabemos", "conclusão")),
+    )
+    return next((beat for beat, terms in rules if any(term in source for term in terms)), "development")
+
+
+def _visual_direction(studio_id: str, shot: str, beat: str) -> str:
+    """Return an actionable composition cue while preserving each studio's visual identity."""
+    framing = {
+        "establishing": "comece com plano geral que situe espaço, época e escala",
+        "wide": "mostre a relação espacial entre os elementos importantes",
+        "medium": "organize a ação principal em plano médio com leitura imediata",
+        "close_up": "aproxime a câmera da expressão ou ação humana decisiva",
+        "detail": "isole o objeto, documento ou evidência narrada em primeiro plano",
+        "tracking": "use deslocamento lateral ou travelling para acompanhar a ação",
+    }.get(shot, "use composição clara e específica para a ação")
+    beat_cue = {
+        "hook": "crie uma imagem-gancho com silhueta e contraste visual fortes",
+        "context": "priorize cenário e pistas visuais de contexto",
+        "cause_effect": "torne causa e consequência legíveis no mesmo enquadramento",
+        "process": "organize a ação em sequência visual fácil de entender",
+        "comparison": "coloque os elementos comparados em áreas distintas e equilibradas",
+        "revelation": "dê destaque visual à evidência sem acrescentar informação não narrada",
+        "conclusion": "feche com composição limpa que sintetize a ideia narrada",
+        "development": "mostre a ação ou conceito específico desta passagem",
+    }.get(beat, "mostre a ideia narrada")
+    style = (
+        "fundo branco, formas 2D simples, cores chapadas e legibilidade didática"
+        if studio_id == "whymentary"
+        else "ilustração histórica cinematográfica, profundidade em camadas, luz atmosférica e materiais de época"
+    )
+    return f"{framing}; {beat_cue}; {style}."
+
+
+def _needs_visual_prompt(scene: dict[str, Any]) -> bool:
+    prompt = str(scene.get("visual_prompt") or "").strip()
+    if len(prompt) < 28:
+        return True
+    generic = {"cena", "uma cena", "ilustração", "imagem", "mostrar", "visual"}
+    return prompt.lower().strip(" .,!") in generic
+
 def direct_storyboard(
     scenes: list[dict[str, Any]], *, studio_id: str, fps: int, fallback_duration: float
 ) -> list[dict[str, Any]]:
@@ -35,6 +89,20 @@ def direct_storyboard(
     for index, scene in enumerate(directed):
         shot = str(scene.get("shot_type") or classify_shot(scene, previous_shot))
         scene["shot_type"] = shot
+        scene["narrative_beat"] = classify_narrative_beat(scene)
+        scene["visual_direction"] = _visual_direction(
+            studio_id, shot, scene["narrative_beat"]
+        )
+        if _needs_visual_prompt(scene):
+            source_text = str(
+                scene.get("voiceover_text") or scene.get("narration")
+                or scene.get("description") or scene.get("name") or ""
+            ).strip()
+            if source_text:
+                scene["visual_prompt_suggestion"] = (
+                    f"Representar visualmente, sem acrescentar fatos: {source_text}. "
+                    f"{scene['visual_direction']}"
+                )
         previous_shot = shot
         scene_frames = max(2, int(max(0.1, float(scene.get("duration") or fallback_duration)) * fps))
         if not scene.get("camera"):
@@ -72,6 +140,8 @@ def build_editing_report(
         words = len(speech.split())
         wpm = round(words / duration * 60, 1) if words else 0.0
         shot = str(scene.get("shot_type") or "medium")
+        beat = str(scene.get("narrative_beat") or classify_narrative_beat(scene))
+        visual_prompt = str(scene.get("visual_prompt") or "").strip()
         shot_counts[shot] = shot_counts.get(shot, 0) + 1
         transition = scene.get("transition_out") or {"type": "cut"}
         transition_type = str(transition.get("type", "cut"))
@@ -81,6 +151,10 @@ def build_editing_report(
             "start_seconds": round(timeline_cursor, 3),
             "duration_seconds": round(duration, 3),
             "shot_type": shot,
+            "narrative_beat": beat,
+            "visual_prompt_present": bool(visual_prompt),
+            "visual_direction": str(scene.get("visual_direction") or ""),
+            "visual_prompt_suggestion": str(scene.get("visual_prompt_suggestion") or ""),
             "speech_words": words,
             "speech_wpm": wpm,
             "pacing": "fast" if wpm > target_words_per_minute * 1.25 else "slow" if words and wpm < target_words_per_minute * 0.65 else "balanced",
@@ -90,6 +164,10 @@ def build_editing_report(
             warnings.append(f"Scene {index + 1}: narration is dense ({wpm} words/min); consider extending or splitting the scene")
         if duration < 1.0:
             warnings.append(f"Scene {index + 1}: shot is shorter than one second")
+        if not visual_prompt and not scene.get("visual_prompt_suggestion"):
+            warnings.append(
+                f"Scene {index + 1}: no specific visual prompt; add an image that directly illustrates the narration"
+            )
         timeline_cursor += duration
         if transition_type == "crossfade" and index < len(scenes) - 1:
             overlap = min(int(transition.get("duration_frames", 0)), max(0, int(duration * fps) // 2))
