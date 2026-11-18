@@ -224,7 +224,7 @@ def apply_scene_edits(
         if transition is not None:
             if transition not in {"cut", "crossfade", "fade_through_black"}:
                 raise ValueError("unsupported transition_type")
-            if position == total - 1 and transition != "cut":
+            if position == total - 1 and transition == "crossfade":
                 raise ValueError("the final scene must use cut")
             if transition == "cut":
                 scene["transition_out"] = {"type": "cut", "duration_frames": 0}
@@ -236,7 +236,7 @@ def apply_scene_edits(
         elif position == total - 1:
             # A scene moved to the end cannot retain an outgoing crossfade.
             current = scene.get("transition_out") or {}
-            if current.get("type") != "cut":
+            if current.get("type") == "crossfade":
                 scene["transition_out"] = {"type": "cut", "duration_frames": 0}
 
     # Validate the complete resulting timeline, including transition overlap.
