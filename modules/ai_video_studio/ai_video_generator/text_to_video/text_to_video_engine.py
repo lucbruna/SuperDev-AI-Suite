@@ -129,6 +129,11 @@ class TextToVideoEngine:
         if not scenes:
             raise ValidationError("Scene planner returned no scenes", field="prompt")
 
+        # Preserve identity metadata for downstream continuity diagnostics.
+        for scene in scenes:
+            scene["_darkstudio_characters"] = list(character_ids)
+            scene["_darkstudio_objects"] = list(object_ids)
+
         # Apply the same registered character identities to every scene.
         # Pose/expression variations are deterministic across the storyboard.
         if character_ids:
