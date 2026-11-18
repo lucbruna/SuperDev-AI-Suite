@@ -150,6 +150,7 @@ def test_render_edits_mixes_saved_audio_tracks(completed_job, monkeypatch, tmp_p
     def fake_mix(clips, output_path, *, total_duration, **settings):
         assert clips[0]["asset"].endswith("bed.wav")
         assert settings["ducking_db"] == 11
+        assert settings["normalization_target_dbfs"] == -18
         assert total_duration == 4
         from pathlib import Path
         Path(output_path).write_bytes(b"mixed-wav")
