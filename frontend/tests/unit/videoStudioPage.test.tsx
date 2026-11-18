@@ -183,3 +183,22 @@ describe("DARKSTUDIO scene object picker", () => {
     }));
   });
 });
+
+
+describe("DARKSTUDIO long-form VidGrid generation", () => {
+  it("supports a seven-minute episode as forty-two ten-second scene clips", async () => {
+    mockedApi.generateVideo.mockResolvedValue({
+      job_id: "job_long_vidgrid", project_id: "u1", status: "queued", progress: 0,
+    });
+    render(<VideoStudioPage />);
+    const scenesInput = screen.getByLabelText("Cenas");
+    fireEvent.change(scenesInput, { target: { value: "42" } });
+    expect(screen.getByText(/Com 42 cenas, o vídeo terá 420 segundos/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Gerar vídeo/ }));
+    expect(mockedApi.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
+      num_scenes: 42,
+      vidgrid_compatible: true,
+      duration_seconds: 420,
+    }));
+  });
+});
