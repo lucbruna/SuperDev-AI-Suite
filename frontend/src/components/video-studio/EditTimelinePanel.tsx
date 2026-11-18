@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { videoStudioApi, type EditTimeline, type EditTimelineClip, type StudioAudioAsset } from "@/api/videoStudio";
+import { videoStudioApi, type EditTimeline, type EditTimelineClip, type StudioAudioAsset, type SceneImageAsset } from "@/api/videoStudio";
 
 type Props = {
   timeline: EditTimeline;
   jobId?: string;
   editedOutputUrl?: string | null;
+  sceneAssets?: SceneImageAsset[] | null;
   title?: string;
   onSaved?: (timeline: EditTimeline) => void;
 };
@@ -44,8 +45,11 @@ function clipLabel(clip: EditTimelineClip, trackType: string): string {
   return trackType === "video" ? `Cena ${(clip.scene_index ?? 0) + 1}` : "Mídia";
 }
 
-export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, title = "Editor de timeline", onSaved }: Props) {
+export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sceneAssets, title = "Editor de timeline", onSaved }: Props) {
   const [draft, setDraft] = useState<EditTimeline>(timeline);
+  const [sceneImageAssets, setSceneImageAssets] = useState<SceneImageAsset[]>(sceneAssets ?? []);
+  const [sceneImagePrompts, setSceneImagePrompts] = useState<Record<number, string>>({});
+  const [editingImageScene, setEditingImageScene] = useState<number | null>(null);
   const [selected, setSelected] = useState<number>(0);
   const [playheadFrame, setPlayheadFrame] = useState(0);
   const [saving, setSaving] = useState(false);
@@ -99,6 +103,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
   const selectedClip = clips[selected] ?? null;
 
   useEffect(() => { setDraft(timeline); setDirty(false); setAudioDirty(false); setSelected(0); }, [timeline]);
+  useEffect(() => { setSceneImageAssets(sceneAssets ?? []); }, [sceneAssets]);
   useEffect(() => { setRenderUrl(editedOutputUrl ?? ""); }, [editedOutputUrl]);
   useEffect(() => {
     setRenderQuality(null);
@@ -237,6 +242,27 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
       setMessage(error instanceof Error ? error.message : "Não foi possível analisar os frames do MP4.");
     } finally { setAnalyzingMp4Visuals(false); }
   }
+  async function editSceneImage(sceneIndex: number) {
+    if (!jobId) return;
+    const prompt = (sceneImagePrompts[sceneIndex] ?? "").trim();
+    if (!prompt || editingImageScene !== null) return;
+    setEditingImageScene(sceneIndex);
+    setMessage("");
+    try {
+      const result = await videoStudioApi.editSceneImage(jobId, sceneIndex, { prompt });
+      setSceneImageAssets((current) => [
+        ...current.filter((asset) => asset.scene_index !== sceneIndex),
+        { scene_index: sceneIndex, image_path: result.image_path, image_url: result.image_url,
+          provider: result.provider, status: "edited", operation: result.operation, prompt: result.prompt },
+      ]);
+      setMessage(`Imagem da cena ${sceneIndex + 1} atualizada. Renderize a edição para aplicar ao MP4.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Não foi possível alterar a imagem da cena.");
+    } finally {
+      setEditingImageScene(null);
+    }
+  }
+
   async function analyzeAvSync() {
     if (!jobId || dirty || audioDirty || saving || savingAudio || analyzingAvSync) return;
     setAnalyzingAvSync(true); setMessage("");
@@ -372,6 +398,28 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
           Timeline v{draft.version}
         </span>
       </div>
+
+      {jobId && <section className="mb-4 rounded-lg border border-surface-200 p-3 dark:border-surface-700">
+        <div className="mb-3">
+          <h3 className="text-sm font-semibold text-surface-900 dark:text-surface-100">Imagens por cena · edição com texto</h3>
+          <p className="mt-1 text-xs text-surface-500">Descreva a alteração desejada. A IA edita a imagem existente ou cria uma imagem nova para a cena. Depois, use Renderizar edição para atualizar o MP4.</p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {(draft.tracks.find((track) => track.type === "video")?.clips ?? []).map((clip) => {
+            const index = clip.scene_index ?? 0;
+            const asset = sceneImageAssets.find((item) => item.scene_index === index);
+            return <div key={index} className="rounded-lg border border-surface-200 p-2 dark:border-surface-700">
+              {asset?.image_url ? <img src={asset.image_url} alt={`Imagem da cena ${index + 1}`} className="mb-2 aspect-video w-full rounded-md object-cover" /> : <div className="mb-2 flex aspect-video items-center justify-center rounded-md bg-surface-100 text-xs text-surface-500 dark:bg-surface-800">Cena {index + 1} · imagem procedural ou ainda não criada</div>}
+              <p className="mb-1 text-xs font-semibold text-surface-700 dark:text-surface-300">Cena {index + 1}</p>
+              <textarea value={sceneImagePrompts[index] ?? ""} onChange={(event) => setSceneImagePrompts((current) => ({ ...current, [index]: event.target.value }))} rows={2} maxLength={4000} placeholder="Ex.: transforme o fundo em uma floresta ao amanhecer, mantenha o personagem e mude a iluminação…" className="w-full rounded-md border border-surface-200 bg-transparent p-2 text-xs dark:border-surface-700" />
+              <button type="button" onClick={() => editSceneImage(index)} disabled={!sceneImagePrompts[index]?.trim() || editingImageScene !== null} className="mt-2 rounded-md border border-primary-300 px-3 py-1.5 text-xs font-semibold disabled:opacity-40 dark:border-primary-700">
+                {editingImageScene === index ? "Gerando imagem…" : asset ? "Alterar imagem por texto" : "Criar imagem por texto"}
+              </button>
+              {asset?.status === "edited" && <p className="mt-1 text-[10px] text-emerald-600">Imagem atualizada · {asset.operation === "image_to_image" ? "edição da imagem anterior" : "imagem criada do zero"}</p>}
+            </div>;
+          })}
+        </div>
+      </section>}
 
       <div className="mb-3 overflow-x-auto">
         <div className="min-w-[620px]">
