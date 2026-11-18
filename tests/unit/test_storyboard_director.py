@@ -75,3 +75,36 @@ def test_storyboard_replaces_generic_prompt_with_directors_scene_suggestion() ->
     )
     assert "Close detalhado de um manuscrito" in scenes[0]["visual_prompt_full"]
     assert scenes[0]["visual_prompt"] != "Cena"
+
+
+def test_character_identity_bible_keeps_mia_and_leo_appearance_in_prompts() -> None:
+    scenes, _ = build_cinematic_storyboard(
+        [{"narration": "Mia conversa com Leo."}],
+        studio_id="whymentary", character_ids=["mia", "leo"],
+    )
+    prompt = scenes[0]["visual_prompt_full"]
+    assert "cabelo loiro" in prompt
+    assert "camisa azul" in prompt
+    assert "cabelo castanho preso" in prompt
+    assert "vestido vermelho" in prompt
+
+
+def test_continuity_report_flags_character_appearance_drift() -> None:
+    from modules.ai_video_studio.media.storyboard_director import analyze_storyboard_continuity
+    report = analyze_storyboard_continuity([
+        {"character_ids": ["mia"], "character_appearance": {"mia": "cabelo castanho preso, vestido vermelho"}},
+        {"character_ids": ["mia"], "character_appearance": {"mia": "cabelo loiro solto, vestido azul"}},
+    ])
+    assert report["status"] == "review_required"
+    assert report["warnings"][0]["type"] == "character_appearance_drift"
+    assert report["warnings"][0]["character_id"] == "mia"
+
+
+def test_continuity_report_flags_unexpected_character_presence_change() -> None:
+    from modules.ai_video_studio.media.storyboard_director import analyze_storyboard_continuity
+    report = analyze_storyboard_continuity([
+        {"character_ids": ["mia", "leo"]},
+        {"character_ids": ["mia"]},
+    ])
+    assert report["warnings"][0]["type"] == "character_presence_change"
+    assert report["warnings"][0]["scene_indices"] == [0, 1]
