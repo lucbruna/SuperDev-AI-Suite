@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from modules.ai_video_studio.ai_video_generator.image_to_video.comfyui_video_provider import (
