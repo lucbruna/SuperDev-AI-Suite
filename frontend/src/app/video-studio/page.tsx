@@ -219,7 +219,6 @@ export default function VideoStudioPage() {
     try {
       const report = await videoStudioApi.validateJobOutput(jobId);
       setOutputValidation((current) => ({ ...current, [jobId]: { loading: false, report } }));
-      await refreshJobs();
     } catch (error) {
       setOutputValidation((current) => ({
         ...current,
