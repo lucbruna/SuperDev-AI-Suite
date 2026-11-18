@@ -1,4 +1,6 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { vi } from "vitest";
+import { videoStudioApi } from "@/api/videoStudio";
 import { describe, expect, it } from "vitest";
 import EditTimelinePanel from "@/components/video-studio/EditTimelinePanel";
 import type { EditTimeline } from "@/api/videoStudio";
@@ -54,5 +56,27 @@ describe("EditTimelinePanel", () => {
       target: { value: "60" },
     });
     expect(screen.getByText("00:02.5")).toBeInTheDocument();
+  });
+  it("allows removing a sound effect and persists the remaining audio clips", async () => {
+    const audioTimeline: EditTimeline = {
+      ...timeline,
+      tracks: [...timeline.tracks,
+        { id: "audio-music", type: "audio", role: "music", clips: [{ asset: "music/theme.wav", start_frame: 0, end_frame: 96, duration_frames: 96, start_seconds: 0, end_seconds: 4, volume: 0.3 }] },
+        { id: "audio-sfx", type: "audio", role: "sound_effect", clips: [{ asset: "effects/hit.wav", start_frame: 24, end_frame: 36, duration_frames: 12, start_seconds: 1, end_seconds: 1.5, volume: 0.8 }] },
+      ],
+    };
+    vi.spyOn(videoStudioApi, "listJobAudioAssets").mockResolvedValue([]);
+    const save = vi.spyOn(videoStudioApi, "updateJobAudio").mockResolvedValue({
+      edit_timeline: audioTimeline, audio_draft_status: "saved", message: "Faixas salvas",
+    });
+    render(<EditTimelinePanel timeline={audioTimeline} jobId="audio-job" />);
+    await waitFor(() => expect(videoStudioApi.listJobAudioAssets).toHaveBeenCalledWith("audio-job"));
+    fireEvent.click(screen.getByRole("button", { name: "Remover" }));
+    fireEvent.click(screen.getByRole("button", { name: "Salvar alterações de áudio" }));
+    await waitFor(() => expect(save).toHaveBeenCalled());
+    expect(save.mock.calls[0][1].sfx_clips).toEqual([]);
+    expect(save.mock.calls[0][1].music_clips).toHaveLength(1);
+    save.mockRestore();
+    vi.mocked(videoStudioApi.listJobAudioAssets).mockRestore?.();
   });
 });
