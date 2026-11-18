@@ -228,3 +228,59 @@ def build_character_cue_timeline(
             "expression": expression,
         })
     return sorted(timeline, key=lambda event: event["frame"])
+
+
+
+def add_character_performance(
+    scene: dict[str, Any],
+    character_id: str,
+    *,
+    narration_clip: dict[str, Any],
+    cues: list[dict[str, Any]],
+    x: float,
+    y: float,
+    fps: int = 30,
+    scale: float = 1.0,
+    initial_pose: str = "neutral",
+    initial_expression: str = "neutral",
+) -> dict[str, Any]:
+    """Add a character whose pose/expression changes at narration cue frames.
+
+    Cues use offsets relative to narration_clip.start. Each full character
+    pose is visible only until the next cue, avoiding stacked duplicate
+    bodies. SceneCanvas evaluates visible_from_frame/visible_until_frame.
+    """
+    if initial_pose not in VALID_POSES:
+        raise ValueError(f"Unknown pose '{initial_pose}'")
+    if initial_expression not in VALID_EXPRESSIONS:
+        raise ValueError(f"Unknown expression '{initial_expression}'")
+    events = build_character_cue_timeline(narration_clip, cues, fps=fps)
+    first_frame = round(float(narration_clip["start"]) * fps)
+    segments = [{
+        "frame": first_frame,
+        "pose": initial_pose,
+        "expression": initial_expression,
+    }]
+    for event in events:
+        if event["frame"] == segments[-1]["frame"]:
+            segments[-1] = event
+        else:
+            segments.append(event)
+
+    result = dict(scene)
+    for layer in ("rects", "circles", "lines"):
+        result[layer] = list(scene.get(layer, []))
+    for index, event in enumerate(segments):
+        end_frame = segments[index + 1]["frame"] if index + 1 < len(segments) else round(float(narration_clip["end"]) * fps) + 1
+        if end_frame <= event["frame"]:
+            continue
+        primitives = character_primitives(
+            character_id, x=x, y=y, scale=scale,
+            pose=event["pose"], expression=event["expression"],
+        )
+        for layer, items in primitives.items():
+            for item in items:
+                item["visible_from_frame"] = event["frame"]
+                item["visible_until_frame"] = end_frame
+            result[layer].extend(items)
+    return result
