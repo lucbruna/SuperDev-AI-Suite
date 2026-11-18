@@ -72,6 +72,7 @@ class SceneCanvas:
         self.height = height
         self.fps = fps
         self.seed = seed
+        self._background_image_cache: dict[str, np.ndarray] = {}
 
     # ── Public API ────────────────────────────────────────────────
     def render_scene(self, scene: dict[str, Any], frame_index: int) -> np.ndarray:
@@ -117,6 +118,10 @@ class SceneCanvas:
             image_root = Path(get_subsystem_dir("images")).resolve()
             if image_root not in source.parents or not source.is_file():
                 raise ValueError("background image must be an existing DARKSTUDIO image asset")
+            cache_key = str(source)
+            cached = self._background_image_cache.get(cache_key)
+            if cached is not None:
+                return cached.copy()
             with Image.open(source) as opened:
                 image = opened.convert("RGB")
                 ratio = max(self.width / image.width, self.height / image.height)
@@ -126,10 +131,12 @@ class SceneCanvas:
                 )
                 left = (resized.width - self.width) // 2
                 top = (resized.height - self.height) // 2
-                return np.asarray(
+                frame = np.asarray(
                     resized.crop((left, top, left + self.width, top + self.height)),
                     dtype=np.uint8,
                 )
+            self._background_image_cache[cache_key] = frame
+            return frame.copy()
 
         bg_type = scene.get("background_type", "gradient")
         colors = [c for c in scene.get("background_colors", []) if c]
