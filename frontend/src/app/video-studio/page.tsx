@@ -781,7 +781,7 @@ export default function VideoStudioPage() {
                         <span className="text-surface-500">Clipes VidGrid:</span>
                         {job.scene_clips.map((clip) => (
                           clip.output_url ? <a key={clip.scene_index} href={clip.output_url} target="_blank" rel="noreferrer" className="font-medium text-primary-600 hover:underline dark:text-primary-400">
-                            Cena {clip.scene_index + 1} · {clip.duration}s
+                            Cena {clip.scene_index + 1} · {clip.duration}s{clip.audio_status === "per_scene_narration_muxed" ? " · com narração" : clip.audio_status === "single_track_not_split" ? " · sem faixa individual" : ""}
                           </a> : <span key={clip.scene_index} className="text-surface-400">Cena {clip.scene_index + 1} · link indisponível</span>
                         ))}
                       </div>
