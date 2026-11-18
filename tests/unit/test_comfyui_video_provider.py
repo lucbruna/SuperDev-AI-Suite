@@ -127,3 +127,64 @@ def test_image_to_video_api_exposes_explicit_comfyui_opt_in():
     assert request.duration_seconds == 10
     with pytest.raises(Exception):
         ImageToVideoRequest(image_ref="scene.png", motion_provider="wan_direct")
+
+
+def test_image_to_video_engine_conforms_comfyui_output_to_exact_clip(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+
+    from modules.ai_video_studio.ai_video_generator.image_to_video import (
+        image_to_video_engine as engine_module,
+    )
+    from modules.ai_video_studio.ai_video_generator.image_to_video.comfyui_video_provider import (
+        ComfyUIVideoProvider as Provider,
+    )
+
+    image = tmp_path / "source.png"
+    image.write_bytes(b"image")
+    monkeypatch.setattr(engine_module.shutil, "which", lambda _name: "/usr/bin/ffmpeg")
+    monkeypatch.setattr(engine_module, "get_subsystem_dir", lambda _kind: tmp_path)
+    monkeypatch.setattr(engine_module, "unique_filename", lambda *_args: tmp_path / "final.mp4")
+
+    def fake_generate(self, *, image_path, prompt, negative_prompt, output_path):
+        output_path.write_bytes(b"0000ftypisom0000")
+        return {"provider": "comfyui_workflow", "prompt_id": "abc", "video_metadata": {"filename": "wan.mp4"}}
+
+    monkeypatch.setattr(Provider, "generate", fake_generate)
+
+    def fake_ffmpeg(command, **_kwargs):
+        Path(command[-1]).write_bytes(b"normalized-mp4")
+        return SimpleNamespace(returncode=0, stderr="")
+
+    monkeypatch.setattr(engine_module.subprocess, "run", fake_ffmpeg)
+    result = engine_module.ImageToVideoEngine().generate({
+        "id": "comfyui-engine-test",
+        "prompt": str(image),
+        "params": {
+            "motion_provider": "comfyui",
+            "motion_prompt": "Slow orbit",
+            "duration": 10,
+            "fps": 24,
+            "width": 1080,
+            "height": 1920,
+        },
+    })
+    assert result["provider"] == "comfyui_workflow"
+    assert result["frames"] == 240
+    assert result["duration"] == 10
+    assert result["encode_engine"] == "ffmpeg_comfyui_normalized"
+    assert (tmp_path / "final.mp4").read_bytes() == b"normalized-mp4"
+
+
+def test_comfyui_engine_rejects_odd_h264_dimensions(tmp_path):
+    from modules.ai_video_studio.ai_video_generator.image_to_video.image_to_video_engine import (
+        ImageToVideoEngine,
+    )
+
+    image = tmp_path / "source.png"
+    image.write_bytes(b"image")
+    with pytest.raises(ValidationError, match="even width and height"):
+        ImageToVideoEngine().generate({
+            "id": "odd-dimensions",
+            "prompt": str(image),
+            "params": {"motion_provider": "comfyui", "width": 641, "height": 480},
+        })
