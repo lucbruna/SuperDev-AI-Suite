@@ -251,12 +251,12 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
       const music = existingMusic.map((clip) => ({
         asset: clip.asset ?? "", start: clip.start_seconds ?? clip.start_frame / draft.fps,
         end: clip.end_seconds ?? clip.end_frame / draft.fps, volume: clip.volume ?? 1,
-        trim_start: clip.trim_start ?? 0, fade_in: clip.fade_in ?? 0, fade_out: clip.fade_out ?? 0, pan: clip.pan ?? 0, loop: clip.loop ?? false, pan: clip.pan ?? 0,
+        trim_start: clip.trim_start ?? 0, fade_in: clip.fade_in ?? 0, fade_out: clip.fade_out ?? 0, loop: clip.loop ?? false, pan: clip.pan ?? 0,
       })).filter((clip) => clip.asset);
       const sfx = existingSfx.map((clip) => ({
         asset: clip.asset ?? "", start: clip.start_seconds ?? clip.start_frame / draft.fps,
         end: clip.end_seconds ?? clip.end_frame / draft.fps, volume: clip.volume ?? 1,
-        trim_start: clip.trim_start ?? 0, fade_in: clip.fade_in ?? 0, fade_out: clip.fade_out ?? 0,
+        trim_start: clip.trim_start ?? 0, fade_in: clip.fade_in ?? 0, fade_out: clip.fade_out ?? 0, pan: clip.pan ?? 0,
       })).filter((clip) => clip.asset);
       const nextMusic = parseClip(musicAsset, musicStart, musicEnd, musicVolume, musicFadeIn, musicFadeOut, musicLoop, musicPan);
       const nextSfx = parseClip(sfxAsset, sfxStart, sfxEnd, sfxVolume, sfxFadeIn, sfxFadeOut, false, sfxPan);
