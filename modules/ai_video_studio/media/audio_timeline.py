@@ -122,7 +122,10 @@ def _ffmpeg_loudnorm_pass(input_path: Path, output_path: Path | None, *, target_
     try:
         report = json.loads(stderr[start:end + 1])
         keys = ("input_i", "input_tp", "input_lra", "input_thresh", "target_offset")
-        return {key: float(report[key]) for key in keys}
+        values = {key: float(report[key]) for key in keys}
+        if not all(np.isfinite(value) for value in values.values()):
+            raise ValueError("loudnorm measurement is not finite (the source may be silent)")
+        return values
     except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
         raise RuntimeError("FFmpeg loudnorm returned an invalid measurement report") from exc
 
@@ -144,7 +147,8 @@ def normalize_loudness_file(path: str | Path, *, target_lufs: float = -14.0, tru
         normalized, rate = dsp.read_audio(temporary, target_sr=44100)
         safe = dsp.limiter(normalized, threshold=float(10 ** (true_peak_db / 20.0)), sample_rate=rate)
         dsp.write_audio(source, safe, sample_rate=rate)
-        return {"target_lufs": target_lufs, "true_peak_db": true_peak_db, "input_i": measured["input_i"], "input_tp": measured["input_tp"], "input_lra": measured["input_lra"], "output_i": output_report["input_i"], "output_tp": output_report["input_tp"], "output_lra": output_report["input_lra"], "passes": 2.0}
+        verified = _ffmpeg_loudnorm_pass(source, None, target_lufs=target_lufs, true_peak_db=true_peak_db, lra=lra)
+        return {"target_lufs": target_lufs, "true_peak_db": true_peak_db, "input_i": measured["input_i"], "input_tp": measured["input_tp"], "input_lra": measured["input_lra"], "output_i": verified["input_i"], "output_tp": verified["input_tp"], "output_lra": verified["input_lra"], "passes": 2.0, "verified": True}
     finally:
         temporary.unlink(missing_ok=True)
 
