@@ -472,7 +472,7 @@ async def generate_video(req: VideoGenerateRequest, background_tasks: Background
         job_id=job_id,
         project_id=req.project_id,
         status="queued",
-        estimated_seconds=req.duration_seconds * 2,
+        estimated_seconds=(req.num_scenes * 10.0 if req.vidgrid_compatible else req.duration_seconds) * 2,
         message="Video generation queued",
         format=req.format,
     )
