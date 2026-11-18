@@ -59,6 +59,29 @@ def test_update_timeline_draft_keeps_non_video_tracks(completed_job, monkeypatch
     assert [track["type"] for track in result["edit_timeline"]["tracks"]] == ["video", "audio"]
 
 
+def test_update_audio_timeline_persists_music_and_sfx_controls(completed_job, monkeypatch, tmp_path) -> None:
+    monkeypatch.setattr(video, "_persist_job", lambda record: None)
+    from modules.ai_video_studio.media import audio_timeline
+
+    monkeypatch.setattr(audio_timeline, "validate_audio_asset", lambda value: tmp_path / "validated.wav")
+    request = video.AudioTimelineEditRequest(
+        music_clips=[video.AudioTimelineClip(
+            asset=str(tmp_path / "music.wav"), start=0.5, end=3.0,
+            volume=0.25, fade_in=0.5, fade_out=0.75,
+        )],
+        sfx_clips=[video.AudioTimelineClip(
+            asset=str(tmp_path / "impact.wav"), start=1.0, end=1.5, volume=0.8,
+        )],
+    )
+    result = asyncio.run(video.update_video_job_audio(completed_job, request))
+    record = video._jobs[completed_job]
+    assert result["audio_draft_status"] == "saved"
+    assert record["_audio_clips"]["music"][0]["volume"] == 0.25
+    assert record["_audio_clips"]["sfx"][0]["start"] == 1.0
+    music_track = next(track for track in result["edit_timeline"]["tracks"] if track.get("role") == "music")
+    assert music_track["clips"][0]["fade_in"] == 0.5
+
+
 def test_update_timeline_draft_rejects_unknown_job() -> None:
     with pytest.raises(HTTPException) as error:
         asyncio.run(video.update_video_job_timeline("missing-job", video.TimelineEditRequest()))
