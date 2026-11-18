@@ -157,6 +157,8 @@ class VideoStatusResponse(BaseModel):
     edited_output_url: str | None = None
     edited_video_duration: float | None = None
     edit_render_audio: str | None = None
+    edit_render_subtitles: str | None = None
+    edited_subtitles: dict | None = None
     error: str | None = None
 
 
