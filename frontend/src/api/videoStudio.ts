@@ -168,6 +168,14 @@ export interface StudioJob {
   output_path?: string | null;
   scene_image_mode?: string | null;
   scene_assets?: SceneImageAsset[] | null;
+  storyboard_report?: {
+    scene_count: number;
+    ready_count: number;
+    needs_review_count: number;
+    repeated_visuals: { scene_indices: number[]; prompt: string }[];
+    warnings: string[];
+    historical_fact_policy?: string | null;
+  } | null;
   scene_clips?: SceneVideoClip[] | null;
   vidgrid_compatible?: boolean | null;
   clip_duration_seconds?: number | null;
