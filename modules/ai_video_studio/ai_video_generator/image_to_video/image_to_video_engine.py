@@ -7,6 +7,9 @@ is generated so the pipeline still produces a real video.
 """
 from __future__ import annotations
 
+import shutil
+import subprocess
+import tempfile
 import time
 from pathlib import Path
 from typing import Any
@@ -33,6 +36,15 @@ class ImageToVideoEngine:
         fps = max(1, int(params.get("fps", 24)))
         width = int(params.get("width", 1280))
         height = int(params.get("height", 720))
+        provider_mode = str(params.get("motion_provider", "camera")).strip().lower()
+        if provider_mode not in {"camera", "comfyui"}:
+            raise ValidationError("motion_provider must be camera or comfyui", field="motion_provider")
+        if provider_mode == "comfyui":
+            return self._generate_with_comfyui(
+                source=source, params=params, duration=duration, fps=fps,
+                width=width, height=height, started=started, job_id=job.get("id"),
+            )
+
         motion = str(params.get("camera_motion", "parallax")).strip().lower()
         if motion not in self.MOTION_PRESETS:
             raise ValidationError(
@@ -61,6 +73,68 @@ class ImageToVideoEngine:
             "elapsed_seconds": round(time.time() - started, 3),
             "output_ref": f"itv_{job.get('id')}",
         }
+
+    def _generate_with_comfyui(
+        self, *, source: str, params: dict[str, Any], duration: float, fps: int,
+        width: int, height: int, started: float, job_id: Any,
+    ) -> dict[str, Any]:
+        """Run a configured generative workflow and conform it to the requested clip."""
+        if not Path(source).is_file():
+            raise ValidationError("ComfyUI mode requires image_ref to be an existing image file", field="image_ref")
+        if not shutil.which("ffmpeg"):
+            raise RuntimeError("FFmpeg is required to normalize the ComfyUI video to the requested clip duration")
+
+        output = unique_filename(get_subsystem_dir("videos"), "image_to_video_ai", "mp4")
+        temp_handle = tempfile.NamedTemporaryFile(prefix="darkstudio-comfyui-", suffix=".mp4", delete=False)
+        raw_path = Path(temp_handle.name)
+        temp_handle.close()
+        try:
+            from modules.ai_video_studio.ai_video_generator.image_to_video.comfyui_video_provider import (
+                ComfyUIVideoProvider,
+            )
+            provider = ComfyUIVideoProvider(
+                timeout=float(params.get("provider_timeout", 900)),
+                poll_interval=float(params.get("provider_poll_interval", 2)),
+            )
+            generated = provider.generate(
+                image_path=source,
+                prompt=str(params.get("motion_prompt") or params.get("prompt") or "Animate the reference image naturally"),
+                negative_prompt=str(params.get("negative_prompt") or ""),
+                output_path=raw_path,
+            )
+            total_frames = max(1, int(round(duration * fps)))
+            command = [
+                "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+                "-stream_loop", "-1", "-i", str(raw_path),
+                "-t", f"{duration:.6f}",
+                "-vf", f"fps={fps},scale={width}:{height}:force_original_aspect_ratio=decrease,pad={width}:{height}:(ow-iw)/2:(oh-ih)/2,setsar=1",
+                "-frames:v", str(total_frames), "-an", "-c:v", "libx264",
+                "-pix_fmt", "yuv420p", "-movflags", "+faststart", str(output),
+            ]
+            completed = subprocess.run(command, capture_output=True, text=True, timeout=max(180, duration * 20))
+            if completed.returncode != 0 or not output.is_file() or output.stat().st_size == 0:
+                output.unlink(missing_ok=True)
+                raise RuntimeError(f"Could not normalize ComfyUI clip: {completed.stderr[-1500:]}")
+            return {
+                "mode": "image_to_video",
+                "provider": generated["provider"],
+                "provider_prompt_id": generated["prompt_id"],
+                "source": source,
+                "image_loaded": True,
+                "camera_motion": None,
+                "frames": total_frames,
+                "fps": fps,
+                "duration": total_frames / fps,
+                "requested_duration": duration,
+                "output_path": str(output),
+                "output_bytes": output.stat().st_size,
+                "encode_engine": "ffmpeg_comfyui_normalized",
+                "provider_output": generated["video_metadata"],
+                "elapsed_seconds": round(time.time() - started, 3),
+                "output_ref": f"itv_{job_id}",
+            }
+        finally:
+            raw_path.unlink(missing_ok=True)
 
     MOTION_PRESETS = {
         "parallax", "zoom", "push_in", "pull_out", "pan", "pan_left",
