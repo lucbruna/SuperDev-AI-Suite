@@ -245,6 +245,7 @@ export const videoStudioApi = {
     video_duration: number;
     file_size_bytes: number;
     audio_status: string;
+    ducking?: { enabled?: boolean; reduction_db?: number; speech_detected?: boolean } | null;
     message: string;
   }> {
     const { data } = await apiClient.post(`${STUDIO_BASE}/videos/jobs/${jobId}/render-edits`);
