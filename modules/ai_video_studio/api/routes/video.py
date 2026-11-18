@@ -160,6 +160,7 @@ class VideoStatusResponse(BaseModel):
     edit_render_ducking: dict | None = None
     edit_render_normalization: dict | None = None
     edit_render_loudness: dict | None = None
+    edit_render_quality: dict | None = None
     edit_render_status: str | None = None
     edited_output_url: str | None = None
     edited_video_duration: float | None = None
@@ -576,6 +577,14 @@ async def render_video_job_edits(job_id: str):
                 mix_audio_timeline, audio_inputs, audio_path, total_duration=total_duration,
                 **(record.get("_audio_settings") or {}),
             )
+            quality_report = mix_result.get("quality") or {}
+            if quality_report and not quality_report.get("export_allowed", True):
+                record["edit_render_quality"] = quality_report
+                _persist_job(record)
+                raise HTTPException(
+                    status_code=422,
+                    detail="Exportação bloqueada: o áudio final contém clipping. Reduza os níveis e renderize novamente.",
+                )
             muxed_path = unique_filename(get_subsystem_dir("videos"), "text_to_video_edited_final", "mp4")
             mux_result = await asyncio.to_thread(
                 mux_audio_into_video, rendered_path, mix_result["output_path"], muxed_path
@@ -637,6 +646,7 @@ async def render_video_job_edits(job_id: str):
             edit_render_ducking=(mix_result.get("ducking") if isinstance(mix_result, dict) else None),
             edit_render_normalization=(mix_result.get("normalization") if isinstance(mix_result, dict) else None),
             edit_render_loudness=(mix_result.get("loudness") if isinstance(mix_result, dict) else None),
+            edit_render_quality=(mix_result.get("quality") if isinstance(mix_result, dict) else None),
             edit_render_status="completed",
             edit_render_audio=audio_status,
             edit_render_subtitles=subtitle_status,
@@ -655,8 +665,13 @@ async def render_video_job_edits(job_id: str):
             "ducking": (mix_result.get("ducking") if isinstance(mix_result, dict) else None),
             "normalization": (mix_result.get("normalization") if isinstance(mix_result, dict) else None),
             "loudness": (mix_result.get("loudness") if isinstance(mix_result, dict) else None),
+            "quality": (mix_result.get("quality") if isinstance(mix_result, dict) else None),
             "mastering": (mix_result.get("mastering") if isinstance(mix_result, dict) else None),
         }
+    except HTTPException:
+        record["edit_render_status"] = "quality_blocked" if record.get("edit_render_quality", {}).get("export_allowed") is False else "failed"
+        _persist_job(record)
+        raise
     except Exception as exc:
         record["edit_render_status"] = "failed"
         record["edit_render_error"] = str(exc)[:500]
