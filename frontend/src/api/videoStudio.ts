@@ -236,7 +236,7 @@ export const videoStudioApi = {
     music_clips: { asset: string; start: number; end: number; trim_start?: number; volume?: number; fade_in?: number; fade_out?: number; loop?: boolean; pan?: number }[];
     sfx_clips: { asset: string; start: number; end: number; trim_start?: number; volume?: number; fade_in?: number; fade_out?: number; pan?: number }[];
     ducking_enabled?: boolean; ducking_db?: number; ducking_threshold_db?: number;
-    ducking_attack?: number; ducking_release?: number; normalization_enabled?: boolean; normalization_target_dbfs?: number; normalization_max_gain_db?: number; loudness_normalization_enabled?: boolean; target_lufs?: number; true_peak_db?: number; loudness_range?: number;
+    ducking_attack?: number; ducking_release?: number; normalization_enabled?: boolean; normalization_target_dbfs?: number; normalization_max_gain_db?: number; loudness_normalization_enabled?: boolean; target_lufs?: number; true_peak_db?: number; loudness_range?: number; compressor_enabled?: boolean; compressor_threshold_db?: number; compressor_ratio?: number; compressor_attack?: number; compressor_release?: number; compressor_makeup_db?: number; eq_enabled?: boolean; eq_low_db?: number; eq_mid_db?: number; eq_high_db?: number;
   }): Promise<{ edit_timeline: EditTimeline; audio_draft_status: string; message: string }> {
     const { data } = await apiClient.patch(`${STUDIO_BASE}/videos/jobs/${jobId}/audio`, payload);
     return data;
