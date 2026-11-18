@@ -177,6 +177,7 @@ async def preview_scene_object(
             x=float(payload.get("x", 0)),
             y=float(payload.get("y", 0)),
             scale=float(payload.get("scale", 1.0)),
+            motion_start_frame=int(payload.get("motion_start_frame", 0)),
         )
     except (TypeError, ValueError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
