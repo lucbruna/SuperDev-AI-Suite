@@ -683,8 +683,8 @@ async def regenerate_video_job_scene_images(job_id: str, req: SceneImageBatchEdi
     record = _jobs.get(job_id)
     if record is None:
         raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
-    if record.get("_rendering_edits"):
-        raise HTTPException(status_code=409, detail="The edited video is rendering; scene assets are temporarily locked")
+    if record.get("_rendering_edits") or record.get("_rebuilding_scene_clips"):
+        raise HTTPException(status_code=409, detail="Scene assets are locked by an active render operation")
     if record.get("status") != "completed":
         raise HTTPException(status_code=409, detail="Scene images can only be changed after generation completes")
     if job_id in _scene_batch_jobs:
