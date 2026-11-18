@@ -449,7 +449,8 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
         <div className="grid gap-3 sm:grid-cols-2">
           {(draft.tracks.find((track) => track.type === "video")?.clips ?? []).map((clip) => {
             const index = clip.scene_index ?? 0;
-            const asset = sceneImageAssets.find((item) => item.scene_index === index);
+            const sourceIndex = clip.source_scene_index ?? index;
+            const asset = sceneImageAssets.find((item) => item.scene_index === sourceIndex);
             return <div key={index} className="rounded-lg border border-surface-200 p-2 dark:border-surface-700">
               {asset?.image_url ? <img src={asset.image_url} alt={`Imagem da cena ${index + 1}`} className="mb-2 aspect-video w-full rounded-md object-cover" /> : <div className="mb-2 flex aspect-video items-center justify-center rounded-md bg-surface-100 text-xs text-surface-500 dark:bg-surface-800">Cena {index + 1} · imagem procedural ou ainda não criada</div>}
               <p className="mb-1 text-xs font-semibold text-surface-700 dark:text-surface-300">Cena {index + 1}</p>
