@@ -187,6 +187,7 @@ class AudioTimelineClip(BaseModel):
     end: float = Field(..., gt=0, le=36000)
     trim_start: float = Field(default=0, ge=0, le=36000)
     volume: float = Field(default=1, ge=0, le=2)
+    pan: float = Field(default=0, ge=-1, le=1, description="Stereo balance: -1 left, 0 center, 1 right")
     fade_in: float = Field(default=0, ge=0, le=36000)
     fade_out: float = Field(default=0, ge=0, le=36000)
     loop: bool = Field(default=False, description="Repeat a short source to fill the timeline clip; use for music only")
