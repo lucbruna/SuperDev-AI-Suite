@@ -133,6 +133,7 @@ export interface StudioJob {
   edit_timeline?: EditTimeline | null;
   edit_draft_status?: string | null;
   audio_draft_status?: string | null;
+  audio_settings?: { ducking_enabled?: boolean; ducking_db?: number; ducking_threshold_db?: number; ducking_attack?: number; ducking_release?: number } | null;
   edit_render_status?: string | null;
   edited_output_url?: string | null;
   edited_video_duration?: number | null;
