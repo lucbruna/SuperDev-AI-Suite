@@ -48,11 +48,23 @@ class _FakeEngine:
 
         out = get_subsystem_dir("videos") / "fake_voiced_0001.mp4"
         out.write_bytes(b"FAKE-MP4-WITH-AUDIO")
+        subtitle_info = None
+        if job.get("params", {}).get("generate_subtitles"):
+            subtitle_path = get_subsystem_dir("subtitles") / "fake_0001.srt"
+            subtitle_path.parent.mkdir(parents=True, exist_ok=True)
+            subtitle_path.write_text("1\\n00:00:00,000 --> 00:00:02,000\\nLegenda de teste.\\n", encoding="utf-8")
+            subtitle_info = {
+                "format": "srt",
+                "file_path": str(subtitle_path),
+                "cue_count": 1,
+                "duration": 2.0,
+            }
         result = {
             "output_path": str(out),
             "output_bytes": out.stat().st_size,
             "ai_planner": "deterministic",
             "video_duration": 6.0,
+            "subtitles": subtitle_info,
             "voiceover": {
                 "muxed": True,
                 "output_path": str(out),
@@ -780,3 +792,28 @@ class TestDarkstudioProfileSelection:
             },
         )
         assert resp.status_code == 422
+
+
+class TestSubtitleDownload:
+    @pytest.mark.asyncio
+    async def test_generated_srt_is_exposed_as_downloadable_file(
+        self, client: AsyncClient, fake_engine: _FakeEngine
+    ):
+        resp = await client.post(
+            "/api/v1/video-studio/videos/generate",
+            json={
+                "project_id": "p1",
+                "prompt": "Cena com legenda.",
+                "generate_subtitles": True,
+            },
+        )
+        assert resp.status_code == 202
+        job_id = resp.json()["job_id"]
+        status = (await client.get(f"/api/v1/video-studio/videos/jobs/{job_id}")).json()
+        subtitle = status["subtitles"]
+        assert subtitle["format"] == "srt"
+        assert subtitle["cue_count"] == 1
+        assert subtitle["download_url"].endswith("/downloads/subtitles/fake_0001.srt")
+        downloaded = await client.get(subtitle["download_url"])
+        assert downloaded.status_code == 200
+        assert "Legenda de teste." in downloaded.text
