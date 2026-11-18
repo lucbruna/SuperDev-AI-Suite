@@ -76,6 +76,8 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
   const [analyzingAvSync, setAnalyzingAvSync] = useState(false);
   const [visualReport, setVisualReport] = useState<Awaited<ReturnType<typeof videoStudioApi.analyzeJobVisuals>> | null>(null);
   const [analyzingVisuals, setAnalyzingVisuals] = useState(false);
+  const [mp4VisualReport, setMp4VisualReport] = useState<Awaited<ReturnType<typeof videoStudioApi.analyzeJobMp4Visuals>> | null>(null);
+  const [analyzingMp4Visuals, setAnalyzingMp4Visuals] = useState(false);
   const [renderQuality, setRenderQuality] = useState<Awaited<ReturnType<typeof videoStudioApi.getJob>>["edit_render_quality"]>(null);
   const [duckingEnabled, setDuckingEnabled] = useState(true);
   const [duckingDb, setDuckingDb] = useState("9");
@@ -107,6 +109,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
       if (job.audio_analysis) setAudioAnalysis(job.audio_analysis as Awaited<ReturnType<typeof videoStudioApi.analyzeJobAudio>>);
       if (job.av_sync_analysis) setAvSyncReport(job.av_sync_analysis as Awaited<ReturnType<typeof videoStudioApi.analyzeJobAvSync>>);
       if (job.visual_intelligence) setVisualReport(job.visual_intelligence as Awaited<ReturnType<typeof videoStudioApi.analyzeJobVisuals>>);
+      if (job.mp4_visual_analysis) setMp4VisualReport(job.mp4_visual_analysis as Awaited<ReturnType<typeof videoStudioApi.analyzeJobMp4Visuals>>);
       if (job.audio_settings) {
         setDuckingEnabled(job.audio_settings.ducking_enabled ?? true);
         setDuckingDb(String(job.audio_settings.ducking_db ?? 9));
@@ -222,6 +225,17 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Não foi possível analisar a qualidade visual.");
     } finally { setAnalyzingVisuals(false); }
+  }
+  async function analyzeMp4Visuals() {
+    if (!jobId || dirty || audioDirty || saving || savingAudio || analyzingMp4Visuals) return;
+    setAnalyzingMp4Visuals(true); setMessage("");
+    try {
+      const report = await videoStudioApi.analyzeJobMp4Visuals(jobId);
+      setMp4VisualReport(report);
+      setMessage(report.status === "no_obvious_issue" ? "Análise dos frames concluída sem alertas detectados." : "Análise do MP4 concluída; revise os trechos sinalizados.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Não foi possível analisar os frames do MP4.");
+    } finally { setAnalyzingMp4Visuals(false); }
   }
   async function analyzeAvSync() {
     if (!jobId || dirty || audioDirty || saving || savingAudio || analyzingAvSync) return;
@@ -548,6 +562,9 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
             <button type="button" onClick={analyzeVisuals} disabled={!jobId || dirty || audioDirty || saving || savingAudio || analyzingVisuals} className="rounded-md border border-primary-300 px-3 py-2 text-xs font-semibold disabled:opacity-40 dark:border-primary-700">
               {analyzingVisuals ? "Analisando visual…" : "Analisar qualidade visual"}
             </button>
+            <button type="button" onClick={analyzeMp4Visuals} disabled={!jobId || dirty || audioDirty || saving || savingAudio || analyzingMp4Visuals} className="rounded-md border border-primary-300 px-3 py-2 text-xs font-semibold disabled:opacity-40 dark:border-primary-700">
+              {analyzingMp4Visuals ? "Extraindo frames…" : "Analisar MP4 renderizado"}
+            </button>
             <button type="button" onClick={analyzeAvSync} disabled={!jobId || dirty || audioDirty || saving || savingAudio || analyzingAvSync} className="rounded-md border border-primary-300 px-3 py-2 text-xs font-semibold disabled:opacity-40 dark:border-primary-700">
               {analyzingAvSync ? "Verificando sincronização…" : "Verificar A/V"}
             </button>
@@ -556,6 +573,23 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
             </button>
             <span className="text-[11px] text-surface-400">A lista mostra arquivos gerados em music, effects, voice, dubbing e mix. Caminhos externos são bloqueados.</span>
           </div>
+          {mp4VisualReport && <div className="rounded-md border border-surface-200 p-3 text-xs dark:border-surface-700 sm:col-span-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <strong>Scene Intelligence · frames reais do MP4</strong>
+              <span className={mp4VisualReport.status === "no_obvious_issue" ? "text-emerald-600" : "text-amber-600"}>{mp4VisualReport.status.replaceAll("_", " ")}</span>
+            </div>
+            <p className="mt-1 text-surface-500">{mp4VisualReport.sample_count} frames amostrados · intervalo {mp4VisualReport.sample_interval_seconds}s · vídeo {mp4VisualReport.video_source === "edited" ? "editado" : "original"} · {mp4VisualReport.video_duration_seconds}s</p>
+            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <div className="rounded bg-surface-100 p-2 dark:bg-surface-800"><div className="text-surface-500">Pares repetidos</div><strong>{mp4VisualReport.duplicate_pair_count}</strong></div>
+              <div className="rounded bg-surface-100 p-2 dark:bg-surface-800"><div className="text-surface-500">Pares quase estáticos</div><strong>{mp4VisualReport.low_change_pair_count}</strong></div>
+              <div className="rounded bg-surface-100 p-2 dark:bg-surface-800"><div className="text-surface-500">Trechos estáticos</div><strong>{mp4VisualReport.static_runs.length}</strong></div>
+              <div className="rounded bg-surface-100 p-2 dark:bg-surface-800"><div className="text-surface-500">Comparações</div><strong>{mp4VisualReport.comparison_count}</strong></div>
+            </div>
+            {mp4VisualReport.static_runs.length > 0 && <div className="mt-3"><strong>Trechos com pouca mudança visual</strong><ul className="mt-1 list-disc pl-5">{mp4VisualReport.static_runs.map((run, index) => <li key={index}>{run.start_seconds}s–{run.end_seconds}s ({run.comparison_count} comparações)</li>)}</ul></div>}
+            {mp4VisualReport.scene_summaries.length > 0 && <div className="mt-3"><strong>Resumo por cena</strong><ul className="mt-1 space-y-1">{mp4VisualReport.scene_summaries.map((scene) => <li key={scene.scene_index}>Cena {scene.scene_index + 1}: {scene.sampled_comparisons} amostras · {scene.repeated_frame_pairs} pares repetidos · {scene.low_change_pairs} pares estáticos</li>)}</ul></div>}
+            {mp4VisualReport.warnings.length > 0 && <ul className="mt-2 list-disc space-y-1 pl-5 text-amber-600">{mp4VisualReport.warnings.map((warning, index) => <li key={index}>{warning.code.replaceAll("_", " ")} · {warning.count}</li>)}</ul>}
+            <p className="mt-2 text-surface-400">Análise de frames amostrados com FFmpeg, Pillow e NumPy. Não reconhece personagens nem comprova movimento semântico ou qualidade artística.</p>
+          </div>}
           {visualReport && <div className="rounded-md border border-surface-200 p-3 text-xs dark:border-surface-700 sm:col-span-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <strong>Visual Intelligence · {visualReport.studio_id === "whymentary" ? "Whymentary" : "Documentário Histórico"}</strong>
