@@ -87,6 +87,17 @@ def test_frames_to_video_ffmpeg_mp4(tmp_path) -> None:
     assert result["fps"] == 12
 
 
+
+@pytest.mark.skipif(not ffmpeg_available(), reason="ffmpeg not installed")
+def test_frames_to_video_require_mp4_success(tmp_path) -> None:
+    """Strict mode must produce an actual MP4 when FFmpeg is available."""
+    out = tmp_path / "strict.mp4"
+    result = frames_to_video(_frames(12), out, fps=12, require_mp4=True)
+    assert result["engine"] == "ffmpeg"
+    assert result["output_path"] == str(out)
+    assert out.is_file()
+    assert out.stat().st_size > 0
+
 def test_frames_to_video_gif_fallback(tmp_path) -> None:
     """Without ffmpeg the pipeline must still produce a file (GIF)."""
     out = tmp_path / "video.mp4"
