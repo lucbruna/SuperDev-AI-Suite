@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { videoStudioApi, type EditTimeline, type EditTimelineClip, type StudioAudioAsset, type SceneImageAsset } from "@/api/videoStudio";
+import { videoStudioApi, type EditTimeline, type EditTimelineClip, type StudioAudioAsset, type SceneImageAsset, type SceneVisualDirection } from "@/api/videoStudio";
 
 type Props = {
   timeline: EditTimeline;
@@ -49,6 +49,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
   const [draft, setDraft] = useState<EditTimeline>(timeline);
   const [sceneImageAssets, setSceneImageAssets] = useState<SceneImageAsset[]>(sceneAssets ?? []);
   const [sceneImagePrompts, setSceneImagePrompts] = useState<Record<number, string>>({});
+  const [visualDirections, setVisualDirections] = useState<Record<number, SceneVisualDirection>>({});
   const [editingImageScene, setEditingImageScene] = useState<number | null>(null);
   const [generatingMotionScene, setGeneratingMotionScene] = useState<number | null>(null);
   const [generatedMotionClips, setGeneratedMotionClips] = useState<Record<number, string>>({});
@@ -87,6 +88,24 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
   const [analyzingVisuals, setAnalyzingVisuals] = useState(false);
   const [mp4VisualReport, setMp4VisualReport] = useState<Awaited<ReturnType<typeof videoStudioApi.analyzeJobMp4Visuals>> | null>(null);
   const [analyzingMp4Visuals, setAnalyzingMp4Visuals] = useState(false);
+  useEffect(() => {
+    if (!jobId) return;
+    let cancelled = false;
+    videoStudioApi.getJobVisualDirection(jobId).then((result) => {
+      if (cancelled) return;
+      const byIndex: Record<number, SceneVisualDirection> = {};
+      const suggestedPrompts: Record<number, string> = {};
+      for (const scene of result.scenes) {
+        byIndex[scene.scene_index] = scene;
+        if (scene.visual_prompt_suggestion) suggestedPrompts[scene.scene_index] = scene.visual_prompt_suggestion;
+      }
+      setVisualDirections(byIndex);
+      setSceneImagePrompts((current) => ({ ...suggestedPrompts, ...current }));
+    }).catch(() => {
+      // Older jobs may not have retained scene direction metadata.
+    });
+    return () => { cancelled = true; };
+  }, [jobId]);
   const [renderQuality, setRenderQuality] = useState<Awaited<ReturnType<typeof videoStudioApi.getJob>>["edit_render_quality"]>(null);
   const [duckingEnabled, setDuckingEnabled] = useState(true);
   const [duckingDb, setDuckingDb] = useState("9");
@@ -472,9 +491,18 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
             return <div key={index} className="rounded-lg border border-surface-200 p-2 dark:border-surface-700">
               {asset?.image_url ? <img src={asset.image_url} alt={`Imagem da cena ${index + 1}`} className="mb-2 aspect-video w-full rounded-md object-cover" /> : <div className="mb-2 flex aspect-video items-center justify-center rounded-md bg-surface-100 text-xs text-surface-500 dark:bg-surface-800">Cena {index + 1} · imagem procedural ou ainda não criada</div>}
               <p className="mb-1 text-xs font-semibold text-surface-700 dark:text-surface-300">Cena {index + 1}</p>
-              <textarea value={sceneImagePrompts[index] ?? ""} onChange={(event) => setSceneImagePrompts((current) => ({ ...current, [index]: event.target.value }))} rows={2} maxLength={4000} placeholder="Ex.: transforme o fundo em uma floresta ao amanhecer, mantenha o personagem e mude a iluminação…" className="w-full rounded-md border border-surface-200 bg-transparent p-2 text-xs dark:border-surface-700" />
-              <button type="button" onClick={() => editSceneImage(index)} disabled={!sceneImagePrompts[index]?.trim() || editingImageScene !== null} className="mt-2 rounded-md border border-primary-300 px-3 py-1.5 text-xs font-semibold disabled:opacity-40 dark:border-primary-700">
-                {editingImageScene === index ? "Gerando imagem…" : asset ? "Alterar imagem por texto" : "Criar imagem por texto"}
+              {visualDirections[sourceIndex] && <div className="mb-2 rounded-md bg-surface-50 p-2 text-[11px] dark:bg-surface-800">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full bg-primary-100 px-2 py-0.5 font-semibold text-primary-700 dark:bg-primary-950 dark:text-primary-300">{visualDirections[sourceIndex].narrative_beat.replaceAll("_", " ")}</span>
+                  <span className="text-surface-500">Plano: {visualDirections[sourceIndex].shot_type}</span>
+                </div>
+                {visualDirections[sourceIndex].narration && <p className="mt-1 text-surface-600 dark:text-surface-300">Narração: {visualDirections[sourceIndex].narration}</p>}
+                {visualDirections[sourceIndex].visual_direction && <p className="mt-1 text-surface-500">Direção: {visualDirections[sourceIndex].visual_direction}</p>}
+              </div>}
+              <label className="mb-1 block text-[10px] font-medium text-surface-500">Prompt visual · edite antes de regenerar</label>
+              <textarea value={sceneImagePrompts[sourceIndex] ?? sceneImagePrompts[index] ?? visualDirections[sourceIndex]?.visual_prompt ?? visualDirections[sourceIndex]?.visual_prompt_suggestion ?? ""} onChange={(event) => setSceneImagePrompts((current) => ({ ...current, [sourceIndex]: event.target.value }))} onChange={(event) => setSceneImagePrompts((current) => ({ ...current, [index]: event.target.value }))} rows={2} maxLength={4000} placeholder="Ex.: transforme o fundo em uma floresta ao amanhecer, mantenha o personagem e mude a iluminação…" className="w-full rounded-md border border-surface-200 bg-transparent p-2 text-xs dark:border-surface-700" />
+              <button type="button" onClick={() => editSceneImage(sourceIndex)} disabled={!(sceneImagePrompts[sourceIndex] ?? sceneImagePrompts[index] ?? visualDirections[sourceIndex]?.visual_prompt_suggestion)?.trim() || editingImageScene !== null} className="mt-2 rounded-md border border-primary-300 px-3 py-1.5 text-xs font-semibold disabled:opacity-40 dark:border-primary-700">
+                {editingImageScene === sourceIndex ? "Gerando imagem…" : asset ? "Regenerar somente esta cena" : "Criar imagem desta cena"}
               </button>
               <button type="button" onClick={() => asset && generateSceneMotion(index, asset)} disabled={!asset?.image_path || generatingMotionScene !== null} className="ml-2 mt-2 rounded-md border border-violet-300 px-3 py-1.5 text-xs font-semibold disabled:opacity-40 dark:border-violet-700">
                 {generatingMotionScene === index ? "Gerando vídeo IA…" : "Animar com IA · ComfyUI"}
