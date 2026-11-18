@@ -134,6 +134,7 @@ class VideoStatusResponse(BaseModel):
     format: str | None = None
     params: dict | None = None
     voiceover: VoiceoverInfo | None = None
+    subtitles: dict | None = None
     error: str | None = None
 
 
@@ -153,7 +154,7 @@ async def generate_video(req: VideoGenerateRequest, background_tasks: Background
         # Full param snapshot (every request field, including the prompt) so
         # the list can label the job and re-run it with identical settings.
         "params": req.model_dump(exclude={"project_id"}),
-        "voiceover": None, "error": None,
+        "voiceover": None, "subtitles": None, "error": None,
     }
 
     async def _run(job_id: str, r: VideoGenerateRequest) -> None:
@@ -207,6 +208,7 @@ async def generate_video(req: VideoGenerateRequest, background_tasks: Background
                 ai_planner=result.get("ai_planner"),
                 video_duration=await _probe_video_duration(output_path),
                 voiceover=result.get("voiceover"),
+                subtitles=result.get("subtitles"),
             )
         except Exception as e:  # noqa: BLE001 — surface any failure on the job
             record.update(status="failed", error=str(e))
