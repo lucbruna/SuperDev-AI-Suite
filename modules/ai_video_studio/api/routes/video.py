@@ -994,21 +994,25 @@ async def render_video_job_edits(job_id: str):
                 if isinstance(original_narration, list) and voiceover_for_timeline.get("narration_style") == "per_scene"
                 else []
             )
+            previous = record.get("edit_timeline") or {}
+            has_subtitle_track = bool(record.get("subtitles")) or any(
+                track.get("type") == "subtitle" for track in previous.get("tracks", [])
+            )
             offsets = compute_scene_offsets(scenes, fps=fps)
             subtitle_cues = []
-            for index, scene in enumerate(scenes):
-                text_value = scene_narration_text(scene)
-                if text_value:
-                    start_seconds = offsets[index]
-                    end_seconds = start_seconds + max(1, int(round(float(scene.get("duration") or 3.0) * fps))) / fps
-                    subtitle_cues.append({"index": index + 1, "text": text_value, "start": start_seconds, "end": end_seconds})
+            if has_subtitle_track:
+                for index, scene in enumerate(scenes):
+                    text_value = scene_narration_text(scene)
+                    if text_value:
+                        start_seconds = offsets[index]
+                        end_seconds = start_seconds + max(1, int(round(float(scene.get("duration") or 3.0) * fps))) / fps
+                        subtitle_cues.append({"index": index + 1, "text": text_value, "start": start_seconds, "end": end_seconds})
             mixed_timeline = build_edit_timeline(
                 scenes, fps=fps, width=width, height=height,
                 narration=remapped_narration, subtitle_cues=subtitle_cues,
                 music_clips=configured_audio.get("music", []),
                 sfx_clips=configured_audio.get("sfx", []),
             )
-            previous = record.get("edit_timeline") or {}
             mixed_timeline["tracks"].extend(
                 track for track in previous.get("tracks", [])
                 if track.get("type") != "video"
