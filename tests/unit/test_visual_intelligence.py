@@ -21,6 +21,7 @@ def test_historical_visual_report_scores_camera_and_shot_variety():
     assert report["scene_count"] == 3
     assert report["moving_camera_scenes"] == 3
     assert report["unique_shot_types"] == 3
+    assert report["transition_counts"] == {"cut": 3}
     assert report["components"]["motion"] == 100
     assert report["score"] > 0
     assert report["analysis_method"] == "scene_descriptor_metadata"
