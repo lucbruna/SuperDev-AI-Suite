@@ -46,12 +46,23 @@ Optional EBU R128 loudness normalization uses FFmpeg's two-pass loudnorm filter 
 
 Per-clip pan is saved with the timeline metadata. Mono sources are duplicated to both channels before balance is applied; stereo sources retain their channel separation. The mix output is a two-channel WAV.
 
-## Edited render limitation
+## Edited render and audio behavior
 
-The render endpoint creates a separate MP4 file and does not overwrite the original generated/narrated output. It currently renders the edited visual scenes with strict FFmpeg MP4 encoding. It does **not** yet retime narration, music, sound effects, or subtitle cues after scene reorder/duration changes. The API returns `audio_status: "not_retimed"`; treat the edited MP4 as a silent visual preview until the audio timeline renderer is implemented.
+The render endpoint creates a separate MP4 file and never overwrites the original. It renders the edited visual sequence, remaps per-scene narration to the edited scene order and timing when individual scene audio is available, regenerates the SRT sidecar, and mixes the configured music and sound-effect clips.
+
+A pre-mixed single narration track cannot be automatically re-timed after scene edits. In that case the original single track is omitted from the edited output when other audio clips are present; when no other clips exist, the status is single_track_not_retimed. Review the returned audio status rather than assuming narration was aligned.
+
+Audio statuses:
+- mixed_audio: narration and configured music/effects were mixed.
+- mixed_audio_single_track_omitted: configured music/effects were mixed, but the original pre-mixed narration could not be re-timed and was omitted.
+- single_track_not_retimed: the original pre-mixed narration was not re-timed.
+- silent: no audio clips were configured.
+- audio_mux_failed: visual MP4 succeeded but audio muxing failed.
+
+Subtitle statuses are returned separately; when regeneration succeeds, the edited SRT follows the edited scene timing. The edited video remains a separate output from the original generated MP4.
 
 ## API response statuses
 
-- `edit_draft_status: persisted_local_sqlite`: scene edits were stored in the local SQLite database.
-- `edit_render_status: rendering | completed | failed`: edited MP4 render lifecycle.
-- `audio_status: not_retimed`: original audio tracks were not re-aligned to the new visual timing.
+- edit_draft_status: persisted_local_sqlite means scene edits were stored in the local SQLite database.
+- edit_render_status: rendering | completed | failed describes the edited MP4 lifecycle.
+- audio_status: use the values above; it is not a generic guarantee that the original narration was retained.
