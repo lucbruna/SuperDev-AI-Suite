@@ -313,3 +313,11 @@ Completed jobs expose `POST /videos/jobs/{job_id}/validate-output`. The endpoint
 The dashboard provides a **Validar MP4** action next to the download link. A report is marked valid only when the file exists, is non-empty, FFprobe is available, and a video stream plus positive duration are confirmed. Audio is reported but not required, because silent videos are legitimate outputs. A duration mismatch is a warning, not an automatic rejection: transitions and timeline edits can change the final runtime.
 
 This check confirms container/stream readability, not visual quality, narration intelligibility, subtitle correctness, or whether the scene images match the script. Those require separate semantic and human review.
+
+## Progresso e recuperação por cena
+
+Cada job expõe agora `scene_progress`, uma lista persistida de estados individuais. O motor emite eventos após planejar o storyboard, durante a geração de imagem e durante a exportação de cada clipe VidGrid. O backend atualiza o registro do job em cada evento; falhas de persistência do telemetria não interrompem o render.
+
+Estados observáveis: `pending`, `processing`, `completed`, `fallback` e `failed`. As etapas incluem `storyboard`, `image_generation`, `image_ready`, `image_fallback`, `clip_render`, `clip_ready` e `exported`. A interface apresenta a grade de cenas e a contagem de cenas concluídas, preservadas ao recarregar a lista de jobs.
+
+Limite atual: este lote implementa rastreamento e diagnóstico por cena, não a repetição isolada de uma cena. A regeneração seletiva exige ainda uma operação que reutilize o storyboard/ativos originais, invalide somente o ativo escolhido e remonte o vídeo final; não deve ser confundida com o status visual já disponível.
