@@ -117,6 +117,8 @@ export interface SceneVideoClip {
   output_url?: string;
   bytes: number;
   encode_engine: string;
+  audio_status?: "per_scene_narration_muxed" | "no_scene_narration" | "narration_mux_failed" | "single_track_not_split" | "silent_or_tts_unavailable";
+  audio_error?: string;
 }
 
 export interface StudioJob {
