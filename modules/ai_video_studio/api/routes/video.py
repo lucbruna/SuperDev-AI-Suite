@@ -290,9 +290,12 @@ def _persist_job(record: dict) -> None:
 
 
 try:
-    from modules.ai_video_studio.media.job_store import load_jobs
+    from modules.ai_video_studio.media.job_store import load_jobs, mark_interrupted_jobs
 
     _jobs: dict[str, dict] = load_jobs()
+    # Jobs cannot resume an interrupted FFmpeg/model subprocess. Mark them
+    # explicitly failed instead of leaving a permanent "processing" status.
+    mark_interrupted_jobs(_jobs)
 except Exception:
     # API startup remains available if the local job database needs repair.
     _jobs = {}
