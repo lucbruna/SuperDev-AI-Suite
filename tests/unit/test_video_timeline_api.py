@@ -510,3 +510,16 @@ def test_scene_image_edit_refreshes_vidgrid_clip_export(completed_job, monkeypat
     assert result["scene_clip"]["status"] == "updated"
     assert record["scene_clips"][0]["duration"] == 10.0
     assert record["scene_clips"][0]["output_path"].endswith("scene_01_edited.mp4")
+
+
+def test_vidgrid_timeline_rejects_scene_duration_other_than_ten_seconds(completed_job):
+    record = video._jobs[completed_job]
+    record["vidgrid_compatible"] = True
+    request = video.TimelineEditRequest(
+        scene_order=[0, 1],
+        scene_edits=[video.SceneEdit(scene_index=0, duration_frames=24)],
+    )
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(video.update_video_job_timeline(completed_job, request))
+    assert exc.value.status_code == 422
+    assert "exactly 10 seconds" in exc.value.detail
