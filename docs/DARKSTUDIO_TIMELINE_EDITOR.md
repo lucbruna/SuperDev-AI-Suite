@@ -154,3 +154,47 @@ facial acting, lip-sync, or new objects between frames. A true generative
 image-to-video provider (for example a configured Wan workflow) is not yet
 connected to this production pipeline. This distinction is intentional: the
 UI and job metadata must not label a camera move as AI-generated video.
+
+### Optional generative image-to-video through ComfyUI
+
+The dedicated image-to-video endpoint accepts `motion_provider=camera` (default)
+or `motion_provider=comfyui`. ComfyUI mode requires a running ComfyUI server,
+an API-format workflow JSON exported from that installation, and a node mapping.
+No Wan graph or custom-node IDs are assumed by the application.
+
+Configure the backend environment:
+
+- `DARKSTUDIO_COMFYUI_URL=http://127.0.0.1:8188`
+- `DARKSTUDIO_COMFYUI_WORKFLOW=C:/path/to/workflow_api.json`
+- `DARKSTUDIO_COMFYUI_MAPPING={"image":{"node_id":"LOAD_IMAGE_NODE","input":"image"},"prompt":{"node_id":"POSITIVE_PROMPT_NODE","input":"text"},"negative_prompt":{"node_id":"NEGATIVE_PROMPT_NODE","input":"text"}}`
+
+Replace the node IDs and input names with those from the actual workflow's API
+export. The workflow must accept an uploaded image and prompt and expose an MP4
+file in ComfyUI history under `outputs[*].videos` or `outputs[*].gifs`.
+Workflows that only output PNG frames are rejected rather than mislabeled as
+video generation.
+
+Example request to `POST /api/v1/generation/videos/image-to-video`:
+
+```json
+{
+  "image_ref": "C:/assets/scene-01.png",
+  "duration_seconds": 10,
+  "fps": 24,
+  "motion_provider": "comfyui",
+  "motion_prompt": "Slow cinematic orbit around the subject; preserve identity and clothing",
+  "negative_prompt": "flicker, deformation, extra limbs"
+}
+```
+
+The returned MP4 is conformed to the requested duration, frame rate and
+resolution by FFmpeg. If the generated source is shorter, it is looped to fill
+the requested clip; if longer, it is trimmed. This duration conforming does not
+guarantee seamless motion at the loop boundary. The endpoint is an explicit
+opt-in and the regular DARKSTUDIO text-to-video storyboard pipeline remains
+unchanged until a tested scene-by-scene video provider is integrated there.
+
+For Wan, use an API-exported workflow that is already installed and tested in
+your ComfyUI environment. On a GTX 1060 6 GB, modern Wan video workflows are
+not a realistic local-generation target; use a remote ComfyUI server or a
+smaller compatible model. The backend adapter itself adds no model weights.
