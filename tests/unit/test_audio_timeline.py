@@ -127,7 +127,7 @@ def test_normalize_loudness_file_uses_two_pass_ebu_r128(tmp_path, monkeypatch):
     monkeypatch.setattr(dsp, "read_audio", lambda path, target_sr: (np.full(4410, 0.1, dtype=np.float32), 44100))
     monkeypatch.setattr(dsp, "limiter", lambda samples, **kwargs: samples)
     written = []
-    monkeypatch.setattr(dsp, "write_audio", lambda path, samples, sample_rate: written.append((path, sample_rate)) or Path(path))
+    monkeypatch.setattr(dsp, "write_audio", lambda path, samples, sample_rate: written.append((path, sample_rate)) or path)
     result = audio_timeline.normalize_loudness_file(source, target_lufs=-14, true_peak_db=-1, lra=11)
     assert len(calls) == 2
     assert "loudnorm=I=-14:TP=-1:LRA=11" in calls[0][calls[0].index("-af") + 1]
