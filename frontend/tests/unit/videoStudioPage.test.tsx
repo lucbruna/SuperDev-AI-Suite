@@ -15,6 +15,7 @@ vi.mock("@/api/videoStudio", () => ({
     getJob: vi.fn(),
     generateVideo: vi.fn(),
     preflightVideo: vi.fn(),
+    validateJobOutput: vi.fn(),
   },
 }));
 
@@ -57,6 +58,7 @@ beforeEach(() => {
   mockedApi.getJob.mockReset();
   mockedApi.generateVideo.mockReset();
   mockedApi.preflightVideo.mockReset();
+  mockedApi.validateJobOutput.mockReset();
 
   mockedApi.health.mockResolvedValue({
     status: "healthy",
@@ -119,6 +121,23 @@ describe("VideoStudioPage", () => {
       scene_image_mode: "auto",
     })));
     expect(mockedApi.preflightVideo.mock.invocationCallOrder[0]).toBeLessThan(mockedApi.generateVideo.mock.invocationCallOrder[0]);
+  });
+
+  it("validates a completed MP4 and displays the measured streams", async () => {
+    mockedApi.listJobs.mockResolvedValue([{
+      job_id: "job_to_validate", project_id: "p1", status: "completed",
+      progress: 1, output_url: "/downloads/final.mp4",
+    }]);
+    mockedApi.validateJobOutput.mockResolvedValue({
+      job_id: "job_to_validate", path_exists: true, file_size_bytes: 4096,
+      ffprobe_available: true, valid: true, duration_seconds: 30,
+      video_streams: 1, audio_streams: 1, errors: [], warnings: [],
+    });
+    render(<VideoStudioPage />);
+    fireEvent.click(await screen.findByRole("button", { name: "Validar MP4" }));
+    expect(await screen.findByText("MP4 validado")).toBeInTheDocument();
+    expect(screen.getByText(/30.00s · 1 vídeo · 1 áudio/)).toBeInTheDocument();
+    expect(mockedApi.validateJobOutput).toHaveBeenCalledWith("job_to_validate");
   });
 
   it("does not queue a render when preflight reports a missing MP4 prerequisite", async () => {
