@@ -66,7 +66,7 @@ describe("EditTimelinePanel", () => {
       ],
     };
     const assets = vi.spyOn(videoStudioApi, "listJobAudioAssets").mockResolvedValue([]);
-    const job = vi.spyOn(videoStudioApi, "getJob").mockResolvedValue({ job_id: "audio-job", project_id: "p1", status: "completed", progress: 1, audio_settings: { ducking_enabled: false, ducking_db: 14, normalization_enabled: false, normalization_target_dbfs: -22, loudness_normalization_enabled: true, target_lufs: -16 } });
+    const job = vi.spyOn(videoStudioApi, "getJob").mockResolvedValue({ job_id: "audio-job", project_id: "p1", status: "completed", progress: 1, audio_settings: { ducking_enabled: false, ducking_db: 14, normalization_enabled: false, normalization_target_dbfs: -22, loudness_normalization_enabled: true, target_lufs: -16, compressor_enabled: true, compressor_threshold_db: -20, compressor_ratio: 4, eq_enabled: true, eq_low_db: 2, eq_mid_db: -1, eq_high_db: 1 } });
     const save = vi.spyOn(videoStudioApi, "updateJobAudio").mockResolvedValue({
       edit_timeline: audioTimeline, audio_draft_status: "saved", message: "Faixas salvas",
     });
@@ -76,6 +76,11 @@ describe("EditTimelinePanel", () => {
     expect(screen.getByRole("checkbox", { name: "Ativar normalização" })).not.toBeChecked();
     expect(screen.getByRole("checkbox", { name: "Ativar LUFS" })).toBeChecked();
     expect(screen.getByLabelText("Alvo LUFS")).toHaveValue(-16);
+    expect(screen.getByRole("checkbox", { name: "Ativar compressor" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Ativar EQ" })).toBeChecked();
+    expect(screen.getByLabelText("Graves")).toHaveValue("2");
+    expect(screen.getByLabelText("Médios")).toHaveValue("-1");
+    expect(screen.getByLabelText("Agudos")).toHaveValue("1");
     fireEvent.change(screen.getAllByRole("slider", { name: /Panorama L\/R/ })[0], { target: { value: "-0.5" } });
     fireEvent.click(screen.getByRole("checkbox", { name: "Repetir" }));
     fireEvent.click(screen.getByRole("button", { name: "Remover" }));
