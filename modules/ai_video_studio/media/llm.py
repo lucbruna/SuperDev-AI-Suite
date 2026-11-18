@@ -133,12 +133,14 @@ class ScenePlanner:
     """Plans renderable scenes from a text prompt."""
 
     SYSTEM_PROMPT = (
-        "You are an AI film director. Convert a video brief into a JSON array of "
-        "scenes. Each scene: name, description, duration, background_colors "
-        "(array of 2 hex strings like #1a1a2e), particles (array of "
-        "{x,y,vx,vy,radius,color}), circles (array of {x,y,radius,color}), "
-        "text ({content,size,color}), camera ({dx,dy,zoom}). Return ONLY the "
-        "JSON array, no markdown, no prose."
+        "You are an AI film director and storyboard artist. Convert the video brief "
+        "into exactly the requested number of scenes. Return a JSON array only. "
+        "Each scene must include name, description, visual_prompt (a detailed standalone "
+        "image-generation prompt describing subject, environment, action, composition, "
+        "lighting, lens/framing and visual style), negative_prompt, voiceover_text, "
+        "shot_type, duration, background_colors, particles, circles, rects, lines, "
+        "text and camera. Vary shot sizes and angles; do not repeat the same composition. "
+        "Never invent facts when the brief is historical or documentary."
     )
 
     def plan(
@@ -190,6 +192,10 @@ class ScenePlanner:
                     "index": i,
                     "name": str(item.get("name") or f"Scene {i + 1}")[:255],
                     "description": str(item.get("description") or "")[:1000],
+                    "visual_prompt": str(item.get("visual_prompt") or item.get("image_prompt") or item.get("description") or item.get("name") or "")[:2000],
+                    "negative_prompt": str(item.get("negative_prompt") or "")[:1000],
+                    "voiceover_text": str(item.get("voiceover_text") or item.get("narration") or "")[:2000],
+                    "shot_type": str(item.get("shot_type") or "medium")[:32],
                     "duration": max(0.5, s_duration),
                     "background_colors": self._coerce_colors(item.get("background_colors")),
                     "particles": self._coerce_list(item.get("particles")),
@@ -231,6 +237,10 @@ class ScenePlanner:
                     "index": i,
                     "name": f"Scene {i + 1}",
                     "description": chunk[:1000],
+                    "visual_prompt": f"{prompt}. Scene focus: {chunk}. Clear subject, detailed environment, cinematic composition, purposeful camera framing.",
+                    "negative_prompt": "blurry, low quality, distorted anatomy, unreadable text, watermark, logo",
+                    "voiceover_text": chunk[:1000],
+                    "shot_type": ("establishing", "wide", "medium", "close_up", "detail")[i % 5],
                     "duration": per_scene,
                     "background_colors": [palette[i % len(palette)], palette[(i + 1) % len(palette)]],
                     "particles": [
