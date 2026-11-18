@@ -67,6 +67,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
   const [sfxFadeIn, setSfxFadeIn] = useState("0");
   const [sfxFadeOut, setSfxFadeOut] = useState("0.2");
   const [savingAudio, setSavingAudio] = useState(false);
+  const [audioDirty, setAudioDirty] = useState(false);
   const videoTrack = draft.tracks.find((track) => track.type === "video");
   const clips = videoTrack?.clips ?? [];
   const duration = Math.max(1, draft.duration_frames);
@@ -137,6 +138,14 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
     }
   }
 
+  function updateAudioClip(role: "music" | "sound_effect", index: number, patch: Partial<EditTimelineClip>) {
+    setAudioDirty(true);
+    setDraft((current) => ({ ...current, tracks: current.tracks.map((track) => track.role !== role ? track : { ...track, clips: track.clips.map((clip, clipIndex) => clipIndex === index ? { ...clip, ...patch } : clip) }) }));
+  }
+  function removeAudioClip(role: "music" | "sound_effect", index: number) {
+    setAudioDirty(true);
+    setDraft((current) => ({ ...current, tracks: current.tracks.map((track) => track.role !== role ? track : { ...track, clips: track.clips.filter((_, clipIndex) => clipIndex !== index) }) }));
+  }
   async function saveAudioDraft() {
     if (!jobId || dirty || saving) return;
     const parseClip = (asset: string, start: string, end: string, volume: string, fadeIn: string, fadeOut: string) => {
@@ -174,6 +183,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
       if (nextSfx) sfx.push(nextSfx);
       const result = await videoStudioApi.updateJobAudio(jobId, { music_clips: music, sfx_clips: sfx });
       setDraft(result.edit_timeline);
+      setAudioDirty(false);
       onSaved?.(result.edit_timeline);
       setMusicAsset("");
       setSfxAsset("");
@@ -319,9 +329,24 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
               <label className="text-xs text-surface-500">Fade-out (s)<input type="number" min="0" step="0.1" value={sfxFadeOut} onChange={(event) => setSfxFadeOut(event.target.value)} className="mt-1 w-full rounded border bg-transparent px-2 py-1" /></label>
             </div>
           </div>
+          {(["music", "sound_effect"] as const).map((role) => {
+            const track = draft.tracks.find((item) => item.role === role);
+            return track?.clips.map((clip, index) => (
+              <div key={role + "-" + index} className="grid gap-2 rounded-md bg-surface-50 p-2 dark:bg-surface-800 sm:col-span-2 sm:grid-cols-[minmax(140px,2fr)_repeat(5,minmax(70px,1fr))_auto]">
+                <label className="text-[11px] text-surface-500">{role === "music" ? "Música" : "Efeito"} · arquivo<select value={clip.asset ?? ""} onChange={(event) => updateAudioClip(role, index, { asset: event.target.value })} className="mt-1 w-full rounded border bg-transparent px-2 py-1.5 text-xs"><option value="">Selecione…</option>{audioAssets.map((asset) => <option key={asset.asset} value={asset.asset}>{asset.name}</option>)}</select></label>
+                <label className="text-[11px] text-surface-500">Início (s)<input type="number" min="0" step="0.1" value={clip.start_seconds ?? clip.start_frame / draft.fps} onChange={(event) => updateAudioClip(role, index, { start_seconds: Number(event.target.value) })} className="mt-1 w-full rounded border bg-transparent px-2 py-1" /></label>
+                <label className="text-[11px] text-surface-500">Fim (s)<input type="number" min="0.1" step="0.1" value={clip.end_seconds ?? clip.end_frame / draft.fps} onChange={(event) => updateAudioClip(role, index, { end_seconds: Number(event.target.value) })} className="mt-1 w-full rounded border bg-transparent px-2 py-1" /></label>
+                <label className="text-[11px] text-surface-500">Volume<input type="number" min="0" max="2" step="0.05" value={clip.volume ?? 1} onChange={(event) => updateAudioClip(role, index, { volume: Number(event.target.value) })} className="mt-1 w-full rounded border bg-transparent px-2 py-1" /></label>
+                <label className="text-[11px] text-surface-500">Corte (s)<input type="number" min="0" step="0.1" value={clip.trim_start ?? 0} onChange={(event) => updateAudioClip(role, index, { trim_start: Number(event.target.value) })} className="mt-1 w-full rounded border bg-transparent px-2 py-1" /></label>
+                <label className="text-[11px] text-surface-500">Fade-in (s)<input type="number" min="0" step="0.1" value={clip.fade_in ?? 0} onChange={(event) => updateAudioClip(role, index, { fade_in: Number(event.target.value) })} className="mt-1 w-full rounded border bg-transparent px-2 py-1" /></label>
+                <button type="button" onClick={() => removeAudioClip(role, index)} className="self-end rounded border border-red-300 px-2 py-1 text-xs text-red-600">Remover</button>
+                <label className="text-[11px] text-surface-500 sm:col-start-6">Fade-out (s)<input type="number" min="0" step="0.1" value={clip.fade_out ?? 0} onChange={(event) => updateAudioClip(role, index, { fade_out: Number(event.target.value) })} className="mt-1 w-full rounded border bg-transparent px-2 py-1" /></label>
+              </div>
+            ));
+          })}
           <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
-            <button type="button" onClick={saveAudioDraft} disabled={savingAudio || dirty || saving || (!musicAsset.trim() && !sfxAsset.trim() && !draft.tracks.some((track) => track.role === "music" || track.role === "sound_effect"))} className="rounded-md border border-surface-300 px-3 py-2 text-xs font-semibold disabled:opacity-40 dark:border-surface-600">
-              {savingAudio ? "Salvando áudio…" : "Salvar faixas de áudio"}
+            <button type="button" onClick={saveAudioDraft} disabled={savingAudio || dirty || saving || (!audioDirty && !musicAsset.trim() && !sfxAsset.trim())} className="rounded-md border border-surface-300 px-3 py-2 text-xs font-semibold disabled:opacity-40 dark:border-surface-600">
+              {savingAudio ? "Salvando áudio…" : audioDirty ? "Salvar alterações de áudio" : "Salvar faixas de áudio"}
             </button>
             <span className="text-[11px] text-surface-400">A lista mostra arquivos gerados em music, effects, voice, dubbing e mix. Caminhos externos são bloqueados.</span>
           </div>
@@ -340,7 +365,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
           <button type="button" onClick={saveDraft} disabled={saving || !dirty} className="rounded-md border border-surface-300 px-3 py-2 text-xs font-semibold disabled:opacity-40 dark:border-surface-600">
             {saving ? "Salvando…" : "Salvar rascunho"}
           </button>
-          <button type="button" onClick={renderEdits} disabled={rendering || saving || dirty} className="rounded-md bg-primary-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-40">
+          <button type="button" onClick={renderEdits} disabled={rendering || saving || dirty || audioDirty || savingAudio} className="rounded-md bg-primary-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-40">
             {rendering ? "Renderizando MP4…" : "Renderizar edição"}
           </button>
         </>}
