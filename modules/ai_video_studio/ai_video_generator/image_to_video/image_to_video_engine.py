@@ -81,6 +81,8 @@ class ImageToVideoEngine:
         """Run a configured generative workflow and conform it to the requested clip."""
         if not Path(source).is_file():
             raise ValidationError("ComfyUI mode requires image_ref to be an existing image file", field="image_ref")
+        if width % 2 or height % 2:
+            raise ValidationError("ComfyUI MP4 output requires even width and height", field="resolution")
         if not shutil.which("ffmpeg"):
             raise RuntimeError("FFmpeg is required to normalize the ComfyUI video to the requested clip duration")
 
