@@ -33,18 +33,35 @@ def scene_narration_text(scene: dict[str, Any]) -> str:
     ).strip()[:_MAX_SCENE_CHARS]
 
 
-def compute_scene_offsets(scenes: list[dict[str, Any]], *, fallback_duration: float = 3.0) -> list[float]:
-    """Cumulative start time of each scene inside the video timeline.
+def compute_scene_offsets(
+    scenes: list[dict[str, Any]], *, fallback_duration: float = 3.0, fps: int = 24
+) -> list[float]:
+    """Return scene starts on the final rendered timeline.
 
-    A scene without an explicit ``duration`` gets ``fallback_duration``.
+    Crossfades overlap adjacent scenes, so their duration is subtracted from
+    the next scene's start. Fade-through-black and hard cuts do not overlap.
+    Frame clamping mirrors the multi-scene renderer.
     """
+    if fps < 1:
+        raise ValueError("fps must be at least 1")
+    from modules.ai_video_studio.media.transitions import transition_spec
+
     offsets: list[float] = []
     cursor = 0.0
-    for scene in scenes:
-        offsets.append(cursor)
-        cursor += max(0.1, float(scene.get("duration") or fallback_duration))
+    durations = [max(0.1, float(scene.get("duration") or fallback_duration)) for scene in scenes]
+    frame_counts = [max(1, int(duration * fps)) for duration in durations]
+    for index, scene in enumerate(scenes):
+        offsets.append(round(cursor, 6))
+        cursor += frame_counts[index] / fps
+        spec = transition_spec(scene)
+        if spec["type"] == "crossfade":
+            if index == len(scenes) - 1:
+                raise ValueError("The final scene cannot have an outgoing crossfade")
+            overlap = min(spec["duration_frames"], frame_counts[index] // 2, frame_counts[index + 1] // 2)
+            if overlap < 2:
+                raise ValueError("Scenes are too short for the requested crossfade")
+            cursor -= overlap / fps
     return offsets
-
 
 def build_narration_tracks(
     clips: list[dict[str, Any]],
