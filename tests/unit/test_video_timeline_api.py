@@ -523,3 +523,10 @@ def test_vidgrid_timeline_rejects_scene_duration_other_than_ten_seconds(complete
         asyncio.run(video.update_video_job_timeline(completed_job, request))
     assert exc.value.status_code == 422
     assert "exactly 10 seconds" in exc.value.detail
+
+
+def test_video_generation_defaults_to_automatic_per_scene_images():
+    request = video.VideoGenerateRequest(project_id="p1", prompt="Uma viagem pela floresta")
+    assert request.scene_image_mode == "auto"
+    assert request.voice_language == "pt-BR"
+    assert request.vidgrid_compatible is False
