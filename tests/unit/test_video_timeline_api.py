@@ -364,3 +364,28 @@ def test_av_sync_endpoint_requires_video_timeline(completed_job):
     with pytest.raises(HTTPException) as exc:
         asyncio.run(video.analyze_video_job_av_sync(completed_job))
     assert exc.value.status_code == 409
+
+
+def test_visual_analysis_endpoint_persists_studio_report(completed_job, monkeypatch):
+    monkeypatch.setattr(video, "_persist_job", lambda record: None)
+    record = video._jobs[completed_job]
+    record["_edited_scenes"] = [
+        {"duration": 2, "shot_type": "wide", "camera": {"keyframes": [
+            {"frame": 0, "zoom": 1.0}, {"frame": 47, "zoom": 1.05},
+        ]}, "rects": [{}, {}, {}], "_darkstudio_characters": ["leo"]},
+        {"duration": 2, "shot_type": "close_up", "camera": {"keyframes": [
+            {"frame": 0, "zoom": 1.02}, {"frame": 47, "zoom": 1.1},
+        ]}, "circles": [{}, {}, {}], "_darkstudio_characters": ["leo"]},
+    ]
+    result = asyncio.run(video.analyze_video_job_visuals(completed_job))
+    assert result["studio_id"] == "whymentary"
+    assert result["scene_count"] == 2
+    assert record["visual_intelligence"]["score"] == result["score"]
+
+
+def test_visual_analysis_endpoint_requires_scene_plan(completed_job):
+    video._jobs[completed_job]["_edited_scenes"] = []
+    video._jobs[completed_job]["_source_scenes"] = []
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(video.analyze_video_job_visuals(completed_job))
+    assert exc.value.status_code == 409
