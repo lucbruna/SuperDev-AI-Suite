@@ -160,6 +160,18 @@ export interface SceneVideoClip {
   reason?: string;
 }
 
+export interface SceneImageSimilarityReport {
+  job_id: string;
+  status: "duplicates_found" | "no_duplicates_detected";
+  method: string;
+  threshold_hamming_distance: number;
+  image_count: number;
+  compared_pairs: number;
+  duplicate_pairs: { scene_indices: number[]; match_type: "exact" | "perceptual_near_duplicate"; hamming_distance: number; similarity_percent: number }[];
+  skipped_images: { scene_index: number; reason: string }[];
+  limitations: string[];
+}
+
 export interface StudioJob {
   job_id: string;
   project_id: string;
@@ -222,6 +234,7 @@ export interface StudioJob {
     warnings?: { role: string; source: string; code: string }[];
     ducking_recommendation?: { available: boolean; recommended_ducking_db?: number; recommended_threshold_db?: number; reason?: string };
   } | null;
+  image_similarity_analysis?: SceneImageSimilarityReport | null;
   mp4_visual_analysis?: {
     status: string;
     sample_count: number;
@@ -488,6 +501,11 @@ export const videoStudioApi = {
     const { data } = await apiClient.post(`${STUDIO_BASE}/videos/jobs/${jobId}/audio-analysis`);
     return data;
   },
+  async analyzeJobSceneImageSimilarity(jobId: string, maxHammingDistance = 6): Promise<SceneImageSimilarityReport> {
+    const { data } = await apiClient.post(STUDIO_BASE + "/videos/jobs/" + jobId + "/image-similarity-analysis", null, { params: { max_hamming_distance: maxHammingDistance } });
+    return data;
+  },
+
   async analyzeJobMp4Visuals(jobId: string, maxFrames = 48): Promise<NonNullable<StudioJob["mp4_visual_analysis"]>> {
     const { data } = await apiClient.post(`${STUDIO_BASE}/videos/jobs/${jobId}/mp4-visual-analysis`, null, { params: { max_frames: maxFrames } });
     return data;
