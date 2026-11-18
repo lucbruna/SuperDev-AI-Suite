@@ -563,6 +563,13 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, ti
           <span>Alertas: <strong>{renderQuality.warnings?.length ?? 0}</strong></span>
         </div>
         {!!renderQuality.warnings?.length && <ul className="mt-2 list-disc space-y-1 pl-5 text-amber-600">{renderQuality.warnings.map((warning, index) => <li key={index}>{warning.message}</li>)}</ul>}
+        {!!renderQuality.recommendations?.length && <div className="mt-3 space-y-2">
+          <strong>Correções sugeridas</strong>
+          {renderQuality.recommendations.map((recommendation, index) => <div key={index} className="flex flex-wrap items-center justify-between gap-2 rounded bg-surface-50 p-2 dark:bg-surface-800">
+            <span>{recommendation.message}</span>
+            {recommendation.action === "increase_ducking" && <button type="button" onClick={() => { setDuckingEnabled(true); setDuckingDb(String(recommendation.recommended_ducking_db ?? 12)); setAudioDirty(true); setMessage("Ducking atualizado no rascunho. Salve as faixas antes de renderizar novamente."); }} className="rounded border px-2 py-1 font-semibold">Aplicar correção</button>}
+          </div>)}
+        </div>}
         {!!renderQuality.silence_gaps?.length && <p className="mt-2">Silêncios internos: {renderQuality.silence_gaps.map((gap) => String(gap.start) + "s–" + String(gap.end) + "s").join(", ")}</p>}
         {!!renderQuality.narration_music_masking?.length && <p className="mt-2">Possível voz encoberta: {renderQuality.narration_music_masking.map((gap) => String(gap.start) + "s–" + String(gap.end) + "s").join(", ")}</p>}
         <p className="mt-2 text-[10px] text-surface-500">{renderQuality.masking_method}</p>
