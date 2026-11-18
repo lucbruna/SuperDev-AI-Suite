@@ -25,6 +25,30 @@ def test_compute_scene_offsets_no_scenes() -> None:
     assert scene_narration.compute_scene_offsets([]) == []
 
 
+def test_compute_scene_offsets_accounts_for_crossfade_overlap() -> None:
+    scenes = [
+        {"duration": 2.0, "transition_out": {"type": "crossfade", "duration_frames": 12}},
+        {"duration": 3.0},
+    ]
+    assert scene_narration.compute_scene_offsets(scenes, fps=24) == [0.0, 1.5]
+
+
+def test_compute_scene_offsets_does_not_shorten_fade_through_black() -> None:
+    scenes = [
+        {"duration": 2.0, "transition_out": {"type": "fade_through_black", "duration_frames": 8}},
+        {"duration": 3.0},
+    ]
+    assert scene_narration.compute_scene_offsets(scenes, fps=24) == [0.0, 2.0]
+
+
+def test_compute_scene_offsets_clamps_crossfade_like_renderer() -> None:
+    scenes = [
+        {"duration": 0.5, "transition_out": {"type": "crossfade", "duration_frames": 20}},
+        {"duration": 0.5},
+    ]
+    assert scene_narration.compute_scene_offsets(scenes, fps=24) == [0.0, 0.25]
+
+
 def test_scene_narration_text_prefers_authored_speech_over_visual_description() -> None:
     assert scene_narration.scene_narration_text(
         {"description": "visual direction", "voiceover_text": "spoken line", "name": "scene"}
