@@ -215,3 +215,32 @@ def timeit(fn: Callable[[], Any]) -> tuple[Any, float]:
     started = time.time()
     result = fn()
     return result, round(time.time() - started, 3)
+
+
+
+def render_single_scene_clip(
+    scene: dict[str, Any],
+    output_path: str | Path,
+    *,
+    duration: float = 10.0,
+    fps: int = 24,
+    width: int = 1280,
+    height: int = 720,
+    require_mp4: bool = True,
+    studio_id: str | None = None,
+) -> dict[str, Any]:
+    """Stream one scene as a standalone clip without buffering all frames in RAM."""
+    clip_scene = dict(scene)
+    clip_scene["duration"] = duration
+    # An isolated clip has no outgoing transition; the assembled master keeps
+    # the authored transition separately.
+    clip_scene["transition_out"] = {"type": "cut", "duration_frames": 0}
+    return render_multi_scene_video(
+        [clip_scene],
+        output_path,
+        fps=fps,
+        width=width,
+        height=height,
+        require_mp4=require_mp4,
+        studio_id=studio_id,
+    )
