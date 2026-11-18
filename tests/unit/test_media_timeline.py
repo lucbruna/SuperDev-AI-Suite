@@ -28,7 +28,7 @@ def test_timeline_adds_only_tracks_with_real_assets() -> None:
         [{"duration": 4}],
         fps=30,
         narration={"clips": [{"start": 0.5, "end": 2.5, "audio_path": "voice.wav", "text": "Olá"}]},
-        music_clips=[{"start": 0, "end": 4, "asset": "music.mp3"}],
+        music_clips=[{"start": 0, "end": 4, "asset": "music.mp3", "pan": -0.5}],
         sfx_clips=[{"start": 1, "end": 1.5, "path": "whoosh.wav"}],
         subtitle_cues=[{"index": 1, "start": 0.5, "end": 2.0, "text": "Olá"}],
     )
@@ -37,6 +37,7 @@ def test_timeline_adds_only_tracks_with_real_assets() -> None:
     ]
     assert timeline["tracks"][1]["clips"][0]["start_frame"] == 15
     assert timeline["tracks"][1]["clips"][0]["end_frame"] == 75
+    assert timeline["tracks"][2]["clips"][0]["pan"] == -0.5
     assert timeline["tracks"][4]["clips"][0]["duration_frames"] == 45
 
 
