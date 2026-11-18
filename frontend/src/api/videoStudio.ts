@@ -140,6 +140,23 @@ export interface StudioJob {
     warnings?: { role: string; source: string; code: string }[];
     ducking_recommendation?: { available: boolean; recommended_ducking_db?: number; recommended_threshold_db?: number; reason?: string };
   } | null;
+  visual_intelligence?: {
+    studio_id: "whymentary" | "historical_documentary";
+    status: "good" | "needs_review" | "blocked";
+    score: number;
+    score_label: string;
+    components: { motion: number; composition: number; variety: number; clarity: number };
+    scene_count: number;
+    moving_camera_scenes: number;
+    animated_primitives: number;
+    unique_shot_types: number;
+    shot_counts: Record<string, number>;
+    character_continuity_changes: number;
+    scenes: { scene_index: number; shot_type: string; camera_motion: boolean; animated_primitive_count: number; primitive_count: number; character_ids: string[] }[];
+    warnings: { code: string; severity: string; scene_index?: number; [key: string]: unknown }[];
+    analysis_method: string;
+    limitations: string[];
+  } | null;
   av_sync_analysis?: {
     status: "passed" | "needs_review" | "blocked" | "no_narration";
     fps: number;
@@ -275,6 +292,10 @@ export const videoStudioApi = {
     message: string;
   }> {
     const { data } = await apiClient.post(`${STUDIO_BASE}/videos/jobs/${jobId}/audio-analysis`);
+    return data;
+  },
+  async analyzeJobVisuals(jobId: string): Promise<NonNullable<StudioJob["visual_intelligence"]>> {
+    const { data } = await apiClient.post(`${STUDIO_BASE}/videos/jobs/${jobId}/visual-analysis`);
     return data;
   },
   async analyzeJobAvSync(jobId: string): Promise<NonNullable<StudioJob["av_sync_analysis"]>> {
