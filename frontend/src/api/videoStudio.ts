@@ -124,6 +124,14 @@ export interface SceneVideoClip {
   audio_status?: "per_scene_narration_muxed" | "no_scene_narration" | "narration_mux_failed" | "single_track_not_split" | "silent_or_tts_unavailable";
   audio_error?: string;
   status?: "updated" | "stale";
+  generative_video_path?: string;
+  generative_video_url?: string;
+  generative_video_provider?: string;
+  generative_video_prompt?: string;
+  generative_video_duration?: number;
+  generative_video_frames?: number;
+  generative_video_fps?: number;
+  generative_video_status?: "ready" | "failed";
   reason?: string;
 }
 
@@ -334,6 +342,22 @@ export const videoStudioApi = {
   }> {
     const { data } = await apiClient.post(
       `${STUDIO_BASE}/videos/jobs/${jobId}/scenes/${sceneIndex}/image-edit`,
+      payload,
+    );
+    return data;
+  },
+
+  async generateJobSceneMotion(jobId: string, sceneIndex: number, payload: {
+    motion_prompt: string;
+    negative_prompt?: string;
+    provider_timeout?: number;
+  }): Promise<{
+    job_id: string; scene_index: number; status: string; provider?: string;
+    duration: number; frames: number; fps: number; output_path: string;
+    download_url: string; message: string;
+  }> {
+    const { data } = await apiClient.post(
+      `${STUDIO_BASE}/videos/jobs/${jobId}/scenes/${sceneIndex}/motion`,
       payload,
     );
     return data;
