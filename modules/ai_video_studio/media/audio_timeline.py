@@ -9,6 +9,7 @@ from __future__ import annotations
 from pathlib import Path
 import json
 import subprocess
+import shutil
 import tempfile
 from typing import Any
 
@@ -47,7 +48,6 @@ def measure_encoded_audio(path: str | Path, *, timeout: int = 180) -> dict[str, 
     overshoot is included. This is a measurement, not a normalization pass.
     """
     import re
-    import shutil
 
     media_path = Path(path)
     if not media_path.is_file():
