@@ -342,6 +342,6 @@ it("generates a separate 10-second ComfyUI motion clip from a scene image", asyn
     await waitFor(() => expect(direction).toHaveBeenCalledWith("director-job"));
     expect(await screen.findByText("revelation")).toBeInTheDocument();
     expect(screen.getByText(/Isole a evidência em close de detalhe/)).toBeInTheDocument();
-    const prompt = screen.getAllByLabelText("Prompt visual · edite antes de regenerar")[0] as HTMLTextAreaElement;
+    const prompt = screen.getAllByPlaceholderText("Ex.: transforme o fundo em uma floresta ao amanhecer, mantenha o personagem e mude a iluminação…")[0] as HTMLTextAreaElement;
     expect(prompt.value).toBe("Documento antigo em primeiro plano, luz lateral dramática.");
   });
