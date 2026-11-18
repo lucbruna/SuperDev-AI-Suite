@@ -218,6 +218,7 @@ class AudioTimelineEditRequest(BaseModel):
     eq_low_db: float = Field(default=0.0, ge=-12, le=12)
     eq_mid_db: float = Field(default=0.0, ge=-12, le=12)
     eq_high_db: float = Field(default=0.0, ge=-12, le=12)
+    mastering_preset: str = Field(default="custom", pattern="^(custom|voice|documentary|music|cinematic_sfx)$")
 
 
 def _persist_job(record: dict) -> None:
