@@ -46,3 +46,45 @@ def test_whymentary_director_keeps_fast_cut_style() -> None:
     )
     assert directed[0]["transition_out"] == {"type": "cut", "duration_frames": 0}
     assert directed[0]["camera"]["keyframes"][-1]["roll"] == 0
+
+
+def test_editing_report_flags_dense_narration_and_low_shot_variety() -> None:
+    from modules.ai_video_studio.media.editing_director import build_editing_report
+
+    scenes = [
+        {"duration": 2.0, "shot_type": "medium", "narration": " ".join(["palavra"] * 12),
+         "transition_out": {"type": "crossfade", "duration_frames": 12}},
+        {"duration": 2.0, "shot_type": "medium", "narration": "Frase curta."},
+        {"duration": 2.0, "shot_type": "medium"},
+        {"duration": 2.0, "shot_type": "medium"},
+    ]
+    report = build_editing_report(scenes, fps=24, fallback_duration=2.0)
+    assert report["scene_count"] == 4
+    assert report["timeline_duration_seconds"] == 7.5
+    assert report["shot_counts"] == {"medium": 4}
+    assert report["transition_counts"] == {"crossfade": 1, "cut": 3}
+    assert any("narration is dense" in warning for warning in report["warnings"])
+    assert any("Low shot variety" in warning for warning in report["warnings"])
+    assert report["scenes"][0]["speech_wpm"] == 360.0
+
+
+def test_editing_report_accepts_balanced_speech_and_multiple_shots() -> None:
+    from modules.ai_video_studio.media.editing_director import build_editing_report
+
+    scenes = [
+        {"duration": 10.0, "shot_type": "wide", "voiceover_text": " ".join(["palavra"] * 20)},
+        {"duration": 10.0, "shot_type": "close_up", "voiceover_text": " ".join(["palavra"] * 20)},
+        {"duration": 10.0, "shot_type": "detail", "voiceover_text": " ".join(["palavra"] * 20)},
+    ]
+    report = build_editing_report(scenes, fps=30, fallback_duration=10.0)
+    assert report["warnings"] == []
+    assert report["timeline_duration_seconds"] == 30.0
+    assert [row["pacing"] for row in report["scenes"]] == ["balanced"] * 3
+
+
+def test_editing_report_rejects_invalid_timing_settings() -> None:
+    import pytest
+    from modules.ai_video_studio.media.editing_director import build_editing_report
+
+    with pytest.raises(ValueError):
+        build_editing_report([], fps=0, fallback_duration=2.0)
