@@ -1695,6 +1695,74 @@ class TestDependencyRebuildExecution:
         assert error.value.status_code == 409
 
     @pytest.mark.asyncio
+    async def test_scene_change_rebuilds_only_affected_scene_before_final_render(self, monkeypatch):
+        from modules.ai_video_studio.api.routes import video
+
+        record = {
+            "job_id": "dependency-execution-scene", "status": "completed",
+            "vidgrid_compatible": True,
+        }
+        video._jobs["dependency-execution-scene"] = record
+        impact = {
+            "job_id": "dependency-execution-scene",
+            "changed_asset_ids": ["scene:3:image"],
+            "affected_nodes": [{"id": "scene:3:clip", "type": "video_clip", "status": "stale"}],
+            "affected_node_ids": ["scene:3:clip", "final:export"],
+            "rebuild_scene_indices": [3], "final_export_required": True,
+        }
+        calls = []
+        monkeypatch.setattr(video, "preview_video_job_dependency_impact", lambda *_args: _async_result(impact))
+        async def rebuild(_job_id, request):
+            calls.append(("rebuild", request.scene_indices))
+            return {"requested": 1, "rebuilt": 1, "failed": 0, "status": "completed"}
+        async def render(_job_id):
+            calls.append(("render", None))
+            return {"output_url": "/downloads/rebuilt.mp4"}
+        monkeypatch.setattr(video, "rebuild_stale_video_job_scene_clips", rebuild)
+        monkeypatch.setattr(video, "render_video_job_edits", render)
+        monkeypatch.setattr(video, "_persist_job", lambda _record: None)
+
+        request = video.DependencyExecutionRequest(changed_asset_ids=["scene:3:image"], confirmed=True)
+        result = await video.execute_video_job_dependency_rebuild("dependency-execution-scene", request)
+
+        assert calls == [("rebuild", [3]), ("render", None)]
+        assert result["status"] == "completed"
+        assert result["render"]["output_url"] == "/downloads/rebuilt.mp4"
+
+    @pytest.mark.asyncio
+    async def test_partial_scene_rebuild_skips_final_render(self, monkeypatch):
+        from modules.ai_video_studio.api.routes import video
+
+        record = {
+            "job_id": "dependency-execution-partial", "status": "completed",
+            "vidgrid_compatible": True,
+        }
+        video._jobs["dependency-execution-partial"] = record
+        impact = {
+            "job_id": "dependency-execution-partial",
+            "changed_asset_ids": ["scene:1:image"],
+            "affected_nodes": [{"id": "scene:1:clip", "type": "video_clip", "status": "stale"}],
+            "affected_node_ids": ["scene:1:clip", "final:export"],
+            "rebuild_scene_indices": [1], "final_export_required": True,
+        }
+        monkeypatch.setattr(video, "preview_video_job_dependency_impact", lambda *_args: _async_result(impact))
+        async def rebuild(*_args):
+            return {"requested": 1, "rebuilt": 0, "failed": 1, "status": "failed"}
+        async def fail_render(*_args):
+            raise AssertionError("final render must not run after a partial scene rebuild")
+        monkeypatch.setattr(video, "rebuild_stale_video_job_scene_clips", rebuild)
+        monkeypatch.setattr(video, "render_video_job_edits", fail_render)
+        monkeypatch.setattr(video, "_persist_job", lambda _record: None)
+
+        request = video.DependencyExecutionRequest(changed_asset_ids=["scene:1:image"], confirmed=True)
+        result = await video.execute_video_job_dependency_rebuild("dependency-execution-partial", request)
+
+        assert result["status"] == "partial"
+        assert result["render"] is None
+        assert record["dependency_rebuild_execution"]["final_export_skipped"] is True
+
+
+    @pytest.mark.asyncio
     async def test_audio_only_change_skips_scene_rebuild_and_renders_final(self, monkeypatch):
         from modules.ai_video_studio.api.routes import video
 
