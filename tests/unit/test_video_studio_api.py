@@ -874,6 +874,13 @@ class TestDownloads:
         assert resp.status_code == 200
         assert resp.content == b"FAKE-MP4-WITH-AUDIO"
         assert resp.headers["content-type"].startswith("video/")
+        assert resp.headers["content-disposition"].startswith("inline;")
+
+        download = await client.get(
+            f"/api/v1/video-studio/downloads/videos/{filename}?download=true"
+        )
+        assert download.status_code == 200
+        assert download.headers["content-disposition"].startswith("attachment;")
 
     @pytest.mark.asyncio
     async def test_download_rejects_path_traversal(self, client: AsyncClient):

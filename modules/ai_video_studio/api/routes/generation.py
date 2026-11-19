@@ -185,7 +185,7 @@ async def generate_asset(req: AssetGenerateRequest):
 
 # ── File serving ──────────────────────────────────────────────────
 @router.get("/downloads/{kind}/{filename}", summary="Download a generated media file")
-async def download_media(kind: str, filename: str):
+async def download_media(kind: str, filename: str, download: bool = False):
     """Serve a generated file from ``modules/downloads/<kind>/<filename>``.
 
     Path traversal is blocked via ``Path(...).name``: only the final path
@@ -210,4 +210,7 @@ async def download_media(kind: str, filename: str):
     # downloads tree cannot expose files elsewhere on the machine.
     if root not in path.parents or not path.is_file():
         raise HTTPException(status_code=404, detail="File not found")
-    return FileResponse(str(path))
+    # Browsers need inline disposition for the HTML5 video preview. Explicit
+    # downloads use the query flag so the same endpoint supports both flows.
+    disposition = "attachment" if download else "inline"
+    return FileResponse(str(path), content_disposition_type=disposition)

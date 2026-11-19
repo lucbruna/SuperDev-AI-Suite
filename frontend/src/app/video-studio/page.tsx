@@ -999,7 +999,7 @@ export default function VideoStudioPage() {
                       </Button>
                     )}
                     {job.output_url && job.status === "completed" && (
-                      <Button variant="secondary" size="sm" onClick={() => window.open(job.output_url as string, "_blank")}>
+                      <Button variant="secondary" size="sm" onClick={() => window.open(`${job.output_url}${job.output_url?.includes("?") ? "&" : "?"}download=true`, "_blank")}>
                         ⬇ Baixar MP4
                       </Button>
                     )}
@@ -1009,7 +1009,7 @@ export default function VideoStudioPage() {
                       </Button>
                     )}
                     {job.subtitles?.download_url && job.status === "completed" && (
-                      <Button variant="secondary" size="sm" onClick={() => window.open(job.subtitles?.download_url as string, "_blank")}>
+                      <Button variant="secondary" size="sm" onClick={() => window.open(`${job.subtitles?.download_url}${job.subtitles?.download_url?.includes("?") ? "&" : "?"}download=true`, "_blank")}>
                         ⬇ Baixar SRT
                       </Button>
                     )}
