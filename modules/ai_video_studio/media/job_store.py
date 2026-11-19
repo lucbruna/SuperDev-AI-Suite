@@ -285,7 +285,7 @@ def list_tasks(task_type: str | None = None) -> list[dict[str, Any]]:
             ).fetchall()
         else:
             rows = connection.execute(
-                "SELECT task_id, task_type, status, attempts, available_at, lease_expires_at, last_error "
+                "SELECT task_id, task_type, status, attempts, available_at, lease_expires_at, last_error, payload "
                 "FROM durable_tasks ORDER BY created_at DESC"
             ).fetchall()
     finally:
