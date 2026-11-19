@@ -443,3 +443,15 @@ A interface apresenta o botão **Confirmar e executar reconstrução** somente a
 
 
 A seleção direta de um nó `video_clip` também inclui a própria cena no plano de reconstrução (não apenas a exportação downstream). Arquivos de clipe ausentes ou corrompidos são tratados como saídas reconstruíveis; o bloqueio é reservado às entradas necessárias — imagem, narração, música e efeitos — quando ausentes, corrompidas ou ilegíveis.
+
+
+## Fila assíncrona de reconstrução VidGrid
+
+A reconstrução seletiva também pode ser iniciada sem manter a requisição HTTP aberta:
+
+- `POST /videos/jobs/{job_id}/scenes/rebuild-stale-clips/queue` retorna HTTP 202 e um `queue_id`.
+- `GET /videos/jobs/{job_id}/scenes/rebuild-stale-clips/status` retorna status, cena atual, totais, resultados e erros.
+- `POST /videos/jobs/{job_id}/scenes/rebuild-stale-clips/cancel` solicita cancelamento cooperativo. A cena que já começou termina; as próximas não são iniciadas.
+- A fila e os resultados por cena são persistidos no job. O frontend inicia a fila e oferece atualização manual de progresso e cancelamento.
+
+Os locks são adquiridos antes do agendamento, impedindo edições, renderização e outra reconstrução enquanto a tarefa aguarda execução. Em reinicialização da API, filas em `queued` ou `processing` são marcadas como `interrupted`; resultados já concluídos permanecem salvos. A retomada é manual nesta versão: consulte o recovery-plan e enfileire apenas as cenas que continuarem reparáveis. O worker usa `BackgroundTasks` do processo FastAPI; não é ainda uma fila distribuída nem garante execução após encerramento abrupto do processo.
