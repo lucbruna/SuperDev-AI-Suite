@@ -82,6 +82,18 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
   const [vidGridQueue, setVidGridQueue] = useState<Awaited<ReturnType<typeof videoStudioApi.getVidGridClipRebuildStatus>> | null>(null);
   const [refreshingVidGridQueue, setRefreshingVidGridQueue] = useState(false);
   useEffect(() => {
+    let active = true;
+    if (!jobId) {
+      setVidGridQueue(null);
+      return () => { active = false; };
+    }
+    videoStudioApi.getVidGridClipRebuildStatus(jobId)
+      .then((status) => { if (active) setVidGridQueue(status); })
+      .catch(() => { if (active) setVidGridQueue(null); });
+    return () => { active = false; };
+  }, [jobId]);
+
+  useEffect(() => {
     if (!jobId || !vidGridQueue || !["queued", "processing"].includes(vidGridQueue.status)) return;
     let active = true;
     const pollQueue = async () => {
