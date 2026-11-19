@@ -1123,14 +1123,14 @@ async def _run_scene_clip_rebuild_background(job_id: str, scene_indices: list[in
     if queue.get("cancel_requested"):
         queue.update({"status": "cancelled", "updated_at": time.time(), "current_scene_index": None})
         record["scene_clip_rebuild_status"] = "cancelled"
-        _persist_job(record)
         record["_scene_clip_rebuild_worker"] = False
+        _persist_job(record)
         return
     queue["status"] = "processing"
     queue["updated_at"] = time.time()
     record["scene_clip_rebuild_queue"] = queue
-    _persist_job(record)
     try:
+        _persist_job(record)
         await rebuild_stale_video_job_scene_clips(
             job_id, SceneClipRebuildRequest(scene_indices=scene_indices)
         )
