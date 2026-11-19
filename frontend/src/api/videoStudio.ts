@@ -249,6 +249,7 @@ export interface StudioJob {
     title?: string;
     visual_prompt?: string;
     image_provider?: string;
+    image_seed?: number;
     error?: string;
     updated_at?: number;
   }[] | null;
