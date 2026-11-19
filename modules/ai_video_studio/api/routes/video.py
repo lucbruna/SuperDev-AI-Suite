@@ -246,6 +246,7 @@ class VideoStatusResponse(BaseModel):
     output_validation: dict | None = None
     scene_progress: list[dict[str, Any]] | None = None
     scene_clip_rebuild_queue: dict[str, Any] | None = None
+    asset_health: dict[str, Any] | None = None
     error: str | None = None
 
 
@@ -660,6 +661,81 @@ async def approve_video_job_scene_image(job_id: str, scene_index: int, candidate
             "status": "approved", "image_path": str(candidate_path),
             "image_url": to_download_url(str(candidate_path)), "render_required": True,
             "message": "Imagem aprovada e aplicada à cena. Renderize a edição para atualizar o MP4 completo."}
+
+
+def _asset_health_entry(kind: str, value: Any, allowed_root: Path) -> dict[str, Any]:
+    """Inspect one persisted asset reference without exposing absolute paths."""
+    if not value:
+        return {"kind": kind, "status": "missing", "reason": "path_not_recorded"}
+    try:
+        path = Path(str(value)).resolve()
+        if allowed_root not in path.parents or not path.is_file():
+            return {"kind": kind, "status": "missing", "reason": "file_missing_or_outside_asset_root"}
+        stat = path.stat()
+        if stat.st_size <= 0:
+            return {"kind": kind, "status": "corrupt", "reason": "empty_file", "bytes": 0}
+        result = {"kind": kind, "status": "available", "bytes": stat.st_size,
+                  "sha256": _asset_sha256(path)}
+        return result
+    except (OSError, ValueError):
+        return {"kind": kind, "status": "unreadable", "reason": "file_could_not_be_read"}
+
+
+@router.get("/jobs/{job_id}/asset-health")
+async def get_video_job_asset_health(job_id: str):
+    """Audit persisted scene images, VidGrid clips and narration assets, read-only."""
+    record = _jobs.get(job_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+    from modules.ai_video_studio.media.output_paths import get_subsystem_dir
+
+    roots = {
+        "image": Path(get_subsystem_dir("images")).resolve(),
+        "video": Path(get_subsystem_dir("videos")).resolve(),
+        "audio": Path(get_subsystem_dir("audio")).resolve(),
+    }
+    scenes = record.get("_edited_scenes") or record.get("_source_scenes") or []
+    clips = {int(item.get("scene_index", -1)): item for item in (record.get("scene_clips") or []) if isinstance(item, dict)}
+    voiceover = record.get("voiceover") or {}
+    narration_by_scene = {
+        int(item.get("index", -1)): item for item in (voiceover.get("clips") or [])
+        if isinstance(item, dict)
+    }
+    rows: list[dict[str, Any]] = []
+    counts = {"available": 0, "missing": 0, "corrupt": 0, "unreadable": 0}
+    for position, scene in enumerate(scenes):
+        scene_index = int(scene.get("_source_scene_index", position))
+        clip = clips.get(scene_index) or {}
+        narration = narration_by_scene.get(scene_index) or {}
+        assets = [
+            _asset_health_entry("scene_image", scene.get("background_image_path"), roots["image"]),
+            _asset_health_entry("scene_clip", clip.get("output_path"), roots["video"]),
+        ]
+        if voiceover.get("narration_style") == "per_scene":
+            assets.append(_asset_health_entry("scene_narration", narration.get("audio_path"), roots["audio"]))
+        for asset in assets:
+            counts[asset["status"]] = counts.get(asset["status"], 0) + 1
+        rows.append({"scene_index": scene_index, "status": (
+            "healthy" if all(item["status"] == "available" for item in assets) else "needs_attention"
+        ), "assets": assets})
+    audio_settings = record.get("audio_settings") or {}
+    for group, kind in (("music_clips", "music"), ("sfx_clips", "sound_effect")):
+        for position, item in enumerate(audio_settings.get(group) or []):
+            asset = _asset_health_entry(kind, item.get("asset"), roots["audio"])
+            counts[asset["status"]] = counts.get(asset["status"], 0) + 1
+            rows.append({"asset_index": position, "group": group, "status": asset["status"], "assets": [asset]})
+    total = sum(counts.values())
+    return {
+        "job_id": job_id, "status": "healthy" if counts["missing"] + counts["corrupt"] + counts["unreadable"] == 0 else "needs_attention",
+        "summary": {"total_assets": total, **counts},
+        "scenes": rows,
+        "checked_at": time.time(),
+        "limitations": [
+            "A auditoria verifica existência, leitura básica e SHA-256; não comprova qualidade semântica ou sincronização perceptual.",
+            "Clipes MP4 não são decodificados quadro a quadro nesta auditoria.",
+            "Faixas únicas de narração são reportadas pelo manifesto de áudio, não divididas artificialmente por cena.",
+        ],
+    }
 
 
 @router.get("/jobs/{job_id}/recovery-plan")
