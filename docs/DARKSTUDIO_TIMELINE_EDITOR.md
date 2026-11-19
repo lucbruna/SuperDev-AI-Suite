@@ -360,3 +360,12 @@ Cada render final da timeline persiste um manifesto com o modo de montagem (conc
 O endpoint `POST /videos/jobs/{job_id}/validate-output` valida a exportação editada mais recente antes de recorrer ao MP4 original. Quando FFprobe está disponível, registra duração, contagem de streams, codecs, resolução, FPS, pixel format, dados básicos do áudio e integridade estrutural do vídeo. Também alerta sobre áudio ausente quando a etapa não foi declarada silenciosa, falha de mux, faixa única não reposicionada, divergência de duração e sidecar de legendas ausente.
 
 A validação é estrutural, não uma prova de sincronização perceptual, inteligibilidade da fala ou qualidade visual. A existência do arquivo SRT é verificada separadamente; o SRT não é presumido como faixa embutida no MP4. Sem FFprobe, o relatório marca a integridade como não verificada, em vez de aprovar o arquivo.
+
+
+### Plano de recuperação inteligente por cena
+
+O endpoint `GET /videos/jobs/{job_id}/recovery-plan` faz uma auditoria não destrutiva das cenas VidGrid. Para cada cena compara a imagem aprovada ativa com o fingerprint SHA-256 salvo no clipe, verifica a existência e a localização segura do MP4 e compara resolução/FPS com o perfil atual. Também detecta clipes ausentes e estados explicitamente stale.
+
+O painel consulta esse plano e mostra quantas cenas estão prontas, quantas precisam de reconstrução e quantas estão bloqueadas por falta de imagem válida. A ação de recuperação reconstrói somente cenas reparáveis, preservando os clipes ainda válidos. Depois da reconstrução, o fingerprint da imagem é persistido para permitir detectar alterações futuras. Jobs antigos sem fingerprint são sinalizados como legado, sem serem invalidados automaticamente apenas por isso.
+
+Limite: a verificação usa fingerprint da imagem e metadados/arquivo do clipe; não faz comparação semântica dos frames renderizados nem valida a integridade interna de cada clipe com FFprobe nesta etapa. A recuperação dos clipes individuais não substitui a renderização do MP4 completo.
