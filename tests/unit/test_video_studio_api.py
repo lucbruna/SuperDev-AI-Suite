@@ -1211,7 +1211,7 @@ class TestCompletedOutputValidation:
         monkeypatch.setattr(
             video_routes.subprocess, "run",
             lambda *args, **kwargs: SimpleNamespace(
-                returncode=0, stderr="", stdout='{"format":{"duration":"30","format_name":"mov,mp4"},"streams":[{"codec_type":"video","width":1280,"height":720,"r_frame_rate":"24/1"},{"codec_type":"audio"}]}',
+                returncode=0, stderr="", stdout='{"format":{"duration":"30","format_name":"mov,mp4"},"streams":[{"codec_type":"video","codec_name":"h264","width":1280,"height":720,"avg_frame_rate":"24/1","r_frame_rate":"24/1","pix_fmt":"yuv420p"},{"codec_type":"audio","codec_name":"aac","sample_rate":"48000","channels":2}]}',
             ),
         )
         monkeypatch.setattr(video_routes, "_persist_job", lambda _record: None)
@@ -1225,6 +1225,11 @@ class TestCompletedOutputValidation:
         assert report["duration_seconds"] == 30
         assert report["video_streams"] == 1
         assert report["audio_streams"] == 1
+        assert report["resolution"] == "1280x720"
+        assert report["fps"] == "24/1"
+        assert report["video_codec"] == "h264"
+        assert report["audio"]["codec_name"] == "aac"
+        assert report["integrity"] == "passed"
         assert video_routes._jobs["validate-job"]["output_validation"]["valid"] is True
 
     def test_job_status_response_exposes_persisted_output_validation(self):
