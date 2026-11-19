@@ -1640,6 +1640,32 @@ class TestDarkstudioDependencyGraph:
         assert graph["summary"]["dependencies"] == 2
 
     @pytest.mark.asyncio
+    async def test_changed_scene_image_marks_source_node_stale(self, tmp_path, monkeypatch):
+        from modules.ai_video_studio.api.routes import video
+        from modules.ai_video_studio.media import output_paths
+
+        roots = {name: tmp_path / name for name in ("images", "videos", "voice", "music", "effects")}
+        for root in roots.values():
+            root.mkdir()
+        image = roots["images"] / "scene.png"
+        image.write_bytes(b"new-approved-image")
+        monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda name: roots[name])
+        video._jobs["dependency-graph-image-stale"] = {
+            "job_id": "dependency-graph-image-stale",
+            "_edited_scenes": [{"_source_scene_index": 4, "background_image_path": str(image)}],
+            "scene_clips": [{
+                "scene_index": 4, "output_path": str(roots["videos"] / "clip.mp4"),
+                "source_image_fingerprint": "old-image-fingerprint",
+            }],
+        }
+
+        graph = await video.get_video_job_dependency_graph("dependency-graph-image-stale")
+        image_node = next(node for node in graph["nodes"] if node["id"] == "scene:4:image")
+
+        assert image_node["status"] == "stale"
+        assert image_node["reason"] == "source_image_changed"
+
+    @pytest.mark.asyncio
     async def test_audio_fingerprint_mismatch_marks_dependency_stale(self, tmp_path, monkeypatch):
         from modules.ai_video_studio.api.routes import video
         from modules.ai_video_studio.media import output_paths
