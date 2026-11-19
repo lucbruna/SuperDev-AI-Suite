@@ -22,7 +22,7 @@ from modules.ai_video_studio.core.exceptions import ValidationError
 from modules.ai_video_studio.media.llm import get_scene_planner
 from modules.ai_video_studio.media.output_paths import get_subsystem_dir, unique_filename
 from modules.ai_video_studio.media.render import render_multi_scene_video, render_single_scene_clip
-from modules.ai_video_studio.media.characters import add_character
+from modules.ai_video_studio.media.characters import PRESETS, add_character
 from modules.ai_video_studio.media.scene_library import OBJECTS, compose_scene_object
 from modules.ai_video_studio.ai_video_generator.generation_statistics import get_generation_statistics
 
@@ -277,6 +277,10 @@ class TextToVideoEngine:
             scale = max(0.35, min(width, height) / 720.0)
             for scene_index, scene in enumerate(scenes):
                 for character_index, character_id in enumerate(character_ids):
+                    # Only built-in procedural avatars can be drawn as primitives.
+                    # Arbitrary user references remain in the storyboard/image prompt.
+                    if character_id not in PRESETS:
+                        continue
                     if len(character_ids) == 1:
                         x = width * 0.5
                     else:
@@ -317,6 +321,10 @@ class TextToVideoEngine:
             object_scale = max(0.35, min(width, height) / 720.0)
             for scene_index, scene in enumerate(scenes):
                 for object_index, object_id in enumerate(object_ids):
+                    # Custom object references guide generated imagery; only
+                    # registered library objects have procedural primitives.
+                    if object_id not in OBJECTS:
+                        continue
                     x = width * (0.12 + 0.14 * (object_index % 6))
                     y = height * (0.48 + 0.04 * (object_index % 2))
                     scenes[scene_index] = compose_scene_object(
