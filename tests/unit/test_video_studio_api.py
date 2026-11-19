@@ -1520,6 +1520,11 @@ class TestAsyncVidGridRebuildQueue:
         video._jobs["async-queue-job"] = record
         monkeypatch.setattr(video, "_scene_clip_recovery_plan", lambda _record: {"repair_scene_indices": [1, 4]})
         monkeypatch.setattr(video, "_persist_job", lambda _record: None)
+        enqueued = []
+        monkeypatch.setattr(
+            "modules.ai_video_studio.media.job_store.enqueue_task",
+            lambda task_id, task_type, payload: enqueued.append((task_id, task_type, payload)),
+        )
         tasks = BackgroundTasks()
 
         result = await video.queue_scene_clip_rebuild(
@@ -1530,7 +1535,10 @@ class TestAsyncVidGridRebuildQueue:
         assert result["requested"] == 1
         assert record["_scene_clip_rebuild_scheduled"] is True
         assert record["scene_clip_rebuild_queue"]["requested_scene_indices"] == [4]
-        assert len(tasks.tasks) == 1
+        assert result["task_id"] == enqueued[0][0]
+        assert enqueued[0][1] == "scene_clip_rebuild"
+        assert enqueued[0][2]["scene_indices"] == [4]
+        assert tasks.tasks == []
 
     @pytest.mark.asyncio
     async def test_resume_only_accepts_incomplete_queue_states(self, monkeypatch):
