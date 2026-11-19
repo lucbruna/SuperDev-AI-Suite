@@ -436,7 +436,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
       setSceneImageCandidates((current) => ({ ...current, [sceneIndex]: {
         scene_index: sceneIndex, candidate_id: result.candidate_id!, image_path: result.image_path,
         image_url: result.image_url, provider: result.provider, status: "candidate",
-        operation: result.operation, prompt: result.prompt, approval_required: true,
+        operation: result.operation, prompt: result.prompt, seed: result.seed, approval_required: true,
       } }));
       setMessage(`Nova imagem da cena ${sceneIndex + 1} gerada como candidata. Compare com a atual e aprove para aplicar.`);
     } catch (error) { setMessage(error instanceof Error ? error.message : "Não foi possível gerar a imagem candidata."); }
@@ -498,7 +498,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
           if (!result.candidate_id) continue;
           next[item.scene_index] = { scene_index: item.scene_index, candidate_id: result.candidate_id,
             image_path: result.image_path, image_url: result.image_url, provider: result.provider,
-            status: "candidate", operation: result.operation, prompt: result.prompt, approval_required: true };
+            status: "candidate", operation: result.operation, prompt: result.prompt, seed: result.seed, approval_required: true };
         }
         return next;
       });
@@ -873,8 +873,10 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
                 </button>
               </div>
               {asset?.image_url ? <img src={asset.image_url} alt={`Imagem da cena ${index + 1}`} className="mb-2 aspect-video w-full rounded-md object-cover" /> : <div className="mb-2 flex aspect-video items-center justify-center rounded-md bg-surface-100 text-xs text-surface-500 dark:bg-surface-800">Cena {index + 1} · imagem procedural ou ainda não criada</div>}
+              {asset?.seed !== undefined && asset.seed >= 0 && <p className="mb-2 text-[10px] text-surface-500">Seed da imagem atual: <span className="font-mono tabular-nums">{asset.seed}</span></p>}
               {sceneImageCandidates[sourceIndex]?.image_url && <div className="mb-2 rounded-md border border-amber-400 p-2 dark:border-amber-700">
                 <p className="mb-1 text-xs font-semibold text-amber-700 dark:text-amber-300">Imagem candidata · ainda não aplicada</p>
+                {sceneImageCandidates[sourceIndex].seed !== undefined && sceneImageCandidates[sourceIndex].seed! >= 0 && <p className="mb-2 text-[10px] text-surface-500">Seed candidata: <span className="font-mono tabular-nums">{sceneImageCandidates[sourceIndex].seed}</span></p>}
                 <div className="grid grid-cols-2 gap-2">
                   <div><img src={asset?.image_url ?? visualDirections[sourceIndex]?.image_url ?? ""} alt={`Imagem atual da cena ${index + 1}`} className="aspect-video w-full rounded object-cover" /><p className="mt-1 text-center text-[10px]">Atual</p></div>
                   <div><img src={sceneImageCandidates[sourceIndex].image_url} alt={`Imagem candidata da cena ${index + 1}`} className="aspect-video w-full rounded object-cover" /><p className="mt-1 text-center text-[10px]">Candidata</p></div>
