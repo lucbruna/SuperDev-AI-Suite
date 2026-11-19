@@ -1640,6 +1640,37 @@ class TestDarkstudioDependencyGraph:
         assert graph["summary"]["dependencies"] == 2
 
     @pytest.mark.asyncio
+    async def test_audio_fingerprint_mismatch_marks_dependency_stale(self, tmp_path, monkeypatch):
+        from modules.ai_video_studio.api.routes import video
+        from modules.ai_video_studio.media import output_paths
+
+        roots = {name: tmp_path / name for name in ("images", "videos", "voice", "music", "effects")}
+        for root in roots.values():
+            root.mkdir()
+        monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda name: roots[name])
+        monkeypatch.setattr(
+            video, "_audio_asset_health",
+            lambda kind, value, root: {
+                "kind": kind, "status": "available", "sha256": "current-fingerprint",
+            },
+        )
+        video._jobs["dependency-graph-audio-stale"] = {
+            "job_id": "dependency-graph-audio-stale",
+            "_edited_scenes": [],
+            "_audio_clips": {
+                "music": [{"asset": "music/track.wav", "asset_fingerprint": "saved-fingerprint"}],
+                "sfx": [],
+            },
+        }
+
+        graph = await video.get_video_job_dependency_graph("dependency-graph-audio-stale")
+        music = next(node for node in graph["nodes"] if node["id"] == "audio:music:0")
+
+        assert music["status"] == "stale"
+        assert music["reason"] == "asset_changed_since_timeline_save"
+        assert music["sha256"] == "current-fingerprint"
+
+    @pytest.mark.asyncio
     async def test_malformed_persisted_metadata_does_not_break_graph(self, tmp_path, monkeypatch):
         from modules.ai_video_studio.api.routes import video
         from modules.ai_video_studio.media import output_paths
