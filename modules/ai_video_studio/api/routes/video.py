@@ -692,7 +692,7 @@ async def get_video_job_asset_health(job_id: str):
     roots = {
         "image": Path(get_subsystem_dir("images")).resolve(),
         "video": Path(get_subsystem_dir("videos")).resolve(),
-        "audio": Path(get_subsystem_dir("audio")).resolve(),
+        "voice": Path(get_subsystem_dir("voice")).resolve(),\n        "music": Path(get_subsystem_dir("music")).resolve(),\n        "effects": Path(get_subsystem_dir("effects")).resolve(),
     }
     scenes = record.get("_edited_scenes") or record.get("_source_scenes") or []
     clips = {int(item.get("scene_index", -1)): item for item in (record.get("scene_clips") or []) if isinstance(item, dict)}
@@ -712,16 +712,16 @@ async def get_video_job_asset_health(job_id: str):
             _asset_health_entry("scene_clip", clip.get("output_path"), roots["video"]),
         ]
         if voiceover.get("narration_style") == "per_scene":
-            assets.append(_asset_health_entry("scene_narration", narration.get("audio_path"), roots["audio"]))
+            assets.append(_asset_health_entry("scene_narration", narration.get("audio_path"), roots["voice"]))
         for asset in assets:
             counts[asset["status"]] = counts.get(asset["status"], 0) + 1
         rows.append({"scene_index": scene_index, "status": (
             "healthy" if all(item["status"] == "available" for item in assets) else "needs_attention"
         ), "assets": assets})
     audio_settings = record.get("audio_settings") or {}
-    for group, kind in (("music_clips", "music"), ("sfx_clips", "sound_effect")):
+    for group, kind, root_key in (("music_clips", "music", "music"), ("sfx_clips", "sound_effect", "effects")):
         for position, item in enumerate(audio_settings.get(group) or []):
-            asset = _asset_health_entry(kind, item.get("asset"), roots["audio"])
+            asset = _asset_health_entry(kind, item.get("asset"), roots[root_key])
             counts[asset["status"]] = counts.get(asset["status"], 0) + 1
             rows.append({"asset_index": position, "group": group, "status": asset["status"], "assets": [asset]})
     total = sum(counts.values())
