@@ -90,3 +90,18 @@ def test_unique_task_enqueue_is_atomic_per_job_and_task_type(tmp_path, monkeypat
     assert {item["task_id"] for item in active} == {
         "scene-task-1", "dependency-task-1",
     }
+
+
+def test_queued_task_can_be_rolled_back_but_claimed_task_cannot(tmp_path, monkeypatch):
+    database = tmp_path / "rollback-queue.sqlite3"
+    monkeypatch.setattr(job_store, "_database_path", lambda: database)
+
+    job_store.enqueue_task("task-rollback", "scene_clip_rebuild", {"job_id": "job-rollback"})
+    assert job_store.delete_queued_task("task-rollback")
+    assert job_store.list_tasks() == []
+
+    job_store.enqueue_task("task-claimed", "scene_clip_rebuild", {"job_id": "job-claimed"})
+    claimed = job_store.claim_next_task("worker-a")
+    assert claimed is not None
+    assert not job_store.delete_queued_task("task-claimed")
+    assert job_store.list_tasks()[0]["status"] == "processing"
