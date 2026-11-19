@@ -1351,6 +1351,36 @@ class TestCompletedOutputValidation:
         )
         assert response_with_scenes.model_dump()["scene_progress"] == scene_progress
 
+    def test_interrupted_job_records_last_completed_and_active_scene(self, monkeypatch):
+        from modules.ai_video_studio.media import job_store
+
+        saved = []
+        monkeypatch.setattr(job_store, "save_job", lambda record: saved.append(dict(record)))
+        jobs = {
+            "restart-job": {
+                "job_id": "restart-job", "project_id": "p1", "status": "processing",
+                "current_step": "Cena 3: rendering frames",
+                "scene_progress": [
+                    {"scene_index": 0, "status": "completed", "stage": "exported"},
+                    {"scene_index": 1, "status": "completed", "stage": "exported"},
+                    {"scene_index": 2, "status": "processing", "stage": "rendering"},
+                ],
+            }
+        }
+
+        recovered = job_store.mark_interrupted_jobs(jobs)
+        failure = jobs["restart-job"]["failure_info"]
+
+        assert recovered == ["restart-job"]
+        assert jobs["restart-job"]["status"] == "failed"
+        assert failure["kind"] == "server_restart"
+        assert failure["failed_stage"] == "Cena 3: rendering frames"
+        assert failure["failed_scene_index"] == 2
+        assert failure["last_completed_scene_index"] == 1
+        assert failure["completed_scene_indices"] == [0, 1]
+        assert failure["automatic_resume_supported"] is False
+        assert saved[0]["failure_info"] == failure
+
     @pytest.mark.asyncio
     async def test_rejects_output_path_outside_video_directory(self, tmp_path, monkeypatch):
         from modules.ai_video_studio.api.routes import video as video_routes

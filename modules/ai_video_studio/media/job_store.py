@@ -99,11 +99,41 @@ def mark_interrupted_jobs(jobs: dict[str, dict[str, Any]]) -> list[str]:
     for job_id, record in jobs.items():
         if record.get("status") not in {"queued", "processing"}:
             continue
+        progress_items = [
+            item for item in (record.get("scene_progress") or [])
+            if isinstance(item, dict)
+        ]
+        completed_indices = [
+            int(item.get("scene_index", index))
+            for index, item in enumerate(progress_items)
+            if item.get("status") == "completed"
+        ]
+        active_scene = next(
+            (item for item in reversed(progress_items) if item.get("status") == "processing"),
+            None,
+        )
+        previous_step = str(record.get("current_step") or "unknown")
+        message = (
+            "A geração foi interrompida pela reinicialização do servidor. "
+            "O progresso registrado foi preservado; a retomada automática integral ainda não está disponível."
+        )
         record.update(
             status="failed",
             current_step="Interrupted",
-            error="A geração foi interrompida por reinicialização do servidor. Inicie um novo job; o progresso salvo foi preservado.",
+            error=message,
             interrupted=True,
+            failure_info={
+                "kind": "server_restart",
+                "failed_stage": previous_step,
+                "failed_scene_index": active_scene.get("scene_index") if active_scene else None,
+                "last_completed_scene_index": max(completed_indices) if completed_indices else None,
+                "completed_scene_indices": completed_indices,
+                "automatic_resume_supported": False,
+                "recovery_hint": (
+                    "Consulte as cenas concluídas e os arquivos preservados antes de iniciar uma nova geração. "
+                    "A retomada integral da geração interrompida ainda não é suportada."
+                ),
+            },
         )
         try:
             save_job(record)

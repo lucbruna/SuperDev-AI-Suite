@@ -182,6 +182,7 @@ class VoiceoverClip(BaseModel):
     tts_engine: str | None = None
     audio_duration: float | None = None
     error: str | None = None
+    failure_info: dict[str, Any] | None = None
 
 
 class VoiceoverInfo(BaseModel):
@@ -1956,7 +1957,37 @@ async def generate_video(req: VideoGenerateRequest, background_tasks: Background
                 active["status"] = "failed"
                 active["stage"] = "failed"
                 active["error"] = str(e)[:300]
-            record.update(status="failed", error=str(e), scene_progress=progress_items)
+            completed_indices = [
+                int(item.get("scene_index", index))
+                for index, item in enumerate(progress_items)
+                if item.get("status") == "completed"
+            ]
+            failed_scene = next(
+                (item for item in reversed(progress_items) if item.get("status") == "failed"),
+                None,
+            )
+            failed_stage = str(
+                (failed_scene or {}).get("stage")
+                or record.get("current_step")
+                or "generation"
+            )
+            record.update(
+                status="failed",
+                error=str(e),
+                scene_progress=progress_items,
+                failure_info={
+                    "kind": "generation_error",
+                    "failed_stage": failed_stage,
+                    "failed_scene_index": failed_scene.get("scene_index") if failed_scene else None,
+                    "last_completed_scene_index": max(completed_indices) if completed_indices else None,
+                    "completed_scene_indices": completed_indices,
+                    "automatic_resume_supported": False,
+                    "recovery_hint": (
+                        "O job preservou o diagnóstico e o progresso de cenas. "
+                        "A retomada automática da geração inicial ainda não está disponível."
+                    ),
+                },
+            )
             _persist_job(record)
 
     background_tasks.add_task(_run, job_id, req)
