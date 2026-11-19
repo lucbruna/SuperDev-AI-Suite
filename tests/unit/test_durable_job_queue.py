@@ -39,3 +39,28 @@ def test_durable_task_retries_are_bounded(tmp_path, monkeypatch):
     assert task["status"] == "failed"
     assert task["attempts"] == 2
     assert task["last_error"] == "permanent failure"
+
+
+def test_expired_worker_leases_are_reclaimed_and_crashes_are_bounded(tmp_path, monkeypatch):
+    database = tmp_path / "lease-recovery.sqlite3"
+    monkeypatch.setattr(job_store, "_database_path", lambda: database)
+    clock = {"now": 1000.0}
+    monkeypatch.setattr("time.time", lambda: clock["now"])
+
+    job_store.enqueue_task("task-crash", "dependency_rebuild", {"job_id": "job-crash"})
+    first = job_store.claim_next_task("worker-a", lease_seconds=30)
+    assert first["attempts"] == 1
+
+    clock["now"] = 1031.0
+    second = job_store.claim_next_task("worker-b", lease_seconds=30)
+    assert second["attempts"] == 2
+
+    clock["now"] = 1062.0
+    third = job_store.claim_next_task("worker-c", lease_seconds=30)
+    assert third["attempts"] == 3
+
+    clock["now"] = 1093.0
+    assert job_store.claim_next_task("worker-d", lease_seconds=30) is None
+    task = job_store.list_tasks("dependency_rebuild")[0]
+    assert task["status"] == "failed"
+    assert task["attempts"] == 3
