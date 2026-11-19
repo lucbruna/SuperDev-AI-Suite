@@ -473,7 +473,7 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
         raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
     if job_id in _scene_batch_jobs and asyncio.current_task() is not _scene_batch_tasks.get(job_id):
         raise HTTPException(status_code=409, detail="A batch scene regeneration is already running")
-    if record.get("_rendering_edits") or record.get("_rebuilding_scene_clips"):
+    if record.get("_rendering_edits") or record.get("_rebuilding_scene_clips") or record.get("_scene_clip_rebuild_scheduled"):
         raise HTTPException(status_code=409, detail="Scene assets are locked by an active render operation")
     if record.get("status") != "completed":
         raise HTTPException(status_code=409, detail="Scene images can only be changed after generation completes")
@@ -672,7 +672,7 @@ async def approve_video_job_scene_image(job_id: str, scene_index: int, candidate
     record = _jobs.get(job_id)
     if record is None:
         raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
-    if record.get("_rendering_edits") or record.get("_rebuilding_scene_clips") or job_id in _scene_batch_jobs:
+    if record.get("_rendering_edits") or record.get("_rebuilding_scene_clips") or record.get("_scene_clip_rebuild_scheduled") or job_id in _scene_batch_jobs:
         raise HTTPException(status_code=409, detail="Scene assets are locked by another operation")
     if record.get("status") != "completed":
         raise HTTPException(status_code=409, detail="Only completed jobs can approve scene images")
@@ -2116,7 +2116,7 @@ async def render_video_job_edits(job_id: str):
         raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
     if record.get("status") != "completed" or not record.get("_edited_scenes"):
         raise HTTPException(status_code=409, detail="Save a valid timeline draft before rendering")
-    if record.get("_rendering_edits") or record.get("_rebuilding_scene_clips"):
+    if record.get("_rendering_edits") or record.get("_rebuilding_scene_clips") or record.get("_scene_clip_rebuild_scheduled"):
         raise HTTPException(status_code=409, detail="An edited render is already running")
     if job_id in _scene_batch_jobs:
         raise HTTPException(status_code=409, detail="Wait for scene regeneration to finish before rendering")
