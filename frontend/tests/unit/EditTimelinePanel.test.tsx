@@ -486,14 +486,12 @@ describe("Storyboard scene navigation", () => {
 
     render(<EditTimelinePanel timeline={timeline} jobId="storyboard-navigation-job" />);
 
-    const editSecondScene = await screen.findByRole("button", { name: "Editar cena" });
-    const sceneButtons = screen.getAllByRole("button", { name: "Editar cena" });
+    const sceneButtons = await screen.findAllByRole("button", { name: "Editar cena" });
     expect(sceneButtons).toHaveLength(2);
     fireEvent.click(sceneButtons[1]);
 
     expect(screen.getByText(/Selecionado: Cena 2 · close_up/)).toBeInTheDocument();
     expect(screen.getByRole("slider", { name: "Posição do cursor da timeline" })).toHaveValue("48");
     expect(screen.getByRole("button", { name: "Em edição" })).toHaveAttribute("aria-pressed", "true");
-    void editSecondScene;
   });
 });
