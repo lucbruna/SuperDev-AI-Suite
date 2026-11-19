@@ -1181,10 +1181,26 @@ async def queue_scene_clip_rebuild(job_id: str, background_tasks: BackgroundTask
     }
     record["scene_clip_rebuild_status"] = "queued"
     record["_scene_clip_rebuild_scheduled"] = True
+    task_id = str(uuid.uuid4())
+    try:
+        from modules.ai_video_studio.media.job_store import enqueue_task
+        enqueue_task(task_id, "scene_clip_rebuild", {
+            "job_id": job_id, "queue_id": queue_id,
+            "scene_indices": list(requested),
+        })
+    except Exception as exc:
+        record["_scene_clip_rebuild_scheduled"] = False
+        record["scene_clip_rebuild_queue"].update({
+            "status": "failed", "error": f"Não foi possível persistir a fila: {str(exc)[:300]}",
+            "updated_at": time.time(),
+        })
+        record["scene_clip_rebuild_status"] = "failed"
+        _persist_job(record)
+        raise HTTPException(status_code=503, detail="Durable scene rebuild queue is unavailable") from exc
+    record["scene_clip_rebuild_queue"]["task_id"] = task_id
     _persist_job(record)
-    background_tasks.add_task(_run_scene_clip_rebuild_background, job_id, list(requested))
     return {
-        "job_id": job_id, "queue_id": queue_id, "status": "queued",
+        "job_id": job_id, "queue_id": queue_id, "task_id": task_id, "status": "queued",
         "queued": True, "requested": len(requested),
         "status_url": f"/videos/jobs/{job_id}/scenes/rebuild-stale-clips/status",
     }
@@ -2545,6 +2561,51 @@ async def _process_durable_dependency_rebuild(payload: dict) -> None:
     await _run_dependency_rebuild_background(job_id, changed_asset_ids, impact)
 
 
+async def _process_durable_scene_clip_rebuild(payload: dict) -> None:
+    """Run one persisted VidGrid scene-rebuild task idempotently."""
+    job_id = str(payload.get("job_id") or "")
+    queue_id = str(payload.get("queue_id") or "")
+    record = _jobs.get(job_id)
+    queue = record.get("scene_clip_rebuild_queue") if record else None
+    if not isinstance(queue, dict) or str(queue.get("queue_id") or "") != queue_id:
+        raise RuntimeError("Durable scene rebuild task references a missing or replaced queue")
+    if queue.get("cancel_requested"):
+        queue.update({"status": "cancelled", "current_scene_index": None, "updated_at": time.time()})
+        record["scene_clip_rebuild_status"] = "cancelled"
+        _persist_job(record)
+        return
+    recovery = _scene_clip_recovery_plan(record)
+    repairable = set(recovery.get("repair_scene_indices") or [])
+    requested = set(payload.get("scene_indices") or queue.get("requested_scene_indices") or [])
+    pending = sorted(requested & repairable)
+    queue["requested_scene_indices"] = pending
+    queue["total"] = len(pending)
+    queue["status"] = "processing"
+    queue["updated_at"] = time.time()
+    record["_scene_clip_rebuild_scheduled"] = False
+    record["_scene_clip_rebuild_worker"] = True
+    _persist_job(record)
+    if not pending:
+        queue.update({"status": "completed", "completed": 0, "failed": 0,
+                      "current_scene_index": None, "results": [], "updated_at": time.time()})
+        record["scene_clip_rebuild_status"] = "completed"
+        record["_scene_clip_rebuild_worker"] = False
+        _persist_job(record)
+        return
+    try:
+        result = await rebuild_stale_video_job_scene_clips(
+            job_id, SceneClipRebuildRequest(scene_indices=pending)
+        )
+        if result.get("failed") and result.get("rebuilt"):
+            queue["status"] = "partial"
+        if result.get("status") == "failed":
+            queue["error"] = "All requested scene clips failed to rebuild"
+    finally:
+        record["_scene_clip_rebuild_worker"] = False
+        record["_scene_clip_rebuild_scheduled"] = False
+        _persist_job(record)
+
+
 async def _dependency_worker_loop(worker_id: str) -> None:
     from modules.ai_video_studio.media.job_store import (
         claim_next_task, complete_task, fail_task, renew_task_lease, list_tasks,
@@ -2587,14 +2648,17 @@ async def _dependency_worker_loop(worker_id: str) -> None:
 
         heartbeat_task = asyncio.create_task(heartbeat())
         try:
-            if task.get("task_type") != "dependency_rebuild":
-                raise RuntimeError(f"Unsupported durable task type: {task.get('task_type')}")
-            await _process_durable_dependency_rebuild(task.get("payload") or {})
             payload = task.get("payload") or {}
-            record = _jobs.get(str(payload.get("job_id") or ""))
-            execution = record.get("dependency_rebuild_execution") if record else None
-            if isinstance(execution, dict) and execution.get("status") == "failed":
-                raise RuntimeError(str(execution.get("error") or "Dependency rebuild failed"))
+            if task.get("task_type") == "dependency_rebuild":
+                await _process_durable_dependency_rebuild(payload)
+                record = _jobs.get(str(payload.get("job_id") or ""))
+                execution = record.get("dependency_rebuild_execution") if record else None
+                if isinstance(execution, dict) and execution.get("status") == "failed":
+                    raise RuntimeError(str(execution.get("error") or "Dependency rebuild failed"))
+            elif task.get("task_type") == "scene_clip_rebuild":
+                await _process_durable_scene_clip_rebuild(payload)
+            else:
+                raise RuntimeError(f"Unsupported durable task type: {task.get('task_type')}")
             await asyncio.to_thread(complete_task, task_id, worker_id)
         except asyncio.CancelledError:
             raise
@@ -2604,16 +2668,32 @@ async def _dependency_worker_loop(worker_id: str) -> None:
             )
             payload = task.get("payload") or {}
             record = _jobs.get(str(payload.get("job_id") or ""))
-            execution = record.get("dependency_rebuild_execution") if record else None
-            if isinstance(execution, dict):
-                execution.update({
-                    "status": "queued" if retried else "failed",
-                    "error": str(exc)[:500],
-                    "updated_at": time.time(),
-                    "worker_attempts": task.get("attempts"),
-                    "retry_scheduled": bool(retried),
-                })
-                _persist_job(record)
+            if task.get("task_type") == "dependency_rebuild":
+                execution = record.get("dependency_rebuild_execution") if record else None
+                if isinstance(execution, dict):
+                    execution.update({
+                        "status": "queued" if retried else "failed",
+                        "error": str(exc)[:500],
+                        "updated_at": time.time(),
+                        "worker_attempts": task.get("attempts"),
+                        "retry_scheduled": bool(retried),
+                    })
+                    _persist_job(record)
+            elif task.get("task_type") == "scene_clip_rebuild":
+                queue = record.get("scene_clip_rebuild_queue") if record else None
+                if isinstance(queue, dict):
+                    queue.update({
+                        "status": "queued" if retried else "failed",
+                        "error": str(exc)[:500],
+                        "updated_at": time.time(),
+                        "worker_attempts": task.get("attempts"),
+                        "retry_scheduled": bool(retried),
+                        "current_scene_index": None,
+                    })
+                    record["scene_clip_rebuild_status"] = queue["status"]
+                    record["_scene_clip_rebuild_scheduled"] = False
+                    record["_scene_clip_rebuild_worker"] = False
+                    _persist_job(record)
         finally:
             heartbeat_stop.set()
             heartbeat_task.cancel()
