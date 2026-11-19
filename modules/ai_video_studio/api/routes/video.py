@@ -2741,15 +2741,26 @@ async def resume_video_job_dependency_rebuild(job_id: str, background_tasks: Bac
     }
     record["dependency_rebuild_execution"] = execution
     _persist_job(record)
-    background_tasks.add_task(
-        _run_dependency_rebuild_background, job_id, changed_asset_ids, impact
-    )
+    task_id = str(uuid.uuid4())
+    try:
+        from modules.ai_video_studio.media.job_store import enqueue_task
+        enqueue_task(task_id, "dependency_rebuild", {
+            "job_id": job_id, "changed_asset_ids": changed_asset_ids,
+        })
+    except Exception as exc:
+        execution.update({"status": previous.get("status", "interrupted"),
+                          "error": f"Não foi possível persistir a retomada: {str(exc)[:400]}",
+                          "updated_at": time.time()})
+        _persist_job(record)
+        raise HTTPException(status_code=503, detail="Durable task queue is unavailable") from exc
+    execution["task_id"] = task_id
+    _persist_job(record)
     return {
-        "job_id": job_id, "status": "queued", "queued": True,
+        "job_id": job_id, "status": "queued", "queued": True, "task_id": task_id,
         "scene_indices": execution["scene_indices"],
         "previously_completed_scene_indices": execution["previously_completed_scene_indices"],
         "status_url": f"/videos/jobs/{job_id}/dependency-rebuild/status",
-        "message": "Execução retomada; somente cenas ainda desatualizadas serão reconstruídas.",
+        "message": "Execução gravada na fila persistente; somente cenas ainda desatualizadas serão reconstruídas.",
     }
 
 
@@ -2800,19 +2811,24 @@ async def execute_video_job_dependency_rebuild(
     }
     record["dependency_rebuild_execution"] = execution
     _persist_job(record)
-    if background_tasks is None:
-        # Direct invocation compatibility for internal callers and unit tests.
-        await _run_dependency_rebuild_background(job_id, list(req.changed_asset_ids), impact)
-        completed = record.get("dependency_rebuild_execution") or {}
-        return {"job_id": job_id, **completed, "queued": False, "executed": True}
-    background_tasks.add_task(
-        _run_dependency_rebuild_background, job_id, list(req.changed_asset_ids), impact
-    )
+    task_id = str(uuid.uuid4())
+    try:
+        from modules.ai_video_studio.media.job_store import enqueue_task
+        enqueue_task(task_id, "dependency_rebuild", {
+            "job_id": job_id, "changed_asset_ids": list(req.changed_asset_ids),
+        })
+    except Exception as exc:
+        execution.update({"status": "failed", "error": f"Não foi possível persistir a tarefa: {str(exc)[:400]}",
+                          "updated_at": time.time()})
+        _persist_job(record)
+        raise HTTPException(status_code=503, detail="Durable task queue is unavailable") from exc
+    execution["task_id"] = task_id
+    _persist_job(record)
     return {
         "job_id": job_id, "status": "queued", "queued": True, "executed": False,
-        "impact": impact,
+        "task_id": task_id, "impact": impact,
         "status_url": f"/videos/jobs/{job_id}/dependency-rebuild/status",
-        "message": "Reconstrução adicionada à fila; consulte o status para acompanhar o processamento.",
+        "message": "Reconstrução gravada na fila persistente; o worker processará a tarefa.",
     }
 
 
