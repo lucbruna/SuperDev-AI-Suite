@@ -134,7 +134,7 @@ def generate_scene_image(
     }
     result = _post_json(f"{_api_base_url()}/sdapi/v1/txt2img", payload, timeout)
     output = _decode_image(result, "darkstudio_scene")
-    output.update({"generation_info": result.get("info"), "operation": "text_to_image"})
+    output.update({"generation_info": result.get("info"), "operation": "text_to_image", "seed": int(seed)})
     return output
 
 
