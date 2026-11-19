@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import asyncio
 import concurrent.futures
+import hashlib
 import logging
 import time
 from typing import Any, Callable
@@ -33,6 +34,29 @@ _SYNC_BRIDGE = concurrent.futures.ThreadPoolExecutor(max_workers=1, thread_name_
 
 # Cap on narration characters so TTS stays responsive on long storyboards.
 _MAX_NARRATION_CHARS = 800
+
+
+def derive_scene_image_seed(
+    job_id: str,
+    scene: dict[str, Any],
+    scene_index: int,
+    base_seed: int | None = None,
+) -> int:
+    """Return a stable, distinct 31-bit seed for one scene image.
+
+    An explicit base seed makes the same scene reproducible across jobs.
+    Without one, the job ID provides a fresh but repeatable seed namespace.
+    """
+    scene_identity = str(
+        scene.get("storyboard_scene_id")
+        or scene.get("name")
+        or f"scene-{scene_index + 1}"
+    )
+    namespace = f"seed:{int(base_seed)}" if base_seed is not None else f"job:{job_id}"
+    digest = hashlib.sha256(
+        f"{namespace}:{scene_identity}:{scene_index}".encode("utf-8")
+    ).digest()
+    return int.from_bytes(digest[:4], "big") & 0x7FFFFFFF
 
 
 class TextToVideoEngine:
@@ -221,6 +245,13 @@ class TextToVideoEngine:
                     f"{image_style}. {visual_prompt}.{character_reservation} "
                     "No captions, no typography, no watermark."
                 )
+                image_seed = derive_scene_image_seed(
+                    str(job.get("id") or job.get("job_id") or prompt[:200]),
+                    scene,
+                    scene_index,
+                    params.get("scene_image_seed"),
+                )
+                scene["image_generation_seed"] = image_seed
                 try:
                     generated = await asyncio.to_thread(
                         generate_scene_image,
@@ -229,6 +260,7 @@ class TextToVideoEngine:
                         width=image_width,
                         height=image_height,
                         steps=int(params.get("scene_image_steps", 20)),
+                        seed=image_seed,
                         timeout=float(params.get("scene_image_timeout", 240)),
                     )
                     scene["background_image_path"] = generated["image_path"]
@@ -240,6 +272,7 @@ class TextToVideoEngine:
                         "provider": generated["provider"],
                         "status": "generated",
                         "prompt": full_prompt,
+                        "seed": image_seed,
                     })
                 except Exception as exc:
                     if image_mode == "ai":
