@@ -248,6 +248,9 @@ class ScenePlanner:
                 s_duration = float(item.get("duration") or per_scene)
             except (TypeError, ValueError):
                 s_duration = per_scene
+            allowed_shots = {"establishing", "wide", "medium", "close_up", "detail", "tracking"}
+            requested_shot = str(item.get("shot_type") or "medium").strip().lower()
+            shot_type = requested_shot if requested_shot in allowed_shots else ("establishing", "wide", "medium", "close_up", "detail", "tracking")[i % 6]
             scenes.append(
                 {
                     "index": i,
@@ -256,7 +259,7 @@ class ScenePlanner:
                     "visual_prompt": str(item.get("visual_prompt") or item.get("image_prompt") or item.get("description") or item.get("name") or "")[:2000],
                     "negative_prompt": str(item.get("negative_prompt") or "")[:1000],
                     "voiceover_text": str(item.get("voiceover_text") or item.get("narration") or "")[:2000],
-                    "shot_type": str(item.get("shot_type") or "medium")[:32],
+                    "shot_type": shot_type,
                     "character_pose": str(item.get("character_pose") or "")[:24],
                     "character_expression": str(item.get("character_expression") or "")[:24],
                     "duration": max(0.5, s_duration),
@@ -285,24 +288,40 @@ class ScenePlanner:
         return [v for v in value if isinstance(v, dict)]
 
     # ── Deterministic fallback ────────────────────────────────────
+    @staticmethod
+    def _shot_guidance(shot_type: str, scene_index: int) -> str:
+        """Give each fallback scene a concrete, distinct visual composition."""
+        guidance = {
+            "establishing": "very wide establishing view, show the full environment and spatial scale",
+            "wide": "wide environmental composition, show subject in relation to surroundings",
+            "medium": "medium shot, prioritize the main action and readable subject placement",
+            "close_up": "close-up framing, emphasize the narrated expression or key action",
+            "detail": "macro detail shot, isolate the specific object or evidence named in this beat",
+            "tracking": "dynamic lateral tracking composition, show movement through the environment",
+        }
+        return f"{guidance[shot_type]}; alternate screen direction for scene {scene_index + 1}; avoid repeating the previous scene's framing"
+
     def fallback(self, prompt: str, *, num_scenes: int = 3, duration: float = 10.0) -> dict[str, Any]:
         """Deterministic scene plan usable with no LLM available."""
         beats = _split_prompt_into_scene_beats(prompt, num_scenes)
         per_scene = duration / max(num_scenes, 1)
         palette = ["#1a1a2e", "#0f3460", "#533483", "#e94560", "#16213e"]
+        shot_types = ("establishing", "wide", "medium", "close_up", "detail", "tracking")
         scenes: list[dict[str, Any]] = []
         for i, chunk in enumerate(beats):
             if not chunk:
                 chunk = f"Parte {i + 1}"
+            shot_type = shot_types[i % len(shot_types)]
+            visual_guidance = self._shot_guidance(shot_type, i)
             scenes.append(
                 {
                     "index": i,
                     "name": f"Scene {i + 1}",
                     "description": chunk[:1000],
-                    "visual_prompt": f"Scene focus: {chunk}. Create a standalone image for this beat only, with a clear subject, relevant environment, distinct composition and purposeful camera framing. Do not repeat imagery from other beats.",
+                    "visual_prompt": f"Visualize only this narrated beat: {chunk}. {visual_guidance}. Create a standalone image with a clear subject and environment. Keep the user's requested art style; do not add events or details absent from the brief.",
                     "negative_prompt": "blurry, low quality, distorted anatomy, unreadable text, watermark, logo",
                     "voiceover_text": chunk[:1000],
-                    "shot_type": ("establishing", "wide", "medium", "close_up", "detail")[i % 5],
+                    "shot_type": shot_type,
                     "character_pose": ("explain", "point", "neutral")[i % 3],
                     "character_expression": ("neutral", "happy", "surprised")[i % 3],
                     "duration": per_scene,
