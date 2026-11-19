@@ -1103,6 +1103,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
           <span>Ausentes: <strong>{assetHealth.summary.missing}</strong></span>
           <span>Corrompidos: <strong>{assetHealth.summary.corrupt}</strong></span>
           <span>Ilegíveis: <strong>{assetHealth.summary.unreadable}</strong></span>
+          <span>Alterados: <strong>{assetHealth.summary.stale ?? 0}</strong></span>
         </div>
         {!!assetHealth.scenes.filter((scene) => scene.status !== "healthy").length && <ul className="mt-2 list-disc pl-5">
           {assetHealth.scenes.filter((scene) => scene.status !== "healthy").map((scene, index) => <li key={index}>
