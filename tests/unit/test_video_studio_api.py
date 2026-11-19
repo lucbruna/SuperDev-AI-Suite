@@ -1520,11 +1520,13 @@ class TestAsyncVidGridRebuildQueue:
         video._jobs["async-queue-job"] = record
         monkeypatch.setattr(video, "_scene_clip_recovery_plan", lambda _record: {"repair_scene_indices": [1, 4]})
         monkeypatch.setattr(video, "_persist_job", lambda _record: None)
-        monkeypatch.setattr(video, "has_active_task_for_job", lambda *_args: False)
         enqueued = []
+        def fake_enqueue(task_id, task_type, job_id, payload):
+            enqueued.append((task_id, task_type, job_id, payload))
+            return True
         monkeypatch.setattr(
-            "modules.ai_video_studio.media.job_store.enqueue_task",
-            lambda task_id, task_type, payload: enqueued.append((task_id, task_type, payload)),
+            "modules.ai_video_studio.media.job_store.enqueue_unique_task_for_job",
+            fake_enqueue,
         )
         tasks = BackgroundTasks()
 
@@ -1538,7 +1540,8 @@ class TestAsyncVidGridRebuildQueue:
         assert record["scene_clip_rebuild_queue"]["requested_scene_indices"] == [4]
         assert result["task_id"] == enqueued[0][0]
         assert enqueued[0][1] == "scene_clip_rebuild"
-        assert enqueued[0][2]["scene_indices"] == [4]
+        assert enqueued[0][2] == "async-queue-job"
+        assert enqueued[0][3]["scene_indices"] == [4]
         assert tasks.tasks == []
 
     @pytest.mark.asyncio
