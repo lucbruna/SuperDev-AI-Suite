@@ -456,3 +456,10 @@ A reconstrução seletiva também pode ser iniciada sem manter a requisição HT
 - A fila e os resultados por cena são persistidos no job. O frontend inicia a fila, atualiza o progresso automaticamente a cada 2,5 segundos, oferece atualização manual e permite solicitar cancelamento.
 
 Os locks são adquiridos antes do agendamento, impedindo edições, renderização e outra reconstrução enquanto a tarefa aguarda execução. Em reinicialização da API, filas em `queued` ou `processing` são marcadas como `interrupted`; resultados já concluídos permanecem salvos. A retomada após reinicialização é iniciada pelo usuário no botão **Retomar somente cenas pendentes**; o servidor consulta novamente o recovery-plan e enfileira apenas as cenas ainda reparáveis. O worker usa `BackgroundTasks` do processo FastAPI; não é ainda uma fila distribuída nem garante execução após encerramento abrupto do processo.
+
+
+### Execução assíncrona do grafo de dependências
+
+A confirmação de reconstrução por dependências responde com HTTP 202 e persiste o estado inicial `queued`. O processamento é executado por tarefa em segundo plano; consulte `GET /videos/jobs/{job_id}/dependency-rebuild/status` para acompanhar `queued`, `processing`, `completed`, `partial` ou `failed`. A exportação final só é executada depois que todas as cenas selecionadas forem reconstruídas com sucesso. O estado e os resultados são persistidos no registro do job para inspeção após reinicialização.
+
+Limitação atual: esta fila usa as tarefas em segundo plano do processo FastAPI e não é um broker distribuído. Uma reinicialização pode interromper o trabalho; o estado persistido permite identificar a interrupção, mas não há retomada automática nem cancelamento cooperativo dedicado para a execução do grafo de dependências.
