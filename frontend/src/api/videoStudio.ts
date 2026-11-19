@@ -559,6 +559,30 @@ export const videoStudioApi = {
     return data;
   },
 
+  async queueStaleVidGridClips(jobId: string, sceneIndices?: number[]): Promise<{
+    job_id: string; queue_id?: string; status: string; queued: boolean; requested: number; status_url?: string;
+  }> {
+    const { data } = await apiClient.post(
+      `${STUDIO_BASE}/videos/jobs/${jobId}/scenes/rebuild-stale-clips/queue`,
+      sceneIndices ? { scene_indices: sceneIndices } : {},
+    );
+    return data;
+  },
+
+  async getVidGridClipRebuildStatus(jobId: string): Promise<NonNullable<VidGridClipRebuildResult["queue"]> & { job_id: string; queue_id?: string; cancel_requested?: boolean; error?: string }> {
+    const { data } = await apiClient.get(
+      `${STUDIO_BASE}/videos/jobs/${jobId}/scenes/rebuild-stale-clips/status`,
+    );
+    return data;
+  },
+
+  async cancelVidGridClipRebuild(jobId: string): Promise<{ job_id: string; status: string; cancel_requested: boolean; message: string }> {
+    const { data } = await apiClient.post(
+      `${STUDIO_BASE}/videos/jobs/${jobId}/scenes/rebuild-stale-clips/cancel`,
+    );
+    return data;
+  },
+
   async rebuildStaleVidGridClips(jobId: string, sceneIndices?: number[]): Promise<VidGridClipRebuildResult> {
     const { data } = await apiClient.post(
       `${STUDIO_BASE}/videos/jobs/${jobId}/scenes/rebuild-stale-clips`,
