@@ -423,7 +423,7 @@ def _scene_clip_recovery_plan(record: dict) -> dict:
 
 
 try:
-    from modules.ai_video_studio.media.job_store import load_jobs, mark_interrupted_jobs
+    from modules.ai_video_studio.media.job_store import load_jobs, mark_interrupted_jobs, has_active_task_for_job
 
     _jobs: dict[str, dict] = load_jobs()
     # Jobs cannot resume an interrupted FFmpeg/model subprocess. Mark them
@@ -446,7 +446,9 @@ try:
             except Exception:
                 pass
         _execution = _job_record.get("dependency_rebuild_execution")
-        if isinstance(_execution, dict) and _execution.get("status") in {"queued", "processing"}:
+        if (isinstance(_execution, dict)
+                and _execution.get("status") in {"queued", "processing"}
+                and not has_active_task_for_job(str(_job_record.get("job_id") or ""), "dependency_rebuild")):
             _execution["status"] = "interrupted"
             _execution["updated_at"] = time.time()
             _execution["recovery_note"] = (
