@@ -99,6 +99,30 @@ def _decode_image(result: dict[str, Any], prefix: str) -> dict[str, Any]:
     }
 
 
+def _reported_seed(info: Any, requested_seed: int) -> int:
+    """Return the seed reported by Automatic1111, falling back to the request."""
+    if requested_seed >= 0:
+        return int(requested_seed)
+    payload = info
+    if isinstance(payload, str):
+        try:
+            payload = json.loads(payload)
+        except (TypeError, ValueError):
+            return int(requested_seed)
+    if isinstance(payload, dict):
+        seeds = payload.get("all_seeds")
+        if isinstance(seeds, list) and seeds:
+            try:
+                return int(seeds[0])
+            except (TypeError, ValueError):
+                pass
+        try:
+            return int(payload.get("seed", requested_seed))
+        except (TypeError, ValueError):
+            pass
+    return int(requested_seed)
+
+
 def generate_scene_image(
     prompt: str,
     *,
@@ -134,7 +158,11 @@ def generate_scene_image(
     }
     result = _post_json(f"{_api_base_url()}/sdapi/v1/txt2img", payload, timeout)
     output = _decode_image(result, "darkstudio_scene")
-    output.update({"generation_info": result.get("info"), "operation": "text_to_image", "seed": int(seed)})
+    output.update({
+        "generation_info": result.get("info"),
+        "operation": "text_to_image",
+        "seed": _reported_seed(result.get("info"), seed),
+    })
     return output
 
 
@@ -177,5 +205,9 @@ def edit_image(
     }
     result = _post_json(f"{_api_base_url()}/sdapi/v1/img2img", payload, timeout)
     output = _decode_image(result, "darkstudio_edit")
-    output.update({"operation": "image_to_image", "source_path": str(source), "seed": int(seed)})
+    output.update({
+        "operation": "image_to_image",
+        "source_path": str(source),
+        "seed": _reported_seed(result.get("info"), seed),
+    })
     return output
