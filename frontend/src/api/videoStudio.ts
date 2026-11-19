@@ -400,6 +400,16 @@ export interface GenerateVideoParams {
   vidgrid_compatible?: boolean;
 }
 
+export interface DarkstudioAssetHealth {
+  job_id: string;
+  status: "healthy" | "needs_attention";
+  summary: { total_assets: number; available: number; missing: number; corrupt: number; unreadable: number };
+  scenes: { scene_index?: number; asset_index?: number; group?: string; status: string;
+    assets: { kind: string; status: string; reason?: string; bytes?: number; sha256?: string }[] }[];
+  checked_at: number;
+  limitations: string[];
+}
+
 export interface VideoOutputValidation {
   job_id: string;
   path_exists: boolean;
@@ -696,6 +706,11 @@ export const videoStudioApi = {
     message: string;
   }> {
     const { data } = await apiClient.post(`${STUDIO_BASE}/videos/jobs/${jobId}/render-edits`);
+    return data;
+  },
+
+  async getJobAssetHealth(jobId: string): Promise<DarkstudioAssetHealth> {
+    const { data } = await apiClient.get(`${STUDIO_BASE}/videos/jobs/${jobId}/asset-health`);
     return data;
   },
 
