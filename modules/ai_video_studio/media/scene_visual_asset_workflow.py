@@ -1,0 +1,190 @@
+"""Safe candidate lifecycle helpers for editable scene images.
+
+The helpers operate on a copied job record and never mutate the caller's object.
+They intentionally do not render clips or call image-generation providers.
+"""
+from __future__ import annotations
+
+from copy import deepcopy
+from pathlib import Path
+from typing import Any
+
+
+def _candidate_bucket(record: dict[str, Any], scene_index: int) -> list[dict[str, Any]]:
+    buckets = record.get("scene_image_candidates")
+    if not isinstance(buckets, dict):
+        return []
+    items = buckets.get(str(scene_index), [])
+    return [item for item in items if isinstance(item, dict)] if isinstance(items, list) else []
+
+
+def _assert_editable(record: dict[str, Any]) -> None:
+    if record.get("status") != "completed":
+        raise ValueError("Scene image candidates can only be changed after job completion")
+    if any(record.get(key) for key in (
+        "_rendering_edits", "_rebuilding_scene_clips", "_scene_clip_rebuild_scheduled"
+    )):
+        raise RuntimeError("Scene assets are locked by an active render operation")
+
+
+def list_scene_image_candidates(record: dict[str, Any], scene_index: int | None = None) -> list[dict[str, Any]]:
+    """Return detached candidate metadata, optionally for one scene."""
+    buckets = record.get("scene_image_candidates")
+    if not isinstance(buckets, dict):
+        return []
+    selected = [str(scene_index)] if scene_index is not None else sorted(buckets, key=lambda value: (not value.isdigit(), value))
+    result: list[dict[str, Any]] = []
+    for key in selected:
+        items = buckets.get(key, [])
+        if isinstance(items, list):
+            result.extend(deepcopy(item) for item in items if isinstance(item, dict))
+    return result
+
+
+def stage_scene_image_candidate(
+    record: dict[str, Any], scene_index: int, candidate: dict[str, Any], *, max_per_scene: int = 8
+) -> dict[str, Any]:
+    """Add a pending candidate without changing the active scene image."""
+    _assert_editable(record)
+    if isinstance(scene_index, bool) or not isinstance(scene_index, int) or scene_index < 0:
+        raise ValueError("scene_index must be a non-negative integer")
+    if not isinstance(candidate, dict):
+        raise ValueError("candidate must be a dictionary")
+    candidate_id = str(candidate.get("candidate_id") or "").strip()
+    image_path = str(candidate.get("image_path") or "").strip()
+    if not candidate_id or not image_path:
+        raise ValueError("candidate_id and image_path are required")
+    if max_per_scene < 1:
+        raise ValueError("max_per_scene must be positive")
+
+    updated = deepcopy(record)
+    bucket = _candidate_bucket(updated, scene_index)
+    if any(str(item.get("candidate_id")) == candidate_id for item in bucket):
+        raise ValueError("candidate_id already exists for this scene")
+    if len(bucket) >= max_per_scene:
+        raise ValueError("Maximum pending candidates reached for this scene")
+    normalized = {
+        **deepcopy(candidate),
+        "candidate_id": candidate_id,
+        "scene_index": scene_index,
+        "status": "pending_approval",
+    }
+    updated.setdefault("scene_image_candidates", {})[str(scene_index)] = [*bucket, normalized]
+    return updated
+
+
+def discard_scene_image_candidate(
+    record: dict[str, Any], scene_index: int, candidate_id: str
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Remove one candidate while preserving the active scene and its clips."""
+    _assert_editable(record)
+    updated = deepcopy(record)
+    bucket = _candidate_bucket(updated, scene_index)
+    selected = next((item for item in bucket if str(item.get("candidate_id")) == candidate_id), None)
+    if selected is None:
+        raise KeyError("Image candidate not found")
+    remaining = [item for item in bucket if str(item.get("candidate_id")) != candidate_id]
+    if remaining:
+        updated.setdefault("scene_image_candidates", {})[str(scene_index)] = remaining
+    else:
+        updated.setdefault("scene_image_candidates", {}).pop(str(scene_index), None)
+    return updated, deepcopy(selected)
+
+
+def _find_scene_position(scenes: list[dict[str, Any]], scene_index: int) -> int:
+    for position, scene in enumerate(scenes):
+        try:
+            source_index = int(scene.get("_source_scene_index", position))
+        except (TypeError, ValueError):
+            source_index = position
+        if source_index == scene_index:
+            return position
+    if 0 <= scene_index < len(scenes):
+        return scene_index
+    raise KeyError("Scene index not found")
+
+
+def approve_scene_image_candidate(
+    record: dict[str, Any],
+    scene_index: int,
+    candidate_id: str,
+    *,
+    image_root: str | Path,
+    image_url_builder,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Promote a valid candidate, preserve history, and mark its clip stale."""
+    _assert_editable(record)
+    updated = deepcopy(record)
+    bucket = _candidate_bucket(updated, scene_index)
+    candidate = next((item for item in bucket if str(item.get("candidate_id")) == candidate_id), None)
+    if candidate is None:
+        raise KeyError("Image candidate not found")
+    if candidate.get("status") not in (None, "pending_approval"):
+        raise ValueError("Only pending candidates can be approved")
+
+    root = Path(image_root).resolve()
+    candidate_path = Path(str(candidate.get("image_path") or "")).resolve()
+    if root not in candidate_path.parents or not candidate_path.is_file():
+        raise ValueError("Candidate image is missing or outside the DARKSTUDIO image directory")
+    if candidate_path.stat().st_size <= 0:
+        raise ValueError("Candidate image is empty")
+
+    source_scenes = updated.get("_edited_scenes") or updated.get("_source_scenes") or []
+    if not isinstance(source_scenes, list):
+        raise ValueError("Job scenes are malformed")
+    scenes = [dict(item) for item in source_scenes if isinstance(item, dict)]
+    position = _find_scene_position(scenes, scene_index)
+    scene = scenes[position]
+
+    old_path = scene.get("background_image_path")
+    if old_path:
+        updated.setdefault("scene_asset_history", []).append({
+            "scene_index": scene_index,
+            "image_path": str(old_path),
+            "replaced_by_candidate_id": candidate_id,
+            "reason": "candidate_approved",
+        })
+
+    scene.update({
+        "background_image_path": str(candidate_path),
+        "image_asset_provider": candidate.get("provider"),
+        "visual_prompt": candidate.get("prompt") or scene.get("visual_prompt"),
+        "visual_prompt_full": candidate.get("prompt") or scene.get("visual_prompt_full"),
+        "negative_prompt": candidate.get("negative_prompt") or scene.get("negative_prompt", ""),
+        "image_edit_operation": candidate.get("operation"),
+        "image_generation_seed": candidate.get("seed", -1),
+    })
+    if updated.get("_edited_scenes") is not None:
+        updated["_edited_scenes"] = scenes
+    else:
+        updated["_edited_scenes"] = scenes
+
+    assets = updated.setdefault("scene_assets", [])
+    assets[:] = [
+        item for item in assets
+        if not (isinstance(item, dict) and int(item.get("scene_index", -1)) == scene_index)
+    ]
+    assets.append({
+        "scene_index": scene_index,
+        "image_path": str(candidate_path),
+        "image_url": image_url_builder(str(candidate_path)),
+        "provider": candidate.get("provider"),
+        "status": "edited",
+        "operation": candidate.get("operation"),
+        "prompt": candidate.get("prompt"),
+        "seed": candidate.get("seed", -1),
+    })
+
+    remaining = [item for item in bucket if str(item.get("candidate_id")) != candidate_id]
+    if remaining:
+        updated.setdefault("scene_image_candidates", {})[str(scene_index)] = remaining
+    else:
+        updated.setdefault("scene_image_candidates", {}).pop(str(scene_index), None)
+    updated["scene_image_mode"] = "mixed"
+
+    for clip in updated.get("scene_clips") or []:
+        if isinstance(clip, dict) and int(clip.get("scene_index", -1)) == scene_index:
+            clip["status"] = "stale"
+            clip["reason"] = "A imagem da cena foi aprovada; gere novamente o clipe VidGrid."
+
+    return updated, deepcopy(candidate)
