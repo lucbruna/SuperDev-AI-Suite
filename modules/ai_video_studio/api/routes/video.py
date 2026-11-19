@@ -1173,14 +1173,6 @@ async def queue_scene_clip_rebuild(job_id: str, background_tasks: BackgroundTask
     if not requested:
         return {"job_id": job_id, "status": "unchanged", "queued": False, "requested": 0}
     queue_id = str(uuid.uuid4())
-    record["scene_clip_rebuild_queue"] = {
-        "queue_id": queue_id, "requested_scene_indices": list(requested),
-        "total": len(requested), "completed": 0, "failed": 0,
-        "current_scene_index": None, "status": "queued", "cancel_requested": False,
-        "results": [], "started_at": time.time(), "updated_at": time.time(),
-    }
-    record["scene_clip_rebuild_status"] = "queued"
-    record["_scene_clip_rebuild_scheduled"] = True
     task_id = str(uuid.uuid4())
     try:
         from modules.ai_video_studio.media.job_store import enqueue_unique_task_for_job
@@ -1195,16 +1187,22 @@ async def queue_scene_clip_rebuild(job_id: str, background_tasks: BackgroundTask
                 status_code=409,
                 detail="A durable scene rebuild task is already queued or leased; wait for worker recovery before resubmitting",
             )
+    except HTTPException:
+        raise
     except Exception as exc:
-        record["_scene_clip_rebuild_scheduled"] = False
-        record["scene_clip_rebuild_queue"].update({
-            "status": "failed", "error": f"Não foi possível persistir a fila: {str(exc)[:300]}",
-            "updated_at": time.time(),
-        })
-        record["scene_clip_rebuild_status"] = "failed"
-        _persist_job(record)
         raise HTTPException(status_code=503, detail="Durable scene rebuild queue is unavailable") from exc
-    record["scene_clip_rebuild_queue"]["task_id"] = task_id
+
+    # No await occurs between durable insertion and publishing the matching
+    # in-memory queue, so this process's worker cannot observe a half-created job.
+    record["scene_clip_rebuild_queue"] = {
+        "queue_id": queue_id, "task_id": task_id,
+        "requested_scene_indices": list(requested),
+        "total": len(requested), "completed": 0, "failed": 0,
+        "current_scene_index": None, "status": "queued", "cancel_requested": False,
+        "results": [], "started_at": time.time(), "updated_at": time.time(),
+    }
+    record["scene_clip_rebuild_status"] = "queued"
+    record["_scene_clip_rebuild_scheduled"] = True
     _persist_job(record)
     return {
         "job_id": job_id, "queue_id": queue_id, "task_id": task_id, "status": "queued",
