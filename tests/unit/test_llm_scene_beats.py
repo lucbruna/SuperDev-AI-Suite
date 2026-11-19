@@ -41,3 +41,24 @@ def test_empty_brief_returns_requested_number_of_reviewable_beats():
     assert _split_prompt_into_scene_beats("   ", 4) == [
         "Parte 1", "Parte 2", "Parte 3", "Parte 4"
     ]
+
+
+def test_fallback_planner_creates_distinct_visual_prompts_per_beat():
+    from modules.ai_video_studio.media.llm import ScenePlanner
+
+    prompt = (
+        "A cidade cresceu perto do rio. "
+        "O comércio trouxe novas rotas. "
+        "A ferrovia conectou regiões distantes."
+    )
+    result = ScenePlanner().fallback(prompt, num_scenes=3, duration=30)
+    scenes = result["scenes"]
+
+    assert len(scenes) == 3
+    assert [scene["description"] for scene in scenes] == [
+        "A cidade cresceu perto do rio.",
+        "O comércio trouxe novas rotas.",
+        "A ferrovia conectou regiões distantes.",
+    ]
+    assert len({scene["visual_prompt"] for scene in scenes}) == 3
+    assert all(prompt not in scene["visual_prompt"] for scene in scenes)
