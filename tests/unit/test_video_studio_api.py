@@ -1348,6 +1348,36 @@ class TestSceneAssetRenderLock:
         assert error.value.status_code == 409
         assert "stale" in str(error.value.detail).lower()
 
+    @pytest.mark.asyncio
+    async def test_recovery_plan_detects_missing_clip_and_changed_image(self, tmp_path, monkeypatch):
+        from modules.ai_video_studio.api.routes import video
+        from modules.ai_video_studio.media import output_paths
+        image_root, video_root = tmp_path / "images", tmp_path / "videos"
+        image_root.mkdir()
+        video_root.mkdir()
+        image = image_root / "scene.png"
+        image.write_bytes(b"new-approved-image")
+        old_clip = video_root / "old.mp4"
+        old_clip.write_bytes(b"existing-mp4")
+        monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda name: image_root if name == "images" else video_root)
+        video._jobs["recovery-plan-job"] = {
+            "job_id": "recovery-plan-job", "status": "completed", "vidgrid_compatible": True,
+            "resolution": "1280x720", "frame_rate": 30, "params": {},
+            "_edited_scenes": [
+                {"_source_scene_index": 0, "background_image_path": str(image)},
+                {"_source_scene_index": 1, "background_image_path": str(image)},
+            ],
+            "scene_clips": [
+                {"scene_index": 0, "status": "updated", "output_path": str(old_clip),
+                 "width": 1280, "height": 720, "fps": 30, "source_image_fingerprint": "old-image-hash"},
+            ],
+        }
+        plan = await video.get_video_job_recovery_plan("recovery-plan-job")
+        assert plan["repair_scene_indices"] == [0, 1]
+        assert plan["repairable_count"] == 2
+        assert "source_image_changed" in plan["scenes"][0]["reasons"]
+        assert "clip_missing" in plan["scenes"][1]["reasons"]
+
 class TestSelectiveVidGridClipRebuild:
     @pytest.mark.asyncio
     async def test_rebuilds_only_stale_clip_and_reuses_approved_image(self, tmp_path, monkeypatch):
@@ -1375,6 +1405,8 @@ class TestSelectiveVidGridClipRebuild:
             return {"output_path": str(output_path), "engine": "test"}
 
         monkeypatch.setattr(render, "render_single_scene_clip", fake_render)
+        current_clip = video_root / "current-1.mp4"
+        current_clip.write_bytes(b"existing-mp4")
         monkeypatch.setattr(video, "_persist_job", lambda _record: None)
         video._jobs["selective-vidgrid-job"] = {
             "job_id": "selective-vidgrid-job", "status": "completed",
@@ -1388,7 +1420,7 @@ class TestSelectiveVidGridClipRebuild:
             ],
             "scene_clips": [
                 {"scene_index": 0, "status": "stale", "output_path": "old-0.mp4"},
-                {"scene_index": 1, "status": "updated", "output_path": "current-1.mp4"},
+                {"scene_index": 1, "status": "updated", "output_path": str(current_clip)},
             ],
             "voiceover": {"narration_style": "none", "clips": []},
         }
