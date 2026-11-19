@@ -369,3 +369,12 @@ O endpoint `GET /videos/jobs/{job_id}/recovery-plan` faz uma auditoria não dest
 O painel consulta esse plano e mostra quantas cenas estão prontas, quantas precisam de reconstrução e quantas estão bloqueadas por falta de imagem válida. A ação de recuperação reconstrói somente cenas reparáveis, preservando os clipes ainda válidos. Depois da reconstrução, o fingerprint da imagem é persistido para permitir detectar alterações futuras. Jobs antigos sem fingerprint são sinalizados como legado, sem serem invalidados automaticamente apenas por isso.
 
 Limite: a verificação usa fingerprint da imagem e metadados/arquivo do clipe; não faz comparação semântica dos frames renderizados nem valida a integridade interna de cada clipe com FFprobe nesta etapa. A recuperação dos clipes individuais não substitui a renderização do MP4 completo.
+
+
+## Fila persistente e reconstrução selecionada de clipes VidGrid
+
+O endpoint `POST /videos/jobs/{job_id}/scenes/rebuild-stale-clips` aceita opcionalmente `{"scene_indices":[0,3]}` para reconstruir somente cenas reparáveis selecionadas. Sem esse corpo, reconstrói todas as cenas reparáveis retornadas por `GET /videos/jobs/{job_id}/recovery-plan`. Índices que não estejam no plano de reparo são rejeitados com HTTP 422; cenas prontas nunca são reprocessadas por engano.
+
+Durante a execução, o job persiste `scene_clip_rebuild_queue` com índices solicitados, total, concluídos, falhas, cena atual, resultados e timestamps. O estado também é incluído no modelo de status do job. Se a API reiniciar enquanto a fila estiver em processamento, o estado é marcado como `interrupted`; clipes já concluídos permanecem salvos e o usuário pode consultar novamente o plano e reenviar somente os índices ainda reparáveis.
+
+**Limite atual:** a fila é persistente e recuperável por reenvio, mas a execução ainda é síncrona dentro da requisição HTTP. Não há cancelamento cooperativo, worker independente nem retomada automática do processo interrompido. A reconstrução dos clipes continua exigindo uma exportação final do MP4 completo.
