@@ -74,6 +74,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
   const [selectedDependencyAssets, setSelectedDependencyAssets] = useState<string[]>([]);
   const [dependencyImpact, setDependencyImpact] = useState<Awaited<ReturnType<typeof videoStudioApi.previewJobDependencyImpact>> | null>(null);
   const [previewingDependencyImpact, setPreviewingDependencyImpact] = useState(false);
+  const [executingDependencyRebuild, setExecutingDependencyRebuild] = useState(false);
   const [message, setMessage] = useState("");
   const [staleVidGridClipCount, setStaleVidGridClipCount] = useState(0);
   const [vidGridRecoveryPlan, setVidGridRecoveryPlan] = useState<Awaited<ReturnType<typeof videoStudioApi.getVidGridRecoveryPlan>> | null>(null);
@@ -596,6 +597,28 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
     }
   }
 
+  async function executeDependencyRebuild() {
+    if (!jobId || !dependencyImpact?.final_export_required || !selectedDependencyAssets.length || dirty || saving) return;
+    setExecutingDependencyRebuild(true);
+    setRenderUrl("");
+    setRenderQuality(null);
+    setMessage("");
+    try {
+      const result = await videoStudioApi.executeJobDependencyRebuild(jobId, selectedDependencyAssets);
+      if (result.render?.output_url) setRenderUrl(result.render.output_url);
+      setMessage(result.message);
+      if (result.status === "completed") {
+        setDependencyImpact(null);
+        await loadDependencyGraph();
+        await checkAssetHealth();
+      }
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Falha ao executar a reconstrução das dependências.");
+    } finally {
+      setExecutingDependencyRebuild(false);
+    }
+  }
+
   async function validateOutput() {
     if (!jobId) return;
     try {
@@ -1087,6 +1110,12 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
           <p className="mt-1">Cenas para reconstruir: {dependencyImpact.rebuild_scene_indices.length ? dependencyImpact.rebuild_scene_indices.map((index) => index + 1).join(", ") : "nenhuma"}</p>
           <p>Renderização final necessária: <strong>{dependencyImpact.final_export_required ? "sim" : "não"}</strong></p>
           <p>Ativos downstream afetados: {dependencyImpact.affected_node_ids.length}</p>
+          {dependencyImpact.final_export_required && <div className="mt-3 border-t border-surface-200 pt-3 dark:border-surface-700">
+            <p className="mb-2 text-xs text-surface-600 dark:text-surface-300">A execução reconstruirá somente as cenas listadas e depois atualizará o MP4. Se apenas música ou efeitos mudaram, os clipes de vídeo serão reutilizados. A operação é síncrona e pode demorar.</p>
+            <button type="button" onClick={executeDependencyRebuild} disabled={executingDependencyRebuild || dirty || saving || rendering} className="rounded-md bg-amber-600 px-3 py-2 font-semibold text-white disabled:opacity-40">
+              {executingDependencyRebuild ? "Reconstruindo e exportando…" : "Confirmar e executar reconstrução"}
+            </button>
+          </div>
           <p className="mt-1 text-surface-500">{dependencyImpact.limitations.join(" ")}</p>
         </div>}
       </div>}
