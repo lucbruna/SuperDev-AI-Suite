@@ -50,6 +50,8 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
   const [sceneImageAssets, setSceneImageAssets] = useState<SceneImageAsset[]>(sceneAssets ?? []);
   const [sceneImageCandidates, setSceneImageCandidates] = useState<Record<number, SceneImageCandidate[]>>({});
   const [sceneImageHistory, setSceneImageHistory] = useState<Record<number, import("@/api/videoStudio").SceneImageHistoryEntry[]>>({});
+  const [sceneFraming, setSceneFraming] = useState<Record<number, import("@/api/videoStudio").SceneImageFraming>>({});
+  const [savingFramingScene, setSavingFramingScene] = useState<number | null>(null);
   const [expandedImageHistory, setExpandedImageHistory] = useState<Record<number, boolean>>({});
   const [loadingImageHistoryScene, setLoadingImageHistoryScene] = useState<number | null>(null);
   const [restoringImageHistoryScene, setRestoringImageHistoryScene] = useState<number | null>(null);
@@ -490,6 +492,28 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
     if (!jobId) return;
     const response = await videoStudioApi.listSceneImageCandidates(jobId, sceneIndex);
     setSceneImageCandidates((current) => ({ ...current, [sceneIndex]: response.candidates }));
+  }
+
+  async function saveSceneFraming(sceneIndex: number) {
+    if (!jobId || savingFramingScene !== null) return;
+    const transform = sceneFraming[sceneIndex] ?? { scale: 1, offset_x: 0, offset_y: 0 };
+    setSavingFramingScene(sceneIndex);
+    try {
+      const result = await videoStudioApi.updateSceneImageFraming(jobId, sceneIndex, transform);
+      if (result.clip_invalidated) {
+        const latestJob = await videoStudioApi.getJob(jobId);
+        if (latestJob.vidgrid_compatible) {
+          const plan = await videoStudioApi.getVidGridRecoveryPlan(jobId);
+          setVidGridRecoveryPlan(plan);
+          setStaleVidGridClipCount(plan.repairable_count);
+        }
+      }
+      setMessage("Enquadramento salvo. Reconstrua o clipe desta cena para aplicar o ajuste ao vídeo.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Não foi possível salvar o enquadramento.");
+    } finally {
+      setSavingFramingScene(null);
+    }
   }
 
   async function toggleSceneImageHistory(sceneIndex: number) {
@@ -1017,6 +1041,23 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
                   <button type="button" onClick={() => approveSceneImage(sourceIndex, candidate.candidate_id)} disabled={approvingImageScene !== null} className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40">{approvingImageScene === sourceIndex ? "Aprovando…" : "Aplicar esta imagem"}</button>
                 </div>
               </div> : null)}
+              <div className="mb-3 rounded-md border border-surface-200 p-3 dark:border-surface-700">
+                <div className="mb-2 text-xs font-semibold">Enquadramento da imagem</div>
+                {(["scale", "offset_x", "offset_y"] as const).map((key) => {
+                  const value = sceneFraming[sourceIndex]?.[key] ?? (key === "scale" ? 1 : 0);
+                  const min = key === "scale" ? 1 : -1;
+                  const max = key === "scale" ? 3 : 1;
+                  const label = key === "scale" ? "Zoom" : key === "offset_x" ? "Horizontal" : "Vertical";
+                  return <label key={key} className="mb-2 block text-[11px] text-surface-500">
+                    <span className="flex justify-between"><span>{label}</span><strong>{value.toFixed(2)}</strong></span>
+                    <input type="range" min={min} max={max} step={0.05} value={value} onChange={(event) => setSceneFraming((current) => ({ ...current, [sourceIndex]: { ...(current[sourceIndex] ?? { scale: 1, offset_x: 0, offset_y: 0 }), [key]: Number(event.target.value) } }))} className="w-full" />
+                  </label>;
+                })}
+                <button type="button" onClick={() => void saveSceneFraming(sourceIndex)} disabled={savingFramingScene !== null || !jobId} className="rounded-md bg-surface-900 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40 dark:bg-surface-100 dark:text-surface-900">
+                  {savingFramingScene === sourceIndex ? "Salvando…" : "Salvar enquadramento"}
+                </button>
+                <p className="mt-1 text-[10px] text-surface-500">O ajuste afeta o render procedural. Reconstrua o clipe VidGrid para atualizar essa cena.</p>
+              </div>
               <div className="mb-2">
                 <button type="button" onClick={() => void toggleSceneImageHistory(sourceIndex)} disabled={loadingImageHistoryScene === sourceIndex} className="rounded-md border border-surface-300 px-3 py-1.5 text-xs font-semibold dark:border-surface-600 disabled:opacity-40">
                   {loadingImageHistoryScene === sourceIndex ? "Carregando histórico…" : expandedImageHistory[sourceIndex] ? "Ocultar histórico de imagens" : "Ver histórico de imagens"}

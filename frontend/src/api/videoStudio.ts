@@ -157,6 +157,8 @@ export interface SceneImageCandidate {
   metadata_match_terms?: string[];
 }
 
+export interface SceneImageFraming { scale: number; offset_x: number; offset_y: number; }
+
 export interface SceneImageHistoryEntry {
   history_id: string;
   scene_index: number;
@@ -564,6 +566,11 @@ export const videoStudioApi = {
     const { data } = await apiClient.get(
       `${STUDIO_BASE}/visual-assets/jobs/${jobId}/scenes/${sceneIndex}/image-candidates`,
     );
+    return data;
+  },
+
+  async updateSceneImageFraming(jobId: string, sceneIndex: number, transform: SceneImageFraming): Promise<{ job_id: string; scene_index: number; status: "saved"; background_image_transform: SceneImageFraming; clip_invalidated: boolean; render_started: boolean }> {
+    const { data } = await apiClient.put(`${STUDIO_BASE}/visual-assets/jobs/${jobId}/scenes/${sceneIndex}/image-framing`, transform);
     return data;
   },
 

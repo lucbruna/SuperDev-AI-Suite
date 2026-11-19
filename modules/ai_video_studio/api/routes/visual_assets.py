@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 from modules.ai_video_studio.api.routes import video as video_routes
 from modules.ai_video_studio.api.urls import to_download_url
@@ -16,6 +16,13 @@ from modules.ai_video_studio.media.visual_asset_director import (
 )
 
 router = APIRouter()
+
+
+class SceneImageFramingRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    scale: float = Field(default=1.0, ge=1.0, le=3.0, allow_inf_nan=False)
+    offset_x: float = Field(default=0.0, ge=-1.0, le=1.0, allow_inf_nan=False)
+    offset_y: float = Field(default=0.0, ge=-1.0, le=1.0, allow_inf_nan=False)
 
 
 class VisualPlanRequest(BaseModel):
@@ -239,3 +246,49 @@ async def restore_job_scene_image_history(job_id: str, scene_index: int, history
             record, scene_index, image_root=image_root, image_url_builder=to_download_url,
         ),
     }
+
+
+@router.put("/jobs/{job_id}/scenes/{scene_index}/image-framing")
+async def update_job_scene_image_framing(job_id: str, scene_index: int, req: SceneImageFramingRequest):
+    """Persist image framing and invalidate only the affected scene clip."""
+    record = _job_or_404(job_id)
+    if scene_index < 0:
+        raise HTTPException(status_code=422, detail="scene_index must be non-negative")
+    if record.get("status") != "completed":
+        raise HTTPException(status_code=409, detail="Scene framing requires a completed job")
+    if job_id in getattr(video_routes, "_scene_batch_jobs", set()) or any(record.get(key) for key in ("_rendering_edits", "_rebuilding_scene_clips", "_scene_clip_rebuild_scheduled")):
+        raise HTTPException(status_code=409, detail="Scene assets are locked by an active operation")
+    scenes = _source_scenes(record)
+    position = next((i for i, scene in enumerate(scenes) if int(scene.get("_source_scene_index", i)) == scene_index), None)
+    if position is None and scene_index < len(scenes):
+        position = scene_index
+    if position is None:
+        raise HTTPException(status_code=404, detail="Scene index not found")
+    from modules.ai_video_studio.media.scene_image_transform import normalize_scene_image_transform
+    try:
+        transform = normalize_scene_image_transform(req.model_dump())
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    scenes[position]["background_image_transform"] = transform
+    updated = dict(record)
+    updated["_edited_scenes"] = scenes
+    clips = [dict(item) for item in (record.get("scene_clips") or []) if isinstance(item, dict)]
+    matched = False
+    for clip in clips:
+        try:
+            idx = int(clip.get("scene_index", -1))
+        except (TypeError, ValueError):
+            continue
+        if idx == scene_index:
+            clip["status"] = "stale"
+            clip["reason"] = "O enquadramento foi alterado; reconstrua este clipe VidGrid."
+            matched = True
+    if matched:
+        updated["scene_clips"] = clips
+    try:
+        video_routes._persist_job(updated)
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail="Could not persist scene framing") from exc
+    record.clear()
+    record.update(updated)
+    return {"job_id": job_id, "scene_index": scene_index, "status": "saved", "background_image_transform": transform, "clip_invalidated": matched, "render_started": False}

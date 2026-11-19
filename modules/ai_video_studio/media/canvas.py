@@ -120,7 +120,7 @@ class SceneCanvas:
             image_root = Path(get_subsystem_dir("images")).resolve()
             if image_root not in source.parents or not source.is_file():
                 raise ValueError("background image must be an existing DARKSTUDIO image asset")
-            cache_key = str(source)
+            cache_key = f"{source}:{scene.get('background_image_transform')!r}"
             cached = self._background_image_cache.get(cache_key)
             if cached is not None:
                 return cached.copy()
