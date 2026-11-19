@@ -139,6 +139,10 @@ class DependencyImpactRequest(BaseModel):
         return values
 
 
+class DependencyExecutionRequest(DependencyImpactRequest):
+    confirmed: bool = False
+
+
 class SceneMotionRequest(BaseModel):
     motion_prompt: str = Field(..., min_length=1, max_length=4000)
     negative_prompt: str = Field(default="", max_length=2000)
@@ -2342,6 +2346,96 @@ async def render_video_job_edits(job_id: str):
         raise HTTPException(status_code=500, detail="Edited video render failed") from exc
     finally:
         record["_rendering_edits"] = False
+
+@router.post("/jobs/{job_id}/execute-dependency-rebuild")
+async def execute_video_job_dependency_rebuild(job_id: str, req: DependencyExecutionRequest):
+    """Execute a freshly recalculated dependency plan after explicit user confirmation."""
+    if not req.confirmed:
+        raise HTTPException(status_code=409, detail="Explicit confirmation is required before rebuilding assets")
+    record = _jobs.get(job_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+    if record.get("status") != "completed":
+        raise HTTPException(status_code=409, detail="Only completed jobs can run dependency rebuilds")
+    if record.get("_rendering_edits") or record.get("_rebuilding_scene_clips") or job_id in _scene_batch_jobs:
+        raise HTTPException(status_code=409, detail="Job assets are locked by another operation")
+
+    impact = await preview_video_job_dependency_impact(
+        job_id, DependencyImpactRequest(changed_asset_ids=req.changed_asset_ids)
+    )
+    if not impact["final_export_required"]:
+        return {
+            "job_id": job_id, "status": "unchanged", "executed": False,
+            "message": "Os ativos selecionados não exigem reconstrução nem nova exportação.",
+            "impact": impact,
+        }
+
+    blocked = [
+        {"id": node["id"], "status": node["status"], "reason": node.get("reason")}
+        for node in [*impact["affected_nodes"], *(
+            node for node in (await get_video_job_dependency_graph(job_id))["nodes"]
+            if node["id"] in req.changed_asset_ids
+        )]
+        if node.get("status") in {"missing", "corrupt", "unreadable"}
+    ]
+    if blocked:
+        raise HTTPException(
+            status_code=409,
+            detail={"message": "Rebuild blocked because required assets are unavailable or corrupt", "blocked_assets": blocked},
+        )
+
+    execution = {
+        "status": "processing", "changed_asset_ids": list(req.changed_asset_ids),
+        "scene_indices": list(impact["rebuild_scene_indices"]),
+        "started_at": time.time(), "updated_at": time.time(),
+    }
+    record["dependency_rebuild_execution"] = execution
+    _persist_job(record)
+    rebuild_result = None
+    try:
+        scene_indices = impact["rebuild_scene_indices"]
+        if scene_indices:
+            if not record.get("vidgrid_compatible"):
+                raise HTTPException(
+                    status_code=409,
+                    detail="Affected scene clips require VidGrid selective rebuild; regenerate the storyboard clips first.",
+                )
+            rebuild_result = await rebuild_stale_video_job_scene_clips(
+                job_id, SceneClipRebuildRequest(scene_indices=scene_indices)
+            )
+            if rebuild_result.get("failed") or rebuild_result.get("rebuilt") != len(scene_indices):
+                execution.update({
+                    "status": "partial", "updated_at": time.time(),
+                    "rebuild_result": rebuild_result, "final_export_skipped": True,
+                })
+                _persist_job(record)
+                return {
+                    "job_id": job_id, "status": "partial", "executed": True,
+                    "rebuild": rebuild_result, "render": None,
+                    "message": "Algumas cenas não foram reconstruídas; a exportação final foi preservada para evitar um MP4 incompleto.",
+                }
+
+        render_result = await render_video_job_edits(job_id)
+        execution.update({
+            "status": "completed", "updated_at": time.time(),
+            "rebuild_result": rebuild_result,
+            "render_output_url": render_result.get("output_url"),
+        })
+        _persist_job(record)
+        return {
+            "job_id": job_id, "status": "completed", "executed": True,
+            "impact": impact, "rebuild": rebuild_result, "render": render_result,
+            "message": "Ativos afetados reconstruídos e exportação final atualizada.",
+        }
+    except HTTPException as exc:
+        execution.update({"status": "failed", "updated_at": time.time(), "error": str(exc.detail)[:500]})
+        _persist_job(record)
+        raise
+    except Exception as exc:
+        execution.update({"status": "failed", "updated_at": time.time(), "error": str(exc)[:500]})
+        _persist_job(record)
+        raise HTTPException(status_code=500, detail="Dependency rebuild execution failed") from exc
+
 
 @router.post("/jobs/{job_id}/preview")
 async def preview_video_job_edits(job_id: str):
