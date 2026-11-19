@@ -2547,12 +2547,26 @@ async def _process_durable_dependency_rebuild(payload: dict) -> None:
 
 async def _dependency_worker_loop(worker_id: str) -> None:
     from modules.ai_video_studio.media.job_store import (
-        claim_next_task, complete_task, fail_task, renew_task_lease,
+        claim_next_task, complete_task, fail_task, renew_task_lease, list_tasks,
     )
 
     while not _dependency_worker_stop.is_set():
         task = await asyncio.to_thread(claim_next_task, worker_id, 120)
         if task is None:
+            # Surface tasks exhausted by repeated process crashes in the job status.
+            failed_tasks = await asyncio.to_thread(list_tasks, "dependency_rebuild")
+            for failed_task in failed_tasks:
+                if failed_task.get("status") != "failed":
+                    continue
+                payload = failed_task.get("payload") or {}
+                record = _jobs.get(str(payload.get("job_id") or ""))
+                execution = record.get("dependency_rebuild_execution") if record else None
+                if isinstance(execution, dict) and execution.get("status") in {"queued", "processing"}:
+                    execution.update({"status": "failed",
+                                      "error": failed_task.get("last_error") or "Worker exhausted its recovery attempts",
+                                      "updated_at": time.time(),
+                                      "worker_attempts": failed_task.get("attempts")})
+                    _persist_job(record)
             try:
                 await asyncio.wait_for(_dependency_worker_stop.wait(), timeout=1.0)
             except asyncio.TimeoutError:
