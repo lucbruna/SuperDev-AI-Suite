@@ -1120,6 +1120,12 @@ async def _run_scene_clip_rebuild_background(job_id: str, scene_indices: list[in
     record["_scene_clip_rebuild_scheduled"] = False
     record["_scene_clip_rebuild_worker"] = True
     queue = record.get("scene_clip_rebuild_queue") or {}
+    if queue.get("cancel_requested"):
+        queue.update({"status": "cancelled", "updated_at": time.time(), "current_scene_index": None})
+        record["scene_clip_rebuild_status"] = "cancelled"
+        _persist_job(record)
+        record["_scene_clip_rebuild_worker"] = False
+        return
     queue["status"] = "processing"
     queue["updated_at"] = time.time()
     record["scene_clip_rebuild_queue"] = queue
@@ -1250,12 +1256,17 @@ async def rebuild_stale_video_job_scene_clips(job_id: str, req: SceneClipRebuild
     except (TypeError, ValueError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
+    existing_queue = record.get("scene_clip_rebuild_queue")
+    existing_queue = existing_queue if isinstance(existing_queue, dict) else {}
     record["_rebuilding_scene_clips"] = True
     record["scene_clip_rebuild_status"] = "processing"
     record["scene_clip_rebuild_queue"] = {
+        "queue_id": existing_queue.get("queue_id"),
+        "cancel_requested": bool(existing_queue.get("cancel_requested")),
         "requested_scene_indices": list(stale), "total": len(stale), "completed": 0,
         "failed": 0, "current_scene_index": None, "status": "processing",
-        "results": [], "started_at": time.time(), "updated_at": time.time(),
+        "results": [], "started_at": existing_queue.get("started_at") or time.time(),
+        "updated_at": time.time(),
     }
     _persist_job(record)
     results: list[dict[str, Any]] = []
