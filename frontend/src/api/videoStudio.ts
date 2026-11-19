@@ -745,6 +745,22 @@ export const videoStudioApi = {
     return data;
   },
 
+  async executeJobDependencyRebuild(jobId: string, changedAssetIds: string[]): Promise<{
+    job_id: string;
+    status: "completed" | "partial" | "unchanged";
+    executed: boolean;
+    impact?: DarkstudioDependencyImpact;
+    rebuild?: { status: string; requested: number; rebuilt: number; failed: number; results: Array<{ scene_index: number; status: string }> } | null;
+    render?: { output_url?: string; message?: string } | null;
+    message: string;
+  }> {
+    const { data } = await apiClient.post(
+      `${STUDIO_BASE}/videos/jobs/${jobId}/execute-dependency-rebuild`,
+      { changed_asset_ids: changedAssetIds, confirmed: true },
+    );
+    return data;
+  },
+
   async getJobAssetHealth(jobId: string): Promise<DarkstudioAssetHealth> {
     const { data } = await apiClient.get(`${STUDIO_BASE}/videos/jobs/${jobId}/asset-health`);
     return data;
