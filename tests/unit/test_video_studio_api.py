@@ -1510,6 +1510,7 @@ class TestSelectedVidGridRecoveryQueue:
 class TestDarkstudioAssetHealth:
     @pytest.mark.asyncio
     async def test_reports_missing_clip_and_available_scene_image(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(video.shutil, "which", lambda _name: None)
         from modules.ai_video_studio.api.routes import video
         from modules.ai_video_studio.media import output_paths
 
