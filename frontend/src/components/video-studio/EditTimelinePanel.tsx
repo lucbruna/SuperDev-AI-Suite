@@ -543,7 +543,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
       if (queued.queued) {
         const status = await videoStudioApi.getVidGridClipRebuildStatus(jobId);
         setVidGridQueue(status);
-        setMessage(`Fila iniciada: ${queued.requested} cena(s). Você pode continuar editando outras áreas enquanto o servidor processa.`);
+        setMessage(`Fila iniciada: ${queued.requested} cena(s). Você pode sair desta tela; este job ficará bloqueado para edição e renderização até a fila terminar.`);
       } else {
         setMessage("Nenhuma cena precisa de reconstrução.");
       }
