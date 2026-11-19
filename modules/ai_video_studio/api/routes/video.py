@@ -2477,7 +2477,7 @@ async def execute_video_job_dependency_rebuild(job_id: str, req: DependencyExecu
         raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
     if record.get("status") != "completed":
         raise HTTPException(status_code=409, detail="Only completed jobs can run dependency rebuilds")
-    if record.get("_rendering_edits") or record.get("_rebuilding_scene_clips") or job_id in _scene_batch_jobs:
+    if record.get("_rendering_edits") or record.get("_rebuilding_scene_clips") or record.get("_scene_clip_rebuild_scheduled") or job_id in _scene_batch_jobs:
         raise HTTPException(status_code=409, detail="Job assets are locked by another operation")
     previous_execution = record.get("dependency_rebuild_execution")
     if isinstance(previous_execution, dict) and previous_execution.get("status") == "processing":
