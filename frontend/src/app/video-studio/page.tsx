@@ -98,7 +98,7 @@ export default function VideoStudioPage() {
   const [preflightReport, setPreflightReport] = useState<VideoPreflight | null>(null);
   const [outputValidation, setOutputValidation] = useState<Record<string, { loading: boolean; report?: VideoOutputValidation; error?: string }>>({});
 
-  const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollTimers = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map());
 
   // Estimated render time for the current resolution/fps/duration combo.
   const estimatedSeconds = estimateRenderSeconds(effectiveDuration, frameRate, parseResolutionPixels(resolution));
@@ -144,7 +144,6 @@ export default function VideoStudioPage() {
     })();
     return () => {
       cancelled = true;
-      if (pollTimer.current) clearInterval(pollTimer.current);
     };
   }, [refreshJobs]);
 
@@ -172,11 +171,12 @@ export default function VideoStudioPage() {
   }, [studioId]);
 
   const pollUntilDone = useCallback(async (jobId: string) => {
-    if (pollTimer.current) clearInterval(pollTimer.current);
+    // Each job owns its polling loop. This also allows several queued jobs to
+    // remain visible and update independently.
+    if (pollTimers.current.has(jobId)) return;
     let requestInFlight = false;
     let consecutiveErrors = 0;
-    pollTimer.current = setInterval(async () => {
-      // A slow status request must not overlap with the next polling tick.
+    const timer = setInterval(async () => {
       if (requestInFlight) return;
       requestInFlight = true;
       try {
@@ -184,21 +184,38 @@ export default function VideoStudioPage() {
         consecutiveErrors = 0;
         setJobs((prev) => prev.map((j) => (j.job_id === jobId ? job : j)));
         if (["completed", "failed", "cancelled", "interrupted"].includes(job.status)) {
-          if (pollTimer.current) clearInterval(pollTimer.current);
-          pollTimer.current = null;
+          clearInterval(timer);
+          pollTimers.current.delete(jobId);
         }
       } catch {
         // Retry transient network/API failures instead of leaving a long render
         // permanently stale after one missed status request.
         consecutiveErrors += 1;
-        if (consecutiveErrors >= 5 && pollTimer.current) {
-          clearInterval(pollTimer.current);
-          pollTimer.current = null;
+        if (consecutiveErrors >= 5) {
+          clearInterval(timer);
+          pollTimers.current.delete(jobId);
         }
       } finally {
         requestInFlight = false;
       }
     }, 1500);
+    pollTimers.current.set(jobId, timer);
+  }, []);
+
+  // Jobs restored from history may still be running after a browser refresh.
+  // Resume their status polling automatically instead of leaving stale cards.
+  useEffect(() => {
+    const terminal = new Set(["completed", "failed", "cancelled", "interrupted"]);
+    for (const job of jobs) {
+      if (job.job_id && !terminal.has(job.status)) {
+        pollUntilDone(job.job_id);
+      }
+    }
+  }, [jobs, pollUntilDone]);
+
+  useEffect(() => () => {
+    for (const timer of pollTimers.current.values()) clearInterval(timer);
+    pollTimers.current.clear();
   }, []);
 
   // Scale the scene count with the duration so longer videos don't stretch

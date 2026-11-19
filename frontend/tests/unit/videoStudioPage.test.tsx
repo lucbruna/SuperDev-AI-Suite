@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import VideoStudioPage from "@/app/video-studio/page";
 import { useAuthStore } from "@/stores/authStore";
 import type { StudioJob } from "@/api/videoStudio";
@@ -121,6 +121,28 @@ describe("VideoStudioPage", () => {
       scene_image_mode: "auto",
     })));
     expect(mockedApi.preflightVideo.mock.invocationCallOrder[0]).toBeLessThan(mockedApi.generateVideo.mock.invocationCallOrder[0]);
+  });
+
+  it("resumes polling jobs that were already active when the page loads", async () => {
+    vi.useFakeTimers();
+    mockedApi.listJobs.mockResolvedValue([{
+      job_id: "job_resumed", project_id: "p1", status: "processing", progress: 0.4,
+    }]);
+    mockedApi.getJob.mockResolvedValue({
+      job_id: "job_resumed", project_id: "p1", status: "completed", progress: 1,
+    });
+
+    render(<VideoStudioPage />);
+
+    // The page loads history first; the active job should then get a status
+    // request on the normal 1.5-second polling cadence.
+    await act(async () => {
+      for (let i = 0; i < 12; i += 1) await Promise.resolve();
+      await vi.advanceTimersByTimeAsync(1500);
+    });
+
+    expect(mockedApi.getJob).toHaveBeenCalledWith("job_resumed");
+    vi.useRealTimers();
   });
 
   it("validates a completed MP4 and displays the measured streams", async () => {
