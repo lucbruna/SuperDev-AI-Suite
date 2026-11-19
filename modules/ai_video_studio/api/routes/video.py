@@ -692,7 +692,9 @@ async def get_video_job_asset_health(job_id: str):
     roots = {
         "image": Path(get_subsystem_dir("images")).resolve(),
         "video": Path(get_subsystem_dir("videos")).resolve(),
-        "voice": Path(get_subsystem_dir("voice")).resolve(),\n        "music": Path(get_subsystem_dir("music")).resolve(),\n        "effects": Path(get_subsystem_dir("effects")).resolve(),
+        "voice": Path(get_subsystem_dir("voice")).resolve(),
+        "music": Path(get_subsystem_dir("music")).resolve(),
+        "effects": Path(get_subsystem_dir("effects")).resolve(),
     }
     scenes = record.get("_edited_scenes") or record.get("_source_scenes") or []
     clips = {int(item.get("scene_index", -1)): item for item in (record.get("scene_clips") or []) if isinstance(item, dict)}
