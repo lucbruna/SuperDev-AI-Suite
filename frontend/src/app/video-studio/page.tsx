@@ -293,7 +293,7 @@ export default function VideoStudioPage() {
               AI Video Studio
             </h1>
             <p className="mt-0.5 text-sm text-surface-500">
-              Suite completa de geração de vídeo, voz e mídia — {readyCount}/{totalCount} módulos
+              Estúdio de vídeo, voz e mídia — {readyCount} módulos integrados · {plannedModules.length} planejados
               {version ? ` · v${version}` : ""}
             </p>
           </div>
@@ -357,7 +357,7 @@ export default function VideoStudioPage() {
               <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-50 text-base dark:bg-sky-950/50">🧩</span>
             </div>
             <p className="mt-3 text-2xl font-bold tabular-nums text-surface-900 dark:text-surface-50">{readyCount}<span className="ml-1 text-sm font-medium text-surface-400">/ {totalCount}</span></p>
-            <p className="mt-1 text-xs text-surface-400">10 listados · 6 planejados</p>
+            <p className="mt-1 text-xs text-surface-400">10 integrados · 6 planejados</p>
           </div>
         </div>
 
@@ -746,7 +746,7 @@ export default function VideoStudioPage() {
           <h2 className="text-lg font-semibold text-surface-900 dark:text-surface-50">
             Módulos do Estúdio
           </h2>
-          <Badge variant="primary" size="sm">{readyCount} prontos</Badge>
+          <Badge variant="primary" size="sm">{readyCount} integrados</Badge>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           {studioModules.map((mod) => (
@@ -760,7 +760,7 @@ export default function VideoStudioPage() {
               <p className="text-xs font-semibold text-surface-900 dark:text-surface-50">{mod.name}</p>
               <p className="text-[10px] leading-tight text-surface-400">{mod.desc}</p>
               <span className="mt-auto inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-medium text-green-600 dark:bg-green-950 dark:text-green-400">
-                <span className="h-1 w-1 rounded-full bg-green-500" /> Ativo
+                <span className="h-1 w-1 rounded-full bg-sky-500" /> Integrado no código
               </span>
             </div>
           ))}
