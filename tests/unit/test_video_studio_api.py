@@ -1633,6 +1633,48 @@ class TestDarkstudioDependencyGraph:
         assert any(node["status"] == "missing" for node in graph["nodes"])
 
     @pytest.mark.asyncio
+    async def test_dependency_impact_maps_image_to_scene_and_final_export(self, monkeypatch):
+        from modules.ai_video_studio.api.routes import video
+
+        async def fake_graph(_job_id):
+            return {
+                "nodes": [
+                    {"id": "scene:2:image", "type": "image", "scene_index": 2},
+                    {"id": "scene:2:clip", "type": "video_clip", "scene_index": 2},
+                    {"id": "final:export", "type": "final_export", "scene_index": None},
+                ],
+                "edges": [
+                    {"from": "scene:2:image", "to": "scene:2:clip"},
+                    {"from": "scene:2:clip", "to": "final:export"},
+                ],
+            }
+
+        monkeypatch.setattr(video, "get_video_job_dependency_graph", fake_graph)
+        result = await video.preview_video_job_dependency_impact(
+            "impact-job", video.DependencyImpactRequest(changed_asset_ids=["scene:2:image"])
+        )
+
+        assert result["rebuild_scene_indices"] == [2]
+        assert result["final_export_required"] is True
+        assert result["executed"] is False
+        assert result["requires_user_confirmation"] is True
+
+    @pytest.mark.asyncio
+    async def test_dependency_impact_rejects_unknown_asset(self, monkeypatch):
+        from fastapi import HTTPException
+        from modules.ai_video_studio.api.routes import video
+
+        async def fake_graph(_job_id):
+            return {"nodes": [{"id": "final:export", "type": "final_export"}], "edges": []}
+
+        monkeypatch.setattr(video, "get_video_job_dependency_graph", fake_graph)
+        with pytest.raises(HTTPException) as error:
+            await video.preview_video_job_dependency_impact(
+                "impact-job", video.DependencyImpactRequest(changed_asset_ids=["missing"])
+            )
+        assert error.value.status_code == 422
+
+    @pytest.mark.asyncio
     async def test_rejects_unknown_job(self):
         from fastapi import HTTPException
         from modules.ai_video_studio.api.routes import video
