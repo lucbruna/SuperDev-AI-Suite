@@ -2640,3 +2640,38 @@ async def test_resume_dependency_rebuild_queues_only_scenes_still_repairable(mon
     assert result["task_id"] == enqueued[0][0]
     assert enqueued[0][2]["job_id"] == job_id
     assert tasks.tasks == []
+
+
+def test_restart_keeps_scene_clip_queue_when_durable_task_exists():
+    from modules.ai_video_studio.api.routes.video import _reconcile_scene_clip_queue_after_restart
+
+    record = {
+        "scene_clip_rebuild_queue": {
+            "status": "processing", "current_scene_index": 4,
+        },
+        "_scene_clip_rebuild_worker": True,
+    }
+    _reconcile_scene_clip_queue_after_restart(record, durable_task_active=True)
+
+    assert record["scene_clip_rebuild_queue"]["status"] == "queued"
+    assert record["scene_clip_rebuild_queue"]["current_scene_index"] is None
+    assert record["_scene_clip_rebuild_scheduled"] is True
+    assert record["_scene_clip_rebuild_worker"] is False
+    assert "worker retomará" in record["scene_clip_rebuild_queue"]["recovery_note"]
+
+
+def test_restart_marks_scene_clip_queue_interrupted_without_durable_task():
+    from modules.ai_video_studio.api.routes.video import _reconcile_scene_clip_queue_after_restart
+
+    record = {
+        "scene_clip_rebuild_queue": {
+            "status": "processing", "current_scene_index": 2,
+        },
+        "_scene_clip_rebuild_scheduled": True,
+    }
+    _reconcile_scene_clip_queue_after_restart(record, durable_task_active=False)
+
+    assert record["scene_clip_rebuild_queue"]["status"] == "interrupted"
+    assert record["_scene_clip_rebuild_scheduled"] is False
+    assert record["_scene_clip_rebuild_worker"] is False
+    assert "recovery-plan" in record["scene_clip_rebuild_queue"]["recovery_note"]

@@ -530,6 +530,31 @@ def _scene_clip_recovery_plan(record: dict) -> dict:
             "repair_scene_indices": repair, "scenes": items}
 
 
+def _reconcile_scene_clip_queue_after_restart(record: dict, durable_task_active: bool) -> None:
+    """Keep durable VidGrid work resumable after an API process restart."""
+    queue = record.get("scene_clip_rebuild_queue")
+    if not isinstance(queue, dict) or queue.get("status") not in {"queued", "processing"}:
+        return
+    queue["current_scene_index"] = None
+    queue["updated_at"] = time.time()
+    record["_scene_clip_rebuild_worker"] = False
+    if durable_task_active:
+        # The durable worker will reclaim queued work or an expired lease.
+        queue["status"] = "queued"
+        record["_scene_clip_rebuild_scheduled"] = True
+        queue["recovery_note"] = (
+            "Reconstrução persistida preservada. O worker retomará as cenas pendentes "
+            "assim que a tarefa estiver disponível."
+        )
+    else:
+        queue["status"] = "interrupted"
+        record["_scene_clip_rebuild_scheduled"] = False
+        queue["recovery_note"] = (
+            "A API reiniciou sem uma tarefa durável ativa. Os resultados concluídos foram preservados; "
+            "use recovery-plan para reenfileirar somente as cenas reparáveis."
+        )
+
+
 try:
     from modules.ai_video_studio.media.job_store import load_jobs, mark_interrupted_jobs, has_active_task_for_job
 
@@ -540,15 +565,10 @@ try:
     for _job_record in _jobs.values():
         _queue = _job_record.get("scene_clip_rebuild_queue")
         if isinstance(_queue, dict) and _queue.get("status") in {"queued", "processing"}:
-            _queue["status"] = "interrupted"
-            _job_record["_scene_clip_rebuild_scheduled"] = False
-            _job_record["_scene_clip_rebuild_worker"] = False
-            _queue["current_scene_index"] = None
-            _queue["updated_at"] = time.time()
-            _queue["recovery_note"] = (
-                "A API foi reiniciada durante a reconstrução. Os resultados concluídos foram preservados; "
-                "consulte recovery-plan e envie novamente apenas as cenas ainda reparáveis."
+            _task_active = has_active_task_for_job(
+                str(_job_record.get("job_id") or ""), "scene_clip_rebuild"
             )
+            _reconcile_scene_clip_queue_after_restart(_job_record, _task_active)
             try:
                 _persist_job(_job_record)
             except Exception:
