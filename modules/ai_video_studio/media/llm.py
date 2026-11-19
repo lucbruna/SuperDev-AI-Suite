@@ -162,7 +162,6 @@ def _split_prompt_into_scene_beats(prompt: str, num_scenes: int) -> list[str]:
     cursor = 0
     for group_index in range(count):
         remaining_groups = count - group_index
-        remaining_units = len(units) - cursor
         if remaining_groups == 1:
             groups.append(units[cursor:])
             break
