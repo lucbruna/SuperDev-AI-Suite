@@ -108,6 +108,7 @@ class SceneImageBatchItem(BaseModel):
     scene_index: int = Field(..., ge=0)
     prompt: str = Field(..., min_length=1, max_length=4000)
     negative_prompt: str = Field(default="", max_length=2000)
+    seed: int = Field(default=-1, ge=-1, le=2147483647)
 
 
 class SceneImageBatchEditRequest(BaseModel):
@@ -1477,6 +1478,7 @@ async def regenerate_video_job_scene_images(job_id: str, req: SceneImageBatchEdi
                     SceneImageEditRequest(
                         prompt=item.prompt,
                         negative_prompt=item.negative_prompt,
+                        seed=item.seed,
                         stage_only=True,
                     ),
                 )
