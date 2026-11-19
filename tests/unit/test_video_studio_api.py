@@ -1464,3 +1464,44 @@ class TestSelectiveVidGridClipRebuild:
             await video.regenerate_video_job_scene_images("batch-lock-vidgrid-job", request)
         assert error.value.status_code == 409
 
+
+
+class TestSelectedVidGridRecoveryQueue:
+    @pytest.mark.asyncio
+    async def test_rejects_selected_scene_that_does_not_need_rebuild(self, tmp_path, monkeypatch):
+        from fastapi import HTTPException
+        from modules.ai_video_studio.api.routes import video
+        from modules.ai_video_studio.media import output_paths
+
+        image_root, video_root = tmp_path / "images", tmp_path / "videos"
+        image_root.mkdir()
+        video_root.mkdir()
+        image = image_root / "approved.png"
+        image.write_bytes(b"approved-image")
+        stale_clip = video_root / "stale.mp4"
+        stale_clip.write_bytes(b"old-clip")
+        ready_clip = video_root / "ready.mp4"
+        ready_clip.write_bytes(b"ready-clip")
+        monkeypatch.setattr(
+            output_paths, "get_subsystem_dir",
+            lambda name: image_root if name == "images" else video_root,
+        )
+        monkeypatch.setattr(video, "_persist_job", lambda _record: None)
+        video._jobs["selected-recovery-job"] = {
+            "job_id": "selected-recovery-job", "status": "completed",
+            "vidgrid_compatible": True, "resolution": "1280x720", "frame_rate": 30,
+            "params": {},
+            "_edited_scenes": [
+                {"_source_scene_index": 0, "background_image_path": str(image)},
+                {"_source_scene_index": 1, "background_image_path": str(image)},
+            ],
+            "scene_clips": [
+                {"scene_index": 0, "status": "stale", "output_path": str(stale_clip)},
+                {"scene_index": 1, "status": "updated", "output_path": str(ready_clip)},
+            ],
+        }
+        request = video.SceneClipRebuildRequest(scene_indices=[1])
+        with pytest.raises(HTTPException) as error:
+            await video.rebuild_stale_video_job_scene_clips("selected-recovery-job", request)
+        assert error.value.status_code == 422
+        assert error.value.detail["invalid_scene_indices"] == [1]
