@@ -202,3 +202,49 @@ def test_image_history_restore_rejects_active_render_lock(monkeypatch) -> None:
     with pytest.raises(HTTPException) as exc:
         asyncio.run(visual_assets.restore_job_scene_image_history("job-visual-1", 4, "history-1"))
     assert exc.value.status_code == 409
+
+
+
+def test_scene_image_framing_persists_transform_and_invalidates_only_target_clip(monkeypatch) -> None:
+    record = _record()
+    record["scene_clips"] = [
+        {"scene_index": 4, "status": "ready"},
+        {"scene_index": 5, "status": "ready"},
+    ]
+    monkeypatch.setattr(video, "_jobs", {"job-visual-1": record})
+    saved = []
+    monkeypatch.setattr(video, "_persist_job", lambda item: saved.append(item.copy()))
+    response = asyncio.run(
+        visual_assets.update_job_scene_image_framing(
+            "job-visual-1", 4,
+            visual_assets.SceneImageFramingRequest(scale=1.6, offset_x=-0.5, offset_y=0.25),
+        )
+    )
+    assert response["status"] == "saved"
+    assert response["clip_invalidated"] is True
+    assert response["render_started"] is False
+    assert record["_edited_scenes"][0]["background_image_transform"] == {
+        "scale": 1.6, "offset_x": -0.5, "offset_y": 0.25,
+    }
+    assert record["scene_clips"][0]["status"] == "stale"
+    assert record["scene_clips"][1]["status"] == "ready"
+    assert len(saved) == 1
+
+
+def test_scene_image_framing_rejects_active_render_lock(monkeypatch) -> None:
+    record = {**_record(), "_rendering_edits": True}
+    monkeypatch.setattr(video, "_jobs", {"job-visual-1": record})
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(visual_assets.update_job_scene_image_framing(
+            "job-visual-1", 4, visual_assets.SceneImageFramingRequest(scale=1.2)
+        ))
+    assert exc.value.status_code == 409
+
+
+def test_scene_image_framing_rejects_unknown_scene(monkeypatch) -> None:
+    monkeypatch.setattr(video, "_jobs", {"job-visual-1": _record()})
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(visual_assets.update_job_scene_image_framing(
+            "job-visual-1", 999, visual_assets.SceneImageFramingRequest()
+        ))
+    assert exc.value.status_code == 404
