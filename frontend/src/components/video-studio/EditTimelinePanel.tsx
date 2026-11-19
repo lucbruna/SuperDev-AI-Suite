@@ -75,6 +75,8 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
   const [dependencyImpact, setDependencyImpact] = useState<Awaited<ReturnType<typeof videoStudioApi.previewJobDependencyImpact>> | null>(null);
   const [previewingDependencyImpact, setPreviewingDependencyImpact] = useState(false);
   const [executingDependencyRebuild, setExecutingDependencyRebuild] = useState(false);
+  const [dependencyRebuildStatus, setDependencyRebuildStatus] = useState<Awaited<ReturnType<typeof videoStudioApi.getJobDependencyRebuildStatus>> | null>(null);
+  const [refreshingDependencyStatus, setRefreshingDependencyStatus] = useState(false);
   const [message, setMessage] = useState("");
   const [staleVidGridClipCount, setStaleVidGridClipCount] = useState(0);
   const [vidGridRecoveryPlan, setVidGridRecoveryPlan] = useState<Awaited<ReturnType<typeof videoStudioApi.getVidGridRecoveryPlan>> | null>(null);
@@ -123,6 +125,59 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
       window.clearInterval(timer);
     };
   }, [jobId, vidGridQueue?.status]);
+
+  useEffect(() => {
+    let active = true;
+    if (!jobId) {
+      setDependencyRebuildStatus(null);
+      return () => { active = false; };
+    }
+    videoStudioApi.getJobDependencyRebuildStatus(jobId)
+      .then((status) => { if (active) setDependencyRebuildStatus(status); })
+      .catch(() => { if (active) setDependencyRebuildStatus(null); });
+    return () => { active = false; };
+  }, [jobId]);
+
+  useEffect(() => {
+    if (!jobId || !dependencyRebuildStatus || !["queued", "processing"].includes(dependencyRebuildStatus.status)) return;
+    let active = true;
+    const poll = async () => {
+      try {
+        const status = await videoStudioApi.getJobDependencyRebuildStatus(jobId);
+        if (!active) return;
+        setDependencyRebuildStatus(status);
+        if (["completed", "partial", "failed", "interrupted"].includes(status.status)) {
+          if (status.render_output_url || status.render_result?.output_url) {
+            setRenderUrl(status.render_output_url || status.render_result?.output_url || "");
+          }
+          const [graph, health, latest] = await Promise.all([
+            videoStudioApi.getJobDependencyGraph(jobId),
+            videoStudioApi.getJobAssetHealth(jobId),
+            videoStudioApi.getJob(jobId),
+          ]);
+          if (!active) return;
+          setDependencyGraph(graph);
+          setAssetHealth(health);
+          if (latest.scene_assets) setSceneImageAssets(latest.scene_assets);
+          setMessage(status.status === "completed"
+            ? "Reconstrução e exportação final concluídas."
+            : status.status === "partial"
+              ? "Reconstrução parcial. A exportação final foi preservada sem atualização."
+              : status.status === "interrupted"
+                ? "Execução interrompida. Os resultados persistidos foram preservados."
+                : status.error || "Falha na reconstrução das dependências.");
+        }
+      } catch {
+        // Preserve the last known state if a polling request fails temporarily.
+      }
+    };
+    void poll();
+    const timer = window.setInterval(() => { void poll(); }, 2500);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [jobId, dependencyRebuildStatus?.status]);
 
   const [dirty, setDirty] = useState(false);
   const [audioAssets, setAudioAssets] = useState<StudioAudioAsset[]>([]);
@@ -699,12 +754,17 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
     setMessage("");
     try {
       const result = await videoStudioApi.executeJobDependencyRebuild(jobId, selectedDependencyAssets);
-      if (result.render?.output_url) setRenderUrl(result.render.output_url);
-      setMessage(result.message);
-      if (result.status === "completed") {
+      setDependencyRebuildStatus({
+        job_id: jobId,
+        status: result.status,
+        changed_asset_ids: selectedDependencyAssets,
+        scene_indices: result.scene_indices || result.impact?.rebuild_scene_indices || [],
+        updated_at: Date.now() / 1000,
+        render_output_url: result.render?.output_url,
+      });
+      setMessage(result.message || "Reconstrução adicionada à fila. Acompanhe o andamento abaixo.");
+      if (result.status === "completed" || result.status === "partial" || result.status === "failed") {
         setDependencyImpact(null);
-        await loadDependencyGraph();
-        await checkAssetHealth();
       }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Falha ao executar a reconstrução das dependências.");
@@ -1227,7 +1287,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
           <p>Renderização final necessária: <strong>{dependencyImpact.final_export_required ? "sim" : "não"}</strong></p>
           <p>Ativos downstream afetados: {dependencyImpact.affected_node_ids.length}</p>
           {dependencyImpact.final_export_required && <div className="mt-3 border-t border-surface-200 pt-3 dark:border-surface-700">
-            <p className="mb-2 text-xs text-surface-600 dark:text-surface-300">A execução reconstruirá somente as cenas listadas e depois atualizará o MP4. Se apenas música ou efeitos mudaram, os clipes de vídeo serão reutilizados. A operação é síncrona e pode demorar.</p>
+            <p className="mb-2 text-xs text-surface-600 dark:text-surface-300">A execução será processada em segundo plano. O painel acompanha a fila e atualiza o resultado automaticamente. Se apenas música ou efeitos mudaram, os clipes de vídeo serão reutilizados.</p>
             <button type="button" onClick={executeDependencyRebuild} disabled={executingDependencyRebuild || dirty || saving || rendering} className="rounded-md bg-amber-600 px-3 py-2 font-semibold text-white disabled:opacity-40">
               {executingDependencyRebuild ? "Reconstruindo e exportando…" : "Confirmar e executar reconstrução"}
             </button>
