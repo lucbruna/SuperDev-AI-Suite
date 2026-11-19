@@ -406,3 +406,12 @@ A auditoria `GET /videos/jobs/{job_id}/asset-health` agora tenta validar clipes 
 O endpoint `GET /videos/jobs/{job_id}/dependency-graph` descreve as dependências persistidas por job: imagem aprovada → clipe da cena; narração por cena → clipe quando o áudio é muxado individualmente; clipes e faixas de áudio → exportação final. A resposta inclui nós, relações, estado básico dos ativos e regras de impacto para orientar reconstruções seletivas.
 
 O editor de timeline oferece o botão **Mapa de dependências** e apresenta a contagem de ativos/relações e as regras de reconstrução. Esta versão é somente de leitura: não dispara renders nem altera arquivos. Alterações de música/efeitos apontam para reconstrução da exportação final; alterações de imagem/narração por cena apontam para o clipe correspondente e a exportação.
+
+
+## Prévia de impacto das dependências
+
+O endpoint `POST /videos/jobs/{job_id}/dependency-impact` recebe `changed_asset_ids` e percorre o grafo persistido para calcular os nós downstream afetados. A resposta informa as cenas que exigem reconstrução de clipe e se a exportação final precisa ser refeita. IDs que não pertencem ao job são rejeitados com HTTP 422.
+
+A interface do editor permite selecionar imagens, narrações, músicas, efeitos ou clipes existentes e solicitar essa prévia. O resultado é somente leitura: `executed=false` e `requires_user_confirmation=true`. Nenhuma geração ou renderização é iniciada. A execução continua separada nos comandos existentes de reconstrução seletiva VidGrid e renderização final; alterações em músicas/efeitos afetam somente a exportação final segundo o grafo registrado.
+
+Limitações: o plano depende das relações persistidas e não identifica arquivos externos não registrados. O endpoint ainda não executa uma transação única para reconstruir clipes e exportar o MP4.
