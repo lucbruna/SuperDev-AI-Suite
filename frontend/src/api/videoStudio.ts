@@ -389,7 +389,18 @@ export interface VideoOutputValidation {
   format_name?: string;
   video_streams?: number;
   audio_streams?: number;
-  video?: { width?: number; height?: number; r_frame_rate?: string } | null;
+  video?: { width?: number; height?: number; codec_name?: string; avg_frame_rate?: string; r_frame_rate?: string; pix_fmt?: string } | null;
+  audio?: { codec_name?: string; sample_rate?: string; channels?: number } | null;
+  resolution?: string;
+  fps?: string;
+  video_codec?: string;
+  pixel_format?: string;
+  integrity?: "passed" | "failed" | "not_verified" | "not_checked";
+  assembly_mode?: string;
+  source_scene_indices?: number[];
+  fallback_reason?: string | null;
+  subtitle_status?: string;
+  subtitle_file_exists?: boolean;
   errors: string[];
   warnings: string[];
 }
