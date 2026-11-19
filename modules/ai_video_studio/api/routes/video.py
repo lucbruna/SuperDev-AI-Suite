@@ -211,6 +211,9 @@ class VoiceoverInfo(BaseModel):
 
 class VideoStatusResponse(BaseModel):
     job_id: str
+    # Included by both GET /jobs and GET /jobs/{job_id}; the dashboard uses
+    # this field to keep the job identity contract consistent after polling.
+    project_id: str | None = None
     status: str
     progress: float
     current_step: str | None = None

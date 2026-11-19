@@ -569,6 +569,7 @@ class TestJobStatus:
                 break
 
         assert status["status"] == "completed", status.get("error")
+        assert status["project_id"] == "p1"
         assert status["format"] == "shorts"
         params = status["params"]
         assert params is not None

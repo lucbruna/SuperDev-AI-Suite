@@ -247,7 +247,7 @@ export interface SceneImageSimilarityReport {
 
 export interface StudioJob {
   job_id: string;
-  project_id: string;
+  project_id?: string;
   status: string;
   progress: number;
   current_step?: string | null;
