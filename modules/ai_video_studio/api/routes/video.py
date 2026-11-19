@@ -2576,6 +2576,11 @@ async def _dependency_worker_loop(worker_id: str) -> None:
             if task.get("task_type") != "dependency_rebuild":
                 raise RuntimeError(f"Unsupported durable task type: {task.get('task_type')}")
             await _process_durable_dependency_rebuild(task.get("payload") or {})
+            payload = task.get("payload") or {}
+            record = _jobs.get(str(payload.get("job_id") or ""))
+            execution = record.get("dependency_rebuild_execution") if record else None
+            if isinstance(execution, dict) and execution.get("status") == "failed":
+                raise RuntimeError(str(execution.get("error") or "Dependency rebuild failed"))
             await asyncio.to_thread(complete_task, task_id, worker_id)
         except asyncio.CancelledError:
             raise
@@ -2586,9 +2591,14 @@ async def _dependency_worker_loop(worker_id: str) -> None:
             payload = task.get("payload") or {}
             record = _jobs.get(str(payload.get("job_id") or ""))
             execution = record.get("dependency_rebuild_execution") if record else None
-            if isinstance(execution, dict) and not retried:
-                execution.update({"status": "failed", "error": str(exc)[:500],
-                                  "updated_at": time.time(), "worker_attempts": task.get("attempts")})
+            if isinstance(execution, dict):
+                execution.update({
+                    "status": "queued" if retried else "failed",
+                    "error": str(exc)[:500],
+                    "updated_at": time.time(),
+                    "worker_attempts": task.get("attempts"),
+                    "retry_scheduled": bool(retried),
+                })
                 _persist_job(record)
         finally:
             heartbeat_stop.set()
