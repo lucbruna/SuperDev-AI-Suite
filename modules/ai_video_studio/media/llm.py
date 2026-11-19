@@ -129,6 +129,62 @@ def generate_text(
     raise last_error or RuntimeError("No Ollama endpoint reachable")
 
 
+def _split_prompt_into_scene_beats(prompt: str, num_scenes: int) -> list[str]:
+    """Split a brief into contiguous, non-overlapping narrative beats.
+
+    Sentence and clause boundaries are preferred. If the brief contains fewer
+    units than requested scenes, contiguous word groups are used rather than
+    interleaving words from unrelated parts of the brief.
+    """
+    count = max(1, int(num_scenes))
+    text = re.sub(r"\\s+", " ", str(prompt or "")).strip()
+    if not text:
+        return [f"Parte {index + 1}" for index in range(count)]
+
+    units = [part.strip() for part in re.split(r"(?<=[.!?])\\s+|\\s*[\\n;]+\\s*", text) if part.strip()]
+    if len(units) < count:
+        expanded: list[str] = []
+        for unit in units:
+            clauses = [part.strip() for part in re.split(r"\\s+(?:e então|em seguida|depois|enquanto|mas|porém|porque|quando|e)\\s+|,\\s*", unit, flags=re.IGNORECASE) if part.strip()]
+            expanded.extend(clauses if len(clauses) > 1 else [unit])
+        units = expanded
+
+    if len(units) < count:
+        words = text.split()
+        # Balanced contiguous word ranges; never shuffle or omit source words.
+        return [
+            " ".join(words[(index * len(words)) // count:((index + 1) * len(words)) // count])
+            or words[min(index, len(words) - 1)]
+            for index in range(count)
+        ]
+
+    groups: list[list[str]] = []
+    cursor = 0
+    for group_index in range(count):
+        remaining_groups = count - group_index
+        remaining_units = len(units) - cursor
+        if remaining_groups == 1:
+            groups.append(units[cursor:])
+            break
+        target_chars = sum(len(item) for item in units[cursor:]) / remaining_groups
+        end = cursor
+        chars = 0
+        max_end = len(units) - (remaining_groups - 1)
+        while end < max_end:
+            candidate = len(units[end])
+            if end > cursor and chars + candidate > target_chars and (target_chars - chars) <= (chars + candidate - target_chars):
+                break
+            chars += candidate
+            end += 1
+            if chars >= target_chars:
+                break
+        end = max(cursor + 1, min(end, max_end))
+        groups.append(units[cursor:end])
+        cursor = end
+
+    return [" ".join(group).strip() for group in groups]
+
+
 class ScenePlanner:
     """Plans renderable scenes from a text prompt."""
 
@@ -232,14 +288,13 @@ class ScenePlanner:
     # ── Deterministic fallback ────────────────────────────────────
     def fallback(self, prompt: str, *, num_scenes: int = 3, duration: float = 10.0) -> dict[str, Any]:
         """Deterministic scene plan usable with no LLM available."""
-        words = prompt.split() or ["Scene"]
+        beats = _split_prompt_into_scene_beats(prompt, num_scenes)
         per_scene = duration / max(num_scenes, 1)
         palette = ["#1a1a2e", "#0f3460", "#533483", "#e94560", "#16213e"]
         scenes: list[dict[str, Any]] = []
-        for i in range(num_scenes):
-            chunk = " ".join(words[i::num_scenes])
+        for i, chunk in enumerate(beats):
             if not chunk:
-                chunk = f"Scene {i + 1}"
+                chunk = f"Parte {i + 1}"
             scenes.append(
                 {
                     "index": i,
