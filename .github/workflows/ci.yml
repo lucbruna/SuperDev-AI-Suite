@@ -78,8 +78,7 @@ jobs:
         run: |
           pytest tests/unit tests/integration -x -v --timeout=30 \
             --ignore=tests/unit/test_ai_router.py \
-            --ignore=tests/unit/test_git_tool.py 2>&1 || true
-        continue-on-error: true
+            --ignore=tests/unit/test_git_tool.py
       - name: Run media-engine regression tests (strict)
         run: pytest tests/unit/test_editing_director.py tests/unit/test_scene_transitions.py tests/unit/test_camera_motion.py tests/unit/test_characters.py tests/unit/test_media_video.py tests/unit/test_scene_narration.py tests/unit/test_audio_mux_duration.py tests/unit/test_studio_profile_pixels.py tests/unit/test_text_to_video_engine_mp4.py tests/unit/test_media_llm.py tests/unit/test_studio_canvas_grading.py tests/unit/test_local_diffusion_provider.py tests/unit/test_studio_api.py tests/unit/test_video_studio_api.py tests/unit/test_tts_engine.py tests/unit/test_subtitle_timing.py tests/unit/test_media_timeline.py tests/unit/test_audio_timeline.py tests/unit/test_av_sync.py tests/unit/test_visual_intelligence.py tests/unit/test_mp4_visual_analysis.py tests/unit/test_video_timeline_api.py tests/unit/test_video_job_store.py tests/unit/test_image_to_video_motion.py tests/unit/test_comfyui_video_provider.py \
             tests/unit/test_mixed_scene_render.py tests/unit/test_studio_profiles.py \
