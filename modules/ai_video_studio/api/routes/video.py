@@ -345,6 +345,7 @@ def _scene_clip_recovery_plan(record: dict) -> dict:
         for item in (voiceover.get("clips") or [])
         if isinstance(item, dict)
     }
+    params = record.get("params") or {}
     try:
         width, height = _parse_resolution(record.get("resolution") or params.get("resolution") or "1280x720")
         fps = int(record.get("frame_rate") or params.get("frame_rate") or 24)
