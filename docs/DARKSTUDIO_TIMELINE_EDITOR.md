@@ -466,3 +466,10 @@ Limitação atual: esta fila usa as tarefas em segundo plano do processo FastAPI
 
 
 O painel de edição consulta o endpoint de status da reconstrução de dependências a cada 2,5 segundos enquanto a execução estiver em `queued` ou `processing`. Ao concluir, atualiza o link do MP4, o mapa de dependências e a auditoria de saúde dos ativos. Também há atualização manual do status; falhas temporárias de consulta não apagam o último estado conhecido.
+
+
+### Cancelamento cooperativo da reconstrução por dependências
+
+O endpoint `POST /videos/jobs/{job_id}/dependency-rebuild/cancel` registra `cancel_requested=true` para execuções `queued` ou `processing`. A tarefa verifica o pedido antes de iniciar, depois da etapa de reconstrução de cenas e antes da exportação final. Se cancelada, mantém os clipes já persistidos e não inicia a exportação final. O editor oferece a ação **Solicitar cancelamento** e continua consultando o status.
+
+Limitação importante: a reconstrução seletiva chamada por esse fluxo ainda processa o conjunto de cenas como uma única etapa; o cancelamento durante essa etapa só é aplicado quando ela retorna. O cancelamento por cena individual e a retomada automática após reinicialização ainda não estão implementados para a fila de dependências.
