@@ -12,10 +12,14 @@ import json
 import shutil
 import subprocess
 import tempfile
+import wave
+
+import numpy as np
 from pathlib import Path
 from typing import Any
 
 from modules.ai_video_studio.ai_video_generator.text_to_video import text_to_video_engine as engine_module
+from modules.ai_video_studio import ai_voice_studio
 
 
 class _DeterministicPlanner:
@@ -60,6 +64,23 @@ def _probe(path: Path) -> dict[str, Any]:
     return json.loads(result.stdout)
 
 
+class _DeterministicVoiceEngine:
+    async def synthesize_async(self, text: str, **kwargs: Any) -> dict[str, Any]:
+        # A real WAV file exercises the production alignment, mix and mux path.
+        # This is a pipeline integration proof, not a Portuguese voice-quality test.
+        output = Path(tempfile.gettempdir()) / f"darkstudio-voice-{abs(hash(text))}.wav"
+        sample_rate = 22050
+        duration = 1.25
+        samples = (0.12 * np.sin(2 * np.pi * 440 * np.arange(int(sample_rate * duration)) / sample_rate))
+        pcm = (samples * 32767).astype(np.int16)
+        with wave.open(str(output), "wb") as wav:
+            wav.setnchannels(1)
+            wav.setsampwidth(2)
+            wav.setframerate(sample_rate)
+            wav.writeframes(pcm.tobytes())
+        return {"output_path": str(output), "engine": "deterministic-smoke-tone", "duration": duration}
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
@@ -80,6 +101,7 @@ def main() -> None:
 
         engine_module.get_scene_planner = lambda: _DeterministicPlanner()
         engine_module.get_subsystem_dir = subsystem_dir
+        ai_voice_studio.get_voice_engine = lambda: _DeterministicVoiceEngine()
 
         result = asyncio.run(engine_module.TextToVideoEngine().generate_async(
             {
@@ -96,7 +118,9 @@ def main() -> None:
                     "scene_image_mode": "procedural",
                     "vidgrid_compatible": True,
                     "generate_subtitles": True,
-                    "voiceover": False,
+                    "voiceover": True,
+                    "voiceover_mode": "per_scene",
+                    "voice_language": "pt-BR",
                 },
             }
         ))
@@ -118,6 +142,13 @@ def main() -> None:
             raise SystemExit(f"Unexpected master MP4 stream: {master_video}")
         if abs(master_duration - 20.0) > 0.2:
             raise SystemExit(f"Expected a 20-second master MP4, got {master_duration:.3f}s")
+        if not any(stream["codec_type"] == "audio" for stream in master_probe["streams"]):
+            raise SystemExit("Narration was requested but the master MP4 has no audio stream")
+        voiceover = result.get("voiceover") or {}
+        if not voiceover.get("muxed") or voiceover.get("narration_style") != "per_scene":
+            raise SystemExit(f"Per-scene narration did not complete: {voiceover}")
+        if len(voiceover.get("clips") or []) != 2 or any(not clip.get("audio_path") for clip in voiceover["clips"]):
+            raise SystemExit("Expected one synthesized audio asset for each scene")
 
         clip_reports = []
         for index, clip in enumerate(clips):
@@ -126,7 +157,9 @@ def main() -> None:
             duration = float(metadata["format"]["duration"])
             if abs(duration - 10.0) > 0.2 or stream["codec_name"] != "h264":
                 raise SystemExit(f"VidGrid clip {index + 1} failed validation: {metadata}")
-            clip_reports.append({"path": clip.name, "duration": duration, "bytes": metadata["format"]["size"]})
+            if not any(item["codec_type"] == "audio" for item in metadata["streams"]):
+                raise SystemExit(f"VidGrid clip {index + 1} is missing its scene narration audio")
+            clip_reports.append({"path": clip.name, "duration": duration, "bytes": metadata["format"]["size"], "audio": True})
 
         shutil.copy2(master, output)
         print(json.dumps({
@@ -135,6 +168,7 @@ def main() -> None:
             "master_mp4": {"path": str(output), "duration": master_duration, "bytes": output.stat().st_size},
             "vidgrid_clips": clip_reports,
             "subtitles": {"cue_count": result["subtitles"]["cue_count"], "format": "srt"},
+            "narration": {"style": voiceover["narration_style"], "clips": len(voiceover["clips"]), "audio_stream": True},
         }, indent=2))
 
 
