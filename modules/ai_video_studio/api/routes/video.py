@@ -1161,6 +1161,16 @@ async def queue_scene_clip_rebuild(job_id: str, background_tasks: BackgroundTask
     if (record.get("_rendering_edits") or record.get("_rebuilding_scene_clips")
         or record.get("_scene_clip_rebuild_scheduled") or job_id in _scene_batch_jobs):
         raise HTTPException(status_code=409, detail="Scene assets are locked by another operation")
+    try:
+        if has_active_task_for_job(job_id, "scene_clip_rebuild"):
+            raise HTTPException(
+                status_code=409,
+                detail="A durable scene rebuild task is already queued or leased; wait for worker recovery before resubmitting",
+            )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail="Durable scene rebuild queue is unavailable") from exc
     recovery = _scene_clip_recovery_plan(record)
     repairable = sorted(recovery["repair_scene_indices"])
     requested = req.scene_indices if req and req.scene_indices is not None else repairable
