@@ -385,3 +385,34 @@ async def test_regenerate_changed_narration_only_synthesizes_edited_scene(monkey
         "new first.wav", "second.wav",
     ]
     assert [clip["start"] for clip in result["clips"]] == [0.0, 2.0]
+
+
+def test_edited_subtitles_follow_successful_scene_audio_and_edited_order():
+    scenes = [
+        {"_source_scene_index": 2, "voiceover_text": "third", "duration": 2.0},
+        {"_source_scene_index": 0, "voiceover_text": "new first", "duration": 1.5},
+        {"_source_scene_index": 1, "voiceover_text": "failed second", "duration": 3.0},
+    ]
+    clips = [
+        {"index": 2, "text": "third", "audio_path": "third.wav"},
+        {"index": 0, "text": "new first", "audio_path": "new-first.wav"},
+        {"index": 1, "text": "failed second", "error": "tts unavailable"},
+    ]
+    subtitles = scene_narration.build_edited_subtitle_scenes(
+        scenes, clips, fps=24, per_scene_narration=True,
+    )
+    assert [item["text"] for item in subtitles] == ["third", "new first"]
+    assert [item["start_offset"] for item in subtitles] == [0.0, 2.0]
+    assert [item["duration"] for item in subtitles] == [2.0, 1.5]
+
+
+def test_edited_subtitles_keep_scene_text_without_per_scene_voiceover():
+    scenes = [
+        {"voiceover_text": "first caption", "duration": 1.0},
+        {"voiceover_text": "second caption", "duration": 2.0},
+    ]
+    subtitles = scene_narration.build_edited_subtitle_scenes(
+        scenes, None, fps=30, per_scene_narration=False,
+    )
+    assert [item["text"] for item in subtitles] == ["first caption", "second caption"]
+    assert [item["start_offset"] for item in subtitles] == [0.0, 1.0]

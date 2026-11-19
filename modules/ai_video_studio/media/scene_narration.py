@@ -126,6 +126,35 @@ def remap_narration_clips_for_edits(
 
 
 
+
+def build_edited_subtitle_scenes(
+    scenes: list[dict[str, Any]], narration_clips: list[dict[str, Any]] | None,
+    *, fps: int = 24, per_scene_narration: bool = False,
+) -> list[dict[str, Any]]:
+    """Build captions aligned to the edited timeline and actual speech assets."""
+    if fps < 1:
+        raise ValueError("fps must be at least 1")
+    offsets = compute_scene_offsets(scenes, fps=fps)
+    clips_by_source = {
+        int(clip.get("index", -1)): clip for clip in (narration_clips or [])
+        if isinstance(clip, dict)
+    } if per_scene_narration else {}
+    output: list[dict[str, Any]] = []
+    for position, (scene, start) in enumerate(zip(scenes, offsets, strict=False)):
+        source_index = scene.get("_source_scene_index", position)
+        if per_scene_narration:
+            clip = clips_by_source.get(source_index)
+            if not isinstance(clip, dict) or not clip.get("audio_path"):
+                continue
+            text = str(clip.get("text") or "")
+        else:
+            text = scene_narration_text(scene)
+        if not text.strip():
+            continue
+        duration = max(1, int(round(float(scene.get("duration") or 3.0) * fps))) / fps
+        output.append({"text": text, "duration": duration, "start_offset": start})
+    return output
+
 async def regenerate_changed_scene_narration_async(
     scenes: list[dict[str, Any]],
     original_clips: list[dict[str, Any]],

@@ -2713,19 +2713,17 @@ async def render_video_job_edits(job_id: str):
         subtitle_status = "not_generated"
         subtitle_info = None
         try:
-            from modules.ai_video_studio.media.scene_narration import compute_scene_offsets, scene_narration_text
+            from modules.ai_video_studio.media.scene_narration import build_edited_subtitle_scenes
             from modules.ai_video_studio.media.output_paths import get_subsystem_dir, unique_filename
             from modules.ai_video_studio.services.subtitle_studio import SubtitleStudioService
 
-            subtitle_offsets = compute_scene_offsets(scenes, fps=fps)
-            subtitle_scenes = [
-                {
-                    "text": scene_narration_text(scene),
-                    "duration": max(1, int(round(float(scene.get("duration") or 3.0) * fps))) / fps,
-                    "start_offset": subtitle_offsets[index],
-                }
-                for index, scene in enumerate(scenes)
-            ]
+            subtitle_scenes = build_edited_subtitle_scenes(
+                scenes, narration_clips, fps=fps,
+                per_scene_narration=(
+                    isinstance(voiceover, dict)
+                    and voiceover.get("narration_style") == "per_scene"
+                ),
+            )
             subtitle_path = unique_filename(
                 get_subsystem_dir("subtitles"), "edited_video_subtitles", "srt"
             )
