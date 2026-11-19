@@ -415,3 +415,12 @@ O endpoint `POST /videos/jobs/{job_id}/dependency-impact` recebe `changed_asset_
 A interface do editor permite selecionar imagens, narrações, músicas, efeitos ou clipes existentes e solicitar essa prévia. O resultado é somente leitura: `executed=false` e `requires_user_confirmation=true`. Nenhuma geração ou renderização é iniciada. A execução continua separada nos comandos existentes de reconstrução seletiva VidGrid e renderização final; alterações em músicas/efeitos afetam somente a exportação final segundo o grafo registrado.
 
 Limitações: o plano depende das relações persistidas e não identifica arquivos externos não registrados. O endpoint ainda não executa uma transação única para reconstruir clipes e exportar o MP4.
+
+
+## Fingerprints e detecção de ativos alterados
+
+A timeline de áudio persiste `_audio_clips.music` e `_audio_clips.sfx`; `audio_settings` contém os parâmetros de mixagem, não as referências das faixas. A auditoria e o grafo agora leem a estrutura canônica `_audio_clips`, com fallback para jobs legados que tenham referências no formato antigo.
+
+Ao salvar a timeline de áudio, cada música/efeito recebe um SHA-256 de referência (`asset_fingerprint`). O grafo calcula o SHA-256 atual e marca o nó como `stale` se o arquivo tiver sido substituído ou alterado depois de salvo. Para clipes de cena, o fingerprint da imagem aprovada é comparado com `source_image_fingerprint` registrado no clipe; divergências marcam a imagem de origem como alterada, permitindo selecionar a imagem e planejar a reconstrução do clipe dependente.
+
+A interface oferece **Selecionar ativos alterados** para selecionar automaticamente nós `stale` antes de calcular o impacto. Essa seleção e a prévia não executam renderização. Jobs antigos sem fingerprint de áudio permanecem sem verificação histórica até que suas faixas sejam salvas novamente.
