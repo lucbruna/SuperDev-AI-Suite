@@ -13,16 +13,17 @@ from modules.ai_video_studio.api.routes.studios import (
 )
 
 
-def test_list_studios_exposes_three_distinct_profiles() -> None:
+def test_list_studios_exposes_optional_profiles_and_custom_mode() -> None:
     result = asyncio.run(list_studios())
-    assert result["count"] == 3
+    assert result["count"] == 4
     profiles = {item["id"]: item for item in result["studios"]}
-    assert set(profiles) == {"whymentary", "historical_documentary", "felt_clay"}
+    assert set(profiles) == {"whymentary", "historical_documentary", "felt_clay", "custom"}
     assert profiles["whymentary"]["background"]["type"] == "solid"
     assert profiles["whymentary"]["background"]["colors"] == ["#FFFFFF"]
     assert profiles["historical_documentary"]["background"]["type"] == "gradient"
     assert profiles["felt_clay"]["name"] == "Felt & Clay"
     assert profiles["felt_clay"]["background"]["colors"] == ["#F8E7B5"]
+    assert profiles["custom"]["name"] == "Personalizado"
 
 
 def test_get_studio_returns_serializable_visual_contract() -> None:
@@ -153,3 +154,15 @@ def test_scene_library_objects_render_and_animate_on_real_canvas() -> None:
     assert (first_frame != 255).any()
     assert (settled_frame != 255).any()
     assert not (first_frame == settled_frame).all()
+
+
+def test_custom_scene_preview_preserves_user_authored_look() -> None:
+    source = {
+        "visual_language": "Anime cyberpunk with watercolor",
+        "background_type": "radial",
+        "background_colors": ["#FF00AA", "#101020"],
+    }
+    result = asyncio.run(preview_scene_profile("custom", source))
+    assert result["scene"]["visual_language"] == source["visual_language"]
+    assert result["scene"]["background_type"] == "radial"
+    assert result["scene"]["background_colors"] == source["background_colors"]

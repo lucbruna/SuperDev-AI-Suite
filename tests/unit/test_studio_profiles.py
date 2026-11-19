@@ -85,3 +85,20 @@ def test_felt_clay_profile_enforces_handcrafted_visual_identity() -> None:
     assert rendered["background_colors"] == ["#F8E7B5"]
     assert rendered["noise"] == FELT_CLAY.noise
     assert rendered["text"]["content"] == "Dark Health"
+
+
+def test_custom_profile_preserves_user_scene_direction() -> None:
+    source = {
+        "visual_language": "Anime cyberpunk with watercolor textures",
+        "background_type": "radial",
+        "background_colors": ["#FF00AA", "#101020"],
+        "palette": ["#FF00AA", "#00DDEE"],
+        "noise": 0.12,
+    }
+    rendered = apply_studio_profile("custom", source)
+    assert rendered["visual_language"] == source["visual_language"]
+    assert rendered["background_type"] == "radial"
+    assert rendered["background_colors"] == source["background_colors"]
+    assert rendered["palette"] == source["palette"]
+    assert rendered["noise"] == 0.12
+    assert source["background_type"] == "radial"

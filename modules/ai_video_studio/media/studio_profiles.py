@@ -70,10 +70,25 @@ FELT_CLAY = StudioProfile(
     camera_defaults=(("zoom", 1.02), ("dx", 0.0), ("dy", 0.0), ("roll", 0.0)),
 )
 
+CUSTOM = StudioProfile(
+    studio_id="custom",
+    display_name="Personalizado",
+    visual_language="User-defined visual direction; obey the scene prompt and custom style fields",
+    background_type="solid",
+    background_colors=("#101827",),
+    palette=("#F8FAFC", "#101827"),
+    noise=0.0,
+    grading_strength=0.0,
+    default_text_color="#F8FAFC",
+    default_text_size=44,
+    camera_defaults=(("zoom", 1.0), ("dx", 0.0), ("dy", 0.0), ("roll", 0.0)),
+)
+
 PROFILES: dict[str, StudioProfile] = {
     WHYMENTARY.studio_id: WHYMENTARY,
     HISTORICAL_DOCUMENTARY.studio_id: HISTORICAL_DOCUMENTARY,
     FELT_CLAY.studio_id: FELT_CLAY,
+    CUSTOM.studio_id: CUSTOM,
 }
 
 
@@ -99,12 +114,21 @@ def apply_studio_profile(
     profile = get_studio_profile(studio_id)
     result = deepcopy(scene or {})
     result["studio_id"] = profile.studio_id
-    result["visual_language"] = profile.visual_language
-    result["background_type"] = profile.background_type
-    result["background_colors"] = list(profile.background_colors)
-    result["palette"] = list(profile.palette)
-    result["noise"] = profile.noise
-    result["grading_strength"] = profile.grading_strength
+    if studio_id == "custom":
+        # Custom mode supplies neutral defaults but never overwrites the user's scene design.
+        result.setdefault("visual_language", profile.visual_language)
+        result.setdefault("background_type", profile.background_type)
+        result.setdefault("background_colors", list(profile.background_colors))
+        result.setdefault("palette", list(profile.palette))
+        result.setdefault("noise", profile.noise)
+        result.setdefault("grading_strength", profile.grading_strength)
+    else:
+        result["visual_language"] = profile.visual_language
+        result["background_type"] = profile.background_type
+        result["background_colors"] = list(profile.background_colors)
+        result["palette"] = list(profile.palette)
+        result["noise"] = profile.noise
+        result["grading_strength"] = profile.grading_strength
 
     text = deepcopy(result.get("text") or {})
     text.setdefault("color", profile.default_text_color)
