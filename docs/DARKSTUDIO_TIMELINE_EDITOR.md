@@ -463,3 +463,6 @@ Os locks são adquiridos antes do agendamento, impedindo edições, renderizaç�
 A confirmação de reconstrução por dependências responde com HTTP 202 e persiste o estado inicial `queued`. O processamento é executado por tarefa em segundo plano; consulte `GET /videos/jobs/{job_id}/dependency-rebuild/status` para acompanhar `queued`, `processing`, `completed`, `partial` ou `failed`. A exportação final só é executada depois que todas as cenas selecionadas forem reconstruídas com sucesso. O estado e os resultados são persistidos no registro do job para inspeção após reinicialização.
 
 Limitação atual: esta fila usa as tarefas em segundo plano do processo FastAPI e não é um broker distribuído. Uma reinicialização pode interromper o trabalho; o estado persistido permite identificar a interrupção, mas não há retomada automática nem cancelamento cooperativo dedicado para a execução do grafo de dependências.
+
+
+O painel de edição consulta o endpoint de status da reconstrução de dependências a cada 2,5 segundos enquanto a execução estiver em `queued` ou `processing`. Ao concluir, atualiza o link do MP4, o mapa de dependências e a auditoria de saúde dos ativos. Também há atualização manual do status; falhas temporárias de consulta não apagam o último estado conhecido.
