@@ -8,6 +8,8 @@ from __future__ import annotations
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
+from time import time
+from uuid import uuid4
 
 
 def _candidate_bucket(record: dict[str, Any], scene_index: int) -> list[dict[str, Any]]:
@@ -192,3 +194,128 @@ def approve_scene_image_candidate(
             clip["reason"] = "A imagem da cena foi aprovada; gere novamente o clipe VidGrid."
 
     return updated, deepcopy(candidate)
+
+
+
+def _history_scene_index(item: dict[str, Any]) -> int:
+    try:
+        value = item.get("scene_index", -1)
+        return -1 if isinstance(value, bool) else int(value)
+    except (TypeError, ValueError, OverflowError):
+        return -1
+
+
+def list_scene_image_history(
+    record: dict[str, Any], scene_index: int, *, image_root: str | Path, image_url_builder
+) -> list[dict[str, Any]]:
+    """Return safe, display-ready history entries for one scene."""
+    root = Path(image_root).resolve()
+    history = record.get("scene_asset_history")
+    if not isinstance(history, list):
+        return []
+    result: list[dict[str, Any]] = []
+    for position, item in enumerate(history):
+        if not isinstance(item, dict) or _history_scene_index(item) != scene_index:
+            continue
+        raw_path = str(item.get("image_path") or "").strip()
+        available, image_url = False, None
+        if raw_path:
+            path = Path(raw_path).resolve()
+            available = root in path.parents and path.is_file() and path.stat().st_size > 0
+            if available:
+                try:
+                    image_url = image_url_builder(str(path))
+                except Exception:
+                    available = False
+        result.append({
+            "history_id": str(item.get("history_id") or f"legacy-{position}"),
+            "scene_index": scene_index, "image_url": image_url, "available": available,
+            "provider": item.get("provider"), "operation": item.get("operation"),
+            "prompt": item.get("prompt"), "reason": item.get("reason"),
+            "created_at": item.get("created_at"),
+        })
+    return result
+
+
+def restore_scene_image_history(
+    record: dict[str, Any], scene_index: int, history_id: str, *,
+    image_root: str | Path, image_url_builder,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Restore a previous image, save the current image as an undo entry, and stale one clip."""
+    _assert_editable(record)
+    if isinstance(scene_index, bool) or not isinstance(scene_index, int) or scene_index < 0:
+        raise ValueError("scene_index must be a non-negative integer")
+    if not str(history_id or "").strip():
+        raise ValueError("history_id is required")
+    updated = deepcopy(record)
+    history = updated.get("scene_asset_history")
+    if not isinstance(history, list):
+        raise KeyError("Image history not found")
+
+    selected_position, selected = None, None
+    for position, item in enumerate(history):
+        if not isinstance(item, dict):
+            continue
+        item_id = str(item.get("history_id") or f"legacy-{position}")
+        if item_id == history_id and _history_scene_index(item) == scene_index:
+            selected_position, selected = position, item
+            break
+    if selected_position is None or selected is None:
+        raise KeyError("Image history entry not found")
+
+    root = Path(image_root).resolve()
+    previous_path = Path(str(selected.get("image_path") or "")).resolve()
+    if root not in previous_path.parents or not previous_path.is_file():
+        raise ValueError("Historical image is missing or outside the DARKSTUDIO image directory")
+    if previous_path.stat().st_size <= 0:
+        raise ValueError("Historical image is empty")
+
+    source_scenes = updated.get("_edited_scenes") or updated.get("_source_scenes") or []
+    if not isinstance(source_scenes, list):
+        raise ValueError("Job scenes are malformed")
+    scenes = [dict(item) for item in source_scenes if isinstance(item, dict)]
+    position = _find_scene_position(scenes, scene_index)
+    scene = scenes[position]
+
+    current_raw_path = str(scene.get("background_image_path") or "").strip()
+    if current_raw_path:
+        current_path = Path(current_raw_path).resolve()
+        if root in current_path.parents and current_path.is_file() and current_path.stat().st_size > 0:
+            history.append({
+                "history_id": str(uuid4()), "scene_index": scene_index,
+                "image_path": str(current_path), "provider": scene.get("image_asset_provider"),
+                "operation": scene.get("image_edit_operation"), "prompt": scene.get("visual_prompt"),
+                "seed": scene.get("image_generation_seed"), "reason": "history_restore_undo",
+                "created_at": time(),
+            })
+
+    restored_path = str(previous_path)
+    scene["background_image_path"] = restored_path
+    scene["image_asset_provider"] = selected.get("provider") or scene.get("image_asset_provider")
+    scene["image_edit_operation"] = selected.get("operation") or "history_restore"
+    if selected.get("prompt"):
+        scene["visual_prompt"] = selected["prompt"]
+        scene["visual_prompt_full"] = selected["prompt"]
+    updated["_edited_scenes"] = scenes
+
+    history.pop(selected_position)
+    updated["scene_asset_history"] = history
+    assets = updated.setdefault("scene_assets", [])
+    assets[:] = [
+        item for item in assets
+        if not (isinstance(item, dict) and _history_scene_index(item) == scene_index)
+    ]
+    assets.append({
+        "scene_index": scene_index, "image_path": restored_path,
+        "image_url": image_url_builder(restored_path),
+        "provider": selected.get("provider") or scene.get("image_asset_provider"),
+        "status": "edited", "operation": selected.get("operation") or "history_restore",
+        "prompt": selected.get("prompt") or scene.get("visual_prompt"),
+        "seed": selected.get("seed", scene.get("image_generation_seed", -1)),
+    })
+    updated["scene_image_mode"] = "mixed"
+    for clip in updated.get("scene_clips") or []:
+        if isinstance(clip, dict) and _history_scene_index(clip) == scene_index:
+            clip["status"] = "stale"
+            clip["reason"] = "Uma imagem anterior foi restaurada; gere novamente o clipe VidGrid."
+    return updated, deepcopy(selected)

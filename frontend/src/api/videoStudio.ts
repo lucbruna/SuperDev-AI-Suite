@@ -157,6 +157,18 @@ export interface SceneImageCandidate {
   metadata_match_terms?: string[];
 }
 
+export interface SceneImageHistoryEntry {
+  history_id: string;
+  scene_index: number;
+  image_url?: string | null;
+  available: boolean;
+  provider?: string;
+  operation?: string;
+  prompt?: string;
+  reason?: string;
+  created_at?: number;
+}
+
 export interface SceneVideoClip {
   scene_index: number;
   duration: number;
@@ -551,6 +563,25 @@ export const videoStudioApi = {
   }> {
     const { data } = await apiClient.get(
       `${STUDIO_BASE}/visual-assets/jobs/${jobId}/scenes/${sceneIndex}/image-candidates`,
+    );
+    return data;
+  },
+
+  async listSceneImageHistory(jobId: string, sceneIndex: number): Promise<{
+    job_id: string; scene_index: number; history_count: number; history: SceneImageHistoryEntry[];
+  }> {
+    const { data } = await apiClient.get(
+      `${STUDIO_BASE}/visual-assets/jobs/${jobId}/scenes/${sceneIndex}/image-history`,
+    );
+    return data;
+  },
+
+  async restoreSceneImageHistory(jobId: string, sceneIndex: number, historyId: string): Promise<{
+    job_id: string; scene_index: number; status: "restored"; image_url: string;
+    render_required: boolean; message: string; history: SceneImageHistoryEntry[];
+  }> {
+    const { data } = await apiClient.post(
+      `${STUDIO_BASE}/visual-assets/jobs/${jobId}/scenes/${sceneIndex}/image-history/${historyId}/restore`,
     );
     return data;
   },

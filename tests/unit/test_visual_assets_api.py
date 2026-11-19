@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from pathlib import Path
 
 import pytest
 from fastapi import HTTPException
@@ -149,3 +150,55 @@ def test_candidate_listing_returns_multiple_options_for_one_scene(monkeypatch) -
         "candidate-1", "candidate-2"
     }
     assert all("image_path" not in item for item in response["candidates"])
+
+
+
+def test_image_history_list_sanitizes_paths(monkeypatch, tmp_path) -> None:
+    image_root = tmp_path / "images"
+    image_root.mkdir()
+    previous = image_root / "previous.png"
+    previous.write_bytes(b"image-bytes")
+    record = _record()
+    record["scene_asset_history"] = [{"history_id": "history-1", "scene_index": 4, "image_path": str(previous), "prompt": "navio no porto"}]
+    monkeypatch.setattr(video, "_jobs", {"job-visual-1": record})
+    from modules.ai_video_studio.media import output_paths
+    monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda name: image_root)
+    monkeypatch.setattr(visual_assets, "to_download_url", lambda path: f"/media/{Path(path).name}", raising=False)
+    response = asyncio.run(visual_assets.list_job_scene_image_history("job-visual-1", 4))
+    assert response["history_count"] == 1
+    assert response["history"][0]["history_id"] == "history-1"
+    assert response["history"][0]["available"] is True
+    assert "image_path" not in response["history"][0]
+
+
+def test_image_history_restore_persists_and_marks_target_clip_stale(monkeypatch, tmp_path) -> None:
+    image_root = tmp_path / "images"
+    image_root.mkdir()
+    previous, current = image_root / "previous.png", image_root / "current.png"
+    previous.write_bytes(b"previous")
+    current.write_bytes(b"current")
+    record = _record()
+    record["_source_scenes"][0]["background_image_path"] = str(current)
+    record["scene_clips"] = [{"scene_index": 4, "status": "ready"}]
+    record["scene_asset_history"] = [{"history_id": "history-1", "scene_index": 4, "image_path": str(previous), "prompt": "imagem anterior"}]
+    monkeypatch.setattr(video, "_jobs", {"job-visual-1": record})
+    from modules.ai_video_studio.media import output_paths
+    monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda name: image_root)
+    monkeypatch.setattr(visual_assets, "to_download_url", lambda path: f"/media/{Path(path).name}", raising=False)
+    saved = []
+    monkeypatch.setattr(video, "_persist_job", lambda item: saved.append(item.copy()))
+    response = asyncio.run(visual_assets.restore_job_scene_image_history("job-visual-1", 4, "history-1"))
+    assert response["status"] == "restored"
+    assert response["render_required"] is True
+    assert record["_edited_scenes"][0]["background_image_path"] == str(previous.resolve())
+    assert record["scene_clips"][0]["status"] == "stale"
+    assert record["scene_asset_history"][0]["image_path"] == str(current.resolve())
+    assert len(saved) == 1
+
+
+def test_image_history_restore_rejects_active_render_lock(monkeypatch) -> None:
+    record = {**_record(), "_rendering_edits": True}
+    monkeypatch.setattr(video, "_jobs", {"job-visual-1": record})
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(visual_assets.restore_job_scene_image_history("job-visual-1", 4, "history-1"))
+    assert exc.value.status_code == 409

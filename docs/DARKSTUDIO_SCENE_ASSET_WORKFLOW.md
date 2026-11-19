@@ -31,3 +31,16 @@ As operações devolvem um novo registro e não modificam o objeto original rece
 ## Estado de integração
 
 O serviço e os testes estão adicionados como camada reutilizável. Os endpoints existentes ainda mantêm sua lógica própria; a próxima integração deve substituir essa duplicação pelos helpers e manter os contratos HTTP atuais. Nenhuma UI nova é declarada neste lote.
+
+
+
+## Histórico e restauração de versões
+
+O histórico agora possui leitura e restauração por cena:
+
+- `GET /visual-assets/jobs/{job_id}/scenes/{scene_index}/image-history` lista versões anteriores com URL de mídia e estado de disponibilidade; caminhos absolutos nunca são expostos.
+- `POST /visual-assets/jobs/{job_id}/scenes/{scene_index}/image-history/{history_id}/restore` restaura uma versão anterior, valida que o arquivo continua dentro da pasta de imagens e existe, preserva a imagem que estava ativa como uma nova entrada de desfazer e invalida somente o clipe daquela cena.
+- O editor apresenta comparação lado a lado e ação **Restaurar esta versão**. Arquivos ausentes ou fora da pasta autorizada aparecem indisponíveis e não podem ser restaurados.
+- A restauração não renderiza automaticamente o MP4 nem o clipe VidGrid. O clipe fica marcado como obsoleto para reconstrução explícita.
+
+Entradas antigas sem identificador recebem um ID legado baseado na posição no histórico, mantendo compatibilidade com jobs salvos antes desta alteração.

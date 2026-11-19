@@ -49,6 +49,10 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
   const [draft, setDraft] = useState<EditTimeline>(timeline);
   const [sceneImageAssets, setSceneImageAssets] = useState<SceneImageAsset[]>(sceneAssets ?? []);
   const [sceneImageCandidates, setSceneImageCandidates] = useState<Record<number, SceneImageCandidate[]>>({});
+  const [sceneImageHistory, setSceneImageHistory] = useState<Record<number, import("@/api/videoStudio").SceneImageHistoryEntry[]>>({});
+  const [expandedImageHistory, setExpandedImageHistory] = useState<Record<number, boolean>>({});
+  const [loadingImageHistoryScene, setLoadingImageHistoryScene] = useState<number | null>(null);
+  const [restoringImageHistoryScene, setRestoringImageHistoryScene] = useState<number | null>(null);
   const [approvingImageScene, setApprovingImageScene] = useState<number | null>(null);
   const [sceneImagePrompts, setSceneImagePrompts] = useState<Record<number, string>>({});
   const [visualDirections, setVisualDirections] = useState<Record<number, SceneVisualDirection>>({});
@@ -486,6 +490,47 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
     if (!jobId) return;
     const response = await videoStudioApi.listSceneImageCandidates(jobId, sceneIndex);
     setSceneImageCandidates((current) => ({ ...current, [sceneIndex]: response.candidates }));
+  }
+
+  async function toggleSceneImageHistory(sceneIndex: number) {
+    if (!jobId) return;
+    const nextExpanded = !expandedImageHistory[sceneIndex];
+    setExpandedImageHistory((current) => ({ ...current, [sceneIndex]: nextExpanded }));
+    if (!nextExpanded || sceneImageHistory[sceneIndex]) return;
+    setLoadingImageHistoryScene(sceneIndex);
+    try {
+      const response = await videoStudioApi.listSceneImageHistory(jobId, sceneIndex);
+      setSceneImageHistory((current) => ({ ...current, [sceneIndex]: response.history }));
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Não foi possível carregar o histórico de imagens.");
+      setExpandedImageHistory((current) => ({ ...current, [sceneIndex]: false }));
+    } finally {
+      setLoadingImageHistoryScene(null);
+    }
+  }
+
+  async function restoreSceneImage(sceneIndex: number, historyId: string) {
+    if (!jobId || restoringImageHistoryScene !== null) return;
+    setRestoringImageHistoryScene(sceneIndex);
+    try {
+      const result = await videoStudioApi.restoreSceneImageHistory(jobId, sceneIndex, historyId);
+      const latestJob = await videoStudioApi.getJob(jobId);
+      setSceneImageAssets(latestJob.scene_assets ?? []);
+      setSceneImageHistory((current) => ({ ...current, [sceneIndex]: result.history }));
+      setVisualDirections((current) => current[sceneIndex]
+        ? { ...current, [sceneIndex]: { ...current[sceneIndex], image_url: result.image_url, image_status: "edited" } }
+        : current);
+      if (latestJob.vidgrid_compatible) {
+        const plan = await videoStudioApi.getVidGridRecoveryPlan(jobId);
+        setVidGridRecoveryPlan(plan);
+        setStaleVidGridClipCount(plan.repairable_count);
+      }
+      setMessage(result.message);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Não foi possível restaurar a imagem anterior.");
+    } finally {
+      setRestoringImageHistoryScene(null);
+    }
   }
 
   async function approveSceneImage(sceneIndex: number, candidateId: string) {
@@ -972,6 +1017,25 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
                   <button type="button" onClick={() => approveSceneImage(sourceIndex, candidate.candidate_id)} disabled={approvingImageScene !== null} className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40">{approvingImageScene === sourceIndex ? "Aprovando…" : "Aplicar esta imagem"}</button>
                 </div>
               </div> : null)}
+              <div className="mb-2">
+                <button type="button" onClick={() => void toggleSceneImageHistory(sourceIndex)} disabled={loadingImageHistoryScene === sourceIndex} className="rounded-md border border-surface-300 px-3 py-1.5 text-xs font-semibold dark:border-surface-600 disabled:opacity-40">
+                  {loadingImageHistoryScene === sourceIndex ? "Carregando histórico…" : expandedImageHistory[sourceIndex] ? "Ocultar histórico de imagens" : "Ver histórico de imagens"}
+                </button>
+                {expandedImageHistory[sourceIndex] && <div className="mt-2 rounded-md border border-surface-200 p-2 dark:border-surface-700">
+                  <p className="mb-2 text-[10px] text-surface-500">Versões anteriores desta cena. Restaurar uma versão preserva a imagem atual como opção para desfazer e exige reconstruir o clipe.</p>
+                  {!(sceneImageHistory[sourceIndex] ?? []).length && <p className="text-xs text-surface-500">Ainda não há versões anteriores registradas para esta cena.</p>}
+                  {(sceneImageHistory[sourceIndex] ?? []).map((entry, historyPosition) => <div key={entry.history_id} className="mb-2 rounded border border-surface-200 p-2 last:mb-0 dark:border-surface-700">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div><img src={entry.image_url ?? ""} alt={`Versão anterior ${historyPosition + 1} da cena ${index + 1}`} className="aspect-video w-full rounded object-cover" /><p className="mt-1 text-center text-[10px]">Versão anterior {historyPosition + 1}</p></div>
+                      <div><img src={asset?.image_url ?? visualDirections[sourceIndex]?.image_url ?? ""} alt={`Imagem atual da cena ${index + 1}`} className="aspect-video w-full rounded object-cover" /><p className="mt-1 text-center text-[10px]">Imagem ativa</p></div>
+                    </div>
+                    {entry.prompt && <p className="mt-1 line-clamp-2 text-[10px] text-surface-500">{entry.prompt}</p>}
+                    <button type="button" onClick={() => void restoreSceneImage(sourceIndex, entry.history_id)} disabled={!entry.available || restoringImageHistoryScene !== null || approvingImageScene !== null} className="mt-2 rounded-md border border-primary-400 px-3 py-1.5 text-xs font-semibold disabled:opacity-40">
+                      {restoringImageHistoryScene === sourceIndex ? "Restaurando…" : entry.available ? "Restaurar esta versão" : "Arquivo indisponível"}
+                    </button>
+                  </div>)}
+                </div>}
+              </div>
               <label className="mb-2 flex items-center gap-2 text-xs font-semibold text-surface-700 dark:text-surface-300">
                 <input type="checkbox" checked={selectedImageScenes.includes(sourceIndex)} onChange={(event) => setSelectedImageScenes((current) => event.target.checked ? [...new Set([...current, sourceIndex])] : current.filter((value) => value !== sourceIndex))} />
                 Selecionar cena {index + 1}

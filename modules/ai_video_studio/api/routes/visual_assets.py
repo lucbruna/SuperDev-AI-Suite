@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import time
+from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
@@ -175,4 +176,66 @@ async def list_job_scene_image_candidates(job_id: str, scene_index: int):
         "candidate_count": len(sanitized),
         "candidates": sanitized,
         "ranking_note": "A ordenação usa palavras-chave dos metadados, não análise visual dos pixels.",
+    }
+
+
+
+@router.get("/jobs/{job_id}/scenes/{scene_index}/image-history")
+async def list_job_scene_image_history(job_id: str, scene_index: int):
+    """List restorable historical images without exposing local filesystem paths."""
+    record = _job_or_404(job_id)
+    if scene_index < 0:
+        raise HTTPException(status_code=422, detail="scene_index must be non-negative")
+    from modules.ai_video_studio.media.output_paths import get_subsystem_dir
+    from modules.ai_video_studio.media.scene_visual_asset_workflow import list_scene_image_history
+    entries = list_scene_image_history(
+        record, scene_index, image_root=Path(get_subsystem_dir("images")).resolve(),
+        image_url_builder=to_download_url,
+    )
+    return {"job_id": job_id, "scene_index": scene_index, "history_count": len(entries), "history": entries}
+
+
+@router.post("/jobs/{job_id}/scenes/{scene_index}/image-history/{history_id}/restore")
+async def restore_job_scene_image_history(job_id: str, scene_index: int, history_id: str):
+    """Restore one previous image and invalidate only its dependent scene clip."""
+    record = _job_or_404(job_id)
+    if scene_index < 0:
+        raise HTTPException(status_code=422, detail="scene_index must be non-negative")
+    if record.get("status") != "completed":
+        raise HTTPException(status_code=409, detail="Image history can only be restored after job completion")
+    if job_id in getattr(video_routes, "_scene_batch_jobs", set()) or any(record.get(key) for key in (
+        "_rendering_edits", "_rebuilding_scene_clips", "_scene_clip_rebuild_scheduled"
+    )):
+        raise HTTPException(status_code=409, detail="Scene assets are locked by an active operation")
+
+    from modules.ai_video_studio.media.output_paths import get_subsystem_dir
+    from modules.ai_video_studio.media.scene_visual_asset_workflow import (
+        list_scene_image_history, restore_scene_image_history,
+    )
+    image_root = Path(get_subsystem_dir("images")).resolve()
+    try:
+        updated, restored = restore_scene_image_history(
+            record, scene_index, history_id, image_root=image_root, image_url_builder=to_download_url,
+        )
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="Image history entry not found") from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    try:
+        video_routes._persist_job(updated)
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail="Could not persist restored scene image") from exc
+    record.clear()
+    record.update(updated)
+    image_path = str(Path(str(restored["image_path"])).resolve())
+    return {
+        "job_id": job_id, "scene_index": scene_index, "history_id": history_id,
+        "status": "restored", "image_url": to_download_url(image_path), "render_required": True,
+        "message": "Imagem anterior restaurada. A versão que estava ativa foi preservada no histórico para permitir desfazer; somente o clipe desta cena ficou desatualizado.",
+        "history": list_scene_image_history(
+            record, scene_index, image_root=image_root, image_url_builder=to_download_url,
+        ),
     }
