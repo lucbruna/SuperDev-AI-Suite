@@ -59,6 +59,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
   const [generatingMotionScene, setGeneratingMotionScene] = useState<number | null>(null);
   const [generatedMotionClips, setGeneratedMotionClips] = useState<Record<number, string>>({});
   const [imageDenoisingStrength, setImageDenoisingStrength] = useState(0.45);
+  const [imageSeed, setImageSeed] = useState<number | null>(null);
   const [selected, setSelected] = useState<number>(0);
   const [playheadFrame, setPlayheadFrame] = useState(0);
   const [saving, setSaving] = useState(false);
@@ -431,7 +432,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
     if (!prompt || editingImageScene !== null) return;
     setEditingImageScene(sceneIndex); setMessage("");
     try {
-      const result = await videoStudioApi.editSceneImage(jobId, sceneIndex, { prompt, denoising_strength: imageDenoisingStrength, stage_only: true });
+      const result = await videoStudioApi.editSceneImage(jobId, sceneIndex, { prompt, denoising_strength: imageDenoisingStrength, seed: imageSeed ?? -1, stage_only: true });
       if (!result.candidate_id) throw new Error("O servidor não retornou o identificador da imagem candidata.");
       setSceneImageCandidates((current) => ({ ...current, [sceneIndex]: {
         scene_index: sceneIndex, candidate_id: result.candidate_id!, image_path: result.image_path,
@@ -482,7 +483,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
       const authored = String(sceneImagePrompts[sceneIndex] ?? "").trim();
       const prompt = authored || direction?.visual_prompt_full || direction?.visual_prompt_suggestion || direction?.visual_prompt
         || (direction?.narration ? `Ilustração fiel desta narração: ${direction.narration}. ${direction.visual_direction ?? ""}` : "");
-      return { scene_index: sceneIndex, prompt: prompt.trim() };
+      return { scene_index: sceneIndex, prompt: prompt.trim(), seed: imageSeed ?? -1 };
     });
     const missing = selectedScenes.filter((scene) => !scene.prompt);
     if (missing.length) { setMessage(`Adicione um prompt para as cenas: ${missing.map((scene) => scene.scene_index + 1).join(", ")}.`); return; }
@@ -840,6 +841,11 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
           Força da alteração · {imageDenoisingStrength.toFixed(2)}
           <input type="range" min={0.05} max={0.95} step={0.05} value={imageDenoisingStrength} onChange={(event) => setImageDenoisingStrength(Number(event.target.value))} className="mt-1 w-full accent-primary-600" />
           <span className="flex justify-between text-[10px]"><span>Preservar imagem</span><span>Transformar bastante</span></span>
+        </label>
+        <label className="mb-3 block max-w-sm text-xs text-surface-500">
+          Seed da imagem · deixe vazio para aleatória
+          <input type="number" min={-1} max={2147483647} step={1} value={imageSeed ?? ""} onChange={(event) => setImageSeed(event.target.value === "" ? null : Number(event.target.value))} placeholder="-1 (aleatória)" className="mt-1 w-full rounded-md border border-surface-300 bg-white px-3 py-2 font-mono dark:border-surface-600 dark:bg-surface-900" />
+          <span className="mt-1 block text-[10px]">Use o mesmo número para repetir a geração de uma cena com o mesmo prompt e modelo.</span>
         </label>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-md bg-surface-50 p-2 dark:bg-surface-800">
           <label className="flex items-center gap-2 text-xs text-surface-600 dark:text-surface-300">
