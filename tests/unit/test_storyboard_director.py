@@ -129,3 +129,18 @@ def test_felt_clay_studio_has_safe_generic_style_fallback() -> None:
         studio_id="felt_clay",
     )
     assert "visual style" in scenes[0]["visual_prompt_full"]
+
+
+def test_custom_storyboard_accepts_arbitrary_user_character_and_object_references() -> None:
+    scenes, _ = build_cinematic_storyboard(
+        [{"narration": "Uma exploradora encontra um artefato antigo."}],
+        studio_id="custom",
+        character_ids=["exploradora_principal", "guia_robotico", "criatura_guardia"],
+        object_ids=["artefato_antigo", "mapa_estelar"],
+    )
+    prompt = scenes[0]["visual_prompt_full"]
+    assert "exploradora_principal" in prompt
+    assert "guia_robotico" in prompt
+    assert "criatura_guardia" in prompt
+    assert "artefato_antigo" in prompt
+    assert "mapa_estelar" in prompt

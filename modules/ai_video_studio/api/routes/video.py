@@ -66,8 +66,8 @@ class VideoGenerateRequest(BaseModel):
     # youtube/square) or "custom" when the user tweaked a dimension manually.
     format: str = Field(default="custom", max_length=32)
     studio_id: str = Field(default="whymentary", pattern="^(whymentary|historical_documentary|felt_clay|custom)$")
-    character_ids: list[str] = Field(default_factory=list, max_length=2, description="Stable character IDs to include in every scene")
-    object_ids: list[str] = Field(default_factory=list, max_length=6, description="Reusable scene object IDs to include in every scene")
+    character_ids: list[str] = Field(default_factory=list, max_length=20, description="Optional user-defined character references")
+    object_ids: list[str] = Field(default_factory=list, max_length=50, description="Optional user-defined recurring object references")
     scene_image_mode: str = Field(default="auto", pattern="^(procedural|ai|auto)$", description="Procedural scenes or per-scene local diffusion image generation")
     scene_image_steps: int = Field(default=20, ge=1, le=60)
     scene_image_seed: int | None = Field(default=None, ge=0, le=2147483647, description="Optional reproducible base seed for all scene images")
@@ -623,11 +623,7 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
         raise HTTPException(status_code=422, detail=f"Unsupported visual studio: {studio_id}")
     style_prompt = style_prompts[studio_id]
     character_ids = params.get("character_ids") or []
-    character_reservation = (
-        " Background plate only, no people or characters; preserve clear foreground space for animated cast."
-        if character_ids else ""
-    )
-    edit_prompt = f"{style_prompt}. {req.prompt}.{character_reservation}"
+    edit_prompt = f"{style_prompt}. {req.prompt}"
     image_root = Path(get_subsystem_dir("images")).resolve()
     source_value = scene.get("background_image_path")
     source = Path(str(source_value)).resolve() if source_value else None

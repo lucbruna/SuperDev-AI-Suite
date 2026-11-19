@@ -115,34 +115,16 @@ class TextToVideoEngine:
 
         character_ids = list(params.get("character_ids") or [])
         object_ids = list(params.get("object_ids") or [])
-        if character_ids:
-            allowed_characters = {
-                "whymentary": {"leo", "mia"},
-                "historical_documentary": {"historical_narrator"},
-            }
-            unknown = set(character_ids) - allowed_characters.get(
-                str(params.get("studio_id") or "whymentary"), set()
-            )
-            if unknown:
-                raise ValidationError(
-                    f"Characters {sorted(unknown)} do not belong to the selected studio",
-                    field="character_ids",
-                )
-            if len(character_ids) != len(set(character_ids)):
-                raise ValidationError("Duplicate character IDs are not allowed", field="character_ids")
-            if len(character_ids) > 2:
-                raise ValidationError("At most two characters can be selected", field="character_ids")
-
-        studio_id = str(params.get("studio_id") or "whymentary")
-        if len(object_ids) > 6 or len(object_ids) != len(set(object_ids)):
-            raise ValidationError("Select up to six unique scene objects", field="object_ids")
-        invalid_objects = [
-            object_id for object_id in object_ids
-            if object_id not in OBJECTS or OBJECTS[object_id]["studio_id"] != studio_id
-        ]
-        if invalid_objects:
+        if len(character_ids) > 20 or len(character_ids) != len(set(character_ids)):
             raise ValidationError(
-                f"Objects {invalid_objects} do not belong to studio '{studio_id}'",
+                "Select up to twenty unique user-defined character references",
+                field="character_ids",
+            )
+
+        studio_id = str(params.get("studio_id") or "custom")
+        if len(object_ids) > 50 or len(object_ids) != len(set(object_ids)):
+            raise ValidationError(
+                "Select up to fifty unique user-defined object references",
                 field="object_ids",
             )
 
@@ -234,13 +216,8 @@ class TextToVideoEngine:
                     or scene.get("description")
                     or prompt
                 )
-                character_reservation = (
-                    " Background plate only: do not depict people, humans or characters; "
-                    "leave clear foreground space for the separately animated cast."
-                    if character_ids else ""
-                )
                 full_prompt = (
-                    f"{image_style + '. ' if image_style else ''}{visual_prompt}.{character_reservation} "
+                    f"{image_style + '. ' if image_style else ''}{visual_prompt} "
                     "No captions, no typography, no watermark."
                 )
                 image_seed = derive_scene_image_seed(
