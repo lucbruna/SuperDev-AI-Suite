@@ -145,7 +145,7 @@ def _split_prompt_into_scene_beats(prompt: str, num_scenes: int) -> list[str]:
     if len(units) < count:
         expanded: list[str] = []
         for unit in units:
-            clauses = [part.strip() for part in re.split(r"\s+(?:e então|em seguida|depois|enquanto|mas|porém|porque|quando|e)\\s+|,\\s*", unit, flags=re.IGNORECASE) if part.strip()]
+            clauses = [part.strip() for part in re.split(r"\s+(?:e então|em seguida|depois|enquanto|mas|porém|porque|quando|e)\s+|,\s*", unit, flags=re.IGNORECASE) if part.strip()]
             expanded.extend(clauses if len(clauses) > 1 else [unit])
         units = expanded
 
