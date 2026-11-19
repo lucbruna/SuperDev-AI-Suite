@@ -40,3 +40,10 @@ O campo "Instrução adicional para todas as cenas selecionadas" é anexado ao p
 ## Segurança e validação
 
 Os uploads não confiam no nome/extensão do arquivo: o servidor verifica o MIME informado e decodifica a imagem, rejeita payloads inválidos e limita tamanho/dimensões. O arquivo normalizado fica dentro do diretório de imagens do job. Testes unitários cobrem upload válido, rejeição de MIME e conteúdo inválido.
+
+
+## Reconstrução seletiva no cartão da cena
+
+Quando o recovery-plan identifica um clipe reparável, o cartão daquela cena exibe a ação "Reconstruir somente o clipe VidGrid da cena N". A interface envia a lista com um único índice ao endpoint de fila, em vez de reconstruir todas as cenas desatualizadas.
+
+O worker de reconstrução usa a imagem aprovada e a narração já salva para aquela cena. Em modo VidGrid, cada clipe reconstruído permanece com exatamente 10 segundos. A exportação MP4 completa continua sendo uma etapa separada.

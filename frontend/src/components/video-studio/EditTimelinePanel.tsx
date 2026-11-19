@@ -689,6 +689,25 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
     }
   }
 
+  async function rebuildOneVidGridClip(sceneIndex: number) {
+    if (!jobId || rebuildingVidGridClips || rendering || dirty || audioDirty) return;
+    setRebuildingVidGridClips(true);
+    setMessage(`Enfileirando reconstrução somente da cena ${sceneIndex + 1}…`);
+    try {
+      const queued = await videoStudioApi.queueStaleVidGridClips(jobId, [sceneIndex]);
+      if (queued.queued) {
+        setVidGridQueue(await videoStudioApi.getVidGridClipRebuildStatus(jobId));
+        setMessage(`Reconstrução seletiva da cena ${sceneIndex + 1} iniciada. O clipe terá exatamente 10 segundos; a narração por cena será preservada quando disponível.`);
+      } else {
+        setMessage(`A cena ${sceneIndex + 1} já está atualizada.`);
+      }
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Falha ao iniciar a reconstrução desta cena.");
+    } finally {
+      setRebuildingVidGridClips(false);
+    }
+  }
+
   async function refreshVidGridQueue() {
     if (!jobId || refreshingVidGridQueue) return;
     setRefreshingVidGridQueue(true);
@@ -920,6 +939,15 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
               </div>
               {asset?.image_url ? <img src={asset.image_url} alt={`Imagem da cena ${index + 1}`} className="mb-2 aspect-video w-full rounded-md object-cover" /> : <div className="mb-2 flex aspect-video items-center justify-center rounded-md bg-surface-100 text-xs text-surface-500 dark:bg-surface-800">Cena {index + 1} · imagem procedural ou ainda não criada</div>}
               {asset?.seed !== undefined && asset.seed >= 0 && <p className="mb-2 text-[10px] text-surface-500">Seed da imagem atual: <span className="font-mono tabular-nums">{asset.seed}</span></p>}
+              {jobId && vidGridRecoveryPlan?.repair_scene_indices.includes(sourceIndex) && <button
+                type="button"
+                onClick={() => rebuildOneVidGridClip(sourceIndex)}
+                disabled={rebuildingVidGridClips || rendering || dirty || audioDirty || (vidGridQueue !== null && ["queued", "processing"].includes(vidGridQueue.status))}
+                className="mb-2 w-full rounded-md border border-amber-300 px-3 py-2 text-xs font-semibold text-amber-700 disabled:opacity-40 dark:border-amber-700 dark:text-amber-300"
+                title="Reconstrói apenas o clipe de 10 segundos desta cena, usando a imagem aprovada e a narração existente."
+              >
+                {rebuildingVidGridClips ? "Enfileirando…" : `Reconstruir somente o clipe VidGrid da cena ${index + 1}`}
+              </button>}
               <label className="mb-2 flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-primary-300 px-3 py-2 text-xs font-semibold text-primary-700 hover:bg-primary-50 dark:border-primary-700 dark:text-primary-300 dark:hover:bg-primary-950/30">
                 {uploadingImageScene === sourceIndex ? "Enviando imagem…" : "Enviar imagem própria para esta cena"}
                 <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" disabled={uploadingImageScene !== null || approvingImageScene !== null} onChange={(event) => {
