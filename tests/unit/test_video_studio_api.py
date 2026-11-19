@@ -1429,8 +1429,10 @@ class TestSelectiveVidGridClipRebuild:
         assert result["rebuilt"] == 1
         assert calls == ["scene zero"]
         clips = video._jobs["selective-vidgrid-job"]["scene_clips"]
-        assert next(x for x in clips if x["scene_index"] == 1)["output_path"] == "current-1.mp4"
-        assert next(x for x in clips if x["scene_index"] == 0)["status"] == "updated"
+        assert next(x for x in clips if x["scene_index"] == 1)["output_path"] == str(current_clip)
+        rebuilt_clip = next(x for x in clips if x["scene_index"] == 0)
+        assert rebuilt_clip["status"] == "updated"
+        assert len(rebuilt_clip["source_image_fingerprint"]) == 64
         assert result["full_mp4_render_required"] is True
 
     @pytest.mark.asyncio
