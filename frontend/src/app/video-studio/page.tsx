@@ -308,8 +308,81 @@ export default function VideoStudioPage() {
         </div>
       </div>
 
+      {/* ─── Workspace overview ──────────────────────────────────────── */}
+      <section className="mb-8 space-y-4" aria-label="Resumo do espaço de trabalho">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary-600 dark:text-primary-400">Seu espaço de criação</p>
+            <h2 className="mt-1 text-lg font-semibold text-surface-900 dark:text-surface-50">Produção audiovisual</h2>
+            <p className="mt-1 text-sm text-surface-500">Acompanhe seus trabalhos e retome a criação de onde parou.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <a href="#darkstudio-generator" className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-700">
+              <span aria-hidden="true">＋</span> Novo vídeo
+            </a>
+            <a href="#darkstudio-jobs" className="inline-flex items-center gap-2 rounded-lg border border-surface-200 px-3 py-2 text-sm font-medium text-surface-700 transition hover:border-primary-300 dark:border-surface-700 dark:text-surface-200">
+              Ver produções <span aria-hidden="true">→</span>
+            </a>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+          <div className="rounded-xl border border-surface-200 bg-white p-4 shadow-sm dark:border-surface-700 dark:bg-surface-900">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-medium text-surface-500">Projetos registrados</span>
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-50 text-base dark:bg-violet-950/50">🎞️</span>
+            </div>
+            <p className="mt-3 text-2xl font-bold tabular-nums text-surface-900 dark:text-surface-50">{jobs.length}</p>
+            <p className="mt-1 text-xs text-surface-400">Gerações no histórico carregado</p>
+          </div>
+          <div className="rounded-xl border border-surface-200 bg-white p-4 shadow-sm dark:border-surface-700 dark:bg-surface-900">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-medium text-surface-500">Na fila / em produção</span>
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-base dark:bg-amber-950/50">⚙️</span>
+            </div>
+            <p className="mt-3 text-2xl font-bold tabular-nums text-surface-900 dark:text-surface-50">{jobs.filter((job) => job.status === "queued" || job.status === "processing").length}</p>
+            <p className="mt-1 text-xs text-surface-400">Trabalhos aguardando ou processando</p>
+          </div>
+          <div className="rounded-xl border border-surface-200 bg-white p-4 shadow-sm dark:border-surface-700 dark:bg-surface-900">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-medium text-surface-500">Concluídos</span>
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-base dark:bg-emerald-950/50">✓</span>
+            </div>
+            <p className="mt-3 text-2xl font-bold tabular-nums text-surface-900 dark:text-surface-50">{jobs.filter((job) => job.status === "completed").length}</p>
+            <p className="mt-1 text-xs text-surface-400">Vídeos finalizados no histórico carregado</p>
+          </div>
+          <div className="rounded-xl border border-surface-200 bg-white p-4 shadow-sm dark:border-surface-700 dark:bg-surface-900">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-medium text-surface-500">Módulos catalogados</span>
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-50 text-base dark:bg-sky-950/50">🧩</span>
+            </div>
+            <p className="mt-3 text-2xl font-bold tabular-nums text-surface-900 dark:text-surface-50">{readyCount}<span className="ml-1 text-sm font-medium text-surface-400">/ {totalCount}</span></p>
+            <p className="mt-1 text-xs text-surface-400">10 listados · 6 planejados</p>
+          </div>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-2">
+          <a href="#darkstudio-generator" className="group flex items-center gap-3 rounded-xl border border-primary-200 bg-gradient-to-r from-primary-50 to-white p-4 transition hover:border-primary-400 dark:border-primary-900 dark:from-primary-950/40 dark:to-surface-900">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-600 text-xl text-white shadow-sm">✍️</span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-semibold text-surface-900 dark:text-surface-50">Criar a partir de um prompt</span>
+              <span className="mt-0.5 block text-xs text-surface-500">Roteiro, cenas, imagens, narração e vídeo</span>
+            </span>
+            <span className="text-lg text-primary-600 transition-transform group-hover:translate-x-1" aria-hidden="true">→</span>
+          </a>
+          <a href="#darkstudio-modules" className="group flex items-center gap-3 rounded-xl border border-surface-200 bg-white p-4 transition hover:border-primary-300 dark:border-surface-700 dark:bg-surface-900">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-surface-100 text-xl dark:bg-surface-800">🧰</span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-semibold text-surface-900 dark:text-surface-50">Explorar ferramentas</span>
+              <span className="mt-0.5 block text-xs text-surface-500">Imagem, vídeo, voz, áudio e legendas</span>
+            </span>
+            <span className="text-lg text-surface-400 transition-transform group-hover:translate-x-1" aria-hidden="true">→</span>
+          </a>
+        </div>
+      </section>
+
       {/* ─── Generation Panel ────────────────────────────────────────── */}
-      <Card className="mb-8">
+      <Card id="darkstudio-generator" className="mb-8">
         <CardHeader>
           <h2 className="text-lg font-semibold text-surface-900 dark:text-surface-50">
             Gerar vídeo com narração
@@ -668,7 +741,7 @@ export default function VideoStudioPage() {
       </Card>
 
       {/* ─── Modules grid ────────────────────────────────────────────── */}
-      <div className="mb-8">
+      <div id="darkstudio-modules" className="mb-8 scroll-mt-6">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-surface-900 dark:text-surface-50">
             Módulos do Estúdio
@@ -730,7 +803,7 @@ export default function VideoStudioPage() {
       })()}
 
       {/* ─── Jobs ────────────────────────────────────────────────────── */}
-      <Card>
+      <Card id="darkstudio-jobs">
         <CardHeader>
           <h2 className="text-lg font-semibold text-surface-900 dark:text-surface-50">
             Gerações recentes
