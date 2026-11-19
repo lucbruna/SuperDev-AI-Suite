@@ -378,3 +378,12 @@ O endpoint `POST /videos/jobs/{job_id}/scenes/rebuild-stale-clips` aceita opcion
 Durante a execução, o job persiste `scene_clip_rebuild_queue` com índices solicitados, total, concluídos, falhas, cena atual, resultados e timestamps. O estado também é incluído no modelo de status do job. Se a API reiniciar enquanto a fila estiver em processamento, o estado é marcado como `interrupted`; clipes já concluídos permanecem salvos e o usuário pode consultar novamente o plano e reenviar somente os índices ainda reparáveis.
 
 **Limite atual:** a fila é persistente e recuperável por reenvio, mas a execução ainda é síncrona dentro da requisição HTTP. Não há cancelamento cooperativo, worker independente nem retomada automática do processo interrompido. A reconstrução dos clipes continua exigindo uma exportação final do MP4 completo.
+
+
+## DARKSTUDIO Asset Intelligence — auditoria de saúde
+
+O endpoint `GET /videos/jobs/{job_id}/asset-health` executa uma auditoria somente leitura dos ativos referenciados pelo job: imagens de fundo das cenas, clipes VidGrid, narração individual, músicas e efeitos configurados na timeline. Os caminhos são confinados às pastas específicas do subsistema (`images`, `videos`, `voice`, `music` e `effects`); caminhos externos não são expostos no relatório.
+
+Cada referência recebe um estado `available`, `missing`, `corrupt` ou `unreadable`. Arquivos existentes e não vazios recebem tamanho e SHA-256. O painel da timeline apresenta contagens e lista as cenas/faixas que precisam de atenção.
+
+**Limites:** a auditoria não decodifica cada quadro de MP4, não verifica se a imagem corresponde semanticamente ao roteiro, não mede sincronização perceptual e não recria ativos automaticamente. Arquivos com extensão válida, mas conteúdo inválido, podem exigir FFprobe/decodificação específica em uma etapa posterior. Narração em faixa única não é artificialmente atribuída a cenas individuais.
