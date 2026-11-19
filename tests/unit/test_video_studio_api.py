@@ -1607,6 +1607,39 @@ class TestDarkstudioDependencyGraph:
         assert graph["summary"]["dependencies"] == 3
 
     @pytest.mark.asyncio
+    async def test_reads_canonical_audio_clips_and_includes_fingerprints(self, tmp_path, monkeypatch):
+        from modules.ai_video_studio.api.routes import video
+        from modules.ai_video_studio.media import output_paths
+
+        roots = {name: tmp_path / name for name in ("images", "videos", "voice", "music", "effects")}
+        for root in roots.values():
+            root.mkdir()
+        monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda name: roots[name])
+        monkeypatch.setattr(
+            video, "_audio_asset_health",
+            lambda kind, value, root: {
+                "kind": kind, "status": "available", "sha256": f"fingerprint-{Path(value).name}",
+            },
+        )
+        video._jobs["dependency-graph-audio"] = {
+            "job_id": "dependency-graph-audio",
+            "_edited_scenes": [],
+            "_audio_clips": {
+                "music": [{"asset": "music/track.wav"}],
+                "sfx": [{"asset": "effects/hit.wav"}],
+            },
+            "audio_settings": {"normalization_enabled": True},
+        }
+
+        graph = await video.get_video_job_dependency_graph("dependency-graph-audio")
+        audio_nodes = {node["id"]: node for node in graph["nodes"] if node["type"] in {"music", "sound_effect"}}
+
+        assert set(audio_nodes) == {"audio:music:0", "audio:sfx:0"}
+        assert audio_nodes["audio:music:0"]["sha256"] == "fingerprint-track.wav"
+        assert audio_nodes["audio:sfx:0"]["sha256"] == "fingerprint-hit.wav"
+        assert graph["summary"]["dependencies"] == 2
+
+    @pytest.mark.asyncio
     async def test_malformed_persisted_metadata_does_not_break_graph(self, tmp_path, monkeypatch):
         from modules.ai_video_studio.api.routes import video
         from modules.ai_video_studio.media import output_paths
