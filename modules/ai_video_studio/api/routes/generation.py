@@ -191,9 +191,23 @@ async def download_media(kind: str, filename: str):
     Path traversal is blocked via ``Path(...).name``: only the final path
     component is used, and it must exist inside the downloads tree.
     """
-    safe_kind = Path(kind).name
-    safe_file = Path(filename).name
-    path = DOWNLOADS_DIR / safe_kind / safe_file
-    if not path.exists() or not path.is_file():
-        raise HTTPException(status_code=404, detail=f"File not found: {kind}/{filename}")
+    # Treat both POSIX and Windows separators as path syntax, regardless of
+    # the host OS. The endpoint accepts exactly two single path components.
+    if (
+        not kind or kind in {".", ".."} or "/" in kind or "\\" in kind
+        or not filename or filename in {".", ".."}
+        or "/" in filename or "\\" in filename
+    ):
+        raise HTTPException(status_code=404, detail="File not found")
+
+    root = Path(DOWNLOADS_DIR).resolve()
+    try:
+        path = (root / kind / filename).resolve(strict=True)
+    except (OSError, RuntimeError):
+        raise HTTPException(status_code=404, detail="File not found") from None
+
+    # Resolve symlinks before checking containment so a link inside the
+    # downloads tree cannot expose files elsewhere on the machine.
+    if root not in path.parents or not path.is_file():
+        raise HTTPException(status_code=404, detail="File not found")
     return FileResponse(str(path))

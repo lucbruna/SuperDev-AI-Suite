@@ -886,6 +886,42 @@ class TestDownloads:
         resp = await client.get("/api/v1/video-studio/downloads/videos/does_not_exist.mp4")
         assert resp.status_code == 404
 
+    @pytest.mark.asyncio
+    async def test_download_rejects_parent_directory_as_kind(self, tmp_path, monkeypatch):
+        from fastapi import HTTPException
+        from modules.ai_video_studio.api.routes import generation
+
+        downloads = tmp_path / "downloads"
+        downloads.mkdir()
+        secret = tmp_path / "secret.txt"
+        secret.write_text("must not be served", encoding="utf-8")
+        monkeypatch.setattr(generation, "DOWNLOADS_DIR", downloads)
+
+        with pytest.raises(HTTPException) as exc:
+            await generation.download_media("..", "secret.txt")
+        assert exc.value.status_code == 404
+
+    @pytest.mark.asyncio
+    async def test_download_rejects_symlink_outside_download_root(self, tmp_path, monkeypatch):
+        from fastapi import HTTPException
+        from modules.ai_video_studio.api.routes import generation
+
+        downloads = tmp_path / "downloads"
+        video_dir = downloads / "videos"
+        video_dir.mkdir(parents=True)
+        outside = tmp_path / "private.mp4"
+        outside.write_bytes(b"private")
+        link = video_dir / "linked.mp4"
+        try:
+            link.symlink_to(outside)
+        except (OSError, NotImplementedError):
+            pytest.skip("Symlinks are not available in this environment")
+        monkeypatch.setattr(generation, "DOWNLOADS_DIR", downloads)
+
+        with pytest.raises(HTTPException) as exc:
+            await generation.download_media("videos", "linked.mp4")
+        assert exc.value.status_code == 404
+
 
 # ── URL helper ────────────────────────────────────────────────────
 
