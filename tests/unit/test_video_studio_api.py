@@ -2199,3 +2199,50 @@ class TestDarkstudioDependencyGraph:
         with pytest.raises(HTTPException) as error:
             await video.get_video_job_dependency_graph("missing-dependency-job")
         assert error.value.status_code == 404
+
+
+
+@pytest.mark.asyncio
+async def test_dependency_rebuild_returns_accepted_and_persists_queue_state(monkeypatch):
+    from fastapi import BackgroundTasks
+    from modules.ai_video_studio.api.routes import video
+
+    job_id = "dependency-async-queue"
+    record = {"job_id": job_id, "status": "completed", "vidgrid_compatible": True}
+    video._jobs[job_id] = record
+    impact = {
+        "job_id": job_id,
+        "changed_asset_ids": ["scene:2:image"],
+        "affected_nodes": [{"id": "scene:2:clip", "type": "video_clip", "status": "stale"}],
+        "affected_node_ids": ["scene:2:clip", "final:export"],
+        "rebuild_scene_indices": [2],
+        "final_export_required": True,
+    }
+    monkeypatch.setattr(video, "preview_video_job_dependency_impact", lambda *_args: _async_result(impact))
+    monkeypatch.setattr(video, "get_video_job_dependency_graph", lambda *_args: _async_result({"nodes": []}))
+    monkeypatch.setattr(video, "_persist_job", lambda _record: None)
+
+    tasks = BackgroundTasks()
+    request = video.DependencyExecutionRequest(changed_asset_ids=["scene:2:image"], confirmed=True)
+    result = await video.execute_video_job_dependency_rebuild(job_id, request, tasks)
+
+    assert result["status"] == "queued"
+    assert result["queued"] is True
+    assert record["dependency_rebuild_execution"]["status"] == "queued"
+    assert len(tasks.tasks) == 1
+    assert tasks.tasks[0].func is video._run_dependency_rebuild_background
+
+
+@pytest.mark.asyncio
+async def test_dependency_rebuild_status_endpoint_returns_persisted_state():
+    from modules.ai_video_studio.api.routes import video
+
+    job_id = "dependency-async-status"
+    video._jobs[job_id] = {
+        "job_id": job_id,
+        "dependency_rebuild_execution": {"status": "processing", "scene_indices": [1, 4]},
+    }
+    result = await video.get_video_job_dependency_rebuild_status(job_id)
+
+    assert result["status"] == "processing"
+    assert result["scene_indices"] == [1, 4]
