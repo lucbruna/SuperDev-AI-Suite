@@ -300,7 +300,7 @@ class ScenePlanner:
                     "index": i,
                     "name": f"Scene {i + 1}",
                     "description": chunk[:1000],
-                    "visual_prompt": f"{prompt}. Scene focus: {chunk}. Clear subject, detailed environment, cinematic composition, purposeful camera framing.",
+                    "visual_prompt": f"Scene focus: {chunk}. Create a standalone image for this beat only, with a clear subject, relevant environment, distinct composition and purposeful camera framing. Do not repeat imagery from other beats.",
                     "negative_prompt": "blurry, low quality, distorted anatomy, unreadable text, watermark, logo",
                     "voiceover_text": chunk[:1000],
                     "shot_type": ("establishing", "wide", "medium", "close_up", "detail")[i % 5],
