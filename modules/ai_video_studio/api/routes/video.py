@@ -69,6 +69,7 @@ class VideoGenerateRequest(BaseModel):
     object_ids: list[str] = Field(default_factory=list, max_length=6, description="Reusable scene object IDs to include in every scene")
     scene_image_mode: str = Field(default="auto", pattern="^(procedural|ai|auto)$", description="Procedural scenes or per-scene local diffusion image generation")
     scene_image_steps: int = Field(default=20, ge=1, le=60)
+    scene_image_seed: int | None = Field(default=None, ge=0, le=2147483647, description="Optional reproducible base seed for all scene images")
     scene_image_timeout: float = Field(default=240.0, ge=1.0, le=900.0)
     vidgrid_compatible: bool = Field(default=False, description="Render every storyboard clip at exactly 10 seconds for VidGrid")
 
@@ -99,6 +100,7 @@ class SceneImageEditRequest(BaseModel):
     denoising_strength: float = Field(default=0.45, ge=0.05, le=0.95)
     steps: int = Field(default=20, ge=1, le=60)
     cfg_scale: float = Field(default=7.0, ge=1.0, le=20.0)
+    seed: int = Field(default=-1, ge=-1, le=2147483647, description="-1 for random, otherwise a reproducible image seed")
     stage_only: bool = Field(default=False, description="Store the generated image as a candidate until explicit approval")
 
 
@@ -520,7 +522,7 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
                 edit_image, source, edit_prompt,
                 negative_prompt=req.negative_prompt or str(scene.get("negative_prompt") or ""),
                 denoising_strength=req.denoising_strength,
-                steps=req.steps, cfg_scale=req.cfg_scale,
+                steps=req.steps, cfg_scale=req.cfg_scale, seed=req.seed,
             )
             operation = "image_to_image"
         else:
@@ -533,7 +535,7 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
                 negative_prompt=req.negative_prompt or str(scene.get("negative_prompt") or ""),
                 width=image_width,
                 height=image_height,
-                steps=req.steps, cfg_scale=req.cfg_scale,
+                steps=req.steps, cfg_scale=req.cfg_scale, seed=req.seed,
             )
             operation = "text_to_image"
     except ValueError as exc:
@@ -547,6 +549,7 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
                      "image_path": result["image_path"], "image_url": to_download_url(result["image_path"]),
                      "provider": result["provider"], "operation": operation, "prompt": req.prompt,
                      "negative_prompt": req.negative_prompt or str(scene.get("negative_prompt") or ""),
+                     "seed": req.seed,
                      "status": "pending_approval"}
         candidates = record.setdefault("scene_image_candidates", {})
         candidates.setdefault(str(scene_index), []).append(candidate)
@@ -562,6 +565,7 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
     scene["visual_prompt_full"] = edit_prompt
     scene["negative_prompt"] = req.negative_prompt or str(scene.get("negative_prompt") or "")
     scene["image_edit_operation"] = operation
+    scene["image_generation_seed"] = req.seed
     record["_edited_scenes"] = scenes
     assets = record.setdefault("scene_assets", [])
     assets[:] = [item for item in assets if item.get("scene_index") != scene_index]
@@ -569,7 +573,7 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
         "scene_index": scene_index, "image_path": result["image_path"],
         "image_url": to_download_url(result["image_path"]),
         "provider": result["provider"], "status": "edited",
-        "operation": operation, "prompt": req.prompt,
+        "operation": operation, "prompt": req.prompt, "seed": req.seed,
     })
     record["scene_image_mode"] = "mixed"
     scene_clip_result: dict[str, Any] | None = None
@@ -1769,6 +1773,7 @@ async def generate_video(req: VideoGenerateRequest, background_tasks: Background
 
             result = await TextToVideoEngine().generate_async(
                 {
+                    "id": job_id,
                     "prompt": r.prompt,
                     "params": {
                         "duration": r.duration_seconds,
@@ -1789,6 +1794,7 @@ async def generate_video(req: VideoGenerateRequest, background_tasks: Background
                         "object_ids": r.object_ids,
                         "scene_image_mode": r.scene_image_mode,
                         "scene_image_steps": r.scene_image_steps,
+                        "scene_image_seed": r.scene_image_seed,
                         "scene_image_timeout": r.scene_image_timeout,
                         "vidgrid_compatible": r.vidgrid_compatible,
                     },
