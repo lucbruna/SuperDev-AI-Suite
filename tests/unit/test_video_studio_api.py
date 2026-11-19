@@ -1510,6 +1510,67 @@ class TestSelectiveVidGridClipRebuild:
 
 
 
+class TestAsyncVidGridRebuildQueue:
+    @pytest.mark.asyncio
+    async def test_queue_returns_immediately_and_persists_requested_scenes(self, monkeypatch):
+        from fastapi import BackgroundTasks
+        from modules.ai_video_studio.api.routes import video
+
+        record = {"job_id": "async-queue-job", "status": "completed", "vidgrid_compatible": True}
+        video._jobs["async-queue-job"] = record
+        monkeypatch.setattr(video, "_scene_clip_recovery_plan", lambda _record: {"repair_scene_indices": [1, 4]})
+        monkeypatch.setattr(video, "_persist_job", lambda _record: None)
+        tasks = BackgroundTasks()
+
+        result = await video.queue_scene_clip_rebuild(
+            "async-queue-job", tasks, video.SceneClipRebuildRequest(scene_indices=[4])
+        )
+
+        assert result["status"] == "queued"
+        assert result["requested"] == 1
+        assert record["_scene_clip_rebuild_scheduled"] is True
+        assert record["scene_clip_rebuild_queue"]["requested_scene_indices"] == [4]
+        assert len(tasks.tasks) == 1
+
+    @pytest.mark.asyncio
+    async def test_cancel_marks_active_queue_for_cooperative_stop(self, monkeypatch):
+        from modules.ai_video_studio.api.routes import video
+
+        record = {
+            "job_id": "async-cancel-job",
+            "scene_clip_rebuild_queue": {"status": "processing", "cancel_requested": False},
+        }
+        video._jobs["async-cancel-job"] = record
+        monkeypatch.setattr(video, "_persist_job", lambda _record: None)
+
+        result = await video.cancel_scene_clip_rebuild_queue("async-cancel-job")
+
+        assert result["cancel_requested"] is True
+        assert record["scene_clip_rebuild_queue"]["cancel_requested"] is True
+
+    @pytest.mark.asyncio
+    async def test_background_worker_clears_scheduling_lock(self, monkeypatch):
+        from modules.ai_video_studio.api.routes import video
+
+        record = {
+            "job_id": "async-worker-job",
+            "scene_clip_rebuild_queue": {"status": "queued", "results": []},
+        }
+        video._jobs["async-worker-job"] = record
+        calls = []
+        async def fake_rebuild(job_id, request):
+            calls.append((job_id, request.scene_indices))
+            return {"status": "completed", "rebuilt": 1}
+        monkeypatch.setattr(video, "rebuild_stale_video_job_scene_clips", fake_rebuild)
+        monkeypatch.setattr(video, "_persist_job", lambda _record: None)
+
+        await video._run_scene_clip_rebuild_background("async-worker-job", [2])
+
+        assert calls == [("async-worker-job", [2])]
+        assert record["_scene_clip_rebuild_worker"] is False
+        assert record["_scene_clip_rebuild_scheduled"] is False
+
+
 class TestSelectedVidGridRecoveryQueue:
     @pytest.mark.asyncio
     async def test_rejects_selected_scene_that_does_not_need_rebuild(self, tmp_path, monkeypatch):
