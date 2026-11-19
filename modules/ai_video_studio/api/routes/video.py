@@ -882,13 +882,23 @@ async def get_video_job_dependency_graph(job_id: str):
         scene_index = _safe_record_index(scene.get("_source_scene_index", position), position)
         image_id = f"scene:{scene_index}:image"
         clip_id = f"scene:{scene_index}:clip"
-        add_node(image_id, "image", f"Imagem da cena {scene_index + 1}",
-                 _asset_health_entry("scene_image", scene.get("background_image_path"), roots["images"]),
-                 scene_index)
+        image_health = _asset_health_entry(
+            "scene_image", scene.get("background_image_path"), roots["images"]
+        )
         clip = clips.get(scene_index) or {}
-        add_node(clip_id, "video_clip", f"Clipe da cena {scene_index + 1}",
-                 _asset_health_entry("scene_clip", clip.get("output_path"), roots["videos"]),
-                 scene_index)
+        saved_image_fingerprint = clip.get("source_image_fingerprint")
+        image_changed = bool(
+            saved_image_fingerprint and image_health.get("sha256")
+            and saved_image_fingerprint != image_health.get("sha256")
+        )
+        if image_changed or clip.get("status") == "stale":
+            image_health = {
+                **image_health, "status": "stale",
+                "reason": "source_image_changed" if image_changed else "clip_marked_stale",
+            }
+        add_node(image_id, "image", f"Imagem da cena {scene_index + 1}", image_health, scene_index)
+        clip_health = _asset_health_entry("scene_clip", clip.get("output_path"), roots["videos"])
+        add_node(clip_id, "video_clip", f"Clipe da cena {scene_index + 1}", clip_health, scene_index)
         edges.append({"from": image_id, "to": clip_id, "relationship": "input_for"})
         if voiceover.get("narration_style") == "per_scene":
             narration = narration_by_scene.get(scene_index) or {}
