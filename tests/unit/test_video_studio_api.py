@@ -1505,3 +1505,47 @@ class TestSelectedVidGridRecoveryQueue:
             await video.rebuild_stale_video_job_scene_clips("selected-recovery-job", request)
         assert error.value.status_code == 422
         assert error.value.detail["invalid_scene_indices"] == [1]
+
+
+class TestDarkstudioAssetHealth:
+    @pytest.mark.asyncio
+    async def test_reports_missing_clip_and_available_scene_image(self, tmp_path, monkeypatch):
+        from modules.ai_video_studio.api.routes import video
+        from modules.ai_video_studio.media import output_paths
+
+        roots = {name: tmp_path / name for name in ("images", "videos", "voice", "music", "effects")}
+        for root in roots.values():
+            root.mkdir()
+        image = roots["images"] / "scene.png"
+        image.write_bytes(b"image-bytes")
+        clip = roots["videos"] / "scene.mp4"
+        clip.write_bytes(b"video-bytes")
+        monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda name: roots[name])
+        video._jobs["asset-health-job"] = {
+            "job_id": "asset-health-job", "status": "completed",
+            "_edited_scenes": [
+                {"_source_scene_index": 0, "background_image_path": str(image)},
+                {"_source_scene_index": 1, "background_image_path": str(image)},
+            ],
+            "scene_clips": [{"scene_index": 0, "output_path": str(clip)}],
+            "voiceover": {"narration_style": "single_track"},
+        }
+
+        report = await video.get_video_job_asset_health("asset-health-job")
+
+        assert report["summary"]["total_assets"] == 4
+        assert report["summary"]["available"] == 3
+        assert report["summary"]["missing"] == 1
+        assert report["scenes"][0]["status"] == "healthy"
+        assert report["scenes"][1]["status"] == "needs_attention"
+        assert "image" not in str(report["scenes"])
+        assert report["status"] == "needs_attention"
+
+    @pytest.mark.asyncio
+    async def test_rejects_unknown_job(self):
+        from fastapi import HTTPException
+        from modules.ai_video_studio.api.routes import video
+
+        with pytest.raises(HTTPException) as error:
+            await video.get_video_job_asset_health("does-not-exist")
+        assert error.value.status_code == 404
