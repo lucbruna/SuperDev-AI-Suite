@@ -21,6 +21,10 @@ from modules.ai_video_studio.api.main import create_app
 from modules.ai_video_studio.api import urls
 
 
+async def _async_result(value):
+    return value
+
+
 # ── Fixtures ──────────────────────────────────────────────────────
 
 @pytest.fixture
@@ -1676,6 +1680,49 @@ class TestAudioTimelineFingerprints:
 
         assert record["_audio_clips"]["music"][0]["asset_fingerprint"] == "saved-audio-sha256"
         assert record["_audio_clips"]["sfx"] == []
+
+
+class TestDependencyRebuildExecution:
+    @pytest.mark.asyncio
+    async def test_requires_explicit_confirmation(self):
+        from fastapi import HTTPException
+        from modules.ai_video_studio.api.routes import video
+
+        video._jobs["dependency-execution-confirm"] = {"job_id": "dependency-execution-confirm", "status": "completed"}
+        request = video.DependencyExecutionRequest(changed_asset_ids=["audio:music:0"], confirmed=False)
+        with pytest.raises(HTTPException) as error:
+            await video.execute_video_job_dependency_rebuild("dependency-execution-confirm", request)
+        assert error.value.status_code == 409
+
+    @pytest.mark.asyncio
+    async def test_audio_only_change_skips_scene_rebuild_and_renders_final(self, monkeypatch):
+        from modules.ai_video_studio.api.routes import video
+
+        record = {"job_id": "dependency-execution-audio", "status": "completed"}
+        video._jobs["dependency-execution-audio"] = record
+        impact = {
+            "job_id": "dependency-execution-audio",
+            "changed_asset_ids": ["audio:music:0"],
+            "affected_nodes": [{"id": "final:export", "type": "final_export", "status": "available"}],
+            "affected_node_ids": ["final:export"],
+            "rebuild_scene_indices": [], "final_export_required": True,
+        }
+        monkeypatch.setattr(video, "preview_video_job_dependency_impact", lambda *_args: _async_result(impact))
+        async def fail_rebuild(*_args):
+            raise AssertionError("audio-only changes must not rebuild scene clips")
+        async def render(*_args):
+            return {"output_url": "/downloads/final.mp4", "message": "rendered"}
+        monkeypatch.setattr(video, "rebuild_stale_video_job_scene_clips", fail_rebuild)
+        monkeypatch.setattr(video, "render_video_job_edits", render)
+        monkeypatch.setattr(video, "_persist_job", lambda _record: None)
+
+        request = video.DependencyExecutionRequest(changed_asset_ids=["audio:music:0"], confirmed=True)
+        result = await video.execute_video_job_dependency_rebuild("dependency-execution-audio", request)
+
+        assert result["status"] == "completed"
+        assert result["rebuild"] is None
+        assert result["render"]["output_url"] == "/downloads/final.mp4"
+        assert record["dependency_rebuild_execution"]["status"] == "completed"
 
 
 class TestDarkstudioDependencyGraph:
