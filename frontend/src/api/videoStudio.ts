@@ -168,6 +168,17 @@ export interface SceneVideoClip {
   reason?: string;
 }
 
+export interface VidGridRecoveryPlan {
+  job_id: string;
+  scene_count: number;
+  ready_count: number;
+  repairable_count: number;
+  blocked_count: number;
+  repair_scene_indices: number[];
+  full_mp4_render_required: boolean;
+  scenes: { scene_index: number; status: "ready" | "needs_rebuild"; reasons: string[]; warnings: string[]; clip_exists: boolean }[];
+}
+
 export interface VidGridClipRebuildResult {
   job_id: string;
   status: "completed" | "partial" | "failed" | "unchanged" | string;
@@ -495,6 +506,11 @@ export const videoStudioApi = {
 
   async approveSceneImageCandidate(jobId: string, sceneIndex: number, candidateId: string): Promise<{ job_id: string; scene_index: number; status: "approved"; image_url: string; render_required: boolean; message: string }> {
     const { data } = await apiClient.post(`${STUDIO_BASE}/videos/jobs/${jobId}/scenes/${sceneIndex}/image-candidates/${candidateId}/approve`);
+    return data;
+  },
+
+  async getVidGridRecoveryPlan(jobId: string): Promise<VidGridRecoveryPlan> {
+    const { data } = await apiClient.get(`${STUDIO_BASE}/videos/jobs/${jobId}/recovery-plan`);
     return data;
   },
 
