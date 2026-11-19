@@ -2615,19 +2615,31 @@ async def _dependency_worker_loop(worker_id: str) -> None:
         task = await asyncio.to_thread(claim_next_task, worker_id, 120)
         if task is None:
             # Surface tasks exhausted by repeated process crashes in the job status.
-            failed_tasks = await asyncio.to_thread(list_tasks, "dependency_rebuild")
+            failed_tasks = await asyncio.to_thread(list_tasks)
             for failed_task in failed_tasks:
                 if failed_task.get("status") != "failed":
                     continue
                 payload = failed_task.get("payload") or {}
                 record = _jobs.get(str(payload.get("job_id") or ""))
-                execution = record.get("dependency_rebuild_execution") if record else None
-                if isinstance(execution, dict) and execution.get("status") in {"queued", "processing"}:
-                    execution.update({"status": "failed",
-                                      "error": failed_task.get("last_error") or "Worker exhausted its recovery attempts",
+                error = failed_task.get("last_error") or "Worker exhausted its recovery attempts"
+                if failed_task.get("task_type") == "dependency_rebuild":
+                    execution = record.get("dependency_rebuild_execution") if record else None
+                    if isinstance(execution, dict) and execution.get("status") in {"queued", "processing"}:
+                        execution.update({"status": "failed", "error": error,
+                                          "updated_at": time.time(),
+                                          "worker_attempts": failed_task.get("attempts")})
+                        _persist_job(record)
+                elif failed_task.get("task_type") == "scene_clip_rebuild":
+                    queue = record.get("scene_clip_rebuild_queue") if record else None
+                    if isinstance(queue, dict) and queue.get("status") in {"queued", "processing", "interrupted"}:
+                        queue.update({"status": "failed", "error": error,
                                       "updated_at": time.time(),
-                                      "worker_attempts": failed_task.get("attempts")})
-                    _persist_job(record)
+                                      "worker_attempts": failed_task.get("attempts"),
+                                      "current_scene_index": None})
+                        record["scene_clip_rebuild_status"] = "failed"
+                        record["_scene_clip_rebuild_scheduled"] = False
+                        record["_scene_clip_rebuild_worker"] = False
+                        _persist_job(record)
             try:
                 await asyncio.wait_for(_dependency_worker_stop.wait(), timeout=1.0)
             except asyncio.TimeoutError:
