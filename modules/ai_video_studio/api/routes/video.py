@@ -2493,6 +2493,134 @@ async def render_video_job_edits(job_id: str):
     finally:
         record["_rendering_edits"] = False
 
+_dependency_worker_task: asyncio.Task | None = None
+_dependency_worker_stop = asyncio.Event()
+
+
+async def _process_durable_dependency_rebuild(payload: dict) -> None:
+    job_id = str(payload.get("job_id") or "")
+    changed_asset_ids = list(payload.get("changed_asset_ids") or [])
+    record = _jobs.get(job_id)
+    if not record or not changed_asset_ids:
+        raise RuntimeError("Durable dependency task references a missing job or asset selection")
+    execution = record.get("dependency_rebuild_execution")
+    if not isinstance(execution, dict):
+        raise RuntimeError("Dependency execution record is missing")
+    if execution.get("cancel_requested"):
+        execution.update({"status": "cancelled", "updated_at": time.time(), "cancelled_at": time.time()})
+        _persist_job(record)
+        return
+
+    # Recalculate the graph after a lease recovery: completed clips are not rebuilt twice.
+    impact = await preview_video_job_dependency_impact(
+        job_id, DependencyImpactRequest(changed_asset_ids=changed_asset_ids)
+    )
+    if impact.get("rebuild_scene_indices"):
+        if not record.get("vidgrid_compatible"):
+            raise RuntimeError("Affected scene clips require VidGrid selective rebuild")
+        recovery = _scene_clip_recovery_plan(record)
+        repairable = set(recovery.get("repair_scene_indices") or [])
+        pending = sorted(set(impact["rebuild_scene_indices"]) & repairable)
+        impact["previously_completed_scene_indices"] = sorted(
+            set(impact["rebuild_scene_indices"]) - set(pending)
+        )
+        impact["rebuild_scene_indices"] = pending
+        impact["rebuild_steps"] = [
+            step for step in impact.get("rebuild_steps", [])
+            if step.get("operation") != "rebuild_scene_clips"
+        ]
+        if pending:
+            impact["rebuild_steps"].insert(0, {
+                "operation": "rebuild_scene_clips", "scene_indices": pending,
+                "reason": "Worker durável: somente cenas ainda desatualizadas",
+            })
+    execution["scene_indices"] = list(impact.get("rebuild_scene_indices") or [])
+    execution["previously_completed_scene_indices"] = list(
+        impact.get("previously_completed_scene_indices") or []
+    )
+    execution["updated_at"] = time.time()
+    _persist_job(record)
+    await _run_dependency_rebuild_background(job_id, changed_asset_ids, impact)
+
+
+async def _dependency_worker_loop(worker_id: str) -> None:
+    from modules.ai_video_studio.media.job_store import (
+        claim_next_task, complete_task, fail_task, renew_task_lease,
+    )
+
+    while not _dependency_worker_stop.is_set():
+        task = await asyncio.to_thread(claim_next_task, worker_id, 120)
+        if task is None:
+            try:
+                await asyncio.wait_for(_dependency_worker_stop.wait(), timeout=1.0)
+            except asyncio.TimeoutError:
+                continue
+            break
+
+        task_id = task["task_id"]
+        heartbeat_stop = asyncio.Event()
+
+        async def heartbeat() -> None:
+            while not heartbeat_stop.is_set():
+                try:
+                    await asyncio.wait_for(heartbeat_stop.wait(), timeout=20)
+                except asyncio.TimeoutError:
+                    owned = await asyncio.to_thread(renew_task_lease, task_id, worker_id, 120)
+                    if not owned:
+                        return
+
+        heartbeat_task = asyncio.create_task(heartbeat())
+        try:
+            if task.get("task_type") != "dependency_rebuild":
+                raise RuntimeError(f"Unsupported durable task type: {task.get('task_type')}")
+            await _process_durable_dependency_rebuild(task.get("payload") or {})
+            await asyncio.to_thread(complete_task, task_id, worker_id)
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:  # noqa: BLE001
+            retried = await asyncio.to_thread(
+                fail_task, task_id, worker_id, str(exc), 15, 3
+            )
+            payload = task.get("payload") or {}
+            record = _jobs.get(str(payload.get("job_id") or ""))
+            execution = record.get("dependency_rebuild_execution") if record else None
+            if isinstance(execution, dict) and not retried:
+                execution.update({"status": "failed", "error": str(exc)[:500],
+                                  "updated_at": time.time(), "worker_attempts": task.get("attempts")})
+                _persist_job(record)
+        finally:
+            heartbeat_stop.set()
+            heartbeat_task.cancel()
+            try:
+                await heartbeat_task
+            except asyncio.CancelledError:
+                pass
+
+
+def start_dependency_rebuild_worker() -> None:
+    global _dependency_worker_task
+    if _dependency_worker_task is None or _dependency_worker_task.done():
+        _dependency_worker_stop.clear()
+        _dependency_worker_task = asyncio.create_task(
+            _dependency_worker_loop(f"darkstudio-{uuid.uuid4()}")
+        )
+
+
+async def stop_dependency_rebuild_worker() -> None:
+    global _dependency_worker_task
+    _dependency_worker_stop.set()
+    if _dependency_worker_task is not None:
+        try:
+            await asyncio.wait_for(_dependency_worker_task, timeout=5)
+        except asyncio.TimeoutError:
+            _dependency_worker_task.cancel()
+            try:
+                await _dependency_worker_task
+            except asyncio.CancelledError:
+                pass
+        _dependency_worker_task = None
+
+
 async def _run_dependency_rebuild_background(job_id: str, changed_asset_ids: list[str], impact: dict) -> None:
     """Run a confirmed dependency rebuild outside the request/response cycle."""
     record = _jobs.get(job_id)
