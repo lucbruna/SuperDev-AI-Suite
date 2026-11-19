@@ -29,6 +29,7 @@ from modules.ai_video_studio.api.routes import (
     suite_integration,
     timeline,
     video,
+    visual_assets,
 )
 from modules.ai_video_studio.database.database import get_db
 from modules.ai_video_studio.database.models import ExportHistory, RenderJob, VideoProject
@@ -37,6 +38,7 @@ api_router = APIRouter()
 
 api_router.include_router(ai.router, prefix="/ai", tags=["AI Studio"])
 api_router.include_router(video.router, prefix="/videos", tags=["Videos"])
+api_router.include_router(visual_assets.router, prefix="/visual-assets", tags=["Visual Assets"])
 api_router.include_router(project.router, prefix="/projects", tags=["Projects"])
 api_router.include_router(publisher.router, prefix="/publisher", tags=["Publisher"])
 api_router.include_router(scene.router, prefix="/scenes", tags=["Scenes"])
