@@ -3321,7 +3321,12 @@ async def validate_video_job_output(job_id: str):
                     report["fps"] = video.get("avg_frame_rate") or video.get("r_frame_rate")
                     report["video_codec"] = video.get("codec_name")
                     report["pixel_format"] = video.get("pix_fmt")
-                if record.get("edit_render_audio") not in {"silent", "audio_mux_failed"} and not audio_streams:
+                params = record.get("params") if isinstance(record.get("params"), dict) else {}
+                audio_expected = bool(params.get("voiceover")) and record.get("edit_render_audio") != "silent"
+                report["audio_expected"] = audio_expected
+                if audio_expected and not audio_streams:
+                    report["errors"].append("Narração solicitada, mas o MP4 final não contém áudio.")
+                elif record.get("edit_render_audio") not in {"silent", "audio_mux_failed"} and not audio_streams:
                     report["warnings"].append("A exportação não contém stream de áudio, embora a etapa de áudio não esteja marcada como silenciosa.")
                 if record.get("edit_render_audio") == "audio_mux_failed":
                     report["warnings"].append("A mixagem de áudio não foi incorporada ao MP4.")

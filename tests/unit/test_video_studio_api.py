@@ -1270,6 +1270,67 @@ class TestCompletedOutputValidation:
         assert report["integrity"] == "passed"
         assert video_routes._jobs["validate-job"]["output_validation"]["valid"] is True
 
+    @pytest.mark.asyncio
+    async def test_requested_voiceover_without_audio_stream_is_invalid(self, tmp_path, monkeypatch):
+        from types import SimpleNamespace
+        from modules.ai_video_studio.api.routes import video as video_routes
+        from modules.ai_video_studio.media import output_paths
+
+        root = tmp_path / "videos"
+        root.mkdir()
+        output = root / "silent.mp4"
+        output.write_bytes(b"mp4")
+        monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda _name: root)
+        monkeypatch.setattr(video_routes.shutil, "which", lambda name: f"/usr/bin/{name}")
+        monkeypatch.setattr(
+            video_routes.subprocess, "run",
+            lambda *args, **kwargs: SimpleNamespace(
+                returncode=0, stderr="",
+                stdout='{"format":{"duration":"12"},"streams":[{"codec_type":"video","codec_name":"h264","width":1280,"height":720}]}',
+            ),
+        )
+        monkeypatch.setattr(video_routes, "_persist_job", lambda _record: None)
+        video_routes._jobs["missing-audio-job"] = {
+            "job_id": "missing-audio-job", "project_id": "p1",
+            "status": "completed", "output_path": str(output),
+            "params": {"voiceover": True},
+        }
+
+        report = await video_routes.validate_video_job_output("missing-audio-job")
+        assert report["audio_expected"] is True
+        assert report["audio_streams"] == 0
+        assert report["valid"] is False
+
+    @pytest.mark.asyncio
+    async def test_intentionally_silent_edit_can_validate_without_audio(self, tmp_path, monkeypatch):
+        from types import SimpleNamespace
+        from modules.ai_video_studio.api.routes import video as video_routes
+        from modules.ai_video_studio.media import output_paths
+
+        root = tmp_path / "videos"
+        root.mkdir()
+        output = root / "silent-edit.mp4"
+        output.write_bytes(b"mp4")
+        monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda _name: root)
+        monkeypatch.setattr(video_routes.shutil, "which", lambda name: f"/usr/bin/{name}")
+        monkeypatch.setattr(
+            video_routes.subprocess, "run",
+            lambda *args, **kwargs: SimpleNamespace(
+                returncode=0, stderr="",
+                stdout='{"format":{"duration":"12"},"streams":[{"codec_type":"video","codec_name":"h264","width":1280,"height":720}]}',
+            ),
+        )
+        monkeypatch.setattr(video_routes, "_persist_job", lambda _record: None)
+        video_routes._jobs["intentional-silence-job"] = {
+            "job_id": "intentional-silence-job", "project_id": "p1",
+            "status": "completed", "output_path": str(output),
+            "params": {"voiceover": True}, "edit_render_audio": "silent",
+        }
+
+        report = await video_routes.validate_video_job_output("intentional-silence-job")
+        assert report["audio_expected"] is False
+        assert report["valid"] is True
+
     def test_job_status_response_exposes_persisted_output_validation(self):
         from modules.ai_video_studio.api.routes.video import VideoStatusResponse
 
