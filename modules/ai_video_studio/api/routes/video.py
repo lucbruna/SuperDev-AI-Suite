@@ -2769,6 +2769,11 @@ async def render_video_job_edits(job_id: str):
             edit_render_audio=audio_status,
             edit_render_subtitles=subtitle_status,
             edit_render_stale_narration_scenes=stale_narration_scene_indices,
+            edit_render_narration_warning=(
+                "A narração antiga foi omitida porque o texto destas cenas mudou; regenere a voz: "
+                + ", ".join(str(index + 1) for index in stale_narration_scene_indices)
+                if stale_narration_scene_indices else None
+            ),
         )
         _persist_job(record)
         return {
@@ -2779,6 +2784,7 @@ async def render_video_job_edits(job_id: str):
             "file_size_bytes": edited_bytes,
             "audio_status": audio_status,
             "stale_narration_scene_indices": stale_narration_scene_indices,
+            "narration_warning": record.get("edit_render_narration_warning"),
             "encoded_audio_quality": record.get("edit_render_encoded_audio"),
             "subtitle_status": subtitle_status,
             "subtitles": subtitle_info,
