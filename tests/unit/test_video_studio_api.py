@@ -1349,6 +1349,46 @@ class TestSceneAssetRenderLock:
         assert "stale" in str(error.value.detail).lower()
 
     @pytest.mark.asyncio
+    async def test_recovery_plan_detects_changed_per_scene_narration(self, tmp_path, monkeypatch):
+        from modules.ai_video_studio.api.routes import video
+        from modules.ai_video_studio.media import output_paths
+
+        roots = {name: tmp_path / name for name in ("images", "videos", "voice")}
+        for root in roots.values():
+            root.mkdir()
+        image = roots["images"] / "scene.png"
+        image.write_bytes(b"approved-image")
+        clip = roots["videos"] / "scene.mp4"
+        clip.write_bytes(b"scene-video")
+        narration = roots["voice"] / "scene.wav"
+        narration.write_bytes(b"new-narration")
+        monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda name: roots[name])
+        video._jobs["recovery-narration-changed"] = {
+            "job_id": "recovery-narration-changed", "status": "completed",
+            "vidgrid_compatible": True, "resolution": "1280x720", "frame_rate": 30,
+            "params": {},
+            "_edited_scenes": [{
+                "_source_scene_index": 0, "background_image_path": str(image),
+            }],
+            "voiceover": {
+                "narration_style": "per_scene",
+                "clips": [{"index": 0, "audio_path": str(narration)}],
+            },
+            "scene_clips": [{
+                "scene_index": 0, "status": "updated", "output_path": str(clip),
+                "width": 1280, "height": 720, "fps": 30,
+                "source_image_fingerprint": video._asset_sha256(image),
+                "source_narration_fingerprint": "previous-narration-hash",
+            }],
+        }
+
+        plan = await video.get_video_job_recovery_plan("recovery-narration-changed")
+
+        assert plan["repair_scene_indices"] == [0]
+        assert "source_narration_changed" in plan["scenes"][0]["reasons"]
+        assert plan["scenes"][0]["source_narration_fingerprint"] == video._asset_sha256(narration)
+
+    @pytest.mark.asyncio
     async def test_recovery_plan_detects_missing_clip_and_changed_image(self, tmp_path, monkeypatch):
         from modules.ai_video_studio.api.routes import video
         from modules.ai_video_studio.media import output_paths
