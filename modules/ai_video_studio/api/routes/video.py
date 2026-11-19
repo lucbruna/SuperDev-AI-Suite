@@ -788,10 +788,18 @@ async def get_video_job_asset_health(job_id: str):
         rows.append({"scene_index": scene_index, "status": (
             "healthy" if all(item["status"] == "available" for item in assets) else "needs_attention"
         ), "assets": assets})
-    audio_settings = record.get("audio_settings")
-    audio_settings = audio_settings if isinstance(audio_settings, dict) else {}
-    for group, kind, root_key in (("music_clips", "music", "music"), ("sfx_clips", "sound_effect", "effects")):
-        for position, item in enumerate(audio_settings.get(group) or []):
+    audio_clips = record.get("_audio_clips")
+    audio_clips = audio_clips if isinstance(audio_clips, dict) else {}
+    legacy_audio_settings = record.get("audio_settings")
+    legacy_audio_settings = legacy_audio_settings if isinstance(legacy_audio_settings, dict) else {}
+    for group, kind, root_key, legacy_key in (
+        ("music", "music", "music", "music_clips"),
+        ("sfx", "sound_effect", "effects", "sfx_clips"),
+    ):
+        clip_items = audio_clips.get(group)
+        if not isinstance(clip_items, list):
+            clip_items = legacy_audio_settings.get(legacy_key) or []
+        for position, item in enumerate(clip_items):
             if not isinstance(item, dict):
                 item = {}
             asset = _asset_health_entry(kind, item.get("asset"), roots[root_key])
@@ -838,6 +846,7 @@ async def get_video_job_dependency_graph(job_id: str):
             "scene_index": scene_index,
             "bytes": health.get("bytes"),
             "probe_status": health.get("probe_status"),
+            "sha256": health.get("sha256"),
         })
 
     scenes = record.get("_edited_scenes") or record.get("_source_scenes") or []
@@ -889,18 +898,25 @@ async def get_video_job_dependency_graph(job_id: str):
                  _asset_health_entry("scene_narration", voiceover.get("output_path"), roots["voice"]))
         edges.append({"from": narration_id, "to": output_id, "relationship": "audio_mix_input"})
 
-    audio_settings = record.get("audio_settings")
-    audio_settings = audio_settings if isinstance(audio_settings, dict) else {}
-    for group, kind, root_key, node_type in (
-        ("music_clips", "music", "music", "music"),
-        ("sfx_clips", "sound_effect", "effects", "sound_effect"),
+    audio_clips = record.get("_audio_clips")
+    audio_clips = audio_clips if isinstance(audio_clips, dict) else {}
+    legacy_audio_settings = record.get("audio_settings")
+    legacy_audio_settings = legacy_audio_settings if isinstance(legacy_audio_settings, dict) else {}
+    for group, kind, root_key, node_type, legacy_key in (
+        ("music", "music", "music", "music", "music_clips"),
+        ("sfx", "sound_effect", "effects", "sound_effect", "sfx_clips"),
     ):
-        for position, item in enumerate(audio_settings.get(group) or []):
+        clip_items = audio_clips.get(group)
+        if not isinstance(clip_items, list):
+            clip_items = legacy_audio_settings.get(legacy_key) or []
+        for position, item in enumerate(clip_items):
             if not isinstance(item, dict):
                 item = {}
             node_id = f"audio:{group}:{position}"
-            add_node(node_id, node_type, f"{'Música' if kind == 'music' else 'Efeito'} {position + 1}",
-                     _asset_health_entry(kind, item.get("asset"), roots[root_key]))
+            health = _asset_health_entry(kind, item.get("asset"), roots[root_key])
+            add_node(node_id, node_type, f"{'Música' if kind == 'music' else 'Efeito'} {position + 1}", health)
+            nodes[-1]["sha256"] = health.get("sha256")
+            nodes[-1]["asset_reference"] = item.get("asset")
             edges.append({"from": node_id, "to": output_id, "relationship": "audio_mix_input"})
 
     status_counts: dict[str, int] = {}
