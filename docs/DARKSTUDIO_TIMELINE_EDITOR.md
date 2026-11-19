@@ -387,3 +387,8 @@ O endpoint `GET /videos/jobs/{job_id}/asset-health` executa uma auditoria soment
 Cada referência recebe um estado `available`, `missing`, `corrupt` ou `unreadable`. Arquivos existentes e não vazios recebem tamanho e SHA-256. O painel da timeline apresenta contagens e lista as cenas/faixas que precisam de atenção.
 
 **Limites:** a auditoria não decodifica cada quadro de MP4, não verifica se a imagem corresponde semanticamente ao roteiro, não mede sincronização perceptual e não recria ativos automaticamente. Arquivos com extensão válida, mas conteúdo inválido, podem exigir FFprobe/decodificação específica em uma etapa posterior. Narração em faixa única não é artificialmente atribuída a cenas individuais.
+
+
+### Verificação de integridade dos arquivos de mídia
+
+A auditoria `GET /videos/jobs/{job_id}/asset-health` agora tenta validar clipes de vídeo, narrações, músicas e efeitos com FFprobe quando o executável está instalado. Arquivos rejeitados pelo FFprobe, sem stream esperado ou sem duração válida são classificados como `corrupt`; falhas ao executar a inspeção são classificadas como `unreadable`. Sem FFprobe, o arquivo permanece como disponível pela verificação básica de existência/tamanho/SHA-256, mas recebe `probe_status=not_verified` — isso não significa que o conteúdo foi decodificado ou validado.
