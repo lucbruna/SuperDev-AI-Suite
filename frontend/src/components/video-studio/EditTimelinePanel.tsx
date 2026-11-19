@@ -618,6 +618,22 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
     }
   }
 
+  async function resumeVidGridQueue() {
+    if (!jobId || !vidGridQueue || !["interrupted", "cancelled", "partial", "failed"].includes(vidGridQueue.status)) return;
+    try {
+      const queued = await videoStudioApi.resumeVidGridClipRebuild(jobId);
+      if (queued.queued) {
+        const status = await videoStudioApi.getVidGridClipRebuildStatus(jobId);
+        setVidGridQueue(status);
+        setMessage(`Retomada iniciada com ${queued.requested} cena(s) ainda pendente(s). Clipes já concluídos serão reutilizados.`);
+      } else {
+        setMessage("Nenhuma cena pendente para retomar.");
+      }
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Falha ao retomar a fila VidGrid.");
+    }
+  }
+
   async function cancelVidGridQueue() {
     if (!jobId || !vidGridQueue || !["queued", "processing"].includes(vidGridQueue.status)) return;
     try {
@@ -1132,6 +1148,9 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
             </button>
             {["queued", "processing"].includes(vidGridQueue.status) && <button type="button" onClick={cancelVidGridQueue} className="rounded border border-red-300 px-2 py-1 text-red-700 dark:border-red-800 dark:text-red-300">
               Solicitar cancelamento
+            </button>}
+            {["interrupted", "cancelled", "partial", "failed"].includes(vidGridQueue.status) && staleVidGridClipCount > 0 && <button type="button" onClick={resumeVidGridQueue} className="rounded border border-primary-300 px-2 py-1 text-primary-700 dark:border-primary-700 dark:text-primary-300">
+              Retomar somente cenas pendentes ({staleVidGridClipCount})
             </button>}
           </div>
           {vidGridQueue.error && <p className="mt-2 text-red-600">{vidGridQueue.error}</p>}
