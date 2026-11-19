@@ -112,6 +112,20 @@ class SceneImageBatchEditRequest(BaseModel):
     scenes: list[SceneImageBatchItem] = Field(..., min_length=1, max_length=60)
 
 
+class SceneClipRebuildRequest(BaseModel):
+    scene_indices: list[int] | None = Field(
+        default=None, min_length=1, max_length=60,
+        description="Stable scene indices to rebuild; omit to rebuild every repairable scene",
+    )
+
+    @field_validator("scene_indices")
+    @classmethod
+    def _validate_scene_indices(cls, values: list[int] | None) -> list[int] | None:
+        if values is not None and len(values) != len(set(values)):
+            raise ValueError("scene_indices must not contain duplicates")
+        return values
+
+
 class SceneMotionRequest(BaseModel):
     motion_prompt: str = Field(..., min_length=1, max_length=4000)
     negative_prompt: str = Field(default="", max_length=2000)
@@ -648,7 +662,7 @@ async def get_video_job_recovery_plan(job_id: str):
 
 
 @router.post("/jobs/{job_id}/scenes/rebuild-stale-clips")
-async def rebuild_stale_video_job_scene_clips(job_id: str):
+async def rebuild_stale_video_job_scene_clips(job_id: str, req: SceneClipRebuildRequest | None = None):
     """Re-render stale VidGrid clips using the currently approved image and narration."""
     record = _jobs.get(job_id)
     if record is None:
@@ -660,7 +674,16 @@ async def rebuild_stale_video_job_scene_clips(job_id: str):
 
     scenes = [dict(item) for item in (record.get("_edited_scenes") or record.get("_source_scenes") or [])]
     recovery_plan = _scene_clip_recovery_plan(record)
-    stale = sorted(recovery_plan["repair_scene_indices"])
+    repairable = sorted(recovery_plan["repair_scene_indices"])
+    requested = req.scene_indices if req and req.scene_indices is not None else repairable
+    unknown = sorted(set(requested) - set(repairable))
+    if unknown:
+        raise HTTPException(
+            status_code=422,
+            detail={"message": "Only scenes marked repairable can be rebuilt", "invalid_scene_indices": unknown,
+                    "repairable_scene_indices": repairable},
+        )
+    stale = sorted(requested)
     if not stale:
         return {"job_id": job_id, "status": "unchanged", "rebuilt": 0, "failed": 0, "results": []}
 
@@ -678,10 +701,20 @@ async def rebuild_stale_video_job_scene_clips(job_id: str):
 
     record["_rebuilding_scene_clips"] = True
     record["scene_clip_rebuild_status"] = "processing"
+    record["scene_clip_rebuild_queue"] = {
+        "requested_scene_indices": list(stale), "total": len(stale), "completed": 0,
+        "failed": 0, "current_scene_index": None, "status": "processing",
+        "results": [], "started_at": time.time(), "updated_at": time.time(),
+    }
     _persist_job(record)
     results: list[dict[str, Any]] = []
     try:
         for scene_index in stale:
+            queue = record["scene_clip_rebuild_queue"]
+            queue["current_scene_index"] = scene_index
+            queue["updated_at"] = time.time()
+            queue["results"] = list(results)
+            _persist_job(record)
             position = next((i for i, item in enumerate(scenes)
                              if int(item.get("_source_scene_index", i)) == scene_index), None)
             if position is None and 0 <= scene_index < len(scenes):
@@ -739,6 +772,11 @@ async def rebuild_stale_video_job_scene_clips(job_id: str):
             except Exception as exc:  # noqa: BLE001
                 results.append({"scene_index": scene_index, "status": "failed", "error": str(exc)[:300]})
             record["scene_clip_rebuild_results"] = list(results)
+            queue = record["scene_clip_rebuild_queue"]
+            queue["completed"] = sum(item["status"] == "completed" for item in results)
+            queue["failed"] = sum(item["status"] == "failed" for item in results)
+            queue["results"] = list(results)
+            queue["updated_at"] = time.time()
             _persist_job(record)
     finally:
         record["_rebuilding_scene_clips"] = False
@@ -746,12 +784,19 @@ async def rebuild_stale_video_job_scene_clips(job_id: str):
         record["scene_clip_rebuild_status"] = (
             "completed" if rebuilt == len(stale) else "partial" if rebuilt else "failed"
         )
+        queue = record.get("scene_clip_rebuild_queue") or {}
+        queue.update({
+            "status": record["scene_clip_rebuild_status"], "current_scene_index": None,
+            "completed": rebuilt, "failed": len(results) - rebuilt,
+            "results": list(results), "updated_at": time.time(),
+        })
         _persist_job(record)
 
     rebuilt = sum(item["status"] == "completed" for item in results)
     return {
         "job_id": job_id, "status": record["scene_clip_rebuild_status"],
-        "requested": len(stale), "rebuilt": rebuilt, "failed": len(stale) - rebuilt,
+        "requested": len(stale), "rebuilt": rebuilt, "failed": len(results) - rebuilt,
+        "queue": record.get("scene_clip_rebuild_queue"),
         "results": results, "full_mp4_render_required": True,
         "message": f"{rebuilt} de {len(stale)} clipes regenerados reutilizando imagens aprovadas e narração existente. O MP4 completo ainda precisa ser renderizado.",
     }
