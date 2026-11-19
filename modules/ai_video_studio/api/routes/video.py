@@ -1057,8 +1057,13 @@ async def preview_video_job_dependency_impact(job_id: str, req: DependencyImpact
                 queue.append(downstream)
 
     affected_nodes = [nodes_by_id[node_id] for node_id in nodes_by_id if node_id in affected]
+    selected_video_clips = [
+        nodes_by_id[node_id] for node_id in req.changed_asset_ids
+        if nodes_by_id[node_id].get("type") == "video_clip"
+    ]
+    impacted_video_clips = [*selected_video_clips, *affected_nodes]
     scene_indices = sorted({
-        node["scene_index"] for node in affected_nodes
+        node["scene_index"] for node in impacted_video_clips
         if node.get("type") == "video_clip" and isinstance(node.get("scene_index"), int)
     })
     final_export_required = any(node["type"] == "final_export" for node in affected_nodes)
@@ -2390,7 +2395,8 @@ async def execute_video_job_dependency_rebuild(job_id: str, req: DependencyExecu
             node for node in (await get_video_job_dependency_graph(job_id))["nodes"]
             if node["id"] in req.changed_asset_ids
         )]
-        if node.get("type") != "final_export" and node.get("status") in {"missing", "corrupt", "unreadable"}
+        if node.get("type") in {"image", "narration", "narration_track", "music", "sound_effect"}
+        and node.get("status") in {"missing", "corrupt", "unreadable"}
     ]
     if blocked:
         raise HTTPException(
