@@ -676,9 +676,48 @@ def _asset_health_entry(kind: str, value: Any, allowed_root: Path) -> dict[str, 
             return {"kind": kind, "status": "corrupt", "reason": "empty_file", "bytes": 0}
         result = {"kind": kind, "status": "available", "bytes": stat.st_size,
                   "sha256": _asset_sha256(path)}
+        if kind in {"scene_clip", "scene_narration", "music", "sound_effect"}:
+            probe = _probe_media_asset(path, kind)
+            if probe.get("status") in {"corrupt", "unreadable"}:
+                return {"kind": kind, **probe, "bytes": stat.st_size}
+            result.update(probe)
         return result
     except (OSError, ValueError):
         return {"kind": kind, "status": "unreadable", "reason": "file_could_not_be_read"}
+
+
+def _probe_media_asset(path: Path, kind: str) -> dict[str, Any]:
+    """Use FFprobe to validate media containers when the binary is available."""
+    ffprobe = shutil.which("ffprobe")
+    if not ffprobe:
+        return {"probe_status": "not_verified", "probe_reason": "ffprobe_unavailable"}
+    try:
+        completed = subprocess.run(
+            [ffprobe, "-v", "error", "-show_entries",
+             "format=duration:stream=codec_type,codec_name,duration,width,height,sample_rate,channels",
+             "-of", "json", str(path)],
+            capture_output=True, text=True, timeout=20, check=False,
+        )
+        if completed.returncode != 0:
+            return {"status": "corrupt", "reason": "ffprobe_rejected_media",
+                    "probe_error": (completed.stderr or "")[:240]}
+        metadata = json.loads(completed.stdout or "{}")
+        streams = metadata.get("streams") or []
+        expected_type = "video" if kind == "scene_clip" else "audio"
+        matching = [item for item in streams if item.get("codec_type") == expected_type]
+        duration = float((metadata.get("format") or {}).get("duration") or 0)
+        if not matching or duration <= 0:
+            return {"status": "corrupt", "reason": "expected_stream_or_duration_missing"}
+        stream = matching[0]
+        details = {"probe_status": "passed", "codec": stream.get("codec_name"),
+                   "duration_seconds": duration}
+        if expected_type == "video":
+            details.update(width=stream.get("width"), height=stream.get("height"))
+        else:
+            details.update(sample_rate=stream.get("sample_rate"), channels=stream.get("channels"))
+        return details
+    except (OSError, subprocess.TimeoutExpired, ValueError, json.JSONDecodeError):
+        return {"status": "unreadable", "reason": "ffprobe_execution_failed"}
 
 
 @router.get("/jobs/{job_id}/asset-health")
