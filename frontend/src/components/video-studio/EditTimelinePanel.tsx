@@ -1320,8 +1320,21 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
             : ""}
         </p>
         {dependencyRebuildStatus.error && <p className="mt-1 text-amber-600">{dependencyRebuildStatus.error}</p>}
-        {dependencyRebuildStatus.final_export_skipped && <p className="mt-1 text-amber-600">Exportação final não executada porque a reconstrução das cenas foi parcial.</p>}
+        {dependencyRebuildStatus.final_export_skipped && <p className="mt-1 text-amber-600">Exportação final não executada porque a reconstrução das cenas foi parcial ou cancelada.</p>}
+        {dependencyRebuildStatus.previously_completed_scene_indices?.length ? <p className="mt-1 text-emerald-600">{dependencyRebuildStatus.previously_completed_scene_indices.length} cena(s) já estavam atualizadas e foram preservadas.</p> : null}
         {(dependencyRebuildStatus.render_output_url || dependencyRebuildStatus.render_result?.output_url) && <a className="mt-2 inline-block font-semibold text-primary-600 underline" href={dependencyRebuildStatus.render_output_url || dependencyRebuildStatus.render_result?.output_url || ""} target="_blank" rel="noreferrer">Abrir MP4 atualizado</a>}
+        {["interrupted", "cancelled", "partial", "failed"].includes(dependencyRebuildStatus.status) && <button type="button" onClick={async () => {
+          if (!jobId) return;
+          try {
+            const resumed = await videoStudioApi.resumeJobDependencyRebuild(jobId);
+            setMessage(`Retomada enfileirada: ${resumed.scene_indices.length} cena(s) pendente(s); ${resumed.previously_completed_scene_indices.length} já estavam atualizadas.`);
+            setDependencyRebuildStatus(await videoStudioApi.getJobDependencyRebuildStatus(jobId));
+          } catch (error) {
+            setMessage(error instanceof Error ? error.message : "Não foi possível retomar a reconstrução.");
+          }
+        }} className="ml-2 mt-2 rounded border border-primary-500 px-2 py-1 text-primary-700 dark:text-primary-300">
+          Retomar somente pendências
+        </button>}
         {["queued", "processing"].includes(dependencyRebuildStatus.status) && <button type="button" onClick={async () => {
           if (!jobId) return;
           try {
