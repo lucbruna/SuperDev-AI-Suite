@@ -2515,13 +2515,13 @@ async def _run_dependency_rebuild_background(job_id: str, changed_asset_ids: lis
             )
             if rebuild_result.get("failed") or rebuild_result.get("rebuilt") != len(scene_indices):
                 execution.update({"status": "partial", "updated_at": time.time(),
-                                  "rebuild_result": rebuild_result, "final_export_skipped": True})
+                                  "rebuild_result": rebuild_result, "rebuild": rebuild_result, "render": None, "final_export_skipped": True})
                 _persist_job(record)
                 return
         render_result = await render_video_job_edits(job_id)
         execution.update({"status": "completed", "updated_at": time.time(),
                           "rebuild_result": rebuild_result,
-                          "render_output_url": render_result.get("output_url"), "render_result": render_result})
+                          "render_output_url": render_result.get("output_url"), "render_result": render_result, "render": render_result, "rebuild": rebuild_result})
     except HTTPException as exc:
         execution.update({"status": "failed", "updated_at": time.time(), "error": str(exc.detail)[:500]})
     except Exception as exc:  # noqa: BLE001
