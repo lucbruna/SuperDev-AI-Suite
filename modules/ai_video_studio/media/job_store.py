@@ -280,3 +280,24 @@ def list_tasks(task_type: str | None = None) -> list[dict[str, Any]]:
         connection.close()
     keys = ("task_id", "task_type", "status", "attempts", "available_at", "lease_expires_at", "last_error")
     return [dict(zip(keys, row)) for row in rows]
+
+
+def renew_task_lease(task_id: str, worker_id: str, lease_seconds: int = 300) -> bool:
+    """Extend a task lease while its worker is actively processing it."""
+    import time
+
+    now = time.time()
+    connection = _connect()
+    try:
+        _ensure_task_queue(connection)
+        cursor = connection.execute(
+            """
+            UPDATE durable_tasks SET lease_expires_at=?, updated_at=?
+            WHERE task_id=? AND status='processing' AND lease_owner=?
+            """,
+            (now + max(30, int(lease_seconds)), now, task_id, worker_id),
+        )
+        connection.commit()
+        return cursor.rowcount == 1
+    finally:
+        connection.close()
