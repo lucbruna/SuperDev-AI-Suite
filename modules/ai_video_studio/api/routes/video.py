@@ -392,6 +392,40 @@ def _asset_sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _ordered_vidgrid_clip_paths(record: dict, scenes: list[dict]) -> list[str]:
+    """Return a complete, ordered set of safe, non-empty VidGrid clip files."""
+    from modules.ai_video_studio.media.output_paths import get_subsystem_dir
+
+    video_root = Path(get_subsystem_dir("videos")).resolve()
+    clips_by_index = {
+        _safe_record_index(item.get("scene_index")): item
+        for item in (record.get("scene_clips") or [])
+        if isinstance(item, dict)
+        and (not item.get("status") or item.get("status") in {"updated", "completed", "ready"})
+        and item.get("output_path")
+    }
+    ordered_indices = [
+        _safe_record_index(scene.get("_source_scene_index", index), index)
+        for index, scene in enumerate(scenes)
+    ]
+    paths: list[str] = []
+    invalid: list[int] = []
+    for scene_index in ordered_indices:
+        clip = clips_by_index.get(scene_index)
+        value = clip.get("output_path") if clip else None
+        path = Path(str(value)).resolve() if value else None
+        if path is None or video_root not in path.parents or not path.is_file() or path.stat().st_size <= 0:
+            invalid.append(scene_index)
+            continue
+        paths.append(str(path))
+    if invalid:
+        raise HTTPException(
+            status_code=409,
+            detail=f"VidGrid clips are missing, empty or outside the approved video directory for scenes {invalid}. Rebuild stale clips before final export.",
+        )
+    return paths
+
+
 def _scene_clip_recovery_plan(record: dict) -> dict:
     """Compare saved VidGrid clips with active scene images and render profile."""
     from modules.ai_video_studio.media.output_paths import get_subsystem_dir
@@ -2416,8 +2450,11 @@ async def render_video_job_edits(job_id: str):
     record = _jobs.get(job_id)
     if record is None:
         raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
-    if record.get("status") != "completed" or not record.get("_edited_scenes"):
-        raise HTTPException(status_code=409, detail="Save a valid timeline draft before rendering")
+    recoverable_failed_vidgrid = (
+        record.get("status") == "failed" and bool(record.get("vidgrid_compatible"))
+    )
+    if (record.get("status") != "completed" and not recoverable_failed_vidgrid) or not record.get("_edited_scenes"):
+        raise HTTPException(status_code=409, detail="A completed job or a partially failed VidGrid job with saved scenes is required before final rendering")
     if record.get("_rendering_edits") or record.get("_rebuilding_scene_clips") or record.get("_scene_clip_rebuild_scheduled"):
         raise HTTPException(status_code=409, detail="An edited render is already running")
     if job_id in _scene_batch_jobs:
@@ -2440,26 +2477,9 @@ async def render_video_job_edits(job_id: str):
         }
         vidgrid_clip_paths: list[str] = []
         if record.get("vidgrid_compatible"):
-            if not record.get("scene_clips"):
-                raise HTTPException(
-                    status_code=409,
-                    detail="This VidGrid job has no exported scene clips. Regenerate the VidGrid clips before final export.",
-                )
-            clips_by_index = {
-                int(item.get("scene_index", -1)): item
-                for item in (record.get("scene_clips") or [])
-                if (not item.get("status") or item.get("status") in {"updated", "completed", "ready"}) and item.get("output_path")
-            }
+            vidgrid_clip_paths = _ordered_vidgrid_clip_paths(record, scenes)
             ordered_indices = [int(scene.get("_source_scene_index", index)) for index, scene in enumerate(scenes)]
-            if record.get("scene_clips"):
-                missing_indices = [index for index in ordered_indices if index not in clips_by_index]
-                if missing_indices:
-                    raise HTTPException(
-                        status_code=409,
-                        detail=f"VidGrid clips are missing or stale for scenes {missing_indices}. Rebuild stale clips before final export.",
-                    )
-                vidgrid_clip_paths = [str(clips_by_index[index]["output_path"]) for index in ordered_indices]
-                generated_scene_clips = dict(zip(ordered_indices, vidgrid_clip_paths))
+            generated_scene_clips = dict(zip(ordered_indices, vidgrid_clip_paths))
         output_path = unique_filename(get_subsystem_dir("videos"), "text_to_video_edited", "mp4")
     except (TypeError, ValueError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc

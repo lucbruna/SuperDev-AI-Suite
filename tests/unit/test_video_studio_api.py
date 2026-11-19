@@ -124,6 +124,45 @@ def fake_engine(monkeypatch, tmp_path) -> _FakeEngine:
 
 # ── POST /videos/generate ─────────────────────────────────────────
 
+class TestVidGridFinalExportRecovery:
+    def test_ordered_clip_paths_reject_missing_and_unsafe_files(self, tmp_path, monkeypatch):
+        from fastapi import HTTPException
+        from modules.ai_video_studio.api.routes import video
+        from modules.ai_video_studio.media import output_paths
+
+        video_root = tmp_path / "videos"
+        video_root.mkdir()
+        monkeypatch.setattr(output_paths, "DOWNLOADS_DIR", tmp_path)
+        monkeypatch.setattr(output_paths, "_SUBDIRS", {**output_paths._SUBDIRS, "videos": "videos"})
+        outside = tmp_path / "outside.mp4"
+        outside.write_bytes(b"not allowed")
+        record = {"scene_clips": [
+            {"scene_index": 0, "status": "ready", "output_path": str(outside)}
+        ]}
+        with pytest.raises(HTTPException) as exc:
+            video._ordered_vidgrid_clip_paths(record, [{"_source_scene_index": 0}])
+        assert exc.value.status_code == 409
+
+    def test_ordered_clip_paths_preserve_scene_order(self, tmp_path, monkeypatch):
+        from modules.ai_video_studio.api.routes import video
+        from modules.ai_video_studio.media import output_paths
+
+        video_root = tmp_path / "videos"
+        video_root.mkdir()
+        monkeypatch.setattr(output_paths, "DOWNLOADS_DIR", tmp_path)
+        monkeypatch.setattr(output_paths, "_SUBDIRS", {**output_paths._SUBDIRS, "videos": "videos"})
+        first, second = video_root / "first.mp4", video_root / "second.mp4"
+        first.write_bytes(b"clip-1")
+        second.write_bytes(b"clip-2")
+        record = {"scene_clips": [
+            {"scene_index": 1, "status": "ready", "output_path": str(second)},
+            {"scene_index": 0, "status": "updated", "output_path": str(first)},
+        ]}
+        assert video._ordered_vidgrid_clip_paths(
+            record, [{"_source_scene_index": 0}, {"_source_scene_index": 1}]
+        ) == [str(first.resolve()), str(second.resolve())]
+
+
 class TestFailedVidGridRecovery:
     def test_recovery_plan_allows_procedural_scene_without_image(self, tmp_path, monkeypatch):
         from modules.ai_video_studio.api.routes.video import _scene_clip_recovery_plan
