@@ -750,7 +750,8 @@ async def get_video_job_asset_health(job_id: str):
     }
     scenes = record.get("_edited_scenes") or record.get("_source_scenes") or []
     clips = {_safe_record_index(item.get("scene_index")): item for item in (record.get("scene_clips") or []) if isinstance(item, dict)}
-    voiceover = record.get("voiceover") or {}
+    voiceover = record.get("voiceover")
+    voiceover = voiceover if isinstance(voiceover, dict) else {}
     narration_by_scene = {
         _safe_record_index(item.get("index")): item for item in (voiceover.get("clips") or [])
         if isinstance(item, dict)
@@ -831,9 +832,10 @@ async def get_video_job_dependency_graph(job_id: str):
         _safe_record_index(item.get("scene_index")): item
         for item in (record.get("scene_clips") or []) if isinstance(item, dict)
     }
-    voiceover = record.get("voiceover") or {}
+    voiceover = record.get("voiceover")
+    voiceover = voiceover if isinstance(voiceover, dict) else {}
     narration_by_scene = {
-        int(item.get("index", -1)): item
+        _safe_record_index(item.get("index")): item
         for item in (voiceover.get("clips") or []) if isinstance(item, dict)
     }
     for position, scene in enumerate(scenes):
@@ -874,7 +876,8 @@ async def get_video_job_dependency_graph(job_id: str):
                  _asset_health_entry("scene_narration", voiceover.get("output_path"), roots["voice"]))
         edges.append({"from": narration_id, "to": output_id, "relationship": "audio_mix_input"})
 
-    audio_settings = record.get("audio_settings") or {}
+    audio_settings = record.get("audio_settings")
+    audio_settings = audio_settings if isinstance(audio_settings, dict) else {}
     for group, kind, root_key, node_type in (
         ("music_clips", "music", "music", "music"),
         ("sfx_clips", "sound_effect", "effects", "sound_effect"),
@@ -1000,7 +1003,8 @@ async def rebuild_stale_video_job_scene_clips(job_id: str, req: SceneClipRebuild
                 )
                 final_path = rendered["output_path"]
                 audio_status = "silent_or_tts_unavailable"
-                voiceover = record.get("voiceover") or {}
+                voiceover = record.get("voiceover")
+    voiceover = voiceover if isinstance(voiceover, dict) else {}
                 if isinstance(voiceover, dict) and voiceover.get("narration_style") == "per_scene":
                     narration = next((item for item in voiceover.get("clips", [])
                                       if int(item.get("index", -1)) == scene_index and item.get("audio_path")), None)
@@ -1721,7 +1725,8 @@ async def analyze_video_job_audio(job_id: str):
             except (TypeError, ValueError) as exc:
                 skipped.append({"role": role, "reason": str(exc)})
 
-    voiceover = record.get("voiceover") or {}
+    voiceover = record.get("voiceover")
+    voiceover = voiceover if isinstance(voiceover, dict) else {}
     narration_clips = voiceover.get("clips", []) if isinstance(voiceover, dict) else []
     for index, clip in enumerate(narration_clips if isinstance(narration_clips, list) else []):
         if not isinstance(clip, dict) or not clip.get("audio_path"):
@@ -1954,7 +1959,8 @@ async def render_video_job_edits(job_id: str):
         rendered_path = result["output_path"]
         audio_status = "silent"
         final_path = rendered_path
-        voiceover = record.get("voiceover") or {}
+        voiceover = record.get("voiceover")
+    voiceover = voiceover if isinstance(voiceover, dict) else {}
         narration_clips = voiceover.get("clips") if isinstance(voiceover, dict) else None
         single_track = (
             isinstance(voiceover, dict)
