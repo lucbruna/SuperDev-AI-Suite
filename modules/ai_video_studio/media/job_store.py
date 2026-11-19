@@ -279,7 +279,7 @@ def list_tasks(task_type: str | None = None) -> list[dict[str, Any]]:
         _ensure_task_queue(connection)
         if task_type:
             rows = connection.execute(
-                "SELECT task_id, task_type, status, attempts, available_at, lease_expires_at, last_error "
+                "SELECT task_id, task_type, status, attempts, available_at, lease_expires_at, last_error, payload "
                 "FROM durable_tasks WHERE task_type=? ORDER BY created_at DESC",
                 (task_type,),
             ).fetchall()
@@ -290,8 +290,16 @@ def list_tasks(task_type: str | None = None) -> list[dict[str, Any]]:
             ).fetchall()
     finally:
         connection.close()
-    keys = ("task_id", "task_type", "status", "attempts", "available_at", "lease_expires_at", "last_error")
-    return [dict(zip(keys, row)) for row in rows]
+    keys = ("task_id", "task_type", "status", "attempts", "available_at", "lease_expires_at", "last_error", "payload")
+    results = []
+    for row in rows:
+        item = dict(zip(keys, row))
+        try:
+            item["payload"] = json.loads(item["payload"])
+        except (TypeError, json.JSONDecodeError):
+            item["payload"] = {}
+        results.append(item)
+    return results
 
 
 def renew_task_lease(task_id: str, worker_id: str, lease_seconds: int = 300) -> bool:
