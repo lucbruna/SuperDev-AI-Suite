@@ -779,6 +779,111 @@ async def get_video_job_asset_health(job_id: str):
     }
 
 
+@router.get("/jobs/{job_id}/dependency-graph")
+async def get_video_job_dependency_graph(job_id: str):
+    """Describe which generated assets depend on each scene and final export."""
+    record = _jobs.get(job_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+    from modules.ai_video_studio.media.output_paths import get_subsystem_dir
+
+    roots = {
+        "images": Path(get_subsystem_dir("images")).resolve(),
+        "videos": Path(get_subsystem_dir("videos")).resolve(),
+        "voice": Path(get_subsystem_dir("voice")).resolve(),
+        "music": Path(get_subsystem_dir("music")).resolve(),
+        "effects": Path(get_subsystem_dir("effects")).resolve(),
+    }
+    nodes: list[dict[str, Any]] = []
+    edges: list[dict[str, str]] = []
+
+    def add_node(node_id: str, node_type: str, label: str, health: dict[str, Any],
+                 scene_index: int | None = None) -> None:
+        nodes.append({
+            "id": node_id, "type": node_type, "label": label,
+            "status": health.get("status", "unknown"),
+            "reason": health.get("reason"),
+            "scene_index": scene_index,
+            "bytes": health.get("bytes"),
+            "probe_status": health.get("probe_status"),
+        })
+
+    scenes = record.get("_edited_scenes") or record.get("_source_scenes") or []
+    clips = {
+        int(item.get("scene_index", -1)): item
+        for item in (record.get("scene_clips") or []) if isinstance(item, dict)
+    }
+    voiceover = record.get("voiceover") or {}
+    narration_by_scene = {
+        int(item.get("index", -1)): item
+        for item in (voiceover.get("clips") or []) if isinstance(item, dict)
+    }
+    for position, scene in enumerate(scenes):
+        scene_index = int(scene.get("_source_scene_index", position))
+        image_id = f"scene:{scene_index}:image"
+        clip_id = f"scene:{scene_index}:clip"
+        add_node(image_id, "image", f"Imagem da cena {scene_index + 1}",
+                 _asset_health_entry("scene_image", scene.get("background_image_path"), roots["images"]),
+                 scene_index)
+        clip = clips.get(scene_index) or {}
+        add_node(clip_id, "video_clip", f"Clipe da cena {scene_index + 1}",
+                 _asset_health_entry("scene_clip", clip.get("output_path"), roots["videos"]),
+                 scene_index)
+        edges.append({"from": image_id, "to": clip_id, "relationship": "input_for"})
+        if voiceover.get("narration_style") == "per_scene":
+            narration = narration_by_scene.get(scene_index) or {}
+            narration_id = f"scene:{scene_index}:narration"
+            add_node(narration_id, "narration", f"Narração da cena {scene_index + 1}",
+                     _asset_health_entry("scene_narration", narration.get("audio_path"), roots["voice"]),
+                     scene_index)
+            edges.append({"from": narration_id, "to": clip_id, "relationship": "audio_mux_input"})
+
+    output_id = "final:export"
+    output_value = record.get("edited_output_path") or record.get("output_path")
+    add_node(output_id, "final_export", "Exportação final",
+             _asset_health_entry("final_export", output_value, roots["videos"]))
+    for position, scene in enumerate(scenes):
+        scene_index = int(scene.get("_source_scene_index", position))
+        edges.append({"from": f"scene:{scene_index}:clip", "to": output_id, "relationship": "assembly_input"})
+
+    if voiceover.get("narration_style") != "per_scene" and voiceover.get("output_path"):
+        narration_id = "audio:narration"
+        add_node(narration_id, "narration_track", "Faixa única de narração",
+                 _asset_health_entry("scene_narration", voiceover.get("output_path"), roots["voice"]))
+        edges.append({"from": narration_id, "to": output_id, "relationship": "audio_mix_input"})
+
+    audio_settings = record.get("audio_settings") or {}
+    for group, kind, root_key, node_type in (
+        ("music_clips", "music", "music", "music"),
+        ("sfx_clips", "sound_effect", "effects", "sound_effect"),
+    ):
+        for position, item in enumerate(audio_settings.get(group) or []):
+            node_id = f"audio:{group}:{position}"
+            add_node(node_id, node_type, f"{'Música' if kind == 'music' else 'Efeito'} {position + 1}",
+                     _asset_health_entry(kind, item.get("asset"), roots[root_key]))
+            edges.append({"from": node_id, "to": output_id, "relationship": "audio_mix_input"})
+
+    status_counts: dict[str, int] = {}
+    for node in nodes:
+        status_counts[node["status"]] = status_counts.get(node["status"], 0) + 1
+    return {
+        "job_id": job_id,
+        "nodes": nodes,
+        "edges": edges,
+        "summary": {"nodes": len(nodes), "dependencies": len(edges), "statuses": status_counts},
+        "impact_rules": [
+            {"changed": "scene_image", "rebuild": ["same_scene_video_clip", "final_export"]},
+            {"changed": "scene_narration", "rebuild": ["same_scene_video_clip", "final_export"],
+             "condition": "per-scene narration"},
+            {"changed": "music_or_sound_effect", "rebuild": ["final_export"]},
+        ],
+        "limitations": [
+            "O grafo representa dependências registradas no job; não detecta dependências externas não registradas.",
+            "A exportação final é marcada como dependente dos clipes e faixas de áudio, mas não é reconstruída automaticamente.",
+        ],
+    }
+
+
 @router.get("/jobs/{job_id}/recovery-plan")
 async def get_video_job_recovery_plan(job_id: str):
     """Return a non-destructive, per-scene asset recovery plan."""
