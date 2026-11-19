@@ -41,3 +41,29 @@ def test_changing_base_seed_changes_scene_seed():
     second = derive_scene_image_seed("job-one", scene, 0, base_seed=9877)
 
     assert first != second
+
+
+def test_random_seed_uses_seed_reported_by_image_provider():
+    import json
+
+    from modules.ai_video_studio.ai_image_generator.providers.local_diffusion import (
+        _reported_seed,
+    )
+
+    assert _reported_seed(json.dumps({"all_seeds": [12345]}), -1) == 12345
+
+
+def test_explicit_seed_is_not_replaced_by_provider_metadata():
+    from modules.ai_video_studio.ai_image_generator.providers.local_diffusion import (
+        _reported_seed,
+    )
+
+    assert _reported_seed({"all_seeds": [999]}, 12345) == 12345
+
+
+def test_missing_provider_seed_preserves_random_sentinel():
+    from modules.ai_video_studio.ai_image_generator.providers.local_diffusion import (
+        _reported_seed,
+    )
+
+    assert _reported_seed("not-json", -1) == -1
