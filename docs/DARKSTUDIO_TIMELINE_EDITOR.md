@@ -277,7 +277,14 @@ A regeneração individual e em lote pode operar em modo de pré-visualização.
 
 A ação **Detectar imagens repetidas** compara os arquivos de imagem ativos das cenas, não os textos dos prompts. O serviço calcula SHA-256 para duplicatas binariamente idênticas e um difference hash (dHash) de 64 bits para sinalizar imagens estruturalmente semelhantes, com distância de Hamming configurável (padrão 6). A execução é CPU/Pillow e não requer GPU nem serviço de IA. O relatório lista os pares de cenas e o percentual de similaridade estrutural. Isso não é reconhecimento semântico: imagens diferentes do mesmo assunto podem ser sinalizadas, e imagens visualmente relacionadas com composição alterada podem escapar. A análise é consultiva e não exclui nem substitui arquivos automaticamente.
  O botão **Manter imagem atual** descarta a candidata pendente sem alterar a imagem ativa da cena.
-\n\n## Bíblia de personagens e auditoria de continuidade\n\nO storyboard injeta instruções de identidade estáveis para personagens conhecidos: Leo (cabelo loiro, camisa azul, calça escura) e Mia (cabelo castanho preso, vestido vermelho). O perfil é acrescentado ao prompt completo de cada cena selecionada, além das restrições negativas contra alteração de identidade. A análise de continuidade compara personagens declarados por cena e descrições de aparência/figurino fornecidas em `character_appearance` ou `character_costumes`; sinaliza mudanças de elenco e divergências de aparência, com índices exatos das cenas. O relatório é exposto na API de direção visual e no editor.\n\n**Limite importante:** esta etapa é uma auditoria de metadados e instruções de geração, não reconhecimento de personagens nos pixels. Ela melhora a consistência solicitada ao gerador, mas não certifica que a imagem gerada respeitou a bíblia visual. A revisão visual continua necessária.\n
+
+
+## Bíblia de personagens e auditoria de continuidade
+
+O storyboard injeta instruções de identidade estáveis para personagens conhecidos: Leo (cabelo loiro, camisa azul, calça escura) e Mia (cabelo castanho preso, vestido vermelho). O perfil é acrescentado ao prompt completo de cada cena selecionada, além das restrições negativas contra alteração de identidade. A análise de continuidade compara personagens declarados por cena e descrições de aparência/figurino fornecidas em `character_appearance` ou `character_costumes`; sinaliza mudanças de elenco e divergências de aparência, com índices exatos das cenas. O relatório é exposto na API de direção visual e no editor.
+
+**Limite importante:** esta etapa é uma auditoria de metadados e instruções de geração, não reconhecimento de personagens nos pixels. Ela melhora a consistência solicitada ao gerador, mas não certifica que a imagem gerada respeitou a bíblia visual. A revisão visual continua necessária.
+
 
 ## Generation preflight
 
