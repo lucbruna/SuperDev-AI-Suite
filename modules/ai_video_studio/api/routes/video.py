@@ -1194,6 +1194,9 @@ async def queue_scene_clip_rebuild(job_id: str, background_tasks: BackgroundTask
 
     # No await occurs between durable insertion and publishing the matching
     # in-memory queue, so this process's worker cannot observe a half-created job.
+    previous_queue = record.get("scene_clip_rebuild_queue")
+    previous_status = record.get("scene_clip_rebuild_status")
+    previous_scheduled = record.get("_scene_clip_rebuild_scheduled")
     record["scene_clip_rebuild_queue"] = {
         "queue_id": queue_id, "task_id": task_id,
         "requested_scene_indices": list(requested),
@@ -1203,7 +1206,27 @@ async def queue_scene_clip_rebuild(job_id: str, background_tasks: BackgroundTask
     }
     record["scene_clip_rebuild_status"] = "queued"
     record["_scene_clip_rebuild_scheduled"] = True
-    _persist_job(record)
+    try:
+        _persist_job(record)
+    except Exception as exc:
+        if previous_queue is None:
+            record.pop("scene_clip_rebuild_queue", None)
+        else:
+            record["scene_clip_rebuild_queue"] = previous_queue
+        if previous_status is None:
+            record.pop("scene_clip_rebuild_status", None)
+        else:
+            record["scene_clip_rebuild_status"] = previous_status
+        if previous_scheduled is None:
+            record.pop("_scene_clip_rebuild_scheduled", None)
+        else:
+            record["_scene_clip_rebuild_scheduled"] = previous_scheduled
+        try:
+            from modules.ai_video_studio.media.job_store import delete_queued_task
+            delete_queued_task(task_id)
+        except Exception:
+            pass
+        raise HTTPException(status_code=503, detail="Could not persist VidGrid rebuild state") from exc
     return {
         "job_id": job_id, "queue_id": queue_id, "task_id": task_id, "status": "queued",
         "queued": True, "requested": len(requested),
