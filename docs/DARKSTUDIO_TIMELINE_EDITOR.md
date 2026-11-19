@@ -473,3 +473,10 @@ O painel de edição consulta o endpoint de status da reconstrução de dependê
 O endpoint `POST /videos/jobs/{job_id}/dependency-rebuild/cancel` registra `cancel_requested=true` para execuções `queued` ou `processing`. A tarefa verifica o pedido antes de iniciar, depois da etapa de reconstrução de cenas e antes da exportação final. Se cancelada, mantém os clipes já persistidos e não inicia a exportação final. O editor oferece a ação **Solicitar cancelamento** e continua consultando o status.
 
 Limitação importante: a reconstrução seletiva chamada por esse fluxo ainda processa o conjunto de cenas como uma única etapa; o cancelamento durante essa etapa só é aplicado quando ela retorna. O cancelamento por cena individual e a retomada automática após reinicialização ainda não estão implementados para a fila de dependências.
+
+
+### Retomada seletiva da reconstrução por dependências
+
+Use `POST /videos/jobs/{job_id}/dependency-rebuild/resume` para retomar uma execução em `interrupted`, `cancelled`, `partial` ou `failed`. O endpoint reutiliza a seleção de ativos salva na execução anterior, recalcula o impacto no grafo e compara os clipes com o estado atual dos ativos. Somente cenas que continuam no conjunto reparável são reenfileiradas; cenas já atualizadas são listadas em `previously_completed_scene_indices`. A exportação final é executada novamente após a validação/reconstrução das pendências.
+
+A retomada incrementa `attempt`, limpa o sinal de cancelamento e preserva a seleção original. Se um ativo obrigatório estiver ausente, corrompido ou ilegível, a retomada é bloqueada e informa os ativos problemáticos. A fila ainda usa FastAPI BackgroundTasks: a retomada precisa ser solicitada pelo cliente após uma interrupção; não existe worker durável independente nem retomada automática no startup.
