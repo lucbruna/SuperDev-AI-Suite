@@ -1604,6 +1604,40 @@ class TestMediaAssetProbe:
         assert result["reason"] == "ffprobe_rejected_media"
 
 
+class TestAudioTimelineFingerprints:
+    @pytest.mark.asyncio
+    async def test_save_audio_timeline_persists_asset_fingerprint(self, tmp_path, monkeypatch):
+        from modules.ai_video_studio.api.routes import video
+
+        audio_file = tmp_path / "music.wav"
+        audio_file.write_bytes(b"audio")
+        monkeypatch.setattr(
+            "modules.ai_video_studio.media.audio_timeline.validate_audio_asset",
+            lambda _value: audio_file,
+        )
+        monkeypatch.setattr(video, "_asset_sha256", lambda _path: "saved-audio-sha256")
+        monkeypatch.setattr(
+            "modules.ai_video_studio.media.timeline.build_edit_timeline",
+            lambda *args, **kwargs: {"duration_seconds": 10.0, "tracks": []},
+        )
+        monkeypatch.setattr(video, "_persist_job", lambda _record: None)
+        record = {
+            "job_id": "audio-fingerprint-save",
+            "status": "completed",
+            "_edited_scenes": [{"duration": 10.0}],
+            "params": {"frame_rate": 24, "resolution": "1280x720"},
+        }
+        video._jobs["audio-fingerprint-save"] = record
+        request = video.AudioTimelineEditRequest(
+            music_clips=[{"asset": "music/music.wav", "end": 5.0}],
+        )
+
+        await video.update_video_job_audio("audio-fingerprint-save", request)
+
+        assert record["_audio_clips"]["music"][0]["asset_fingerprint"] == "saved-audio-sha256"
+        assert record["_audio_clips"]["sfx"] == []
+
+
 class TestDarkstudioDependencyGraph:
     @pytest.mark.asyncio
     async def test_maps_scene_inputs_to_clip_and_final_export(self, tmp_path, monkeypatch):
