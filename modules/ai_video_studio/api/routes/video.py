@@ -443,6 +443,17 @@ try:
                 _persist_job(_job_record)
             except Exception:
                 pass
+        _execution = _job_record.get("dependency_rebuild_execution")
+        if isinstance(_execution, dict) and _execution.get("status") == "processing":
+            _execution["status"] = "interrupted"
+            _execution["updated_at"] = time.time()
+            _execution["recovery_note"] = (
+                "A API foi reiniciada durante a execução. Revise o grafo e o recovery-plan antes de iniciar uma nova execução."
+            )
+            try:
+                _persist_job(_job_record)
+            except Exception:
+                pass
 except Exception:
     # API startup remains available if the local job database needs repair.
     _jobs = {}
