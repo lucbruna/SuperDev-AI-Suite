@@ -2289,3 +2289,38 @@ async def test_dependency_rebuild_worker_honors_cancel_before_start(monkeypatch)
     await video._run_dependency_rebuild_background(job_id, ["scene:0:image"], {"rebuild_scene_indices": [0]})
 
     assert record["dependency_rebuild_execution"]["status"] == "cancelled"
+
+
+@pytest.mark.asyncio
+async def test_resume_dependency_rebuild_queues_only_scenes_still_repairable(monkeypatch):
+    from fastapi import BackgroundTasks
+    from modules.ai_video_studio.api.routes import video
+
+    job_id = "dependency-resume-selective"
+    record = {
+        "job_id": job_id, "status": "completed", "vidgrid_compatible": True,
+        "dependency_rebuild_execution": {
+            "status": "interrupted", "changed_asset_ids": ["scene:1:image"],
+            "scene_indices": [1, 2], "queued_at": 100, "attempt": 1,
+        },
+    }
+    video._jobs[job_id] = record
+    impact = {
+        "job_id": job_id, "changed_asset_ids": ["scene:1:image"],
+        "affected_nodes": [{"id": "scene:1:clip", "type": "video_clip", "status": "stale"}],
+        "rebuild_scene_indices": [1, 2], "final_export_required": True,
+        "rebuild_steps": [{"operation": "rebuild_scene_clips", "scene_indices": [1, 2]}],
+    }
+    monkeypatch.setattr(video, "preview_video_job_dependency_impact", lambda *_args: _async_result(dict(impact)))
+    monkeypatch.setattr(video, "_scene_clip_recovery_plan", lambda _record: {"repair_scene_indices": [2]})
+    monkeypatch.setattr(video, "get_video_job_dependency_graph", lambda *_args: _async_result({"nodes": []}))
+    monkeypatch.setattr(video, "_persist_job", lambda _record: None)
+
+    tasks = BackgroundTasks()
+    result = await video.resume_video_job_dependency_rebuild(job_id, tasks)
+
+    assert result["status"] == "queued"
+    assert result["scene_indices"] == [2]
+    assert result["previously_completed_scene_indices"] == [1]
+    assert record["dependency_rebuild_execution"]["attempt"] == 2
+    assert len(tasks.tasks) == 1
