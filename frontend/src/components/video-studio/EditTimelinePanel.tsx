@@ -66,7 +66,6 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
   const [previewing, setPreviewing] = useState(false);
   const [previewUrl, setPreviewUrl] = useState("");
   const [renderUrl, setRenderUrl] = useState(editedOutputUrl ?? "");
-  const [outputValidation, setOutputValidation] = useState<Awaited<ReturnType<typeof videoStudioApi.validateJobOutput>> | null>(null);
   const [message, setMessage] = useState("");
   const [staleVidGridClipCount, setStaleVidGridClipCount] = useState(0);
   const [rebuildingVidGridClips, setRebuildingVidGridClips] = useState(false);
@@ -958,8 +957,6 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
       </div>
       {message && <p role="status" className="mt-2 text-xs text-surface-500">{message}</p>}
       {renderUrl && <p className="mt-2 text-xs"><a className="text-primary-600 underline" href={renderUrl} target="_blank" rel="noreferrer">Abrir MP4 renderizado</a></p>}
-      {renderUrl && <button type="button" onClick={validateOutput} className="mt-2 rounded border px-3 py-2 text-xs">Validar MP4 final</button>}
-      {outputValidation && <p className="mt-2 text-xs">Integridade: {outputValidation.integrity ?? "—"} · {outputValidation.resolution ?? "resolução não lida"} · {outputValidation.fps ?? "FPS não lido"} · vídeo: {outputValidation.video_codec ?? "—"} · áudio: {outputValidation.audio?.codec_name ?? "—"} · alertas: {outputValidation.warnings.length} · erros: {outputValidation.errors.length}</p>}
       {previewUrl && <div className="mt-3 max-w-3xl rounded-lg border border-violet-200 p-3 dark:border-violet-800">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs">
           <strong>Prévia visual da montagem</strong>
