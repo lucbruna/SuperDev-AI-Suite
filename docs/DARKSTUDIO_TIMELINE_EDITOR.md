@@ -431,3 +431,12 @@ A interface oferece **Selecionar ativos alterados** para selecionar automaticame
 Para jobs com `narration_style=per_scene`, o plano de recuperação agora compara o SHA-256 do áudio atual com `source_narration_fingerprint` salvo no clipe VidGrid. Se a narração mudar, a cena recebe o motivo `source_narration_changed` e entra na lista de reconstrução, desde que a imagem aprovada esteja disponível. A auditoria de saúde e o grafo de dependências também marcam o nó de narração como `stale`, propagando o impacto para o clipe da cena e para a exportação final.
 
 Ao reconstruir o clipe, o sistema valida que o arquivo de narração está dentro do diretório aprovado de voz, faz o mux e registra o novo fingerprint. Clipes legados sem esse fingerprint recebem um aviso de verificação histórica ausente; não são considerados alterados apenas por falta de metadados. A reconstrução continua limitada a clipes de cena; a renderização do MP4 final é uma etapa separada.
+
+
+## Execução confirmada do plano de dependências
+
+A prévia pode ser executada pelo endpoint `POST /videos/jobs/{job_id}/execute-dependency-rebuild`, enviando os mesmos `changed_asset_ids` e `confirmed: true`. O servidor recalcula o impacto no momento da execução; não confia cegamente na prévia exibida anteriormente. A operação bloqueia ativos ausentes, corrompidos ou ilegíveis, reconstrói somente os índices de cena afetados e chama a exportação final depois que todos os clipes selecionados forem concluídos.
+
+Quando a alteração afeta apenas música ou efeitos, nenhum clipe de cena é reconstruído: a timeline de áudio é reutilizada e somente o MP4 final é renderizado. Se qualquer reconstrução de cena falhar, o endpoint retorna `partial` e não publica uma nova exportação final incompleta. A execução exige confirmação explícita, registra estado e resultados no job e impede uma segunda execução simultânea. Em reinício da API, uma execução que ainda constava como `processing` é marcada como `interrupted`; o usuário deve revisar o grafo e o plano de recuperação antes de tentar novamente.
+
+A interface apresenta o botão **Confirmar e executar reconstrução** somente após uma prévia indicar que a exportação final é necessária. A operação é síncrona nesta versão: o cliente aguarda a conclusão da reconstrução e renderização, sem progresso em tempo real nem cancelamento cooperativo. Uma interrupção do cliente não equivale a cancelamento garantido do trabalho no servidor.
