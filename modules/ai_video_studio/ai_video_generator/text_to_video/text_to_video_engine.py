@@ -243,6 +243,7 @@ class TextToVideoEngine:
                     _notify_scene(
                         scene_index, "completed", "image_ready",
                         image_provider=generated["provider"], image_seed=image_seed,
+                        image_path=generated["image_path"], scene_snapshot=dict(scene),
                     )
                     scene_assets.append({
                         "scene_index": scene_index,
@@ -333,6 +334,15 @@ class TextToVideoEngine:
                         motion_start_frame=object_index * max(1, fps // 3),
                     )
 
+        # Persist a complete scene manifest before expensive video rendering.
+        # The API stores these snapshots incrementally so a later failure does
+        # not leave generated assets without the storyboard that describes them.
+        for scene_index, scene in enumerate(scenes):
+            _notify_scene(
+                scene_index, "pending", "scene_checkpoint",
+                scene_snapshot=dict(scene),
+            )
+
         # Produce the final pacing and visual-coverage report from the
         # already-directed storyboard used by the image and video renderers.
         editing_report = build_editing_report(
@@ -380,7 +390,11 @@ class TextToVideoEngine:
                     require_mp4=True,
                     studio_id=studio_id,
                 )
-                _notify_scene(scene_index, "completed", "clip_ready")
+                _notify_scene(
+                    scene_index, "completed", "clip_ready",
+                    clip_path=clip_result["output_path"],
+                    clip_bytes=clip_result.get("bytes"),
+                )
                 scene_clips.append({
                     "scene_index": scene_index,
                     "duration": 10.0,

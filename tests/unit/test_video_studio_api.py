@@ -124,6 +124,46 @@ def fake_engine(monkeypatch, tmp_path) -> _FakeEngine:
 
 # ── POST /videos/generate ─────────────────────────────────────────
 
+class TestSceneCheckpointPersistence:
+    def test_scene_snapshot_and_assets_are_merged_without_overwriting_other_scenes(self, monkeypatch, tmp_path):
+        from modules.ai_video_studio.api.routes.video import _merge_scene_checkpoint
+        from modules.ai_video_studio.media import output_paths
+
+        monkeypatch.setattr(output_paths, "DOWNLOADS_DIR", tmp_path / "downloads")
+        record = {
+            "_source_scenes": [{"title": "Cena 1", "_source_scene_index": 0}],
+            "_edited_scenes": [{"title": "Cena 1", "_source_scene_index": 0}],
+            "scene_assets": [],
+            "scene_clips": [],
+        }
+        _merge_scene_checkpoint(record, {
+            "scene_index": 1,
+            "scene_snapshot": {"title": "Cena 2", "visual_prompt": "Uma cidade ao amanhecer"},
+            "image_path": str(tmp_path / "scene-2.png"),
+            "image_provider": "local_diffusion",
+            "image_seed": 123,
+            "clip_path": str(tmp_path / "scene-2.mp4"),
+            "clip_bytes": 456,
+        })
+
+        assert record["_source_scenes"][0]["title"] == "Cena 1"
+        assert record["_source_scenes"][1]["title"] == "Cena 2"
+        assert record["_edited_scenes"][1]["visual_prompt"] == "Uma cidade ao amanhecer"
+        assert record["scene_assets"][0]["scene_index"] == 1
+        assert record["scene_assets"][0]["provider"] == "local_diffusion"
+        assert record["scene_assets"][0]["seed"] == 123
+        assert record["scene_clips"][0]["output_path"] == str(tmp_path / "scene-2.mp4")
+        assert record["scene_clips"][0]["bytes"] == 456
+
+    def test_invalid_scene_checkpoint_is_ignored(self):
+        from modules.ai_video_studio.api.routes.video import _merge_scene_checkpoint
+
+        record = {"_source_scenes": []}
+        _merge_scene_checkpoint(record, {"scene_index": "invalid", "scene_snapshot": {"title": "x"}})
+        _merge_scene_checkpoint(record, {"scene_index": -1, "scene_snapshot": {"title": "x"}})
+        assert record["_source_scenes"] == []
+
+
 class TestGenerateVoiceover:
     @pytest.mark.asyncio
     async def test_accepts_voiceover_fields(self, client: AsyncClient, fake_engine: _FakeEngine):

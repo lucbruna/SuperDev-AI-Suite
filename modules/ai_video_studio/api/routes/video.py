@@ -330,6 +330,59 @@ def _persist_job(record: dict) -> None:
 
     save_job(record)
 
+def _merge_scene_checkpoint(record: dict[str, Any], event: dict[str, Any]) -> None:
+    """Merge one durable scene snapshot and its completed assets into a job."""
+    try:
+        scene_index = int(event.get("scene_index", -1))
+    except (TypeError, ValueError):
+        return
+    if scene_index < 0:
+        return
+
+    snapshot = event.get("scene_snapshot")
+    if isinstance(snapshot, dict):
+        scenes = [dict(item) for item in (record.get("_source_scenes") or []) if isinstance(item, dict)]
+        while len(scenes) <= scene_index:
+            scenes.append({})
+        scenes[scene_index] = {**scenes[scene_index], **snapshot, "_source_scene_index": scene_index}
+        record["_source_scenes"] = scenes
+        edited = [dict(item) for item in (record.get("_edited_scenes") or []) if isinstance(item, dict)]
+        while len(edited) <= scene_index:
+            edited.append({})
+        edited[scene_index] = {**edited[scene_index], **snapshot, "_source_scene_index": scene_index}
+        record["_edited_scenes"] = edited
+
+    image_path = event.get("image_path")
+    if image_path:
+        assets = record.setdefault("scene_assets", [])
+        asset = next((item for item in assets if int(item.get("scene_index", -1)) == scene_index), None)
+        if asset is None:
+            asset = {"scene_index": scene_index}
+            assets.append(asset)
+        asset.update({
+            "image_path": str(image_path),
+            "image_url": to_download_url(str(image_path)),
+            "provider": event.get("image_provider") or asset.get("provider"),
+            "seed": event.get("image_seed", asset.get("seed")),
+            "status": "generated",
+        })
+
+    clip_path = event.get("clip_path")
+    if clip_path:
+        clips = record.setdefault("scene_clips", [])
+        clip = next((item for item in clips if int(item.get("scene_index", -1)) == scene_index), None)
+        if clip is None:
+            clip = {"scene_index": scene_index}
+            clips.append(clip)
+        clip.update({
+            "output_path": str(clip_path),
+            "output_url": to_download_url(str(clip_path)),
+            "bytes": event.get("clip_bytes"),
+            "status": "ready",
+        })
+        clips.sort(key=lambda item: int(item.get("scene_index", 0)))
+
+
 def _asset_sha256(path: Path) -> str:
     import hashlib
     digest = hashlib.sha256()
@@ -1868,8 +1921,9 @@ async def generate_video(req: VideoGenerateRequest, background_tasks: Background
                 items = list(record.get("scene_progress") or [])
                 while len(items) <= index:
                     items.append({"scene_index": len(items), "status": "pending", "stage": "queued"})
-                items[index] = {**items[index], **event}
+                items[index] = {**items[index], **{key: value for key, value in event.items() if key != "scene_snapshot"}}
                 record["scene_progress"] = items
+                _merge_scene_checkpoint(record, event)
                 record["current_step"] = (
                     f"Cena {index + 1}: {str(event.get('stage') or 'processando').replace('_', ' ')}"
                 )
