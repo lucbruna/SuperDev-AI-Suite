@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { videoStudioApi, type EditTimeline, type EditTimelineClip, type StudioAudioAsset, type SceneImageAsset, type SceneVisualDirection, type SceneImageSimilarityReport } from "@/api/videoStudio";
+import { videoStudioApi, type EditTimeline, type EditTimelineClip, type StudioAudioAsset, type SceneImageAsset, type SceneImageCandidate, type SceneVisualDirection, type SceneImageSimilarityReport } from "@/api/videoStudio";
 
 type Props = {
   timeline: EditTimeline;
@@ -48,7 +48,7 @@ function clipLabel(clip: EditTimelineClip, trackType: string): string {
 export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sceneAssets, title = "Editor de timeline", onSaved }: Props) {
   const [draft, setDraft] = useState<EditTimeline>(timeline);
   const [sceneImageAssets, setSceneImageAssets] = useState<SceneImageAsset[]>(sceneAssets ?? []);
-  const [sceneImageCandidates, setSceneImageCandidates] = useState<Record<number, SceneImageAsset & { candidate_id: string }>>({});
+  const [sceneImageCandidates, setSceneImageCandidates] = useState<Record<number, SceneImageCandidate[]>>({});
   const [approvingImageScene, setApprovingImageScene] = useState<number | null>(null);
   const [sceneImagePrompts, setSceneImagePrompts] = useState<Record<number, string>>({});
   const [visualDirections, setVisualDirections] = useState<Record<number, SceneVisualDirection>>({});
@@ -259,12 +259,29 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
     videoStudioApi.listJobAudioAssets(jobId).then(setAudioAssets).catch(() => setAudioAssets([]));
     videoStudioApi.getJob(jobId).then((job) => {
       if (job.scene_assets) setSceneImageAssets(job.scene_assets);
-      if (job.scene_image_candidates) {
-        const pending: Record<number, SceneImageAsset & { candidate_id: string }> = {};
-        for (const items of Object.values(job.scene_image_candidates)) {
-          for (const item of items) pending[item.scene_index] = item;
-        }
-        setSceneImageCandidates(pending);
+      const candidateSceneIndices = Object.keys(job.scene_image_candidates ?? {});
+      if (!candidateSceneIndices.length) {
+        setSceneImageCandidates({});
+      } else {
+        void Promise.all(candidateSceneIndices.map(async (rawIndex) => {
+          const sceneIndex = Number(rawIndex);
+          try {
+            const response = await videoStudioApi.listSceneImageCandidates(jobId, sceneIndex);
+            return [sceneIndex, response.candidates] as const;
+          } catch {
+            const fallback = job.scene_image_candidates?.[rawIndex] ?? [];
+            return [sceneIndex, fallback.map((item) => ({
+              candidate_id: item.candidate_id,
+              scene_index: item.scene_index,
+              image_url: item.image_url,
+              provider: item.provider,
+              operation: item.operation,
+              prompt: item.prompt,
+              seed: item.seed,
+              status: item.status,
+            }))] as const;
+          }
+        })).then((entries) => setSceneImageCandidates(Object.fromEntries(entries)));
       }
       if (job.vidgrid_compatible) {
         videoStudioApi.getVidGridRecoveryPlan(jobId).then((plan) => {
@@ -434,44 +451,44 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
     try {
       const result = await videoStudioApi.editSceneImage(jobId, sceneIndex, { prompt, denoising_strength: imageDenoisingStrength, seed: imageSeed ?? -1, stage_only: true });
       if (!result.candidate_id) throw new Error("O servidor não retornou o identificador da imagem candidata.");
-      setSceneImageCandidates((current) => ({ ...current, [sceneIndex]: {
-        scene_index: sceneIndex, candidate_id: result.candidate_id!, image_path: result.image_path,
-        image_url: result.image_url, provider: result.provider, status: "candidate",
-        operation: result.operation, prompt: result.prompt, seed: result.seed, approval_required: true,
-      } }));
-      setMessage(`Nova imagem da cena ${sceneIndex + 1} gerada como candidata. Compare com a atual e aprove para aplicar.`);
+      await refreshSceneCandidates(sceneIndex);
+      setMessage(`Nova imagem da cena ${sceneIndex + 1} gerada como candidata. Compare as opções com a imagem atual e aprove a escolhida.`);
     } catch (error) { setMessage(error instanceof Error ? error.message : "Não foi possível gerar a imagem candidata."); }
     finally { setEditingImageScene(null); }
   }
 
-  async function approveSceneImage(sceneIndex: number) {
+  async function refreshSceneCandidates(sceneIndex: number) {
+    if (!jobId) return;
+    const response = await videoStudioApi.listSceneImageCandidates(jobId, sceneIndex);
+    setSceneImageCandidates((current) => ({ ...current, [sceneIndex]: response.candidates }));
+  }
+
+  async function approveSceneImage(sceneIndex: number, candidateId: string) {
     if (!jobId || approvingImageScene !== null) return;
-    const candidate = sceneImageCandidates[sceneIndex];
-    if (!candidate) return;
     setApprovingImageScene(sceneIndex);
     try {
-      const result = await videoStudioApi.approveSceneImageCandidate(jobId, sceneIndex, candidate.candidate_id);
-      setSceneImageAssets((current) => [...current.filter((asset) => asset.scene_index !== sceneIndex), { ...candidate, status: "edited", approval_required: false }]);
-      setVisualDirections((current) => current[sceneIndex] ? { ...current, [sceneIndex]: { ...current[sceneIndex], image_url: result.image_url, image_status: "edited" } } : current);
-      setSceneImageCandidates((current) => { const next = { ...current }; delete next[sceneIndex]; return next; });
-      videoStudioApi.getJob(jobId).then((latestJob) => {
-        videoStudioApi.getVidGridRecoveryPlan(jobId).then((plan) => {
-          setVidGridRecoveryPlan(plan);
-          setStaleVidGridClipCount(plan.repairable_count);
-        }).catch(() => undefined);
-      }).catch(() => undefined);
+      const result = await videoStudioApi.approveSceneImageCandidate(jobId, sceneIndex, candidateId);
+      const latestJob = await videoStudioApi.getJob(jobId);
+      setSceneImageAssets(latestJob.scene_assets ?? []);
+      setVisualDirections((current) => current[sceneIndex]
+        ? { ...current, [sceneIndex]: { ...current[sceneIndex], image_url: result.image_url, image_status: "edited" } }
+        : current);
+      await refreshSceneCandidates(sceneIndex);
+      if (latestJob.vidgrid_compatible) {
+        const plan = await videoStudioApi.getVidGridRecoveryPlan(jobId);
+        setVidGridRecoveryPlan(plan);
+        setStaleVidGridClipCount(plan.repairable_count);
+      }
       setMessage(result.message);
     } catch (error) { setMessage(error instanceof Error ? error.message : "Não foi possível aprovar a imagem candidata."); }
     finally { setApprovingImageScene(null); }
   }
 
-  async function discardSceneImage(sceneIndex: number) {
+  async function discardSceneImage(sceneIndex: number, candidateId: string) {
     if (!jobId) return;
-    const candidate = sceneImageCandidates[sceneIndex];
-    if (!candidate) return;
     try {
-      await videoStudioApi.discardSceneImageCandidate(jobId, sceneIndex, candidate.candidate_id);
-      setSceneImageCandidates((current) => { const next = { ...current }; delete next[sceneIndex]; return next; });
+      await videoStudioApi.discardSceneImageCandidate(jobId, sceneIndex, candidateId);
+      await refreshSceneCandidates(sceneIndex);
       setMessage("Candidata descartada. A imagem atual da cena foi mantida.");
     } catch (error) { setMessage(error instanceof Error ? error.message : "Não foi possível descartar a candidata."); }
   }
@@ -492,17 +509,8 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
     try {
       const response = await videoStudioApi.regenerateSelectedSceneImages(jobId, selectedScenes);
       const successful = response.results.filter((item) => item.status === "candidate" && item.result);
-      setSceneImageCandidates((current) => {
-        const next = { ...current };
-        for (const item of successful) {
-          const result = item.result!;
-          if (!result.candidate_id) continue;
-          next[item.scene_index] = { scene_index: item.scene_index, candidate_id: result.candidate_id,
-            image_path: result.image_path, image_url: result.image_url, provider: result.provider,
-            status: "candidate", operation: result.operation, prompt: result.prompt, seed: result.seed, approval_required: true };
-        }
-        return next;
-      });
+      await Promise.all([...new Set(successful.map((item) => item.scene_index))]
+        .map((sceneIndex) => refreshSceneCandidates(sceneIndex)));
       setSelectedImageScenes([]);
       setMessage(response.message + (response.failed ? ` Falhas: ${response.results.filter((item) => item.status === "failed").map((item) => `cena ${item.scene_index + 1}: ${item.error}`).join("; ")}` : ""));
     } catch (error) { setMessage(error instanceof Error ? error.message : "Não foi possível regenerar as cenas selecionadas."); }
@@ -880,16 +888,22 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
               </div>
               {asset?.image_url ? <img src={asset.image_url} alt={`Imagem da cena ${index + 1}`} className="mb-2 aspect-video w-full rounded-md object-cover" /> : <div className="mb-2 flex aspect-video items-center justify-center rounded-md bg-surface-100 text-xs text-surface-500 dark:bg-surface-800">Cena {index + 1} · imagem procedural ou ainda não criada</div>}
               {asset?.seed !== undefined && asset.seed >= 0 && <p className="mb-2 text-[10px] text-surface-500">Seed da imagem atual: <span className="font-mono tabular-nums">{asset.seed}</span></p>}
-              {sceneImageCandidates[sourceIndex]?.image_url && <div className="mb-2 rounded-md border border-amber-400 p-2 dark:border-amber-700">
-                <p className="mb-1 text-xs font-semibold text-amber-700 dark:text-amber-300">Imagem candidata · ainda não aplicada</p>
-                {sceneImageCandidates[sourceIndex].seed !== undefined && sceneImageCandidates[sourceIndex].seed! >= 0 && <p className="mb-2 text-[10px] text-surface-500">Seed candidata: <span className="font-mono tabular-nums">{sceneImageCandidates[sourceIndex].seed}</span></p>}
+              {(sceneImageCandidates[sourceIndex] ?? []).map((candidate, candidatePosition) => candidate.image_url ? <div key={candidate.candidate_id} className="mb-2 rounded-md border border-amber-400 p-2 dark:border-amber-700">
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <p className="text-xs font-semibold text-amber-700 dark:text-amber-300">Alternativa {candidatePosition + 1} · não aplicada</p>
+                  {candidate.metadata_match_score !== undefined && <span className="text-[10px] text-surface-500">Compatibilidade textual: {Math.round(candidate.metadata_match_score * 100)}%</span>}
+                </div>
+                {candidate.seed !== undefined && candidate.seed >= 0 && <p className="mb-2 text-[10px] text-surface-500">Seed: <span className="font-mono tabular-nums">{candidate.seed}</span></p>}
                 <div className="grid grid-cols-2 gap-2">
                   <div><img src={asset?.image_url ?? visualDirections[sourceIndex]?.image_url ?? ""} alt={`Imagem atual da cena ${index + 1}`} className="aspect-video w-full rounded object-cover" /><p className="mt-1 text-center text-[10px]">Atual</p></div>
-                  <div><img src={sceneImageCandidates[sourceIndex].image_url} alt={`Imagem candidata da cena ${index + 1}`} className="aspect-video w-full rounded object-cover" /><p className="mt-1 text-center text-[10px]">Candidata</p></div>
+                  <div><img src={candidate.image_url} alt={`Alternativa ${candidatePosition + 1} da cena ${index + 1}`} className="aspect-video w-full rounded object-cover" /><p className="mt-1 text-center text-[10px]">Alternativa {candidatePosition + 1}</p></div>
                 </div>
-                <button type="button" onClick={() => discardSceneImage(sourceIndex)} className="ml-2 mt-2 rounded-md border border-surface-300 px-3 py-1.5 text-xs font-semibold dark:border-surface-600">Manter imagem atual</button>
-                <button type="button" onClick={() => approveSceneImage(sourceIndex)} disabled={approvingImageScene !== null} className="mt-2 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40">{approvingImageScene === sourceIndex ? "Aprovando…" : "Aprovar nova imagem"}</button>
-              </div>}
+                {candidate.prompt && <p className="mt-2 line-clamp-2 text-[10px] text-surface-500">{candidate.prompt}</p>}
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <button type="button" onClick={() => discardSceneImage(sourceIndex, candidate.candidate_id)} className="rounded-md border border-surface-300 px-3 py-1.5 text-xs font-semibold dark:border-surface-600">Descartar opção</button>
+                  <button type="button" onClick={() => approveSceneImage(sourceIndex, candidate.candidate_id)} disabled={approvingImageScene !== null} className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40">{approvingImageScene === sourceIndex ? "Aprovando…" : "Aplicar esta imagem"}</button>
+                </div>
+              </div> : null)}
               <label className="mb-2 flex items-center gap-2 text-xs font-semibold text-surface-700 dark:text-surface-300">
                 <input type="checkbox" checked={selectedImageScenes.includes(sourceIndex)} onChange={(event) => setSelectedImageScenes((current) => event.target.checked ? [...new Set([...current, sourceIndex])] : current.filter((value) => value !== sourceIndex))} />
                 Selecionar cena {index + 1}

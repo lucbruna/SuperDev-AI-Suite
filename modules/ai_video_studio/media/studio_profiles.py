@@ -1,4 +1,4 @@
-"""DARKSTUDIO visual profiles for the two independent creative studios.
+"""DARKSTUDIO visual profiles for three independent creative studios.
 
 Profiles provide deterministic scene defaults for the existing SceneCanvas.
 They do not claim to generate hand-drawn artwork or documentary footage:
@@ -56,9 +56,24 @@ HISTORICAL_DOCUMENTARY = StudioProfile(
     camera_defaults=(("zoom", 1.025), ("dx", 0.12), ("dy", 0.0), ("roll", 0.0)),
 )
 
+FELT_CLAY = StudioProfile(
+    studio_id="felt_clay",
+    display_name="Felt & Clay",
+    visual_language="Handcrafted felt and clay stop-motion; tactile wool fibers; rounded expressive forms; warm cinematic lighting",
+    background_type="solid",
+    background_colors=("#F8E7B5",),
+    palette=("#F8E7B5", "#D97757", "#2F6D83", "#E7B84B", "#4D6B50", "#F7F1E5"),
+    noise=0.02,
+    grading_strength=0.04,
+    default_text_color="#27313A",
+    default_text_size=44,
+    camera_defaults=(("zoom", 1.02), ("dx", 0.0), ("dy", 0.0), ("roll", 0.0)),
+)
+
 PROFILES: dict[str, StudioProfile] = {
     WHYMENTARY.studio_id: WHYMENTARY,
     HISTORICAL_DOCUMENTARY.studio_id: HISTORICAL_DOCUMENTARY,
+    FELT_CLAY.studio_id: FELT_CLAY,
 }
 
 

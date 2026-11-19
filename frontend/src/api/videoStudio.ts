@@ -8,7 +8,7 @@ import apiClient from "./client";
 const STUDIO_BASE = "/video-studio";
 
 export interface StudioProfile {
-  id: "whymentary" | "historical_documentary";
+  id: "whymentary" | "historical_documentary" | "felt_clay";
   name: string;
   visual_language: string;
   background: { type: string; colors: string[] };
@@ -141,6 +141,20 @@ export interface SceneImageAsset {
   visual_prompt?: string;
   narration_text?: string;
   reason?: string;
+}
+
+export interface SceneImageCandidate {
+  candidate_id: string;
+  scene_index: number;
+  image_url?: string | null;
+  provider?: string;
+  operation?: "text_to_image" | "image_to_image";
+  prompt?: string;
+  negative_prompt?: string;
+  seed?: number;
+  status: string;
+  metadata_match_score?: number;
+  metadata_match_terms?: string[];
 }
 
 export interface SceneVideoClip {
@@ -311,7 +325,7 @@ export interface StudioJob {
     video_source: "original" | "edited";
   } | null;
   visual_intelligence?: {
-    studio_id: "whymentary" | "historical_documentary";
+    studio_id: "whymentary" | "historical_documentary" | "felt_clay";
     status: "good" | "needs_review" | "blocked";
     score: number;
     score_label: string;
@@ -527,6 +541,16 @@ export const videoStudioApi = {
   }> {
     const { data } = await apiClient.get(
       `${STUDIO_BASE}/videos/jobs/${jobId}/visual-direction`,
+    );
+    return data;
+  },
+
+  async listSceneImageCandidates(jobId: string, sceneIndex: number): Promise<{
+    job_id: string; scene_index: number; candidate_count: number;
+    candidates: SceneImageCandidate[]; ranking_note: string;
+  }> {
+    const { data } = await apiClient.get(
+      `${STUDIO_BASE}/visual-assets/jobs/${jobId}/scenes/${sceneIndex}/image-candidates`,
     );
     return data;
   },

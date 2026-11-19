@@ -1,9 +1,10 @@
-"""Tests for independent DARKSTUDIO studio visual profiles."""
+"""Tests for the three independent DARKSTUDIO studio visual profiles."""
 from __future__ import annotations
 
 import pytest
 
 from modules.ai_video_studio.media.studio_profiles import (
+    FELT_CLAY,
     HISTORICAL_DOCUMENTARY,
     WHYMENTARY,
     apply_studio_profile,
@@ -11,11 +12,13 @@ from modules.ai_video_studio.media.studio_profiles import (
 )
 
 
-def test_two_studio_profiles_are_registered_and_distinct() -> None:
+def test_three_studio_profiles_are_registered_and_distinct() -> None:
     why = get_studio_profile("whymentary")
     history = get_studio_profile("historical_documentary")
+    felt = get_studio_profile("felt_clay")
     assert why == WHYMENTARY
     assert history == HISTORICAL_DOCUMENTARY
+    assert felt == FELT_CLAY
     assert why.background_type == "solid"
     assert why.background_colors == ("#FFFFFF",)
     assert history.background_type == "gradient"
@@ -24,6 +27,10 @@ def test_two_studio_profiles_are_registered_and_distinct() -> None:
     assert why.grading_strength == 0.0
     assert history.noise > 0.0
     assert history.grading_strength > 0.0
+    assert felt.background_type == "solid"
+    assert felt.background_colors == ("#F8E7B5",)
+    assert "felt" in felt.visual_language.casefold()
+    assert felt.noise > 0.0
 
 
 def test_apply_profile_enforces_studio_visual_identity() -> None:
@@ -66,3 +73,15 @@ def test_profile_application_does_not_mutate_input() -> None:
     source = {"camera": {"zoom": 1.1}, "text": {"content": "Teste"}}
     apply_studio_profile("whymentary", source)
     assert source == {"camera": {"zoom": 1.1}, "text": {"content": "Teste"}}
+
+
+def test_felt_clay_profile_enforces_handcrafted_visual_identity() -> None:
+    rendered = apply_studio_profile(
+        "felt_clay",
+        {"background_type": "gradient", "noise": 0.9, "text": {"content": "Dark Health"}},
+    )
+    assert rendered["studio_id"] == "felt_clay"
+    assert rendered["background_type"] == "solid"
+    assert rendered["background_colors"] == ["#F8E7B5"]
+    assert rendered["noise"] == FELT_CLAY.noise
+    assert rendered["text"]["content"] == "Dark Health"

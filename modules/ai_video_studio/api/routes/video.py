@@ -64,7 +64,7 @@ class VideoGenerateRequest(BaseModel):
     # Platform format preset selected in the dashboard (shorts/reels/tiktok/
     # youtube/square) or "custom" when the user tweaked a dimension manually.
     format: str = Field(default="custom", max_length=32)
-    studio_id: str = Field(default="whymentary", pattern="^(whymentary|historical_documentary)$")
+    studio_id: str = Field(default="whymentary", pattern="^(whymentary|historical_documentary|felt_clay)$")
     character_ids: list[str] = Field(default_factory=list, max_length=2, description="Stable character IDs to include in every scene")
     object_ids: list[str] = Field(default_factory=list, max_length=6, description="Reusable scene object IDs to include in every scene")
     scene_image_mode: str = Field(default="auto", pattern="^(procedural|ai|auto)$", description="Procedural scenes or per-scene local diffusion image generation")
@@ -482,6 +482,11 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
         raise HTTPException(status_code=409, detail="Scene assets are locked by an active render operation")
     if record.get("status") != "completed":
         raise HTTPException(status_code=409, detail="Scene images can only be changed after generation completes")
+    if req.stage_only:
+        buckets = record.get("scene_image_candidates")
+        existing = buckets.get(str(scene_index), []) if isinstance(buckets, dict) else []
+        if isinstance(existing, list) and len(existing) >= 8:
+            raise HTTPException(status_code=409, detail="This scene already has the maximum of eight pending image candidates")
     source_scenes = record.get("_edited_scenes") or record.get("_source_scenes") or []
     scenes = [dict(item) for item in source_scenes]
     position = next(
@@ -501,11 +506,14 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
     scene = scenes[position]
     params = record.get("params") or {}
     studio_id = str(params.get("studio_id") or "whymentary")
-    style_prompt = (
-        "handcrafted felt-clay stop motion, tactile wool fibers, bright educational lighting"
-        if studio_id == "whymentary"
-        else "cinematic historical illustration, period-accurate environment, atmospheric depth"
-    )
+    style_prompts = {
+        "whymentary": "2D educational explainer, clean white background, bold marker-like outlines, flat bright colors",
+        "historical_documentary": "cinematic illustrated historical documentary, period-accurate environment, layered depth and atmospheric lighting",
+        "felt_clay": "handcrafted felt and clay stop-motion, tactile wool fibers, soft rounded forms, consistent character materials and warm cinematic lighting",
+    }
+    if studio_id not in style_prompts:
+        raise HTTPException(status_code=422, detail=f"Unsupported visual studio: {studio_id}")
+    style_prompt = style_prompts[studio_id]
     character_ids = params.get("character_ids") or []
     character_reservation = (
         " Background plate only, no people or characters; preserve clear foreground space for animated cast."
@@ -552,8 +560,13 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
                      "negative_prompt": req.negative_prompt or str(scene.get("negative_prompt") or ""),
                      "seed": result.get("seed", req.seed),
                      "status": "pending_approval"}
-        candidates = record.setdefault("scene_image_candidates", {})
-        candidates.setdefault(str(scene_index), []).append(candidate)
+        from modules.ai_video_studio.media.scene_visual_asset_workflow import stage_scene_image_candidate
+        try:
+            updated = stage_scene_image_candidate(record, scene_index, candidate)
+        except (ValueError, RuntimeError) as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        record.clear()
+        record.update(updated)
         _persist_job(record)
         return {"job_id": job_id, "scene_index": scene_index, "candidate_id": candidate_id,
                 "image_path": result["image_path"], "image_url": to_download_url(result["image_path"]),
@@ -657,79 +670,63 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
 
 @router.post("/jobs/{job_id}/scenes/{scene_index}/image-candidates/{candidate_id}/discard")
 async def discard_video_job_scene_image(job_id: str, scene_index: int, candidate_id: str):
-    """Discard a pending candidate while keeping the active scene image unchanged."""
+    """Discard one pending candidate without changing the approved image or clip."""
     record = _jobs.get(job_id)
     if record is None:
         raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
-    candidates = record.get("scene_image_candidates") or {}
-    scene_candidates = candidates.get(str(scene_index)) or []
-    candidate = next((item for item in scene_candidates if item.get("candidate_id") == candidate_id), None)
-    if candidate is None:
-        raise HTTPException(status_code=404, detail="Image candidate not found")
-    candidates[str(scene_index)] = [item for item in scene_candidates if item.get("candidate_id") != candidate_id]
-    if not candidates[str(scene_index)]:
-        candidates.pop(str(scene_index), None)
-    record["scene_image_candidates"] = candidates
+    if job_id in _scene_batch_jobs or record.get("_rendering_edits") or record.get("_rebuilding_scene_clips") or record.get("_scene_clip_rebuild_scheduled"):
+        raise HTTPException(status_code=409, detail="Scene assets are locked by another operation")
+    from modules.ai_video_studio.media.scene_visual_asset_workflow import discard_scene_image_candidate
+    try:
+        updated, _removed = discard_scene_image_candidate(record, scene_index, candidate_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="Image candidate not found") from exc
+    except (ValueError, RuntimeError) as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    record.clear()
+    record.update(updated)
     _persist_job(record)
     return {"job_id": job_id, "scene_index": scene_index, "candidate_id": candidate_id,
             "status": "discarded", "active_image_unchanged": True}
 
 @router.post("/jobs/{job_id}/scenes/{scene_index}/image-candidates/{candidate_id}/approve")
 async def approve_video_job_scene_image(job_id: str, scene_index: int, candidate_id: str):
-    """Promote one reviewed candidate to the active scene image."""
+    """Promote one reviewed candidate, preserve history and invalidate only its clip."""
     record = _jobs.get(job_id)
     if record is None:
         raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
-    if record.get("_rendering_edits") or record.get("_rebuilding_scene_clips") or record.get("_scene_clip_rebuild_scheduled") or job_id in _scene_batch_jobs:
+    if job_id in _scene_batch_jobs or record.get("_rendering_edits") or record.get("_rebuilding_scene_clips") or record.get("_scene_clip_rebuild_scheduled"):
         raise HTTPException(status_code=409, detail="Scene assets are locked by another operation")
     if record.get("status") != "completed":
         raise HTTPException(status_code=409, detail="Only completed jobs can approve scene images")
-    candidates = record.get("scene_image_candidates") or {}
-    scene_candidates = candidates.get(str(scene_index)) or []
-    candidate = next((item for item in scene_candidates if item.get("candidate_id") == candidate_id), None)
-    if candidate is None:
-        raise HTTPException(status_code=404, detail="Image candidate not found")
+
     from modules.ai_video_studio.media.output_paths import get_subsystem_dir
+    from modules.ai_video_studio.media.scene_visual_asset_workflow import approve_scene_image_candidate
     image_root = Path(get_subsystem_dir("images")).resolve()
-    candidate_path = Path(str(candidate.get("image_path") or "")).resolve()
-    if image_root not in candidate_path.parents or not candidate_path.is_file():
-        raise HTTPException(status_code=422, detail="Candidate image is not a valid DARKSTUDIO asset")
-    source_scenes = record.get("_edited_scenes") or record.get("_source_scenes") or []
-    scenes = [dict(item) for item in source_scenes]
-    position = next((i for i, item in enumerate(scenes) if int(item.get("_source_scene_index", i)) == scene_index), None)
-    if position is None and 0 <= scene_index < len(scenes):
-        position = scene_index
-    if position is None:
-        raise HTTPException(status_code=404, detail="Scene index not found")
-    scene = scenes[position]
-    scene["background_image_path"] = str(candidate_path)
-    scene["image_asset_provider"] = candidate.get("provider")
-    scene["visual_prompt"] = candidate.get("prompt") or scene.get("visual_prompt")
-    scene["visual_prompt_full"] = candidate.get("prompt") or scene.get("visual_prompt_full")
-    scene["negative_prompt"] = candidate.get("negative_prompt") or scene.get("negative_prompt", "")
-    scene["image_edit_operation"] = candidate.get("operation")
-    scene["image_generation_seed"] = candidate.get("seed", -1)
-    record["_edited_scenes"] = scenes
-    assets = record.setdefault("scene_assets", [])
-    assets[:] = [item for item in assets if int(item.get("scene_index", -1)) != scene_index]
-    assets.append({"scene_index": scene_index, "image_path": str(candidate_path),
-                   "image_url": to_download_url(str(candidate_path)), "provider": candidate.get("provider"),
-                   "status": "edited", "operation": candidate.get("operation"),
-                   "prompt": candidate.get("prompt"), "seed": candidate.get("seed", -1)})
-    candidates[str(scene_index)] = [item for item in scene_candidates if item.get("candidate_id") != candidate_id]
-    if not candidates[str(scene_index)]:
-        candidates.pop(str(scene_index), None)
-    record["scene_image_candidates"] = candidates
-    record["scene_image_mode"] = "mixed"
-    for clip in record.get("scene_clips") or []:
-        if int(clip.get("scene_index", -1)) == scene_index:
-            clip["status"] = "stale"
-            clip["reason"] = "A imagem da cena foi aprovada; gere novamente o clipe VidGrid."
+    try:
+        updated, candidate = approve_scene_image_candidate(
+            record, scene_index, candidate_id,
+            image_root=image_root,
+            image_url_builder=to_download_url,
+        )
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="Image candidate or scene not found") from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    record.clear()
+    record.update(updated)
     _persist_job(record)
-    return {"job_id": job_id, "scene_index": scene_index, "candidate_id": candidate_id,
-            "status": "approved", "image_path": str(candidate_path),
-            "image_url": to_download_url(str(candidate_path)), "render_required": True,
-            "message": "Imagem aprovada e aplicada à cena. Renderize a edição para atualizar o MP4 completo."}
+    image_path = str(Path(str(candidate["image_path"])).resolve())
+    image_url = to_download_url(image_path)
+    return {
+        "job_id": job_id, "scene_index": scene_index, "candidate_id": candidate_id,
+        "status": "approved", "image_path": image_path, "image_url": image_url,
+        "render_required": True,
+        "message": "Imagem aprovada e aplicada. Somente o clipe desta cena ficou desatualizado; reconstrua o clipe VidGrid e depois renderize o MP4 completo.",
+    }
 
 
 def _safe_record_index(value: Any, fallback: int = -1) -> int:

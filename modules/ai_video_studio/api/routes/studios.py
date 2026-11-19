@@ -47,7 +47,7 @@ def _profile_payload(studio_id: str) -> dict[str, Any]:
 
 @router.get("", tags=["DARKSTUDIO"])
 async def list_studios() -> dict[str, Any]:
-    """List the two registered studios and their visual contracts."""
+    """List all registered studios and their visual contracts."""
     studios = [_profile_payload(studio_id) for studio_id in sorted(PROFILES)]
     return {"count": len(studios), "studios": studios}
 
@@ -114,10 +114,18 @@ async def list_studio_characters(studio_id: str | None = None) -> dict[str, Any]
     }
     if studio_id is not None and studio_id not in PROFILES:
         raise HTTPException(status_code=404, detail=f"Unknown studio '{studio_id}'")
-    items = [
-        item for item in catalog.values()
-        if studio_id is None or item["studio_id"] == studio_id
-    ]
+    if studio_id == "felt_clay":
+        # Mia and Leo keep the same approved identities across the felt/clay studio.
+        items = [
+            {**item, "studio_id": "felt_clay"}
+            for item in catalog.values()
+            if item["id"] in {"mia", "leo"}
+        ]
+    else:
+        items = [
+            item for item in catalog.values()
+            if studio_id is None or item["studio_id"] == studio_id
+        ]
     return {"count": len(items), "characters": items}
 
 

@@ -13,14 +13,16 @@ from modules.ai_video_studio.api.routes.studios import (
 )
 
 
-def test_list_studios_exposes_both_distinct_profiles() -> None:
+def test_list_studios_exposes_three_distinct_profiles() -> None:
     result = asyncio.run(list_studios())
-    assert result["count"] == 2
+    assert result["count"] == 3
     profiles = {item["id"]: item for item in result["studios"]}
-    assert set(profiles) == {"whymentary", "historical_documentary"}
+    assert set(profiles) == {"whymentary", "historical_documentary", "felt_clay"}
     assert profiles["whymentary"]["background"]["type"] == "solid"
     assert profiles["whymentary"]["background"]["colors"] == ["#FFFFFF"]
     assert profiles["historical_documentary"]["background"]["type"] == "gradient"
+    assert profiles["felt_clay"]["name"] == "Felt & Clay"
+    assert profiles["felt_clay"]["background"]["colors"] == ["#F8E7B5"]
 
 
 def test_get_studio_returns_serializable_visual_contract() -> None:
@@ -66,6 +68,9 @@ def test_character_catalog_keeps_mia_and_leo_identity_contracts() -> None:
     assert by_id["leo"]["appearance"]["clothing_color"] == "#2563EB"
     assert by_id["mia"]["appearance"]["hair"] == "brown hair tied up"
     assert by_id["mia"]["appearance"]["outfit"] == "red dress"
+    felt_characters = asyncio.run(list_studio_characters("felt_clay"))
+    assert {item["id"] for item in felt_characters["characters"]} == {"mia", "leo"}
+    assert all(item["studio_id"] == "felt_clay" for item in felt_characters["characters"])
 
 
 def test_character_preview_returns_editable_scene_without_mutating_source() -> None:
@@ -93,10 +98,13 @@ def test_scene_object_catalog_is_filtered_by_studio() -> None:
 
     whymentary = asyncio.run(list_studio_objects("whymentary"))
     historical = asyncio.run(list_studio_objects("historical_documentary"))
+    felt = asyncio.run(list_studio_objects("felt_clay"))
     assert whymentary["count"] >= 4
     assert historical["count"] >= 4
     assert all(item["studio_id"] == "whymentary" for item in whymentary["objects"])
     assert all(item["studio_id"] == "historical_documentary" for item in historical["objects"])
+    assert felt["count"] >= 4
+    assert all(item["studio_id"] == "felt_clay" for item in felt["objects"])
 
 
 def test_scene_object_preview_composes_editable_primitives_without_mutation() -> None:

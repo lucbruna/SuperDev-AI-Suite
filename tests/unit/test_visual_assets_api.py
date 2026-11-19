@@ -125,3 +125,27 @@ def test_visual_plan_returns_404_for_unknown_job(monkeypatch) -> None:
             )
         )
     assert exc.value.status_code == 404
+
+
+
+def test_candidate_listing_returns_multiple_options_for_one_scene(monkeypatch) -> None:
+    record = _record()
+    record["scene_image_candidates"]["4"].append({
+        "candidate_id": "candidate-2",
+        "image_path": "/private/internal/second.png",
+        "image_url": "/downloads/second.png",
+        "provider": "test",
+        "prompt": "porto histórico em luz dourada",
+        "status": "pending_approval",
+    })
+    monkeypatch.setattr(video, "_jobs", {"job-visual-1": record})
+
+    response = asyncio.run(
+        visual_assets.list_job_scene_image_candidates("job-visual-1", 4)
+    )
+
+    assert response["candidate_count"] == 2
+    assert {item["candidate_id"] for item in response["candidates"]} == {
+        "candidate-1", "candidate-2"
+    }
+    assert all("image_path" not in item for item in response["candidates"])

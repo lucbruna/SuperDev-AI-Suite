@@ -108,12 +108,20 @@ OBJECTS: dict[str, dict[str, Any]] = {
 
 def list_scene_objects(studio_id: str | None = None) -> list[dict[str, Any]]:
     """Return object metadata filtered by studio, without exposing mutable data."""
-    if studio_id not in (None, "whymentary", "historical_documentary"):
+    if studio_id not in (None, "whymentary", "historical_documentary", "felt_clay"):
         raise ValueError(f"Unknown studio '{studio_id}'")
+    selected = [
+        item for item in OBJECTS.values()
+        if studio_id is None
+        or item["studio_id"] == studio_id
+        or (studio_id == "felt_clay" and item["studio_id"] == "whymentary")
+    ]
     return [
-        {key: value for key, value in item.items() if key != "primitives"}
-        for item in OBJECTS.values()
-        if studio_id is None or item["studio_id"] == studio_id
+        {
+            **{key: value for key, value in item.items() if key != "primitives"},
+            **({"studio_id": "felt_clay"} if studio_id == "felt_clay" else {}),
+        }
+        for item in selected
     ]
 
 

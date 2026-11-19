@@ -807,6 +807,22 @@ class TestDarkstudioProfileSelection:
         assert fake_engine.received["params"]["studio_id"] == "historical_documentary"
 
     @pytest.mark.asyncio
+    async def test_felt_clay_studio_profile_reaches_render_engine(
+        self, client: AsyncClient, fake_engine: _FakeEngine
+    ):
+        resp = await client.post(
+            "/api/v1/video-studio/videos/generate",
+            json={
+                "project_id": "p1",
+                "prompt": "Mia e Leo explicam um tema de saúde em feltro",
+                "studio_id": "felt_clay",
+            },
+        )
+        assert resp.status_code == 202
+        assert fake_engine.received is not None
+        assert fake_engine.received["params"]["studio_id"] == "felt_clay"
+
+    @pytest.mark.asyncio
     async def test_unknown_studio_profile_is_rejected(
         self, client: AsyncClient
     ):

@@ -138,7 +138,11 @@ def approve_scene_image_candidate(
 
     old_path = scene.get("background_image_path")
     if old_path:
-        updated.setdefault("scene_asset_history", []).append({
+        history = updated.get("scene_asset_history")
+        if not isinstance(history, list):
+            history = []
+            updated["scene_asset_history"] = history
+        history.append({
             "scene_index": scene_index,
             "image_path": str(old_path),
             "replaced_by_candidate_id": candidate_id,
