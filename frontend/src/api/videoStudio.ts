@@ -403,7 +403,7 @@ export interface GenerateVideoParams {
 export interface DarkstudioDependencyGraph {
   job_id: string;
   nodes: { id: string; type: string; label: string; status: string; reason?: string | null;
-    scene_index?: number | null; bytes?: number | null; probe_status?: string | null }[];
+    scene_index?: number | null; bytes?: number | null; probe_status?: string | null; sha256?: string | null }[];
   edges: { from: string; to: string; relationship: string }[];
   summary: { nodes: number; dependencies: number; statuses: Record<string, number> };
   impact_rules: { changed: string; rebuild: string[]; condition?: string }[];
@@ -426,7 +426,7 @@ export interface DarkstudioDependencyImpact {
 export interface DarkstudioAssetHealth {
   job_id: string;
   status: "healthy" | "needs_attention";
-  summary: { total_assets: number; available: number; missing: number; corrupt: number; unreadable: number };
+  summary: { total_assets: number; available: number; missing: number; corrupt: number; unreadable: number; stale?: number };
   scenes: { scene_index?: number; asset_index?: number; group?: string; status: string;
     assets: { kind: string; status: string; reason?: string; bytes?: number; sha256?: string }[] }[];
   checked_at: number;
