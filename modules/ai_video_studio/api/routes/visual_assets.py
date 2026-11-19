@@ -248,6 +248,25 @@ async def restore_job_scene_image_history(job_id: str, scene_index: int, history
     }
 
 
+@router.get("/jobs/{job_id}/image-framing")
+async def get_job_scene_image_framing(job_id: str):
+    """Return saved framing settings keyed by original scene index."""
+    record = _job_or_404(job_id)
+    scenes = _source_scenes(record)
+    framing: dict[str, dict[str, float]] = {}
+    from modules.ai_video_studio.media.scene_image_transform import normalize_scene_image_transform
+    for position, scene in enumerate(scenes):
+        try:
+            scene_index = int(scene.get("_source_scene_index", position))
+            framing[str(scene_index)] = normalize_scene_image_transform(
+                scene.get("background_image_transform")
+            )
+        except (TypeError, ValueError):
+            # Malformed legacy metadata is ignored; the UI uses neutral defaults.
+            continue
+    return {"job_id": job_id, "scenes": framing}
+
+
 @router.put("/jobs/{job_id}/scenes/{scene_index}/image-framing")
 async def update_job_scene_image_framing(job_id: str, scene_index: int, req: SceneImageFramingRequest):
     """Persist image framing and invalidate only the affected scene clip."""

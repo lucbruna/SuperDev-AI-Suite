@@ -569,6 +569,11 @@ export const videoStudioApi = {
     return data;
   },
 
+  async getJobSceneImageFraming(jobId: string): Promise<{ job_id: string; scenes: Record<string, SceneImageFraming> }> {
+    const { data } = await apiClient.get(`${STUDIO_BASE}/visual-assets/jobs/${jobId}/image-framing`);
+    return data;
+  },
+
   async updateSceneImageFraming(jobId: string, sceneIndex: number, transform: SceneImageFraming): Promise<{ job_id: string; scene_index: number; status: "saved"; background_image_transform: SceneImageFraming; clip_invalidated: boolean; render_started: boolean }> {
     const { data } = await apiClient.put(`${STUDIO_BASE}/visual-assets/jobs/${jobId}/scenes/${sceneIndex}/image-framing`, transform);
     return data;

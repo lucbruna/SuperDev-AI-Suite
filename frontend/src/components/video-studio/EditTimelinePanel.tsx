@@ -265,8 +265,16 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
     setRenderQuality(null);
     if (!jobId) return;
     videoStudioApi.listJobAudioAssets(jobId).then(setAudioAssets).catch(() => setAudioAssets([]));
-    videoStudioApi.getJob(jobId).then((job) => {
+    videoStudioApi.getJob(jobId).then(async (job) => {
       if (job.scene_assets) setSceneImageAssets(job.scene_assets);
+      try {
+        const framing = await videoStudioApi.getJobSceneImageFraming(jobId);
+        setSceneFraming(Object.fromEntries(
+          Object.entries(framing.scenes).map(([index, transform]) => [Number(index), transform]),
+        ));
+      } catch {
+        // Older jobs may not expose persisted framing metadata.
+      }
       const candidateSceneIndices = Object.keys(job.scene_image_candidates ?? {});
       if (!candidateSceneIndices.length) {
         setSceneImageCandidates({});

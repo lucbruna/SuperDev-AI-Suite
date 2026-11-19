@@ -248,3 +248,24 @@ def test_scene_image_framing_rejects_unknown_scene(monkeypatch) -> None:
             "job-visual-1", 999, visual_assets.SceneImageFramingRequest()
         ))
     assert exc.value.status_code == 404
+
+    
+def test_scene_image_framing_listing_returns_saved_values_by_source_index(monkeypatch) -> None:
+    record = _record()
+    record["_source_scenes"][0]["background_image_transform"] = {
+        "scale": 1.75, "offset_x": -0.25, "offset_y": 0.5,
+    }
+    monkeypatch.setattr(video, "_jobs", {"job-visual-1": record})
+    response = asyncio.run(visual_assets.get_job_scene_image_framing("job-visual-1"))
+    assert response["job_id"] == "job-visual-1"
+    assert response["scenes"]["4"] == {
+        "scale": 1.75, "offset_x": -0.25, "offset_y": 0.5,
+    }
+
+
+def test_scene_image_framing_listing_defaults_legacy_scenes(monkeypatch) -> None:
+    monkeypatch.setattr(video, "_jobs", {"job-visual-1": _record()})
+    response = asyncio.run(visual_assets.get_job_scene_image_framing("job-visual-1"))
+    assert response["scenes"]["4"] == {
+        "scale": 1.0, "offset_x": 0.0, "offset_y": 0.0,
+    }
