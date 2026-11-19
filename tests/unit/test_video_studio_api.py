@@ -1520,6 +1520,7 @@ class TestAsyncVidGridRebuildQueue:
         video._jobs["async-queue-job"] = record
         monkeypatch.setattr(video, "_scene_clip_recovery_plan", lambda _record: {"repair_scene_indices": [1, 4]})
         monkeypatch.setattr(video, "_persist_job", lambda _record: None)
+        monkeypatch.setattr(video, "has_active_task_for_job", lambda *_args: False)
         enqueued = []
         monkeypatch.setattr(
             "modules.ai_video_studio.media.job_store.enqueue_task",
