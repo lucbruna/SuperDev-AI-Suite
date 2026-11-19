@@ -2543,6 +2543,88 @@ async def _run_dependency_rebuild_background(job_id: str, changed_asset_ids: lis
         _persist_job(record)
 
 
+@router.post("/jobs/{job_id}/dependency-rebuild/resume", status_code=202)
+async def resume_video_job_dependency_rebuild(job_id: str, background_tasks: BackgroundTasks):
+    """Resume an incomplete dependency rebuild from the current asset state."""
+    record = _jobs.get(job_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+    previous = record.get("dependency_rebuild_execution")
+    resumable = {"interrupted", "cancelled", "partial", "failed"}
+    if not isinstance(previous, dict) or previous.get("status") not in resumable:
+        raise HTTPException(status_code=409, detail="Only interrupted, cancelled or incomplete dependency rebuilds can be resumed")
+    if record.get("status") != "completed":
+        raise HTTPException(status_code=409, detail="Only completed jobs can resume dependency rebuilds")
+    if record.get("_rendering_edits") or record.get("_rebuilding_scene_clips") or record.get("_scene_clip_rebuild_scheduled") or job_id in _scene_batch_jobs:
+        raise HTTPException(status_code=409, detail="Job assets are locked by another operation")
+
+    changed_asset_ids = list(previous.get("changed_asset_ids") or [])
+    if not changed_asset_ids:
+        raise HTTPException(status_code=409, detail="The previous execution has no saved asset selection")
+    impact = await preview_video_job_dependency_impact(
+        job_id, DependencyImpactRequest(changed_asset_ids=changed_asset_ids)
+    )
+    if not impact.get("final_export_required"):
+        return {"job_id": job_id, "status": "unchanged", "queued": False,
+                "message": "No downstream export work remains."}
+
+    if impact.get("rebuild_scene_indices"):
+        if not record.get("vidgrid_compatible"):
+            raise HTTPException(status_code=409, detail="Affected scene clips require VidGrid selective rebuild")
+        recovery = _scene_clip_recovery_plan(record)
+        repairable = set(recovery.get("repair_scene_indices") or [])
+        pending = sorted(set(impact["rebuild_scene_indices"]) & repairable)
+        impact["previously_completed_scene_indices"] = sorted(
+            set(impact["rebuild_scene_indices"]) - set(pending)
+        )
+        impact["rebuild_scene_indices"] = pending
+        impact["rebuild_steps"] = [
+            step for step in impact.get("rebuild_steps", [])
+            if step.get("operation") != "rebuild_scene_clips"
+        ]
+        if pending:
+            impact["rebuild_steps"].insert(0, {
+                "operation": "rebuild_scene_clips", "scene_indices": pending,
+                "reason": "Retomada: somente cenas que continuam desatualizadas",
+            })
+
+    graph = await get_video_job_dependency_graph(job_id)
+    nodes_by_id = {node["id"]: node for node in graph["nodes"]}
+    blocked = [
+        {"id": node["id"], "status": node["status"], "reason": node.get("reason")}
+        for node in [*impact.get("affected_nodes", []),
+                     *(nodes_by_id[node_id] for node_id in changed_asset_ids if node_id in nodes_by_id)]
+        if node.get("type") in {"image", "narration", "narration_track", "music", "sound_effect"}
+        and node.get("status") in {"missing", "corrupt", "unreadable"}
+    ]
+    if blocked:
+        raise HTTPException(status_code=409, detail={
+            "message": "Resume blocked because required assets are unavailable or corrupt",
+            "blocked_assets": blocked,
+        })
+
+    execution = {
+        "status": "queued", "changed_asset_ids": changed_asset_ids,
+        "scene_indices": list(impact.get("rebuild_scene_indices") or []),
+        "previously_completed_scene_indices": list(impact.get("previously_completed_scene_indices") or []),
+        "queued_at": time.time(), "updated_at": time.time(),
+        "final_export_required": True, "resume_of": previous.get("queued_at"),
+        "cancel_requested": False, "attempt": int(previous.get("attempt") or 1) + 1,
+    }
+    record["dependency_rebuild_execution"] = execution
+    _persist_job(record)
+    background_tasks.add_task(
+        _run_dependency_rebuild_background, job_id, changed_asset_ids, impact
+    )
+    return {
+        "job_id": job_id, "status": "queued", "queued": True,
+        "scene_indices": execution["scene_indices"],
+        "previously_completed_scene_indices": execution["previously_completed_scene_indices"],
+        "status_url": f"/videos/jobs/{job_id}/dependency-rebuild/status",
+        "message": "Execução retomada; somente cenas ainda desatualizadas serão reconstruídas.",
+    }
+
+
 @router.post("/jobs/{job_id}/execute-dependency-rebuild", status_code=202)
 async def execute_video_job_dependency_rebuild(
     job_id: str, req: DependencyExecutionRequest, background_tasks: BackgroundTasks = None
