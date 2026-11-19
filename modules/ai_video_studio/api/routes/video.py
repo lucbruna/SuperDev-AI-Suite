@@ -2506,6 +2506,9 @@ async def _run_dependency_rebuild_background(job_id: str, changed_asset_ids: lis
     _persist_job(record)
     rebuild_result = None
     try:
+        if execution.get("cancel_requested"):
+            execution.update({"status": "cancelled", "updated_at": time.time(), "cancelled_at": time.time()})
+            return
         scene_indices = list(impact.get("rebuild_scene_indices") or [])
         if scene_indices:
             if not record.get("vidgrid_compatible"):
@@ -2513,11 +2516,21 @@ async def _run_dependency_rebuild_background(job_id: str, changed_asset_ids: lis
             rebuild_result = await rebuild_stale_video_job_scene_clips(
                 job_id, SceneClipRebuildRequest(scene_indices=scene_indices)
             )
+            if execution.get("cancel_requested"):
+                execution.update({"status": "cancelled", "updated_at": time.time(),
+                                  "cancelled_at": time.time(), "rebuild_result": rebuild_result,
+                                  "final_export_skipped": True})
+                return
             if rebuild_result.get("failed") or rebuild_result.get("rebuilt") != len(scene_indices):
                 execution.update({"status": "partial", "updated_at": time.time(),
                                   "rebuild_result": rebuild_result, "rebuild": rebuild_result, "render": None, "final_export_skipped": True})
                 _persist_job(record)
                 return
+        if execution.get("cancel_requested"):
+            execution.update({"status": "cancelled", "updated_at": time.time(),
+                              "cancelled_at": time.time(), "rebuild_result": rebuild_result,
+                              "final_export_skipped": True})
+            return
         render_result = await render_video_job_edits(job_id)
         execution.update({"status": "completed", "updated_at": time.time(),
                           "rebuild_result": rebuild_result,
@@ -2590,6 +2603,23 @@ async def execute_video_job_dependency_rebuild(
         "impact": impact,
         "status_url": f"/videos/jobs/{job_id}/dependency-rebuild/status",
         "message": "Reconstrução adicionada à fila; consulte o status para acompanhar o processamento.",
+    }
+
+
+@router.post("/jobs/{job_id}/dependency-rebuild/cancel")
+async def cancel_video_job_dependency_rebuild(job_id: str):
+    record = _jobs.get(job_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+    execution = record.get("dependency_rebuild_execution")
+    if not isinstance(execution, dict) or execution.get("status") not in {"queued", "processing"}:
+        raise HTTPException(status_code=409, detail="There is no active dependency rebuild to cancel")
+    execution["cancel_requested"] = True
+    execution["updated_at"] = time.time()
+    _persist_job(record)
+    return {
+        "job_id": job_id, "status": execution.get("status"), "cancel_requested": True,
+        "message": "O cancelamento será aplicado antes da próxima etapa segura; uma cena já em renderização será concluída.",
     }
 
 
