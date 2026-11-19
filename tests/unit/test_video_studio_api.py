@@ -1607,6 +1607,32 @@ class TestDarkstudioDependencyGraph:
         assert graph["summary"]["dependencies"] == 3
 
     @pytest.mark.asyncio
+    async def test_malformed_persisted_metadata_does_not_break_graph(self, tmp_path, monkeypatch):
+        from modules.ai_video_studio.api.routes import video
+        from modules.ai_video_studio.media import output_paths
+
+        roots = {name: tmp_path / name for name in ("images", "videos", "voice", "music", "effects")}
+        for root in roots.values():
+            root.mkdir()
+        monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda name: roots[name])
+        video._jobs["dependency-graph-malformed"] = {
+            "job_id": "dependency-graph-malformed",
+            "_edited_scenes": [None, {"_source_scene_index": "not-an-index"}],
+            "scene_clips": [{"scene_index": None}, None],
+            "voiceover": {"narration_style": "per_scene", "clips": [{"index": None}, "bad-entry"]},
+            "audio_settings": {
+                "music_clips": [None, {"asset": None}],
+                "sfx_clips": ["bad-entry"],
+            },
+        }
+
+        graph = await video.get_video_job_dependency_graph("dependency-graph-malformed")
+
+        assert graph["summary"]["nodes"] >= 3
+        assert graph["summary"]["dependencies"] >= 1
+        assert any(node["status"] == "missing" for node in graph["nodes"])
+
+    @pytest.mark.asyncio
     async def test_rejects_unknown_job(self):
         from fastapi import HTTPException
         from modules.ai_video_studio.api.routes import video
