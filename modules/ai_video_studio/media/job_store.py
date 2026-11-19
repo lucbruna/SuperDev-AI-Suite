@@ -207,6 +207,21 @@ def enqueue_unique_task_for_job(task_id: str, task_type: str, job_id: str,
         connection.close()
 
 
+def delete_queued_task(task_id: str) -> bool:
+    """Remove a task only while it is still queued and unclaimed."""
+    connection = _connect()
+    try:
+        _ensure_task_queue(connection)
+        cursor = connection.execute(
+            "DELETE FROM durable_tasks WHERE task_id=? AND status='queued'",
+            (task_id,),
+        )
+        connection.commit()
+        return cursor.rowcount == 1
+    finally:
+        connection.close()
+
+
 def claim_next_task(worker_id: str, lease_seconds: int = 300) -> dict[str, Any] | None:
     """Atomically claim one queued task or reclaim a task with an expired lease."""
     import time
