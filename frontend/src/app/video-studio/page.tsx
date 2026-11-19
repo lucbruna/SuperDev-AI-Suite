@@ -60,9 +60,6 @@ const plannedModules = [
 // Page
 // ---------------------------------------------------------------------------
 
-// Max polling ticks before giving up (1.5s each → ~3 min safety cap).
-const MAX_POLL_TICKS = 120;
-
 export default function VideoStudioPage() {
   const { user } = useAuthStore();
   const projectId = user?.id ?? "default";
@@ -176,21 +173,30 @@ export default function VideoStudioPage() {
 
   const pollUntilDone = useCallback(async (jobId: string) => {
     if (pollTimer.current) clearInterval(pollTimer.current);
-    let ticks = 0;
+    let requestInFlight = false;
+    let consecutiveErrors = 0;
     pollTimer.current = setInterval(async () => {
-      ticks += 1;
-      if (ticks >= MAX_POLL_TICKS) {
-        if (pollTimer.current) clearInterval(pollTimer.current);
-        return;
-      }
+      // A slow status request must not overlap with the next polling tick.
+      if (requestInFlight) return;
+      requestInFlight = true;
       try {
         const job = await videoStudioApi.getJob(jobId);
+        consecutiveErrors = 0;
         setJobs((prev) => prev.map((j) => (j.job_id === jobId ? job : j)));
-        if (job.status === "completed" || job.status === "failed") {
+        if (["completed", "failed", "cancelled", "interrupted"].includes(job.status)) {
           if (pollTimer.current) clearInterval(pollTimer.current);
+          pollTimer.current = null;
         }
       } catch {
-        if (pollTimer.current) clearInterval(pollTimer.current);
+        // Retry transient network/API failures instead of leaving a long render
+        // permanently stale after one missed status request.
+        consecutiveErrors += 1;
+        if (consecutiveErrors >= 5 && pollTimer.current) {
+          clearInterval(pollTimer.current);
+          pollTimer.current = null;
+        }
+      } finally {
+        requestInFlight = false;
       }
     }, 1500);
   }, []);
