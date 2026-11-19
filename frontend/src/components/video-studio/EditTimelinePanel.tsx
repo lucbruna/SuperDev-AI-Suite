@@ -1111,11 +1111,11 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
         {jobId && staleVidGridClipCount > 0 && <button
           type="button"
           onClick={rebuildStaleVidGridClips}
-          disabled={rebuildingVidGridClips || rendering || previewing || saving || dirty || audioDirty || savingAudio}
+          disabled={rebuildingVidGridClips || (vidGridQueue !== null && ["queued", "processing"].includes(vidGridQueue.status)) || rendering || previewing || saving || dirty || audioDirty || savingAudio}
           className="rounded-md border border-amber-300 px-3 py-2 text-xs font-semibold text-amber-700 disabled:opacity-40 dark:border-amber-700 dark:text-amber-300"
           title="Reconstrói apenas cenas com clipe ausente, inválido, desatualizado ou incompatível com a imagem aprovada e o perfil atual."
         >
-          {rebuildingVidGridClips ? "Reconstruindo clipes…" : `Recuperar ${staleVidGridClipCount} cena(s) VidGrid`}
+          {rebuildingVidGridClips ? "Enfileirando…" : vidGridQueue && ["queued", "processing"].includes(vidGridQueue.status) ? "Fila de reconstrução em andamento…" : `Recuperar ${staleVidGridClipCount} cena(s) VidGrid`}
         </button>}
         {vidGridQueue && <div className="mt-2 rounded-md border border-surface-200 p-3 text-xs dark:border-surface-700">
           <div className="flex flex-wrap items-center justify-between gap-2">
