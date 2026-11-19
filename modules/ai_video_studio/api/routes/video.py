@@ -321,7 +321,7 @@ def _scene_clip_recovery_plan(record: dict) -> dict:
     """Compare saved VidGrid clips with active scene images and render profile."""
     from modules.ai_video_studio.media.output_paths import get_subsystem_dir
     scenes = record.get("_edited_scenes") or record.get("_source_scenes") or []
-    clips = {int(item.get("scene_index", -1)): item for item in (record.get("scene_clips") or []) if isinstance(item, dict)}
+    clips = {_safe_record_index(item.get("scene_index")): item for item in (record.get("scene_clips") or []) if isinstance(item, dict)}
     image_root = Path(get_subsystem_dir("images")).resolve()
     video_root = Path(get_subsystem_dir("videos")).resolve()
     params = record.get("params") or {}
@@ -333,7 +333,9 @@ def _scene_clip_recovery_plan(record: dict) -> dict:
     items: list[dict[str, Any]] = []
     repair: list[int] = []
     for position, scene in enumerate(scenes):
-        scene_index = int(scene.get("_source_scene_index", position))
+        if not isinstance(scene, dict):
+            continue
+        scene_index = _safe_record_index(scene.get("_source_scene_index", position), position)
         clip = clips.get(scene_index)
         reasons: list[str] = []
         warnings: list[str] = []
@@ -663,9 +665,19 @@ async def approve_video_job_scene_image(job_id: str, scene_index: int, candidate
             "message": "Imagem aprovada e aplicada à cena. Renderize a edição para atualizar o MP4 completo."}
 
 
+def _safe_record_index(value: Any, fallback: int = -1) -> int:
+    """Parse persisted scene indices defensively; malformed records must not 500 an audit."""
+    try:
+        if isinstance(value, bool):
+            return fallback
+        return int(value)
+    except (TypeError, ValueError, OverflowError):
+        return fallback
+
+
 def _asset_health_entry(kind: str, value: Any, allowed_root: Path) -> dict[str, Any]:
     """Inspect one persisted asset reference without exposing absolute paths."""
-    if not value:
+    if not isinstance(value, (str, Path)) or not str(value).strip():
         return {"kind": kind, "status": "missing", "reason": "path_not_recorded"}
     try:
         path = Path(str(value)).resolve()
@@ -739,7 +751,7 @@ async def get_video_job_asset_health(job_id: str):
     clips = {int(item.get("scene_index", -1)): item for item in (record.get("scene_clips") or []) if isinstance(item, dict)}
     voiceover = record.get("voiceover") or {}
     narration_by_scene = {
-        int(item.get("index", -1)): item for item in (voiceover.get("clips") or [])
+        _safe_record_index(item.get("index")): item for item in (voiceover.get("clips") or [])
         if isinstance(item, dict)
     }
     rows: list[dict[str, Any]] = []
@@ -762,6 +774,8 @@ async def get_video_job_asset_health(job_id: str):
     audio_settings = record.get("audio_settings") or {}
     for group, kind, root_key in (("music_clips", "music", "music"), ("sfx_clips", "sound_effect", "effects")):
         for position, item in enumerate(audio_settings.get(group) or []):
+            if not isinstance(item, dict):
+                item = {}
             asset = _asset_health_entry(kind, item.get("asset"), roots[root_key])
             counts[asset["status"]] = counts.get(asset["status"], 0) + 1
             rows.append({"asset_index": position, "group": group, "status": asset["status"], "assets": [asset]})
@@ -819,7 +833,9 @@ async def get_video_job_dependency_graph(job_id: str):
         for item in (voiceover.get("clips") or []) if isinstance(item, dict)
     }
     for position, scene in enumerate(scenes):
-        scene_index = int(scene.get("_source_scene_index", position))
+        if not isinstance(scene, dict):
+            continue
+        scene_index = _safe_record_index(scene.get("_source_scene_index", position), position)
         image_id = f"scene:{scene_index}:image"
         clip_id = f"scene:{scene_index}:clip"
         add_node(image_id, "image", f"Imagem da cena {scene_index + 1}",
@@ -843,7 +859,9 @@ async def get_video_job_dependency_graph(job_id: str):
     add_node(output_id, "final_export", "Exportação final",
              _asset_health_entry("final_export", output_value, roots["videos"]))
     for position, scene in enumerate(scenes):
-        scene_index = int(scene.get("_source_scene_index", position))
+        if not isinstance(scene, dict):
+            continue
+        scene_index = _safe_record_index(scene.get("_source_scene_index", position), position)
         edges.append({"from": f"scene:{scene_index}:clip", "to": output_id, "relationship": "assembly_input"})
 
     if voiceover.get("narration_style") != "per_scene" and voiceover.get("output_path"):
@@ -858,6 +876,8 @@ async def get_video_job_dependency_graph(job_id: str):
         ("sfx_clips", "sound_effect", "effects", "sound_effect"),
     ):
         for position, item in enumerate(audio_settings.get(group) or []):
+            if not isinstance(item, dict):
+                item = {}
             node_id = f"audio:{group}:{position}"
             add_node(node_id, node_type, f"{'Música' if kind == 'music' else 'Efeito'} {position + 1}",
                      _asset_health_entry(kind, item.get("asset"), roots[root_key]))
