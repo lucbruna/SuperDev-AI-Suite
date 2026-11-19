@@ -446,11 +446,11 @@ try:
             except Exception:
                 pass
         _execution = _job_record.get("dependency_rebuild_execution")
-        if isinstance(_execution, dict) and _execution.get("status") == "processing":
+        if isinstance(_execution, dict) and _execution.get("status") in {"queued", "processing"}:
             _execution["status"] = "interrupted"
             _execution["updated_at"] = time.time()
             _execution["recovery_note"] = (
-                "A API foi reiniciada durante a execução. Revise o grafo e o recovery-plan antes de iniciar uma nova execução."
+                "A API foi reiniciada antes da conclusão. A execução foi preservada como interrompida; revise o grafo e o recovery-plan antes de reenfileirar."
             )
             try:
                 _persist_job(_job_record)
