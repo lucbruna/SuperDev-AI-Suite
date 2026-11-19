@@ -12,6 +12,7 @@ from modules.ai_video_studio.api.routes import (
     assets,
     audio,
     subtitles,
+    visual_assets,
 )
 
 __all__ = [
@@ -23,4 +24,5 @@ __all__ = [
     "assets",
     "audio",
     "subtitles",
+    "visual_assets",
 ]

@@ -71,7 +71,7 @@ def test_visual_plan_apply_persists_briefs_without_replacing_image(monkeypatch) 
     assert response["applied"] is True
     assert record["scene_visual_plan"]["images_replaced"] is False
     assert record["_edited_scenes"][0]["visual_brief"]["status"] == "ready_for_generation"
-    assert record["_edited_scenes"][0]["background_image_path"] is None
+    assert "background_image_path" not in record["_edited_scenes"][0]
     assert record["_edited_scenes"][0]["visual_prompt_suggestion"] == "Navio de madeira chega ao porto"
     assert saved == ["job-visual-1"]
 
