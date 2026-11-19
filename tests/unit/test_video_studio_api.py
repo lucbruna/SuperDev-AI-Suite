@@ -1542,6 +1542,37 @@ class TestDarkstudioAssetHealth:
         assert report["status"] == "needs_attention"
 
     @pytest.mark.asyncio
+    async def test_reports_stale_scene_image_when_clip_fingerprint_differs(self, tmp_path, monkeypatch):
+        from modules.ai_video_studio.api.routes import video
+        from modules.ai_video_studio.media import output_paths
+
+        roots = {name: tmp_path / name for name in ("images", "videos", "voice", "music", "effects")}
+        for root in roots.values():
+            root.mkdir()
+        image = roots["images"] / "approved.png"
+        image.write_bytes(b"current-image")
+        clip = roots["videos"] / "scene.mp4"
+        clip.write_bytes(b"video-bytes")
+        monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda name: roots[name])
+        monkeypatch.setattr(video.shutil, "which", lambda _name: None)
+        video._jobs["asset-health-stale-image"] = {
+            "job_id": "asset-health-stale-image",
+            "_edited_scenes": [{"_source_scene_index": 0, "background_image_path": str(image)}],
+            "scene_clips": [{
+                "scene_index": 0, "output_path": str(clip),
+                "source_image_fingerprint": "previous-image-fingerprint",
+            }],
+        }
+
+        report = await video.get_video_job_asset_health("asset-health-stale-image")
+        image_asset = report["scenes"][0]["assets"][0]
+
+        assert image_asset["status"] == "stale"
+        assert image_asset["reason"] == "source_image_changed"
+        assert report["status"] == "needs_attention"
+        assert report["summary"]["stale"] == 1
+
+    @pytest.mark.asyncio
     async def test_rejects_unknown_job(self):
         from fastapi import HTTPException
         from modules.ai_video_studio.api.routes import video
