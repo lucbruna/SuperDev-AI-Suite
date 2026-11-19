@@ -124,6 +124,37 @@ def fake_engine(monkeypatch, tmp_path) -> _FakeEngine:
 
 # ── POST /videos/generate ─────────────────────────────────────────
 
+class TestFailedVidGridRecovery:
+    def test_recovery_plan_allows_procedural_scene_without_image(self, tmp_path, monkeypatch):
+        from modules.ai_video_studio.api.routes.video import _scene_clip_recovery_plan
+        from modules.ai_video_studio.media import output_paths
+
+        monkeypatch.setattr(output_paths, "DOWNLOADS_DIR", tmp_path / "downloads")
+        record = {
+            "status": "failed", "vidgrid_compatible": True,
+            "resolution": "1280x720", "frame_rate": 24,
+            "params": {"scene_image_mode": "procedural"},
+            "_edited_scenes": [
+                {"_source_scene_index": 0, "description": "Cena procedural", "duration": 10.0}
+            ],
+            "scene_clips": [], "scene_assets": [],
+        }
+        plan = _scene_clip_recovery_plan(record)
+        assert plan["repair_scene_indices"] == [0]
+        assert plan["blocked_count"] == 0
+        assert "procedural_scene_without_image_asset" in plan["scenes"][0]["warnings"]
+
+    def test_failed_vidgrid_job_keeps_mode_metadata_at_creation(self):
+        from modules.ai_video_studio.api.routes.video import VideoGenerateRequest
+
+        request = VideoGenerateRequest(
+            project_id="p1", prompt="A test scene", vidgrid_compatible=True,
+            scene_image_mode="procedural",
+        )
+        assert request.vidgrid_compatible is True
+        assert request.scene_image_mode == "procedural"
+
+
 class TestSceneCheckpointPersistence:
     def test_scene_snapshot_and_assets_are_merged_without_overwriting_other_scenes(self, monkeypatch, tmp_path):
         from modules.ai_video_studio.api.routes.video import _merge_scene_checkpoint

@@ -425,13 +425,29 @@ def _scene_clip_recovery_plan(record: dict) -> dict:
         image_value = scene.get("background_image_path")
         image_path = Path(str(image_value)).resolve() if image_value else None
         image_fingerprint = None
-        if image_path is None or image_root not in image_path.parents or not image_path.is_file():
-            reasons.append("approved_image_missing_or_unsafe")
-        else:
+        asset_record = next(
+            (item for item in (record.get("scene_assets") or [])
+             if isinstance(item, dict) and _safe_record_index(item.get("scene_index")) == scene_index),
+            {},
+        )
+        image_mode = str(params.get("scene_image_mode") or record.get("scene_image_mode") or "auto")
+        procedural_source = (
+            image_mode == "procedural"
+            or asset_record.get("status") == "fallback"
+            or asset_record.get("provider") == "procedural_fallback"
+        )
+        image_ready = False
+        if image_path is not None and image_root in image_path.parents and image_path.is_file():
             try:
                 image_fingerprint = _asset_sha256(image_path)
+                image_ready = True
             except OSError:
                 reasons.append("approved_image_unreadable")
+        elif procedural_source:
+            image_ready = True
+            warnings.append("procedural_scene_without_image_asset")
+        else:
+            reasons.append("approved_image_missing_or_unsafe")
         if clip is None:
             reasons.append("clip_missing")
         else:
@@ -467,7 +483,7 @@ def _scene_clip_recovery_plan(record: dict) -> dict:
                     reasons.append("source_narration_changed")
                 elif narration_fingerprint and not saved_narration_fingerprint:
                     warnings.append("legacy_clip_without_narration_fingerprint")
-        if reasons and image_fingerprint:
+        if reasons and image_ready:
             repair.append(scene_index)
         items.append({"scene_index": scene_index, "status": "needs_rebuild" if reasons else "ready",
                       "reasons": sorted(set(reasons)), "warnings": warnings,
@@ -1270,8 +1286,8 @@ async def get_video_job_recovery_plan(job_id: str):
     record = _jobs.get(job_id)
     if record is None:
         raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
-    if record.get("status") != "completed" or not record.get("vidgrid_compatible"):
-        raise HTTPException(status_code=409, detail="Recovery planning requires a completed VidGrid job")
+    if record.get("status") not in {"completed", "failed"} or not record.get("vidgrid_compatible"):
+        raise HTTPException(status_code=409, detail="Recovery planning requires a completed or partially failed VidGrid job with saved scenes")
     plan = _scene_clip_recovery_plan(record)
     plan["job_id"] = job_id
     plan["full_mp4_render_required"] = bool(plan["repair_scene_indices"])
@@ -1319,8 +1335,8 @@ async def queue_scene_clip_rebuild(job_id: str, background_tasks: BackgroundTask
     record = _jobs.get(job_id)
     if record is None:
         raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
-    if record.get("status") != "completed" or not record.get("vidgrid_compatible"):
-        raise HTTPException(status_code=409, detail="Queued rebuild requires a completed VidGrid job")
+    if record.get("status") not in {"completed", "failed"} or not record.get("vidgrid_compatible"):
+        raise HTTPException(status_code=409, detail="Queued rebuild requires a completed or partially failed VidGrid job")
     if (record.get("_rendering_edits") or record.get("_rebuilding_scene_clips")
         or record.get("_scene_clip_rebuild_scheduled") or job_id in _scene_batch_jobs):
         raise HTTPException(status_code=409, detail="Scene assets are locked by another operation")
@@ -1447,8 +1463,8 @@ async def rebuild_stale_video_job_scene_clips(job_id: str, req: SceneClipRebuild
     record = _jobs.get(job_id)
     if record is None:
         raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
-    if record.get("status") != "completed" or not record.get("vidgrid_compatible"):
-        raise HTTPException(status_code=409, detail="Selective clip rebuild requires a completed VidGrid job")
+    if record.get("status") not in {"completed", "failed"} or not record.get("vidgrid_compatible"):
+        raise HTTPException(status_code=409, detail="Selective clip rebuild requires a completed or partially failed VidGrid job")
     if record.get("_rendering_edits") or (record.get("_rebuilding_scene_clips") and not record.get("_scene_clip_rebuild_worker")) or record.get("_scene_clip_rebuild_scheduled") or job_id in _scene_batch_jobs:
         raise HTTPException(status_code=409, detail="Scene assets are locked by another operation")
 
@@ -1513,7 +1529,20 @@ async def rebuild_stale_video_job_scene_clips(job_id: str, req: SceneClipRebuild
             scene = scenes[position]
             image_value = scene.get("background_image_path")
             image_path = Path(str(image_value)).resolve() if image_value else None
-            if image_path is None or image_root not in image_path.parents or not image_path.is_file():
+            asset_record = next(
+                (item for item in (record.get("scene_assets") or [])
+                 if isinstance(item, dict) and _safe_record_index(item.get("scene_index")) == scene_index),
+                {},
+            )
+            procedural_source = (
+                str(params.get("scene_image_mode") or record.get("scene_image_mode") or "auto") == "procedural"
+                or asset_record.get("status") == "fallback"
+                or asset_record.get("provider") == "procedural_fallback"
+            )
+            image_is_safe = bool(
+                image_path is not None and image_root in image_path.parents and image_path.is_file()
+            )
+            if not image_is_safe and not procedural_source:
                 results.append({"scene_index": scene_index, "status": "failed", "error": "Approved image missing or outside asset directory"})
                 continue
             try:
@@ -1557,7 +1586,7 @@ async def rebuild_stale_video_job_scene_clips(job_id: str, req: SceneClipRebuild
                     "visual_prompt": scene.get("visual_prompt") or scene.get("description", ""),
                     "narration_text": scene.get("voiceover_text") or scene.get("narration") or "",
                     "status": "updated",
-                    "source_image_fingerprint": _asset_sha256(image_path),
+                    "source_image_fingerprint": _asset_sha256(image_path) if image_is_safe and image_path else None,
                     **({"source_narration_fingerprint": narration_fingerprint} if narration_fingerprint else {}),
                 }
                 clips = record.setdefault("scene_clips", [])
@@ -1869,6 +1898,9 @@ async def generate_video(req: VideoGenerateRequest, background_tasks: Background
         "params": req.model_dump(exclude={"project_id"}),
         "voiceover": None, "subtitles": None, "edit_timeline": None, "error": None,
         "scene_progress": [],
+        "vidgrid_compatible": req.vidgrid_compatible,
+        "clip_duration_seconds": 10.0 if req.vidgrid_compatible else None,
+        "scene_image_mode": req.scene_image_mode,
     }
 
     _persist_job(_jobs[job_id])
