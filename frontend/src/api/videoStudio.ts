@@ -400,6 +400,16 @@ export interface GenerateVideoParams {
   vidgrid_compatible?: boolean;
 }
 
+export interface DarkstudioDependencyGraph {
+  job_id: string;
+  nodes: { id: string; type: string; label: string; status: string; reason?: string | null;
+    scene_index?: number | null; bytes?: number | null; probe_status?: string | null }[];
+  edges: { from: string; to: string; relationship: string }[];
+  summary: { nodes: number; dependencies: number; statuses: Record<string, number> };
+  impact_rules: { changed: string; rebuild: string[]; condition?: string }[];
+  limitations: string[];
+}
+
 export interface DarkstudioAssetHealth {
   job_id: string;
   status: "healthy" | "needs_attention";
@@ -706,6 +716,11 @@ export const videoStudioApi = {
     message: string;
   }> {
     const { data } = await apiClient.post(`${STUDIO_BASE}/videos/jobs/${jobId}/render-edits`);
+    return data;
+  },
+
+  async getJobDependencyGraph(jobId: string): Promise<DarkstudioDependencyGraph> {
+    const { data } = await apiClient.get(`${STUDIO_BASE}/videos/jobs/${jobId}/dependency-graph`);
     return data;
   },
 
