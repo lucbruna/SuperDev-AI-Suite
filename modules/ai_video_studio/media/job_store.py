@@ -301,3 +301,29 @@ def renew_task_lease(task_id: str, worker_id: str, lease_seconds: int = 300) -> 
         return cursor.rowcount == 1
     finally:
         connection.close()
+
+
+def has_active_task_for_job(job_id: str, task_type: str | None = None) -> bool:
+    """Check whether a persisted queued/leased task still owns this job."""
+    connection = _connect()
+    try:
+        _ensure_task_queue(connection)
+        if task_type:
+            rows = connection.execute(
+                "SELECT payload FROM durable_tasks WHERE status IN ('queued','processing') AND task_type=?",
+                (task_type,),
+            ).fetchall()
+        else:
+            rows = connection.execute(
+                "SELECT payload FROM durable_tasks WHERE status IN ('queued','processing')"
+            ).fetchall()
+    finally:
+        connection.close()
+    for (encoded,) in rows:
+        try:
+            payload = json.loads(encoded)
+        except (TypeError, json.JSONDecodeError):
+            continue
+        if str(payload.get("job_id") or "") == str(job_id):
+            return True
+    return False
