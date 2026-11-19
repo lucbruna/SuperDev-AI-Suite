@@ -800,9 +800,17 @@ export const videoStudioApi = {
     return data;
   },
 
+  async cancelJobDependencyRebuild(jobId: string): Promise<{ job_id: string; status: string; cancel_requested: boolean; message: string }> {
+    const { data } = await apiClient.post(
+      `${STUDIO_BASE}/videos/jobs/${jobId}/dependency-rebuild/cancel`,
+    );
+    return data;
+  },
+
   async getJobDependencyRebuildStatus(jobId: string): Promise<{
     job_id: string;
-    status: "queued" | "processing" | "completed" | "partial" | "failed" | "interrupted" | string;
+    status: "queued" | "processing" | "completed" | "partial" | "failed" | "interrupted" | "cancelled" | string;
+    cancel_requested?: boolean;
     changed_asset_ids?: string[];
     scene_indices?: number[];
     queued_at?: number;
