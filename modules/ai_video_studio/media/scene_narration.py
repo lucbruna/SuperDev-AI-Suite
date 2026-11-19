@@ -63,6 +63,27 @@ def compute_scene_offsets(
             cursor -= overlap / fps
     return offsets
 
+def narration_text_changes_for_edits(
+    scenes: list[dict[str, Any]], original_clips: list[dict[str, Any]]
+) -> list[int]:
+    """Return source scene indices whose existing audio no longer matches speech text."""
+    changed: list[int] = []
+    for position, scene in enumerate(scenes):
+        source_index = scene.get("_source_scene_index", position)
+        if not isinstance(source_index, int) or isinstance(source_index, bool):
+            raise ValueError("scene source index must be an integer")
+        if not 0 <= source_index < len(original_clips):
+            continue
+        original = original_clips[source_index]
+        if not isinstance(original, dict) or not original.get("audio_path"):
+            continue
+        previous_text = str(original.get("text") or "").strip()
+        current_text = scene_narration_text(scene)
+        if not previous_text or previous_text != current_text:
+            changed.append(source_index)
+    return changed
+
+
 def remap_narration_clips_for_edits(
     scenes: list[dict[str, Any]],
     original_clips: list[dict[str, Any]],
@@ -81,6 +102,7 @@ def remap_narration_clips_for_edits(
     offsets = compute_scene_offsets(
         scenes, fallback_duration=fallback_duration, fps=fps
     )
+    stale_source_indices = set(narration_text_changes_for_edits(scenes, original_clips))
     remapped: list[dict[str, Any]] = []
     for position, (scene, start) in enumerate(zip(scenes, offsets, strict=False)):
         source_index = scene.get("_source_scene_index", position)
@@ -89,7 +111,7 @@ def remap_narration_clips_for_edits(
         if not 0 <= source_index < len(original_clips):
             continue
         original = original_clips[source_index]
-        if not isinstance(original, dict) or not original.get("audio_path"):
+        if not isinstance(original, dict) or not original.get("audio_path") or source_index in stale_source_indices:
             continue
         duration = max(0.1, float(scene.get("duration") or fallback_duration))
         duration_frames = max(1, int(round(duration * fps)))
@@ -175,7 +197,7 @@ async def synthesize_scene_narration_async(
         end = start + scene_duration
         clip: dict[str, Any] = {
             "index": scene.get("index", index),
-            "text": text[:120],
+            "text": text,
             "start": round(start, 3),
             "end": round(end, 3),
         }

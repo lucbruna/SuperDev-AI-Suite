@@ -279,10 +279,10 @@ def test_remap_narration_clips_for_reordered_and_resized_scenes() -> None:
         {"text": "third", "audio_path": "third.wav"},
     ]
     edited_scenes = [
-        {"_source_scene_index": 2, "duration": 1.5},
-        {"_source_scene_index": 0, "duration": 2.0,
+        {"_source_scene_index": 2, "voiceover_text": "third", "duration": 1.5},
+        {"_source_scene_index": 0, "voiceover_text": "first", "duration": 2.0,
          "transition_out": {"type": "crossfade", "duration_frames": 12}},
-        {"_source_scene_index": 1, "duration": 3.0},
+        {"_source_scene_index": 1, "voiceover_text": "second", "duration": 3.0},
     ]
 
     clips = scene_narration.remap_narration_clips_for_edits(
@@ -301,7 +301,7 @@ def test_remap_narration_omits_scenes_without_audio_and_rejects_bad_source_index
     original = [{"text": "silent scene"}, {"text": "spoken", "audio_path": "voice.wav"}]
     scenes = [
         {"_source_scene_index": 0, "duration": 1.0},
-        {"_source_scene_index": 1, "duration": 2.0},
+        {"_source_scene_index": 1, "voiceover_text": "spoken", "duration": 2.0},
     ]
     clips = scene_narration.remap_narration_clips_for_edits(scenes, original, fps=30)
     assert len(clips) == 1
@@ -322,3 +322,29 @@ def test_scene_offsets_round_duration_to_the_same_frame_grid_as_video_rendering(
         fps=24,
     )
     assert offsets[1] == 25 / 24
+
+
+def test_remap_narration_does_not_reuse_audio_after_speech_text_changes() -> None:
+    original = [
+        {"text": "old narration", "audio_path": "old.wav"},
+        {"text": "unchanged narration", "audio_path": "same.wav"},
+    ]
+    edited = [
+        {"_source_scene_index": 0, "voiceover_text": "new narration", "duration": 2.0},
+        {"_source_scene_index": 1, "voiceover_text": "unchanged narration", "duration": 2.0},
+    ]
+
+    assert scene_narration.narration_text_changes_for_edits(edited, original) == [0]
+    clips = scene_narration.remap_narration_clips_for_edits(edited, original)
+    assert [clip["audio_path"] for clip in clips] == ["same.wav"]
+    assert clips[0]["index"] == 1
+
+
+def test_remap_narration_keeps_audio_for_visual_only_edits() -> None:
+    original = [{"text": "same narration", "audio_path": "voice.wav"}]
+    edited = [{"_source_scene_index": 0, "voiceover_text": "same narration",
+               "description": "new visual", "duration": 2.0}]
+
+    assert scene_narration.narration_text_changes_for_edits(edited, original) == []
+    clips = scene_narration.remap_narration_clips_for_edits(edited, original)
+    assert [clip["audio_path"] for clip in clips] == ["voice.wav"]

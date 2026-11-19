@@ -2607,6 +2607,10 @@ async def render_video_job_edits(job_id: str):
         voiceover = record.get("voiceover")
         voiceover = voiceover if isinstance(voiceover, dict) else {}
         narration_clips = voiceover.get("clips") if isinstance(voiceover, dict) else None
+        stale_narration_scene_indices = []
+        if voiceover.get("narration_style") == "per_scene" and isinstance(narration_clips, list):
+            from modules.ai_video_studio.media.scene_narration import narration_text_changes_for_edits
+            stale_narration_scene_indices = narration_text_changes_for_edits(scenes, narration_clips)
         single_track = (
             isinstance(voiceover, dict)
             and voiceover.get("muxed")
@@ -2749,6 +2753,7 @@ async def render_video_job_edits(job_id: str):
             "target_resolution": f"{width}x{height}",
             "audio_status": audio_status,
             "subtitle_status": subtitle_status,
+            "stale_narration_scene_indices": stale_narration_scene_indices,
         }
         record.update(
             edited_output_path=final_path,
@@ -2763,6 +2768,7 @@ async def render_video_job_edits(job_id: str):
             edit_render_status="completed",
             edit_render_audio=audio_status,
             edit_render_subtitles=subtitle_status,
+            edit_render_stale_narration_scenes=stale_narration_scene_indices,
         )
         _persist_job(record)
         return {
@@ -2772,6 +2778,7 @@ async def render_video_job_edits(job_id: str):
             "video_duration": edited_duration,
             "file_size_bytes": edited_bytes,
             "audio_status": audio_status,
+            "stale_narration_scene_indices": stale_narration_scene_indices,
             "encoded_audio_quality": record.get("edit_render_encoded_audio"),
             "subtitle_status": subtitle_status,
             "subtitles": subtitle_info,
