@@ -2532,7 +2532,7 @@ async def _run_dependency_rebuild_background(job_id: str, changed_asset_ids: lis
 
 @router.post("/jobs/{job_id}/execute-dependency-rebuild", status_code=202)
 async def execute_video_job_dependency_rebuild(
-    job_id: str, req: DependencyExecutionRequest, background_tasks: BackgroundTasks | None = None
+    job_id: str, req: DependencyExecutionRequest, background_tasks: BackgroundTasks = None
 ):
     """Queue a freshly recalculated dependency plan after explicit user confirmation."""
     if not req.confirmed:
