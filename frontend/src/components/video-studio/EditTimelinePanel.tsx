@@ -79,6 +79,8 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
   const [staleVidGridClipCount, setStaleVidGridClipCount] = useState(0);
   const [vidGridRecoveryPlan, setVidGridRecoveryPlan] = useState<Awaited<ReturnType<typeof videoStudioApi.getVidGridRecoveryPlan>> | null>(null);
   const [rebuildingVidGridClips, setRebuildingVidGridClips] = useState(false);
+  const [vidGridQueue, setVidGridQueue] = useState<Awaited<ReturnType<typeof videoStudioApi.getVidGridClipRebuildStatus>> | null>(null);
+  const [refreshingVidGridQueue, setRefreshingVidGridQueue] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [audioAssets, setAudioAssets] = useState<StudioAudioAsset[]>([]);
   const [musicAsset, setMusicAsset] = useState("");
@@ -535,19 +537,52 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
   async function rebuildStaleVidGridClips() {
     if (!jobId || rebuildingVidGridClips || rendering || dirty || audioDirty) return;
     setRebuildingVidGridClips(true);
-    setMessage("Reconstruindo somente os clipes desatualizados de 10 segundos…");
+    setMessage("Enfileirando reconstrução das cenas desatualizadas…");
     try {
-      const result = await videoStudioApi.rebuildStaleVidGridClips(jobId);
-      const latest = await videoStudioApi.getJob(jobId);
-      const plan = await videoStudioApi.getVidGridRecoveryPlan(jobId);
-      setVidGridRecoveryPlan(plan);
-      setStaleVidGridClipCount(plan.repairable_count);
-      if (latest.scene_assets) setSceneImageAssets(latest.scene_assets);
-      setMessage(result.message || `${result.rebuilt} clipe(s) reconstruído(s); ${result.failed} falha(s).`);
+      const queued = await videoStudioApi.queueStaleVidGridClips(jobId);
+      if (queued.queued) {
+        const status = await videoStudioApi.getVidGridClipRebuildStatus(jobId);
+        setVidGridQueue(status);
+        setMessage(`Fila iniciada: ${queued.requested} cena(s). Você pode continuar editando outras áreas enquanto o servidor processa.`);
+      } else {
+        setMessage("Nenhuma cena precisa de reconstrução.");
+      }
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Falha ao reconstruir os clipes desatualizados.");
+      setMessage(error instanceof Error ? error.message : "Falha ao iniciar a fila de reconstrução.");
     } finally {
       setRebuildingVidGridClips(false);
+    }
+  }
+
+  async function refreshVidGridQueue() {
+    if (!jobId || refreshingVidGridQueue) return;
+    setRefreshingVidGridQueue(true);
+    try {
+      const status = await videoStudioApi.getVidGridClipRebuildStatus(jobId);
+      setVidGridQueue(status);
+      if (["completed", "partial", "failed", "cancelled", "interrupted"].includes(status.status)) {
+        const plan = await videoStudioApi.getVidGridRecoveryPlan(jobId);
+        setVidGridRecoveryPlan(plan);
+        setStaleVidGridClipCount(plan.repairable_count);
+        const latest = await videoStudioApi.getJob(jobId);
+        if (latest.scene_assets) setSceneImageAssets(latest.scene_assets);
+        setMessage(`Fila ${status.status}: ${status.completed}/${status.total} cenas concluídas; ${status.failed} falha(s).`);
+      }
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Falha ao consultar a fila.");
+    } finally {
+      setRefreshingVidGridQueue(false);
+    }
+  }
+
+  async function cancelVidGridQueue() {
+    if (!jobId || !vidGridQueue || !["queued", "processing"].includes(vidGridQueue.status)) return;
+    try {
+      await videoStudioApi.cancelVidGridClipRebuild(jobId);
+      setMessage("Cancelamento solicitado. A cena em processamento será concluída antes da parada.");
+      await refreshVidGridQueue();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Falha ao solicitar cancelamento.");
     }
   }
 
@@ -1039,6 +1074,25 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
         >
           {rebuildingVidGridClips ? "Reconstruindo clipes…" : `Recuperar ${staleVidGridClipCount} cena(s) VidGrid`}
         </button>}
+        {vidGridQueue && <div className="mt-2 rounded-md border border-surface-200 p-3 text-xs dark:border-surface-700">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <strong>Fila VidGrid: {vidGridQueue.status}</strong>
+            <span>{vidGridQueue.completed}/{vidGridQueue.total} concluídas · {vidGridQueue.failed} falhas</span>
+          </div>
+          {vidGridQueue.current_scene_index !== null && <p className="mt-1">Processando cena {vidGridQueue.current_scene_index + 1}</p>}
+          <div className="mt-2 h-2 overflow-hidden rounded bg-surface-200 dark:bg-surface-700">
+            <div className="h-full bg-primary-600" style={{ width: `${vidGridQueue.total ? Math.min(100, (vidGridQueue.completed + vidGridQueue.failed) / vidGridQueue.total * 100) : 0}%` }} />
+          </div>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button type="button" onClick={refreshVidGridQueue} disabled={refreshingVidGridQueue} className="rounded border border-surface-300 px-2 py-1 disabled:opacity-40">
+              {refreshingVidGridQueue ? "Consultando…" : "Atualizar progresso"}
+            </button>
+            {["queued", "processing"].includes(vidGridQueue.status) && <button type="button" onClick={cancelVidGridQueue} className="rounded border border-red-300 px-2 py-1 text-red-700 dark:border-red-800 dark:text-red-300">
+              Solicitar cancelamento
+            </button>}
+          </div>
+          {vidGridQueue.error && <p className="mt-2 text-red-600">{vidGridQueue.error}</p>}
+        </div>}
         {jobId && <>
           <button type="button" onClick={saveDraft} disabled={saving || !dirty || audioDirty} className="rounded-md border border-surface-300 px-3 py-2 text-xs font-semibold disabled:opacity-40 dark:border-surface-600">
             {saving ? "Salvando…" : "Salvar rascunho"}
