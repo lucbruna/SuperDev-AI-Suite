@@ -108,3 +108,24 @@ def test_continuity_report_flags_unexpected_character_presence_change() -> None:
     ])
     assert report["warnings"][0]["type"] == "character_presence_change"
     assert report["warnings"][0]["scene_indices"] == [0, 1]
+
+
+def test_custom_storyboard_uses_user_style_and_accepts_custom_studio() -> None:
+    scenes, report = build_cinematic_storyboard(
+        [{"narration": "Uma cidade futurista emerge no oceano.",
+          "visual_prompt": "Uma metrópole futurista sobre plataformas oceânicas."}],
+        studio_id="custom",
+        style_prompt="Animação 3D cinematográfica, neon azul e âmbar, câmera aérea dinâmica",
+    )
+    prompt = scenes[0]["visual_prompt_full"]
+    assert prompt.startswith("Animação 3D cinematográfica")
+    assert "metrópole futurista" in prompt
+    assert report["ready_count"] == 1
+
+
+def test_felt_clay_studio_has_safe_generic_style_fallback() -> None:
+    scenes, _ = build_cinematic_storyboard(
+        [{"narration": "Uma personagem caminha pela floresta."}],
+        studio_id="felt_clay",
+    )
+    assert "visual style" in scenes[0]["visual_prompt_full"]

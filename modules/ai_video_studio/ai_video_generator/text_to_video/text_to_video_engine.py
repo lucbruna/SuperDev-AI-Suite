@@ -202,6 +202,7 @@ class TextToVideoEngine:
             studio_id=studio_id,
             character_ids=character_ids,
             object_ids=object_ids,
+            style_prompt=str(params.get("style") or "").strip() or None,
         )
         for scene in scenes:
             scene["_darkstudio_characters"] = list(character_ids)
@@ -220,13 +221,10 @@ class TextToVideoEngine:
             )
             image_width, image_height = fit_image_dimensions(width, height)
 
-            image_style = (
-                "handcrafted felt-clay stop motion, tactile wool fibers, soft studio lighting, "
-                "bright clean educational composition"
-                if studio_id == "whymentary"
-                else "cinematic historical illustration, atmospheric depth, period-accurate environment, "
-                "dramatic natural lighting, painterly detail"
-            )
+            # The storyboard prompt already contains the selected style. Do not
+            # prepend a fixed studio aesthetic: custom prompts must control the
+            # visual language scene by scene.
+            image_style = ""
             for scene_index, scene in enumerate(scenes):
                 _notify_scene(scene_index, "processing", "image_generation")
                 visual_prompt = str(
@@ -242,7 +240,7 @@ class TextToVideoEngine:
                     if character_ids else ""
                 )
                 full_prompt = (
-                    f"{image_style}. {visual_prompt}.{character_reservation} "
+                    f"{image_style + '. ' if image_style else ''}{visual_prompt}.{character_reservation} "
                     "No captions, no typography, no watermark."
                 )
                 image_seed = derive_scene_image_seed(

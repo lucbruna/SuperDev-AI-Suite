@@ -131,9 +131,10 @@ def build_cinematic_storyboard(
     studio_id: str,
     character_ids: list[str] | None = None,
     object_ids: list[str] | None = None,
+    style_prompt: str | None = None,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Enrich scenes with unique visual prompts and continuity metadata."""
-    if studio_id not in _STUDIO_STYLE:
+    if studio_id not in {*_STUDIO_STYLE, "custom", "felt_clay"}:
         raise ValueError(f"Unknown studio '{studio_id}'")
     if not scenes:
         raise ValueError("Cannot build a storyboard without scenes")
@@ -162,8 +163,11 @@ def build_cinematic_storyboard(
 
         # Keep the authored narration intact and explicitly constrain visual
         # interpretation to what this scene actually says.
+        selected_style = (style_prompt or "").strip() or _STUDIO_STYLE.get(
+            studio_id, "visual style, materials, palette and art direction defined by the user's prompt"
+        )
         prompt = (
-            f"{_STUDIO_STYLE[studio_id]}. "
+            f"{selected_style}. "
             f"Conteúdo desta cena: {visual_core}. "
             f"Direção de composição: {direction or 'composição específica, clara e cinematográfica'}. "
             "Representar somente informações sustentadas pelo texto desta cena; "

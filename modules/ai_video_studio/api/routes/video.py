@@ -1900,6 +1900,7 @@ async def generate_video(req: VideoGenerateRequest, background_tasks: Background
                         "voiceover_mode": r.voiceover_mode,
                         "llm_timeout": r.llm_timeout,
                         "studio_id": r.studio_id,
+                        "style": r.style,
                         "character_ids": r.character_ids,
                         "object_ids": r.object_ids,
                         "scene_image_mode": r.scene_image_mode,
