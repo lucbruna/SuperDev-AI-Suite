@@ -171,12 +171,24 @@ def claim_next_task(worker_id: str, lease_seconds: int = 300) -> dict[str, Any] 
     try:
         _ensure_task_queue(connection)
         connection.execute("BEGIN IMMEDIATE")
+        connection.execute(
+            """
+            UPDATE durable_tasks SET status='failed', lease_owner=NULL,
+                lease_expires_at=NULL, last_error=COALESCE(last_error, 'Worker lease expired after maximum attempts'),
+                updated_at=?
+            WHERE status='processing' AND lease_expires_at IS NOT NULL
+              AND lease_expires_at<=? AND attempts>=3
+            """,
+            (now, now),
+        )
         row = connection.execute(
             """
             SELECT task_id, task_type, payload, attempts
             FROM durable_tasks
-            WHERE (status='queued' AND available_at<=?)
-               OR (status='processing' AND lease_expires_at IS NOT NULL AND lease_expires_at<=?)
+            WHERE attempts < 3 AND (
+                (status='queued' AND available_at<=?)
+                OR (status='processing' AND lease_expires_at IS NOT NULL AND lease_expires_at<=?)
+            )
             ORDER BY created_at ASC LIMIT 1
             """,
             (now, now),
