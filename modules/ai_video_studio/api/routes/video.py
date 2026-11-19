@@ -789,8 +789,21 @@ async def get_video_job_asset_health(job_id: str):
         scene_index = _safe_record_index(scene.get("_source_scene_index", position), position)
         clip = clips.get(scene_index) or {}
         narration = narration_by_scene.get(scene_index) or {}
+        image_asset = _asset_health_entry(
+            "scene_image", scene.get("background_image_path"), roots["image"]
+        )
+        saved_image_fingerprint = clip.get("source_image_fingerprint")
+        image_changed = bool(
+            saved_image_fingerprint and image_asset.get("sha256")
+            and saved_image_fingerprint != image_asset.get("sha256")
+        )
+        if image_changed or clip.get("status") == "stale":
+            image_asset = {
+                **image_asset, "status": "stale",
+                "reason": "source_image_changed" if image_changed else "clip_marked_stale",
+            }
         assets = [
-            _asset_health_entry("scene_image", scene.get("background_image_path"), roots["image"]),
+            image_asset,
             _asset_health_entry("scene_clip", clip.get("output_path"), roots["video"]),
         ]
         if voiceover.get("narration_style") == "per_scene":
