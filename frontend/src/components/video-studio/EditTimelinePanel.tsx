@@ -146,7 +146,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
         const status = await videoStudioApi.getJobDependencyRebuildStatus(jobId);
         if (!active) return;
         setDependencyRebuildStatus(status);
-        if (["completed", "partial", "failed", "interrupted"].includes(status.status)) {
+        if (["completed", "partial", "failed", "interrupted", "cancelled"].includes(status.status)) {
           if (status.render_output_url || status.render_result?.output_url) {
             setRenderUrl(status.render_output_url || status.render_result?.output_url || "");
           }
