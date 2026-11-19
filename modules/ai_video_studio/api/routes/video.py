@@ -549,7 +549,7 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
                      "image_path": result["image_path"], "image_url": to_download_url(result["image_path"]),
                      "provider": result["provider"], "operation": operation, "prompt": req.prompt,
                      "negative_prompt": req.negative_prompt or str(scene.get("negative_prompt") or ""),
-                     "seed": req.seed,
+                     "seed": result.get("seed", req.seed),
                      "status": "pending_approval"}
         candidates = record.setdefault("scene_image_candidates", {})
         candidates.setdefault(str(scene_index), []).append(candidate)
@@ -565,7 +565,7 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
     scene["visual_prompt_full"] = edit_prompt
     scene["negative_prompt"] = req.negative_prompt or str(scene.get("negative_prompt") or "")
     scene["image_edit_operation"] = operation
-    scene["image_generation_seed"] = req.seed
+    scene["image_generation_seed"] = result.get("seed", req.seed)
     record["_edited_scenes"] = scenes
     assets = record.setdefault("scene_assets", [])
     assets[:] = [item for item in assets if item.get("scene_index") != scene_index]
@@ -573,7 +573,7 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
         "scene_index": scene_index, "image_path": result["image_path"],
         "image_url": to_download_url(result["image_path"]),
         "provider": result["provider"], "status": "edited",
-        "operation": operation, "prompt": req.prompt, "seed": req.seed,
+        "operation": operation, "prompt": req.prompt, "seed": result.get("seed", req.seed),
     })
     record["scene_image_mode"] = "mixed"
     scene_clip_result: dict[str, Any] | None = None
