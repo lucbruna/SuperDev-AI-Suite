@@ -357,7 +357,7 @@ def _scene_clip_recovery_plan(record: dict) -> dict:
                       "clip_exists": bool(clip and clip.get("output_path") and Path(str(clip["output_path"])).resolve().is_file())})
     return {"scene_count": len(scenes), "ready_count": sum(item["status"] == "ready" for item in items),
             "repairable_count": len(repair),
-            "blocked_count": sum(item["status"] == "needs_rebuild" and "approved_image_missing_or_unsafe" in item["reasons"] for item in items),
+            "blocked_count": sum(item["status"] == "needs_rebuild" and any(reason in item["reasons"] for reason in ("approved_image_missing_or_unsafe", "approved_image_unreadable")) for item in items),
             "repair_scene_indices": repair, "scenes": items}
 
 
