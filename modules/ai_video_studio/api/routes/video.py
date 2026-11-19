@@ -1110,6 +1110,7 @@ async def rebuild_stale_video_job_scene_clips(job_id: str, req: SceneClipRebuild
     from modules.ai_video_studio.media.output_paths import get_subsystem_dir, unique_filename
     from modules.ai_video_studio.media.render import render_single_scene_clip
     image_root = Path(get_subsystem_dir("images")).resolve()
+    voice_root = Path(get_subsystem_dir("voice")).resolve()
     params = record.get("params") or {}
     try:
         width, height = _parse_resolution(record.get("resolution") or params.get("resolution") or "1280x720")
@@ -1159,16 +1160,22 @@ async def rebuild_stale_video_job_scene_clips(job_id: str, req: SceneClipRebuild
                 )
                 final_path = rendered["output_path"]
                 audio_status = "silent_or_tts_unavailable"
+                narration_fingerprint = None
                 voiceover = record.get("voiceover")
                 voiceover = voiceover if isinstance(voiceover, dict) else {}
-                if isinstance(voiceover, dict) and voiceover.get("narration_style") == "per_scene":
+                if voiceover.get("narration_style") == "per_scene":
                     narration = next((item for item in voiceover.get("clips", [])
-                                      if int(item.get("index", -1)) == scene_index and item.get("audio_path")), None)
+                                      if isinstance(item, dict) and _safe_record_index(item.get("index")) == scene_index
+                                      and item.get("audio_path")), None)
                     if narration:
+                        narration_path = Path(str(narration["audio_path"])).resolve()
+                        if voice_root not in narration_path.parents or not narration_path.is_file():
+                            raise ValueError("Scene narration is missing or outside the approved voice asset directory")
+                        narration_fingerprint = _asset_sha256(narration_path)
                         from modules.ai_video_studio.media.audio import mux_audio_into_video
                         voiced_path = unique_filename(get_subsystem_dir("videos") / "vidgrid_clips",
                                                        f"scene_{scene_index + 1:02d}_rebuilt_voiced", "mp4")
-                        muxed = await asyncio.to_thread(mux_audio_into_video, final_path, narration["audio_path"], voiced_path)
+                        muxed = await asyncio.to_thread(mux_audio_into_video, final_path, str(narration_path), voiced_path)
                         if muxed.get("muxed"):
                             final_path = muxed["output_path"]
                             audio_status = "per_scene_narration_muxed"
@@ -1183,6 +1190,7 @@ async def rebuild_stale_video_job_scene_clips(job_id: str, req: SceneClipRebuild
                     "narration_text": scene.get("voiceover_text") or scene.get("narration") or "",
                     "status": "updated",
                     "source_image_fingerprint": _asset_sha256(image_path),
+                    **({"source_narration_fingerprint": narration_fingerprint} if narration_fingerprint else {}),
                 }
                 clips = record.setdefault("scene_clips", [])
                 clips[:] = [item for item in clips if int(item.get("scene_index", -1)) != scene_index]
