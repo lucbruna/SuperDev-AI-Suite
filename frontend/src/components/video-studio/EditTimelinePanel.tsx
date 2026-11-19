@@ -89,7 +89,8 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
   const [sfxFadeIn, setSfxFadeIn] = useState("0");
   const [sfxFadeOut, setSfxFadeOut] = useState("0.2");
   const [savingAudio, setSavingAudio] = useState(false);
-  const [audioDirty, setAudioDirty] = useState(false);  const [audioAnalysis, setAudioAnalysis] = useState<Awaited<ReturnType<typeof videoStudioApi.analyzeJobAudio>> | null>(null);
+  const [audioDirty, setAudioDirty] = useState(false);
+  const [audioAnalysis, setAudioAnalysis] = useState<Awaited<ReturnType<typeof videoStudioApi.analyzeJobAudio>> | null>(null);
   const [analyzingAudio, setAnalyzingAudio] = useState(false);
   const [avSyncReport, setAvSyncReport] = useState<Awaited<ReturnType<typeof videoStudioApi.analyzeJobAvSync>> | null>(null);
   const [analyzingAvSync, setAnalyzingAvSync] = useState(false);
