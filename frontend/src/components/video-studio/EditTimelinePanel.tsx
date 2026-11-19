@@ -1056,6 +1056,15 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
       {dependencyGraph && <div className="mt-3 rounded-md border border-surface-200 p-3 text-xs dark:border-surface-700" aria-label="Prévia do impacto de alterações">
         <strong>Simular alteração de ativos</strong>
         <p className="mt-1 text-surface-500">Marque os arquivos que pretende trocar para calcular quais clipes e exportações serão afetados. Isso não altera nem renderiza arquivos.</p>
+        <button type="button" onClick={() => {
+          const staleIds = dependencyGraph.nodes
+            .filter((node) => node.status === "stale" && ["image", "narration", "narration_track", "music", "sound_effect", "video_clip"].includes(node.type))
+            .map((node) => node.id);
+          setSelectedDependencyAssets(staleIds);
+          setDependencyImpact(null);
+        }} disabled={!dependencyGraph.nodes.some((node) => node.status === "stale")} className="mt-2 rounded-md border border-amber-500 px-3 py-2 font-semibold text-amber-700 disabled:opacity-40 dark:text-amber-300">
+          Selecionar ativos alterados
+        </button>
         <div className="mt-2 grid gap-1 sm:grid-cols-2">
           {dependencyGraph.nodes.filter((node) => ["image", "narration", "narration_track", "music", "sound_effect", "video_clip"].includes(node.type)).map((node) => (
             <label key={node.id} className="flex items-center gap-2 rounded bg-surface-50 p-2 dark:bg-surface-800">
