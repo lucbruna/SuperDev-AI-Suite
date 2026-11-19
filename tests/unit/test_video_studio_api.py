@@ -1771,6 +1771,41 @@ class TestDarkstudioDependencyGraph:
         assert image_node["reason"] == "source_image_changed"
 
     @pytest.mark.asyncio
+    async def test_dependency_graph_marks_changed_scene_narration_stale(self, tmp_path, monkeypatch):
+        from modules.ai_video_studio.api.routes import video
+        from modules.ai_video_studio.media import output_paths
+
+        roots = {name: tmp_path / name for name in ("images", "videos", "voice", "music", "effects")}
+        for root in roots.values():
+            root.mkdir()
+        image = roots["images"] / "scene.png"
+        image.write_bytes(b"image")
+        clip = roots["videos"] / "scene.mp4"
+        clip.write_bytes(b"clip")
+        narration = roots["voice"] / "scene.wav"
+        narration.write_bytes(b"new-audio")
+        monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda name: roots[name])
+        video._jobs["dependency-graph-narration-stale"] = {
+            "job_id": "dependency-graph-narration-stale",
+            "_edited_scenes": [{"_source_scene_index": 2, "background_image_path": str(image)}],
+            "voiceover": {
+                "narration_style": "per_scene",
+                "clips": [{"index": 2, "audio_path": str(narration)}],
+            },
+            "scene_clips": [{
+                "scene_index": 2, "output_path": str(clip),
+                "source_image_fingerprint": video._asset_sha256(image),
+                "source_narration_fingerprint": "old-audio-hash",
+            }],
+        }
+
+        graph = await video.get_video_job_dependency_graph("dependency-graph-narration-stale")
+        narration_node = next(node for node in graph["nodes"] if node["id"] == "scene:2:narration")
+
+        assert narration_node["status"] == "stale"
+        assert narration_node["reason"] == "source_narration_changed"
+
+    @pytest.mark.asyncio
     async def test_audio_fingerprint_mismatch_marks_dependency_stale(self, tmp_path, monkeypatch):
         from modules.ai_video_studio.api.routes import video
         from modules.ai_video_studio.media import output_paths
