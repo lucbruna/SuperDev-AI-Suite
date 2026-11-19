@@ -1533,6 +1533,22 @@ class TestAsyncVidGridRebuildQueue:
         assert len(tasks.tasks) == 1
 
     @pytest.mark.asyncio
+    async def test_second_queue_is_rejected_while_first_is_scheduled(self, monkeypatch):
+        from fastapi import BackgroundTasks, HTTPException
+        from modules.ai_video_studio.api.routes import video
+
+        record = {
+            "job_id": "async-double-queue-job", "status": "completed",
+            "vidgrid_compatible": True, "_scene_clip_rebuild_scheduled": True,
+        }
+        video._jobs["async-double-queue-job"] = record
+        tasks = BackgroundTasks()
+        with pytest.raises(HTTPException) as error:
+            await video.queue_scene_clip_rebuild("async-double-queue-job", tasks)
+        assert error.value.status_code == 409
+        assert not tasks.tasks
+
+    @pytest.mark.asyncio
     async def test_cancel_marks_active_queue_for_cooperative_stop(self, monkeypatch):
         from modules.ai_video_studio.api.routes import video
 
