@@ -27,3 +27,10 @@ Transformar o conteúdo já escrito de cada cena em um briefing visual específi
 ## Limites
 
 O módulo não chama Stable Diffusion, ComfyUI, Ollama ou outro provedor. Não reconhece conteúdo visual dentro dos pixels. A integração com a geração e a interface do editor é uma etapa separada.
+
+
+## Travas de identidade de Mia e Leo
+
+Quando uma cena declara `character_ids` contendo `mia` e/ou `leo`, o diretor visual inclui descrições estáveis no prompt: Leo é menino de cabelo loiro, camisa azul e calça escura; Mia é menina de cabelo castanho preso e vestido vermelho. Também inclui restrições contra troca de figurino, cabelo, paleta, proporções e duplicação acidental. As travas não adicionam personagens a cenas que não os solicitaram.
+
+Essas instruções são texto de prompt, não uma garantia de identidade em imagens geradas por IA. A consistência visual ainda exige referências aprovadas, revisão e comparação das imagens finais.

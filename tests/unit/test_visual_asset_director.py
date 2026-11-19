@@ -67,3 +67,35 @@ def test_candidate_ranking_uses_metadata_overlap_not_pixel_claims() -> None:
     )
     assert ranked[0]["candidate_id"] == "b"
     assert ranked[0]["metadata_match_score"] > ranked[1]["metadata_match_score"]
+
+
+def test_visual_brief_applies_stable_mia_and_leo_identity_locks() -> None:
+    from modules.ai_video_studio.media.visual_asset_director import build_scene_visual_brief
+
+    brief = build_scene_visual_brief(
+        {
+            "narration": "Mia e Leo explicam como o corpo reage ao exercício.",
+            "visual_prompt": "Mia e Leo em uma sala clara, conversando sobre movimento.",
+            "character_ids": ["mia", "leo"],
+        },
+        scene_index=2,
+        studio_id="felt_clay",
+    )
+    assert "cabelo loiro" in brief["image_prompt"]
+    assert "camisa azul" in brief["image_prompt"]
+    assert "cabelo castanho preso" in brief["image_prompt"]
+    assert "vestido vermelho" in brief["image_prompt"]
+    assert set(brief["character_visual_locks"]) == {"mia", "leo"}
+    assert any("figurino" in item for item in brief["continuity_constraints"])
+
+
+def test_visual_brief_does_not_inject_characters_when_none_are_requested() -> None:
+    from modules.ai_video_studio.media.visual_asset_director import build_scene_visual_brief
+
+    brief = build_scene_visual_brief(
+        {"narration": "Uma paisagem ao amanhecer.", "visual_prompt": "Paisagem ao amanhecer com luz suave."},
+        scene_index=0,
+        studio_id="historical_documentary",
+    )
+    assert brief["character_visual_locks"] == {}
+    assert brief["continuity_constraints"] == []
