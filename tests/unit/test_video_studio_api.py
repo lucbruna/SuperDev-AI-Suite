@@ -2246,3 +2246,46 @@ async def test_dependency_rebuild_status_endpoint_returns_persisted_state():
 
     assert result["status"] == "processing"
     assert result["scene_indices"] == [1, 4]
+
+
+@pytest.mark.asyncio
+async def test_cancel_dependency_rebuild_sets_cooperative_cancel_flag():
+    from modules.ai_video_studio.api.routes import video
+
+    job_id = "dependency-cancel-request"
+    record = {
+        "job_id": job_id,
+        "dependency_rebuild_execution": {"status": "processing", "cancel_requested": False},
+    }
+    video._jobs[job_id] = record
+    monkeypatch = pytest.MonkeyPatch()
+    monkeypatch.setattr(video, "_persist_job", lambda _record: None)
+    try:
+        result = await video.cancel_video_job_dependency_rebuild(job_id)
+    finally:
+        monkeypatch.undo()
+
+    assert result["cancel_requested"] is True
+    assert record["dependency_rebuild_execution"]["cancel_requested"] is True
+
+
+@pytest.mark.asyncio
+async def test_dependency_rebuild_worker_honors_cancel_before_start(monkeypatch):
+    from modules.ai_video_studio.api.routes import video
+
+    job_id = "dependency-cancel-before-start"
+    record = {
+        "job_id": job_id,
+        "dependency_rebuild_execution": {"status": "queued", "cancel_requested": True},
+    }
+    video._jobs[job_id] = record
+    monkeypatch.setattr(video, "_persist_job", lambda _record: None)
+
+    async def fail_if_called(*_args, **_kwargs):
+        raise AssertionError("cancelled queue must not rebuild or render")
+
+    monkeypatch.setattr(video, "rebuild_stale_video_job_scene_clips", fail_if_called)
+    monkeypatch.setattr(video, "render_video_job_edits", fail_if_called)
+    await video._run_dependency_rebuild_background(job_id, ["scene:0:image"], {"rebuild_scene_indices": [0]})
+
+    assert record["dependency_rebuild_execution"]["status"] == "cancelled"
