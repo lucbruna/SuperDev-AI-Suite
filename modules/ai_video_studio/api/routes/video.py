@@ -2521,7 +2521,7 @@ async def _run_dependency_rebuild_background(job_id: str, changed_asset_ids: lis
         render_result = await render_video_job_edits(job_id)
         execution.update({"status": "completed", "updated_at": time.time(),
                           "rebuild_result": rebuild_result,
-                          "render_output_url": render_result.get("output_url")})
+                          "render_output_url": render_result.get("output_url"), "render_result": render_result})
     except HTTPException as exc:
         execution.update({"status": "failed", "updated_at": time.time(), "error": str(exc.detail)[:500]})
     except Exception as exc:  # noqa: BLE001
@@ -2532,7 +2532,7 @@ async def _run_dependency_rebuild_background(job_id: str, changed_asset_ids: lis
 
 @router.post("/jobs/{job_id}/execute-dependency-rebuild", status_code=202)
 async def execute_video_job_dependency_rebuild(
-    job_id: str, req: DependencyExecutionRequest, background_tasks: BackgroundTasks
+    job_id: str, req: DependencyExecutionRequest, background_tasks: BackgroundTasks | None = None
 ):
     """Queue a freshly recalculated dependency plan after explicit user confirmation."""
     if not req.confirmed:
@@ -2559,7 +2559,7 @@ async def execute_video_job_dependency_rebuild(
     nodes_by_id = {node["id"]: node for node in graph["nodes"]}
     blocked = [
         {"id": node["id"], "status": node["status"], "reason": node.get("reason")}
-        for node in [*impact["affected_nodes"], *(nodes_by_id[node_id] for node_id in req.changed_asset_ids)]
+        for node in [*impact["affected_nodes"], *(nodes_by_id[node_id] for node_id in req.changed_asset_ids if node_id in nodes_by_id)]
         if node.get("type") in {"image", "narration", "narration_track", "music", "sound_effect"}
         and node.get("status") in {"missing", "corrupt", "unreadable"}
     ]
@@ -2577,6 +2577,11 @@ async def execute_video_job_dependency_rebuild(
     }
     record["dependency_rebuild_execution"] = execution
     _persist_job(record)
+    if background_tasks is None:
+        # Direct invocation compatibility for internal callers and unit tests.
+        await _run_dependency_rebuild_background(job_id, list(req.changed_asset_ids), impact)
+        completed = record.get("dependency_rebuild_execution") or {}
+        return {"job_id": job_id, **completed, "queued": False, "executed": True}
     background_tasks.add_task(
         _run_dependency_rebuild_background, job_id, list(req.changed_asset_ids), impact
     )
