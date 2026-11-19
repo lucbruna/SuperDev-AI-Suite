@@ -1044,6 +1044,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
           <span>Relações: <strong>{dependencyGraph.summary.dependencies}</strong></span>
           <span>Ausentes: <strong>{dependencyGraph.summary.statuses.missing ?? 0}</strong></span>
           <span>Corrompidos: <strong>{dependencyGraph.summary.statuses.corrupt ?? 0}</strong></span>
+          <span>Alterados: <strong>{dependencyGraph.summary.statuses.stale ?? 0}</strong></span>
         </div>
         <ul className="mt-2 grid gap-1 sm:grid-cols-2">
           {dependencyGraph.impact_rules.map((rule) => <li key={rule.changed} className="rounded bg-surface-50 p-2 dark:bg-surface-800">
