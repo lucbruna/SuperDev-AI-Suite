@@ -782,7 +782,7 @@ async def get_video_job_asset_health(job_id: str):
         if isinstance(item, dict)
     }
     rows: list[dict[str, Any]] = []
-    counts = {"available": 0, "missing": 0, "corrupt": 0, "unreadable": 0}
+    counts = {"available": 0, "missing": 0, "corrupt": 0, "unreadable": 0, "stale": 0}
     for position, scene in enumerate(scenes):
         if not isinstance(scene, dict):
             continue
@@ -815,11 +815,15 @@ async def get_video_job_asset_health(job_id: str):
             if not isinstance(item, dict):
                 item = {}
             asset = _audio_asset_health(kind, item.get("asset"), roots[root_key])
+            saved_fingerprint = item.get("asset_fingerprint")
+            current_fingerprint = asset.get("sha256")
+            if saved_fingerprint and current_fingerprint and saved_fingerprint != current_fingerprint:
+                asset = {**asset, "status": "stale", "reason": "asset_changed_since_timeline_save"}
             counts[asset["status"]] = counts.get(asset["status"], 0) + 1
             rows.append({"asset_index": position, "group": group, "status": asset["status"], "assets": [asset]})
     total = sum(counts.values())
     return {
-        "job_id": job_id, "status": "healthy" if counts["missing"] + counts["corrupt"] + counts["unreadable"] == 0 else "needs_attention",
+        "job_id": job_id, "status": "healthy" if counts["missing"] + counts["corrupt"] + counts["unreadable"] + counts["stale"] == 0 else "needs_attention",
         "summary": {"total_assets": total, **counts},
         "scenes": rows,
         "checked_at": time.time(),
@@ -926,6 +930,10 @@ async def get_video_job_dependency_graph(job_id: str):
                 item = {}
             node_id = f"audio:{group}:{position}"
             health = _audio_asset_health(kind, item.get("asset"), roots[root_key])
+            saved_fingerprint = item.get("asset_fingerprint")
+            current_fingerprint = health.get("sha256")
+            if saved_fingerprint and current_fingerprint and saved_fingerprint != current_fingerprint:
+                health = {**health, "status": "stale", "reason": "asset_changed_since_timeline_save"}
             add_node(node_id, node_type, f"{'Música' if kind == 'music' else 'Efeito'} {position + 1}", health)
             edges.append({"from": node_id, "to": output_id, "relationship": "audio_mix_input"})
 
@@ -1882,7 +1890,8 @@ async def update_video_job_audio(job_id: str, req: AudioTimelineEditRequest):
     effects = [clip.model_dump() for clip in req.sfx_clips]
     try:
         for clip in music + effects:
-            validate_audio_asset(clip["asset"])
+            validated_asset = validate_audio_asset(clip["asset"])
+            clip["asset_fingerprint"] = _asset_sha256(validated_asset)
         if any(clip["loop"] for clip in effects):
             raise ValueError("loop is supported for background music only")
         params = record.get("params") or {}
