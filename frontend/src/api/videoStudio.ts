@@ -572,6 +572,15 @@ export const videoStudioApi = {
     return data;
   },
 
+  async resumeVidGridClipRebuild(jobId: string): Promise<{
+    job_id: string; queue_id?: string; status: string; queued: boolean; requested: number; status_url?: string;
+  }> {
+    const { data } = await apiClient.post(
+      `${STUDIO_BASE}/videos/jobs/${jobId}/scenes/rebuild-stale-clips/resume`,
+    );
+    return data;
+  },
+
   async getVidGridClipRebuildStatus(jobId: string): Promise<NonNullable<VidGridClipRebuildResult["queue"]> & { job_id: string; queue_id?: string; cancel_requested?: boolean; error?: string }> {
     const { data } = await apiClient.get(
       `${STUDIO_BASE}/videos/jobs/${jobId}/scenes/rebuild-stale-clips/status`,
