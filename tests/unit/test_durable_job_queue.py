@@ -66,3 +66,27 @@ def test_expired_worker_leases_are_reclaimed_and_crashes_are_bounded(tmp_path, m
     task = job_store.list_tasks("dependency_rebuild")[0]
     assert task["status"] == "failed"
     assert task["attempts"] == 3
+
+
+def test_unique_task_enqueue_is_atomic_per_job_and_task_type(tmp_path, monkeypatch):
+    database = tmp_path / "unique-queue.sqlite3"
+    monkeypatch.setattr(job_store, "_database_path", lambda: database)
+
+    assert job_store.enqueue_unique_task_for_job(
+        "scene-task-1", "scene_clip_rebuild", "job-unique",
+        {"job_id": "job-unique", "queue_id": "queue-1"},
+    )
+    assert not job_store.enqueue_unique_task_for_job(
+        "scene-task-2", "scene_clip_rebuild", "job-unique",
+        {"job_id": "job-unique", "queue_id": "queue-2"},
+    )
+    # A different task type remains independent for the same job.
+    assert job_store.enqueue_unique_task_for_job(
+        "dependency-task-1", "dependency_rebuild", "job-unique",
+        {"job_id": "job-unique"},
+    )
+    active = job_store.list_tasks()
+    assert len(active) == 2
+    assert {item["task_id"] for item in active} == {
+        "scene-task-1", "dependency-task-1",
+    }
