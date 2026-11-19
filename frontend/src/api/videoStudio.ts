@@ -238,6 +238,7 @@ export interface StudioJob {
   file_size_bytes?: number | null;
   output_validation?: VideoOutputValidation | null;
   scene_progress?: {
+  scene_clip_rebuild_queue?: VidGridClipRebuildResult["queue"] & { recovery_note?: string };
     scene_index: number;
     status: "pending" | "processing" | "completed" | "fallback" | "failed" | string;
     stage?: string;
