@@ -348,3 +348,40 @@ def test_remap_narration_keeps_audio_for_visual_only_edits() -> None:
     assert scene_narration.narration_text_changes_for_edits(edited, original) == []
     clips = scene_narration.remap_narration_clips_for_edits(edited, original)
     assert [clip["audio_path"] for clip in clips] == ["voice.wav"]
+
+
+@pytest.mark.asyncio
+async def test_regenerate_changed_narration_only_synthesizes_edited_scene(monkeypatch):
+    from modules.ai_video_studio.media import scene_narration
+
+    calls = []
+
+    class FakeVoiceEngine:
+        async def synthesize_async(self, text, **kwargs):
+            calls.append(text)
+            return {"output_path": f"{text}.wav", "engine": "fake", "duration": 1.2}
+
+    monkeypatch.setattr(
+        "modules.ai_video_studio.ai_voice_studio.get_voice_engine",
+        lambda: FakeVoiceEngine(),
+    )
+    original = [
+        {"text": "old first", "audio_path": "first-old.wav"},
+        {"text": "keep second", "audio_path": "second.wav"},
+    ]
+    edited = [
+        {"_source_scene_index": 0, "voiceover_text": "new first", "duration": 2.0},
+        {"_source_scene_index": 1, "voiceover_text": "keep second", "duration": 2.0},
+    ]
+
+    result = await scene_narration.regenerate_changed_scene_narration_async(
+        edited, original, params={"voice_language": "pt-BR"}, fps=24,
+    )
+
+    assert calls == ["new first"]
+    assert result["regenerated_scene_indices"] == [0]
+    assert result["failed_scene_indices"] == []
+    assert [clip["audio_path"] for clip in result["clips"]] == [
+        "new first.wav", "second.wav",
+    ]
+    assert [clip["start"] for clip in result["clips"]] == [0.0, 2.0]

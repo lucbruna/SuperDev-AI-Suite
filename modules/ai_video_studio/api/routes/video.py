@@ -2609,8 +2609,23 @@ async def render_video_job_edits(job_id: str):
         narration_clips = voiceover.get("clips") if isinstance(voiceover, dict) else None
         stale_narration_scene_indices = []
         if voiceover.get("narration_style") == "per_scene" and isinstance(narration_clips, list):
-            from modules.ai_video_studio.media.scene_narration import narration_text_changes_for_edits
+            from modules.ai_video_studio.media.scene_narration import (
+                narration_text_changes_for_edits, regenerate_changed_scene_narration_async,
+            )
             stale_narration_scene_indices = narration_text_changes_for_edits(scenes, narration_clips)
+            if stale_narration_scene_indices:
+                regenerated = await regenerate_changed_scene_narration_async(
+                    scenes, narration_clips, params=params, fps=fps,
+                )
+                narration_clips = regenerated["clips"]
+                voiceover["clips"] = narration_clips
+                record["voiceover"] = voiceover
+                record["edit_render_narration"] = {
+                    "status": "regenerated" if not regenerated["failed_scene_indices"] else "partial",
+                    "regenerated_scene_indices": regenerated["regenerated_scene_indices"],
+                    "failed_scene_indices": regenerated["failed_scene_indices"],
+                }
+                _persist_job(record)
         single_track = (
             isinstance(voiceover, dict)
             and voiceover.get("muxed")

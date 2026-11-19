@@ -125,6 +125,76 @@ def remap_narration_clips_for_edits(
     return remapped
 
 
+
+async def regenerate_changed_scene_narration_async(
+    scenes: list[dict[str, Any]],
+    original_clips: list[dict[str, Any]],
+    *,
+    params: dict[str, Any] | None = None,
+    fps: int = 24,
+) -> dict[str, Any]:
+    """Regenerate only edited speech while retaining valid scene audio assets.
+
+    The returned clip list follows the edited scene order. Failed TTS scenes are
+    represented with an error and no audio path; unchanged clips are never
+    synthesized again.
+    """
+    params = params or {}
+    if fps < 1:
+        raise ValueError("fps must be at least 1")
+    stale = set(narration_text_changes_for_edits(scenes, original_clips))
+    valid = remap_narration_clips_for_edits(scenes, original_clips, fps=fps)
+    by_source = {int(clip["index"]): dict(clip) for clip in valid}
+    if stale:
+        from modules.ai_video_studio.ai_voice_studio import get_voice_engine
+
+        engine = get_voice_engine()
+        voice_id = str(params.get("voice_id", "default"))
+        language = str(params.get("voice_language", "pt-BR"))
+        speed = float(params.get("voice_speed", 1.0))
+        pitch = float(params.get("voice_pitch", 1.0))
+        offsets = compute_scene_offsets(scenes, fps=fps)
+        for position, (scene, start) in enumerate(zip(scenes, offsets, strict=False)):
+            source_index = scene.get("_source_scene_index", position)
+            if source_index not in stale:
+                continue
+            text = scene_narration_text(scene)
+            duration = max(0.1, float(scene.get("duration") or 3.0))
+            duration = max(1, int(round(duration * fps))) / fps
+            clip: dict[str, Any] = {
+                "index": source_index, "text": text,
+                "start": round(start, 6), "end": round(start + duration, 6),
+            }
+            if text:
+                try:
+                    result = await engine.synthesize_async(
+                        text, voice_id=voice_id, language=language,
+                        speed=speed, pitch=pitch, output_path=None, use_cache=False,
+                    )
+                    clip.update({
+                        "audio_path": result["output_path"],
+                        "tts_engine": result.get("engine"),
+                        "audio_duration": result.get("duration"),
+                    })
+                except Exception as exc:  # TTS failure is isolated to this scene.
+                    logger.warning("Edited scene %s narration failed: %s", source_index, exc)
+                    clip["error"] = str(exc)[:240]
+            by_source[int(source_index)] = clip
+    ordered: list[dict[str, Any]] = []
+    for position, scene in enumerate(scenes):
+        source_index = scene.get("_source_scene_index", position)
+        clip = by_source.get(source_index)
+        if clip is not None:
+            ordered.append(dict(clip))
+    return {
+        "clips": ordered,
+        "regenerated_scene_indices": sorted(stale),
+        "failed_scene_indices": sorted(
+            int(clip["index"]) for clip in ordered
+            if clip.get("error") and not clip.get("audio_path")
+        ),
+    }
+
 def build_narration_tracks(
     clips: list[dict[str, Any]],
     *,
