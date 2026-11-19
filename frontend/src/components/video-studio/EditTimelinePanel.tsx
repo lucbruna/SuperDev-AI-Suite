@@ -1300,7 +1300,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
           <strong>Execução da reconstrução</strong>
           <span className={["completed"].includes(dependencyRebuildStatus.status)
             ? "font-semibold text-emerald-600"
-            : ["failed", "partial", "interrupted"].includes(dependencyRebuildStatus.status)
+            : ["failed", "partial", "interrupted", "cancelled"].includes(dependencyRebuildStatus.status)
               ? "font-semibold text-amber-600"
               : "font-semibold text-primary-600"}>
             {dependencyRebuildStatus.status === "queued" ? "Na fila"
