@@ -113,3 +113,170 @@ def mark_interrupted_jobs(jobs: dict[str, dict[str, Any]]) -> list[str]:
             pass
         recovered.append(str(job_id))
     return recovered
+
+
+def _ensure_task_queue(connection: sqlite3.Connection) -> None:
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS durable_tasks (
+            task_id TEXT PRIMARY KEY,
+            task_type TEXT NOT NULL,
+            payload TEXT NOT NULL,
+            status TEXT NOT NULL,
+            attempts INTEGER NOT NULL DEFAULT 0,
+            available_at REAL NOT NULL,
+            lease_owner TEXT,
+            lease_expires_at REAL,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL,
+            last_error TEXT
+        )
+        """
+    )
+    connection.execute(
+        "CREATE INDEX IF NOT EXISTS idx_durable_tasks_claim "
+        "ON durable_tasks(status, available_at, lease_expires_at, created_at)"
+    )
+
+
+def enqueue_task(task_id: str, task_type: str, payload: dict[str, Any]) -> None:
+    """Persist a durable task before acknowledging it to the API client."""
+    import time
+
+    now = time.time()
+    encoded = json.dumps(payload, ensure_ascii=False, separators=(",", ":"), default=str)
+    connection = _connect()
+    try:
+        _ensure_task_queue(connection)
+        connection.execute(
+            """
+            INSERT INTO durable_tasks(task_id, task_type, payload, status, attempts,
+                                       available_at, created_at, updated_at)
+            VALUES (?, ?, ?, 'queued', 0, ?, ?, ?)
+            ON CONFLICT(task_id) DO NOTHING
+            """,
+            (task_id, task_type, encoded, now, now, now),
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+
+def claim_next_task(worker_id: str, lease_seconds: int = 300) -> dict[str, Any] | None:
+    """Atomically claim one queued task or reclaim a task with an expired lease."""
+    import time
+
+    now = time.time()
+    connection = _connect()
+    try:
+        _ensure_task_queue(connection)
+        connection.execute("BEGIN IMMEDIATE")
+        row = connection.execute(
+            """
+            SELECT task_id, task_type, payload, attempts
+            FROM durable_tasks
+            WHERE (status='queued' AND available_at<=?)
+               OR (status='processing' AND lease_expires_at IS NOT NULL AND lease_expires_at<=?)
+            ORDER BY created_at ASC LIMIT 1
+            """,
+            (now, now),
+        ).fetchone()
+        if row is None:
+            connection.commit()
+            return None
+        task_id, task_type, encoded, attempts = row
+        connection.execute(
+            """
+            UPDATE durable_tasks
+            SET status='processing', attempts=?, lease_owner=?, lease_expires_at=?, updated_at=?
+            WHERE task_id=?
+            """,
+            (int(attempts or 0) + 1, worker_id, now + max(30, int(lease_seconds)), now, task_id),
+        )
+        connection.commit()
+        try:
+            payload = json.loads(encoded)
+        except (TypeError, json.JSONDecodeError):
+            payload = {}
+        return {"task_id": task_id, "task_type": task_type, "payload": payload,
+                "attempts": int(attempts or 0) + 1, "lease_owner": worker_id}
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
+
+
+def complete_task(task_id: str, worker_id: str) -> bool:
+    """Complete only when the caller still owns the task lease."""
+    import time
+
+    connection = _connect()
+    try:
+        _ensure_task_queue(connection)
+        cursor = connection.execute(
+            """
+            UPDATE durable_tasks
+            SET status='completed', lease_owner=NULL, lease_expires_at=NULL, updated_at=?
+            WHERE task_id=? AND status='processing' AND lease_owner=?
+            """,
+            (time.time(), task_id, worker_id),
+        )
+        connection.commit()
+        return cursor.rowcount == 1
+    finally:
+        connection.close()
+
+
+def fail_task(task_id: str, worker_id: str, error: str, retry_delay: int = 30,
+              max_attempts: int = 3) -> bool:
+    """Schedule bounded retries; exhausted tasks become terminally failed."""
+    import time
+
+    now = time.time()
+    connection = _connect()
+    try:
+        _ensure_task_queue(connection)
+        row = connection.execute(
+            "SELECT attempts FROM durable_tasks WHERE task_id=? AND lease_owner=?",
+            (task_id, worker_id),
+        ).fetchone()
+        if row is None:
+            return False
+        attempts = int(row[0] or 0)
+        status = "failed" if attempts >= max_attempts else "queued"
+        cursor = connection.execute(
+            """
+            UPDATE durable_tasks
+            SET status=?, available_at=?, lease_owner=NULL, lease_expires_at=NULL,
+                last_error=?, updated_at=?
+            WHERE task_id=? AND lease_owner=?
+            """,
+            (status, now + max(0, retry_delay), str(error)[:1000], now, task_id, worker_id),
+        )
+        connection.commit()
+        return cursor.rowcount == 1
+    finally:
+        connection.close()
+
+
+def list_tasks(task_type: str | None = None) -> list[dict[str, Any]]:
+    """Return task metadata for diagnostics and operational dashboards."""
+    connection = _connect()
+    try:
+        _ensure_task_queue(connection)
+        if task_type:
+            rows = connection.execute(
+                "SELECT task_id, task_type, status, attempts, available_at, lease_expires_at, last_error "
+                "FROM durable_tasks WHERE task_type=? ORDER BY created_at DESC",
+                (task_type,),
+            ).fetchall()
+        else:
+            rows = connection.execute(
+                "SELECT task_id, task_type, status, attempts, available_at, lease_expires_at, last_error "
+                "FROM durable_tasks ORDER BY created_at DESC"
+            ).fetchall()
+    finally:
+        connection.close()
+    keys = ("task_id", "task_type", "status", "attempts", "available_at", "lease_expires_at", "last_error")
+    return [dict(zip(keys, row)) for row in rows]
