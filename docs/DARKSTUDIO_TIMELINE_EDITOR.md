@@ -351,3 +351,12 @@ Se houver transições, incompatibilidade técnica ou metadados fora do padrão,
 O painel da timeline consulta os clipes do job e exibe **Reconstruir N clipe(s) VidGrid** somente quando há clipes marcados como desatualizados. A ação chama o endpoint seletivo, bloqueia edição/render concorrente, atualiza a contagem após a operação e apresenta o resumo de sucesso parcial/falha. A aprovação de uma imagem candidata atualiza a contagem sem exigir recarregar a página.
 
 A regeneração em lote de imagens também respeita o bloqueio de reconstrução seletiva, evitando que a imagem ativa seja trocada enquanto o clipe correspondente está sendo reconstruído. A reconstrução seletiva continua sendo apenas a etapa dos clipes individuais; o botão **Renderizar edição** segue responsável por produzir o MP4 completo.
+
+
+### Manifesto e validação técnica da exportação
+
+Cada render final da timeline persiste um manifesto com o modo de montagem (concatenação VidGrid sem reencodificação, montagem VidGrid com transições, clipes generativos ou render procedural), índices das cenas-fonte, fallback utilizado, frames produzidos, FPS/resolução-alvo e estados de áudio/legendas.
+
+O endpoint `POST /videos/jobs/{job_id}/validate-output` valida a exportação editada mais recente antes de recorrer ao MP4 original. Quando FFprobe está disponível, registra duração, contagem de streams, codecs, resolução, FPS, pixel format, dados básicos do áudio e integridade estrutural do vídeo. Também alerta sobre áudio ausente quando a etapa não foi declarada silenciosa, falha de mux, faixa única não reposicionada, divergência de duração e sidecar de legendas ausente.
+
+A validação é estrutural, não uma prova de sincronização perceptual, inteligibilidade da fala ou qualidade visual. A existência do arquivo SRT é verificada separadamente; o SRT não é presumido como faixa embutida no MP4. Sem FFprobe, o relatório marca a integridade como não verificada, em vez de aprovar o arquivo.
