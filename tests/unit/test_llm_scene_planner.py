@@ -25,3 +25,35 @@ def test_normalize_replaces_unsupported_shot_type_with_valid_fallback() -> None:
         duration=10.0,
     )
     assert scenes[0]["shot_type"] == "establishing"
+
+
+def test_fallback_assigns_coherent_narrative_progression() -> None:
+    scenes = ScenePlanner().fallback(
+        "Uma expedição parte ao amanhecer. A equipe atravessa a floresta. "
+        "Encontra ruínas antigas. Registra a descoberta e retorna.",
+        num_scenes=4,
+        duration=40.0,
+    )["scenes"]
+    assert [scene["narrative_role"] for scene in scenes] == [
+        "hook", "context", "development", "payoff"
+    ]
+
+
+def test_single_scene_combines_hook_and_payoff() -> None:
+    scenes = ScenePlanner().fallback(
+        "Uma máquina transforma água salgada em água potável.",
+        num_scenes=1,
+        duration=10.0,
+    )["scenes"]
+    assert scenes[0]["narrative_role"] == "hook_payoff"
+
+
+def test_ollama_normalization_assigns_roles_by_scene_position() -> None:
+    scenes = ScenePlanner()._normalize(
+        [{"name": "A"}, {"name": "B"}, {"name": "C"}],
+        num_scenes=3,
+        duration=30.0,
+    )
+    assert [scene["narrative_role"] for scene in scenes] == [
+        "hook", "context", "payoff"
+    ]

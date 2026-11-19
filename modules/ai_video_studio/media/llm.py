@@ -193,10 +193,16 @@ class ScenePlanner:
         "Each scene must include name, description, visual_prompt (a detailed standalone "
         "image-generation prompt describing subject, environment, action, composition, "
         "lighting, lens/framing and visual style), negative_prompt, voiceover_text, "
-        "shot_type, character_pose (neutral/explain/point), character_expression "
+        "shot_type, narrative_role, character_pose (neutral/explain/point), character_expression "
         "(neutral/happy/surprised/concerned), duration, background_colors, particles, circles, rects, lines, "
-        "text and camera. Vary shot sizes and angles; do not repeat the same composition. "
-        "Never invent facts when the brief is historical or documentary."
+        "text and camera. Build a coherent progression: open with a strong visual hook, establish context, "
+        "develop the subject through distinct visual beats, and finish with a clear conclusion or payoff. "
+        "For one scene, combine hook and payoff; for two scenes, use hook then payoff. "
+        "Assign narrative_role as hook, context, development, or payoff according to each scene's function. "
+        "Every scene must advance the brief and connect logically to the previous one; avoid padding and repeated ideas. "
+        "Vary shot sizes and angles; do not repeat the same composition. Preserve the user's requested style. "
+        "Never invent facts when the brief is historical or documentary; if details are missing, stay visually interpretive "
+        "without presenting invented specifics as facts."
     )
 
     def plan(
@@ -237,6 +243,21 @@ class ScenePlanner:
             max_tokens=min(8192, max(1024, num_scenes * 256)),
         )
 
+    @staticmethod
+    def _narrative_role(scene_index: int, total_scenes: int) -> str:
+        """Assign a lightweight story function without inventing scene content."""
+        total = max(1, int(total_scenes))
+        index = max(0, min(int(scene_index), total - 1))
+        if total == 1:
+            return "hook_payoff"
+        if index == 0:
+            return "hook"
+        if index == total - 1:
+            return "payoff"
+        if index == 1:
+            return "context"
+        return "development"
+
     # ── Normalisation ─────────────────────────────────────────────
     def _normalize(self, raw: list[Any], num_scenes: int, duration: float) -> list[dict[str, Any]]:
         per_scene = duration / max(num_scenes, 1)
@@ -256,6 +277,7 @@ class ScenePlanner:
                     "index": i,
                     "name": str(item.get("name") or f"Scene {i + 1}")[:255],
                     "description": str(item.get("description") or "")[:1000],
+                    "narrative_role": self._narrative_role(i, num_scenes),
                     "visual_prompt": str(item.get("visual_prompt") or item.get("image_prompt") or item.get("description") or item.get("name") or "")[:2000],
                     "negative_prompt": str(item.get("negative_prompt") or "")[:1000],
                     "voiceover_text": str(item.get("voiceover_text") or item.get("narration") or "")[:2000],
@@ -318,6 +340,7 @@ class ScenePlanner:
                     "index": i,
                     "name": f"Scene {i + 1}",
                     "description": chunk[:1000],
+                    "narrative_role": self._narrative_role(i, num_scenes),
                     "visual_prompt": f"Visualize only this narrated beat: {chunk}. {visual_guidance}. Create a standalone image with a clear subject and environment. Keep the user's requested art style; do not add events or details absent from the brief.",
                     "negative_prompt": "blurry, low quality, distorted anatomy, unreadable text, watermark, logo",
                     "voiceover_text": chunk[:1000],
