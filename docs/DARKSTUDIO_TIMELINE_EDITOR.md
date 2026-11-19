@@ -424,3 +424,10 @@ A timeline de áudio persiste `_audio_clips.music` e `_audio_clips.sfx`; `audio_
 Ao salvar a timeline de áudio, cada música/efeito recebe um SHA-256 de referência (`asset_fingerprint`). O grafo calcula o SHA-256 atual e marca o nó como `stale` se o arquivo tiver sido substituído ou alterado depois de salvo. Para clipes de cena, o fingerprint da imagem aprovada é comparado com `source_image_fingerprint` registrado no clipe; divergências marcam a imagem de origem como alterada, permitindo selecionar a imagem e planejar a reconstrução do clipe dependente.
 
 A interface oferece **Selecionar ativos alterados** para selecionar automaticamente nós `stale` antes de calcular o impacto. Essa seleção e a prévia não executam renderização. Jobs antigos sem fingerprint de áudio permanecem sem verificação histórica até que suas faixas sejam salvas novamente.
+
+
+## Recuperação por alteração de narração por cena
+
+Para jobs com `narration_style=per_scene`, o plano de recuperação agora compara o SHA-256 do áudio atual com `source_narration_fingerprint` salvo no clipe VidGrid. Se a narração mudar, a cena recebe o motivo `source_narration_changed` e entra na lista de reconstrução, desde que a imagem aprovada esteja disponível. A auditoria de saúde e o grafo de dependências também marcam o nó de narração como `stale`, propagando o impacto para o clipe da cena e para a exportação final.
+
+Ao reconstruir o clipe, o sistema valida que o arquivo de narração está dentro do diretório aprovado de voz, faz o mux e registra o novo fingerprint. Clipes legados sem esse fingerprint recebem um aviso de verificação histórica ausente; não são considerados alterados apenas por falta de metadados. A reconstrução continua limitada a clipes de cena; a renderização do MP4 final é uma etapa separada.
