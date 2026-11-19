@@ -823,6 +823,24 @@ class TestDarkstudioProfileSelection:
         assert fake_engine.received["params"]["studio_id"] == "felt_clay"
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
+    async def test_custom_prompt_studio_is_accepted_and_forwarded(
+        self, client: AsyncClient, fake_engine: _FakeEngine
+    ):
+        resp = await client.post(
+            "/api/v1/video-studio/videos/generate",
+            json={
+                "project_id": "p1",
+                "prompt": "Um anúncio futurista com estética de aquarela e neon.",
+                "studio_id": "custom",
+                "style": "Aquarela digital, neon ciano e magenta, atmosfera futurista",
+            },
+        )
+        assert resp.status_code == 202
+        assert fake_engine.received is not None
+        assert fake_engine.received["params"]["studio_id"] == "custom"
+        assert fake_engine.received["params"]["style"] == "Aquarela digital, neon ciano e magenta, atmosfera futurista"
+
     async def test_unknown_studio_profile_is_rejected(
         self, client: AsyncClient
     ):

@@ -65,7 +65,7 @@ class VideoGenerateRequest(BaseModel):
     # Platform format preset selected in the dashboard (shorts/reels/tiktok/
     # youtube/square) or "custom" when the user tweaked a dimension manually.
     format: str = Field(default="custom", max_length=32)
-    studio_id: str = Field(default="whymentary", pattern="^(whymentary|historical_documentary|felt_clay)$")
+    studio_id: str = Field(default="whymentary", pattern="^(whymentary|historical_documentary|felt_clay|custom)$")
     character_ids: list[str] = Field(default_factory=list, max_length=2, description="Stable character IDs to include in every scene")
     object_ids: list[str] = Field(default_factory=list, max_length=6, description="Reusable scene object IDs to include in every scene")
     scene_image_mode: str = Field(default="auto", pattern="^(procedural|ai|auto)$", description="Procedural scenes or per-scene local diffusion image generation")
@@ -616,7 +616,8 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
     style_prompts = {
         "whymentary": "2D educational explainer, clean white background, bold marker-like outlines, flat bright colors",
         "historical_documentary": "cinematic illustrated historical documentary, period-accurate environment, layered depth and atmospheric lighting",
-        "felt_clay": "handcrafted felt and clay stop-motion, tactile wool fibers, soft rounded forms, consistent character materials and warm cinematic lighting",
+        "felt_clay": "handcrafted felt and clay stop-motion, tactile wool fibers, soft rounded forms, consistent handcrafted materials and warm cinematic lighting",
+        "custom": str(scene.get("visual_style") or scene.get("style_prompt") or scene.get("art_direction") or "Follow the user's requested visual direction"),
     }
     if studio_id not in style_prompts:
         raise HTTPException(status_code=422, detail=f"Unsupported visual studio: {studio_id}")
