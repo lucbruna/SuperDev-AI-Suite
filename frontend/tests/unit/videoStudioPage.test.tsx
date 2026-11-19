@@ -145,6 +145,18 @@ describe("VideoStudioPage", () => {
     vi.useRealTimers();
   });
 
+  it("renders an inline video player for completed jobs with an MP4 URL", async () => {
+    mockedApi.listJobs.mockResolvedValue([{
+      job_id: "job_preview", project_id: "p1", status: "completed", progress: 1,
+      output_url: "/api/v1/video-studio/downloads/videos/final.mp4",
+    }]);
+    render(<VideoStudioPage />);
+    const player = await screen.findByLabelText("Prévia do vídeo job_preview");
+    expect(player.tagName).toBe("VIDEO");
+    expect(player).toHaveAttribute("src", "/api/v1/video-studio/downloads/videos/final.mp4");
+    expect(player).toHaveAttribute("controls");
+  });
+
   it("validates a completed MP4 and displays the measured streams", async () => {
     mockedApi.listJobs.mockResolvedValue([{
       job_id: "job_to_validate", project_id: "p1", status: "completed",

@@ -976,6 +976,16 @@ export default function VideoStudioPage() {
                     )}
 
                   </div>
+                  {job.output_url && job.status === "completed" && (
+                    <video
+                      className="mt-3 w-full max-w-2xl rounded-lg bg-black"
+                      controls
+                      playsInline
+                      preload="metadata"
+                      src={job.output_url}
+                      aria-label={`Prévia do vídeo ${job.job_id}`}
+                    />
+                  )}
                   <div className="flex shrink-0 items-center gap-3">
                     {job.resolution && job.status === "completed" && (
                       <span className="text-xs text-surface-400">{job.resolution}</span>
