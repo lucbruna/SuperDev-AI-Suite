@@ -67,3 +67,39 @@ def test_missing_provider_seed_preserves_random_sentinel():
     )
 
     assert _reported_seed("not-json", -1) == -1
+
+
+def test_video_request_accepts_optional_reproducible_base_seed():
+    from modules.ai_video_studio.api.routes.video import VideoGenerateRequest
+
+    request = VideoGenerateRequest(
+        project_id="seed-test",
+        prompt="A short educational film",
+        scene_image_seed=4321,
+    )
+
+    assert request.scene_image_seed == 4321
+
+
+def test_scene_image_edit_request_accepts_random_or_fixed_seed():
+    import pytest
+    from pydantic import ValidationError
+
+    from modules.ai_video_studio.api.routes.video import SceneImageEditRequest
+
+    assert SceneImageEditRequest(prompt="Change the sky", seed=-1).seed == -1
+    assert SceneImageEditRequest(prompt="Change the sky", seed=4321).seed == 4321
+    with pytest.raises(ValidationError):
+        SceneImageEditRequest(prompt="Change the sky", seed=-2)
+
+
+def test_batch_scene_image_request_accepts_per_scene_seed():
+    from modules.ai_video_studio.api.routes.video import SceneImageBatchItem
+
+    item = SceneImageBatchItem(
+        scene_index=2,
+        prompt="A railway crossing a valley",
+        seed=9876,
+    )
+
+    assert item.seed == 9876
