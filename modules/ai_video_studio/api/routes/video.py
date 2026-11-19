@@ -557,7 +557,8 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
         return {"job_id": job_id, "scene_index": scene_index, "candidate_id": candidate_id,
                 "image_path": result["image_path"], "image_url": to_download_url(result["image_path"]),
                 "operation": operation, "provider": result["provider"], "status": "candidate",
-                "prompt": req.prompt, "approval_required": True, "render_required": False}
+                "prompt": req.prompt, "seed": result.get("seed", req.seed),
+                "approval_required": True, "render_required": False}
 
     scene["background_image_path"] = result["image_path"]
     scene["image_asset_provider"] = result["provider"]
@@ -706,12 +707,14 @@ async def approve_video_job_scene_image(job_id: str, scene_index: int, candidate
     scene["visual_prompt_full"] = candidate.get("prompt") or scene.get("visual_prompt_full")
     scene["negative_prompt"] = candidate.get("negative_prompt") or scene.get("negative_prompt", "")
     scene["image_edit_operation"] = candidate.get("operation")
+    scene["image_generation_seed"] = candidate.get("seed", -1)
     record["_edited_scenes"] = scenes
     assets = record.setdefault("scene_assets", [])
     assets[:] = [item for item in assets if int(item.get("scene_index", -1)) != scene_index]
     assets.append({"scene_index": scene_index, "image_path": str(candidate_path),
                    "image_url": to_download_url(str(candidate_path)), "provider": candidate.get("provider"),
-                   "status": "edited", "operation": candidate.get("operation"), "prompt": candidate.get("prompt")})
+                   "status": "edited", "operation": candidate.get("operation"),
+                   "prompt": candidate.get("prompt"), "seed": candidate.get("seed", -1)})
     candidates[str(scene_index)] = [item for item in scene_candidates if item.get("candidate_id") != candidate_id]
     if not candidates[str(scene_index)]:
         candidates.pop(str(scene_index), None)
