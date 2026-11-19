@@ -536,7 +536,7 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
             clip_output_path = rendered_clip["output_path"]
             audio_status = "silent_or_tts_unavailable"
             voiceover = record.get("voiceover")
-    voiceover = voiceover if isinstance(voiceover, dict) else {}
+            voiceover = voiceover if isinstance(voiceover, dict) else {}
             if voiceover.get("narration_style") == "per_scene":
                 narration = next(
                     (item for item in voiceover.get("clips", [])
@@ -1004,7 +1004,7 @@ async def rebuild_stale_video_job_scene_clips(job_id: str, req: SceneClipRebuild
                 final_path = rendered["output_path"]
                 audio_status = "silent_or_tts_unavailable"
                 voiceover = record.get("voiceover")
-    voiceover = voiceover if isinstance(voiceover, dict) else {}
+                voiceover = voiceover if isinstance(voiceover, dict) else {}
                 if isinstance(voiceover, dict) and voiceover.get("narration_style") == "per_scene":
                     narration = next((item for item in voiceover.get("clips", [])
                                       if int(item.get("index", -1)) == scene_index and item.get("audio_path")), None)
@@ -1960,7 +1960,7 @@ async def render_video_job_edits(job_id: str):
         audio_status = "silent"
         final_path = rendered_path
         voiceover = record.get("voiceover")
-    voiceover = voiceover if isinstance(voiceover, dict) else {}
+        voiceover = voiceover if isinstance(voiceover, dict) else {}
         narration_clips = voiceover.get("clips") if isinstance(voiceover, dict) else None
         single_track = (
             isinstance(voiceover, dict)
