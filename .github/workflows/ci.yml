@@ -93,6 +93,14 @@ jobs:
           name: darkstudio-two-scene-mp4
           path: /tmp/darkstudio-two-scene-demo.mp4
           if-no-files-found: error
+      - name: Run end-to-end DARKSTUDIO prompt-to-video smoke test
+        run: python scripts/darkstudio_pipeline_smoke.py --output /tmp/darkstudio-pipeline-smoke.mp4
+      - name: Upload end-to-end DARKSTUDIO pipeline proof
+        uses: actions/upload-artifact@v4
+        with:
+          name: darkstudio-prompt-to-video-proof
+          path: /tmp/darkstudio-pipeline-smoke.mp4
+          if-no-files-found: error
 
   test-frontend:
     name: Frontend Tests
