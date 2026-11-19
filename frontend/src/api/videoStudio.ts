@@ -135,7 +135,7 @@ export interface SceneImageAsset {
   status: "generated" | "edited" | "fallback" | "candidate";
   candidate_id?: string;
   approval_required?: boolean;
-  operation?: "text_to_image" | "image_to_image";
+  operation?: "text_to_image" | "image_to_image" | "manual_upload";
   seed?: number;
   prompt?: string;
   visual_prompt?: string;
@@ -628,6 +628,19 @@ export const videoStudioApi = {
     const { data } = await apiClient.post(
       `${STUDIO_BASE}/videos/jobs/${jobId}/scenes/rebuild-stale-clips`,
       sceneIndices ? { scene_indices: sceneIndices } : {},
+    );
+    return data;
+  },
+
+  async uploadSceneImageCandidate(jobId: string, sceneIndex: number, file: File): Promise<{
+    job_id: string; scene_index: number; candidate_id: string; image_url: string;
+    status: "candidate"; approval_required: true; render_required: false; message: string;
+  }> {
+    const form = new FormData();
+    form.append("file", file);
+    const { data } = await apiClient.post(
+      `${STUDIO_BASE}/videos/jobs/${jobId}/scenes/${sceneIndex}/image-upload`,
+      form,
     );
     return data;
   },

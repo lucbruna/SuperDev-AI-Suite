@@ -54,6 +54,8 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
   const [visualDirections, setVisualDirections] = useState<Record<number, SceneVisualDirection>>({});
   const [continuityReport, setContinuityReport] = useState<import("@/api/videoStudio").SceneContinuityReport | null>(null);
   const [editingImageScene, setEditingImageScene] = useState<number | null>(null);
+  const [uploadingImageScene, setUploadingImageScene] = useState<number | null>(null);
+  const [bulkImageInstruction, setBulkImageInstruction] = useState("");
   const [selectedImageScenes, setSelectedImageScenes] = useState<number[]>([]);
   const [regeneratingImageBatch, setRegeneratingImageBatch] = useState(false);
   const [generatingMotionScene, setGeneratingMotionScene] = useState<number | null>(null);
@@ -457,6 +459,29 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
     finally { setEditingImageScene(null); }
   }
 
+  async function uploadSceneImage(sceneIndex: number, file: File) {
+    if (!jobId || uploadingImageScene !== null) return;
+    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+      setMessage("Envie uma imagem PNG, JPEG ou WebP.");
+      return;
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      setMessage("A imagem deve ter no máximo 20 MB.");
+      return;
+    }
+    setUploadingImageScene(sceneIndex);
+    setMessage("");
+    try {
+      const result = await videoStudioApi.uploadSceneImageCandidate(jobId, sceneIndex, file);
+      await refreshSceneCandidates(sceneIndex);
+      setMessage(result.message);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Não foi possível enviar a imagem.");
+    } finally {
+      setUploadingImageScene(null);
+    }
+  }
+
   async function refreshSceneCandidates(sceneIndex: number) {
     if (!jobId) return;
     const response = await videoStudioApi.listSceneImageCandidates(jobId, sceneIndex);
@@ -500,7 +525,9 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
       const authored = String(sceneImagePrompts[sceneIndex] ?? "").trim();
       const prompt = authored || direction?.visual_prompt_full || direction?.visual_prompt_suggestion || direction?.visual_prompt
         || (direction?.narration ? `Ilustração fiel desta narração: ${direction.narration}. ${direction.visual_direction ?? ""}` : "");
-      return { scene_index: sceneIndex, prompt: prompt.trim(), seed: imageSeed ?? -1 };
+      const extra = bulkImageInstruction.trim();
+      const combined = extra ? `${prompt.trim()}\n\nInstrução adicional aplicada a esta cena: ${extra}` : prompt.trim();
+      return { scene_index: sceneIndex, prompt: combined, seed: imageSeed ?? -1 };
     });
     const missing = selectedScenes.filter((scene) => !scene.prompt);
     if (missing.length) { setMessage(`Adicione um prompt para as cenas: ${missing.map((scene) => scene.scene_index + 1).join(", ")}.`); return; }
@@ -512,6 +539,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
       await Promise.all([...new Set(successful.map((item) => item.scene_index))]
         .map((sceneIndex) => refreshSceneCandidates(sceneIndex)));
       setSelectedImageScenes([]);
+      setBulkImageInstruction("");
       setMessage(response.message + (response.failed ? ` Falhas: ${response.results.filter((item) => item.status === "failed").map((item) => `cena ${item.scene_index + 1}: ${item.error}`).join("; ")}` : ""));
     } catch (error) { setMessage(error instanceof Error ? error.message : "Não foi possível regenerar as cenas selecionadas."); }
     finally { setRegeneratingImageBatch(false); }
@@ -864,6 +892,10 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
             <button type="button" onClick={() => regenerateSelectedImages(clips.map((clip, index) => clip.source_scene_index ?? clip.scene_index ?? index))} disabled={!clips.length || regeneratingImageBatch || editingImageScene !== null} className="rounded-md border border-primary-600 px-3 py-2 text-xs font-semibold text-primary-700 dark:text-primary-300 disabled:opacity-40">
               Gerar imagens de todas as cenas pelo roteiro
             </button>
+            <label className="block w-full text-xs font-medium text-surface-600 dark:text-surface-300">
+              Instrução adicional para todas as cenas selecionadas
+              <textarea value={bulkImageInstruction} onChange={(event) => setBulkImageInstruction(event.target.value)} rows={2} maxLength={1000} placeholder="Ex.: iluminação mais dramática, enquadramentos variados, manter os personagens e o cenário coerentes…" className="mt-1 w-full rounded-md border border-surface-200 bg-transparent p-2 text-xs dark:border-surface-700" />
+            </label>
             <button type="button" onClick={() => regenerateSelectedImages()} disabled={!selectedImageScenes.length || regeneratingImageBatch || editingImageScene !== null} className="rounded-md bg-primary-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-40">
               {regeneratingImageBatch ? "Regenerando cenas…" : `Regenerar selecionadas (${selectedImageScenes.length})`}
             </button>
@@ -888,6 +920,14 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
               </div>
               {asset?.image_url ? <img src={asset.image_url} alt={`Imagem da cena ${index + 1}`} className="mb-2 aspect-video w-full rounded-md object-cover" /> : <div className="mb-2 flex aspect-video items-center justify-center rounded-md bg-surface-100 text-xs text-surface-500 dark:bg-surface-800">Cena {index + 1} · imagem procedural ou ainda não criada</div>}
               {asset?.seed !== undefined && asset.seed >= 0 && <p className="mb-2 text-[10px] text-surface-500">Seed da imagem atual: <span className="font-mono tabular-nums">{asset.seed}</span></p>}
+              <label className="mb-2 flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-primary-300 px-3 py-2 text-xs font-semibold text-primary-700 hover:bg-primary-50 dark:border-primary-700 dark:text-primary-300 dark:hover:bg-primary-950/30">
+                {uploadingImageScene === sourceIndex ? "Enviando imagem…" : "Enviar imagem própria para esta cena"}
+                <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" disabled={uploadingImageScene !== null || approvingImageScene !== null} onChange={(event) => {
+                  const file = event.currentTarget.files?.[0];
+                  if (file) void uploadSceneImage(sourceIndex, file);
+                  event.currentTarget.value = "";
+                }} />
+              </label>
               {(sceneImageCandidates[sourceIndex] ?? []).map((candidate, candidatePosition) => candidate.image_url ? <div key={candidate.candidate_id} className="mb-2 rounded-md border border-amber-400 p-2 dark:border-amber-700">
                 <div className="mb-1 flex items-center justify-between gap-2">
                   <p className="text-xs font-semibold text-amber-700 dark:text-amber-300">Alternativa {candidatePosition + 1} · não aplicada</p>

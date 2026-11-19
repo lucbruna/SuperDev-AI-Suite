@@ -14,11 +14,12 @@ import subprocess
 import shutil
 import time
 import uuid
+from io import BytesIO
 from pathlib import Path
 from math import gcd
 from typing import Any
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException
+from fastapi import APIRouter, BackgroundTasks, File, HTTPException, UploadFile
 from pydantic import BaseModel, Field, field_validator
 
 from modules.ai_video_studio.api.urls import to_download_url
@@ -468,6 +469,112 @@ except Exception:
 
 _scene_batch_jobs: set[str] = set()
 _scene_batch_tasks: dict[str, asyncio.Task] = {}
+
+
+@router.post("/jobs/{job_id}/scenes/{scene_index}/image-upload", status_code=201)
+async def upload_video_job_scene_image(
+    job_id: str, scene_index: int, file: UploadFile = File(...)
+):
+    """Upload a user-owned image as a reviewable candidate for one scene."""
+    record = _jobs.get(job_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+    if scene_index < 0:
+        raise HTTPException(status_code=422, detail="scene_index must be non-negative")
+    if job_id in _scene_batch_jobs or record.get("_rendering_edits") or record.get("_rebuilding_scene_clips") or record.get("_scene_clip_rebuild_scheduled"):
+        raise HTTPException(status_code=409, detail="Scene assets are locked by an active operation")
+    if record.get("status") != "completed":
+        raise HTTPException(status_code=409, detail="Images can only be uploaded after video generation completes")
+
+    source_scenes = record.get("_edited_scenes") or record.get("_source_scenes") or []
+    position = next(
+        (i for i, item in enumerate(source_scenes)
+         if isinstance(item, dict) and str(item.get("_source_scene_index", i)) == str(scene_index)),
+        None,
+    )
+    if position is None and scene_index < len(source_scenes):
+        position = scene_index
+    if position is None:
+        raise HTTPException(status_code=404, detail="Scene index not found")
+
+    buckets = record.get("scene_image_candidates")
+    existing = buckets.get(str(scene_index), []) if isinstance(buckets, dict) else []
+    if isinstance(existing, list) and len(existing) >= 8:
+        raise HTTPException(status_code=409, detail="This scene already has the maximum of eight pending image candidates")
+
+    allowed_mime = {"image/png", "image/jpeg", "image/webp"}
+    if file.content_type not in allowed_mime:
+        raise HTTPException(status_code=415, detail="Upload only PNG, JPEG or WebP images")
+    content = await file.read(20 * 1024 * 1024 + 1)
+    if not content:
+        raise HTTPException(status_code=422, detail="Uploaded image is empty")
+    if len(content) > 20 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="Image exceeds the 20 MB upload limit")
+
+    try:
+        from PIL import Image
+        with Image.open(BytesIO(content)) as probe:
+            image_format = str(probe.format or "").upper()
+            width, height = probe.size
+            probe.verify()
+        expected_format = {"image/png": "PNG", "image/jpeg": "JPEG", "image/webp": "WEBP"}[file.content_type]
+        if image_format != expected_format:
+            raise ValueError("The uploaded file content does not match its MIME type")
+        if width < 64 or height < 64 or width > 7680 or height > 7680 or width * height > 40_000_000:
+            raise ValueError("Image dimensions must be between 64 and 7680 pixels per side and at most 40 megapixels")
+        with Image.open(BytesIO(content)) as source_image:
+            normalized = source_image.convert("RGBA" if "A" in source_image.getbands() else "RGB")
+            buffer = BytesIO()
+            normalized.save(buffer, format="PNG", optimize=True)
+            png_bytes = buffer.getvalue()
+    except Exception as exc:
+        raise HTTPException(status_code=422, detail=f"Invalid or unreadable image: {str(exc)[:180]}") from exc
+
+    from modules.ai_video_studio.media.output_paths import get_subsystem_dir
+    image_root = Path(get_subsystem_dir("images")).resolve()
+    upload_dir = (image_root / job_id / "uploads").resolve()
+    if image_root not in upload_dir.parents:
+        raise HTTPException(status_code=422, detail="Invalid image destination")
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    image_path = upload_dir / f"scene_{scene_index:03d}_{uuid.uuid4().hex}.png"
+    image_path.write_bytes(png_bytes)
+
+    candidate_id = uuid.uuid4().hex
+    candidate = {
+        "candidate_id": candidate_id,
+        "scene_index": scene_index,
+        "image_path": str(image_path.resolve()),
+        "image_url": to_download_url(str(image_path.resolve())),
+        "provider": "user_upload",
+        "operation": "manual_upload",
+        "prompt": "Imagem enviada manualmente pelo usuário",
+        "negative_prompt": "",
+        "seed": -1,
+        "status": "pending_approval",
+        "original_filename": Path(file.filename or "imagem").name[:160],
+        "mime_type": "image/png",
+        "file_size_bytes": len(png_bytes),
+    }
+    from modules.ai_video_studio.media.scene_visual_asset_workflow import stage_scene_image_candidate
+    try:
+        updated = stage_scene_image_candidate(record, scene_index, candidate)
+        _persist_job(updated)
+        record.clear()
+        record.update(updated)
+    except (ValueError, RuntimeError) as exc:
+        image_path.unlink(missing_ok=True)
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except Exception as exc:
+        image_path.unlink(missing_ok=True)
+        raise HTTPException(status_code=503, detail="Could not persist uploaded scene image") from exc
+
+    return {
+        "job_id": job_id, "scene_index": scene_index, "candidate_id": candidate_id,
+        "image_url": candidate["image_url"], "provider": "user_upload",
+        "operation": "manual_upload", "status": "candidate",
+        "approval_required": True, "render_required": False,
+        "message": "Imagem enviada como alternativa. Aprove-a na galeria para substituir a imagem ativa.",
+    }
 
 
 @router.post("/jobs/{job_id}/scenes/{scene_index}/image-edit")

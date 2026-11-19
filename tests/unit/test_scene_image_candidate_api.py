@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import asyncio
+from io import BytesIO
 from pathlib import Path
 
 import pytest
 from fastapi import HTTPException
+from PIL import Image
+from starlette.datastructures import Headers, UploadFile
 
 from modules.ai_video_studio.api.routes import video
 from modules.ai_video_studio.media import output_paths
@@ -117,3 +120,82 @@ def test_discard_candidate_keeps_approved_image_and_clip(monkeypatch) -> None:
     assert record["_source_scenes"][0]["background_image_path"] == "/images/current.png"
     assert record["scene_clips"][0]["status"] == "updated"
     assert record["scene_image_candidates"] == {}
+
+
+
+def _png_upload(*, color: str = "red", content_type: str = "image/png") -> UploadFile:
+    buffer = BytesIO()
+    Image.new("RGB", (128, 96), color=color).save(buffer, format="PNG")
+    buffer.seek(0)
+    return UploadFile(
+        filename="my-scene.png",
+        file=buffer,
+        headers=Headers({"content-type": content_type}),
+    )
+
+
+def test_upload_scene_image_stages_candidate_without_replacing_active_image(monkeypatch, tmp_path: Path) -> None:
+    image_root = tmp_path / "images"
+    image_root.mkdir()
+    record = {
+        "job_id": "job-candidate-api",
+        "status": "completed",
+        "_source_scenes": [
+            {"_source_scene_index": 3, "background_image_path": "/images/current.png", "visual_prompt": "current"},
+        ],
+        "scene_clips": [{"scene_index": 3, "status": "updated"}],
+    }
+    persisted = []
+    monkeypatch.setattr(video, "_jobs", {record["job_id"]: record})
+    monkeypatch.setattr(video, "_scene_batch_jobs", set())
+    monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda _name: image_root)
+    monkeypatch.setattr(video, "to_download_url", lambda path: f"/downloads/{Path(path).name}")
+    monkeypatch.setattr(video, "_persist_job", lambda current: persisted.append(current.copy()))
+
+    response = asyncio.run(
+        video.upload_video_job_scene_image(record["job_id"], 3, _png_upload())
+    )
+
+    assert response["status"] == "candidate"
+    assert response["approval_required"] is True
+    assert response["operation"] == "manual_upload"
+    assert len(persisted) == 1
+    assert record["_source_scenes"][0]["background_image_path"] == "/images/current.png"
+    assert record["scene_clips"][0]["status"] == "updated"
+    candidate = record["scene_image_candidates"]["3"][0]
+    assert candidate["candidate_id"] == response["candidate_id"]
+    assert candidate["provider"] == "user_upload"
+    assert Path(candidate["image_path"]).is_file()
+    with Image.open(candidate["image_path"]) as saved:
+        assert saved.format == "PNG"
+        assert saved.size == (128, 96)
+
+
+def test_upload_scene_image_rejects_mime_mismatch_and_bad_payload(monkeypatch, tmp_path: Path) -> None:
+    image_root = tmp_path / "images"
+    image_root.mkdir()
+    record = {
+        "job_id": "job-candidate-api",
+        "status": "completed",
+        "_source_scenes": [{"_source_scene_index": 3}],
+    }
+    monkeypatch.setattr(video, "_jobs", {record["job_id"]: record})
+    monkeypatch.setattr(video, "_scene_batch_jobs", set())
+    monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda _name: image_root)
+
+    with pytest.raises(HTTPException) as mime_error:
+        asyncio.run(
+            video.upload_video_job_scene_image(
+                record["job_id"], 3, _png_upload(content_type="application/pdf")
+            )
+        )
+    assert mime_error.value.status_code == 415
+
+    invalid = UploadFile(
+        filename="broken.png",
+        file=BytesIO(b"not-an-image"),
+        headers=Headers({"content-type": "image/png"}),
+    )
+    with pytest.raises(HTTPException) as image_error:
+        asyncio.run(video.upload_video_job_scene_image(record["job_id"], 3, invalid))
+    assert image_error.value.status_code == 422
