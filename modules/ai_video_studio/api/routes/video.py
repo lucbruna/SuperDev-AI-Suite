@@ -1181,13 +1181,14 @@ async def rebuild_stale_video_job_scene_clips(job_id: str, req: SceneClipRebuild
                         narration_path = Path(str(narration["audio_path"])).resolve()
                         if voice_root not in narration_path.parents or not narration_path.is_file():
                             raise ValueError("Scene narration is missing or outside the approved voice asset directory")
-                        narration_fingerprint = _asset_sha256(narration_path)
+                        current_narration_fingerprint = _asset_sha256(narration_path)
                         from modules.ai_video_studio.media.audio import mux_audio_into_video
                         voiced_path = unique_filename(get_subsystem_dir("videos") / "vidgrid_clips",
                                                        f"scene_{scene_index + 1:02d}_rebuilt_voiced", "mp4")
                         muxed = await asyncio.to_thread(mux_audio_into_video, final_path, str(narration_path), voiced_path)
                         if muxed.get("muxed"):
                             final_path = muxed["output_path"]
+                            narration_fingerprint = current_narration_fingerprint
                             audio_status = "per_scene_narration_muxed"
                         else:
                             audio_status = "narration_mux_failed"
