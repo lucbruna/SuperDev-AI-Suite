@@ -1660,6 +1660,29 @@ class TestDarkstudioDependencyGraph:
         assert result["requires_user_confirmation"] is True
 
     @pytest.mark.asyncio
+    async def test_dependency_impact_for_music_only_requires_final_export(self, monkeypatch):
+        from modules.ai_video_studio.api.routes import video
+
+        async def fake_graph(_job_id):
+            return {
+                "nodes": [
+                    {"id": "audio:music_clips:0", "type": "music"},
+                    {"id": "final:export", "type": "final_export"},
+                ],
+                "edges": [{"from": "audio:music_clips:0", "to": "final:export"}],
+            }
+
+        monkeypatch.setattr(video, "get_video_job_dependency_graph", fake_graph)
+        result = await video.preview_video_job_dependency_impact(
+            "impact-music-job",
+            video.DependencyImpactRequest(changed_asset_ids=["audio:music_clips:0"]),
+        )
+
+        assert result["rebuild_scene_indices"] == []
+        assert result["final_export_required"] is True
+        assert [step["operation"] for step in result["rebuild_steps"]] == ["render_final_export"]
+
+    @pytest.mark.asyncio
     async def test_dependency_impact_rejects_unknown_asset(self, monkeypatch):
         from fastapi import HTTPException
         from modules.ai_video_studio.api.routes import video
