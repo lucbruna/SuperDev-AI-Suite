@@ -22,6 +22,7 @@ _STUDIO_STYLES = {
         "handcrafted felt-clay stop motion, tactile wool fibers, soft rounded forms, "
         "consistent handcrafted materials and warm studio lighting"
     ),
+    "custom": "Follow the user-defined visual direction exactly, preserving the requested medium, style, palette, subject and mood.",
 }
 
 _SHOT_SEQUENCE = (
@@ -45,17 +46,6 @@ _SHOT_GUIDANCE = {
     "environmental_wide": "Plano aberto com profundidade em primeiro, segundo e terceiro plano.",
     "reaction_close_up": "Close de reação para destacar a resposta emocional descrita no roteiro.",
 }
-
-_CHARACTER_VISUAL_LOCKS = {
-    "leo": "Leo: menino, cabelo loiro, camisa azul e calça escura; manter rosto, cabelo, roupa, cores e proporções idênticos em todas as cenas.",
-    "mia": "Mia: menina, cabelo castanho preso e vestido vermelho; manter rosto, penteado, roupa, cores e proporções idênticos em todas as cenas.",
-}
-
-_CONTINUITY_CONSTRAINTS = (
-    "Não trocar identidade, idade aparente, cabelo, figurino, paleta ou proporções dos personagens recorrentes.",
-    "Não criar cópias do mesmo personagem na mesma cena, salvo quando o roteiro exigir explicitamente.",
-    "Preservar o material visual e o acabamento artístico entre cenas consecutivas.",
-)
 
 _GENERIC = {"cena", "uma cena", "imagem", "ilustração", "visual", "mostrar"}
 _TOKEN_RE = re.compile(r"[a-zà-ÿ0-9]{3,}", re.IGNORECASE)
@@ -114,17 +104,13 @@ def build_scene_visual_brief(scene: dict[str, Any], *, scene_index: int = 0, stu
         "Representar somente fatos, objetos, personagens e ações sustentados pelo texto da cena. "
         "Não acrescentar datas, falas, eventos, símbolos ou personagens não fornecidos."
     )
-    character_ids = scene.get("character_ids") or scene.get("continuity", {}).get("characters", [])
-    character_visual_locks: dict[str, str] = {}
-    if isinstance(character_ids, list) and character_ids:
-        prompt += " Preservar as identidades visuais aprovadas de: " + ", ".join(map(str, character_ids)) + "."
-        for character_id in character_ids:
-            key = str(character_id).casefold()
-            if key in _CHARACTER_VISUAL_LOCKS:
-                character_visual_locks[key] = _CHARACTER_VISUAL_LOCKS[key]
-        if character_visual_locks:
-            prompt += " Travas visuais obrigatórias: " + " ".join(character_visual_locks.values())
-            prompt += " " + " ".join(_CONTINUITY_CONSTRAINTS)
+    requested_style = _first_text(scene, "visual_style", "style_prompt", "art_direction")
+    if requested_style:
+        prompt += " Direção visual solicitada pelo usuário: " + requested_style + "."
+    continuity_prompt = _first_text(scene, "continuity_prompt", "reference_consistency")
+    if continuity_prompt:
+        prompt += " Continuidade solicitada pelo usuário: " + continuity_prompt + "."
+
 
     negative = (
         "texto ilegível, legendas embutidas, marca d'água, logotipo, anatomia deformada, "
@@ -147,8 +133,8 @@ def build_scene_visual_brief(scene: dict[str, Any], *, scene_index: int = 0, stu
         "negative_prompt": negative,
         "requires_human_review": status != "ready_for_generation",
         "prompt_source": "authored" if authored_prompt and not generic_prompt else "scene_text_or_suggestion",
-        "character_visual_locks": character_visual_locks,
-        "continuity_constraints": list(_CONTINUITY_CONSTRAINTS) if character_visual_locks else [],
+        "requested_style": requested_style,
+        "continuity_prompt": continuity_prompt,
     }
 
 

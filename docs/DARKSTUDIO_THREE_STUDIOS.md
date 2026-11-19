@@ -1,26 +1,24 @@
-# DARKSTUDIO — três estúdios de produção
+# DARKSTUDIO — perfis visuais e direção livre
 
-O catálogo agora expõe três contratos visuais independentes:
+O DARKSTUDIO é um estúdio universal de criação audiovisual orientado pela ideia e pelo prompt do usuário. Os perfis visuais são atalhos opcionais, não limites de conteúdo nem formatos obrigatórios.
 
-| Estúdio | Direção visual | Uso principal |
+## Perfis opcionais
+
+| Perfil | Direção inicial | Personalização |
 |---|---|---|
-| Whymentary | Explainer 2D, fundo branco, contornos tipo marcador e cores chapadas | Explicações didáticas |
-| Documentário Histórico | Ilustração cinematográfica, profundidade, luz atmosférica e materiais de época | História e documentários |
-| Felt & Clay | Stop motion artesanal, fibras de lã, formas arredondadas e iluminação quente | Dark Health e personagens recorrentes |
+| Whymentary | Explainer 2D, fundo branco, contornos tipo marcador | O prompt pode substituir ou detalhar a direção |
+| Documentário Histórico | Ilustração cinematográfica e atmosfera de época | O prompt define período, técnica, rigor e linguagem |
+| Felt & Clay | Stop motion artesanal e materiais táteis | O prompt pode pedir qualquer assunto ou estética |
+| Custom | Segue a direção visual descrita pelo usuário | Estilo, mídia, paleta, assunto, clima e composição livres |
 
-## Continuidade de personagens
+## Regra de prioridade
 
-Mia e Leo continuam com as identidades aprovadas e podem ser selecionados também no estúdio Felt & Clay. O catálogo reaproveita as mesmas descrições de identidade, em vez de criar versões independentes com nomes iguais.
+1. A ideia e o prompt do usuário são a fonte principal.
+2. O perfil escolhido fornece somente valores iniciais.
+3. visual_style, style_prompt ou art_direction personalizam a estética da cena.
+4. continuity_prompt ou reference_consistency carregam regras de continuidade definidas pelo usuário (personagens, produtos, cenários, figurino, objetos, veículos ou qualquer outro elemento).
+5. Não inserir personagens, marcas, objetos, cenários ou temas fixos que não tenham sido solicitados.
 
-## Catálogo de objetos
+## Limites reais
 
-O estúdio Felt & Clay pode reutilizar os objetos didáticos existentes, mas a renderização continua sujeita às capacidades reais do SceneCanvas. A disponibilidade de um perfil não significa que todos os objetos tenham sido redesenhados em materiais de feltro.
-
-## Contratos de API
-
-- `GET /api/v1/video-studio/studios` lista os três perfis.
-- `GET /api/v1/video-studio/studios/felt_clay` retorna o contrato visual Felt & Clay.
-- `GET /api/v1/video-studio/studios/library/characters?studio_id=felt_clay` retorna Mia e Leo com o estúdio associado.
-- `POST /api/v1/video-studio/videos/generate` aceita `studio_id="felt_clay"`.
-
-A seleção do perfil configura paleta, fundo, ruído, gradação, texto e defaults de câmera. O modo de geração de imagem continua dependendo do provedor instalado/configurado; o perfil não equivale a um modelo de difusão.
+O diretor visual monta prompts e instruções; não gera pixels por si só. A criação de imagens depende de um provedor configurado. Continuidade textual orienta o gerador, mas a consistência efetiva depende de referências visuais, recursos do modelo e revisão.
