@@ -136,6 +136,7 @@ export interface SceneImageAsset {
   candidate_id?: string;
   approval_required?: boolean;
   operation?: "text_to_image" | "image_to_image";
+  seed?: number;
   prompt?: string;
   visual_prompt?: string;
   narration_text?: string;
@@ -276,6 +277,7 @@ export interface StudioJob {
     object_ids?: string[];
     scene_image_mode?: "procedural" | "ai" | "auto";
     scene_image_steps?: number;
+    scene_image_seed?: number | null;
     scene_image_timeout?: number;
     vidgrid_compatible?: boolean;
     llm_timeout?: number;
@@ -399,6 +401,7 @@ export interface GenerateVideoParams {
   studio_id?: StudioProfile["id"];
   scene_image_mode?: "procedural" | "ai" | "auto";
   scene_image_steps?: number;
+  scene_image_seed?: number;
   scene_image_timeout?: number;
   vidgrid_compatible?: boolean;
 }
@@ -609,6 +612,7 @@ export const videoStudioApi = {
     denoising_strength?: number;
     steps?: number;
     cfg_scale?: number;
+    seed?: number;
     stage_only?: boolean;
   }): Promise<SceneImageAsset & {
     candidate_id?: string;
