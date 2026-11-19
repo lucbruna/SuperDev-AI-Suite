@@ -1261,8 +1261,8 @@ async def rebuild_stale_video_job_scene_clips(job_id: str, req: SceneClipRebuild
     record["_rebuilding_scene_clips"] = True
     record["scene_clip_rebuild_status"] = "processing"
     record["scene_clip_rebuild_queue"] = {
-        "queue_id": existing_queue.get("queue_id"),
-        "cancel_requested": bool(existing_queue.get("cancel_requested")),
+        "queue_id": existing_queue.get("queue_id") if record.get("_scene_clip_rebuild_worker") else None,
+        "cancel_requested": bool(existing_queue.get("cancel_requested")) if record.get("_scene_clip_rebuild_worker") else False,
         "requested_scene_indices": list(stale), "total": len(stale), "completed": 0,
         "failed": 0, "current_scene_index": None, "status": "processing",
         "results": [], "started_at": existing_queue.get("started_at") or time.time(),
