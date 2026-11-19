@@ -337,7 +337,14 @@ def _scene_clip_recovery_plan(record: dict) -> dict:
     clips = {_safe_record_index(item.get("scene_index")): item for item in (record.get("scene_clips") or []) if isinstance(item, dict)}
     image_root = Path(get_subsystem_dir("images")).resolve()
     video_root = Path(get_subsystem_dir("videos")).resolve()
-    params = record.get("params") or {}
+    voice_root = Path(get_subsystem_dir("voice")).resolve()
+    voiceover = record.get("voiceover")
+    voiceover = voiceover if isinstance(voiceover, dict) else {}
+    narration_by_scene = {
+        _safe_record_index(item.get("index")): item
+        for item in (voiceover.get("clips") or [])
+        if isinstance(item, dict)
+    }
     try:
         width, height = _parse_resolution(record.get("resolution") or params.get("resolution") or "1280x720")
         fps = int(record.get("frame_rate") or params.get("frame_rate") or 24)
@@ -380,11 +387,29 @@ def _scene_clip_recovery_plan(record: dict) -> dict:
                 reasons.append("source_image_changed")
             elif not saved_fingerprint:
                 warnings.append("legacy_clip_without_image_fingerprint")
+            if voiceover.get("narration_style") == "per_scene":
+                narration = narration_by_scene.get(scene_index) or {}
+                narration_value = narration.get("audio_path")
+                narration_path = Path(str(narration_value)).resolve() if narration_value else None
+                narration_fingerprint = None
+                if narration_path is not None and voice_root in narration_path.parents and narration_path.is_file():
+                    try:
+                        narration_fingerprint = _asset_sha256(narration_path)
+                    except OSError:
+                        warnings.append("scene_narration_unreadable")
+                elif narration_value:
+                    warnings.append("scene_narration_missing_or_unsafe")
+                saved_narration_fingerprint = clip.get("source_narration_fingerprint")
+                if saved_narration_fingerprint and narration_fingerprint and saved_narration_fingerprint != narration_fingerprint:
+                    reasons.append("source_narration_changed")
+                elif narration_fingerprint and not saved_narration_fingerprint:
+                    warnings.append("legacy_clip_without_narration_fingerprint")
         if reasons and image_fingerprint:
             repair.append(scene_index)
         items.append({"scene_index": scene_index, "status": "needs_rebuild" if reasons else "ready",
                       "reasons": sorted(set(reasons)), "warnings": warnings,
                       "source_image_fingerprint": image_fingerprint,
+                      "source_narration_fingerprint": narration_fingerprint if clip is not None and voiceover.get("narration_style") == "per_scene" else None,
                       "clip_exists": bool(clip and clip.get("output_path") and Path(str(clip["output_path"])).resolve().is_file())})
     return {"scene_count": len(scenes), "ready_count": sum(item["status"] == "ready" for item in items),
             "repairable_count": len(repair),
