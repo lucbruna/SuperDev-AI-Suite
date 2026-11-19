@@ -1051,20 +1051,41 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
               </div> : null)}
               <div className="mb-3 rounded-md border border-surface-200 p-3 dark:border-surface-700">
                 <div className="mb-2 text-xs font-semibold">Enquadramento da imagem</div>
-                {(["scale", "offset_x", "offset_y"] as const).map((key) => {
-                  const value = sceneFraming[sourceIndex]?.[key] ?? (key === "scale" ? 1 : 0);
-                  const min = key === "scale" ? 1 : -1;
-                  const max = key === "scale" ? 3 : 1;
-                  const label = key === "scale" ? "Zoom" : key === "offset_x" ? "Horizontal" : "Vertical";
-                  return <label key={key} className="mb-2 block text-[11px] text-surface-500">
-                    <span className="flex justify-between"><span>{label}</span><strong>{value.toFixed(2)}</strong></span>
-                    <input type="range" min={min} max={max} step={0.05} value={value} onChange={(event) => setSceneFraming((current) => ({ ...current, [sourceIndex]: { ...(current[sourceIndex] ?? { scale: 1, offset_x: 0, offset_y: 0 }), [key]: Number(event.target.value) } }))} className="w-full" />
-                  </label>;
-                })}
+                {(() => {
+                  const framing = sceneFraming[sourceIndex] ?? { scale: 1, offset_x: 0, offset_y: 0 };
+                  const imageUrl = asset?.image_url ?? visualDirections[sourceIndex]?.image_url ?? "";
+                  const presets = [
+                    { label: "Aberto", value: { scale: 1, offset_x: 0, offset_y: 0 } },
+                    { label: "Plano médio", value: { scale: 1.35, offset_x: 0, offset_y: 0 } },
+                    { label: "Close-up", value: { scale: 1.8, offset_x: 0, offset_y: 0 } },
+                    { label: "Cinematográfico", value: { scale: 1.5, offset_x: 0, offset_y: -0.18 } },
+                  ];
+                  return <>
+                    {imageUrl ? <div className="mb-3 overflow-hidden rounded-md bg-surface-100 dark:bg-surface-800">
+                      <div className="aspect-video w-full overflow-hidden">
+                        <img src={imageUrl} alt={"Prévia aproximada do enquadramento da cena " + (index + 1)} className="h-full w-full object-cover transition-transform duration-150" style={{ transform: "translate(" + (-framing.offset_x * Math.max(0, framing.scale - 1) * 50) + "%, " + (-framing.offset_y * Math.max(0, framing.scale - 1) * 50) + "%) scale(" + framing.scale + ")" }} />
+                      </div>
+                      <p className="px-2 py-1 text-[10px] text-surface-500">Prévia aproximada · o recorte final é calculado pelo renderizador</p>
+                    </div> : <p className="mb-2 text-[10px] text-surface-500">A prévia aparece quando a imagem da cena estiver disponível.</p>}
+                    <div className="mb-3 flex flex-wrap gap-1.5">
+                      {presets.map((preset) => <button key={preset.label} type="button" onClick={() => setSceneFraming((current) => ({ ...current, [sourceIndex]: preset.value }))} className="rounded-md border border-surface-300 px-2 py-1 text-[10px] font-semibold hover:border-primary-400 dark:border-surface-600">{preset.label}</button>)}
+                    </div>
+                    {(["scale", "offset_x", "offset_y"] as const).map((key) => {
+                      const value = framing[key];
+                      const min = key === "scale" ? 1 : -1;
+                      const max = key === "scale" ? 3 : 1;
+                      const label = key === "scale" ? "Zoom" : key === "offset_x" ? "Horizontal" : "Vertical";
+                      return <label key={key} className="mb-2 block text-[11px] text-surface-500">
+                        <span className="flex justify-between"><span>{label}</span><strong>{value.toFixed(2)}</strong></span>
+                        <input type="range" min={min} max={max} step={0.05} value={value} onChange={(event) => setSceneFraming((current) => ({ ...current, [sourceIndex]: { ...(current[sourceIndex] ?? { scale: 1, offset_x: 0, offset_y: 0 }), [key]: Number(event.target.value) } }))} className="w-full" />
+                      </label>;
+                    })}
+                  </>;
+                })()}
                 <button type="button" onClick={() => void saveSceneFraming(sourceIndex)} disabled={savingFramingScene !== null || !jobId} className="rounded-md bg-surface-900 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40 dark:bg-surface-100 dark:text-surface-900">
                   {savingFramingScene === sourceIndex ? "Salvando…" : "Salvar enquadramento"}
                 </button>
-                <p className="mt-1 text-[10px] text-surface-500">O ajuste afeta o render procedural. Reconstrua o clipe VidGrid para atualizar essa cena.</p>
+                <p className="mt-1 text-[10px] text-surface-500">A prévia é aproximada. O ajuste final é aplicado no render procedural. Reconstrua o clipe VidGrid para atualizar essa cena.</p>
               </div>
               <div className="mb-2">
                 <button type="button" onClick={() => void toggleSceneImageHistory(sourceIndex)} disabled={loadingImageHistoryScene === sourceIndex} className="rounded-md border border-surface-300 px-3 py-1.5 text-xs font-semibold dark:border-surface-600 disabled:opacity-40">
