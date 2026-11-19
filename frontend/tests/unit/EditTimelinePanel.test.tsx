@@ -423,3 +423,53 @@ it("regenerates every storyboard image from its scene-specific visual brief with
   expect(screen.getByAltText("Imagem candidata da cena 1")).toHaveAttribute("src", "/images/all-0.png");
   expect(screen.getByAltText("Imagem candidata da cena 2")).toHaveAttribute("src", "/images/all-1.png");
 });
+
+
+  it("shows the queued dependency rebuild state returned by the async endpoint", async () => {
+    vi.spyOn(videoStudioApi, "getJob").mockResolvedValue({
+      job_id: "async-dependency-ui", project_id: "p1", status: "completed", progress: 1,
+    });
+    vi.spyOn(videoStudioApi, "getJobDependencyRebuildStatus").mockRejectedValue(new Error("Ainda não há execução"));
+    vi.spyOn(videoStudioApi, "getJobDependencyGraph").mockResolvedValue({
+      job_id: "async-dependency-ui",
+      nodes: [
+        { id: "scene:0:image", type: "image", label: "Imagem da cena 1", status: "stale", scene_index: 0 },
+        { id: "scene:0:clip", type: "video_clip", label: "Clipe da cena 1", status: "stale", scene_index: 0 },
+      ],
+      edges: [],
+      summary: { nodes: 2, dependencies: 0, statuses: { stale: 2 } },
+      impact_rules: [],
+      limitations: [],
+    });
+    vi.spyOn(videoStudioApi, "previewJobDependencyImpact").mockResolvedValue({
+      job_id: "async-dependency-ui",
+      changed_asset_ids: ["scene:0:image"],
+      affected_node_ids: ["scene:0:clip", "final:export"],
+      affected_nodes: [{ id: "scene:0:clip", type: "video_clip", label: "Clipe da cena 1", status: "stale", scene_index: 0 }],
+      rebuild_scene_indices: [0],
+      final_export_required: true,
+      rebuild_steps: [],
+      requires_user_confirmation: true,
+      executed: false,
+      limitations: [],
+    });
+    const execute = vi.spyOn(videoStudioApi, "executeJobDependencyRebuild").mockResolvedValue({
+      job_id: "async-dependency-ui",
+      status: "queued",
+      queued: true,
+      executed: false,
+      scene_indices: [0],
+      message: "Reconstrução adicionada à fila.",
+    });
+
+    render(<EditTimelinePanel timeline={timeline} jobId="async-dependency-ui" />);
+    fireEvent.click(screen.getByRole("button", { name: "Mapa de dependências" }));
+    await waitFor(() => expect(screen.getByText("Imagem da cena 1")).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("checkbox"));
+    fireEvent.click(screen.getByRole("button", { name: /Calcular impacto/ }));
+    await waitFor(() => expect(screen.getByText("Plano calculado · somente prévia")).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar e executar reconstrução" }));
+    await waitFor(() => expect(execute).toHaveBeenCalledWith("async-dependency-ui", ["scene:0:image"]));
+    expect(await screen.findByText("Na fila")).toBeInTheDocument();
+    expect(screen.getByText(/Cenas solicitadas: 1/)).toBeInTheDocument();
+  });
