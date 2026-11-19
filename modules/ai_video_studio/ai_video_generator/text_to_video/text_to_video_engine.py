@@ -207,7 +207,26 @@ class TextToVideoEngine:
             # prepend a fixed studio aesthetic: custom prompts must control the
             # visual language scene by scene.
             image_style = ""
+            # Circuit breaker for auto mode: once the local diffusion service
+            # fails, do not wait through the timeout again for every remaining
+            # scene. Preserve each scene in the manifest and use procedural
+            # composition for the rest of this job.
+            image_provider_unavailable = False
             for scene_index, scene in enumerate(scenes):
+                if image_mode == "auto" and image_provider_unavailable:
+                    reason = "Local image provider already failed for this job; skipped further connection attempts"
+                    _notify_scene(
+                        scene_index, "fallback", "image_fallback",
+                        image_fallback=True, error=reason,
+                    )
+                    scene_assets.append({
+                        "scene_index": scene_index,
+                        "provider": "procedural_fallback",
+                        "status": "fallback",
+                        "reason": reason,
+                        "seed": None,
+                    })
+                    continue
                 _notify_scene(scene_index, "processing", "image_generation")
                 visual_prompt = str(
                     scene.get("visual_prompt_full")
@@ -259,6 +278,7 @@ class TextToVideoEngine:
                             f"AI image generation failed for scene {scene_index + 1}: {str(exc)[:240]}",
                             field="scene_image_mode",
                         ) from exc
+                    image_provider_unavailable = True
                     _notify_scene(scene_index, "fallback", "image_fallback", image_fallback=True, error=str(exc)[:240])
                     scene_assets.append({
                         "scene_index": scene_index,

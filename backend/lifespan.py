@@ -45,19 +45,42 @@ async def lifespan(app):
             exc,
         )
 
-    yield
-
-    # Graceful shutdown with timeout watchdog
-    shutdown_task = asyncio.create_task(_safe_shutdown(log))
+    # The main application (uvicorn backend.main:app) mounts DARKSTUDIO's
+    # router directly, so its worker must be managed by this lifespan too.
+    # Keep the import lazy: the rest of the backend can still start if the
+    # optional video-studio package is unavailable.
+    video_worker_started = False
     try:
-        await asyncio.wait_for(shutdown_task, timeout=30.0)
-    except TimeoutError:
-        log.warning("Shutdown timed out after 30s — forcing exit")
-        import os
+        from modules.ai_video_studio.api.routes.video import start_dependency_rebuild_worker
 
-        os._exit(1)  # noqa: SLF001
+        start_dependency_rebuild_worker()
+        video_worker_started = True
+        log.info("DARKSTUDIO durable scene rebuild worker started")
+    except Exception as exc:
+        log.warning("DARKSTUDIO durable scene rebuild worker unavailable: %s", exc)
 
-    log.info("SuperDev AI Suite shutdown complete")
+    try:
+        yield
+    finally:
+        if video_worker_started:
+            try:
+                from modules.ai_video_studio.api.routes.video import stop_dependency_rebuild_worker
+
+                await stop_dependency_rebuild_worker()
+            except Exception as exc:
+                log.warning("DARKSTUDIO worker shutdown failed: %s", exc)
+
+        # Graceful shutdown with timeout watchdog
+        shutdown_task = asyncio.create_task(_safe_shutdown(log))
+        try:
+            await asyncio.wait_for(shutdown_task, timeout=30.0)
+        except TimeoutError:
+            log.warning("Shutdown timed out after 30s — forcing exit")
+            import os
+
+            os._exit(1)  # noqa: SLF001
+
+        log.info("SuperDev AI Suite shutdown complete")
 
 
 async def _safe_shutdown(log) -> None:

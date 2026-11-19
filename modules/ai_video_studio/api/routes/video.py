@@ -71,7 +71,7 @@ class VideoGenerateRequest(BaseModel):
     scene_image_mode: str = Field(default="auto", pattern="^(procedural|ai|auto)$", description="Procedural scenes or per-scene local diffusion image generation")
     scene_image_steps: int = Field(default=20, ge=1, le=60)
     scene_image_seed: int | None = Field(default=None, ge=0, le=2147483647, description="Optional reproducible base seed for all scene images")
-    scene_image_timeout: float = Field(default=240.0, ge=1.0, le=900.0)
+    scene_image_timeout: float = Field(default=30.0, ge=1.0, le=900.0, description="Per-scene provider timeout; auto mode falls back after the first provider failure")
     vidgrid_compatible: bool = Field(default=False, description="Render every storyboard clip at exactly 10 seconds for VidGrid")
 
     @field_validator("resolution")
