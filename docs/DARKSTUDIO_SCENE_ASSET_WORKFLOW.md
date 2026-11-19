@@ -30,7 +30,7 @@ As operações devolvem um novo registro e não modificam o objeto original rece
 
 ## Estado de integração
 
-O serviço e os testes estão adicionados como camada reutilizável. Os endpoints existentes ainda mantêm sua lógica própria; a próxima integração deve substituir essa duplicação pelos helpers e manter os contratos HTTP atuais. Nenhuma UI nova é declarada neste lote.
+Os helpers são usados pelos endpoints de upload, aprovação, descarte, consulta e restauração. O editor oferece comparação de candidatas e histórico por cena. A persistência continua sob responsabilidade das rotas, que gravam o registro atualizado antes de substituir o estado em memória.
 
 
 

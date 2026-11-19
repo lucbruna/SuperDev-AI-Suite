@@ -145,10 +145,16 @@ def approve_scene_image_candidate(
             history = []
             updated["scene_asset_history"] = history
         history.append({
+            "history_id": str(uuid4()),
             "scene_index": scene_index,
             "image_path": str(old_path),
             "replaced_by_candidate_id": candidate_id,
+            "provider": scene.get("image_asset_provider"),
+            "operation": scene.get("image_edit_operation"),
+            "prompt": scene.get("visual_prompt"),
+            "seed": scene.get("image_generation_seed"),
             "reason": "candidate_approved",
+            "created_at": time(),
         })
 
     scene.update({

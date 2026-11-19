@@ -72,6 +72,8 @@ def test_approve_replaces_image_records_history_and_invalidates_clip(tmp_path: P
     assert approved["candidate_id"] == "c1"
     assert updated["_edited_scenes"][0]["background_image_path"] == str(candidate_path.resolve())
     assert updated["scene_asset_history"][0]["image_path"] == "old.png"
+    assert updated["scene_asset_history"][0]["history_id"]
+    assert updated["scene_asset_history"][0]["reason"] == "candidate_approved"
     assert updated["scene_clips"][0]["status"] == "stale"
     assert updated["scene_assets"][0]["image_url"] == "/media/candidate.png"
     assert list_scene_image_candidates(updated) == []
