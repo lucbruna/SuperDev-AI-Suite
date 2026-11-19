@@ -1295,6 +1295,46 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
           <p className="mt-1 text-surface-500">{dependencyImpact.limitations.join(" ")}</p>
         </div>}
       </div>}
+      {dependencyRebuildStatus && <div className="mt-3 rounded-md border border-surface-200 p-3 text-xs dark:border-surface-700" aria-label="Status da reconstrução de dependências" aria-live="polite">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <strong>Execução da reconstrução</strong>
+          <span className={["completed"].includes(dependencyRebuildStatus.status)
+            ? "font-semibold text-emerald-600"
+            : ["failed", "partial", "interrupted"].includes(dependencyRebuildStatus.status)
+              ? "font-semibold text-amber-600"
+              : "font-semibold text-primary-600"}>
+            {dependencyRebuildStatus.status === "queued" ? "Na fila"
+              : dependencyRebuildStatus.status === "processing" ? "Processando"
+                : dependencyRebuildStatus.status === "completed" ? "Concluída"
+                  : dependencyRebuildStatus.status === "partial" ? "Parcial"
+                    : dependencyRebuildStatus.status === "interrupted" ? "Interrompida"
+                      : dependencyRebuildStatus.status === "failed" ? "Falhou"
+                        : dependencyRebuildStatus.status}
+          </span>
+        </div>
+        <p className="mt-1 text-surface-600 dark:text-surface-300">
+          Cenas solicitadas: {dependencyRebuildStatus.scene_indices?.length ?? 0}
+          {dependencyRebuildStatus.rebuild_result
+            ? ` · ${dependencyRebuildStatus.rebuild_result.rebuilt} concluída(s) · ${dependencyRebuildStatus.rebuild_result.failed} falha(s)`
+            : ""}
+        </p>
+        {dependencyRebuildStatus.error && <p className="mt-1 text-amber-600">{dependencyRebuildStatus.error}</p>}
+        {dependencyRebuildStatus.final_export_skipped && <p className="mt-1 text-amber-600">Exportação final não executada porque a reconstrução das cenas foi parcial.</p>}
+        {(dependencyRebuildStatus.render_output_url || dependencyRebuildStatus.render_result?.output_url) && <a className="mt-2 inline-block font-semibold text-primary-600 underline" href={dependencyRebuildStatus.render_output_url || dependencyRebuildStatus.render_result?.output_url || ""} target="_blank" rel="noreferrer">Abrir MP4 atualizado</a>}
+        <button type="button" onClick={async () => {
+          if (!jobId) return;
+          setRefreshingDependencyStatus(true);
+          try {
+            setDependencyRebuildStatus(await videoStudioApi.getJobDependencyRebuildStatus(jobId));
+          } catch (error) {
+            setMessage(error instanceof Error ? error.message : "Não foi possível atualizar o status.");
+          } finally {
+            setRefreshingDependencyStatus(false);
+          }
+        }} disabled={refreshingDependencyStatus} className="ml-2 mt-2 rounded border px-2 py-1 disabled:opacity-40">
+          {refreshingDependencyStatus ? "Atualizando…" : "Atualizar status"}
+        </button>
+      </div>}
       {assetHealth && <div className="mt-3 rounded-md border border-surface-200 p-3 text-xs dark:border-surface-700" aria-label="Saúde dos ativos do projeto">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <strong>Saúde dos ativos</strong>
