@@ -77,16 +77,16 @@ def test_storyboard_replaces_generic_prompt_with_directors_scene_suggestion() ->
     assert scenes[0]["visual_prompt"] != "Cena"
 
 
-def test_character_identity_bible_keeps_mia_and_leo_appearance_in_prompts() -> None:
+def test_character_references_do_not_inject_preset_appearance() -> None:
     scenes, _ = build_cinematic_storyboard(
-        [{"narration": "Mia conversa com Leo."}],
-        studio_id="whymentary", character_ids=["mia", "leo"],
+        [{"narration": "Dois personagens conversam."}],
+        studio_id="custom", character_ids=["character_a", "character_b"],
     )
     prompt = scenes[0]["visual_prompt_full"]
-    assert "cabelo loiro" in prompt
-    assert "camisa azul" in prompt
-    assert "cabelo castanho preso" in prompt
-    assert "vestido vermelho" in prompt
+    assert "identidade visual aprovada e fornecida pelo usuário para character_a" in prompt
+    assert "identidade visual aprovada e fornecida pelo usuário para character_b" in prompt
+    assert "cabelo loiro" not in prompt
+    assert "vestido vermelho" not in prompt
 
 
 def test_continuity_report_flags_character_appearance_drift() -> None:

@@ -46,20 +46,12 @@ def _continuity_tokens(scene: dict[str, Any], character_ids: list[str], object_i
     }
 
 
-_CHARACTER_IDENTITY = {
-    "leo": "Leo é sempre o mesmo menino: cabelo loiro, camisa azul, calça escura, mesmas proporções faciais e corporais; não trocar cabelo, roupa ou paleta.",
-    "mia": "Mia é sempre a mesma menina: cabelo castanho preso, vestido vermelho, mesmas proporções faciais e corporais; não trocar cabelo, penteado, vestido ou paleta.",
-    "whymentary_host": "Manter exatamente a identidade, paleta de pele, cabelo, roupa e proporções do personagem Whymentary Host.",
-    "historical_narrator": "Manter a mesma identidade visual, cabelo, vestuário e proporções do narrador histórico estabelecido no guia visual.",
-}
-
-
 def _character_identity_prompt(character_ids: list[str]) -> str:
-    descriptions = [_CHARACTER_IDENTITY[item] for item in character_ids if item in _CHARACTER_IDENTITY]
-    unknown = [item for item in character_ids if item not in _CHARACTER_IDENTITY]
-    if unknown:
-        descriptions.extend(f"Preservar sem alterações a identidade visual aprovada do personagem {item}." for item in unknown)
-    return " ".join(descriptions)
+    """Use only user-defined character references; never inject preset identities."""
+    return " ".join(
+        f"Preservar a identidade visual aprovada e fornecida pelo usuário para {item}."
+        for item in character_ids
+    )
 
 
 def analyze_storyboard_continuity(scenes: list[dict[str, Any]]) -> dict[str, Any]:
