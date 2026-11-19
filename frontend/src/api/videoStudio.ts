@@ -189,12 +189,15 @@ export interface VidGridClipRebuildResult {
   full_mp4_render_required?: boolean;
   message?: string;
   queue?: {
+    queue_id?: string;
     requested_scene_indices: number[];
     total: number;
     completed: number;
     failed: number;
     current_scene_index: number | null;
     status: string;
+    cancel_requested?: boolean;
+    error?: string;
     results: { scene_index: number; status: string; error?: string }[];
     started_at: number;
     updated_at: number;
