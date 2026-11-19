@@ -1684,6 +1684,29 @@ class TestAudioTimelineFingerprints:
 
 class TestDependencyRebuildExecution:
     @pytest.mark.asyncio
+    async def test_selected_stale_video_clip_is_included_in_rebuild_scene_indices(self, monkeypatch):
+        from modules.ai_video_studio.api.routes import video
+
+        graph = {
+            "nodes": [
+                {"id": "scene:5:clip", "type": "video_clip", "scene_index": 5, "status": "stale"},
+                {"id": "final:export", "type": "final_export", "status": "available"},
+            ],
+            "edges": [{"from": "scene:5:clip", "to": "final:export"}],
+        }
+        async def get_graph(_job_id):
+            return graph
+        monkeypatch.setattr(video, "get_video_job_dependency_graph", get_graph)
+
+        impact = await video.preview_video_job_dependency_impact(
+            "dependency-impact-selected-clip",
+            video.DependencyImpactRequest(changed_asset_ids=["scene:5:clip"]),
+        )
+
+        assert impact["rebuild_scene_indices"] == [5]
+        assert impact["final_export_required"] is True
+
+    @pytest.mark.asyncio
     async def test_requires_explicit_confirmation(self):
         from fastapi import HTTPException
         from modules.ai_video_studio.api.routes import video
