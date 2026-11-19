@@ -176,7 +176,7 @@ export interface VidGridRecoveryPlan {
   blocked_count: number;
   repair_scene_indices: number[];
   full_mp4_render_required: boolean;
-  scenes: { scene_index: number; status: "ready" | "needs_rebuild"; reasons: string[]; warnings: string[]; clip_exists: boolean }[];
+  scenes: { scene_index: number; status: "ready" | "needs_rebuild"; reasons: string[]; warnings: string[]; clip_exists: boolean; source_image_fingerprint?: string | null }[];
 }
 
 export interface VidGridClipRebuildResult {
@@ -188,6 +188,17 @@ export interface VidGridClipRebuildResult {
   results: { scene_index: number; status: "completed" | "failed" | string; output_url?: string; audio_status?: string; error?: string }[];
   full_mp4_render_required?: boolean;
   message?: string;
+  queue?: {
+    requested_scene_indices: number[];
+    total: number;
+    completed: number;
+    failed: number;
+    current_scene_index: number | null;
+    status: string;
+    results: { scene_index: number; status: string; error?: string }[];
+    started_at: number;
+    updated_at: number;
+  };
 }
 
 export interface SceneImageSimilarityReport {
@@ -514,9 +525,10 @@ export const videoStudioApi = {
     return data;
   },
 
-  async rebuildStaleVidGridClips(jobId: string): Promise<VidGridClipRebuildResult> {
+  async rebuildStaleVidGridClips(jobId: string, sceneIndices?: number[]): Promise<VidGridClipRebuildResult> {
     const { data } = await apiClient.post(
       `${STUDIO_BASE}/videos/jobs/${jobId}/scenes/rebuild-stale-clips`,
+      sceneIndices ? { scene_indices: sceneIndices } : {},
     );
     return data;
   },
