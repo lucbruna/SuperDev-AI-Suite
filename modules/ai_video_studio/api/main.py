@@ -17,8 +17,12 @@ async def lifespan(app: FastAPI):
     settings.storage.ensure_dirs()
     # Register the shipped skill catalog so the API serves it out of the box.
     register_all_concrete(get_skill_engine())
-    yield
-    # Shutdown: nothing persistent to close for in-process renderers
+    from modules.ai_video_studio.api.routes.video import start_dependency_rebuild_worker, stop_dependency_rebuild_worker
+    start_dependency_rebuild_worker()
+    try:
+        yield
+    finally:
+        await stop_dependency_rebuild_worker()
 
 
 def create_app() -> FastAPI:
