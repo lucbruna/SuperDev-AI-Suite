@@ -1533,6 +1533,33 @@ class TestAsyncVidGridRebuildQueue:
         assert len(tasks.tasks) == 1
 
     @pytest.mark.asyncio
+    async def test_resume_only_accepts_incomplete_queue_states(self, monkeypatch):
+        from fastapi import BackgroundTasks, HTTPException
+        from modules.ai_video_studio.api.routes import video
+
+        record = {
+            "job_id": "async-resume-job",
+            "scene_clip_rebuild_queue": {"status": "interrupted"},
+        }
+        video._jobs["async-resume-job"] = record
+        called = []
+        async def fake_queue(job_id, background_tasks, request):
+            called.append((job_id, request))
+            return {"status": "queued", "queued": True, "requested": 2}
+        monkeypatch.setattr(video, "queue_scene_clip_rebuild", fake_queue)
+
+        result = await video.resume_scene_clip_rebuild_queue("async-resume-job", BackgroundTasks())
+
+        assert result["queued"] is True
+        assert called == [("async-resume-job", None)]
+
+        record["scene_clip_rebuild_queue"]["status"] = "completed"
+        with pytest.raises(HTTPException) as error:
+            await video.resume_scene_clip_rebuild_queue("async-resume-job", BackgroundTasks())
+        assert error.value.status_code == 409
+
+
+    @pytest.mark.asyncio
     async def test_second_queue_is_rejected_while_first_is_scheduled(self, monkeypatch):
         from fastapi import BackgroundTasks, HTTPException
         from modules.ai_video_studio.api.routes import video
