@@ -66,7 +66,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
   const [previewing, setPreviewing] = useState(false);
   const [previewUrl, setPreviewUrl] = useState("");
   const [renderUrl, setRenderUrl] = useState(editedOutputUrl ?? "");
-  const [outputValidation, setOutputValidation] = useState<Awaited<ReturnType<typeof videoStudioApi.validateJobOutput>> | null>(null);
+  const [outputValidation, setOutputValidation] = useState<Awaited<ReturnType<typeof videoStudioApi.validateJobOutput>> | null>(null);\n  const [assetHealth, setAssetHealth] = useState<Awaited<ReturnType<typeof videoStudioApi.getJobAssetHealth>> | null>(null);\n  const [checkingAssetHealth, setCheckingAssetHealth] = useState(false);
   const [message, setMessage] = useState("");
   const [staleVidGridClipCount, setStaleVidGridClipCount] = useState(0);
   const [vidGridRecoveryPlan, setVidGridRecoveryPlan] = useState<Awaited<ReturnType<typeof videoStudioApi.getVidGridRecoveryPlan>> | null>(null);
@@ -542,6 +542,22 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
     }
   }
 
+  async function checkAssetHealth() {
+    if (!jobId) return;
+    setCheckingAssetHealth(true);
+    try {
+      const report = await videoStudioApi.getJobAssetHealth(jobId);
+      setAssetHealth(report);
+      setMessage(report.status === "healthy"
+        ? "Todos os ativos referenciados foram encontrados e lidos."
+        : "A auditoria encontrou ativos que precisam de atenção.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Falha ao auditar os ativos do projeto.");
+    } finally {
+      setCheckingAssetHealth(false);
+    }
+  }
+
   async function validateOutput() {
     if (!jobId) return;
     try {
@@ -977,6 +993,30 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
       {message && <p role="status" className="mt-2 text-xs text-surface-500">{message}</p>}
       {renderUrl && <p className="mt-2 text-xs"><a className="text-primary-600 underline" href={renderUrl} target="_blank" rel="noreferrer">Abrir MP4 renderizado</a></p>}
       {renderUrl && <button type="button" onClick={validateOutput} className="mt-2 rounded border px-3 py-2 text-xs">Validar MP4 final</button>}
+      {jobId && <button type="button" onClick={checkAssetHealth} disabled={checkingAssetHealth || rendering || rebuildingVidGridClips} className="mt-2 ml-2 rounded border px-3 py-2 text-xs disabled:opacity-40">
+        {checkingAssetHealth ? "Auditando ativos…" : "Auditar saúde dos ativos"}
+      </button>}
+      {assetHealth && <div className="mt-3 rounded-md border border-surface-200 p-3 text-xs dark:border-surface-700" aria-label="Saúde dos ativos do projeto">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <strong>Saúde dos ativos</strong>
+          <span className={assetHealth.status === "healthy" ? "font-semibold text-emerald-600" : "font-semibold text-amber-600"}>
+            {assetHealth.status === "healthy" ? "Todos os ativos disponíveis" : "Atenção necessária"}
+          </span>
+        </div>
+        <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-5">
+          <span>Total: <strong>{assetHealth.summary.total_assets}</strong></span>
+          <span>Disponíveis: <strong>{assetHealth.summary.available}</strong></span>
+          <span>Ausentes: <strong>{assetHealth.summary.missing}</strong></span>
+          <span>Corrompidos: <strong>{assetHealth.summary.corrupt}</strong></span>
+          <span>Ilegíveis: <strong>{assetHealth.summary.unreadable}</strong></span>
+        </div>
+        {!!assetHealth.scenes.filter((scene) => scene.status !== "healthy").length && <ul className="mt-2 list-disc pl-5">
+          {assetHealth.scenes.filter((scene) => scene.status !== "healthy").map((scene, index) => <li key={index}>
+            {scene.scene_index !== undefined ? `Cena ${scene.scene_index + 1}` : scene.group ?? "Áudio"}: {scene.assets.filter((asset) => asset.status !== "available").map((asset) => asset.kind + " (" + asset.status + ")").join(", ")}
+          </li>)}
+        </ul>}
+        <p className="mt-2 text-[10px] text-surface-500">Verificação de existência, leitura básica e SHA-256. Não é análise semântica nem validação perceptual de sincronização.</p>
+      </div>}
       {outputValidation && <p className="mt-2 text-xs">Integridade: {outputValidation.integrity ?? "—"} · {outputValidation.resolution ?? "resolução não lida"} · {outputValidation.fps ?? "FPS não lido"} · vídeo: {outputValidation.video_codec ?? "—"} · áudio: {outputValidation.audio?.codec_name ?? "—"} · alertas: {outputValidation.warnings.length} · erros: {outputValidation.errors.length}</p>}
       {previewUrl && <div className="mt-3 max-w-3xl rounded-lg border border-violet-200 p-3 dark:border-violet-800">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs">
