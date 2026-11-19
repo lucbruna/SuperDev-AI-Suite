@@ -68,6 +68,8 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
   const [renderUrl, setRenderUrl] = useState(editedOutputUrl ?? "");
   const [outputValidation, setOutputValidation] = useState<Awaited<ReturnType<typeof videoStudioApi.validateJobOutput>> | null>(null);
   const [assetHealth, setAssetHealth] = useState<Awaited<ReturnType<typeof videoStudioApi.getJobAssetHealth>> | null>(null);\n  const [checkingAssetHealth, setCheckingAssetHealth] = useState(false);
+  const [dependencyGraph, setDependencyGraph] = useState<Awaited<ReturnType<typeof videoStudioApi.getJobDependencyGraph>> | null>(null);
+  const [loadingDependencyGraph, setLoadingDependencyGraph] = useState(false);
   const [message, setMessage] = useState("");
   const [staleVidGridClipCount, setStaleVidGridClipCount] = useState(0);
   const [vidGridRecoveryPlan, setVidGridRecoveryPlan] = useState<Awaited<ReturnType<typeof videoStudioApi.getVidGridRecoveryPlan>> | null>(null);
@@ -560,6 +562,20 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
     }
   }
 
+  async function loadDependencyGraph() {
+    if (!jobId) return;
+    setLoadingDependencyGraph(true);
+    try {
+      const graph = await videoStudioApi.getJobDependencyGraph(jobId);
+      setDependencyGraph(graph);
+      setMessage(`Mapa de dependências carregado: ${graph.summary.nodes} ativos e ${graph.summary.dependencies} relações.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Falha ao montar o mapa de dependências.");
+    } finally {
+      setLoadingDependencyGraph(false);
+    }
+  }
+
   async function validateOutput() {
     if (!jobId) return;
     try {
@@ -998,6 +1014,25 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
       {jobId && <button type="button" onClick={checkAssetHealth} disabled={checkingAssetHealth || rendering || rebuildingVidGridClips} className="mt-2 ml-2 rounded border px-3 py-2 text-xs disabled:opacity-40">
         {checkingAssetHealth ? "Auditando ativos…" : "Auditar saúde dos ativos"}
       </button>}
+      {jobId && <button type="button" onClick={loadDependencyGraph} disabled={loadingDependencyGraph || rendering || rebuildingVidGridClips} className="mt-2 ml-2 rounded border px-3 py-2 text-xs disabled:opacity-40">
+        {loadingDependencyGraph ? "Mapeando dependências…" : "Mapa de dependências"}
+      </button>}
+      {dependencyGraph && <div className="mt-3 rounded-md border border-surface-200 p-3 text-xs dark:border-surface-700" aria-label="Mapa de dependências do projeto">
+        <strong>Dependências da produção</strong>
+        <div className="mt-2 flex flex-wrap gap-3">
+          <span>Ativos: <strong>{dependencyGraph.summary.nodes}</strong></span>
+          <span>Relações: <strong>{dependencyGraph.summary.dependencies}</strong></span>
+          <span>Ausentes: <strong>{dependencyGraph.summary.statuses.missing ?? 0}</strong></span>
+          <span>Corrompidos: <strong>{dependencyGraph.summary.statuses.corrupt ?? 0}</strong></span>
+        </div>
+        <ul className="mt-2 grid gap-1 sm:grid-cols-2">
+          {dependencyGraph.impact_rules.map((rule) => <li key={rule.changed} className="rounded bg-surface-50 p-2 dark:bg-surface-800">
+            <strong>{rule.changed}</strong> → {rule.rebuild.join(" + ")}
+            {rule.condition ? <span className="block text-surface-500">{rule.condition}</span> : null}
+          </li>)}
+        </ul>
+        <p className="mt-2 text-[10px] text-surface-500">Mapa baseado nas referências persistidas. A reconstrução ainda exige ação explícita e não ocorre automaticamente.</p>
+      </div>}
       {assetHealth && <div className="mt-3 rounded-md border border-surface-200 p-3 text-xs dark:border-surface-700" aria-label="Saúde dos ativos do projeto">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <strong>Saúde dos ativos</strong>
