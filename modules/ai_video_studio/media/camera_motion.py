@@ -60,8 +60,25 @@ def studio_camera_move(
             "detail": (1.01, 1.035, 1.0, 0.0),
             "tracking": (1.0, 1.02, 9.0, 0.0),
         }
+    elif studio_id == "felt_clay":
+        ranges = {
+            "establishing": (1.0, 1.025, 8.0, 0.0),
+            "wide": (1.0, 1.02, 5.0, 0.0),
+            "medium": (1.005, 1.035, 7.0, 0.0),
+            "close_up": (1.015, 1.055, 3.0, 0.0),
+            "detail": (1.02, 1.065, 2.0, 0.0),
+            "tracking": (1.0, 1.03, 10.0, 0.0),
+        }
     else:
-        raise ValueError(f"Unknown studio '{studio_id}'")
+        # Neutral cinematic movement for custom user-defined art direction.
+        ranges = {
+            "establishing": (1.0, 1.035, 18.0, 0.0),
+            "wide": (1.0, 1.025, 12.0, 0.0),
+            "medium": (1.005, 1.05, 14.0, 0.0),
+            "close_up": (1.02, 1.075, 6.0, 0.0),
+            "detail": (1.03, 1.085, 4.0, 0.0),
+            "tracking": (1.0, 1.045, 24.0, 0.0),
+        }
     if shot_type not in ranges:
         raise ValueError(f"Unknown shot type '{shot_type}'")
     start_zoom, end_zoom, pan, roll = ranges[shot_type]

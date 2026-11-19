@@ -63,11 +63,15 @@ def _visual_direction(studio_id: str, shot: str, beat: str) -> str:
         "conclusion": "feche com composição limpa que sintetize a ideia narrada",
         "development": "mostre a ação ou conceito específico desta passagem",
     }.get(beat, "mostre a ideia narrada")
-    style = (
-        "fundo branco, formas 2D simples, cores chapadas e legibilidade didática"
-        if studio_id == "whymentary"
-        else "ilustração histórica cinematográfica, profundidade em camadas, luz atmosférica e materiais de época"
-    )
+    if studio_id == "whymentary":
+        style = "fundo branco, formas 2D simples, cores chapadas e legibilidade didática"
+    elif studio_id == "historical_documentary":
+        style = "ilustração histórica cinematográfica, profundidade em camadas, luz atmosférica e materiais de época"
+    elif studio_id == "felt_clay":
+        style = "materiais táteis de feltro e argila, iluminação suave e volumes artesanais"
+    else:
+        # A direção customizada pertence ao usuário; nunca injete uma estética predefinida.
+        style = "preserve integralmente o estilo visual, materiais, paleta e direção de arte definidos pelo usuário"
     return f"{framing}; {beat_cue}; {style}."
 
 
@@ -115,10 +119,10 @@ def direct_storyboard(
                     scene["transition_out"] = {"type": "fade_through_black", "duration_frames": max(2, fps // 3)}
                 else:
                     scene["transition_out"] = {"type": "crossfade", "duration_frames": max(2, fps // 2)}
-            elif studio_id == "whymentary":
-                scene["transition_out"] = {"type": "cut", "duration_frames": 0}
             else:
-                raise ValueError(f"Unknown studio '{studio_id}'")
+                # Custom and felt-clay profiles use a neutral hard cut unless
+                # the user or the scene planner explicitly authored a transition.
+                scene["transition_out"] = {"type": "cut", "duration_frames": 0}
     return directed
 
 

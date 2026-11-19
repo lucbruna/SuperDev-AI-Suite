@@ -111,3 +111,26 @@ def test_director_classifies_narrative_beats_and_suggests_missing_visuals() -> N
     report = build_editing_report(directed, fps=24, fallback_duration=10.0)
     assert report["scenes"][0]["narrative_beat"] == "process"
     assert report["scenes"][0]["visual_prompt_suggestion"]
+
+
+def test_custom_director_preserves_user_style_and_generates_camera() -> None:
+    directed = direct_storyboard(
+        [
+            {"duration": 10.0, "narration": "Uma cidade futurista surge no oceano."},
+            {"duration": 10.0, "narration": "A câmera acompanha uma nave entre as torres."},
+        ],
+        studio_id="custom", fps=30, fallback_duration=10.0,
+    )
+    assert "estilo visual, materiais, paleta e direção de arte definidos pelo usuário" in directed[0]["visual_direction"]
+    assert len(directed[0]["camera"]["keyframes"]) == 3
+    assert directed[0]["transition_out"] == {"type": "cut", "duration_frames": 0}
+
+
+def test_felt_clay_director_uses_felt_style_and_camera_preset() -> None:
+    directed = direct_storyboard(
+        [{"duration": 10.0, "narration": "Uma criatura atravessa a floresta."},
+         {"duration": 10.0, "narration": "A criatura encontra uma cabana."}],
+        studio_id="felt_clay", fps=30, fallback_duration=10.0,
+    )
+    assert "feltro e argila" in directed[0]["visual_direction"]
+    assert len(directed[0]["camera"]["keyframes"]) == 3
