@@ -410,6 +410,19 @@ export interface DarkstudioDependencyGraph {
   limitations: string[];
 }
 
+export interface DarkstudioDependencyImpact {
+  job_id: string;
+  changed_asset_ids: string[];
+  affected_node_ids: string[];
+  affected_nodes: DarkstudioDependencyGraph["nodes"];
+  rebuild_scene_indices: number[];
+  final_export_required: boolean;
+  rebuild_steps: { operation: string; scene_indices?: number[]; reason: string }[];
+  requires_user_confirmation: boolean;
+  executed: boolean;
+  limitations: string[];
+}
+
 export interface DarkstudioAssetHealth {
   job_id: string;
   status: "healthy" | "needs_attention";
@@ -721,6 +734,14 @@ export const videoStudioApi = {
 
   async getJobDependencyGraph(jobId: string): Promise<DarkstudioDependencyGraph> {
     const { data } = await apiClient.get(`${STUDIO_BASE}/videos/jobs/${jobId}/dependency-graph`);
+    return data;
+  },
+
+  async previewJobDependencyImpact(jobId: string, changedAssetIds: string[]): Promise<DarkstudioDependencyImpact> {
+    const { data } = await apiClient.post(
+      `${STUDIO_BASE}/videos/jobs/${jobId}/dependency-impact`,
+      { changed_asset_ids: changedAssetIds },
+    );
     return data;
   },
 
