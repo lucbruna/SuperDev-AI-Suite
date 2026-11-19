@@ -1092,7 +1092,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
         <div className="mt-2 grid gap-1 sm:grid-cols-2">
           {dependencyGraph.nodes.filter((node) => ["image", "narration", "narration_track", "music", "sound_effect", "video_clip"].includes(node.type)).map((node) => (
             <label key={node.id} className="flex items-center gap-2 rounded bg-surface-50 p-2 dark:bg-surface-800">
-              <input type="checkbox" checked={selectedDependencyAssets.includes(node.id)} onChange={(event) => {
+              <input type="checkbox" checked={selectedDependencyAssets.includes(node.id)} disabled={node.status !== "stale"} onChange={(event) => {
                 setSelectedDependencyAssets((current) => event.target.checked
                   ? [...current, node.id]
                   : current.filter((id) => id !== node.id));
