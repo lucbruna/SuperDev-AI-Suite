@@ -535,6 +535,7 @@ export const videoStudioApi = {
     scene_index: number;
     prompt: string;
     negative_prompt?: string;
+    seed?: number;
   }[]): Promise<{
     job_id: string;
     status: "completed" | "partial" | "failed";
