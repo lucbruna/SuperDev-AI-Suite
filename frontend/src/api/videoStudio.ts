@@ -788,6 +788,8 @@ export const videoStudioApi = {
     executed?: boolean;
     status_url?: string;
     scene_indices?: number[];
+    previously_completed_scene_indices?: number[];
+    attempt?: number;
     impact?: DarkstudioDependencyImpact;
     rebuild?: { status: string; requested: number; rebuilt: number; failed: number; results: Array<{ scene_index: number; status: string }> } | null;
     render?: { output_url?: string; message?: string } | null;
@@ -803,6 +805,16 @@ export const videoStudioApi = {
   async cancelJobDependencyRebuild(jobId: string): Promise<{ job_id: string; status: string; cancel_requested: boolean; message: string }> {
     const { data } = await apiClient.post(
       `${STUDIO_BASE}/videos/jobs/${jobId}/dependency-rebuild/cancel`,
+    );
+    return data;
+  },
+
+  async resumeJobDependencyRebuild(jobId: string): Promise<{
+    job_id: string; status: string; queued: boolean; scene_indices: number[];
+    previously_completed_scene_indices: number[]; status_url: string; message: string;
+  }> {
+    const { data } = await apiClient.post(
+      `${STUDIO_BASE}/videos/jobs/${jobId}/dependency-rebuild/resume`,
     );
     return data;
   },
