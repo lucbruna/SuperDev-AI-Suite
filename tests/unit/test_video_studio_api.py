@@ -1541,6 +1541,67 @@ class TestAsyncVidGridRebuildQueue:
         assert tasks.tasks == []
 
     @pytest.mark.asyncio
+    async def test_durable_scene_worker_honors_cancel_before_render(self, monkeypatch):
+        from modules.ai_video_studio.api.routes import video
+
+        job_id = "durable-scene-cancel"
+        record = {
+            "job_id": job_id,
+            "scene_clip_rebuild_queue": {
+                "queue_id": "queue-cancel", "status": "queued",
+                "cancel_requested": True, "results": [],
+            },
+        }
+        video._jobs[job_id] = record
+        monkeypatch.setattr(video, "_persist_job", lambda _record: None)
+
+        async def fail_if_called(*_args, **_kwargs):
+            raise AssertionError("cancelled durable task must not render")
+
+        monkeypatch.setattr(video, "rebuild_stale_video_job_scene_clips", fail_if_called)
+        await video._process_durable_scene_clip_rebuild({
+            "job_id": job_id, "queue_id": "queue-cancel", "scene_indices": [0],
+        })
+
+        assert record["scene_clip_rebuild_queue"]["status"] == "cancelled"
+        assert record["scene_clip_rebuild_status"] == "cancelled"
+
+    @pytest.mark.asyncio
+    async def test_durable_scene_worker_recalculates_repairable_scenes(self, monkeypatch):
+        from modules.ai_video_studio.api.routes import video
+
+        job_id = "durable-scene-recovery"
+        record = {
+            "job_id": job_id,
+            "vidgrid_compatible": True,
+            "scene_clip_rebuild_queue": {
+                "queue_id": "queue-recovery", "status": "interrupted",
+                "cancel_requested": False, "results": [],
+            },
+        }
+        video._jobs[job_id] = record
+        monkeypatch.setattr(video, "_scene_clip_recovery_plan", lambda _record: {"repair_scene_indices": [2]})
+        monkeypatch.setattr(video, "_persist_job", lambda _record: None)
+        calls = []
+
+        async def fake_rebuild(_job_id, request):
+            calls.append(request.scene_indices)
+            record["scene_clip_rebuild_queue"].update({
+                "status": "completed", "completed": 1, "failed": 0,
+                "results": [{"scene_index": 2, "status": "completed"}],
+            })
+            return {"status": "completed", "rebuilt": 1, "failed": 0}
+
+        monkeypatch.setattr(video, "rebuild_stale_video_job_scene_clips", fake_rebuild)
+        await video._process_durable_scene_clip_rebuild({
+            "job_id": job_id, "queue_id": "queue-recovery", "scene_indices": [1, 2],
+        })
+
+        assert calls == [[2]]
+        assert record["_scene_clip_rebuild_worker"] is False
+        assert record["_scene_clip_rebuild_scheduled"] is False
+
+    @pytest.mark.asyncio
     async def test_resume_only_accepts_incomplete_queue_states(self, monkeypatch):
         from fastapi import BackgroundTasks, HTTPException
         from modules.ai_video_studio.api.routes import video
