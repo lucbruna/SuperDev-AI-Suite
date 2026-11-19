@@ -9,6 +9,7 @@ def test_durable_task_claim_is_exclusive_and_completes(tmp_path, monkeypatch):
     monkeypatch.setattr(job_store, "_database_path", lambda: database)
 
     job_store.enqueue_task("task-1", "dependency_rebuild", {"job_id": "job-1"})
+    assert job_store.has_active_task_for_job("job-1", "dependency_rebuild")
     first = job_store.claim_next_task("worker-a", lease_seconds=60)
     second = job_store.claim_next_task("worker-b", lease_seconds=60)
 
@@ -18,6 +19,7 @@ def test_durable_task_claim_is_exclusive_and_completes(tmp_path, monkeypatch):
     assert second is None
     assert job_store.renew_task_lease("task-1", "worker-a", lease_seconds=60)
     assert job_store.complete_task("task-1", "worker-a")
+    assert not job_store.has_active_task_for_job("job-1", "dependency_rebuild")
     assert job_store.claim_next_task("worker-b") is None
     assert job_store.list_tasks("dependency_rebuild")[0]["status"] == "completed"
 
