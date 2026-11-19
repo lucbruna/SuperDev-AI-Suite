@@ -1571,3 +1571,46 @@ class TestMediaAssetProbe:
         result = video._probe_media_asset(tmp_path / "broken.mp4", "scene_clip")
         assert result["status"] == "corrupt"
         assert result["reason"] == "ffprobe_rejected_media"
+
+
+class TestDarkstudioDependencyGraph:
+    @pytest.mark.asyncio
+    async def test_maps_scene_inputs_to_clip_and_final_export(self, tmp_path, monkeypatch):
+        from modules.ai_video_studio.api.routes import video
+        from modules.ai_video_studio.media import output_paths
+
+        monkeypatch.setattr(video.shutil, "which", lambda _name: None)
+        roots = {name: tmp_path / name for name in ("images", "videos", "voice", "music", "effects")}
+        for root in roots.values():
+            root.mkdir()
+        image = roots["images"] / "scene.png"
+        image.write_bytes(b"image")
+        clip = roots["videos"] / "scene.mp4"
+        clip.write_bytes(b"clip")
+        final = roots["videos"] / "final.mp4"
+        final.write_bytes(b"final")
+        monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda name: roots[name])
+        video._jobs["dependency-graph-job"] = {
+            "job_id": "dependency-graph-job",
+            "_edited_scenes": [{"_source_scene_index": 0, "background_image_path": str(image)}],
+            "scene_clips": [{"scene_index": 0, "output_path": str(clip)}],
+            "voiceover": {"narration_style": "per_scene", "clips": []},
+            "output_path": str(final),
+        }
+
+        graph = await video.get_video_job_dependency_graph("dependency-graph-job")
+
+        node_ids = {node["id"] for node in graph["nodes"]}
+        assert {"scene:0:image", "scene:0:clip", "scene:0:narration", "final:export"} <= node_ids
+        assert {"from": "scene:0:image", "to": "scene:0:clip", "relationship": "input_for"} in graph["edges"]
+        assert {"from": "scene:0:clip", "to": "final:export", "relationship": "assembly_input"} in graph["edges"]
+        assert graph["summary"]["dependencies"] == 3
+
+    @pytest.mark.asyncio
+    async def test_rejects_unknown_job(self):
+        from fastapi import HTTPException
+        from modules.ai_video_studio.api.routes import video
+
+        with pytest.raises(HTTPException) as error:
+            await video.get_video_job_dependency_graph("missing-dependency-job")
+        assert error.value.status_code == 404
