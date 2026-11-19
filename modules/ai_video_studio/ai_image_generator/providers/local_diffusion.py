@@ -146,6 +146,7 @@ def edit_image(
     denoising_strength: float = 0.45,
     steps: int = 20,
     cfg_scale: float = 7.0,
+    seed: int = -1,
     timeout: float = 240.0,
 ) -> dict[str, Any]:
     source = Path(source_path).resolve()
@@ -169,11 +170,12 @@ def edit_image(
         "denoising_strength": denoising_strength,
         "steps": steps,
         "cfg_scale": cfg_scale,
+        "seed": int(seed),
         "batch_size": 1,
         "n_iter": 1,
         "save_images": False,
     }
     result = _post_json(f"{_api_base_url()}/sdapi/v1/img2img", payload, timeout)
     output = _decode_image(result, "darkstudio_edit")
-    output.update({"operation": "image_to_image", "source_path": str(source)})
+    output.update({"operation": "image_to_image", "source_path": str(source), "seed": int(seed)})
     return output
