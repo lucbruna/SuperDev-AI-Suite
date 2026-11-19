@@ -23,6 +23,8 @@ from typing import Any
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
 
+from modules.ai_video_studio.media.scene_image_transform import calculate_cover_crop
+
 try:
     from PIL import ImageFont
 except Exception:  # pragma: no cover  # very old Pillow
@@ -124,17 +126,13 @@ class SceneCanvas:
                 return cached.copy()
             with Image.open(source) as opened:
                 image = opened.convert("RGB")
-                ratio = max(self.width / image.width, self.height / image.height)
-                resized = image.resize(
-                    (max(self.width, int(image.width * ratio)), max(self.height, int(image.height * ratio))),
-                    Image.Resampling.LANCZOS,
+                crop_box = calculate_cover_crop(
+                    image.width, image.height, self.width, self.height,
+                    scene.get("background_image_transform"),
                 )
-                left = (resized.width - self.width) // 2
-                top = (resized.height - self.height) // 2
-                frame = np.asarray(
-                    resized.crop((left, top, left + self.width, top + self.height)),
-                    dtype=np.uint8,
-                )
+                cropped = image.crop(crop_box)
+                resized = cropped.resize((self.width, self.height), Image.Resampling.LANCZOS)
+                frame = np.asarray(resized, dtype=np.uint8)
             self._background_image_cache[cache_key] = frame
             return frame.copy()
 
