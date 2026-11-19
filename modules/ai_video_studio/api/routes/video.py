@@ -2359,6 +2359,9 @@ async def execute_video_job_dependency_rebuild(job_id: str, req: DependencyExecu
         raise HTTPException(status_code=409, detail="Only completed jobs can run dependency rebuilds")
     if record.get("_rendering_edits") or record.get("_rebuilding_scene_clips") or job_id in _scene_batch_jobs:
         raise HTTPException(status_code=409, detail="Job assets are locked by another operation")
+    previous_execution = record.get("dependency_rebuild_execution")
+    if isinstance(previous_execution, dict) and previous_execution.get("status") == "processing":
+        raise HTTPException(status_code=409, detail="A dependency rebuild is already in progress")
 
     impact = await preview_video_job_dependency_impact(
         job_id, DependencyImpactRequest(changed_asset_ids=req.changed_asset_ids)
@@ -2376,7 +2379,7 @@ async def execute_video_job_dependency_rebuild(job_id: str, req: DependencyExecu
             node for node in (await get_video_job_dependency_graph(job_id))["nodes"]
             if node["id"] in req.changed_asset_ids
         )]
-        if node.get("status") in {"missing", "corrupt", "unreadable"}
+        if node.get("type") != "final_export" and node.get("status") in {"missing", "corrupt", "unreadable"}
     ]
     if blocked:
         raise HTTPException(
