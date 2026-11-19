@@ -65,10 +65,14 @@ def _probe(path: Path) -> dict[str, Any]:
 
 
 class _DeterministicVoiceEngine:
+    def __init__(self, output_dir: Path) -> None:
+        self.output_dir = output_dir
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+
     async def synthesize_async(self, text: str, **kwargs: Any) -> dict[str, Any]:
         # A real WAV file exercises the production alignment, mix and mux path.
         # This is a pipeline integration proof, not a Portuguese voice-quality test.
-        output = Path(tempfile.gettempdir()) / f"darkstudio-voice-{abs(hash(text))}.wav"
+        output = self.output_dir / f"darkstudio-voice-{abs(hash(text))}.wav"
         sample_rate = 22050
         duration = 1.25
         samples = (0.12 * np.sin(2 * np.pi * 440 * np.arange(int(sample_rate * duration)) / sample_rate))
@@ -99,9 +103,16 @@ def main() -> None:
             directory.mkdir(parents=True, exist_ok=True)
             return directory
 
+        # Keep every generated asset inside this smoke test's temporary tree.
+        # scene_narration imports get_subsystem_dir independently from the engine,
+        # so patch both module references to avoid leaking files into the checkout.
+        from modules.ai_video_studio.media import scene_narration
+
         engine_module.get_scene_planner = lambda: _DeterministicPlanner()
         engine_module.get_subsystem_dir = subsystem_dir
-        ai_voice_studio.get_voice_engine = lambda: _DeterministicVoiceEngine()
+        scene_narration.get_subsystem_dir = subsystem_dir
+        voice_dir = subsystem_dir("voice")
+        ai_voice_studio.get_voice_engine = lambda: _DeterministicVoiceEngine(voice_dir)
 
         result = asyncio.run(engine_module.TextToVideoEngine().generate_async(
             {
@@ -149,6 +160,8 @@ def main() -> None:
             raise SystemExit(f"Per-scene narration did not complete: {voiceover}")
         if len(voiceover.get("clips") or []) != 2 or any(not clip.get("audio_path") for clip in voiceover["clips"]):
             raise SystemExit("Expected one synthesized audio asset for each scene")
+        if any(item.get("audio_status") != "per_scene_narration_muxed" for item in result["scene_clips"]):
+            raise SystemExit(f"Per-scene narration was not muxed into every VidGrid clip: {result['scene_clips']}")
 
         clip_reports = []
         for index, clip in enumerate(clips):
