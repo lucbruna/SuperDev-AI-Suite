@@ -265,7 +265,10 @@ class TextToVideoEngine:
                     )
                     scene["background_image_path"] = generated["image_path"]
                     scene["image_asset_provider"] = generated["provider"]
-                    _notify_scene(scene_index, "completed", "image_ready", image_provider=generated["provider"])
+                    _notify_scene(
+                        scene_index, "completed", "image_ready",
+                        image_provider=generated["provider"], image_seed=image_seed,
+                    )
                     scene_assets.append({
                         "scene_index": scene_index,
                         "image_path": generated["image_path"],
@@ -286,6 +289,7 @@ class TextToVideoEngine:
                         "provider": "procedural_fallback",
                         "status": "fallback",
                         "reason": str(exc)[:240],
+                        "seed": image_seed,
                     })
             if image_mode == "auto" and any(item["status"] == "fallback" for item in scene_assets):
                 image_mode = "auto_with_fallback"
