@@ -71,6 +71,9 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
   const [checkingAssetHealth, setCheckingAssetHealth] = useState(false);
   const [dependencyGraph, setDependencyGraph] = useState<Awaited<ReturnType<typeof videoStudioApi.getJobDependencyGraph>> | null>(null);
   const [loadingDependencyGraph, setLoadingDependencyGraph] = useState(false);
+  const [selectedDependencyAssets, setSelectedDependencyAssets] = useState<string[]>([]);
+  const [dependencyImpact, setDependencyImpact] = useState<Awaited<ReturnType<typeof videoStudioApi.previewJobDependencyImpact>> | null>(null);
+  const [previewingDependencyImpact, setPreviewingDependencyImpact] = useState(false);
   const [message, setMessage] = useState("");
   const [staleVidGridClipCount, setStaleVidGridClipCount] = useState(0);
   const [vidGridRecoveryPlan, setVidGridRecoveryPlan] = useState<Awaited<ReturnType<typeof videoStudioApi.getVidGridRecoveryPlan>> | null>(null);
@@ -577,6 +580,22 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
     }
   }
 
+  async function previewDependencyImpact() {
+    if (!jobId || !selectedDependencyAssets.length) return;
+    setPreviewingDependencyImpact(true);
+    try {
+      const preview = await videoStudioApi.previewJobDependencyImpact(jobId, selectedDependencyAssets);
+      setDependencyImpact(preview);
+      setMessage(preview.executed
+        ? "A prévia retornou uma execução inesperada; confira o servidor."
+        : "Impacto calculado. Nenhuma renderização foi iniciada.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Falha ao calcular o impacto das alterações.");
+    } finally {
+      setPreviewingDependencyImpact(false);
+    }
+  }
+
   async function validateOutput() {
     if (!jobId) return;
     try {
@@ -1033,6 +1052,33 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
           </li>)}
         </ul>
         <p className="mt-2 text-[10px] text-surface-500">Mapa baseado nas referências persistidas. A reconstrução ainda exige ação explícita e não ocorre automaticamente.</p>
+      </div>}
+      {dependencyGraph && <div className="mt-3 rounded-md border border-surface-200 p-3 text-xs dark:border-surface-700" aria-label="Prévia do impacto de alterações">
+        <strong>Simular alteração de ativos</strong>
+        <p className="mt-1 text-surface-500">Marque os arquivos que pretende trocar para calcular quais clipes e exportações serão afetados. Isso não altera nem renderiza arquivos.</p>
+        <div className="mt-2 grid gap-1 sm:grid-cols-2">
+          {dependencyGraph.nodes.filter((node) => ["image", "narration", "music", "sound_effect", "video_clip"].includes(node.type)).map((node) => (
+            <label key={node.id} className="flex items-center gap-2 rounded bg-surface-50 p-2 dark:bg-surface-800">
+              <input type="checkbox" checked={selectedDependencyAssets.includes(node.id)} onChange={(event) => {
+                setSelectedDependencyAssets((current) => event.target.checked
+                  ? [...current, node.id]
+                  : current.filter((id) => id !== node.id));
+                setDependencyImpact(null);
+              }} />
+              <span>{node.label} <span className="text-surface-500">· {node.status}</span></span>
+            </label>
+          ))}
+        </div>
+        <button type="button" onClick={previewDependencyImpact} disabled={!selectedDependencyAssets.length || previewingDependencyImpact} className="mt-2 rounded-md bg-primary-600 px-3 py-2 font-semibold text-white disabled:opacity-40">
+          {previewingDependencyImpact ? "Calculando impacto…" : `Calcular impacto (${selectedDependencyAssets.length})`}
+        </button>
+        {dependencyImpact && <div className="mt-3 rounded border border-surface-200 p-2 dark:border-surface-700">
+          <strong>Plano calculado · somente prévia</strong>
+          <p className="mt-1">Cenas para reconstruir: {dependencyImpact.rebuild_scene_indices.length ? dependencyImpact.rebuild_scene_indices.map((index) => index + 1).join(", ") : "nenhuma"}</p>
+          <p>Renderização final necessária: <strong>{dependencyImpact.final_export_required ? "sim" : "não"}</strong></p>
+          <p>Ativos downstream afetados: {dependencyImpact.affected_node_ids.length}</p>
+          <p className="mt-1 text-surface-500">{dependencyImpact.limitations.join(" ")}</p>
+        </div>}
       </div>}
       {assetHealth && <div className="mt-3 rounded-md border border-surface-200 p-3 text-xs dark:border-surface-700" aria-label="Saúde dos ativos do projeto">
         <div className="flex flex-wrap items-center justify-between gap-2">
