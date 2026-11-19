@@ -431,8 +431,10 @@ try:
     mark_interrupted_jobs(_jobs)
     for _job_record in _jobs.values():
         _queue = _job_record.get("scene_clip_rebuild_queue")
-        if isinstance(_queue, dict) and _queue.get("status") == "processing":
+        if isinstance(_queue, dict) and _queue.get("status") in {"queued", "processing"}:
             _queue["status"] = "interrupted"
+            _job_record["_scene_clip_rebuild_scheduled"] = False
+            _job_record["_scene_clip_rebuild_worker"] = False
             _queue["current_scene_index"] = None
             _queue["updated_at"] = time.time()
             _queue["recovery_note"] = (
