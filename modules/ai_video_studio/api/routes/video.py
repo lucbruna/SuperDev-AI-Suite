@@ -832,7 +832,12 @@ async def get_video_job_asset_health(job_id: str):
             _asset_health_entry("scene_clip", clip.get("output_path"), roots["video"]),
         ]
         if voiceover.get("narration_style") == "per_scene":
-            assets.append(_asset_health_entry("scene_narration", narration.get("audio_path"), roots["voice"]))
+            narration_asset = _asset_health_entry("scene_narration", narration.get("audio_path"), roots["voice"])
+            saved_narration_fingerprint = clip.get("source_narration_fingerprint")
+            current_narration_fingerprint = narration_asset.get("sha256")
+            if saved_narration_fingerprint and current_narration_fingerprint and saved_narration_fingerprint != current_narration_fingerprint:
+                narration_asset = {**narration_asset, "status": "stale", "reason": "source_narration_changed"}
+            assets.append(narration_asset)
         for asset in assets:
             counts[asset["status"]] = counts.get(asset["status"], 0) + 1
         rows.append({"scene_index": scene_index, "status": (
@@ -941,9 +946,13 @@ async def get_video_job_dependency_graph(job_id: str):
         if voiceover.get("narration_style") == "per_scene":
             narration = narration_by_scene.get(scene_index) or {}
             narration_id = f"scene:{scene_index}:narration"
+            narration_health = _asset_health_entry("scene_narration", narration.get("audio_path"), roots["voice"])
+            saved_narration_fingerprint = clip.get("source_narration_fingerprint")
+            current_narration_fingerprint = narration_health.get("sha256")
+            if saved_narration_fingerprint and current_narration_fingerprint and saved_narration_fingerprint != current_narration_fingerprint:
+                narration_health = {**narration_health, "status": "stale", "reason": "source_narration_changed"}
             add_node(narration_id, "narration", f"Narração da cena {scene_index + 1}",
-                     _asset_health_entry("scene_narration", narration.get("audio_path"), roots["voice"]),
-                     scene_index)
+                     narration_health, scene_index)
             edges.append({"from": narration_id, "to": clip_id, "relationship": "audio_mux_input"})
 
     output_id = "final:export"
