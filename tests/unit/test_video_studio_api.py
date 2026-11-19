@@ -1549,6 +1549,28 @@ class TestAsyncVidGridRebuildQueue:
         assert record["scene_clip_rebuild_queue"]["cancel_requested"] is True
 
     @pytest.mark.asyncio
+    async def test_background_worker_honors_cancel_before_start(self, monkeypatch):
+        from modules.ai_video_studio.api.routes import video
+
+        record = {
+            "job_id": "async-pre-cancel-job",
+            "scene_clip_rebuild_queue": {
+                "status": "queued", "cancel_requested": True, "results": [],
+            },
+        }
+        video._jobs["async-pre-cancel-job"] = record
+        async def fail_rebuild(*_args):
+            raise AssertionError("cancelled queued work must not start")
+        monkeypatch.setattr(video, "rebuild_stale_video_job_scene_clips", fail_rebuild)
+        monkeypatch.setattr(video, "_persist_job", lambda _record: None)
+
+        await video._run_scene_clip_rebuild_background("async-pre-cancel-job", [0])
+
+        assert record["scene_clip_rebuild_queue"]["status"] == "cancelled"
+        assert record["scene_clip_rebuild_status"] == "cancelled"
+        assert record["_scene_clip_rebuild_worker"] is False
+
+    @pytest.mark.asyncio
     async def test_background_worker_clears_scheduling_lock(self, monkeypatch):
         from modules.ai_video_studio.api.routes import video
 
