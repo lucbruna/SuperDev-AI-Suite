@@ -392,3 +392,10 @@ Cada referência recebe um estado `available`, `missing`, `corrupt` ou `unreadab
 ### Verificação de integridade dos arquivos de mídia
 
 A auditoria `GET /videos/jobs/{job_id}/asset-health` agora tenta validar clipes de vídeo, narrações, músicas e efeitos com FFprobe quando o executável está instalado. Arquivos rejeitados pelo FFprobe, sem stream esperado ou sem duração válida são classificados como `corrupt`; falhas ao executar a inspeção são classificadas como `unreadable`. Sem FFprobe, o arquivo permanece como disponível pela verificação básica de existência/tamanho/SHA-256, mas recebe `probe_status=not_verified` — isso não significa que o conteúdo foi decodificado ou validado.
+
+
+### Grafo de dependências da produção
+
+O endpoint `GET /videos/jobs/{job_id}/dependency-graph` descreve as dependências persistidas por job: imagem aprovada → clipe da cena; narração por cena → clipe quando o áudio é muxado individualmente; clipes e faixas de áudio → exportação final. A resposta inclui nós, relações, estado básico dos ativos e regras de impacto para orientar reconstruções seletivas.
+
+O editor de timeline oferece o botão **Mapa de dependências** e apresenta a contagem de ativos/relações e as regras de reconstrução. Esta versão é somente de leitura: não dispara renders nem altera arquivos. Alterações de música/efeitos apontam para reconstrução da exportação final; alterações de imagem/narração por cena apontam para o clipe correspondente e a exportação.
