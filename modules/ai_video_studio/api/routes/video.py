@@ -712,6 +712,18 @@ def _asset_health_entry(kind: str, value: Any, allowed_root: Path) -> dict[str, 
         return {"kind": kind, "status": "unreadable", "reason": "file_could_not_be_read"}
 
 
+def _audio_asset_health(kind: str, value: Any, allowed_root: Path) -> dict[str, Any]:
+    """Resolve a timeline audio identifier through the approved audio-asset validator."""
+    if not isinstance(value, str) or not value.strip():
+        return {"kind": kind, "status": "missing", "reason": "path_not_recorded"}
+    try:
+        from modules.ai_video_studio.media.audio_timeline import validate_audio_asset
+        resolved = validate_audio_asset(value)
+    except (OSError, ValueError):
+        return {"kind": kind, "status": "missing", "reason": "audio_asset_missing_or_not_approved"}
+    return _asset_health_entry(kind, resolved, allowed_root)
+
+
 def _probe_media_asset(path: Path, kind: str) -> dict[str, Any]:
     """Use FFprobe to validate media containers when the binary is available."""
     ffprobe = shutil.which("ffprobe")
@@ -802,7 +814,7 @@ async def get_video_job_asset_health(job_id: str):
         for position, item in enumerate(clip_items):
             if not isinstance(item, dict):
                 item = {}
-            asset = _asset_health_entry(kind, item.get("asset"), roots[root_key])
+            asset = _audio_asset_health(kind, item.get("asset"), roots[root_key])
             counts[asset["status"]] = counts.get(asset["status"], 0) + 1
             rows.append({"asset_index": position, "group": group, "status": asset["status"], "assets": [asset]})
     total = sum(counts.values())
@@ -913,10 +925,8 @@ async def get_video_job_dependency_graph(job_id: str):
             if not isinstance(item, dict):
                 item = {}
             node_id = f"audio:{group}:{position}"
-            health = _asset_health_entry(kind, item.get("asset"), roots[root_key])
+            health = _audio_asset_health(kind, item.get("asset"), roots[root_key])
             add_node(node_id, node_type, f"{'Música' if kind == 'music' else 'Efeito'} {position + 1}", health)
-            nodes[-1]["sha256"] = health.get("sha256")
-            nodes[-1]["asset_reference"] = item.get("asset")
             edges.append({"from": node_id, "to": output_id, "relationship": "audio_mix_input"})
 
     status_counts: dict[str, int] = {}
