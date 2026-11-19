@@ -535,7 +535,8 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
             )
             clip_output_path = rendered_clip["output_path"]
             audio_status = "silent_or_tts_unavailable"
-            voiceover = record.get("voiceover") or {}
+            voiceover = record.get("voiceover")
+    voiceover = voiceover if isinstance(voiceover, dict) else {}
             if voiceover.get("narration_style") == "per_scene":
                 narration = next(
                     (item for item in voiceover.get("clips", [])
@@ -748,7 +749,7 @@ async def get_video_job_asset_health(job_id: str):
         "effects": Path(get_subsystem_dir("effects")).resolve(),
     }
     scenes = record.get("_edited_scenes") or record.get("_source_scenes") or []
-    clips = {int(item.get("scene_index", -1)): item for item in (record.get("scene_clips") or []) if isinstance(item, dict)}
+    clips = {_safe_record_index(item.get("scene_index")): item for item in (record.get("scene_clips") or []) if isinstance(item, dict)}
     voiceover = record.get("voiceover") or {}
     narration_by_scene = {
         _safe_record_index(item.get("index")): item for item in (voiceover.get("clips") or [])
@@ -757,7 +758,9 @@ async def get_video_job_asset_health(job_id: str):
     rows: list[dict[str, Any]] = []
     counts = {"available": 0, "missing": 0, "corrupt": 0, "unreadable": 0}
     for position, scene in enumerate(scenes):
-        scene_index = int(scene.get("_source_scene_index", position))
+        if not isinstance(scene, dict):
+            continue
+        scene_index = _safe_record_index(scene.get("_source_scene_index", position), position)
         clip = clips.get(scene_index) or {}
         narration = narration_by_scene.get(scene_index) or {}
         assets = [
@@ -771,7 +774,8 @@ async def get_video_job_asset_health(job_id: str):
         rows.append({"scene_index": scene_index, "status": (
             "healthy" if all(item["status"] == "available" for item in assets) else "needs_attention"
         ), "assets": assets})
-    audio_settings = record.get("audio_settings") or {}
+    audio_settings = record.get("audio_settings")
+    audio_settings = audio_settings if isinstance(audio_settings, dict) else {}
     for group, kind, root_key in (("music_clips", "music", "music"), ("sfx_clips", "sound_effect", "effects")):
         for position, item in enumerate(audio_settings.get(group) or []):
             if not isinstance(item, dict):
@@ -824,7 +828,7 @@ async def get_video_job_dependency_graph(job_id: str):
 
     scenes = record.get("_edited_scenes") or record.get("_source_scenes") or []
     clips = {
-        int(item.get("scene_index", -1)): item
+        _safe_record_index(item.get("scene_index")): item
         for item in (record.get("scene_clips") or []) if isinstance(item, dict)
     }
     voiceover = record.get("voiceover") or {}
