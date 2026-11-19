@@ -1217,6 +1217,21 @@ async def cancel_scene_clip_rebuild_queue(job_id: str):
     }
 
 
+@router.post("/jobs/{job_id}/scenes/rebuild-stale-clips/resume", status_code=202)
+async def resume_scene_clip_rebuild_queue(job_id: str, background_tasks: BackgroundTasks):
+    """Resume an interrupted/partial queue using only scenes still marked repairable."""
+    record = _jobs.get(job_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+    previous = record.get("scene_clip_rebuild_queue")
+    if not isinstance(previous, dict) or previous.get("status") not in {
+        "interrupted", "cancelled", "partial", "failed",
+    }:
+        raise HTTPException(status_code=409, detail="Only interrupted, cancelled or incomplete queues can be resumed")
+    # A fresh recovery plan excludes clips that were successfully rebuilt before interruption.
+    return await queue_scene_clip_rebuild(job_id, background_tasks, None)
+
+
 @router.post("/jobs/{job_id}/scenes/rebuild-stale-clips")
 async def rebuild_stale_video_job_scene_clips(job_id: str, req: SceneClipRebuildRequest | None = None):
     """Re-render stale VidGrid clips using the currently approved image and narration."""
