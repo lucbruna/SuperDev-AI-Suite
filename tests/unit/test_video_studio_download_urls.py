@@ -33,6 +33,8 @@ def test_to_download_url_maps_download_tree_and_encodes_segments(path, expected)
         "/app/modules/downloads/../secrets.txt",
         "/app/modules/downloads/videos/../../secrets.txt",
         "/app/modules/not-downloads/videos/final.mp4",
+        "/tmp/downloads/videos/final.mp4",
+        "/app/modules/cache/downloads/videos/final.mp4",
         "/app/modules/downloads//final.mp4",
     ],
 )

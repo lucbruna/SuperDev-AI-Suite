@@ -19,9 +19,17 @@ def to_download_url(output_path: str) -> str | None:
 
     normalized = output_path.replace("\\", "/")
     parts = normalized.split("/")
-    try:
-        marker_index = len(parts) - 1 - parts[::-1].index("downloads")
-    except ValueError:
+    # Require the canonical modules/downloads directory shape. A random
+    # directory named "downloads" elsewhere on disk is not an export source.
+    marker_index = next(
+        (
+            index
+            for index in range(len(parts) - 1, 0, -1)
+            if parts[index] == "downloads" and parts[index - 1] == "modules"
+        ),
+        None,
+    )
+    if marker_index is None:
         return None
 
     relative_parts = parts[marker_index + 1 :]
