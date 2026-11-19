@@ -126,6 +126,19 @@ class SceneClipRebuildRequest(BaseModel):
         return values
 
 
+class DependencyImpactRequest(BaseModel):
+    changed_asset_ids: list[str] = Field(..., min_length=1, max_length=100)
+
+    @field_validator("changed_asset_ids")
+    @classmethod
+    def _validate_changed_asset_ids(cls, values: list[str]) -> list[str]:
+        if len(values) != len(set(values)):
+            raise ValueError("changed_asset_ids must not contain duplicates")
+        if any(not value.strip() or len(value) > 200 for value in values):
+            raise ValueError("asset IDs must be non-empty and at most 200 characters")
+        return values
+
+
 class SceneMotionRequest(BaseModel):
     motion_prompt: str = Field(..., min_length=1, max_length=4000)
     negative_prompt: str = Field(default="", max_length=2000)
@@ -907,6 +920,67 @@ async def get_video_job_dependency_graph(job_id: str):
         "limitations": [
             "O grafo representa dependências registradas no job; não detecta dependências externas não registradas.",
             "A exportação final é marcada como dependente dos clipes e faixas de áudio, mas não é reconstruída automaticamente.",
+        ],
+    }
+
+
+@router.post("/jobs/{job_id}/dependency-impact")
+async def preview_video_job_dependency_impact(job_id: str, req: DependencyImpactRequest):
+    """Preview downstream rebuild work for selected persisted assets; never renders."""
+    graph = await get_video_job_dependency_graph(job_id)
+    nodes_by_id = {node["id"]: node for node in graph["nodes"]}
+    unknown = sorted(set(req.changed_asset_ids) - set(nodes_by_id))
+    if unknown:
+        raise HTTPException(
+            status_code=422,
+            detail={"message": "Unknown asset IDs for this job", "unknown_asset_ids": unknown},
+        )
+
+    outgoing: dict[str, list[str]] = {}
+    for edge in graph["edges"]:
+        outgoing.setdefault(edge["from"], []).append(edge["to"])
+
+    affected: set[str] = set()
+    queue = list(req.changed_asset_ids)
+    while queue:
+        current = queue.pop(0)
+        for downstream in outgoing.get(current, []):
+            if downstream not in affected:
+                affected.add(downstream)
+                queue.append(downstream)
+
+    affected_nodes = [nodes_by_id[node_id] for node_id in nodes_by_id if node_id in affected]
+    scene_indices = sorted({
+        node["scene_index"] for node in affected_nodes
+        if node.get("type") == "video_clip" and isinstance(node.get("scene_index"), int)
+    })
+    final_export_required = any(node["type"] == "final_export" for node in affected_nodes)
+    rebuild_steps = []
+    if scene_indices:
+        rebuild_steps.append({
+            "operation": "rebuild_scene_clips",
+            "scene_indices": scene_indices,
+            "reason": "As cenas selecionadas dependem diretamente de um ou mais ativos alterados",
+        })
+    if final_export_required:
+        rebuild_steps.append({
+            "operation": "render_final_export",
+            "reason": "A exportação final depende dos ativos alterados ou dos clipes afetados",
+        })
+    return {
+        "job_id": job_id,
+        "changed_asset_ids": req.changed_asset_ids,
+        "affected_node_ids": [node["id"] for node in affected_nodes],
+        "affected_nodes": affected_nodes,
+        "rebuild_scene_indices": scene_indices,
+        "final_export_required": final_export_required,
+        "rebuild_steps": rebuild_steps,
+        "requires_user_confirmation": True,
+        "executed": False,
+        "limitations": [
+            "Prévia somente leitura: nenhuma imagem, narração, faixa ou exportação foi alterada.",
+            "O plano segue apenas as dependências persistidas no job; recursos externos não registrados podem não aparecer.",
+            "A reconstrução seletiva de clipes VidGrid e a renderização final continuam sendo operações separadas.",
         ],
     }
 
