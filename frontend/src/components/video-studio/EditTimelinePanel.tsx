@@ -81,6 +81,37 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
   const [rebuildingVidGridClips, setRebuildingVidGridClips] = useState(false);
   const [vidGridQueue, setVidGridQueue] = useState<Awaited<ReturnType<typeof videoStudioApi.getVidGridClipRebuildStatus>> | null>(null);
   const [refreshingVidGridQueue, setRefreshingVidGridQueue] = useState(false);
+  useEffect(() => {
+    if (!jobId || !vidGridQueue || !["queued", "processing"].includes(vidGridQueue.status)) return;
+    let active = true;
+    const pollQueue = async () => {
+      try {
+        const status = await videoStudioApi.getVidGridClipRebuildStatus(jobId);
+        if (!active) return;
+        setVidGridQueue(status);
+        if (["completed", "partial", "failed", "cancelled", "interrupted"].includes(status.status)) {
+          const [plan, latest] = await Promise.all([
+            videoStudioApi.getVidGridRecoveryPlan(jobId),
+            videoStudioApi.getJob(jobId),
+          ]);
+          if (!active) return;
+          setVidGridRecoveryPlan(plan);
+          setStaleVidGridClipCount(plan.repairable_count);
+          if (latest.scene_assets) setSceneImageAssets(latest.scene_assets);
+          setMessage(`Fila ${status.status}: ${status.completed}/${status.total} cenas concluídas; ${status.failed} falha(s).`);
+        }
+      } catch {
+        // A temporary polling failure must not discard the persisted queue state.
+      }
+    };
+    void pollQueue();
+    const timer = window.setInterval(() => { void pollQueue(); }, 2500);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [jobId, vidGridQueue?.status]);
+
   const [dirty, setDirty] = useState(false);
   const [audioAssets, setAudioAssets] = useState<StudioAudioAsset[]>([]);
   const [musicAsset, setMusicAsset] = useState("");
