@@ -1549,3 +1549,25 @@ class TestDarkstudioAssetHealth:
         with pytest.raises(HTTPException) as error:
             await video.get_video_job_asset_health("does-not-exist")
         assert error.value.status_code == 404
+
+
+class TestMediaAssetProbe:
+    def test_reports_unverified_when_ffprobe_is_unavailable(self, tmp_path, monkeypatch):
+        from modules.ai_video_studio.api.routes import video
+
+        monkeypatch.setattr(video.shutil, "which", lambda _name: None)
+        result = video._probe_media_asset(tmp_path / "clip.mp4", "scene_clip")
+        assert result["probe_status"] == "not_verified"
+
+    def test_marks_media_corrupt_when_ffprobe_rejects_it(self, tmp_path, monkeypatch):
+        from types import SimpleNamespace
+        from modules.ai_video_studio.api.routes import video
+
+        monkeypatch.setattr(video.shutil, "which", lambda _name: "/usr/bin/ffprobe")
+        monkeypatch.setattr(
+            video.subprocess, "run",
+            lambda *args, **kwargs: SimpleNamespace(returncode=1, stderr="invalid data", stdout=""),
+        )
+        result = video._probe_media_asset(tmp_path / "broken.mp4", "scene_clip")
+        assert result["status"] == "corrupt"
+        assert result["reason"] == "ffprobe_rejected_media"
