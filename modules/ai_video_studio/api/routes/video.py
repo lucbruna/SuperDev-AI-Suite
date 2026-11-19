@@ -1696,6 +1696,23 @@ async def render_video_job_edits(job_id: str):
         edited_url = to_download_url(final_path)
         edited_duration = round(result["frames"] / fps, 3)
         edited_bytes = Path(final_path).stat().st_size
+        record["edit_export_manifest"] = {
+            "assembly_mode": (
+                "vidgrid_stream_copy" if record.get("edit_render_transition_policy", {}).get("mode") == "vidgrid_stream_copy"
+                else "vidgrid_transition_render" if vidgrid_clip_paths
+                else "generative_scene_render" if generated_scene_clips
+                else "procedural_scene_render"
+            ),
+            "source_scene_indices": [
+                int(scene.get("_source_scene_index", index)) for index, scene in enumerate(scenes)
+            ],
+            "fallback_reason": record.get("edit_render_assembly_fallback"),
+            "video_frames": int(result.get("frames") or 0),
+            "target_fps": fps,
+            "target_resolution": f"{width}x{height}",
+            "audio_status": audio_status,
+            "subtitle_status": subtitle_status,
+        }
         record.update(
             edited_output_path=final_path,
             edited_output_url=edited_url,
