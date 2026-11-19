@@ -860,7 +860,18 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
             const index = clip.scene_index ?? 0;
             const sourceIndex = clip.source_scene_index ?? index;
             const asset = sceneImageAssets.find((item) => item.scene_index === sourceIndex);
-            return <div key={index} className="rounded-lg border border-surface-200 p-2 dark:border-surface-700">
+            const activeScene = selected === clips.indexOf(clip);
+            const sceneDuration = clip.duration_frames / draft.fps;
+            return <div key={index} className={`rounded-lg border p-2 transition ${activeScene ? "border-primary-500 bg-primary-50/40 ring-1 ring-primary-500 dark:bg-primary-950/20" : "border-surface-200 dark:border-surface-700"}`}>
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="truncate text-xs font-semibold text-surface-800 dark:text-surface-100">Cena {index + 1}</p>
+                  <p className="text-[10px] tabular-nums text-surface-500">{formatTime(clip.start_seconds)} – {formatTime(clip.end_seconds)} · {sceneDuration.toFixed(1)}s</p>
+                </div>
+                <button type="button" onClick={() => { setSelected(clips.indexOf(clip)); setPlayheadFrame(clip.start_frame); }} aria-pressed={activeScene} className={`shrink-0 rounded-md px-2.5 py-1.5 text-[10px] font-semibold transition ${activeScene ? "bg-primary-600 text-white" : "border border-surface-300 text-surface-600 hover:border-primary-400 dark:border-surface-600 dark:text-surface-300"}`}>
+                  {activeScene ? "Em edição" : "Editar cena"}
+                </button>
+              </div>
               {asset?.image_url ? <img src={asset.image_url} alt={`Imagem da cena ${index + 1}`} className="mb-2 aspect-video w-full rounded-md object-cover" /> : <div className="mb-2 flex aspect-video items-center justify-center rounded-md bg-surface-100 text-xs text-surface-500 dark:bg-surface-800">Cena {index + 1} · imagem procedural ou ainda não criada</div>}
               {sceneImageCandidates[sourceIndex]?.image_url && <div className="mb-2 rounded-md border border-amber-400 p-2 dark:border-amber-700">
                 <p className="mb-1 text-xs font-semibold text-amber-700 dark:text-amber-300">Imagem candidata · ainda não aplicada</p>
