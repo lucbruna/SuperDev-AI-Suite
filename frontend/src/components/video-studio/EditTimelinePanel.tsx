@@ -1308,6 +1308,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
                 : dependencyRebuildStatus.status === "completed" ? "Concluída"
                   : dependencyRebuildStatus.status === "partial" ? "Parcial"
                     : dependencyRebuildStatus.status === "interrupted" ? "Interrompida"
+                      : dependencyRebuildStatus.status === "cancelled" ? "Cancelada"
                       : dependencyRebuildStatus.status === "failed" ? "Falhou"
                         : dependencyRebuildStatus.status}
           </span>
@@ -1321,6 +1322,18 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
         {dependencyRebuildStatus.error && <p className="mt-1 text-amber-600">{dependencyRebuildStatus.error}</p>}
         {dependencyRebuildStatus.final_export_skipped && <p className="mt-1 text-amber-600">Exportação final não executada porque a reconstrução das cenas foi parcial.</p>}
         {(dependencyRebuildStatus.render_output_url || dependencyRebuildStatus.render_result?.output_url) && <a className="mt-2 inline-block font-semibold text-primary-600 underline" href={dependencyRebuildStatus.render_output_url || dependencyRebuildStatus.render_result?.output_url || ""} target="_blank" rel="noreferrer">Abrir MP4 atualizado</a>}
+        {["queued", "processing"].includes(dependencyRebuildStatus.status) && <button type="button" onClick={async () => {
+          if (!jobId) return;
+          try {
+            await videoStudioApi.cancelJobDependencyRebuild(jobId);
+            setMessage("Cancelamento solicitado. A execução será encerrada no próximo ponto seguro.");
+            setDependencyRebuildStatus(await videoStudioApi.getJobDependencyRebuildStatus(jobId));
+          } catch (error) {
+            setMessage(error instanceof Error ? error.message : "Não foi possível solicitar o cancelamento.");
+          }
+        }} className="ml-2 mt-2 rounded border border-amber-500 px-2 py-1 text-amber-700 dark:text-amber-400">
+          Solicitar cancelamento
+        </button>}
         <button type="button" onClick={async () => {
           if (!jobId) return;
           setRefreshingDependencyStatus(true);
