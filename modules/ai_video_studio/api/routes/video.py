@@ -245,6 +245,7 @@ class VideoStatusResponse(BaseModel):
     edited_subtitles: dict | None = None
     output_validation: dict | None = None
     scene_progress: list[dict[str, Any]] | None = None
+    scene_clip_rebuild_queue: dict[str, Any] | None = None
     error: str | None = None
 
 
@@ -382,6 +383,20 @@ try:
     # Jobs cannot resume an interrupted FFmpeg/model subprocess. Mark them
     # explicitly failed instead of leaving a permanent "processing" status.
     mark_interrupted_jobs(_jobs)
+    for _job_record in _jobs.values():
+        _queue = _job_record.get("scene_clip_rebuild_queue")
+        if isinstance(_queue, dict) and _queue.get("status") == "processing":
+            _queue["status"] = "interrupted"
+            _queue["current_scene_index"] = None
+            _queue["updated_at"] = time.time()
+            _queue["recovery_note"] = (
+                "A API foi reiniciada durante a reconstrução. Os resultados concluídos foram preservados; "
+                "consulte recovery-plan e envie novamente apenas as cenas ainda reparáveis."
+            )
+            try:
+                _persist_job(_job_record)
+            except Exception:
+                pass
 except Exception:
     # API startup remains available if the local job database needs repair.
     _jobs = {}
