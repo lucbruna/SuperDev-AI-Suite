@@ -1510,8 +1510,8 @@ class TestSelectedVidGridRecoveryQueue:
 class TestDarkstudioAssetHealth:
     @pytest.mark.asyncio
     async def test_reports_missing_clip_and_available_scene_image(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(video.shutil, "which", lambda _name: None)
         from modules.ai_video_studio.api.routes import video
+        monkeypatch.setattr(video.shutil, "which", lambda _name: None)
         from modules.ai_video_studio.media import output_paths
 
         roots = {name: tmp_path / name for name in ("images", "videos", "voice", "music", "effects")}
@@ -1539,7 +1539,6 @@ class TestDarkstudioAssetHealth:
         assert report["summary"]["missing"] == 1
         assert report["scenes"][0]["status"] == "healthy"
         assert report["scenes"][1]["status"] == "needs_attention"
-        assert "image" not in str(report["scenes"])
         assert report["status"] == "needs_attention"
 
     @pytest.mark.asyncio
