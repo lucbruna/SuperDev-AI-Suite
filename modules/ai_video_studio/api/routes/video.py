@@ -292,6 +292,74 @@ def _persist_job(record: dict) -> None:
 
     save_job(record)
 
+def _asset_sha256(path: Path) -> str:
+    import hashlib
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _scene_clip_recovery_plan(record: dict) -> dict:
+    """Compare saved VidGrid clips with active scene images and render profile."""
+    from modules.ai_video_studio.media.output_paths import get_subsystem_dir
+    scenes = record.get("_edited_scenes") or record.get("_source_scenes") or []
+    clips = {int(item.get("scene_index", -1)): item for item in (record.get("scene_clips") or []) if isinstance(item, dict)}
+    image_root = Path(get_subsystem_dir("images")).resolve()
+    video_root = Path(get_subsystem_dir("videos")).resolve()
+    params = record.get("params") or {}
+    try:
+        width, height = _parse_resolution(record.get("resolution") or params.get("resolution") or "1280x720")
+        fps = int(record.get("frame_rate") or params.get("frame_rate") or 24)
+    except (TypeError, ValueError):
+        width, height, fps = 0, 0, 0
+    items: list[dict[str, Any]] = []
+    repair: list[int] = []
+    for position, scene in enumerate(scenes):
+        scene_index = int(scene.get("_source_scene_index", position))
+        clip = clips.get(scene_index)
+        reasons: list[str] = []
+        warnings: list[str] = []
+        image_value = scene.get("background_image_path")
+        image_path = Path(str(image_value)).resolve() if image_value else None
+        image_fingerprint = None
+        if image_path is None or image_root not in image_path.parents or not image_path.is_file():
+            reasons.append("approved_image_missing_or_unsafe")
+        else:
+            try:
+                image_fingerprint = _asset_sha256(image_path)
+            except OSError:
+                reasons.append("approved_image_unreadable")
+        if clip is None:
+            reasons.append("clip_missing")
+        else:
+            if clip.get("status") == "stale":
+                reasons.append("clip_marked_stale")
+            clip_value = clip.get("output_path")
+            clip_path = Path(str(clip_value)).resolve() if clip_value else None
+            if clip_path is None or video_root not in clip_path.parents or not clip_path.is_file() or clip_path.stat().st_size <= 0:
+                reasons.append("clip_file_missing_or_unsafe")
+            if clip.get("width") not in (None, width) or clip.get("height") not in (None, height):
+                reasons.append("resolution_changed")
+            if clip.get("fps") not in (None, fps):
+                reasons.append("frame_rate_changed")
+            saved_fingerprint = clip.get("source_image_fingerprint")
+            if saved_fingerprint and image_fingerprint and saved_fingerprint != image_fingerprint:
+                reasons.append("source_image_changed")
+            elif not saved_fingerprint:
+                warnings.append("legacy_clip_without_image_fingerprint")
+        if reasons and image_fingerprint:
+            repair.append(scene_index)
+        items.append({"scene_index": scene_index, "status": "needs_rebuild" if reasons else "ready",
+                      "reasons": sorted(set(reasons)), "warnings": warnings,
+                      "source_image_fingerprint": image_fingerprint,
+                      "clip_exists": bool(clip and clip.get("output_path") and Path(str(clip["output_path"])).resolve().is_file())})
+    return {"scene_count": len(scenes), "ready_count": sum(item["status"] == "ready" for item in items),
+            "repairable_count": len(repair),
+            "blocked_count": sum(item["status"] == "needs_rebuild" and "approved_image_missing_or_unsafe" in item["reasons"] for item in items),
+            "repair_scene_indices": repair, "scenes": items}
+
 
 try:
     from modules.ai_video_studio.media.job_store import load_jobs, mark_interrupted_jobs
@@ -565,6 +633,20 @@ async def approve_video_job_scene_image(job_id: str, scene_index: int, candidate
             "message": "Imagem aprovada e aplicada à cena. Renderize a edição para atualizar o MP4 completo."}
 
 
+@router.get("/jobs/{job_id}/recovery-plan")
+async def get_video_job_recovery_plan(job_id: str):
+    """Return a non-destructive, per-scene asset recovery plan."""
+    record = _jobs.get(job_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+    if record.get("status") != "completed" or not record.get("vidgrid_compatible"):
+        raise HTTPException(status_code=409, detail="Recovery planning requires a completed VidGrid job")
+    plan = _scene_clip_recovery_plan(record)
+    plan["job_id"] = job_id
+    plan["full_mp4_render_required"] = bool(plan["repair_scene_indices"])
+    return plan
+
+
 @router.post("/jobs/{job_id}/scenes/rebuild-stale-clips")
 async def rebuild_stale_video_job_scene_clips(job_id: str):
     """Re-render stale VidGrid clips using the currently approved image and narration."""
@@ -577,11 +659,8 @@ async def rebuild_stale_video_job_scene_clips(job_id: str):
         raise HTTPException(status_code=409, detail="Scene assets are locked by another operation")
 
     scenes = [dict(item) for item in (record.get("_edited_scenes") or record.get("_source_scenes") or [])]
-    stale = sorted({
-        int(item.get("scene_index", -1))
-        for item in (record.get("scene_clips") or [])
-        if item.get("status") == "stale"
-    })
+    recovery_plan = _scene_clip_recovery_plan(record)
+    stale = sorted(recovery_plan["repair_scene_indices"])
     if not stale:
         return {"job_id": job_id, "status": "unchanged", "rebuilt": 0, "failed": 0, "results": []}
 
@@ -649,6 +728,7 @@ async def rebuild_stale_video_job_scene_clips(job_id: str):
                     "visual_prompt": scene.get("visual_prompt") or scene.get("description", ""),
                     "narration_text": scene.get("voiceover_text") or scene.get("narration") or "",
                     "status": "updated",
+                    "source_image_fingerprint": _asset_sha256(image_path),
                 }
                 clips = record.setdefault("scene_clips", [])
                 clips[:] = [item for item in clips if int(item.get("scene_index", -1)) != scene_index]
