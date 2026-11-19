@@ -1,7 +1,5 @@
 """Lifecycle integration tests for the main backend application."""
 
-from contextlib import asynccontextmanager
-
 import pytest
 
 
@@ -20,7 +18,7 @@ async def test_main_backend_lifespan_starts_and_stops_darkstudio_worker(monkeypa
     monkeypatch.setattr(backend_lifespan, "startup_handler", startup)
     monkeypatch.setattr(backend_lifespan, "shutdown_handler", shutdown)
     monkeypatch.setattr(backend_lifespan, "setup_logging", lambda _config: __import__("logging").getLogger("test"))
-    monkeypatch.setattr(backend_lifespan, "get_environment", lambda: __import__("backend.environment", fromlist=["Environment"]).Environment.DEVELOPMENT)
+    monkeypatch.setattr(backend_lifespan, "get_environment", lambda: __import__("backend.environment", fromlist=["Environment"]).Environment.DEV)
     monkeypatch.setattr(backend_lifespan, "register_signal_handlers", lambda **_kwargs: None)
     monkeypatch.setattr(video, "start_dependency_rebuild_worker", lambda: calls.append("worker_start"))
 
