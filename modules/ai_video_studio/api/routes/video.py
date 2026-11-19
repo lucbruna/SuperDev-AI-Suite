@@ -1875,7 +1875,7 @@ async def get_video_job_visual_direction(job_id: str):
 
 @router.post("/jobs/{job_id}/validate-output")
 async def validate_video_job_output(job_id: str):
-    """Probe the completed MP4 and persist an objective export-validation report."""
+    """Probe the latest edited/original MP4 and persist a detailed export report."""
     record = _jobs.get(job_id)
     if record is None:
         raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
@@ -1884,7 +1884,8 @@ async def validate_video_job_output(job_id: str):
 
     from modules.ai_video_studio.media.output_paths import get_subsystem_dir
 
-    output_value = record.get("output_path")
+    # Prefer the latest timeline export; the original generation remains a fallback.
+    output_value = record.get("edited_output_path") or record.get("output_path")
     if not output_value:
         raise HTTPException(status_code=422, detail="The job has no output MP4 path")
     output_path = Path(str(output_value)).resolve()
@@ -1892,12 +1893,29 @@ async def validate_video_job_output(job_id: str):
     if video_root not in output_path.parents or not output_path.is_file():
         raise HTTPException(status_code=422, detail="The output MP4 is missing or outside the DARKSTUDIO video directory")
 
+    export_manifest = record.get("edit_export_manifest") or {}
+    subtitle_info = record.get("edited_subtitles") or record.get("subtitles") or {}
+    subtitle_path_value = subtitle_info.get("file_path") if isinstance(subtitle_info, dict) else None
+    subtitle_exists = False
+    if subtitle_path_value:
+        subtitle_path = Path(str(subtitle_path_value)).resolve()
+        subtitle_root = Path(get_subsystem_dir("subtitles")).resolve()
+        subtitle_exists = subtitle_root in subtitle_path.parents and subtitle_path.is_file()
+
     report: dict[str, Any] = {
         "job_id": job_id,
         "path_exists": True,
         "file_size_bytes": output_path.stat().st_size,
         "ffprobe_available": bool(shutil.which("ffprobe")),
         "valid": False,
+        "integrity": "not_checked",
+        "assembly_mode": export_manifest.get("assembly_mode") or (
+            "original_generation" if not record.get("edited_output_path") else "unknown"
+        ),
+        "source_scene_indices": export_manifest.get("source_scene_indices", []),
+        "fallback_reason": export_manifest.get("fallback_reason"),
+        "subtitle_status": record.get("edit_render_subtitles") or ("available" if subtitle_exists else "not_generated"),
+        "subtitle_file_exists": subtitle_exists,
         "errors": [],
         "warnings": [],
     }
@@ -1911,7 +1929,7 @@ async def validate_video_job_output(job_id: str):
             completed = await asyncio.to_thread(
                 subprocess.run,
                 [ffprobe, "-v", "error", "-show_entries",
-                 "format=duration,format_name:stream=codec_type,width,height,r_frame_rate",
+                 "format=duration,format_name:stream=index,codec_type,codec_name,profile,width,height,r_frame_rate,avg_frame_rate,pix_fmt,duration,sample_rate,channels",
                  "-of", "json", str(output_path)],
                 capture_output=True, text=True, timeout=30, check=False,
             )
@@ -1921,23 +1939,37 @@ async def validate_video_job_output(job_id: str):
                 metadata = json.loads(completed.stdout or "{}")
                 streams = metadata.get("streams") or []
                 video_streams = [stream for stream in streams if stream.get("codec_type") == "video"]
+                audio_streams = [stream for stream in streams if stream.get("codec_type") == "audio"]
                 format_info = metadata.get("format") or {}
                 duration = float(format_info.get("duration") or 0)
                 report.update(
                     duration_seconds=duration,
                     format_name=format_info.get("format_name"),
                     video_streams=len(video_streams),
-                    audio_streams=sum(1 for stream in streams if stream.get("codec_type") == "audio"),
+                    audio_streams=len(audio_streams),
                     video=video_streams[0] if video_streams else None,
+                    audio=audio_streams[0] if audio_streams else None,
                 )
                 if not video_streams:
                     report["errors"].append("O arquivo não contém stream de vídeo.")
                 if duration <= 0:
                     report["errors"].append("A duração do MP4 não pôde ser determinada.")
+                if video_streams:
+                    video = video_streams[0]
+                    report["resolution"] = f"{video.get('width', 0)}x{video.get('height', 0)}"
+                    report["fps"] = video.get("avg_frame_rate") or video.get("r_frame_rate")
+                    report["video_codec"] = video.get("codec_name")
+                    report["pixel_format"] = video.get("pix_fmt")
+                if record.get("edit_render_audio") not in {"silent", "audio_mux_failed"} and not audio_streams:
+                    report["warnings"].append("A exportação não contém stream de áudio, embora a etapa de áudio não esteja marcada como silenciosa.")
+                if record.get("edit_render_audio") == "audio_mux_failed":
+                    report["warnings"].append("A mixagem de áudio não foi incorporada ao MP4.")
+                if record.get("edit_render_audio") == "single_track_not_retimed":
+                    report["warnings"].append("A faixa única original não foi reposicionada automaticamente na timeline.")
                 expected_duration = (
                     float(record.get("clip_duration_seconds") or 10.0) * len(record.get("scene_clips") or [])
                     if record.get("vidgrid_compatible") and record.get("scene_clips")
-                    else float(record.get("video_duration") or 0)
+                    else float(record.get("edited_video_duration") or record.get("video_duration") or 0)
                 )
                 if expected_duration > 0 and duration > 0:
                     tolerance = max(1.0, expected_duration * 0.03)
@@ -1947,16 +1979,22 @@ async def validate_video_job_output(job_id: str):
                         report["warnings"].append(
                             f"Duração medida ({duration:.2f}s) difere da referência ({expected_duration:.2f}s)."
                         )
+                if subtitle_path_value and not subtitle_exists:
+                    report["warnings"].append("O arquivo lateral de legendas informado não foi encontrado no diretório de legendas.")
+                report["integrity"] = "passed" if video_streams and duration > 0 else "failed"
         except (OSError, subprocess.TimeoutExpired, ValueError, json.JSONDecodeError) as exc:
             report["errors"].append(f"Falha ao inspecionar MP4: {str(exc)[:300]}")
-    report["valid"] = bool(report["path_exists"] and report["file_size_bytes"] > 0
-                           and report["ffprobe_available"] and not report["errors"]
-                           and report.get("video_streams", 0) > 0
-                           and report.get("duration_seconds", 0) > 0)
+            report["integrity"] = "failed"
+    report["valid"] = bool(
+        report["path_exists"] and report["file_size_bytes"] > 0
+        and report["ffprobe_available"] and not report["errors"]
+        and report.get("video_streams", 0) > 0 and report.get("duration_seconds", 0) > 0
+    )
+    if not report["ffprobe_available"]:
+        report["integrity"] = "not_verified"
     record["output_validation"] = report
     _persist_job(record)
     return report
-
 
 @router.get("/jobs/{job_id}", response_model=VideoStatusResponse)
 async def get_video_job_status(job_id: str):
