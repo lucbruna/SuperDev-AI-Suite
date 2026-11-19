@@ -69,6 +69,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
   const [outputValidation, setOutputValidation] = useState<Awaited<ReturnType<typeof videoStudioApi.validateJobOutput>> | null>(null);
   const [message, setMessage] = useState("");
   const [staleVidGridClipCount, setStaleVidGridClipCount] = useState(0);
+  const [vidGridRecoveryPlan, setVidGridRecoveryPlan] = useState<Awaited<ReturnType<typeof videoStudioApi.getVidGridRecoveryPlan>> | null>(null);
   const [rebuildingVidGridClips, setRebuildingVidGridClips] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [audioAssets, setAudioAssets] = useState<StudioAudioAsset[]>([]);
@@ -155,7 +156,15 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
         }
         setSceneImageCandidates(pending);
       }
-      setStaleVidGridClipCount(job.scene_clips?.filter((clip) => clip.status === "stale").length ?? 0);
+      if (job.vidgrid_compatible) {
+        videoStudioApi.getVidGridRecoveryPlan(jobId).then((plan) => {
+          setVidGridRecoveryPlan(plan);
+          setStaleVidGridClipCount(plan.repairable_count);
+        }).catch(() => setVidGridRecoveryPlan(null));
+      } else {
+        setVidGridRecoveryPlan(null);
+        setStaleVidGridClipCount(0);
+      }
       if (job.scene_clips?.length) {
         setGeneratedMotionClips(Object.fromEntries(
           job.scene_clips
@@ -336,7 +345,10 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
       setVisualDirections((current) => current[sceneIndex] ? { ...current, [sceneIndex]: { ...current[sceneIndex], image_url: result.image_url, image_status: "edited" } } : current);
       setSceneImageCandidates((current) => { const next = { ...current }; delete next[sceneIndex]; return next; });
       videoStudioApi.getJob(jobId).then((latestJob) => {
-        setStaleVidGridClipCount(latestJob.scene_clips?.filter((clip) => clip.status === "stale").length ?? 0);
+        videoStudioApi.getVidGridRecoveryPlan(jobId).then((plan) => {
+          setVidGridRecoveryPlan(plan);
+          setStaleVidGridClipCount(plan.repairable_count);
+        }).catch(() => undefined);
       }).catch(() => undefined);
       setMessage(result.message);
     } catch (error) { setMessage(error instanceof Error ? error.message : "Não foi possível aprovar a imagem candidata."); }
@@ -518,7 +530,9 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
     try {
       const result = await videoStudioApi.rebuildStaleVidGridClips(jobId);
       const latest = await videoStudioApi.getJob(jobId);
-      setStaleVidGridClipCount(latest.scene_clips?.filter((clip) => clip.status === "stale").length ?? 0);
+      const plan = await videoStudioApi.getVidGridRecoveryPlan(jobId);
+      setVidGridRecoveryPlan(plan);
+      setStaleVidGridClipCount(plan.repairable_count);
       if (latest.scene_assets) setSceneImageAssets(latest.scene_assets);
       setMessage(result.message || `${result.rebuilt} clipe(s) reconstruído(s); ${result.failed} falha(s).`);
     } catch (error) {
@@ -935,14 +949,18 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
             onChange={(event) => setPlayheadFrame(Number(event.target.value))} className="w-full accent-primary-600" />
           <span className="w-14 text-right tabular-nums">{formatTime(playheadFrame / draft.fps)}</span>
         </label>
+        {vidGridRecoveryPlan && <p className="mb-2 text-xs text-surface-500">
+          Recuperação inteligente: {vidGridRecoveryPlan.ready_count}/{vidGridRecoveryPlan.scene_count} cenas prontas
+          {vidGridRecoveryPlan.blocked_count > 0 && ` · ${vidGridRecoveryPlan.blocked_count} sem imagem válida`}
+        </p>}
         {jobId && staleVidGridClipCount > 0 && <button
           type="button"
           onClick={rebuildStaleVidGridClips}
           disabled={rebuildingVidGridClips || rendering || previewing || saving || dirty || audioDirty || savingAudio}
           className="rounded-md border border-amber-300 px-3 py-2 text-xs font-semibold text-amber-700 disabled:opacity-40 dark:border-amber-700 dark:text-amber-300"
-          title="Recria apenas os clipes marcados como desatualizados, usando as imagens aprovadas e a narração já existente."
+          title="Reconstrói apenas cenas com clipe ausente, inválido, desatualizado ou incompatível com a imagem aprovada e o perfil atual."
         >
-          {rebuildingVidGridClips ? "Reconstruindo clipes…" : `Reconstruir ${staleVidGridClipCount} clipe(s) VidGrid`}
+          {rebuildingVidGridClips ? "Reconstruindo clipes…" : `Recuperar ${staleVidGridClipCount} cena(s) VidGrid`}
         </button>}
         {jobId && <>
           <button type="button" onClick={saveDraft} disabled={saving || !dirty || audioDirty} className="rounded-md border border-surface-300 px-3 py-2 text-xs font-semibold disabled:opacity-40 dark:border-surface-600">
