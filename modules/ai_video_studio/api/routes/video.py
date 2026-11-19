@@ -1111,6 +1111,104 @@ async def get_video_job_recovery_plan(job_id: str):
     return plan
 
 
+async def _run_scene_clip_rebuild_background(job_id: str, scene_indices: list[int]) -> None:
+    record = _jobs.get(job_id)
+    if record is None:
+        return
+    record["_scene_clip_rebuild_scheduled"] = False
+    record["_scene_clip_rebuild_worker"] = True
+    queue = record.get("scene_clip_rebuild_queue") or {}
+    queue["status"] = "processing"
+    queue["updated_at"] = time.time()
+    record["scene_clip_rebuild_queue"] = queue
+    _persist_job(record)
+    try:
+        await rebuild_stale_video_job_scene_clips(
+            job_id, SceneClipRebuildRequest(scene_indices=scene_indices)
+        )
+    except Exception as exc:  # noqa: BLE001
+        queue = record.get("scene_clip_rebuild_queue") or {}
+        queue.update({
+            "status": "failed", "error": str(exc)[:500],
+            "updated_at": time.time(), "current_scene_index": None,
+        })
+        record["scene_clip_rebuild_status"] = "failed"
+        _persist_job(record)
+    finally:
+        record["_scene_clip_rebuild_worker"] = False
+        record["_scene_clip_rebuild_scheduled"] = False
+        _persist_job(record)
+
+
+@router.post("/jobs/{job_id}/scenes/rebuild-stale-clips/queue", status_code=202)
+async def queue_scene_clip_rebuild(job_id: str, background_tasks: BackgroundTasks, req: SceneClipRebuildRequest | None = None):
+    """Schedule selective scene rebuilding and return immediately with a persistent queue id."""
+    record = _jobs.get(job_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+    if record.get("status") != "completed" or not record.get("vidgrid_compatible"):
+        raise HTTPException(status_code=409, detail="Queued rebuild requires a completed VidGrid job")
+    if (record.get("_rendering_edits") or record.get("_rebuilding_scene_clips")
+        or record.get("_scene_clip_rebuild_scheduled") or job_id in _scene_batch_jobs):
+        raise HTTPException(status_code=409, detail="Scene assets are locked by another operation")
+    recovery = _scene_clip_recovery_plan(record)
+    repairable = sorted(recovery["repair_scene_indices"])
+    requested = req.scene_indices if req and req.scene_indices is not None else repairable
+    invalid = sorted(set(requested) - set(repairable))
+    if invalid:
+        raise HTTPException(status_code=422, detail={
+            "message": "Only repairable scenes can be queued",
+            "invalid_scene_indices": invalid, "repairable_scene_indices": repairable,
+        })
+    if not requested:
+        return {"job_id": job_id, "status": "unchanged", "queued": False, "requested": 0}
+    queue_id = str(uuid.uuid4())
+    record["scene_clip_rebuild_queue"] = {
+        "queue_id": queue_id, "requested_scene_indices": list(requested),
+        "total": len(requested), "completed": 0, "failed": 0,
+        "current_scene_index": None, "status": "queued", "cancel_requested": False,
+        "results": [], "started_at": time.time(), "updated_at": time.time(),
+    }
+    record["scene_clip_rebuild_status"] = "queued"
+    record["_scene_clip_rebuild_scheduled"] = True
+    _persist_job(record)
+    background_tasks.add_task(_run_scene_clip_rebuild_background, job_id, list(requested))
+    return {
+        "job_id": job_id, "queue_id": queue_id, "status": "queued",
+        "queued": True, "requested": len(requested),
+        "status_url": f"/videos/jobs/{job_id}/scenes/rebuild-stale-clips/status",
+    }
+
+
+@router.get("/jobs/{job_id}/scenes/rebuild-stale-clips/status")
+async def get_scene_clip_rebuild_queue_status(job_id: str):
+    record = _jobs.get(job_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+    queue = record.get("scene_clip_rebuild_queue")
+    if not isinstance(queue, dict):
+        raise HTTPException(status_code=404, detail="No scene rebuild queue exists for this job")
+    return {"job_id": job_id, **queue}
+
+
+@router.post("/jobs/{job_id}/scenes/rebuild-stale-clips/cancel")
+async def cancel_scene_clip_rebuild_queue(job_id: str):
+    record = _jobs.get(job_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+    queue = record.get("scene_clip_rebuild_queue")
+    if not isinstance(queue, dict) or queue.get("status") not in {"queued", "processing"}:
+        raise HTTPException(status_code=409, detail="There is no active scene rebuild to cancel")
+    queue["cancel_requested"] = True
+    queue["updated_at"] = time.time()
+    _persist_job(record)
+    return {
+        "job_id": job_id, "status": queue.get("status"),
+        "cancel_requested": True,
+        "message": "Cancellation will take effect after the current scene finishes.",
+    }
+
+
 @router.post("/jobs/{job_id}/scenes/rebuild-stale-clips")
 async def rebuild_stale_video_job_scene_clips(job_id: str, req: SceneClipRebuildRequest | None = None):
     """Re-render stale VidGrid clips using the currently approved image and narration."""
@@ -1119,7 +1217,7 @@ async def rebuild_stale_video_job_scene_clips(job_id: str, req: SceneClipRebuild
         raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
     if record.get("status") != "completed" or not record.get("vidgrid_compatible"):
         raise HTTPException(status_code=409, detail="Selective clip rebuild requires a completed VidGrid job")
-    if record.get("_rendering_edits") or record.get("_rebuilding_scene_clips") or job_id in _scene_batch_jobs:
+    if record.get("_rendering_edits") or (record.get("_rebuilding_scene_clips") and not record.get("_scene_clip_rebuild_worker")) or record.get("_scene_clip_rebuild_scheduled") or job_id in _scene_batch_jobs:
         raise HTTPException(status_code=409, detail="Scene assets are locked by another operation")
 
     scenes = [dict(item) for item in (record.get("_edited_scenes") or record.get("_source_scenes") or [])]
@@ -1161,6 +1259,8 @@ async def rebuild_stale_video_job_scene_clips(job_id: str, req: SceneClipRebuild
     results: list[dict[str, Any]] = []
     try:
         for scene_index in stale:
+            if (record.get("scene_clip_rebuild_queue") or {}).get("cancel_requested"):
+                break
             queue = record["scene_clip_rebuild_queue"]
             queue["current_scene_index"] = scene_index
             queue["updated_at"] = time.time()
@@ -1241,7 +1341,9 @@ async def rebuild_stale_video_job_scene_clips(job_id: str, req: SceneClipRebuild
     finally:
         record["_rebuilding_scene_clips"] = False
         rebuilt = sum(item["status"] == "completed" for item in results)
+        cancelled = bool((record.get("scene_clip_rebuild_queue") or {}).get("cancel_requested"))
         record["scene_clip_rebuild_status"] = (
+            "cancelled" if cancelled else
             "completed" if rebuilt == len(stale) else "partial" if rebuilt else "failed"
         )
         queue = record.get("scene_clip_rebuild_queue") or {}
