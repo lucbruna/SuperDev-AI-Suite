@@ -162,6 +162,51 @@ def enqueue_task(task_id: str, task_type: str, payload: dict[str, Any]) -> None:
         connection.close()
 
 
+def enqueue_unique_task_for_job(task_id: str, task_type: str, job_id: str,
+                               payload: dict[str, Any]) -> bool:
+    """Atomically enqueue at most one active task of this type for a job.
+
+    The check and insert share a BEGIN IMMEDIATE transaction, so concurrent API
+    requests cannot both pass a separate preflight check and create duplicates.
+    Returns False when an active queued/leased task already owns the job.
+    """
+    import time
+
+    now = time.time()
+    encoded = json.dumps(payload, ensure_ascii=False, separators=(",", ":"), default=str)
+    connection = _connect()
+    try:
+        _ensure_task_queue(connection)
+        connection.execute("BEGIN IMMEDIATE")
+        rows = connection.execute(
+            "SELECT payload FROM durable_tasks WHERE task_type=? AND status IN ('queued','processing')",
+            (task_type,),
+        ).fetchall()
+        for (active_payload,) in rows:
+            try:
+                active = json.loads(active_payload)
+            except (TypeError, json.JSONDecodeError):
+                continue
+            if str(active.get("job_id") or "") == str(job_id):
+                connection.rollback()
+                return False
+        connection.execute(
+            """
+            INSERT INTO durable_tasks(task_id, task_type, payload, status, attempts,
+                                      available_at, created_at, updated_at)
+            VALUES (?, ?, ?, 'queued', 0, ?, ?, ?)
+            """,
+            (task_id, task_type, encoded, now, now, now),
+        )
+        connection.commit()
+        return True
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
+
+
 def claim_next_task(worker_id: str, lease_seconds: int = 300) -> dict[str, Any] | None:
     """Atomically claim one queued task or reclaim a task with an expired lease."""
     import time
