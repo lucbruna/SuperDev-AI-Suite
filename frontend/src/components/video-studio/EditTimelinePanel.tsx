@@ -67,7 +67,8 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
   const [previewUrl, setPreviewUrl] = useState("");
   const [renderUrl, setRenderUrl] = useState(editedOutputUrl ?? "");
   const [outputValidation, setOutputValidation] = useState<Awaited<ReturnType<typeof videoStudioApi.validateJobOutput>> | null>(null);
-  const [assetHealth, setAssetHealth] = useState<Awaited<ReturnType<typeof videoStudioApi.getJobAssetHealth>> | null>(null);\n  const [checkingAssetHealth, setCheckingAssetHealth] = useState(false);
+  const [assetHealth, setAssetHealth] = useState<Awaited<ReturnType<typeof videoStudioApi.getJobAssetHealth>> | null>(null);
+  const [checkingAssetHealth, setCheckingAssetHealth] = useState(false);
   const [dependencyGraph, setDependencyGraph] = useState<Awaited<ReturnType<typeof videoStudioApi.getJobDependencyGraph>> | null>(null);
   const [loadingDependencyGraph, setLoadingDependencyGraph] = useState(false);
   const [message, setMessage] = useState("");
