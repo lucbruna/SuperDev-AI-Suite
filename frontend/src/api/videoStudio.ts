@@ -783,16 +783,39 @@ export const videoStudioApi = {
 
   async executeJobDependencyRebuild(jobId: string, changedAssetIds: string[]): Promise<{
     job_id: string;
-    status: "completed" | "partial" | "unchanged";
-    executed: boolean;
+    status: "queued" | "processing" | "completed" | "partial" | "failed" | "unchanged" | string;
+    queued?: boolean;
+    executed?: boolean;
+    status_url?: string;
+    scene_indices?: number[];
     impact?: DarkstudioDependencyImpact;
     rebuild?: { status: string; requested: number; rebuilt: number; failed: number; results: Array<{ scene_index: number; status: string }> } | null;
     render?: { output_url?: string; message?: string } | null;
-    message: string;
+    message?: string;
   }> {
     const { data } = await apiClient.post(
       `${STUDIO_BASE}/videos/jobs/${jobId}/execute-dependency-rebuild`,
       { changed_asset_ids: changedAssetIds, confirmed: true },
+    );
+    return data;
+  },
+
+  async getJobDependencyRebuildStatus(jobId: string): Promise<{
+    job_id: string;
+    status: "queued" | "processing" | "completed" | "partial" | "failed" | "interrupted" | string;
+    changed_asset_ids?: string[];
+    scene_indices?: number[];
+    queued_at?: number;
+    started_at?: number;
+    updated_at?: number;
+    render_output_url?: string;
+    render_result?: { output_url?: string; message?: string };
+    rebuild_result?: { status: string; requested?: number; rebuilt: number; failed: number; results?: Array<{ scene_index: number; status: string }> } | null;
+    error?: string;
+    final_export_skipped?: boolean;
+  }> {
+    const { data } = await apiClient.get(
+      `${STUDIO_BASE}/videos/jobs/${jobId}/dependency-rebuild/status`,
     );
     return data;
   },
