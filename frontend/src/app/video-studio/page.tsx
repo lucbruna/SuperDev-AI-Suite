@@ -777,7 +777,7 @@ export default function VideoStudioPage() {
 
           <div className="flex items-center justify-between">
             <p className="text-xs text-surface-400">
-              Gera um MP4 real (Ollama → frames → FFmpeg) com narração sincronizada por cena.
+              Gera MP4 com planejamento de cenas, composição por FFmpeg e narração por cena; Ollama é opcional.
             </p>
             <Button variant="primary" onClick={handleGenerate} isLoading={generating} disabled={!prompt.trim()}>
               {generating ? "Gerando…" : "▶ Gerar vídeo"}
