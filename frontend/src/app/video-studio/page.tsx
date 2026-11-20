@@ -606,7 +606,7 @@ export default function VideoStudioPage() {
 
           <section className="rounded-xl border border-surface-200 p-4 dark:border-surface-700" aria-labelledby="scene-image-mode-title">
             <h3 id="scene-image-mode-title" className="text-sm font-semibold text-surface-900 dark:text-surface-100">Imagens das cenas</h3>
-            <p className="mt-1 text-xs text-surface-500">O DARKSTUDIO interpreta o roteiro e cria uma imagem diferente para cada cena. No modo Automático, tenta a IA local primeiro e usa a composição procedural apenas se o serviço de imagens não estiver disponível. Mia, Leo e os objetos são elementos opcionais, não imagens obrigatórias.</p>
+            <p className="mt-1 text-xs text-surface-500">O DARKSTUDIO interpreta o roteiro e cria uma imagem diferente para cada cena. No modo Automático, tenta a IA local primeiro e usa a composição procedural apenas se o serviço de imagens não estiver disponível. Personagens e objetos recorrentes são opcionais; o estilo e os elementos visuais são definidos pelo projeto.</p>
             <label className="mt-3 block">
               <span className="text-xs font-medium text-surface-500">Motor visual</span>
               <select value={sceneImageMode} onChange={(event) => setSceneImageMode(event.target.value as "procedural" | "ai" | "auto")} className="mt-1 w-full rounded-lg border border-surface-200 bg-transparent p-2 text-sm text-surface-900 dark:border-surface-700 dark:text-surface-100">
