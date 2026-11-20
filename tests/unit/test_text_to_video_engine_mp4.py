@@ -642,3 +642,33 @@ def test_reusable_vidgrid_clip_rejects_wrong_measured_duration(monkeypatch, tmp_
     assert not engine_module._is_reusable_vidgrid_clip(
         saved, scene_index=2, video_root=tmp_path, fps=24, width=64, height=36,
     )
+
+
+def test_reusable_vidgrid_clip_rejects_old_narration_when_voiceover_disabled(monkeypatch, tmp_path):
+    from types import SimpleNamespace
+
+    clip = tmp_path / "voiced_clip.mp4"
+    clip.write_bytes(b"non-empty-mp4-placeholder")
+    monkeypatch.setattr(engine_module.shutil, "which", lambda _name: "ffprobe")
+    monkeypatch.setattr(
+        engine_module.subprocess, "run",
+        lambda *_args, **_kwargs: SimpleNamespace(
+            returncode=0,
+            stdout='{"format":{"duration":"10.0"},"streams":[{"codec_type":"video","width":64,"height":36}]}',
+            stderr="",
+        ),
+    )
+    saved = {
+        "scene_index": 0, "output_path": str(clip), "duration": 10.0,
+        "fps": 24, "width": 64, "height": 36,
+        "audio_status": "per_scene_narration_muxed",
+    }
+
+    assert not engine_module._is_reusable_vidgrid_clip(
+        saved, scene_index=0, video_root=tmp_path, fps=24, width=64, height=36,
+        voiceover_requested=False,
+    )
+    assert engine_module._is_reusable_vidgrid_clip(
+        saved, scene_index=0, video_root=tmp_path, fps=24, width=64, height=36,
+        voiceover_requested=True,
+    )
