@@ -69,6 +69,52 @@ for _demo_id in ["p1","p2","p3","p4"]:
         del _projects[_demo_id]
 
 
+def _video_job_project_summary(record: dict, existing: dict | None = None) -> dict:
+    """Build the project-catalog summary for one real video-generation job."""
+    params = record.get("params") if isinstance(record.get("params"), dict) else {}
+    project_id = str(record.get("project_id") or "").strip()
+    if not project_id:
+        raise ValueError("A video job must have a project_id")
+
+    resolution = str(record.get("resolution") or params.get("resolution") or "1280x720")
+    try:
+        width, height = (int(part) for part in resolution.lower().split("x", 1))
+        aspect_ratio = f"{width // __import__('math').gcd(width, height)}:{height // __import__('math').gcd(width, height)}"
+    except (TypeError, ValueError):
+        aspect_ratio = "16:9"
+
+    current = dict(existing or {})
+    current.update({
+        "id": project_id,
+        "name": current.get("name") or "Workspace de vídeos",
+        "description": current.get("description") or "Projeto local vinculado aos vídeos gerados.",
+        "status": current.get("status") or "active",
+        "resolution": resolution,
+        "aspect_ratio": current.get("aspect_ratio") or aspect_ratio,
+        "frame_rate": int(record.get("frame_rate") or params.get("frame_rate") or current.get("frame_rate") or 24),
+        "duration_seconds": float(record.get("video_duration") or params.get("duration_seconds") or current.get("duration_seconds") or 0),
+        "video_codec": current.get("video_codec") or "libx264",
+        "audio_codec": current.get("audio_codec") or "aac",
+        "container": current.get("container") or "mp4",
+        "ai_prompt": params.get("prompt") or current.get("ai_prompt"),
+        "ai_style": params.get("style") or current.get("ai_style"),
+        "ai_language": params.get("voice_language") or current.get("ai_language") or "pt-BR",
+        "tags": current.get("tags"),
+        "thumbnail_url": current.get("thumbnail_url"),
+        "output_url": record.get("output_url") or current.get("output_url"),
+        "scene_count": len(record.get("_source_scenes") or []) or int(params.get("num_scenes") or current.get("scene_count") or 0),
+    })
+    return current
+
+
+def sync_video_job_project(record: dict) -> None:
+    """Ensure the local project catalog reflects the latest real video job."""
+    project_id = str(record.get("project_id") or "").strip()
+    if not project_id:
+        return
+    _projects[project_id] = _video_job_project_summary(record, _projects.get(project_id))
+
+
 @router.post("/", response_model=ProjectResponse, status_code=201)
 async def create_project(data: ProjectCreate):
     pid = str(uuid.uuid4())

@@ -333,6 +333,16 @@ def _persist_job(record: dict) -> None:
     from modules.ai_video_studio.media.job_store import save_job
 
     save_job(record)
+    # Keep the project dashboard aligned with the durable SQLite job record.
+    # A catalog write failure must not abort a video render; the next checkpoint
+    # retries the summary synchronization.
+    try:
+        from modules.ai_video_studio.api.routes.project import sync_video_job_project
+
+        sync_video_job_project(record)
+        record.pop("project_sync_warning", None)
+    except Exception as exc:  # noqa: BLE001
+        record["project_sync_warning"] = str(exc)[:240]
 
 def _merge_scene_checkpoint(record: dict[str, Any], event: dict[str, Any]) -> None:
     """Merge one durable scene snapshot and its completed assets into a job."""
