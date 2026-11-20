@@ -143,6 +143,74 @@ class TestVidGridFinalExportRecovery:
             video._ordered_vidgrid_clip_paths(record, [{"_source_scene_index": 0}])
         assert exc.value.status_code == 409
 
+    def test_per_scene_narration_missing_or_unmuxed_blocks_vidgrid_clip(self, tmp_path, monkeypatch):
+        from fastapi import HTTPException
+        from modules.ai_video_studio.api.routes import video
+        from modules.ai_video_studio.media import output_paths
+
+        video_root = tmp_path / "videos"
+        voice_root = tmp_path / "voice"
+        video_root.mkdir()
+        voice_root.mkdir()
+        clip_path = video_root / "scene.mp4"
+        clip_path.write_bytes(b"fake-mp4")
+        monkeypatch.setattr(output_paths, "DOWNLOADS_DIR", tmp_path)
+        monkeypatch.setattr(output_paths, "_SUBDIRS", {
+            **output_paths._SUBDIRS, "videos": "videos", "voice": "voice",
+        })
+        monkeypatch.setattr(video, "_probe_media_asset", lambda *_: {
+            "probe_status": "not_verified",
+        })
+        base = {
+            "scene_clips": [{
+                "scene_index": 0, "status": "ready",
+                "output_path": str(clip_path), "duration": 10.0,
+                "audio_status": "silent_or_tts_unavailable",
+            }],
+            "voiceover": {
+                "narration_style": "per_scene",
+                "clips": [{"index": 0, "audio_path": None}],
+            },
+        }
+        with pytest.raises(HTTPException) as missing:
+            video._ordered_vidgrid_clip_paths(base, [{"_source_scene_index": 0}])
+        assert missing.value.status_code == 409
+
+        narration_path = voice_root / "scene.wav"
+        narration_path.write_bytes(b"audio")
+        base["voiceover"]["clips"][0]["audio_path"] = str(narration_path)
+        with pytest.raises(HTTPException) as unmuxed:
+            video._ordered_vidgrid_clip_paths(base, [{"_source_scene_index": 0}])
+        assert unmuxed.value.status_code == 409
+
+    def test_single_track_narration_cannot_mark_individual_vidgrid_clips_ready(self, tmp_path, monkeypatch):
+        from fastapi import HTTPException
+        from modules.ai_video_studio.api.routes import video
+        from modules.ai_video_studio.media import output_paths
+
+        video_root = tmp_path / "videos"
+        video_root.mkdir()
+        clip_path = video_root / "scene.mp4"
+        clip_path.write_bytes(b"fake-mp4")
+        master_audio = tmp_path / "master.wav"
+        master_audio.write_bytes(b"audio")
+        monkeypatch.setattr(output_paths, "DOWNLOADS_DIR", tmp_path)
+        monkeypatch.setattr(output_paths, "_SUBDIRS", {**output_paths._SUBDIRS, "videos": "videos"})
+        monkeypatch.setattr(video, "_probe_media_asset", lambda *_: {"probe_status": "not_verified"})
+        record = {
+            "scene_clips": [{
+                "scene_index": 0, "status": "ready",
+                "output_path": str(clip_path), "duration": 10.0,
+            }],
+            "voiceover": {
+                "narration_style": "single_track",
+                "output_path": str(master_audio), "muxed": True,
+            },
+        }
+        with pytest.raises(HTTPException) as exc:
+            video._ordered_vidgrid_clip_paths(record, [{"_source_scene_index": 0}])
+        assert exc.value.status_code == 409
+
     def test_ordered_clip_paths_preserve_scene_order(self, tmp_path, monkeypatch):
         from modules.ai_video_studio.api.routes import video
         from modules.ai_video_studio.media import output_paths

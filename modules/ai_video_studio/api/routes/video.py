@@ -510,18 +510,33 @@ def _ordered_vidgrid_clip_paths(record: dict, scenes: list[dict]) -> list[str]:
         if voiceover.get("narration_style") == "per_scene":
             narration = narration_by_scene.get(scene_index) or {}
             narration_value = narration.get("audio_path")
-            if narration_value:
-                narration_path = Path(str(narration_value)).resolve()
-                if voice_root not in narration_path.parents or not narration_path.is_file():
-                    invalid.append(scene_index)
-                    continue
-                if clip.get("audio_status") != "per_scene_narration_muxed":
-                    invalid.append(scene_index)
-                    continue
-                saved_fingerprint = clip.get("source_narration_fingerprint")
-                if saved_fingerprint and saved_fingerprint != _asset_sha256(narration_path):
-                    invalid.append(scene_index)
-                    continue
+            # A per-scene narration request is an audio requirement, not an
+            # optional enhancement. Missing/empty source audio must never make
+            # a silent clip appear ready for standalone VidGrid delivery.
+            if not narration_value:
+                invalid.append(scene_index)
+                continue
+            narration_path = Path(str(narration_value)).resolve()
+            if (voice_root not in narration_path.parents
+                    or not narration_path.is_file()
+                    or narration_path.stat().st_size <= 0):
+                invalid.append(scene_index)
+                continue
+            if clip.get("audio_status") != "per_scene_narration_muxed":
+                invalid.append(scene_index)
+                continue
+            saved_fingerprint = clip.get("source_narration_fingerprint")
+            if saved_fingerprint and saved_fingerprint != _asset_sha256(narration_path):
+                invalid.append(scene_index)
+                continue
+        elif voiceover.get("narration_style") == "single_track" and (
+            voiceover.get("output_path") or voiceover.get("muxed")
+        ):
+            # A single master track cannot be assumed to align with separately
+            # downloaded/reordered 10-second clips. Require per-scene TTS for
+            # a VidGrid package whose individual clips must carry their audio.
+            invalid.append(scene_index)
+            continue
         paths.append(str(path))
     if invalid:
         raise HTTPException(
