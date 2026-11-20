@@ -933,6 +933,7 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
             )
             clip_output_path = rendered_clip["output_path"]
             audio_status = "silent_or_tts_unavailable"
+            narration_fingerprint = None
             voiceover = record.get("voiceover")
             voiceover = voiceover if isinstance(voiceover, dict) else {}
             if voiceover.get("narration_style") == "per_scene":
@@ -954,6 +955,7 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
                     )
                     if muxed.get("muxed"):
                         clip_output_path = muxed["output_path"]
+                        narration_fingerprint = _asset_sha256(Path(narration["audio_path"]).resolve())
                         audio_status = "per_scene_narration_muxed"
                     else:
                         audio_status = "narration_mux_failed"
@@ -968,6 +970,7 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
                 "visual_prompt": scene.get("visual_prompt") or scene.get("description", ""),
                 "narration_text": scene.get("voiceover_text") or scene.get("narration") or "",
                 "status": "updated",
+                **({"source_narration_fingerprint": narration_fingerprint} if narration_fingerprint else {}),
             }
             clips = record.setdefault("scene_clips", [])
             clips[:] = [item for item in clips if int(item.get("scene_index", -1)) != scene_index]
