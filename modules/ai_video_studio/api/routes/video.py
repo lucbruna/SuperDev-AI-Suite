@@ -967,7 +967,7 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
                     None,
                 )
                 if narration:
-                    from modules.ai_video_studio.media.audio import mux_audio_into_video
+                    from modules.ai_video_studio.media.audio import extract_audio_track, mux_audio_into_video
 
                     voiced_path = unique_filename(
                         get_subsystem_dir("videos") / "vidgrid_clips",
@@ -2768,6 +2768,27 @@ async def render_video_job_edits(job_id: str):
         from modules.ai_video_studio.media.output_paths import get_subsystem_dir, unique_filename
 
         audio_inputs = []
+        total_duration = int(round(result["frames"])) / fps
+        if single_track:
+            # The original single-track voiceover lives inside its source MP4.
+            # The edited visual render is silent, so extract and remix the voice.
+            source_voiceover_video = voiceover.get("output_path")
+            if not source_voiceover_video:
+                raise HTTPException(status_code=422, detail="A narração em faixa única não possui arquivo-fonte para a nova mixagem.")
+            video_root = Path(get_subsystem_dir("videos")).resolve()
+            source_path = Path(source_voiceover_video).resolve()
+            if video_root not in source_path.parents or not source_path.is_file():
+                raise HTTPException(status_code=422, detail="O arquivo-fonte da narração não está disponível na pasta de vídeos do projeto.")
+            narration_wav = unique_filename(get_subsystem_dir("voice"), "edited_single_track_narration", "wav")
+            extraction = await asyncio.to_thread(extract_audio_track, source_path, narration_wav)
+            if not extraction.get("extracted"):
+                raise HTTPException(status_code=422, detail="Não foi possível recuperar a narração original para a mixagem: " + str(extraction.get("reason") or "falha desconhecida"))
+            audio_inputs.append({
+                "audio_path": extraction.get("output_path") or str(narration_wav),
+                "kind": "narration", "start": 0, "end": total_duration, "volume": 1.0,
+            })
+            audio_status = "single_track_reused_in_mix"
+
         has_per_scene_narration = isinstance(narration_clips, list) and any(
             isinstance(clip, dict) and clip.get("audio_path") for clip in narration_clips
         )
@@ -2785,7 +2806,6 @@ async def render_video_job_edits(job_id: str):
         mix_result = None
         final_quality = None
         if audio_inputs:
-            total_duration = int(round(result["frames"])) / fps
             audio_path = unique_filename(get_subsystem_dir("mix"), "edited_audio_mix", "wav")
             mix_result = await asyncio.to_thread(
                 mix_audio_timeline, audio_inputs, audio_path, total_duration=total_duration,
@@ -2806,7 +2826,7 @@ async def render_video_job_edits(job_id: str):
             )
             if mux_result.get("muxed"):
                 final_path = mux_result["output_path"]
-                audio_status = "mixed_audio_single_track_omitted" if single_track and not has_per_scene_narration else "mixed_audio"
+                audio_status = "mixed_audio"
                 try:
                     encoded_report = await asyncio.to_thread(measure_encoded_audio, final_path)
                     settings = record.get("_audio_settings") or {}

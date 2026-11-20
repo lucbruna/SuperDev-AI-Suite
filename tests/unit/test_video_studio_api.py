@@ -3358,3 +3358,73 @@ def test_saved_audio_timeline_survives_sqlite_job_reload(tmp_path, monkeypatch):
     assert restored["_audio_settings"] == record["_audio_settings"]
     assert restored["audio_settings"] == record["audio_settings"]
     assert restored["edit_timeline"] == record["edit_timeline"]
+
+
+@pytest.mark.asyncio
+async def test_single_track_narration_is_included_when_editing_audio_mix(tmp_path, monkeypatch):
+    from modules.ai_video_studio.api.routes import video as video_routes
+    from modules.ai_video_studio.media import output_paths, render, audio, audio_timeline
+
+    roots = {name: tmp_path / name for name in ("videos", "voice", "mix", "subtitles")}
+    for root in roots.values():
+        root.mkdir()
+    source_voiceover = roots["videos"] / "original_voiced.mp4"
+    source_voiceover.write_bytes(b"source-video-with-narration")
+    rendered = roots["videos"] / "edited-visual.mp4"
+    rendered.write_bytes(b"silent-edited-video")
+    mixed = roots["mix"] / "mixed.wav"
+    mixed.write_bytes(b"mixed-audio")
+    captured = {}
+    monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda name: roots[name])
+    monkeypatch.setattr(output_paths, "unique_filename", lambda directory, prefix, extension: Path(directory) / (
+        "final.mp4" if prefix == "text_to_video_edited_final"
+        else "edited_visual.mp4" if prefix == "text_to_video_edited"
+        else "recovered.wav" if prefix == "edited_single_track_narration"
+        else f"{prefix}.{extension}"
+    ))
+    monkeypatch.setattr(render, "render_mixed_scene_video", lambda *_args, **_kwargs: {
+        "output_path": str(rendered), "frames": 48, "bytes": rendered.stat().st_size,
+        "engine": "test", "transition_policy": "frame_accurate", "transitions_applied": [],
+    })
+
+    def fake_extract(source, destination):
+        assert Path(source) == source_voiceover
+        Path(destination).write_bytes(b"extracted-narration")
+        return {"extracted": True, "output_path": str(destination), "bytes": 19}
+
+    def fake_mix(clips, output_path, **kwargs):
+        captured["clips"] = clips
+        captured["total_duration"] = kwargs["total_duration"]
+        return {"output_path": str(mixed), "quality": {"export_allowed": True}}
+
+    def fake_mux(_video, _audio, destination):
+        Path(destination).write_bytes(b"final-video-with-mixed-audio")
+        return {"muxed": True, "output_path": str(destination), "bytes": 28}
+
+    monkeypatch.setattr(audio, "extract_audio_track", fake_extract)
+    monkeypatch.setattr(audio_timeline, "mix_audio_timeline", fake_mix)
+    monkeypatch.setattr(audio, "mux_audio_into_video", fake_mux)
+    monkeypatch.setattr(audio_timeline, "measure_encoded_audio", lambda *_args: {
+        "measured": {"integrated_lufs": -18.0, "true_peak_dbTP": -1.0},
+    })
+    monkeypatch.setattr(video_routes, "_persist_job", lambda _record: None)
+    job_id = "single-track-narration-edit"
+    video_routes._jobs[job_id] = {
+        "job_id": job_id, "status": "completed",
+        "params": {"resolution": "320x180", "frame_rate": 24},
+        "_edited_scenes": [{"_source_scene_index": 0, "duration": 2, "generative_video_path": str(rendered)}],
+        "voiceover": {"muxed": True, "narration_style": "single_track", "output_path": str(source_voiceover)},
+        "_audio_clips": {"music": [{"asset": "music/background.wav", "start": 0, "end": 2, "volume": 0.2}], "sfx": []},
+        "_audio_settings": {"ducking_enabled": True, "ducking_db": 9},
+    }
+
+    await video_routes.render_video_job_edits(job_id)
+
+    narration_inputs = [clip for clip in captured["clips"] if clip.get("kind") == "narration"]
+    music_inputs = [clip for clip in captured["clips"] if clip.get("kind") == "music"]
+    assert len(narration_inputs) == 1
+    assert narration_inputs[0]["audio_path"].endswith("recovered.wav")
+    assert narration_inputs[0]["start"] == 0
+    assert narration_inputs[0]["end"] == pytest.approx(2.0)
+    assert len(music_inputs) == 1
+    assert video_routes._jobs[job_id]["edit_render_audio"] == "mixed_audio"

@@ -102,3 +102,30 @@ from truncating the final frames of the rendered video.
         logger.warning("Audio mux command succeeded without producing a non-empty output file")
         return {"output_path": str(video), "muxed": False, "reason": "mux output missing or empty"}
     return {"output_path": str(out), "muxed": True, "bytes": out.stat().st_size}
+
+
+def extract_audio_track(video_path: str | Path, output_path: str | Path) -> dict[str, Any]:
+    """Extract the first audio stream from a video into a PCM WAV track."""
+    import shutil
+    video = Path(video_path)
+    output = Path(output_path)
+    if not video.is_file() or video.stat().st_size <= 0:
+        return {"extracted": False, "reason": "source video is missing or empty"}
+    if shutil.which("ffmpeg") is None:
+        return {"extracted": False, "reason": "ffmpeg unavailable"}
+    output.parent.mkdir(parents=True, exist_ok=True)
+    command = ["ffmpeg", "-y", "-i", str(video), "-map", "0:a:0", "-vn",
+               "-ac", "2", "-ar", str(SAMPLE_RATE), "-c:a", "pcm_s16le", str(output)]
+    try:
+        result = subprocess.run(command, capture_output=True, text=True, timeout=180)
+    except subprocess.TimeoutExpired:
+        return {"extracted": False, "reason": "audio extraction timed out"}
+    except OSError as exc:
+        return {"extracted": False, "reason": f"audio extraction could not start: {exc}"}
+    if result.returncode != 0:
+        output.unlink(missing_ok=True)
+        return {"extracted": False, "reason": (result.stderr or "FFmpeg audio extraction failed")[-300:]}
+    if not output.is_file() or output.stat().st_size <= 44:
+        output.unlink(missing_ok=True)
+        return {"extracted": False, "reason": "FFmpeg produced an empty audio track"}
+    return {"extracted": True, "output_path": str(output), "bytes": output.stat().st_size}
