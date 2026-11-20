@@ -145,6 +145,9 @@ def main() -> None:
             raise SystemExit("TextToVideoEngine did not produce both VidGrid scene MP4s")
         if not subtitle.is_file() or subtitle.stat().st_size == 0 or result["subtitles"]["cue_count"] < 2:
             raise SystemExit("TextToVideoEngine did not produce the expected SRT subtitle sidecar")
+        subtitle_text = subtitle.read_text(encoding="utf-8-sig")
+        if "-->" not in subtitle_text:
+            raise SystemExit("Generated SRT does not contain valid cue timing separators")
 
         master_probe = _probe(master)
         master_video = next(s for s in master_probe["streams"] if s["codec_type"] == "video")
@@ -167,8 +170,13 @@ def main() -> None:
         voiceover = result.get("voiceover") or {}
         if not voiceover.get("muxed") or voiceover.get("narration_style") != "per_scene":
             raise SystemExit(f"Per-scene narration did not complete: {voiceover}")
-        if len(voiceover.get("clips") or []) != 2 or any(not clip.get("audio_path") for clip in voiceover["clips"]):
+        narration_assets = voiceover.get("clips") or []
+        if len(narration_assets) != 2 or any(not clip.get("audio_path") for clip in narration_assets):
             raise SystemExit("Expected one synthesized audio asset for each scene")
+        for index, narration in enumerate(narration_assets):
+            audio_path = Path(narration["audio_path"])
+            if not audio_path.is_file() or audio_path.stat().st_size == 0:
+                raise SystemExit(f"Scene {index + 1} narration source is missing or empty: {audio_path}")
         if any(item.get("audio_status") != "per_scene_narration_muxed" for item in result["scene_clips"]):
             raise SystemExit(f"Per-scene narration was not muxed into every VidGrid clip: {result['scene_clips']}")
 
