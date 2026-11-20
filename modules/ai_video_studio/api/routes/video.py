@@ -439,6 +439,15 @@ def _ordered_vidgrid_clip_paths(record: dict, scenes: list[dict]) -> list[str]:
         if path is None or video_root not in path.parents or not path.is_file() or path.stat().st_size <= 0:
             invalid.append(scene_index)
             continue
+        # VidGrid accepts ten-second scene files. Refuse known mismatches
+        # rather than silently exporting a mixed-duration clip set.
+        try:
+            clip_duration = float(clip.get("duration")) if clip.get("duration") is not None else None
+        except (TypeError, ValueError):
+            clip_duration = -1.0
+        if clip_duration is not None and abs(clip_duration - 10.0) > 0.05:
+            invalid.append(scene_index)
+            continue
         paths.append(str(path))
     if invalid:
         raise HTTPException(
@@ -517,6 +526,14 @@ def _scene_clip_recovery_plan(record: dict) -> dict:
                 reasons.append("resolution_changed")
             if clip.get("fps") not in (None, fps):
                 reasons.append("frame_rate_changed")
+            if clip.get("duration") is not None:
+                try:
+                    if abs(float(clip.get("duration")) - 10.0) > 0.05:
+                        reasons.append("vidgrid_clip_duration_not_10_seconds")
+                except (TypeError, ValueError):
+                    reasons.append("vidgrid_clip_duration_invalid")
+            else:
+                warnings.append("legacy_clip_without_duration_metadata")
             saved_fingerprint = clip.get("source_image_fingerprint")
             if saved_fingerprint and image_fingerprint and saved_fingerprint != image_fingerprint:
                 reasons.append("source_image_changed")

@@ -3080,3 +3080,56 @@ def test_scene_checkpoint_rejects_narration_fingerprint_outside_voice_root(tmp_p
     })
 
     assert "source_narration_fingerprint" not in record["scene_clips"][0]
+
+
+    @pytest.mark.asyncio
+    async def test_recovery_plan_marks_non_ten_second_vidgrid_clip_stale(self, tmp_path, monkeypatch):
+        from modules.ai_video_studio.api.routes import video
+        from modules.ai_video_studio.media import output_paths
+
+        roots = {name: tmp_path / name for name in ("images", "videos", "voice")}
+        for root in roots.values():
+            root.mkdir()
+        image = roots["images"] / "scene.png"
+        image.write_bytes(b"approved-image")
+        clip = roots["videos"] / "scene.mp4"
+        clip.write_bytes(b"video")
+        monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda name: roots[name])
+        record = {
+            "job_id": "recovery-wrong-duration", "status": "completed",
+            "vidgrid_compatible": True, "resolution": "1280x720", "frame_rate": 30,
+            "params": {},
+            "_edited_scenes": [{"_source_scene_index": 0, "background_image_path": str(image)}],
+            "scene_clips": [{
+                "scene_index": 0, "status": "ready", "output_path": str(clip),
+                "duration": 8.0, "width": 1280, "height": 720, "fps": 30,
+                "source_image_fingerprint": video._asset_sha256(image),
+            }],
+        }
+        video._jobs["recovery-wrong-duration"] = record
+
+        plan = await video.get_video_job_recovery_plan("recovery-wrong-duration")
+
+        assert plan["repair_scene_indices"] == [0]
+        assert "vidgrid_clip_duration_not_10_seconds" in plan["scenes"][0]["reasons"]
+
+
+def test_vidgrid_export_rejects_clip_with_wrong_duration_metadata(tmp_path, monkeypatch):
+    from fastapi import HTTPException
+    from modules.ai_video_studio.api.routes import video
+    from modules.ai_video_studio.media import output_paths
+
+    video_root = tmp_path / "videos"
+    video_root.mkdir()
+    clip = video_root / "short.mp4"
+    clip.write_bytes(b"not-a-real-mp4-but-nonempty")
+    monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda _name: video_root)
+    record = {"scene_clips": [{
+        "scene_index": 0, "status": "ready", "output_path": str(clip), "duration": 9.5,
+    }]}
+
+    with pytest.raises(HTTPException) as error:
+        video._ordered_vidgrid_clip_paths(record, [{"_source_scene_index": 0}])
+
+    assert error.value.status_code == 409
+    assert "scenes [0]" in str(error.value.detail)
