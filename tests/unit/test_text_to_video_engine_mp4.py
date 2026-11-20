@@ -595,3 +595,50 @@ def test_generate_async_rejects_incomplete_saved_storyboard(monkeypatch):
                 "checkpoint_scenes": [{"duration": 1.0, "description": "Só uma cena"}],
             },
         }))
+
+
+
+def test_reusable_vidgrid_clip_requires_valid_ffprobe_metadata(monkeypatch, tmp_path):
+    from types import SimpleNamespace
+
+    clip = tmp_path / "clip.mp4"
+    clip.write_bytes(b"not-empty")
+    monkeypatch.setattr(engine_module.shutil, "which", lambda _name: "ffprobe")
+    monkeypatch.setattr(
+        engine_module.subprocess, "run",
+        lambda *_args, **_kwargs: SimpleNamespace(
+            returncode=0,
+            stdout='{"format":{"duration":"10.0"},"streams":[{"codec_type":"video","width":64,"height":36}]}',
+            stderr="",
+        ),
+    )
+    saved = {
+        "scene_index": 2, "output_path": str(clip), "duration": 10.0,
+        "fps": 24, "width": 64, "height": 36,
+    }
+    assert engine_module._is_reusable_vidgrid_clip(
+        saved, scene_index=2, video_root=tmp_path, fps=24, width=64, height=36,
+    )
+
+
+def test_reusable_vidgrid_clip_rejects_wrong_measured_duration(monkeypatch, tmp_path):
+    from types import SimpleNamespace
+
+    clip = tmp_path / "clip.mp4"
+    clip.write_bytes(b"not-empty")
+    monkeypatch.setattr(engine_module.shutil, "which", lambda _name: "ffprobe")
+    monkeypatch.setattr(
+        engine_module.subprocess, "run",
+        lambda *_args, **_kwargs: SimpleNamespace(
+            returncode=0,
+            stdout='{"format":{"duration":"9.5"},"streams":[{"codec_type":"video","width":64,"height":36}]}',
+            stderr="",
+        ),
+    )
+    saved = {
+        "scene_index": 2, "output_path": str(clip), "duration": 10.0,
+        "fps": 24, "width": 64, "height": 36,
+    }
+    assert not engine_module._is_reusable_vidgrid_clip(
+        saved, scene_index=2, video_root=tmp_path, fps=24, width=64, height=36,
+    )
