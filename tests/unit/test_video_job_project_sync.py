@@ -136,3 +136,33 @@ def test_video_job_asset_sync_does_not_create_records_without_project_or_job(mon
     assets.sync_video_job_assets({"project_id": "p", "output_path": "/tmp/video.mp4"})
     assets.sync_video_job_assets({"job_id": "j", "output_path": "/tmp/video.mp4"})
     assert store == {}
+
+
+def test_video_job_assets_sync_indexes_each_per_scene_narration(tmp_path, monkeypatch):
+    from modules.ai_video_studio.api.routes import assets
+
+    store = {}
+    monkeypatch.setattr(assets, "_assets", store)
+    narration_one = tmp_path / "scene-1.mp3"
+    narration_two = tmp_path / "scene-2.mp3"
+    narration_one.write_bytes(b"voice-one")
+    narration_two.write_bytes(b"voice-two")
+    assets.sync_video_job_assets({
+        "job_id": "job-voice",
+        "project_id": "project-voice",
+        "voiceover": {
+            "narration_style": "per_scene",
+            "clips": [
+                {"index": 0, "audio_path": str(narration_one)},
+                {"index": 1, "audio_path": str(narration_two)},
+            ],
+        },
+    })
+
+    first = store["job:job-voice:narration-0"]
+    second = store["job:job-voice:narration-1"]
+    assert first["asset_type"] == "audio"
+    assert first["file_size_bytes"] == len(b"voice-one")
+    assert second["asset_type"] == "audio"
+    assert second["_source_scene_index"] == 1
+    assert "job:job-voice:voiceover" not in store

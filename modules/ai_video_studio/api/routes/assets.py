@@ -85,7 +85,17 @@ def sync_video_job_assets(record: dict) -> None:
         candidates.append(("subtitles", "Legendas", str(subtitles.get("file_path") or ""), None))
     voiceover = record.get("voiceover")
     if isinstance(voiceover, dict):
-        candidates.append(("voiceover", "Narração", str(voiceover.get("file_path") or voiceover.get("audio_path") or ""), None))
+        # The production generator stores narration as one file per scene.
+        for clip in voiceover.get("clips") or []:
+            if not isinstance(clip, dict):
+                continue
+            try:
+                index = int(clip.get("index", 0))
+            except (TypeError, ValueError):
+                continue
+            candidates.append((f"narration-{index}", f"Narração da cena {index + 1}", str(clip.get("audio_path") or ""), index))
+        # Also index a single-track narration when the selected mode uses one.
+        candidates.append(("voiceover", "Narração", str(voiceover.get("output_path") or voiceover.get("file_path") or voiceover.get("audio_path") or ""), None))
     candidates.append(("master-video", "Vídeo final", str(record.get("output_path") or ""), None))
 
     for key, name, raw_path, scene_index in candidates:
