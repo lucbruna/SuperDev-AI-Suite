@@ -2310,6 +2310,133 @@ async def generate_video(req: VideoGenerateRequest, background_tasks: Background
     )
 
 
+@router.post("/jobs/{job_id}/resume-generation", status_code=202)
+async def resume_interrupted_generation(job_id: str, background_tasks: BackgroundTasks):
+    """Resume a failed generation from its complete saved storyboard and assets."""
+    record = _jobs.get(job_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+    if record.get("status") not in {"failed", "interrupted"}:
+        raise HTTPException(status_code=409, detail="Only failed or interrupted generation jobs can be resumed")
+    scenes = [
+        dict(item) for item in (record.get("_source_scenes") or [])
+        if isinstance(item, dict) and item
+    ]
+    params = dict(record.get("params") or {})
+    expected = int(params.get("num_scenes") or len(scenes) or 0)
+    if expected <= 0 or len(scenes) != expected:
+        raise HTTPException(
+            status_code=409,
+            detail="The saved storyboard is incomplete. This job cannot be resumed safely; create a new generation.",
+        )
+    if record.get("_generation_resume_scheduled"):
+        raise HTTPException(status_code=409, detail="A generation recovery is already queued")
+
+    params["checkpoint_scenes"] = scenes
+    params["checkpoint_scene_assets"] = [
+        dict(item) for item in (record.get("scene_assets") or []) if isinstance(item, dict)
+    ]
+    record["_generation_resume_scheduled"] = True
+    record.update(
+        status="queued", progress=0.0, current_step="Preparing saved storyboard recovery",
+        error=None, failure_info=None,
+    )
+    _persist_job(record)
+
+    async def _resume() -> None:
+        record["_generation_resume_scheduled"] = False
+        record.update(status="processing", progress=0.05, current_step="Reusing saved storyboard")
+        _persist_job(record)
+        try:
+            from modules.ai_video_studio.ai_video_generator.text_to_video.text_to_video_engine import TextToVideoEngine
+
+            width, height = _parse_resolution(str(params.get("resolution") or record.get("resolution") or "1280x720"))
+            engine_params = {
+                "duration": params.get("duration_seconds", params.get("duration", 6.0)),
+                "num_scenes": expected,
+                "fps": params.get("frame_rate", record.get("frame_rate", 24)),
+                "width": width, "height": height,
+                "voiceover": params.get("voiceover", False),
+                "generate_subtitles": params.get("generate_subtitles", False),
+                "voice_id": params.get("voice_id"),
+                "voice_language": params.get("voice_language"),
+                "voice_speed": params.get("voice_speed"),
+                "voice_pitch": params.get("voice_pitch"),
+                "voiceover_mode": params.get("voiceover_mode"),
+                "llm_timeout": params.get("llm_timeout", 60.0),
+                "studio_id": params.get("studio_id", "custom"),
+                "style": params.get("style", ""),
+                "character_ids": params.get("character_ids") or [],
+                "object_ids": params.get("object_ids") or [],
+                "scene_image_mode": params.get("scene_image_mode", "auto"),
+                "scene_image_steps": params.get("scene_image_steps", 20),
+                "scene_image_seed": params.get("scene_image_seed"),
+                "scene_image_timeout": params.get("scene_image_timeout", 180),
+                "vidgrid_compatible": params.get("vidgrid_compatible", record.get("vidgrid_compatible", False)),
+                "checkpoint_scenes": scenes,
+                "checkpoint_scene_assets": params["checkpoint_scene_assets"],
+            }
+
+            def on_scene(event: dict[str, Any]) -> None:
+                index = int(event.get("scene_index", -1))
+                if index < 0:
+                    return
+                progress = list(record.get("scene_progress") or [])
+                while len(progress) <= index:
+                    progress.append({"scene_index": len(progress), "status": "pending", "stage": "queued"})
+                progress[index] = {
+                    **progress[index],
+                    **{key: value for key, value in event.items() if key != "scene_snapshot"},
+                }
+                record["scene_progress"] = progress
+                _merge_scene_checkpoint(record, event)
+                record["current_step"] = f"Recuperando cena {index + 1}: {event.get('stage', 'processando')}"
+                _persist_job(record)
+
+            result = await TextToVideoEngine().generate_async(
+                {"id": job_id, "prompt": str(params.get("prompt") or record.get("prompt") or ""), "params": engine_params},
+                scene_callback=on_scene,
+            )
+            scene_assets = result.get("scene_assets") or []
+            for asset in scene_assets:
+                if asset.get("image_path") and asset.get("status") in {"generated", "edited", "preserved"}:
+                    asset["image_url"] = to_download_url(asset["image_path"])
+            scene_clips = result.get("scene_clips") or []
+            for clip in scene_clips:
+                clip["output_url"] = to_download_url(clip["output_path"])
+            record.update(
+                status="completed", progress=1.0, current_step="Recovery complete",
+                output_path=result["output_path"], output_url=to_download_url(result["output_path"]),
+                file_size_bytes=result.get("output_bytes", 0),
+                ai_planner=result.get("ai_planner"),
+                video_duration=await _probe_video_duration(result["output_path"]),
+                voiceover=result.get("voiceover"), subtitles=result.get("subtitles"),
+                edit_timeline=result.get("edit_timeline"), scene_assets=scene_assets,
+                scene_clips=scene_clips, storyboard_report=result.get("storyboard_report"),
+                vidgrid_compatible=result.get("vidgrid_compatible", False),
+                _source_scenes=result.get("scenes"), _edited_scenes=result.get("scenes"),
+                failure_info=None, error=None,
+            )
+            _persist_job(record)
+        except Exception as exc:  # noqa: BLE001
+            record.update(
+                status="failed", error=str(exc),
+                failure_info={
+                    "kind": "generation_recovery_error",
+                    "automatic_resume_supported": True,
+                    "recovery_hint": "O storyboard e os assets existentes foram mantidos. Corrija a causa e tente recuperar novamente.",
+                },
+            )
+            _persist_job(record)
+
+    background_tasks.add_task(_resume)
+    return {
+        "job_id": job_id, "status": "queued", "queued": True,
+        "reused_scene_count": len(scenes),
+        "message": "A geração será refeita usando o storyboard e as imagens salvas, sem novo planejamento visual.",
+    }
+
+
 
 @router.patch("/jobs/{job_id}/timeline")
 async def update_video_job_timeline(job_id: str, req: TimelineEditRequest):
