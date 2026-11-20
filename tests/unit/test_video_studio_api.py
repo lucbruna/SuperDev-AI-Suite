@@ -3298,3 +3298,63 @@ async def test_requested_audio_shorter_than_video_invalidates_final_mp4(tmp_path
     assert report["audio_video_duration_delta_seconds"] == -4.0
     assert report["valid"] is False
     assert any("termina 4.00s antes" in item for item in report["errors"])
+
+
+def test_saved_audio_timeline_survives_sqlite_job_reload(tmp_path, monkeypatch):
+    from modules.ai_video_studio.media import job_store
+
+    database = tmp_path / "darkstudio_jobs.sqlite3"
+    monkeypatch.setattr(job_store, "_database_path", lambda: database)
+    record = {
+        "job_id": "audio-reload-job",
+        "project_id": "local-project",
+        "status": "completed",
+        "_audio_clips": {
+            "music": [{
+                "asset": "music/background.wav",
+                "asset_fingerprint": "music-sha256",
+                "start": 0.5,
+                "end": 18.0,
+                "volume": 0.22,
+                "loop": True,
+            }],
+            "sfx": [{
+                "asset": "effects/impact.wav",
+                "asset_fingerprint": "sfx-sha256",
+                "start": 4.0,
+                "end": 5.5,
+                "volume": 0.8,
+            }],
+        },
+        "_audio_settings": {
+            "ducking_enabled": True,
+            "ducking_db": 11.0,
+            "normalization_enabled": True,
+            "normalization_target_dbfs": -18.0,
+        },
+        "audio_settings": {
+            "ducking_enabled": True,
+            "ducking_db": 11.0,
+            "normalization_enabled": True,
+            "normalization_target_dbfs": -18.0,
+        },
+        "edit_timeline": {
+            "fps": 30,
+            "tracks": [
+                {"id": "music", "type": "audio", "role": "music", "clips": [
+                    {"asset": "music/background.wav", "start_frame": 15, "end_frame": 540},
+                ]},
+                {"id": "sfx", "type": "audio", "role": "sound_effect", "clips": [
+                    {"asset": "effects/impact.wav", "start_frame": 120, "end_frame": 165},
+                ]},
+            ],
+        },
+    }
+
+    job_store.save_job(record)
+    restored = job_store.load_jobs("local-project")["audio-reload-job"]
+
+    assert restored["_audio_clips"] == record["_audio_clips"]
+    assert restored["_audio_settings"] == record["_audio_settings"]
+    assert restored["audio_settings"] == record["audio_settings"]
+    assert restored["edit_timeline"] == record["edit_timeline"]
