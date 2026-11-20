@@ -57,7 +57,7 @@ class _DeterministicPlanner:
 def _probe(path: Path) -> dict[str, Any]:
     command = [
         "ffprobe", "-v", "error", "-show_entries",
-        "stream=codec_type,codec_name,width,height",
+        "stream=codec_type,codec_name,width,height,duration",
         "-show_entries", "format=duration,size", "-of", "json", str(path),
     ]
     result = subprocess.run(command, check=True, capture_output=True, text=True, timeout=30)
@@ -153,8 +153,17 @@ def main() -> None:
             raise SystemExit(f"Unexpected master MP4 stream: {master_video}")
         if abs(master_duration - 20.0) > 0.2:
             raise SystemExit(f"Expected a 20-second master MP4, got {master_duration:.3f}s")
-        if not any(stream["codec_type"] == "audio" for stream in master_probe["streams"]):
+        master_audio = [stream for stream in master_probe["streams"] if stream["codec_type"] == "audio"]
+        if not master_audio:
             raise SystemExit("Narration was requested but the master MP4 has no audio stream")
+        master_audio_duration = max(
+            (float(stream.get("duration") or 0.0) for stream in master_audio),
+            default=0.0,
+        )
+        if not 19.5 <= master_audio_duration <= 20.5:
+            raise SystemExit(
+                f"Expected master narration audio to span ~20 seconds, got {master_audio_duration:.3f}s"
+            )
         voiceover = result.get("voiceover") or {}
         if not voiceover.get("muxed") or voiceover.get("narration_style") != "per_scene":
             raise SystemExit(f"Per-scene narration did not complete: {voiceover}")
@@ -170,9 +179,25 @@ def main() -> None:
             duration = float(metadata["format"]["duration"])
             if abs(duration - 10.0) > 0.2 or stream["codec_name"] != "h264":
                 raise SystemExit(f"VidGrid clip {index + 1} failed validation: {metadata}")
-            if not any(item["codec_type"] == "audio" for item in metadata["streams"]):
+            clip_audio = [item for item in metadata["streams"] if item["codec_type"] == "audio"]
+            if not clip_audio:
                 raise SystemExit(f"VidGrid clip {index + 1} is missing its scene narration audio")
-            clip_reports.append({"path": clip.name, "duration": duration, "bytes": metadata["format"]["size"], "audio": True})
+            audio_duration = max(
+                (float(item.get("duration") or 0.0) for item in clip_audio),
+                default=0.0,
+            )
+            if not 9.5 <= audio_duration <= 10.5:
+                raise SystemExit(
+                    f"VidGrid clip {index + 1} narration does not span its 10-second scene: "
+                    f"{audio_duration:.3f}s"
+                )
+            clip_reports.append({
+                "path": clip.name,
+                "duration": duration,
+                "audio_duration": audio_duration,
+                "bytes": metadata["format"]["size"],
+                "audio": True,
+            })
 
         shutil.copy2(master, output)
         print(json.dumps({
@@ -181,7 +206,7 @@ def main() -> None:
             "master_mp4": {"path": str(output), "duration": master_duration, "bytes": output.stat().st_size},
             "vidgrid_clips": clip_reports,
             "subtitles": {"cue_count": result["subtitles"]["cue_count"], "format": "srt"},
-            "narration": {"style": voiceover["narration_style"], "clips": len(voiceover["clips"]), "audio_stream": True},
+            "narration": {"style": voiceover["narration_style"], "clips": len(voiceover["clips"]), "master_audio_duration": master_audio_duration, "audio_stream": True},
         }, indent=2))
 
 
