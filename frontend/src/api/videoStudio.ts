@@ -770,6 +770,11 @@ export const videoStudioApi = {
     return data;
   },
 
+  async resumeInterruptedGeneration(jobId: string): Promise<{ job_id: string; status: string; queued: boolean; reused_scene_count: number; message: string }> {
+    const { data } = await apiClient.post(`${STUDIO_BASE}/videos/jobs/${jobId}/resume-generation`);
+    return data;
+  },
+
   async getJob(jobId: string): Promise<StudioJob> {
     const { data } = await apiClient.get(`${STUDIO_BASE}/videos/jobs/${jobId}`);
     return data;

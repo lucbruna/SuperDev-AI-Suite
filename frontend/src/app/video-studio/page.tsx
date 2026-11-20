@@ -102,6 +102,8 @@ export default function VideoStudioPage() {
   const [recoveryPlans, setRecoveryPlans] = useState<Record<string, VidGridRecoveryPlan>>({});
   const [recoveryBusy, setRecoveryBusy] = useState<Record<string, boolean>>({});
   const [recoveryErrors, setRecoveryErrors] = useState<Record<string, string>>({});
+  const [generationRecoveryBusy, setGenerationRecoveryBusy] = useState<Record<string, boolean>>({});
+  const [generationRecoveryErrors, setGenerationRecoveryErrors] = useState<Record<string, string>>({});
 
   const pollTimers = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map());
 
@@ -150,6 +152,20 @@ export default function VideoStudioPage() {
       setRecoveryBusy((prev) => ({ ...prev, [jobId]: false }));
     }
   }, [loadVidGridRecoveryPlan, recoveryPlans]);
+
+  const resumeInterruptedGeneration = useCallback(async (jobId: string) => {
+    setGenerationRecoveryBusy((prev) => ({ ...prev, [jobId]: true }));
+    setGenerationRecoveryErrors((prev) => ({ ...prev, [jobId]: "" }));
+    try {
+      await videoStudioApi.resumeInterruptedGeneration(jobId);
+      const updated = await videoStudioApi.getJob(jobId);
+      setJobs((prev) => prev.map((job) => job.job_id === jobId ? updated : job));
+    } catch (error) {
+      setGenerationRecoveryErrors((prev) => ({ ...prev, [jobId]: extractErrorMessage(error, "Não foi possível retomar a geração") }));
+    } finally {
+      setGenerationRecoveryBusy((prev) => ({ ...prev, [jobId]: false }));
+    }
+  }, []);
 
   const refreshVidGridRecoveryStatus = useCallback(async (jobId: string) => {
     try {
@@ -1039,6 +1055,16 @@ export default function VideoStudioPage() {
                       </div>
                     )}
                     {job.error && <p className="mt-1 text-xs text-red-500">{job.error}</p>}
+                    {job.status === "failed" && (job.scene_progress?.length ?? 0) > 0 && (
+                      <div className="mt-2 rounded-md border border-surface-200 p-3 text-xs dark:border-surface-700">
+                        <p className="font-semibold">Retomar geração com storyboard salvo</p>
+                        <p className="mt-1 text-surface-500">Reutiliza as cenas e imagens já salvas. O vídeo completo será renderizado novamente; o planejamento visual não será repetido.</p>
+                        <Button className="mt-2" variant="secondary" size="sm" disabled={!!generationRecoveryBusy[job.job_id]} onClick={() => resumeInterruptedGeneration(job.job_id)}>
+                          {generationRecoveryBusy[job.job_id] ? "Preparando recuperação…" : "Retomar geração"}
+                        </Button>
+                        {generationRecoveryErrors[job.job_id] && <p role="alert" className="mt-2 text-red-500">{generationRecoveryErrors[job.job_id]}</p>}
+                      </div>
+                    )}
                     {job.failure_info?.kind === "server_restart" && (
                       <div className="mt-2 rounded-md border border-amber-300/70 bg-amber-50 p-3 text-xs text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
                         <p className="font-semibold">Projeto recuperável após reinicialização</p>
