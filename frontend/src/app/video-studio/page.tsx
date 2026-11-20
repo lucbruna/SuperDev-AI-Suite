@@ -30,16 +30,16 @@ import {
 // ---------------------------------------------------------------------------
 
 const studioModules = [
-  { name: "Text to Video", icon: "🎬", desc: "Prompt → MP4 com narração", status: "ready" as const, endpoint: "/api/v1/video-studio/videos/generate", color: "bg-violet-50 text-violet-600 dark:bg-violet-950 dark:text-violet-400" },
-  { name: "Image to Video", icon: "🖼️", desc: "Anima imagens em vídeo", status: "ready" as const, endpoint: "/api/v1/video-studio/videos/image-to-video", color: "bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400" },
-  { name: "Video to Video", icon: "🔄", desc: "Estilo, upscale, denoise", status: "ready" as const, endpoint: "/api/v1/video-studio/videos/video-to-video", color: "bg-cyan-50 text-cyan-600 dark:bg-cyan-950 dark:text-cyan-400" },
-  { name: "AI Image Generator", icon: "🎨", desc: "14 estilos de imagem", status: "ready" as const, endpoint: "/api/v1/video-studio/images/generate", color: "bg-pink-50 text-pink-600 dark:bg-pink-950 dark:text-pink-400" },
-  { name: "AI Voice Studio", icon: "🗣️", desc: "TTS, clones e dublagem", status: "ready" as const, endpoint: "/api/v1/video-studio/audio/synthesize", color: "bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-400" },
-  { name: "AI Animation", icon: "🤸", desc: "Personagens e rigging", status: "ready" as const, endpoint: "/api/v1/video-studio/animations/generate", color: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400" },
-  { name: "AI Physics", icon: "🌊", desc: "Partículas e simulação", status: "ready" as const, endpoint: "/api/v1/video-studio/physics/simulate", color: "bg-teal-50 text-teal-600 dark:bg-teal-950 dark:text-teal-400" },
-  { name: "AI Music", icon: "🎵", desc: "20 gêneros + instrumentos", status: "ready" as const, endpoint: "/api/v1/video-studio/assets/generate", color: "bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-400" },
-  { name: "AI Sound Effects", icon: "🌩️", desc: "16 efeitos realistas", status: "ready" as const, endpoint: "/api/v1/video-studio/assets/generate", color: "bg-sky-50 text-sky-600 dark:bg-sky-950 dark:text-sky-400" },
-  { name: "AI Subtitles", icon: "💬", desc: "SRT / VTT / ASS", status: "ready" as const, endpoint: "/api/v1/video-studio/subtitles", color: "bg-rose-50 text-rose-600 dark:bg-rose-950 dark:text-rose-400" },
+  { name: "Text to Video", icon: "🎬", desc: "Prompt → MP4 com narração", capability: "Pipeline principal", endpoint: "/api/v1/video-studio/videos/generate", color: "bg-violet-50 text-violet-600 dark:bg-violet-950 dark:text-violet-400" },
+  { name: "Image to Video", icon: "🖼️", desc: "Movimento e composição via FFmpeg", capability: "Efeitos tradicionais", endpoint: "/api/v1/video-studio/videos/image-to-video", color: "bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400" },
+  { name: "Video to Video", icon: "🔄", desc: "Filtros e transformação via FFmpeg", capability: "Efeitos tradicionais", endpoint: "/api/v1/video-studio/videos/video-to-video", color: "bg-cyan-50 text-cyan-600 dark:bg-cyan-950 dark:text-cyan-400" },
+  { name: "AI Image Generator", icon: "🎨", desc: "API compatível ou fallback procedural", capability: "Depende de provedor", endpoint: "/api/v1/video-studio/images/generate", color: "bg-pink-50 text-pink-600 dark:bg-pink-950 dark:text-pink-400" },
+  { name: "AI Voice Studio", icon: "🗣️", desc: "Síntese TTS conforme mecanismo instalado", capability: "TTS básico", endpoint: "/api/v1/video-studio/audio/synthesize", color: "bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-400" },
+  { name: "AI Animation", icon: "🤸", desc: "Animações procedurais", capability: "Procedural", endpoint: "/api/v1/video-studio/animations/generate", color: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400" },
+  { name: "AI Physics", icon: "🌊", desc: "Partículas e simulação procedural", capability: "Procedural", endpoint: "/api/v1/video-studio/physics/simulate", color: "bg-teal-50 text-teal-600 dark:bg-teal-950 dark:text-teal-400" },
+  { name: "AI Music", icon: "🎵", desc: "Geração musical completa ainda pendente", capability: "Em desenvolvimento", endpoint: "/api/v1/video-studio/assets/generate", color: "bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-400" },
+  { name: "AI Sound Effects", icon: "🌩️", desc: "Biblioteca/geração realista ainda pendente", capability: "Em desenvolvimento", endpoint: "/api/v1/video-studio/assets/generate", color: "bg-sky-50 text-sky-600 dark:bg-sky-950 dark:text-sky-400" },
+  { name: "AI Subtitles", icon: "💬", desc: "Legendas SRT / VTT / ASS", capability: "Exportação disponível", endpoint: "/api/v1/video-studio/subtitles", color: "bg-rose-50 text-rose-600 dark:bg-rose-950 dark:text-rose-400" },
 ];
 
 // Modules planned for future volumes — shown as "Em breve" (the 6 missing ones)
@@ -339,7 +339,7 @@ export default function VideoStudioPage() {
               AI Video Studio
             </h1>
             <p className="mt-0.5 text-sm text-surface-500">
-              Estúdio de vídeo, voz e mídia — {readyCount} módulos integrados · {plannedModules.length} planejados
+              Estúdio de vídeo, voz e mídia — {readyCount} módulos catalogados · {plannedModules.length} planejados
               {version ? ` · v${version}` : ""}
             </p>
           </div>
@@ -403,7 +403,7 @@ export default function VideoStudioPage() {
               <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-50 text-base dark:bg-sky-950/50">🧩</span>
             </div>
             <p className="mt-3 text-2xl font-bold tabular-nums text-surface-900 dark:text-surface-50">{readyCount}<span className="ml-1 text-sm font-medium text-surface-400">/ {totalCount}</span></p>
-            <p className="mt-1 text-xs text-surface-400">10 integrados · 6 planejados</p>
+            <p className="mt-1 text-xs text-surface-400">10 com base de código · 6 planejados</p>
           </div>
         </div>
 
@@ -792,7 +792,7 @@ export default function VideoStudioPage() {
           <h2 className="text-lg font-semibold text-surface-900 dark:text-surface-50">
             Módulos do Estúdio
           </h2>
-          <Badge variant="primary" size="sm">{readyCount} integrados</Badge>
+          <Badge variant="primary" size="sm">{readyCount} catalogados</Badge>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           {studioModules.map((mod) => (
@@ -805,8 +805,8 @@ export default function VideoStudioPage() {
               </div>
               <p className="text-xs font-semibold text-surface-900 dark:text-surface-50">{mod.name}</p>
               <p className="text-[10px] leading-tight text-surface-400">{mod.desc}</p>
-              <span className="mt-auto inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-medium text-green-600 dark:bg-green-950 dark:text-green-400">
-                <span className="h-1 w-1 rounded-full bg-sky-500" /> Integrado no código
+              <span className="mt-auto inline-flex items-center rounded-full bg-surface-100 px-2 py-0.5 text-[10px] font-medium text-surface-600 dark:bg-surface-800 dark:text-surface-300">
+                {mod.capability}
               </span>
             </div>
           ))}
