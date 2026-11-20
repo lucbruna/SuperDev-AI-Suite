@@ -1498,6 +1498,12 @@ class TestCompletedOutputValidation:
             output_validation=report,
         )
         assert response.model_dump()["output_validation"] == report
+        recovery = {"kind": "server_restart", "can_retry_export": True, "scene_assets_preserved": True}
+        response_with_recovery = VideoStatusResponse(
+            job_id="persisted-job", status="completed", progress=1.0,
+            edit_render_status="interrupted", edit_render_recovery=recovery,
+        )
+        assert response_with_recovery.model_dump()["edit_render_recovery"] == recovery
         scene_progress = [{"scene_index": 0, "status": "completed", "stage": "exported"}]
         response_with_scenes = VideoStatusResponse(
             job_id="persisted-job", status="completed", progress=1.0,
