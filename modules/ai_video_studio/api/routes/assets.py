@@ -2,6 +2,7 @@
 from __future__ import annotations
 import uuid
 import os
+from modules.ai_video_studio.core.local_store import PersistentDict
 from fastapi import APIRouter, HTTPException, Query, UploadFile, File
 from pydantic import BaseModel
 
@@ -72,7 +73,7 @@ def _seed_assets() -> dict[str, dict]:
     return {r["id"]: r for r in rows}
 
 
-_assets = _seed_assets()
+_assets = PersistentDict("assets", _seed_assets())
 
 ASSET_TYPE_MAP = {
     "video/mp4": "video", "video/quicktime": "video", "video/webm": "video",

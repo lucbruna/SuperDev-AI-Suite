@@ -2,6 +2,7 @@
 from __future__ import annotations
 import uuid
 from datetime import datetime, UTC
+from modules.ai_video_studio.core.local_store import PersistentDict
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
@@ -84,7 +85,7 @@ def _seed_renders() -> dict[str, dict]:
     return {r["id"]: r for r in rows}
 
 
-_renders = _seed_renders()
+_renders = PersistentDict("renders", _seed_renders())
 
 
 @router.post("/", response_model=RenderResponse, status_code=201)

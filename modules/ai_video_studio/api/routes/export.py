@@ -2,6 +2,7 @@
 from __future__ import annotations
 import uuid
 from datetime import UTC, datetime
+from modules.ai_video_studio.core.local_store import PersistentDict
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
@@ -35,7 +36,7 @@ class ExportFormatsResponse(BaseModel):
     description: str
 
 
-_exports: dict[str, dict] = {}
+_exports: dict[str, dict] = PersistentDict("exports")
 
 
 @router.get("/formats", response_model=list[ExportFormatsResponse])

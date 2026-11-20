@@ -1,6 +1,7 @@
 """Audio track endpoints — voice, music, SFX management."""
 from __future__ import annotations
 import uuid
+from modules.ai_video_studio.core.local_store import PersistentDict
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
@@ -75,7 +76,7 @@ class VoiceSynthesizeRequest(BaseModel):
     emotion: str | None = None
 
 
-_audio: dict[str, dict] = {}
+_audio: dict[str, dict] = PersistentDict("audio")
 
 
 @router.post("/", response_model=AudioTrackResponse, status_code=201)

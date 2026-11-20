@@ -1,6 +1,7 @@
 """Project CRUD endpoints."""
 from __future__ import annotations
 import uuid
+from modules.ai_video_studio.core.local_store import PersistentDict
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
@@ -111,7 +112,7 @@ def _seed_projects() -> dict[str, dict]:
     return {r["id"]: r for r in rows}
 
 
-_projects = _seed_projects()
+_projects = PersistentDict("projects", _seed_projects())
 
 
 @router.post("/", response_model=ProjectResponse, status_code=201)

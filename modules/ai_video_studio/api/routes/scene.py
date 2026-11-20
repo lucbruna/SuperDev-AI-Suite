@@ -1,6 +1,7 @@
 """Scene CRUD endpoints."""
 from __future__ import annotations
 import uuid
+from modules.ai_video_studio.core.local_store import PersistentDict
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
@@ -63,7 +64,7 @@ class SceneResponse(BaseModel):
     generated_image_url: str | None = None
 
 
-_scenes: dict[str, dict] = {}
+_scenes: dict[str, dict] = PersistentDict("scenes")
 
 
 @router.post("/", response_model=SceneResponse, status_code=201)

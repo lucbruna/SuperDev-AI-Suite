@@ -1,6 +1,7 @@
 """Timeline endpoints — manage multi-track video timelines."""
 from __future__ import annotations
 import uuid
+from modules.ai_video_studio.core.local_store import PersistentDict
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
@@ -44,7 +45,7 @@ class TimelineResponse(BaseModel):
     clips: list[ClipResponse]
 
 
-_timelines: dict[str, dict] = {}
+_timelines: dict[str, dict] = PersistentDict("timelines")
 
 
 @router.post("/", response_model=TimelineResponse, status_code=201)
