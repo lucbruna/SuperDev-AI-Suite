@@ -7,7 +7,7 @@ import { Card, CardHeader, CardBody } from "@/components/cards/Card";
 import { Badge } from "@/components/badges/Badge";
 import { Button } from "@/components/buttons/Button";
 import { useAuthStore } from "@/stores/authStore";
-import { videoStudioApi, type StudioJob, type StudioVoice, type StudioProfile, type StudioCharacter, type StudioSceneObject, type VideoPreflight, type VideoOutputValidation } from "@/api/videoStudio";
+import { videoStudioApi, type StudioJob, type StudioVoice, type StudioProfile, type StudioCharacter, type StudioSceneObject, type VideoPreflight, type VideoOutputValidation, type VidGridRecoveryPlan } from "@/api/videoStudio";
 import { extractErrorMessage } from "@/utils/apiError";
 import EditTimelinePanel from "@/components/video-studio/EditTimelinePanel";
 import { fmtBytes, fmtDuration, fmtEstimate, jobStatusVariant, studioHealthVariant } from "@/utils/format";
@@ -99,6 +99,9 @@ export default function VideoStudioPage() {
   const [outputValidation, setOutputValidation] = useState<Record<string, { loading: boolean; report?: VideoOutputValidation; error?: string }>>({});
   const [retryingEditRender, setRetryingEditRender] = useState<Record<string, boolean>>({});
   const [editRenderErrors, setEditRenderErrors] = useState<Record<string, string>>({});
+  const [recoveryPlans, setRecoveryPlans] = useState<Record<string, VidGridRecoveryPlan>>({});
+  const [recoveryBusy, setRecoveryBusy] = useState<Record<string, boolean>>({});
+  const [recoveryErrors, setRecoveryErrors] = useState<Record<string, string>>({});
 
   const pollTimers = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map());
 
@@ -117,6 +120,61 @@ export default function VideoStudioPage() {
       // Backend may be offline — keep last known jobs.
     }
   }, []);
+
+  const loadVidGridRecoveryPlan = useCallback(async (jobId: string) => {
+    setRecoveryBusy((prev) => ({ ...prev, [jobId]: true }));
+    setRecoveryErrors((prev) => ({ ...prev, [jobId]: "" }));
+    try {
+      const plan = await videoStudioApi.getVidGridRecoveryPlan(jobId);
+      setRecoveryPlans((prev) => ({ ...prev, [jobId]: plan }));
+    } catch (error) {
+      setRecoveryErrors((prev) => ({ ...prev, [jobId]: extractErrorMessage(error, "Não foi possível verificar as cenas recuperáveis") }));
+    } finally {
+      setRecoveryBusy((prev) => ({ ...prev, [jobId]: false }));
+    }
+  }, []);
+
+  const queueVidGridRecovery = useCallback(async (jobId: string) => {
+    const plan = recoveryPlans[jobId];
+    if (!plan?.repair_scene_indices.length) return;
+    setRecoveryBusy((prev) => ({ ...prev, [jobId]: true }));
+    setRecoveryErrors((prev) => ({ ...prev, [jobId]: "" }));
+    try {
+      await videoStudioApi.queueStaleVidGridClips(jobId, plan.repair_scene_indices);
+      const updated = await videoStudioApi.getJob(jobId);
+      setJobs((prev) => prev.map((job) => job.job_id === jobId ? updated : job));
+      await loadVidGridRecoveryPlan(jobId);
+    } catch (error) {
+      setRecoveryErrors((prev) => ({ ...prev, [jobId]: extractErrorMessage(error, "Não foi possível enfileirar a reconstrução") }));
+    } finally {
+      setRecoveryBusy((prev) => ({ ...prev, [jobId]: false }));
+    }
+  }, [loadVidGridRecoveryPlan, recoveryPlans]);
+
+  const refreshVidGridRecoveryStatus = useCallback(async (jobId: string) => {
+    try {
+      const updated = await videoStudioApi.getJob(jobId);
+      setJobs((prev) => prev.map((job) => job.job_id === jobId ? updated : job));
+      await loadVidGridRecoveryPlan(jobId);
+    } catch (error) {
+      setRecoveryErrors((prev) => ({ ...prev, [jobId]: extractErrorMessage(error, "Não foi possível atualizar a recuperação") }));
+    }
+  }, [loadVidGridRecoveryPlan]);
+
+  const resumeVidGridRecovery = useCallback(async (jobId: string) => {
+    setRecoveryBusy((prev) => ({ ...prev, [jobId]: true }));
+    setRecoveryErrors((prev) => ({ ...prev, [jobId]: "" }));
+    try {
+      await videoStudioApi.resumeVidGridClipRebuild(jobId);
+      const updated = await videoStudioApi.getJob(jobId);
+      setJobs((prev) => prev.map((job) => job.job_id === jobId ? updated : job));
+      await loadVidGridRecoveryPlan(jobId);
+    } catch (error) {
+      setRecoveryErrors((prev) => ({ ...prev, [jobId]: extractErrorMessage(error, "Não foi possível retomar a reconstrução") }));
+    } finally {
+      setRecoveryBusy((prev) => ({ ...prev, [jobId]: false }));
+    }
+  }, [loadVidGridRecoveryPlan]);
 
   useEffect(() => {
     let cancelled = false;
@@ -991,6 +1049,53 @@ export default function VideoStudioPage() {
                           <p className="mt-1">Cenas com arquivos recuperáveis: {job.failure_info.recoverable_scene_indices?.map((index) => index + 1).join(", ")}.</p>
                         )}
                         <p className="mt-1">{job.failure_info.recovery_hint ?? "Os arquivos existentes foram preservados; a retomada automática do processo interrompido não está disponível."}</p>
+                      </div>
+                    )}
+                    {job.vidgrid_compatible && ["completed", "failed"].includes(job.status) && (
+                      <div className="mt-2 rounded-md border border-surface-200 p-3 text-xs dark:border-surface-700">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <p className="font-semibold text-surface-700 dark:text-surface-200">Recuperação seletiva VidGrid</p>
+                          <Button variant="secondary" size="sm" disabled={!!recoveryBusy[job.job_id]} onClick={() => loadVidGridRecoveryPlan(job.job_id)}>
+                            {recoveryBusy[job.job_id] ? "Verificando…" : recoveryPlans[job.job_id] ? "Atualizar diagnóstico" : "Verificar cenas"}
+                          </Button>
+                        </div>
+                        {recoveryPlans[job.job_id] && (
+                          <>
+                            <p className="mt-2 text-surface-500">
+                              {recoveryPlans[job.job_id].ready_count} prontas · {recoveryPlans[job.job_id].repairable_count} reparáveis · {recoveryPlans[job.job_id].blocked_count} bloqueadas
+                            </p>
+                            <div className="mt-2 flex flex-wrap gap-1.5">
+                              {recoveryPlans[job.job_id].scenes.map((scene) => (
+                                <span key={scene.scene_index} title={scene.reasons.join(", ") || "Clipes válidos"} className={`rounded px-2 py-1 ${scene.status === "ready" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" : "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300"}`}>
+                                  Cena {scene.scene_index + 1}: {scene.status === "ready" ? "OK" : "reparar"}
+                                </span>
+                              ))}
+                            </div>
+                            {recoveryPlans[job.job_id].repairable_count > 0 && (
+                              <Button className="mt-2" size="sm" disabled={!!recoveryBusy[job.job_id]} onClick={() => queueVidGridRecovery(job.job_id)}>
+                                Reconstruir {recoveryPlans[job.job_id].repairable_count} cena(s) sem refazer as prontas
+                              </Button>
+                            )}
+                            {recoveryPlans[job.job_id].repairable_count === 0 && (
+                              <p className="mt-2 text-emerald-600">Nenhuma cena precisa ser reconstruída.</p>
+                            )}
+                          </>
+                        )}
+                        {job.scene_clip_rebuild_queue && (
+                          <div className="mt-2 rounded bg-surface-50 p-2 dark:bg-surface-800">
+                            <p>Fila: {job.scene_clip_rebuild_queue.status} · {job.scene_clip_rebuild_queue.completed}/{job.scene_clip_rebuild_queue.total} concluídas · {job.scene_clip_rebuild_queue.failed} falhas</p>
+                            {job.scene_clip_rebuild_queue.recovery_note && <p className="mt-1">{job.scene_clip_rebuild_queue.recovery_note}</p>}
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              {["queued", "processing"].includes(job.scene_clip_rebuild_queue.status) && (
+                                <Button variant="secondary" size="sm" onClick={() => refreshVidGridRecoveryStatus(job.job_id)}>Atualizar fila</Button>
+                              )}
+                              {["interrupted", "cancelled", "partial", "failed"].includes(job.scene_clip_rebuild_queue.status) && (
+                                <Button variant="secondary" size="sm" disabled={!!recoveryBusy[job.job_id]} onClick={() => resumeVidGridRecovery(job.job_id)}>Retomar cenas pendentes</Button>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        {recoveryErrors[job.job_id] && <p role="alert" className="mt-2 text-red-500">{recoveryErrors[job.job_id]}</p>}
                       </div>
                     )}
                     {job.edit_render_status === "interrupted" && (
