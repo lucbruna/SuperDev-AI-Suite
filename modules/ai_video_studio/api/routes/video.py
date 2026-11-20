@@ -3538,10 +3538,17 @@ async def validate_video_job_output(job_id: str):
                     report["warnings"].append("A mixagem de áudio não foi incorporada ao MP4.")
                 if record.get("edit_render_audio") == "single_track_not_retimed":
                     report["warnings"].append("A faixa única original não foi reposicionada automaticamente na timeline.")
-                expected_duration = (
-                    float(record.get("clip_duration_seconds") or 10.0) * len(record.get("scene_clips") or [])
-                    if record.get("vidgrid_compatible") and record.get("scene_clips")
-                    else float(record.get("edited_video_duration") or record.get("video_duration") or 0)
+                # The final edited timeline may contain a subset or a
+                # reordered selection of VidGrid clips. Prefer its measured
+                # render duration; the full source clip count is only a
+                # fallback for jobs without an edited-export duration.
+                expected_duration = float(
+                    record.get("edited_video_duration")
+                    or (
+                        float(record.get("clip_duration_seconds") or 10.0) * len(record.get("scene_clips") or [])
+                        if record.get("vidgrid_compatible") and record.get("scene_clips")
+                        else record.get("video_duration") or 0
+                    )
                 )
                 if expected_duration > 0 and duration > 0:
                     tolerance = max(1.0, expected_duration * 0.03)

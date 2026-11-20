@@ -1425,6 +1425,42 @@ class TestCompletedOutputValidation:
         assert video_routes._jobs["validate-job"]["output_validation"]["valid"] is True
 
     @pytest.mark.asyncio
+    async def test_edited_vidgrid_validation_uses_final_timeline_duration(self, tmp_path, monkeypatch):
+        from types import SimpleNamespace
+        from modules.ai_video_studio.api.routes import video as video_routes
+        from modules.ai_video_studio.media import output_paths
+
+        root = tmp_path / "videos"
+        root.mkdir()
+        output = root / "edited.mp4"
+        output.write_bytes(b"mp4")
+        monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda _name: root)
+        monkeypatch.setattr(video_routes.shutil, "which", lambda name: f"/usr/bin/{name}")
+        monkeypatch.setattr(
+            video_routes.subprocess, "run",
+            lambda *args, **kwargs: SimpleNamespace(
+                returncode=0, stderr="",
+                stdout='{"format":{"duration":"20"},"streams":[{"codec_type":"video","codec_name":"h264","width":1280,"height":720,"avg_frame_rate":"24/1"}]}',
+            ),
+        )
+        monkeypatch.setattr(video_routes, "_persist_job", lambda _record: None)
+        video_routes._jobs["edited-vidgrid-duration"] = {
+            "job_id": "edited-vidgrid-duration", "project_id": "p1",
+            "status": "completed", "vidgrid_compatible": True,
+            "edited_output_path": str(output), "edited_video_duration": 20,
+            "clip_duration_seconds": 10,
+            "scene_clips": [{"scene_index": index} for index in range(4)],
+            "edit_export_manifest": {"video_frames": 480, "target_fps": 24},
+            "edit_render_audio": "silent",
+        }
+
+        report = await video_routes.validate_video_job_output("edited-vidgrid-duration")
+
+        assert report["expected_duration_seconds"] == 20
+        assert not any("Duração medida" in warning for warning in report["warnings"])
+        assert report["valid"] is True
+
+    @pytest.mark.asyncio
     async def test_requested_voiceover_without_audio_stream_is_invalid(self, tmp_path, monkeypatch):
         from types import SimpleNamespace
         from modules.ai_video_studio.api.routes import video as video_routes
