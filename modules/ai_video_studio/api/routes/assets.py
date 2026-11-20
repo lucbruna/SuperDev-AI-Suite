@@ -65,12 +65,21 @@ def sync_video_job_assets(record: dict) -> None:
         return
 
     candidates: list[tuple[str, str, str, int | None]] = []
+
+    def _scene_index(item: dict) -> int:
+        try:
+            return int(item.get("scene_index", 0))
+        except (TypeError, ValueError):
+            return 0
+
     for item in record.get("scene_assets") or []:
         if isinstance(item, dict):
-            candidates.append((f"image-{item.get('scene_index', 0)}", str(item.get("name") or f"Imagem da cena {int(item.get('scene_index', 0)) + 1}"), str(item.get("image_path") or ""), int(item.get("scene_index", 0))))
+            index = _scene_index(item)
+            candidates.append((f"image-{index}", str(item.get("name") or f"Imagem da cena {index + 1}"), str(item.get("image_path") or ""), index))
     for item in record.get("scene_clips") or []:
         if isinstance(item, dict):
-            candidates.append((f"clip-{item.get('scene_index', 0)}", str(item.get("name") or f"Clipe da cena {int(item.get('scene_index', 0)) + 1}"), str(item.get("output_path") or item.get("generative_video_path") or ""), int(item.get("scene_index", 0))))
+            index = _scene_index(item)
+            candidates.append((f"clip-{index}", str(item.get("name") or f"Clipe da cena {index + 1}"), str(item.get("output_path") or item.get("generative_video_path") or ""), index))
     subtitles = record.get("subtitles")
     if isinstance(subtitles, dict):
         candidates.append(("subtitles", "Legendas", str(subtitles.get("file_path") or ""), None))
