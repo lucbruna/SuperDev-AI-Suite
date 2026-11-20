@@ -1,6 +1,7 @@
 """Scene CRUD endpoints."""
 from __future__ import annotations
 import uuid
+from math import isfinite
 from modules.ai_video_studio.core.local_store import PersistentDict
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
@@ -80,6 +81,13 @@ def sync_video_job_scenes(record: dict) -> None:
         except (TypeError, ValueError):
             return -1
 
+    def _number(value: object, default: float) -> float:
+        try:
+            parsed = float(value)
+        except (TypeError, ValueError):
+            return default
+        return parsed if isfinite(parsed) else default
+
     scenes = record.get("_edited_scenes") or record.get("_source_scenes") or []
     if not isinstance(scenes, list):
         return
@@ -95,10 +103,10 @@ def sync_video_job_scenes(record: dict) -> None:
         except (TypeError, ValueError):
             index = position
         scene_id = f"job:{job_id}:{index}"
-        try:
-            generated_duration = 10.0 if record.get("vidgrid_compatible") else float(source.get("duration") or 5.0)
-        except (TypeError, ValueError):
-            generated_duration = 5.0
+        generated_duration = (
+            10.0 if record.get("vidgrid_compatible")
+            else _number(source.get("duration") or 5.0, 5.0)
+        )
         if generated_duration <= 0:
             generated_duration = 5.0
         asset = next((item for item in assets if isinstance(item, dict) and _index(item) == index), {})
@@ -120,7 +128,7 @@ def sync_video_job_scenes(record: dict) -> None:
             "background_color": source.get("background_color"),
             "transition_in": source.get("transition_in") or "cut",
             "transition_out": source.get("transition_out") or "cut",
-            "transition_duration": float(source.get("transition_duration") or 0.5),
+            "transition_duration": max(0.0, _number(source.get("transition_duration") or 0.5, 0.5)),
             "generation_status": (
                 "completed" if clip.get("output_url") or clip.get("output_path")
                 else "processing" if progress_item.get("status") == "processing"

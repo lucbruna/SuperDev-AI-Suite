@@ -193,3 +193,25 @@ def test_video_job_asset_sync_skips_invalid_scene_indexes(tmp_path, monkeypatch)
     })
 
     assert store == {}
+
+
+def test_generated_scene_sync_uses_safe_timing_defaults(monkeypatch):
+    from modules.ai_video_studio.api.routes import scene
+
+    store = {}
+    monkeypatch.setattr(scene, "_scenes", store)
+    scene.sync_video_job_scenes({
+        "job_id": "job-bad-timing",
+        "project_id": "project-bad-timing",
+        "_source_scenes": [
+            {"duration": "not-a-number", "transition_duration": "invalid"},
+            {"duration": float("nan"), "transition_duration": float("nan")},
+        ],
+    })
+
+    first = store["job:job-bad-timing:0"]
+    second = store["job:job-bad-timing:1"]
+    assert first["duration"] == 5.0
+    assert first["transition_duration"] == 0.5
+    assert second["duration"] == 5.0
+    assert second["transition_duration"] == 0.5
