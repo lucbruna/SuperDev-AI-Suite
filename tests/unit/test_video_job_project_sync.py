@@ -96,3 +96,43 @@ def test_generated_scene_sync_ignores_invalid_asset_indexes(monkeypatch):
         "scene_clips": [{"scene_index": "invalid"}],
     })
     assert store["job:job-1:0"]["name"] == "Scene"
+
+
+def test_video_job_assets_sync_only_real_files_and_refresh_metadata(tmp_path, monkeypatch):
+    from modules.ai_video_studio.api.routes import assets
+
+    store = {}
+    monkeypatch.setattr(assets, "_assets", store)
+    image = tmp_path / "scene.png"
+    image.write_bytes(b"image-bytes")
+    master = tmp_path / "final.mp4"
+    master.write_bytes(b"video-bytes")
+    record = {
+        "job_id": "job-assets",
+        "project_id": "project-assets",
+        "scene_assets": [{"scene_index": 0, "image_path": str(image)}],
+        "scene_clips": [{"scene_index": 0, "output_path": str(tmp_path / "missing.mp4")}],
+        "output_path": str(master),
+    }
+
+    assets.sync_video_job_assets(record)
+    image_record = store["job:job-assets:image-0"]
+    assert image_record["asset_type"] == "image"
+    assert image_record["file_size_bytes"] == len(b"image-bytes")
+    assert image_record["project_id"] == "project-assets"
+    assert "job:job-assets:clip-0" not in store
+    assert store["job:job-assets:master-video"]["asset_type"] == "video"
+
+    image.write_bytes(b"updated-image")
+    assets.sync_video_job_assets(record)
+    assert store["job:job-assets:image-0"]["file_size_bytes"] == len(b"updated-image")
+
+
+def test_video_job_asset_sync_does_not_create_records_without_project_or_job(monkeypatch):
+    from modules.ai_video_studio.api.routes import assets
+
+    store = {}
+    monkeypatch.setattr(assets, "_assets", store)
+    assets.sync_video_job_assets({"project_id": "p", "output_path": "/tmp/video.mp4"})
+    assets.sync_video_job_assets({"job_id": "j", "output_path": "/tmp/video.mp4"})
+    assert store == {}
