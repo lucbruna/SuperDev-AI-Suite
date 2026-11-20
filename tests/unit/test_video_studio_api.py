@@ -3083,7 +3083,7 @@ def test_scene_checkpoint_rejects_narration_fingerprint_outside_voice_root(tmp_p
 
 
 @pytest.mark.asyncio
-async def test_recovery_plan_marks_non_ten_second_vidgrid_clip_stale(self, tmp_path, monkeypatch):
+async def test_recovery_plan_marks_non_ten_second_vidgrid_clip_stale(tmp_path, monkeypatch):
     from modules.ai_video_studio.api.routes import video
     from modules.ai_video_studio.media import output_paths
 
