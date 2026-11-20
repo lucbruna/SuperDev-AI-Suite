@@ -17,6 +17,8 @@ def _seconds_to_frames(value: Any, fps: int, *, field: str) -> int:
         seconds = float(value)
     except (TypeError, ValueError) as exc:
         raise ValueError(f"{field} must be a number of seconds") from exc
+    if not math.isfinite(seconds):
+        raise ValueError(f"{field} must be finite")
     if seconds < 0:
         raise ValueError(f"{field} cannot be negative")
     return int(round(seconds * fps))
@@ -174,6 +176,14 @@ def build_edit_timeline(
             raise ValueError(f"subtitle cue {index} must have positive duration")
         if not str(cue.get("text") or "").strip():
             raise ValueError(f"subtitle cue {index} requires text")
+        # Captions must never outlive the assembled picture. Match the
+        # audio-track policy: discard cues starting after the video and clamp
+        # a cue that crosses the final frame.
+        if start >= cursor:
+            continue
+        end = min(end, cursor)
+        if end <= start:
+            continue
         captions.append({
             "cue_index": int(cue.get("index", index + 1)),
             "start_frame": start,

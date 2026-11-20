@@ -120,3 +120,26 @@ def test_apply_scene_edits_allows_final_fade_to_black() -> None:
         fps=24,
     )
     assert edited[-1]["transition_out"]["type"] == "fade_through_black"
+
+
+
+def test_timeline_clamps_subtitles_to_final_video_duration() -> None:
+    timeline = build_edit_timeline(
+        [{"duration": 2.0}],
+        fps=24,
+        subtitle_cues=[
+            {"index": 1, "start": 1.5, "end": 2.5, "text": "clamp me"},
+            {"index": 2, "start": 2.0, "end": 3.0, "text": "outside"},
+        ],
+    )
+    subtitles = timeline["tracks"][1]["clips"]
+    assert len(subtitles) == 1
+    assert subtitles[0]["start_frame"] == 36
+    assert subtitles[0]["end_frame"] == 48
+    assert subtitles[0]["duration_frames"] == 12
+
+
+@pytest.mark.parametrize("duration", [float("nan"), float("inf"), float("-inf")])
+def test_timeline_rejects_non_finite_scene_durations(duration) -> None:
+    with pytest.raises(ValueError, match="finite"):
+        build_edit_timeline([{"duration": duration}], fps=24)
