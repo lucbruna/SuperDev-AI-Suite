@@ -87,7 +87,14 @@ from truncating the final frames of the rendered video.
         "-shortest",
         str(out),
     ]
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+    except subprocess.TimeoutExpired:
+        logger.warning("Audio muxing timed out after 300 seconds")
+        return {"output_path": str(video), "muxed": False, "reason": "audio muxing timed out"}
+    except OSError as exc:
+        logger.warning("Audio muxing could not start: %s", exc)
+        return {"output_path": str(video), "muxed": False, "reason": "audio mux process could not start"}
     if result.returncode != 0:
         logger.warning("Audio muxing failed: %s", result.stderr[-300:])
         return {"output_path": str(video_path), "muxed": False, "reason": result.stderr[-200:]}

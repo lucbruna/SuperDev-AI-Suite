@@ -26,6 +26,34 @@ def test_mux_rejects_empty_audio_input(tmp_path, monkeypatch):
     assert result["reason"] == "audio input missing or empty"
 
 
+def test_mux_reports_timeout_without_raising(tmp_path, monkeypatch):
+    video_file = tmp_path / "video.mp4"
+    audio_file = tmp_path / "voice.wav"
+    video_file.write_bytes(b"video")
+    audio_file.write_bytes(b"audio")
+    monkeypatch.setattr(shutil, "which", lambda _name: "ffmpeg")
+    def timeout(*args, **kwargs):
+        raise subprocess.TimeoutExpired(args[0], kwargs.get("timeout", 300))
+    monkeypatch.setattr(subprocess, "run", timeout)
+    result = audio.mux_audio_into_video(video_file, audio_file, tmp_path / "out.mp4")
+    assert result["muxed"] is False
+    assert result["reason"] == "audio muxing timed out"
+
+
+def test_mux_reports_process_start_error_without_raising(tmp_path, monkeypatch):
+    video_file = tmp_path / "video.mp4"
+    audio_file = tmp_path / "voice.wav"
+    video_file.write_bytes(b"video")
+    audio_file.write_bytes(b"audio")
+    monkeypatch.setattr(shutil, "which", lambda _name: "ffmpeg")
+    def fail_start(*args, **kwargs):
+        raise OSError("permission denied")
+    monkeypatch.setattr(subprocess, "run", fail_start)
+    result = audio.mux_audio_into_video(video_file, audio_file, tmp_path / "out.mp4")
+    assert result["muxed"] is False
+    assert result["reason"] == "audio mux process could not start"
+
+
 def test_mux_rejects_success_without_output_file(tmp_path, monkeypatch):
     video_file = tmp_path / "video.mp4"
     audio_file = tmp_path / "voice.wav"
