@@ -138,6 +138,11 @@ class TextToVideoEngine:
         scenes = plan["scenes"]
         if not scenes:
             raise ValidationError("Scene planner returned no scenes", field="prompt")
+        if len(scenes) != num_scenes:
+            raise ValidationError(
+                f"Scene planner returned {len(scenes)} scenes; expected {num_scenes}",
+                field="num_scenes",
+            )
 
         def _notify_scene(index: int, status: str, stage: str, **details: Any) -> None:
             if scene_callback is None:

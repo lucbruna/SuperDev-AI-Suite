@@ -470,3 +470,29 @@ def test_vidgrid_scene_narration_mux_failure_fails_generation(monkeypatch, tmp_p
                        "height": 360, "voiceover": True, "vidgrid_compatible": True},
         }))
 
+def test_generate_async_rejects_storyboard_with_wrong_scene_count(monkeypatch) -> None:
+    class Planner:
+        def plan(self, prompt, *, num_scenes, duration, timeout):
+            return {
+                "scenes": [{"duration": 1.0, "description": "Somente uma cena."}],
+                "provider": "deterministic",
+                "ai_generated": False,
+            }
+
+    monkeypatch.setattr(engine_module, "get_scene_planner", lambda: Planner())
+    with pytest.raises(Exception, match=r"returned 1 scenes; expected 2"):
+        asyncio.run(
+            engine_module.TextToVideoEngine().generate_async(
+                {
+                    "prompt": "Vídeo com duas cenas.",
+                    "params": {
+                        "duration": 20.0,
+                        "num_scenes": 2,
+                        "fps": 24,
+                        "width": 64,
+                        "height": 36,
+                        "vidgrid_compatible": True,
+                    },
+                }
+            )
+        )
