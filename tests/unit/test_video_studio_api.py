@@ -1541,6 +1541,19 @@ class TestCompletedOutputValidation:
         assert failure["automatic_resume_supported"] is False
         assert saved[0]["failure_info"] == failure
 
+    def test_interrupted_vidgrid_export_is_not_retryable_without_source_clips(self, monkeypatch, tmp_path):
+        from modules.ai_video_studio.media import job_store, output_paths
+        video_root = tmp_path / "videos"
+        video_root.mkdir()
+        monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda _name: video_root)
+        monkeypatch.setattr(job_store, "save_job", lambda _record: None)
+        jobs = {"vidgrid": {"job_id": "vidgrid", "project_id": "p1", "vidgrid_compatible": True, "edit_render_status": "rendering", "_edited_scenes": [{"_source_scene_index": 0}], "scene_clips": [{"scene_index": 0, "output_path": str(video_root / "missing.mp4")}]}}
+        job_store.mark_interrupted_edit_renders(jobs)
+        recovery = jobs["vidgrid"]["edit_render_recovery"]
+        assert recovery["can_retry_export"] is False
+        assert recovery["scene_records_preserved"] is True
+        assert recovery["scene_assets_preserved"] is False
+
     def test_interrupted_edit_export_is_recoverable_without_rebuilding_scenes(self, monkeypatch):
         from modules.ai_video_studio.media import job_store
 
@@ -1566,7 +1579,8 @@ class TestCompletedOutputValidation:
         assert record["edit_render_status"] == "interrupted"
         assert record["edit_render_recovery"]["kind"] == "server_restart"
         assert record["edit_render_recovery"]["can_retry_export"] is True
-        assert record["edit_render_recovery"]["scene_assets_preserved"] is True
+        assert record["edit_render_recovery"]["scene_assets_preserved"] is False
+        assert record["edit_render_recovery"]["scene_records_preserved"] is True
         assert record["edit_render_recovery"]["automatic_resume_supported"] is False
         assert record["_edited_scenes"] == [{"description": "scene", "image_path": "scene.png"}]
         assert record["scene_clips"][0]["status"] == "completed"

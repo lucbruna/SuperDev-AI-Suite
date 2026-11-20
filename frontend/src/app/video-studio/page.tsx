@@ -980,7 +980,7 @@ export default function VideoStudioPage() {
                     {job.edit_render_status === "interrupted" && (
                       <div className="mt-2 rounded-md border border-amber-300/70 bg-amber-50 p-3 text-xs text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
                         <p className="font-semibold">Exportação interrompida</p>
-                        <p className="mt-1">{job.edit_render_recovery?.message ?? "As cenas salvas foram preservadas. Gere novamente o MP4 final."}</p>
+                        <p className="mt-1">{job.edit_render_recovery?.message ?? "O rascunho das cenas foi preservado. Os arquivos serão verificados antes da exportação."}</p>
                         {job.edit_render_recovery?.can_retry_export && (
                           <Button
                             className="mt-2"

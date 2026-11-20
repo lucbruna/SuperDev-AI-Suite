@@ -393,6 +393,7 @@ export interface StudioJob {
     kind?: string;
     can_retry_export?: boolean;
     scene_assets_preserved?: boolean;
+    scene_records_preserved?: boolean;
     automatic_resume_supported?: boolean;
     message?: string;
   } | null;

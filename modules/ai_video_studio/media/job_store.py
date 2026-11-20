@@ -101,15 +101,42 @@ def mark_interrupted_edit_renders(jobs: dict[str, dict[str, Any]]) -> list[str]:
             continue
         record["edit_render_status"] = "interrupted"
         record["edit_render_interrupted_at"] = datetime.now(timezone.utc).isoformat()
+        scenes = record.get("_edited_scenes")
+        has_scene_records = isinstance(scenes, list) and bool(scenes)
+        can_retry_export = has_scene_records
+        if record.get("vidgrid_compatible") and has_scene_records:
+            # VidGrid needs one existing, non-empty clip for every edited scene.
+            try:
+                from pathlib import Path
+                from modules.ai_video_studio.media.output_paths import get_subsystem_dir
+                video_root = Path(get_subsystem_dir("videos")).resolve()
+                clips = {
+                    int(item.get("scene_index")): item
+                    for item in (record.get("scene_clips") or [])
+                    if isinstance(item, dict) and str(item.get("scene_index", "")).isdigit()
+                }
+                for position, scene in enumerate(scenes):
+                    source_index = scene.get("_source_scene_index", position)
+                    clip = clips.get(int(source_index)) if str(source_index).isdigit() else None
+                    value = clip.get("output_path") if clip else None
+                    path = Path(str(value)).resolve() if value else None
+                    if path is None or video_root not in path.parents or not path.is_file() or path.stat().st_size <= 0:
+                        can_retry_export = False
+                        break
+            except (OSError, TypeError, ValueError):
+                can_retry_export = False
         record["edit_render_recovery"] = {
             "kind": "server_restart",
-            "can_retry_export": bool(record.get("_edited_scenes")),
-            "scene_assets_preserved": True,
+            "can_retry_export": can_retry_export,
+            "scene_records_preserved": has_scene_records,
+            "scene_assets_preserved": False,
             "automatic_resume_supported": False,
             "message": (
-                "A exportação foi interrompida pela reinicialização do servidor. "
-                "O MP4 parcial não será retomado; as cenas e o rascunho foram preservados. "
-                "Solicite uma nova exportação para continuar."
+                "A exportação foi interrompida. O rascunho das cenas foi preservado; "
+                "os arquivos serão verificados durante a exportação. O MP4 parcial não pode ser retomado."
+                if can_retry_export else
+                "A exportação foi interrompida. O rascunho foi preservado, mas os clipes necessários "
+                "não foram encontrados ou não passaram na verificação. Reconstrua-os antes de exportar."
             ),
         }
         try:
