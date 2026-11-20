@@ -382,6 +382,11 @@ def _merge_scene_checkpoint(record: dict[str, Any], event: dict[str, Any]) -> No
             "output_path": str(clip_path),
             "output_url": to_download_url(str(clip_path)),
             "bytes": event.get("clip_bytes"),
+            "duration": event.get("clip_duration", clip.get("duration")),
+            "fps": event.get("clip_fps", clip.get("fps")),
+            "width": event.get("clip_width", clip.get("width")),
+            "height": event.get("clip_height", clip.get("height")),
+            "audio_status": event.get("clip_audio_status", clip.get("audio_status")),
             "status": "ready",
         })
         clips.sort(key=lambda item: int(item.get("scene_index", 0)))
@@ -517,9 +522,11 @@ def _scene_clip_recovery_plan(record: dict) -> dict:
                 elif narration_value:
                     warnings.append("scene_narration_missing_or_unsafe")
                 saved_narration_fingerprint = clip.get("source_narration_fingerprint")
+                if narration_fingerprint and clip.get("audio_status") != "per_scene_narration_muxed":
+                    reasons.append("scene_narration_not_muxed")
                 if saved_narration_fingerprint and narration_fingerprint and saved_narration_fingerprint != narration_fingerprint:
                     reasons.append("source_narration_changed")
-                elif narration_fingerprint and not saved_narration_fingerprint:
+                elif narration_fingerprint and not saved_narration_fingerprint and clip.get("audio_status") == "per_scene_narration_muxed":
                     warnings.append("legacy_clip_without_narration_fingerprint")
         if reasons and image_ready:
             repair.append(scene_index)

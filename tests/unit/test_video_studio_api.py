@@ -1940,6 +1940,40 @@ class TestSceneAssetRenderLock:
         assert plan["scenes"][0]["source_narration_fingerprint"] == video._asset_sha256(narration)
 
     @pytest.mark.asyncio
+    async def test_recovery_plan_repairs_clip_when_scene_narration_was_not_muxed(self, tmp_path, monkeypatch):
+        from modules.ai_video_studio.api.routes import video
+        from modules.ai_video_studio.media import output_paths
+
+        roots = {name: tmp_path / name for name in ("images", "videos", "voice")}
+        for root in roots.values():
+            root.mkdir()
+        image = roots["images"] / "scene.png"
+        image.write_bytes(b"approved-image")
+        clip = roots["videos"] / "scene.mp4"
+        clip.write_bytes(b"silent-visual-intermediate")
+        narration = roots["voice"] / "scene.wav"
+        narration.write_bytes(b"valid-narration")
+        monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda name: roots[name])
+        video._jobs["recovery-unmuxed-narration"] = {
+            "job_id": "recovery-unmuxed-narration", "status": "failed",
+            "vidgrid_compatible": True, "resolution": "1280x720", "frame_rate": 30,
+            "params": {},
+            "_edited_scenes": [{"_source_scene_index": 0, "background_image_path": str(image)}],
+            "voiceover": {"narration_style": "per_scene",
+                          "clips": [{"index": 0, "audio_path": str(narration)}]},
+            "scene_clips": [{
+                "scene_index": 0, "status": "ready", "output_path": str(clip),
+                "width": 1280, "height": 720, "fps": 30,
+                "source_image_fingerprint": video._asset_sha256(image),
+            }],
+        }
+
+        plan = await video.get_video_job_recovery_plan("recovery-unmuxed-narration")
+
+        assert plan["repair_scene_indices"] == [0]
+        assert "scene_narration_not_muxed" in plan["scenes"][0]["reasons"]
+
+    @pytest.mark.asyncio
     async def test_recovery_plan_detects_missing_clip_and_changed_image(self, tmp_path, monkeypatch):
         from modules.ai_video_studio.api.routes import video
         from modules.ai_video_studio.media import output_paths

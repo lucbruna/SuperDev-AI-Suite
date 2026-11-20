@@ -512,6 +512,20 @@ class TextToVideoEngine:
                     for scene_clip in scene_clips:
                         scene_clip["audio_status"] = "silent_or_tts_unavailable"
 
+            # Persist the final clip path and narration result after muxing. The
+            # earlier clip_ready checkpoint is only the silent visual intermediate.
+            for scene_clip in scene_clips:
+                _notify_scene(
+                    scene_clip["scene_index"], "completed", "clip_ready",
+                    clip_path=scene_clip["output_path"],
+                    clip_bytes=scene_clip.get("bytes"),
+                    clip_duration=10.0,
+                    clip_fps=fps,
+                    clip_width=width,
+                    clip_height=height,
+                    clip_audio_status=scene_clip.get("audio_status"),
+                )
+
         # Optional timed SRT sidecar. Keep subtitles as a separate deliverable
         # so callers can review/edit them before any burn-in/export decision.
         if params.get("generate_subtitles") or params.get("subtitles"):
