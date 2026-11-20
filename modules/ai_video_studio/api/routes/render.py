@@ -53,39 +53,16 @@ _renders: dict[str, dict] = {}
 
 
 def _seed_renders() -> dict[str, dict]:
-    """Demo render jobs mirroring the frontend render center (in-memory)."""
-    now = datetime.now(UTC).isoformat()
-    rows: list[dict] = [
-        {
-            "id": "r1", "project_id": "p1", "status": "rendering", "priority": 1,
-            "progress": 0.64, "current_step": "Encoding",
-            "output_format": "mp4", "output_resolution": "3840x2160",
-            "video_codec": "libx264", "audio_codec": "aac", "crf": 23, "preset": "medium",
-            "use_gpu": True, "output_path": None, "output_url": None,
-            "error_message": None, "created_at": now, "started_at": now, "completed_at": None,
-        },
-        {
-            "id": "r2", "project_id": "p2", "status": "completed", "priority": 1,
-            "progress": 1.0, "current_step": "Done",
-            "output_format": "mp4", "output_resolution": "1920x1080",
-            "video_codec": "libx264", "audio_codec": "aac", "crf": 23, "preset": "medium",
-            "use_gpu": True, "output_path": "storage/video_studio/renders/r2.mp4",
-            "output_url": "/api/v1/video-studio/downloads/videos/brand_story.mp4",
-            "error_message": None, "created_at": now, "started_at": now, "completed_at": now,
-        },
-        {
-            "id": "r3", "project_id": "p3", "status": "queued", "priority": 2,
-            "progress": 0.0, "current_step": "Queued",
-            "output_format": "mp4", "output_resolution": "1920x1080",
-            "video_codec": "libx264", "audio_codec": "aac", "crf": 23, "preset": "medium",
-            "use_gpu": False, "output_path": None, "output_url": None,
-            "error_message": None, "created_at": now, "started_at": None, "completed_at": None,
-        },
-    ]
-    return {r["id"]: r for r in rows}
+    """Return an empty local workspace; demo fixtures are not production records."""
+    return {}
 
 
-_renders = PersistentDict("renders", _seed_renders())
+_renders = PersistentDict("renders")
+# Remove only the fixed IDs used by the old bundled demo fixtures. Real user
+# records use generated UUIDs and are left untouched.
+for _demo_id in ["r1","r2","r3"]:
+    if _demo_id in _renders:
+        del _renders[_demo_id]
 
 
 @router.post("/", response_model=RenderResponse, status_code=201)

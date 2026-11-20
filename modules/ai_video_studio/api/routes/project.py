@@ -64,55 +64,16 @@ _projects: dict[str, dict] = {}
 
 
 def _seed_projects() -> dict[str, dict]:
-    """Demo workspace projects mirroring the frontend dashboard (in-memory)."""
-    rows: list[dict] = [
-        {
-            "id": "p1", "name": "Product Launch 2026",
-            "description": "Cinematic launch film for the Q1 reveal.",
-            "status": "active", "resolution": "3840x2160", "aspect_ratio": "16:9",
-            "frame_rate": 30, "duration_seconds": 42.0,
-            "video_codec": "libx264", "audio_codec": "aac", "container": "mp4",
-            "ai_prompt": "launch film with kinetic typography",
-            "ai_style": "cinematic", "ai_language": "en",
-            "tags": {"brand": "launch"}, "thumbnail_url": None, "output_url": None,
-            "scene_count": 4,
-        },
-        {
-            "id": "p2", "name": "Brand Story — Agriculture",
-            "description": "Field-to-table brand narrative.",
-            "status": "published", "resolution": "1920x1080", "aspect_ratio": "16:9",
-            "frame_rate": 60, "duration_seconds": 96.0,
-            "video_codec": "libx264", "audio_codec": "aac", "container": "mp4",
-            "ai_prompt": None, "ai_style": "documentary", "ai_language": "pt",
-            "tags": None, "thumbnail_url": None,
-            "output_url": "/api/v1/video-studio/downloads/videos/brand_story.mp4",
-            "scene_count": 6,
-        },
-        {
-            "id": "p3", "name": "Finance Explainer Series",
-            "description": "Quarterly results explainer.",
-            "status": "rendering", "resolution": "1920x1080", "aspect_ratio": "16:9",
-            "frame_rate": 30, "duration_seconds": 120.0,
-            "video_codec": "libx264", "audio_codec": "aac", "container": "mp4",
-            "ai_prompt": None, "ai_style": "corporate", "ai_language": "en",
-            "tags": None, "thumbnail_url": None, "output_url": None,
-            "scene_count": 5,
-        },
-        {
-            "id": "p4", "name": "Ecommerce Ads Q3",
-            "description": "High-converting product ad set.",
-            "status": "draft", "resolution": "1080x1920", "aspect_ratio": "9:16",
-            "frame_rate": 30, "duration_seconds": 15.0,
-            "video_codec": "libx264", "audio_codec": "aac", "container": "mp4",
-            "ai_prompt": None, "ai_style": "advertising", "ai_language": "en",
-            "tags": None, "thumbnail_url": None, "output_url": None,
-            "scene_count": 1,
-        },
-    ]
-    return {r["id"]: r for r in rows}
+    """Return an empty local workspace; demo fixtures are not production records."""
+    return {}
 
 
-_projects = PersistentDict("projects", _seed_projects())
+_projects = PersistentDict("projects")
+# Remove only the fixed IDs used by the old bundled demo fixtures. Real user
+# records use generated UUIDs and are left untouched.
+for _demo_id in ["p1","p2","p3","p4"]:
+    if _demo_id in _projects:
+        del _projects[_demo_id]
 
 
 @router.post("/", response_model=ProjectResponse, status_code=201)

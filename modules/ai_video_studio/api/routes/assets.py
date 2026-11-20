@@ -39,41 +39,16 @@ _assets: dict[str, dict] = {}
 
 
 def _seed_assets() -> dict[str, dict]:
-    """Demo assets mirroring the frontend library (in-memory store)."""
-    rows: list[dict] = [
-        {
-            "id": "a1", "project_id": "p1", "name": "hero_broll.mp4",
-            "asset_type": "video", "mime_type": "video/mp4",
-            "file_path": "storage/video_studio/projects/p1/assets/hero_broll.mp4",
-            "file_size_bytes": 4_200_000_000, "duration": 12.4, "width": 3840, "height": 2160,
-            "codec": "h264", "fps": 30.0, "thumbnail_url": None,
-        },
-        {
-            "id": "a2", "project_id": "p1", "name": "logo_white.svg",
-            "asset_type": "image", "mime_type": "image/svg+xml",
-            "file_path": "storage/video_studio/projects/p1/assets/logo_white.svg",
-            "file_size_bytes": 18_000, "duration": None, "width": None, "height": None,
-            "codec": None, "fps": None, "thumbnail_url": None,
-        },
-        {
-            "id": "a3", "project_id": "p2", "name": "voiceover_final.wav",
-            "asset_type": "audio", "mime_type": "audio/wav",
-            "file_path": "storage/video_studio/projects/p2/assets/voiceover_final.wav",
-            "file_size_bytes": 24_000_000, "duration": 96.0, "width": None, "height": None,
-            "codec": "pcm", "fps": None, "thumbnail_url": None,
-        },
-        {
-            "id": "a4", "project_id": "p4", "name": "captions_pt.srt",
-            "asset_type": "subtitle", "mime_type": "application/x-subrip",
-            "file_path": "storage/video_studio/projects/p4/assets/captions_pt.srt",
-            "file_size_bytes": 8_400, "duration": None, "width": None, "height": None,
-            "codec": None, "fps": None, "thumbnail_url": None,
-        },
-    ]
-    return {r["id"]: r for r in rows}
+    """Return an empty local workspace; demo fixtures are not production records."""
+    return {}
 
 
-_assets = PersistentDict("assets", _seed_assets())
+_assets = PersistentDict("assets")
+# Remove only the fixed IDs used by the old bundled demo fixtures. Real user
+# records use generated UUIDs and are left untouched.
+for _demo_id in ["a1","a2","a3","a4"]:
+    if _demo_id in _assets:
+        del _assets[_demo_id]
 
 ASSET_TYPE_MAP = {
     "video/mp4": "video", "video/quicktime": "video", "video/webm": "video",
