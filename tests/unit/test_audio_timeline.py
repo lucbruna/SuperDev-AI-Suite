@@ -480,3 +480,31 @@ def test_measure_encoded_audio_parses_decoded_stream_loudness(monkeypatch, tmp_p
     assert report["verified"] is True
     assert report["measured"]["integrated_lufs"] == -14.2
     assert report["measured"]["true_peak_dbTP"] == -1.3
+
+
+def test_mix_audio_timeline_ducks_music_for_asset_backed_narration(tmp_path, monkeypatch):
+    downloads = _audio_roots(tmp_path, monkeypatch)
+    sample_rate = 8000
+    voice_path = downloads / "voice" / "spoken.wav"
+    music_path = downloads / "music" / "bed.wav"
+    voice_path.parent.mkdir(parents=True, exist_ok=True)
+    music_path.parent.mkdir(parents=True, exist_ok=True)
+    dsp.write_audio(voice_path, np.full(sample_rate, 0.2, dtype=np.float32), sample_rate=sample_rate)
+    dsp.write_audio(music_path, np.full(sample_rate * 2, 0.2, dtype=np.float32), sample_rate=sample_rate)
+    output = tmp_path / "asset_ducking.wav"
+
+    result = audio_timeline.mix_audio_timeline(
+        [
+            {"asset": str(music_path), "start": 0, "end": 2, "kind": "music"},
+            {"asset": str(voice_path), "start": 0.5, "end": 1.5, "kind": "narration"},
+        ],
+        output, total_duration=2, sample_rate=sample_rate,
+        ducking_db=12, ducking_threshold_db=-40, ducking_attack=0.01, ducking_release=0.05,
+        normalization_enabled=False,
+    )
+    mixed, _ = dsp.read_audio(output, target_sr=sample_rate)
+    before = np.sqrt(np.mean(mixed[int(0.1 * sample_rate):int(0.4 * sample_rate)] ** 2))
+    during = np.sqrt(np.mean(mixed[int(0.9 * sample_rate):int(1.2 * sample_rate)] ** 2))
+    assert result["ducking"]["speech_detected"] is True
+    assert result["clips"][0]["ducking_applied"] is True
+    assert during < before * 0.75

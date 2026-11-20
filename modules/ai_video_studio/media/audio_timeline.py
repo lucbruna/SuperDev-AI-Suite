@@ -518,13 +518,63 @@ def mix_audio_timeline(
     narration_counts = np.zeros(quality_windows, dtype=np.int64)
     music_energy = np.zeros(quality_windows, dtype=np.float64)
     music_counts = np.zeros(quality_windows, dtype=np.int64)
-    speech_envelope = (_narration_activity_envelope(clips, total_samples=total_samples, sample_rate=sample_rate, threshold_db=ducking_threshold_db, attack_seconds=ducking_attack, release_seconds=ducking_release) if ducking_enabled and ducking_db > 0 else np.zeros(total_samples, dtype=np.float32))
+    # Decode asset-backed narration before ducking analysis. The previous
+    # detector only saw in-memory samples, so ordinary TTS files never ducked
+    # the background music during real exports.
+    prepared_narration_samples: dict[int, np.ndarray] = {}
+    speech_detection_clips: list[dict[str, Any]] = []
+    if ducking_enabled and ducking_db > 0:
+        for clip_index, source_clip in enumerate(clips):
+            if not isinstance(source_clip, dict) or source_clip.get("kind") != "narration":
+                continue
+            raw = source_clip.get("samples")
+            if raw is None:
+                narration_asset = validate_audio_asset(
+                    source_clip.get("asset") or source_clip.get("audio_path") or source_clip.get("path")
+                )
+                decoded, decoded_rate = dsp.read_audio(
+                    narration_asset, target_sr=sample_rate, preserve_channels=True
+                )
+                if decoded_rate != sample_rate:
+                    decoded = dsp.resample(decoded, int(round(len(decoded) * sample_rate / decoded_rate)))
+                raw = np.asarray(decoded, dtype=np.float32)
+                prepared_narration_samples[clip_index] = raw
+            samples_for_detection = np.asarray(raw, dtype=np.float32)
+            if samples_for_detection.ndim == 1:
+                samples_for_detection = samples_for_detection[:, None]
+            trim = max(0, int(round(float(source_clip.get("trim_start", 0)) * sample_rate)))
+            samples_for_detection = samples_for_detection[trim:]
+            clip_start = float(source_clip.get("start", source_clip.get("offset", 0)))
+            clip_end = float(source_clip.get(
+                "end", clip_start + len(samples_for_detection) / sample_rate
+            ))
+            visible_seconds = max(0.0, min(clip_end, total_duration) - clip_start)
+            samples_for_detection = samples_for_detection[:int(round(visible_seconds * sample_rate))]
+            gain = float(source_clip.get("volume", source_clip.get("gain", 1)))
+            if gain != 1:
+                samples_for_detection = samples_for_detection * gain
+            speech_detection_clips.append({
+                "kind": "narration",
+                "samples": samples_for_detection,
+                "start": clip_start,
+            })
+    speech_envelope = (
+        _narration_activity_envelope(
+            speech_detection_clips, total_samples=total_samples, sample_rate=sample_rate,
+            threshold_db=ducking_threshold_db, attack_seconds=ducking_attack,
+            release_seconds=ducking_release,
+        )
+        if ducking_enabled and ducking_db > 0
+        else np.zeros(total_samples, dtype=np.float32)
+    )
     duck_floor = float(10 ** (-ducking_db / 20.0))
 
     for index, clip in enumerate(clips):
         if not isinstance(clip, dict):
             raise ValueError(f"audio clip {index} must be an object")
         raw_samples = clip.get("samples")
+        if raw_samples is None and index in prepared_narration_samples:
+            raw_samples = prepared_narration_samples[index]
         asset = None if raw_samples is not None else validate_audio_asset(
             clip.get("asset") or clip.get("audio_path") or clip.get("path")
         )
