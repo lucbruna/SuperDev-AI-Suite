@@ -1909,24 +1909,35 @@ async def preflight_video_generation(req: VideoGenerateRequest):
     ffmpeg = shutil.which("ffmpeg")
     ffprobe = shutil.which("ffprobe")
     image_api = os.getenv("DARKSTUDIO_IMAGE_API_URL", "http://127.0.0.1:7860").strip()
+    image_api_available, image_api_error = await asyncio.to_thread(_probe_image_api, image_api)
     comfy_url = os.getenv("DARKSTUDIO_COMFYUI_URL", "").strip()
     comfy_workflow = os.getenv("DARKSTUDIO_COMFYUI_WORKFLOW", "").strip()
     workflow_exists = bool(comfy_workflow and Path(comfy_workflow).is_file())
+
+    if image_api_available:
+        image_status = "ready"
+        image_message = f"Gerador de imagens acessível em {image_api}."
+    elif req.scene_image_mode == "ai":
+        image_status = "blocked"
+        image_message = image_api_error or "O modo IA exige um gerador de imagens acessível."
+    elif req.scene_image_mode == "auto":
+        image_status = "warning"
+        image_message = (image_api_error or "Gerador de imagens indisponível.") + " O modo automático poderá usar imagens procedurais."
+    else:
+        image_status = "optional"
+        image_message = (image_api_error or "Gerador de imagens indisponível.") + " O modo procedural não depende dele."
 
     checks = [
         {"id": "ffmpeg", "status": "ready" if ffmpeg else "blocked",
          "message": f"FFmpeg encontrado: {ffmpeg}" if ffmpeg else "FFmpeg não encontrado no PATH; a exportação MP4 não pode ser concluída."},
         {"id": "ffprobe", "status": "ready" if ffprobe else "warning",
          "message": "FFprobe disponível para validar duração e metadados." if ffprobe else "FFprobe ausente; a duração final pode ficar sem confirmação automática."},
-        {"id": "image_provider", "status": "configured_unverified" if image_api else "missing",
-         "message": f"Endpoint de imagens configurado ({image_api}); serviço/modelo não testado." if image_api else "Endpoint local de imagens não configurado."},
+        {"id": "image_provider", "status": image_status, "message": image_message},
         {"id": "generative_video", "status": "ready" if comfy_url and workflow_exists else "optional",
          "message": "ComfyUI e workflow configurados; conexão não testada." if comfy_url and workflow_exists else "ComfyUI não está completamente configurado; movimentos de câmera continuam disponíveis."},
     ]
     blockers = [item for item in checks if item["status"] == "blocked"]
     warnings = [item["message"] for item in checks if item["status"] in {"warning", "missing", "optional", "configured_unverified"}]
-    if req.scene_image_mode == "auto":
-        warnings.append("Modo auto pode usar cenas procedurais se a difusão estiver indisponível.")
     if req.voiceover:
         warnings.append("A disponibilidade do mecanismo TTS e da voz será confirmada durante a síntese.")
     total_seconds = req.num_scenes * 10 if req.vidgrid_compatible else req.duration_seconds
@@ -3605,6 +3616,31 @@ async def _probe_video_duration(path: str) -> float | None:
         return await asyncio.to_thread(probe_duration, path) or None
     except Exception:  # noqa: BLE001 — probe failure is non-fatal
         return None
+
+
+def _probe_image_api(base_url: str, timeout: float = 1.5) -> tuple[bool, str | None]:
+    """Check that the configured AUTOMATIC1111-compatible API responds."""
+    import urllib.error
+    import urllib.request
+
+    if not base_url:
+        return False, "Endpoint de imagens não configurado."
+    request = urllib.request.Request(
+        f"{base_url.rstrip('/')}/sdapi/v1/options",
+        headers={"Accept": "application/json"},
+        method="GET",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            if response.status < 200 or response.status >= 300:
+                return False, f"API de imagens respondeu HTTP {response.status}."
+            payload = json.loads(response.read(65536).decode("utf-8"))
+            if not isinstance(payload, dict):
+                return False, "API de imagens respondeu em formato inesperado."
+        return True, None
+    except (urllib.error.URLError, TimeoutError, OSError, json.JSONDecodeError, ValueError) as exc:
+        reason = getattr(exc, "reason", None) or str(exc)
+        return False, f"API de imagens indisponível: {str(reason)[:180]}"
 
 
 def _parse_resolution(resolution: str) -> tuple[int, int]:

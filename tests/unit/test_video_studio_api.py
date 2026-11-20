@@ -1344,6 +1344,10 @@ class TestVideoPreflight:
             "modules.ai_video_studio.api.routes.video.shutil.which",
             lambda name: f"/usr/bin/{name}",
         )
+        monkeypatch.setattr(
+            "modules.ai_video_studio.api.routes.video._probe_image_api",
+            lambda _url: (True, None),
+        )
         resp = await client.post(
             "/api/v1/video-studio/videos/preflight",
             json={
@@ -1372,6 +1376,10 @@ class TestVideoPreflight:
             "modules.ai_video_studio.api.routes.video.shutil.which",
             lambda name: None,
         )
+        monkeypatch.setattr(
+            "modules.ai_video_studio.api.routes.video._probe_image_api",
+            lambda _url: (False, "API offline"),
+        )
         resp = await client.post(
             "/api/v1/video-studio/videos/preflight",
             json={"project_id": "preflight-project", "prompt": "a short film"},
@@ -1381,6 +1389,50 @@ class TestVideoPreflight:
         assert body["status"] == "blocked"
         assert body["can_queue"] is False
         assert any(item["id"] == "ffmpeg" for item in body["blockers"])
+
+    @pytest.mark.asyncio
+    async def test_ai_image_mode_blocks_when_local_provider_is_unavailable(
+        self, client: AsyncClient, monkeypatch
+    ):
+        monkeypatch.setattr(
+            "modules.ai_video_studio.api.routes.video.shutil.which",
+            lambda name: f"/usr/bin/{name}",
+        )
+        monkeypatch.setattr(
+            "modules.ai_video_studio.api.routes.video._probe_image_api",
+            lambda _url: (False, "API offline"),
+        )
+        response = await client.post(
+            "/api/v1/video-studio/videos/preflight",
+            json={"project_id": "ai-provider-offline", "prompt": "A cinematic forest", "scene_image_mode": "ai"},
+        )
+        assert response.status_code == 200, response.text
+        body = response.json()
+        assert body["can_queue"] is False
+        assert any(item["id"] == "image_provider" and item["status"] == "blocked" for item in body["blockers"])
+
+    @pytest.mark.asyncio
+    async def test_auto_image_mode_warns_and_keeps_procedural_fallback(
+        self, client: AsyncClient, monkeypatch
+    ):
+        monkeypatch.setattr(
+            "modules.ai_video_studio.api.routes.video.shutil.which",
+            lambda name: f"/usr/bin/{name}",
+        )
+        monkeypatch.setattr(
+            "modules.ai_video_studio.api.routes.video._probe_image_api",
+            lambda _url: (False, "API offline"),
+        )
+        response = await client.post(
+            "/api/v1/video-studio/videos/preflight",
+            json={"project_id": "auto-provider-offline", "prompt": "A cinematic forest", "scene_image_mode": "auto"},
+        )
+        assert response.status_code == 200, response.text
+        body = response.json()
+        assert body["can_queue"] is True
+        check = next(item for item in body["checks"] if item["id"] == "image_provider")
+        assert check["status"] == "warning"
+        assert "procedurais" in check["message"]
 
 
 # ── Completed MP4 output validation ───────────────────────────────
