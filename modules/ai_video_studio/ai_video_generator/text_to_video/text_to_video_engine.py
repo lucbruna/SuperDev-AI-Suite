@@ -15,6 +15,9 @@ import asyncio
 import concurrent.futures
 import hashlib
 import logging
+import json
+import shutil
+import subprocess
 import time
 from typing import Any, Callable
 
@@ -27,6 +30,57 @@ from modules.ai_video_studio.media.scene_library import OBJECTS, compose_scene_o
 from modules.ai_video_studio.ai_video_generator.generation_statistics import get_generation_statistics
 
 logger = logging.getLogger(__name__)
+
+def _is_reusable_vidgrid_clip(
+    saved: dict[str, Any],
+    *,
+    scene_index: int,
+    video_root: Any,
+    fps: int,
+    width: int,
+    height: int,
+    duration: float = 10.0,
+) -> bool:
+    """Accept a recovery clip only after path, metadata and FFprobe validation."""
+    from pathlib import Path
+
+    try:
+        raw_path = saved.get("output_path")
+        if not raw_path:
+            return False
+        root = Path(video_root).resolve()
+        path = Path(str(raw_path)).resolve()
+        if root not in path.parents or not path.is_file() or path.stat().st_size <= 0:
+            return False
+        if int(saved.get("scene_index", -1)) != scene_index:
+            return False
+        if abs(float(saved.get("duration") or 0) - duration) > 0.05:
+            return False
+        if int(saved.get("fps") or 0) != fps:
+            return False
+        if int(saved.get("width") or 0) != width or int(saved.get("height") or 0) != height:
+            return False
+        ffprobe = shutil.which("ffprobe")
+        if not ffprobe:
+            return False
+        result = subprocess.run(
+            [ffprobe, "-v", "error", "-show_entries",
+             "format=duration:stream=codec_type,width,height",
+             "-of", "json", str(path)],
+            capture_output=True, text=True, timeout=20, check=False,
+        )
+        if result.returncode != 0:
+            return False
+        metadata = json.loads(result.stdout or "{}")
+        streams = [item for item in (metadata.get("streams") or []) if item.get("codec_type") == "video"]
+        measured = float((metadata.get("format") or {}).get("duration") or 0)
+        if not streams or abs(measured - duration) > 0.05:
+            return False
+        stream = streams[0]
+        return int(stream.get("width") or 0) == width and int(stream.get("height") or 0) == height
+    except (OSError, ValueError, TypeError, KeyError, subprocess.TimeoutExpired, json.JSONDecodeError):
+        return False
+
 
 # Single worker used when a sync caller needs to run the async pipeline from
 # inside a thread that already owns an event loop.
@@ -451,15 +505,14 @@ class TextToVideoEngine:
             for scene_index, scene in enumerate(scenes):
                 saved = saved_clips.get(scene_index) or {}
                 saved_path = Path(str(saved.get("output_path") or "")).resolve() if saved.get("output_path") else None
-                saved_is_compatible = (
-                    saved_path is not None
-                    and video_root in saved_path.parents
-                    and saved_path.is_file()
-                    and saved_path.stat().st_size > 0
-                    and float(saved.get("duration") or 0) == 10.0
-                    and int(saved.get("fps") or 0) == fps
-                    and int(saved.get("width") or 0) == width
-                    and int(saved.get("height") or 0) == height
+                saved_is_compatible = _is_reusable_vidgrid_clip(
+                    saved,
+                    scene_index=scene_index,
+                    video_root=video_root,
+                    fps=fps,
+                    width=width,
+                    height=height,
+                    duration=10.0,
                 )
                 if saved_is_compatible:
                     clip_record = {
