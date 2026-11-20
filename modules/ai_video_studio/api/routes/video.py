@@ -2421,6 +2421,27 @@ async def resume_interrupted_generation(job_id: str, background_tasks: Backgroun
                 ],
             }
 
+            def on_narration_clip(clip: dict[str, Any]) -> None:
+                # Persist each synthesized/reused narration clip immediately so
+                # an interrupted recovery can resume without repeating TTS.
+                voiceover = dict(record.get("voiceover") or {})
+                clips = [
+                    dict(item) for item in (voiceover.get("clips") or [])
+                    if isinstance(item, dict)
+                    and int(item.get("index", -1)) != int(clip.get("index", -2))
+                ]
+                clips.append(dict(clip))
+                clips.sort(key=lambda item: int(item.get("index", 0)))
+                voiceover.update(
+                    clips=clips,
+                    narration_style="per_scene",
+                    checkpoint_status="in_progress",
+                )
+                record["voiceover"] = voiceover
+                _persist_job(record)
+
+            engine_params["narration_clip_callback"] = on_narration_clip
+
             def on_scene(event: dict[str, Any]) -> None:
                 index = int(event.get("scene_index", -1))
                 if index < 0:

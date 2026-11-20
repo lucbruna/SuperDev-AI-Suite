@@ -809,6 +809,8 @@ class TextToVideoEngine:
                     scenes,
                     video_path=video_path,
                     params=params,
+                    checkpoint_clips=params.get("checkpoint_narration_clips"),
+                    clip_callback=params.get("narration_clip_callback"),
                 )
                 if result.get("muxed"):
                     narration = " ".join(

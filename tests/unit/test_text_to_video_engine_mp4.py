@@ -672,3 +672,36 @@ def test_reusable_vidgrid_clip_rejects_old_narration_when_voiceover_disabled(mon
         saved, scene_index=0, video_root=tmp_path, fps=24, width=64, height=36,
         voiceover_requested=True,
     )
+
+
+
+def test_add_voiceover_forwards_narration_checkpoints_and_callback(monkeypatch):
+    from modules.ai_video_studio.media import scene_narration
+
+    captured = {}
+    expected_checkpoints = [
+        {"index": 0, "text": "Texto salvo", "audio_path": "/voice/scene-0.wav"}
+    ]
+    callback = lambda clip: None
+
+    async def fake_synthesize(scenes, **kwargs):
+        captured.update(kwargs)
+        return {
+            "muxed": True,
+            "clips": [{"index": 0, "text": "Texto salvo", "audio_path": "/voice/scene-0.wav"}],
+        }
+
+    monkeypatch.setattr(scene_narration, "synthesize_scene_narration_async", fake_synthesize)
+    result = asyncio.run(engine_module.TextToVideoEngine()._add_voiceover(
+        "Prompt", [{"duration": 10, "voiceover_text": "Texto salvo"}],
+        video_path="/videos/source.mp4",
+        params={
+            "voiceover_mode": "per_scene",
+            "checkpoint_narration_clips": expected_checkpoints,
+            "narration_clip_callback": callback,
+        },
+    ))
+
+    assert captured["checkpoint_clips"] == expected_checkpoints
+    assert captured["clip_callback"] is callback
+    assert result["narration_style"] == "per_scene"
