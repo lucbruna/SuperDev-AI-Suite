@@ -40,6 +40,7 @@ def _is_reusable_vidgrid_clip(
     width: int,
     height: int,
     duration: float = 10.0,
+    voiceover_requested: bool = False,
 ) -> bool:
     """Accept a recovery clip only after path, metadata and FFprobe validation."""
     from pathlib import Path
@@ -59,6 +60,14 @@ def _is_reusable_vidgrid_clip(
         if int(saved.get("fps") or 0) != fps:
             return False
         if int(saved.get("width") or 0) != width or int(saved.get("height") or 0) != height:
+            return False
+        # A previously narrated clip cannot be reused as a silent VidGrid
+        # deliverable when narration has since been disabled. Otherwise the
+        # old speech track would silently survive in the exported scene.
+        if (
+            not voiceover_requested
+            and saved.get("audio_status") == "per_scene_narration_muxed"
+        ):
             return False
         ffprobe = shutil.which("ffprobe")
         if not ffprobe:
@@ -513,6 +522,7 @@ class TextToVideoEngine:
                     width=width,
                     height=height,
                     duration=10.0,
+                    voiceover_requested=bool(params.get("voiceover")),
                 )
                 if saved_is_compatible:
                     clip_record = {
