@@ -387,6 +387,46 @@ async def test_regenerate_changed_narration_only_synthesizes_edited_scene(monkey
     assert [clip["start"] for clip in result["clips"]] == [0.0, 2.0]
 
 
+
+@pytest.mark.asyncio
+async def test_regenerate_changed_narration_when_original_tts_failed(monkeypatch):
+    from modules.ai_video_studio.media import scene_narration
+
+    calls = []
+
+    class FakeVoiceEngine:
+        async def synthesize_async(self, text, **kwargs):
+            calls.append(text)
+            return {"output_path": "recovered.wav", "engine": "fake", "duration": 1.0}
+
+    monkeypatch.setattr(
+        "modules.ai_video_studio.ai_voice_studio.get_voice_engine",
+        lambda: FakeVoiceEngine(),
+    )
+    original = [{"index": 0, "text": "old line", "error": "TTS unavailable"}]
+    edited = [{"_source_scene_index": 0, "voiceover_text": "new line", "duration": 2.0}]
+
+    result = await scene_narration.regenerate_changed_scene_narration_async(
+        edited, original, params={"voice_language": "pt-BR"}, fps=24,
+    )
+
+    assert calls == ["new line"]
+    assert result["regenerated_scene_indices"] == [0]
+    assert result["failed_scene_indices"] == []
+    assert result["clips"][0]["audio_path"] == "recovered.wav"
+
+
+def test_narration_change_detection_uses_explicit_source_indices():
+    originals = [
+        {"index": 4, "text": "old line", "error": "TTS unavailable"},
+        {"index": 1, "text": "keep line", "audio_path": "keep.wav"},
+    ]
+    scenes = [
+        {"_source_scene_index": 1, "voiceover_text": "keep line"},
+        {"_source_scene_index": 4, "voiceover_text": "new line"},
+    ]
+    assert scene_narration.narration_text_changes_for_edits(scenes, originals) == [4]
+
 def test_edited_subtitles_follow_successful_scene_audio_and_edited_order():
     scenes = [
         {"_source_scene_index": 2, "voiceover_text": "third", "duration": 2.0},

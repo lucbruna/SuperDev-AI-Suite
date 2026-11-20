@@ -63,23 +63,38 @@ def compute_scene_offsets(
             cursor -= overlap / fps
     return offsets
 
+def _original_clips_by_source(
+    original_clips: list[dict[str, Any]],
+) -> dict[int, dict[str, Any]]:
+    """Index saved narration by source scene, tolerating legacy positional clips."""
+    indexed: dict[int, dict[str, Any]] = {}
+    for position, clip in enumerate(original_clips):
+        if not isinstance(clip, dict):
+            continue
+        source_index = clip.get("index", position)
+        if isinstance(source_index, int) and not isinstance(source_index, bool) and source_index >= 0:
+            indexed[source_index] = clip
+    return indexed
+
+
 def narration_text_changes_for_edits(
     scenes: list[dict[str, Any]], original_clips: list[dict[str, Any]]
 ) -> list[int]:
-    """Return source scene indices whose existing audio no longer matches speech text."""
+    """Return source scenes whose speech changed or whose audio is missing."""
+    originals = _original_clips_by_source(original_clips)
     changed: list[int] = []
     for position, scene in enumerate(scenes):
         source_index = scene.get("_source_scene_index", position)
         if not isinstance(source_index, int) or isinstance(source_index, bool):
             raise ValueError("scene source index must be an integer")
-        if not 0 <= source_index < len(original_clips):
-            continue
-        original = original_clips[source_index]
-        if not isinstance(original, dict) or not original.get("audio_path"):
+        original = originals.get(source_index)
+        if original is None:
             continue
         previous_text = str(original.get("text") or "").strip()
         current_text = scene_narration_text(scene)
-        if not previous_text or previous_text != current_text:
+        # A changed/new speech line must be synthesized even when the original
+        # TTS attempt failed and therefore left no audio_path.
+        if previous_text != current_text and current_text:
             changed.append(source_index)
     return changed
 
@@ -103,14 +118,13 @@ def remap_narration_clips_for_edits(
         scenes, fallback_duration=fallback_duration, fps=fps
     )
     stale_source_indices = set(narration_text_changes_for_edits(scenes, original_clips))
+    originals = _original_clips_by_source(original_clips)
     remapped: list[dict[str, Any]] = []
     for position, (scene, start) in enumerate(zip(scenes, offsets, strict=False)):
         source_index = scene.get("_source_scene_index", position)
         if not isinstance(source_index, int) or isinstance(source_index, bool):
             raise ValueError("scene source index must be an integer")
-        if not 0 <= source_index < len(original_clips):
-            continue
-        original = original_clips[source_index]
+        original = originals.get(source_index)
         if not isinstance(original, dict) or not original.get("audio_path") or source_index in stale_source_indices:
             continue
         duration = max(0.1, float(scene.get("duration") or fallback_duration))
