@@ -389,6 +389,19 @@ def _merge_scene_checkpoint(record: dict[str, Any], event: dict[str, Any]) -> No
             "audio_status": event.get("clip_audio_status", clip.get("audio_status")),
             "status": "ready",
         })
+        # Fingerprint the exact narration source used by a successful mux so
+        # future voice edits can invalidate and rebuild this scene clip.
+        narration_value = event.get("clip_narration_path")
+        if clip.get("audio_status") == "per_scene_narration_muxed" and narration_value:
+            from modules.ai_video_studio.media.output_paths import get_subsystem_dir
+
+            voice_root = Path(get_subsystem_dir("voice")).resolve()
+            narration_path = Path(str(narration_value)).resolve()
+            if voice_root in narration_path.parents and narration_path.is_file():
+                try:
+                    clip["source_narration_fingerprint"] = _asset_sha256(narration_path)
+                except OSError:
+                    clip.pop("source_narration_fingerprint", None)
         clips.sort(key=lambda item: int(item.get("scene_index", 0)))
 
 

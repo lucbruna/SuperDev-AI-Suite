@@ -524,6 +524,12 @@ class TextToVideoEngine:
                     clip_width=width,
                     clip_height=height,
                     clip_audio_status=scene_clip.get("audio_status"),
+                    clip_narration_path=(
+                        (narration_by_index.get(scene_clip["scene_index"]) or {}).get("audio_path")
+                        if scene_clip.get("audio_status") == "per_scene_narration_muxed"
+                        and voice and voice.get("narration_style") == "per_scene"
+                        else None
+                    ),
                 )
 
         # Optional timed SRT sidecar. Keep subtitles as a separate deliverable

@@ -3021,3 +3021,62 @@ def test_restart_marks_scene_clip_queue_interrupted_without_durable_task():
     assert record["_scene_clip_rebuild_scheduled"] is False
     assert record["_scene_clip_rebuild_worker"] is False
     assert "recovery-plan" in record["scene_clip_rebuild_queue"]["recovery_note"]
+
+
+def test_scene_checkpoint_persists_fingerprint_of_muxed_narration(tmp_path, monkeypatch):
+    from modules.ai_video_studio.api.routes import video
+    from modules.ai_video_studio.media import output_paths
+
+    voice_root = tmp_path / "voice"
+    video_root = tmp_path / "videos"
+    voice_root.mkdir()
+    video_root.mkdir()
+    narration = voice_root / "scene.wav"
+    narration.write_bytes(b"the exact narration used for mux")
+    clip = video_root / "scene.mp4"
+    clip.write_bytes(b"muxed scene video")
+    monkeypatch.setattr(
+        output_paths, "get_subsystem_dir",
+        lambda name: voice_root if name == "voice" else video_root,
+    )
+
+    record = {"scene_clips": []}
+    video._merge_scene_checkpoint(record, {
+        "scene_index": 0, "clip_path": str(clip),
+        "clip_narration_path": str(narration),
+        "clip_audio_status": "per_scene_narration_muxed",
+        "clip_duration": 10.0, "clip_bytes": clip.stat().st_size,
+    })
+
+    saved = record["scene_clips"][0]
+    assert saved["audio_status"] == "per_scene_narration_muxed"
+    assert saved["source_narration_fingerprint"] == video._asset_sha256(narration)
+
+
+def test_scene_checkpoint_rejects_narration_fingerprint_outside_voice_root(tmp_path, monkeypatch):
+    from modules.ai_video_studio.api.routes import video
+    from modules.ai_video_studio.media import output_paths
+
+    voice_root = tmp_path / "voice"
+    outside_root = tmp_path / "outside"
+    video_root = tmp_path / "videos"
+    voice_root.mkdir()
+    outside_root.mkdir()
+    video_root.mkdir()
+    narration = outside_root / "scene.wav"
+    narration.write_bytes(b"untrusted path")
+    clip = video_root / "scene.mp4"
+    clip.write_bytes(b"muxed scene video")
+    monkeypatch.setattr(
+        output_paths, "get_subsystem_dir",
+        lambda name: voice_root if name == "voice" else video_root,
+    )
+
+    record = {"scene_clips": []}
+    video._merge_scene_checkpoint(record, {
+        "scene_index": 0, "clip_path": str(clip),
+        "clip_narration_path": str(narration),
+        "clip_audio_status": "per_scene_narration_muxed",
+    })
+
+    assert "source_narration_fingerprint" not in record["scene_clips"][0]
