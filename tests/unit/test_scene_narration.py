@@ -222,9 +222,13 @@ def test_engine_add_voiceover_uses_per_scene(fake_tts, monkeypatch, tmp_path) ->
     engine = TextToVideoEngine()
     captured: dict = {}
 
-    async def _fake_scene_narration(scenes, *, video_path, params):
+    async def _fake_scene_narration(
+        scenes, *, video_path, params, checkpoint_clips=None, clip_callback=None
+    ):
         captured["scenes"] = scenes
         captured["params"] = params
+        captured["checkpoint_clips"] = checkpoint_clips
+        captured["clip_callback"] = clip_callback
         return {
             "muxed": True,
             "clips": [{"start": 0.0, "text": "one"}, {"start": 2.0, "text": "two"}],
@@ -237,9 +241,15 @@ def test_engine_add_voiceover_uses_per_scene(fake_tts, monkeypatch, tmp_path) ->
         "prompt",
         _scenes(),
         video_path=str(tmp_path / "v.mp4"),
-        params={"voiceover_mode": "per_scene"},
+        params={
+            "voiceover_mode": "per_scene",
+            "checkpoint_narration_clips": [{"index": 0, "text": "one"}],
+            "narration_clip_callback": lambda clip: None,
+        },
     ))
     assert result["narration_style"] == "per_scene"
+    assert captured["checkpoint_clips"] == [{"index": 0, "text": "one"}]
+    assert callable(captured["clip_callback"])
     assert len(captured["scenes"]) == 3
     assert captured["params"]["voiceover_mode"] == "per_scene"
     assert result["narration"] == "one two"  # kept as a string, not a list

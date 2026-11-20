@@ -608,13 +608,23 @@ class TextToVideoEngine:
         # Optional AI voice narration.
         if params.get("voiceover"):
             voice_params = dict(params)
-            voice_params["narration_clip_callback"] = lambda clip: _notify_scene(
-                int(clip.get("index", -1)), "completed", "narration_asset_ready",
-                narration_path=clip.get("audio_path"),
-                narration_text=clip.get("text"),
-                narration_engine=clip.get("tts_engine"),
-                narration_duration=clip.get("audio_duration"),
-            )
+            recovery_narration_callback = params.get("narration_clip_callback")
+
+            def on_narration_clip(clip: dict[str, Any]) -> None:
+                _notify_scene(
+                    int(clip.get("index", -1)), "completed", "narration_asset_ready",
+                    narration_path=clip.get("audio_path"),
+                    narration_text=clip.get("text"),
+                    narration_engine=clip.get("tts_engine"),
+                    narration_duration=clip.get("audio_duration"),
+                )
+                # Recovery callers also need an immediate durable checkpoint.
+                # Keep the engine's scene-progress notification and the route's
+                # persistence callback; neither should replace the other.
+                if callable(recovery_narration_callback):
+                    recovery_narration_callback(dict(clip))
+
+            voice_params["narration_clip_callback"] = on_narration_clip
             voice = await self._add_voiceover(
                 prompt,
                 scenes,
