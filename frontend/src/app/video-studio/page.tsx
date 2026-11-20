@@ -981,6 +981,18 @@ export default function VideoStudioPage() {
                       </div>
                     )}
                     {job.error && <p className="mt-1 text-xs text-red-500">{job.error}</p>}
+                    {job.failure_info?.kind === "server_restart" && (
+                      <div className="mt-2 rounded-md border border-amber-300/70 bg-amber-50 p-3 text-xs text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+                        <p className="font-semibold">Projeto recuperável após reinicialização</p>
+                        <p className="mt-1">
+                          {job.failure_info.preserved_image_count ?? 0} imagens · {job.failure_info.preserved_clip_count ?? 0} clipes · {job.failure_info.preserved_narration_count ?? 0} áudios de narração preservados.
+                        </p>
+                        {(job.failure_info.recoverable_scene_indices?.length ?? 0) > 0 && (
+                          <p className="mt-1">Cenas com arquivos recuperáveis: {job.failure_info.recoverable_scene_indices?.map((index) => index + 1).join(", ")}.</p>
+                        )}
+                        <p className="mt-1">{job.failure_info.recovery_hint ?? "Os arquivos existentes foram preservados; a retomada automática do processo interrompido não está disponível."}</p>
+                      </div>
+                    )}
                     {job.edit_render_status === "interrupted" && (
                       <div className="mt-2 rounded-md border border-amber-300/70 bg-amber-50 p-3 text-xs text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
                         <p className="font-semibold">Exportação interrompida</p>

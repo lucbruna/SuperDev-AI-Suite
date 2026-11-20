@@ -269,6 +269,18 @@ export interface StudioJob {
   clip_duration_seconds?: number | null;
   file_size_bytes?: number | null;
   output_validation?: VideoOutputValidation | null;
+  failure_info?: {
+    kind?: string;
+    failed_stage?: string;
+    failed_scene_index?: number | null;
+    completed_scene_indices?: number[];
+    preserved_image_count?: number;
+    preserved_clip_count?: number;
+    preserved_narration_count?: number;
+    recoverable_scene_indices?: number[];
+    automatic_resume_supported?: boolean;
+    recovery_hint?: string;
+  } | null;
   scene_progress?: {
   scene_clip_rebuild_queue?: VidGridClipRebuildResult["queue"] & { recovery_note?: string };
     scene_index: number;
