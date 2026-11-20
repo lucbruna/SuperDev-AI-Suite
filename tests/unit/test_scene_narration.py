@@ -533,7 +533,7 @@ async def test_scene_narration_reuses_valid_checkpoint_audio_without_calling_tts
         async def synthesize_async(self, *args, **kwargs):
             raise AssertionError("saved narration should be reused, not synthesized")
 
-    monkeypatch.setattr(ve, "get_voice_engine", lambda: MustNotSynthesize())
+    monkeypatch.setattr("modules.ai_video_studio.ai_voice_studio.get_voice_engine", lambda: MustNotSynthesize())
     monkeypatch.setattr(scene_narration, "get_subsystem_dir", lambda name: voice_root if name == "voice" else tmp_path)
     monkeypatch.setattr(
         "modules.ai_video_studio.ai_dubbing.export_dubbing.export_audio_track",
@@ -582,7 +582,7 @@ async def test_scene_narration_does_not_reuse_checkpoint_audio_when_text_changed
             dsp.write_audio(str(output), dsp.sine(440.0, 0.5) * 0.5)
             return {"output_path": str(output), "engine": "fresh-engine", "duration": 0.5}
 
-    monkeypatch.setattr(ve, "get_voice_engine", lambda: FakeVoiceEngine())
+    monkeypatch.setattr("modules.ai_video_studio.ai_voice_studio.get_voice_engine", lambda: FakeVoiceEngine())
     monkeypatch.setattr(scene_narration, "get_subsystem_dir", lambda name: voice_root if name == "voice" else tmp_path)
     monkeypatch.setattr(
         "modules.ai_video_studio.ai_dubbing.export_dubbing.export_audio_track",
