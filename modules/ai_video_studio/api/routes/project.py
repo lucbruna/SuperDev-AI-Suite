@@ -94,7 +94,7 @@ def _video_job_project_summary(record: dict, existing: dict | None = None) -> di
         "description": current.get("description") or "Projeto local vinculado aos vídeos gerados.",
         "status": ("completed" if record.get("status") == "completed" else "failed" if record.get("status") == "failed" else "active"),
         "resolution": resolution,
-        "aspect_ratio": current.get("aspect_ratio") or aspect_ratio,
+        "aspect_ratio": aspect_ratio,
         "frame_rate": int(record.get("frame_rate") or params.get("frame_rate") or current.get("frame_rate") or 24),
         "duration_seconds": float(record.get("video_duration") or params.get("duration_seconds") or current.get("duration_seconds") or 0),
         "video_codec": current.get("video_codec") or "libx264",
@@ -116,7 +116,7 @@ def sync_video_job_project(record: dict) -> None:
     project_id = str(record.get("project_id") or "").strip()
     if not project_id:
         return
-    _projects[project_id] = _video_job_project_summary(record, _projects.get(project_id))
+    existing = _projects.get(project_id)\n    summary = _video_job_project_summary(record, existing)\n    if summary != existing:\n        _projects[project_id] = summary
 
 
 @router.post("/", response_model=ProjectResponse, status_code=201)
