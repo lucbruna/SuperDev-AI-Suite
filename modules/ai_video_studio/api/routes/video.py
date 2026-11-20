@@ -2463,12 +2463,34 @@ async def resume_interrupted_generation(job_id: str, background_tasks: Backgroun
             )
             _persist_job(record)
         except Exception as exc:  # noqa: BLE001
+            # A failed retry must not hide which checkpoints survived. Re-scan
+            # the approved asset roots after the exception and persist that
+            # factual recovery snapshot alongside the failure reason.
+            try:
+                from modules.ai_video_studio.media.job_store import _inspect_recoverable_scene_assets
+
+                preserved_assets = _inspect_recoverable_scene_assets(record)
+            except Exception:  # noqa: BLE001
+                preserved_assets = {
+                    "preserved_image_count": 0,
+                    "preserved_clip_count": 0,
+                    "preserved_narration_count": 0,
+                    "recoverable_scene_indices": [],
+                    "scene_assets_preserved": False,
+                    "inspection_error": "asset_recovery_inspection_failed",
+                }
             record.update(
                 status="failed", error=str(exc),
                 failure_info={
                     "kind": "generation_recovery_error",
                     "automatic_resume_supported": True,
-                    "recovery_hint": "O storyboard e os assets existentes foram mantidos. Corrija a causa e tente recuperar novamente.",
+                    **preserved_assets,
+                    "recovery_hint": (
+                        "A tentativa falhou, mas os arquivos de checkpoint listados neste relatório "
+                        "foram verificados e preservados. Corrija a causa e tente recuperar novamente."
+                        if preserved_assets.get("scene_assets_preserved")
+                        else "A tentativa falhou. O storyboard foi mantido; verifique os assets e tente recuperar novamente."
+                    ),
                 },
             )
             _persist_job(record)
