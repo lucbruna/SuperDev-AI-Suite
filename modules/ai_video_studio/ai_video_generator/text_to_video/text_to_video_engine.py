@@ -128,14 +128,28 @@ class TextToVideoEngine:
                 field="object_ids",
             )
 
-        # Ollama on CPU needs time for the first model load (~90s); callers
-        # may override with ``llm_timeout``. Falls back to the deterministic
-        # planner automatically on timeout.
-        llm_timeout = float(params.get("llm_timeout", 60.0))
-        plan = get_scene_planner().plan(
-            prompt, num_scenes=num_scenes, duration=duration, timeout=llm_timeout,
-        )
-        scenes = plan["scenes"]
+        # A recovery run may supply the durable, fully-directed storyboard.
+        # It must be complete: never silently plan replacement scenes and mix
+        # them with the original project.
+        checkpoint_scenes = params.get("checkpoint_scenes")
+        resume_from_checkpoint = checkpoint_scenes is not None
+        if resume_from_checkpoint:
+            if not isinstance(checkpoint_scenes, list) or len(checkpoint_scenes) != num_scenes or not all(isinstance(item, dict) and item for item in checkpoint_scenes):
+                raise ValidationError(
+                    "Recovery requires a complete saved storyboard; create a new generation if scenes are missing",
+                    field="checkpoint_scenes",
+                )
+            scenes = [dict(item) for item in checkpoint_scenes]
+            plan = {"provider": "saved_checkpoint", "ai_generated": False}
+        else:
+            # Ollama on CPU needs time for the first model load (~90s); callers
+            # may override with ``llm_timeout``. Falls back to the deterministic
+            # planner automatically on timeout.
+            llm_timeout = float(params.get("llm_timeout", 60.0))
+            plan = get_scene_planner().plan(
+                prompt, num_scenes=num_scenes, duration=duration, timeout=llm_timeout,
+            )
+            scenes = plan["scenes"]
         if not scenes:
             raise ValidationError("Scene planner returned no scenes", field="prompt")
         if len(scenes) != num_scenes:
@@ -173,27 +187,34 @@ class TextToVideoEngine:
         )
 
         scene_fallback_duration = duration / len(scenes)
-        scenes = direct_storyboard(
-            scenes,
-            studio_id=studio_id,
-            fps=fps,
-            fallback_duration=scene_fallback_duration,
-        )
+        if resume_from_checkpoint:
+            storyboard_report = {
+                "resumed_from_checkpoint": True,
+                "scene_count": len(scenes),
+                "note": "Saved scene snapshots reused without re-planning or re-directing.",
+            }
+        else:
+            scenes = direct_storyboard(
+                scenes,
+                studio_id=studio_id,
+                fps=fps,
+                fallback_duration=scene_fallback_duration,
+            )
 
-        # Convert each authored narration beat into a scene-specific visual
-        # brief, with stable IDs and continuity metadata before image creation.
-        from modules.ai_video_studio.media.storyboard_director import build_cinematic_storyboard
+            # Convert each authored narration beat into a scene-specific visual
+            # brief, with stable IDs and continuity metadata before image creation.
+            from modules.ai_video_studio.media.storyboard_director import build_cinematic_storyboard
 
-        scenes, storyboard_report = build_cinematic_storyboard(
-            scenes,
-            studio_id=studio_id,
-            character_ids=character_ids,
-            object_ids=object_ids,
-            style_prompt=str(params.get("style") or "").strip() or None,
-        )
-        for scene in scenes:
-            scene["_darkstudio_characters"] = list(character_ids)
-            scene["_darkstudio_objects"] = list(object_ids)
+            scenes, storyboard_report = build_cinematic_storyboard(
+                scenes,
+                studio_id=studio_id,
+                character_ids=character_ids,
+                object_ids=object_ids,
+                style_prompt=str(params.get("style") or "").strip() or None,
+            )
+            for scene in scenes:
+                scene["_darkstudio_characters"] = list(character_ids)
+                scene["_darkstudio_objects"] = list(object_ids)
 
         # Generate a unique still image for each storyboard scene when the
         # user explicitly selects the local diffusion provider. Auto mode is
@@ -201,7 +222,10 @@ class TextToVideoEngine:
         image_mode = str(params.get("scene_image_mode") or "auto")
         if image_mode not in {"procedural", "ai", "auto"}:
             raise ValidationError("scene_image_mode must be procedural, ai or auto", field="scene_image_mode")
-        scene_assets: list[dict[str, Any]] = []
+        scene_assets: list[dict[str, Any]] = [
+            dict(item) for item in (params.get("checkpoint_scene_assets") or [])
+            if isinstance(item, dict)
+        ] if resume_from_checkpoint else []
         if image_mode in {"ai", "auto"}:
             from modules.ai_video_studio.ai_image_generator.providers.local_diffusion import (
                 fit_image_dimensions, generate_scene_image,
@@ -218,6 +242,21 @@ class TextToVideoEngine:
             # composition for the rest of this job.
             image_provider_unavailable = False
             for scene_index, scene in enumerate(scenes):
+                if resume_from_checkpoint:
+                    from pathlib import Path
+                    image_value = scene.get("background_image_path")
+                    image_root = Path(get_subsystem_dir("images")).resolve()
+                    image_path = Path(str(image_value)).resolve() if image_value else None
+                    if image_path and image_root in image_path.parents and image_path.is_file() and image_path.stat().st_size > 0:
+                        existing_asset = next((item for item in scene_assets if int(item.get("scene_index", -1)) == scene_index), {})
+                        scene_assets = [item for item in scene_assets if int(item.get("scene_index", -1)) != scene_index]
+                        scene_assets.append({
+                            **existing_asset, "scene_index": scene_index,
+                            "image_path": str(image_path), "status": existing_asset.get("status") or "preserved",
+                            "provider": existing_asset.get("provider") or scene.get("image_asset_provider") or "preserved",
+                        })
+                        _notify_scene(scene_index, "completed", "image_reused", image_path=str(image_path), scene_snapshot=dict(scene))
+                        continue
                 if image_mode == "auto" and image_provider_unavailable:
                     reason = "Local image provider already failed for this job; skipped further connection attempts"
                     _notify_scene(
@@ -299,7 +338,7 @@ class TextToVideoEngine:
 
         # Apply the same registered character identities to every scene.
         # Pose/expression variations are deterministic across the storyboard.
-        if character_ids:
+        if character_ids and not resume_from_checkpoint:
             scale = max(0.35, min(width, height) / 720.0)
             for scene_index, scene in enumerate(scenes):
                 for character_index, character_id in enumerate(character_ids):
@@ -343,7 +382,7 @@ class TextToVideoEngine:
 
         # Add selected reusable props to every scene. Spread them across the
         # lower-middle visual field so they remain visible beside characters.
-        if object_ids:
+        if object_ids and not resume_from_checkpoint:
             object_scale = max(0.35, min(width, height) / 720.0)
             for scene_index, scene in enumerate(scenes):
                 for object_index, object_id in enumerate(object_ids):

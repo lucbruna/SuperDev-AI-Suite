@@ -496,3 +496,67 @@ def test_generate_async_rejects_storyboard_with_wrong_scene_count(monkeypatch) -
                 }
             )
         )
+
+
+def test_generate_async_reuses_complete_saved_storyboard_and_images(monkeypatch, tmp_path):
+    from pathlib import Path
+
+    image_root = tmp_path / "images"
+    image_root.mkdir()
+    saved_image = image_root / "saved-scene.png"
+    saved_image.write_bytes(b"saved-image")
+    captured = {}
+
+    class Stats:
+        def record(self, **kwargs):
+            pass
+
+    def unexpected_planner():
+        raise AssertionError("planner must not run during checkpoint recovery")
+
+    def fake_render(scenes, output_path, **kwargs):
+        captured["scenes"] = scenes
+        return {"output_path": str(output_path), "frames": 48, "bytes": 123, "engine": "ffmpeg"}
+
+    monkeypatch.setattr(engine_module, "get_scene_planner", unexpected_planner)
+    monkeypatch.setattr(engine_module, "get_subsystem_dir", lambda name: image_root if name == "images" else tmp_path)
+    monkeypatch.setattr(engine_module, "unique_filename", lambda *_args: tmp_path / "recovered.mp4")
+    monkeypatch.setattr(engine_module, "render_multi_scene_video", fake_render)
+    monkeypatch.setattr(engine_module, "get_generation_statistics", lambda: Stats())
+
+    saved_scenes = [
+        {"duration": 1.0, "description": "Cena salva", "visual_prompt": "Prompt visual preservado",
+         "background_image_path": str(saved_image), "rects": [{"x": 10, "y": 20, "w": 30, "h": 40}]},
+        {"duration": 1.0, "description": "Segunda cena", "visual_prompt": "Segundo prompt preservado"},
+    ]
+    result = asyncio.run(engine_module.TextToVideoEngine().generate_async({
+        "id": "recovery-job",
+        "prompt": "Retomar projeto salvo",
+        "params": {
+            "duration": 2.0, "num_scenes": 2, "fps": 24, "width": 64, "height": 36,
+            "checkpoint_scenes": saved_scenes,
+            "checkpoint_scene_assets": [{"scene_index": 0, "image_path": str(saved_image), "provider": "local", "status": "generated"}],
+        },
+    }))
+
+    assert captured["scenes"][0]["rects"] == saved_scenes[0]["rects"]
+    assert captured["scenes"][0]["background_image_path"] == str(saved_image)
+    assert result["ai_planner"] == "saved_checkpoint"
+    assert result["storyboard_report"]["resumed_from_checkpoint"] is True
+    assert result["scene_assets"][0]["status"] == "generated"
+
+
+def test_generate_async_rejects_incomplete_saved_storyboard(monkeypatch):
+    class Stats:
+        def record(self, **kwargs):
+            pass
+
+    monkeypatch.setattr(engine_module, "get_generation_statistics", lambda: Stats())
+    with pytest.raises(Exception, match="complete saved storyboard"):
+        asyncio.run(engine_module.TextToVideoEngine().generate_async({
+            "prompt": "Retomar projeto salvo",
+            "params": {
+                "duration": 2.0, "num_scenes": 2, "fps": 24, "width": 64, "height": 36,
+                "checkpoint_scenes": [{"duration": 1.0, "description": "Só uma cena"}],
+            },
+        }))
