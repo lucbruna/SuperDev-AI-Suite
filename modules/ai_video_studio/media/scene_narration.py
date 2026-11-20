@@ -63,6 +63,33 @@ def compute_scene_offsets(
             cursor -= overlap / fps
     return offsets
 
+def _scene_speech_end(
+    scenes: list[dict[str, Any]], index: int, start: float, *,
+    fps: int, fallback_duration: float = 3.0,
+) -> float:
+    """End speech/captions at the next scene start when video crossfades.
+
+    Crossfades overlap picture, not dialogue. Keeping a full-duration voice
+    slot would make adjacent narrators talk over each other and subtitles
+    overlap for the entire transition.
+    """
+    duration = max(0.1, float(scenes[index].get("duration") or fallback_duration))
+    frames = max(1, int(round(duration * fps)))
+    from modules.ai_video_studio.media.transitions import transition_spec
+
+    spec = transition_spec(scenes[index])
+    if spec["type"] == "crossfade":
+        if index == len(scenes) - 1:
+            raise ValueError("The final scene cannot have an outgoing crossfade")
+        next_duration = max(0.1, float(scenes[index + 1].get("duration") or fallback_duration))
+        next_frames = max(1, int(round(next_duration * fps)))
+        overlap = min(spec["duration_frames"], frames // 2, next_frames // 2)
+        if overlap < 2:
+            raise ValueError("Scenes are too short for the requested crossfade")
+        frames -= overlap
+    return round(start + frames / fps, 6)
+
+
 def _original_clips_by_source(
     original_clips: list[dict[str, Any]],
 ) -> dict[int, dict[str, Any]]:
@@ -127,13 +154,14 @@ def remap_narration_clips_for_edits(
         original = originals.get(source_index)
         if not isinstance(original, dict) or not original.get("audio_path") or source_index in stale_source_indices:
             continue
-        duration = max(0.1, float(scene.get("duration") or fallback_duration))
-        duration_frames = max(1, int(round(duration * fps)))
+        end = _scene_speech_end(
+            scenes, position, start, fps=fps, fallback_duration=fallback_duration
+        )
         remapped.append({
             "index": source_index,
             "text": str(original.get("text") or ""),
             "start": round(start, 6),
-            "end": round(start + duration_frames / fps, 6),
+            "end": end,
             "audio_path": original["audio_path"],
         })
     return remapped
@@ -165,8 +193,8 @@ def build_edited_subtitle_scenes(
             text = scene_narration_text(scene)
         if not text.strip():
             continue
-        duration = max(1, int(round(float(scene.get("duration") or 3.0) * fps))) / fps
-        output.append({"text": text, "duration": duration, "start_offset": start})
+        end = _scene_speech_end(scenes, position, start, fps=fps)
+        output.append({"text": text, "duration": round(end - start, 6), "start_offset": start})
     return output
 
 async def regenerate_changed_scene_narration_async(
@@ -202,11 +230,10 @@ async def regenerate_changed_scene_narration_async(
             if source_index not in stale:
                 continue
             text = scene_narration_text(scene)
-            duration = max(0.1, float(scene.get("duration") or 3.0))
-            duration = max(1, int(round(duration * fps))) / fps
+            end = _scene_speech_end(scenes, position, start, fps=fps)
             clip: dict[str, Any] = {
                 "index": source_index, "text": text,
-                "start": round(start, 6), "end": round(start + duration, 6),
+                "start": round(start, 6), "end": end,
             }
             if text:
                 try:
@@ -305,11 +332,9 @@ async def synthesize_scene_narration_async(
     synthesized_any = False
     for index, (scene, start) in enumerate(zip(scenes, offsets, strict=False)):
         text = scene_narration_text(scene)
-        scene_duration = max(0.1, float(scene.get("duration") or 3.0))
-        # Use the same nearest-frame quantization as compute_scene_offsets and
-        # the video renderer; truncation here caused audio slots to drift.
-        scene_duration = max(1, int(round(scene_duration * fps))) / fps
-        end = round(start + scene_duration, 6)
+        # Use the same frame grid as the video renderer, but do not overlap
+        # dialogue across a visual crossfade.
+        end = _scene_speech_end(scenes, index, start, fps=fps)
         clip: dict[str, Any] = {
             "index": scene.get("index", index),
             "text": text,

@@ -333,7 +333,7 @@ def test_remap_narration_clips_for_reordered_and_resized_scenes() -> None:
         "third.wav", "first.wav", "second.wav"
     ]
     assert [(clip["start"], clip["end"]) for clip in clips] == [
-        (0.0, 1.5), (1.5, 3.5), (3.0, 6.0)
+        (0.0, 1.5), (1.5, 3.0), (3.0, 6.0)
     ]
 
 
@@ -496,3 +496,25 @@ def test_edited_subtitles_keep_scene_text_without_per_scene_voiceover():
     )
     assert [item["text"] for item in subtitles] == ["first caption", "second caption"]
     assert [item["start_offset"] for item in subtitles] == [0.0, 1.0]
+
+    
+def test_crossfade_trims_outgoing_narration_and_subtitle_slots():
+    scenes = [
+        {"_source_scene_index": 0, "voiceover_text": "first", "duration": 2.0,
+         "transition_out": {"type": "crossfade", "duration_frames": 12}},
+        {"_source_scene_index": 1, "voiceover_text": "second", "duration": 3.0},
+    ]
+    originals = [
+        {"text": "first", "audio_path": "first.wav"},
+        {"text": "second", "audio_path": "second.wav"},
+    ]
+    clips = scene_narration.remap_narration_clips_for_edits(scenes, originals, fps=24)
+    assert [(clip["start"], clip["end"]) for clip in clips] == [
+        (0.0, 1.5), (1.5, 4.5),
+    ]
+    subtitles = scene_narration.build_edited_subtitle_scenes(
+        scenes, clips, fps=24, per_scene_narration=True,
+    )
+    assert [(cue["start_offset"], cue["duration"]) for cue in subtitles] == [
+        (0.0, 1.5), (1.5, 3.0),
+    ]
