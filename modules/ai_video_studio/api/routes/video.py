@@ -65,7 +65,7 @@ class VideoGenerateRequest(BaseModel):
     # Platform format preset selected in the dashboard (shorts/reels/tiktok/
     # youtube/square) or "custom" when the user tweaked a dimension manually.
     format: str = Field(default="custom", max_length=32)
-    studio_id: str = Field(default="whymentary", pattern="^(whymentary|historical_documentary|felt_clay|custom)$")
+    studio_id: str = Field(default="custom", pattern="^(whymentary|historical_documentary|felt_clay|custom)$")
     character_ids: list[str] = Field(default_factory=list, max_length=20, description="Optional user-defined character references")
     object_ids: list[str] = Field(default_factory=list, max_length=50, description="Optional user-defined recurring object references")
     scene_image_mode: str = Field(default="auto", pattern="^(procedural|ai|auto)$", description="Procedural scenes or per-scene local diffusion image generation")
@@ -746,7 +746,7 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
 
     scene = scenes[position]
     params = record.get("params") or {}
-    studio_id = str(params.get("studio_id") or "whymentary")
+    studio_id = str(params.get("studio_id") or "custom")
     style_prompts = {
         "whymentary": "2D educational explainer, clean white background, bold marker-like outlines, flat bright colors",
         "historical_documentary": "cinematic illustrated historical documentary, period-accurate environment, layered depth and atmospheric lighting",
@@ -1616,7 +1616,7 @@ async def rebuild_stale_video_job_scene_clips(job_id: str, req: SceneClipRebuild
                 rendered = await asyncio.to_thread(
                     render_single_scene_clip, scene, clip_path, duration=10.0, fps=fps,
                     width=width, height=height, require_mp4=True,
-                    studio_id=params.get("studio_id") or "whymentary",
+                    studio_id=params.get("studio_id") or "custom",
                 )
                 final_path = rendered["output_path"]
                 audio_status = "silent_or_tts_unavailable"
@@ -2255,7 +2255,7 @@ async def analyze_video_job_visuals(job_id: str):
     if not scenes:
         raise HTTPException(status_code=409, detail="O trabalho ainda não possui cenas para análise visual")
     params = record.get("params") or {}
-    studio_id = str(params.get("studio_id") or record.get("studio_id") or "whymentary")
+    studio_id = str(params.get("studio_id") or record.get("studio_id") or "custom")
     fps = int(params.get("frame_rate") or record.get("frame_rate") or 24)
     from modules.ai_video_studio.media.visual_intelligence import analyze_visual_quality
     try:
@@ -2603,7 +2603,7 @@ async def render_video_job_edits(job_id: str):
                 result = await asyncio.to_thread(
                     render_mixed_scene_video, scenes, output_path, generated_clips=generated_scene_clips,
                     fps=fps, width=width, height=height, require_mp4=True,
-                    studio_id=params.get("studio_id") or "whymentary",
+                    studio_id=params.get("studio_id") or "custom",
                 )
             if not vidgrid_stream_copy_used:
                 record["edit_render_transition_policy"] = {
@@ -2617,7 +2617,7 @@ async def render_video_job_edits(job_id: str):
             result = await asyncio.to_thread(
                 render_multi_scene_video, scenes, output_path,
                 fps=fps, width=width, height=height, require_mp4=True,
-                studio_id=params.get("studio_id") or "whymentary",
+                studio_id=params.get("studio_id") or "custom",
             )
         rendered_path = result["output_path"]
         audio_status = "silent"
@@ -3373,7 +3373,7 @@ async def preview_video_job_edits(job_id: str):
         renderer = render_mixed_scene_video if generated_scene_clips else render_multi_scene_video
         kwargs = {
             "fps": fps, "width": width, "height": height, "require_mp4": True,
-            "studio_id": params.get("studio_id") or "whymentary",
+            "studio_id": params.get("studio_id") or "custom",
         }
         if generated_scene_clips:
             kwargs["generated_clips"] = generated_scene_clips
@@ -3444,7 +3444,7 @@ async def get_video_job_visual_direction(job_id: str):
         })
     return {
         "job_id": job_id,
-        "studio_id": str((record.get("params") or {}).get("studio_id") or "whymentary"),
+        "studio_id": str((record.get("params") or {}).get("studio_id") or "custom"),
         "scenes": output,
         "scene_count": len(output),
         "storyboard_report": record.get("storyboard_report") or {},

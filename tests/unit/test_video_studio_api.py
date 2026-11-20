@@ -46,7 +46,7 @@ class _FakeEngine:
         self.received: dict | None = None  # the job dict (input)
         self.result: dict | None = None  # the engine result (output)
 
-    async def generate_async(self, job: dict, progress_callback=None) -> dict:
+    async def generate_async(self, job: dict, progress_callback=None, scene_callback=None) -> dict:
         self.received = job
         if progress_callback is not None:
             progress_callback(12, 24)
@@ -192,6 +192,7 @@ class TestFailedVidGridRecovery:
         )
         assert request.vidgrid_compatible is True
         assert request.scene_image_mode == "procedural"
+        assert request.studio_id == "custom"
 
 
 class TestSceneCheckpointPersistence:
@@ -499,7 +500,7 @@ class TestJobStatus:
         """
         events: list[tuple[int, int]] = []
 
-        async def _fake(self, job: dict, progress_callback=None) -> dict:
+        async def _fake(self, job: dict, progress_callback=None, scene_callback=None) -> dict:
             from modules.ai_video_studio.media.output_paths import get_subsystem_dir
 
             out = get_subsystem_dir("videos") / "fake_voiced_0001.mp4"
@@ -612,7 +613,7 @@ class TestJobStatus:
         self, client: AsyncClient, monkeypatch
     ):
         """Completed jobs keep the final frame counters alongside progress=1.0."""
-        async def _fake(self, job: dict, progress_callback=None) -> dict:
+        async def _fake(self, job: dict, progress_callback=None, scene_callback=None) -> dict:
             from modules.ai_video_studio.media.output_paths import get_subsystem_dir
 
             out = get_subsystem_dir("videos") / "fake_voiced_0001.mp4"
@@ -744,7 +745,7 @@ class TestJobStatus:
         """Partial voiceover dicts (single-track / failed TTS) must serialize
         through the typed model without errors and with sensible defaults."""
 
-        async def _fake(self, job: dict, progress_callback=None) -> dict:
+        async def _fake(self, job: dict, progress_callback=None, scene_callback=None) -> dict:
             from modules.ai_video_studio.media.output_paths import get_subsystem_dir
 
             out = get_subsystem_dir("videos") / "fake_voiced_0001.mp4"
@@ -797,7 +798,7 @@ class TestJobStatus:
     ):
         """A bare {"muxed": False, "reason": ...} must serialize (TTS down)."""
 
-        async def _fake(self, job: dict, progress_callback=None) -> dict:
+        async def _fake(self, job: dict, progress_callback=None, scene_callback=None) -> dict:
             from modules.ai_video_studio.media.output_paths import get_subsystem_dir
 
             out = get_subsystem_dir("videos") / "fake_voiced_0001.mp4"
@@ -978,6 +979,17 @@ class TestDarkstudioProfileSelection:
 
     @pytest.mark.asyncio
     @pytest.mark.asyncio
+    async def test_omitted_studio_uses_universal_custom_profile(
+        self, client: AsyncClient, fake_engine: _FakeEngine
+    ):
+        response = await client.post(
+            "/api/v1/video-studio/videos/generate",
+            json={"project_id": "p1", "prompt": "A documentary about ocean exploration."},
+        )
+        assert response.status_code == 202
+        assert fake_engine.received is not None
+        assert fake_engine.received["params"]["studio_id"] == "custom"
+
     async def test_custom_prompt_studio_is_accepted_and_forwarded(
         self, client: AsyncClient, fake_engine: _FakeEngine
     ):
