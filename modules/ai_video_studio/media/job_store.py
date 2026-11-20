@@ -92,14 +92,17 @@ def mark_interrupted_edit_renders(jobs: dict[str, dict[str, Any]]) -> list[str]:
     """Mark an edit export interrupted when the API restarts mid-render.
 
     The final FFmpeg process is not checkpointed, so it cannot be resumed at
-    the exact frame. Source scene clips and the saved edit remain available;
-    the user can safely request a fresh export without rebuilding those assets.
+    the exact frame. Clear the process-local render lock so a fresh export can
+    be requested; source assets are validated separately before retry.
     """
     recovered: list[str] = []
     for job_id, record in jobs.items():
         if record.get("edit_render_status") != "rendering":
             continue
         record["edit_render_status"] = "interrupted"
+        # This flag belongs to the previous API process. If it remains True in
+        # the persisted job, the render endpoint rejects every retry with 409.
+        record["_rendering_edits"] = False
         record["edit_render_interrupted_at"] = datetime.now(timezone.utc).isoformat()
         scenes = record.get("_edited_scenes")
         has_scene_records = isinstance(scenes, list) and bool(scenes)

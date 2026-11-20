@@ -1563,6 +1563,7 @@ class TestCompletedOutputValidation:
             "edit-restart": {
                 "job_id": "edit-restart", "project_id": "p1", "status": "completed",
                 "edit_render_status": "rendering",
+                "_rendering_edits": True,
                 "_edited_scenes": [{"description": "scene", "image_path": "scene.png"}],
                 "scene_clips": [{"scene_index": 0, "status": "completed", "clip_path": "clip.mp4"}],
             },
@@ -1577,6 +1578,8 @@ class TestCompletedOutputValidation:
         assert recovered == ["edit-restart"]
         record = jobs["edit-restart"]
         assert record["edit_render_status"] == "interrupted"
+        assert record["_rendering_edits"] is False
+        assert saved[0]["_rendering_edits"] is False
         assert record["edit_render_recovery"]["kind"] == "server_restart"
         assert record["edit_render_recovery"]["can_retry_export"] is True
         assert record["edit_render_recovery"]["scene_assets_preserved"] is False
