@@ -1526,7 +1526,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
             <button type="button" onClick={executeDependencyRebuild} disabled={executingDependencyRebuild || dirty || saving || rendering} className="rounded-md bg-amber-600 px-3 py-2 font-semibold text-white disabled:opacity-40">
               {executingDependencyRebuild ? "Reconstruindo e exportando…" : "Confirmar e executar reconstrução"}
             </button>
-          </div>
+          </div>}
           <p className="mt-1 text-surface-500">{dependencyImpact.limitations.join(" ")}</p>
         </div>}
       </div>}
