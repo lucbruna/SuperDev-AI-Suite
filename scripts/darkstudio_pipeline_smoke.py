@@ -18,6 +18,12 @@ import numpy as np
 from pathlib import Path
 from typing import Any
 
+# A script launched from scripts/ gets that directory as sys.path[0].
+# Add the repository root so project packages resolve in direct CI execution.
+REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+if str(REPOSITORY_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPOSITORY_ROOT))
+
 from modules.ai_video_studio.ai_video_generator.text_to_video import text_to_video_engine as engine_module
 from modules.ai_video_studio import ai_voice_studio
 
