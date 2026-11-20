@@ -1064,6 +1064,11 @@ export default function VideoStudioPage() {
                             <p className="mt-2 text-surface-500">
                               {recoveryPlans[job.job_id].ready_count} prontas · {recoveryPlans[job.job_id].repairable_count} reparáveis · {recoveryPlans[job.job_id].blocked_count} bloqueadas
                             </p>
+                            {recoveryPlans[job.job_id].full_mp4_render_required && (
+                              <p className="mt-1 text-amber-600 dark:text-amber-400">
+                                Depois de reconstruir os clipes, ainda será necessário exportar novamente o MP4 completo. As duas operações são separadas.
+                              </p>
+                            )}
                             <div className="mt-2 flex flex-wrap gap-1.5">
                               {recoveryPlans[job.job_id].scenes.map((scene) => (
                                 <span key={scene.scene_index} title={scene.reasons.join(", ") || "Clipes válidos"} className={`rounded px-2 py-1 ${scene.status === "ready" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" : "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300"}`}>
