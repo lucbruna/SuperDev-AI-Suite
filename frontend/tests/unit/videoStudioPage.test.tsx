@@ -117,12 +117,21 @@ describe("VideoStudioPage", () => {
     expect(screen.getByRole("button", { name: /Felt & Clay/ })).toHaveAttribute("aria-pressed", "false");
   });
 
+  it("requires an actual prompt before running preflight or queueing a job", async () => {
+    render(<VideoStudioPage />);
+    fireEvent.click(await screen.findByRole("button", { name: /Gerar vídeo/ }));
+    expect(await screen.findByText("Descreva a ideia do vídeo antes de iniciar a geração.")).toBeInTheDocument();
+    expect(mockedApi.preflightVideo).not.toHaveBeenCalled();
+    expect(mockedApi.generateVideo).not.toHaveBeenCalled();
+  });
+
   it("defaults to automatic prompt-driven images for every scene", async () => {
     mockedApi.generateVideo.mockResolvedValue({
       job_id: "job_auto_images", project_id: "u1", status: "queued", progress: 0,
     });
     render(<VideoStudioPage />);
     await screen.findByText("Gerar vídeo com narração");
+    fireEvent.change(screen.getByPlaceholderText(/Descreva a ideia/), { target: { value: "Um documentário cinematográfico sobre uma cidade sustentável." } });
     const imageMode = screen.getByLabelText("Motor visual");
     expect(imageMode).toHaveValue("auto");
     fireEvent.click(screen.getByRole("button", { name: /Gerar vídeo/ }));
@@ -271,6 +280,7 @@ describe("DARKSTUDIO scene object picker", () => {
 
     const objectCheckbox = await screen.findByRole("checkbox", { name: /Copo de água/ });
     fireEvent.click(objectCheckbox);
+    fireEvent.change(screen.getByPlaceholderText(/Descreva a ideia/), { target: { value: "Uma cena explicativa sobre hidratação." } });
     fireEvent.change(screen.getByLabelText("Motor visual"), { target: { value: "ai" } });
     expect(screen.getByRole("checkbox", { name: /Modo compatível com VidGrid/ })).toBeChecked();
     fireEvent.click(screen.getByRole("button", { name: /Gerar vídeo/ }));
@@ -293,6 +303,7 @@ describe("DARKSTUDIO long-form VidGrid generation", () => {
     render(<VideoStudioPage />);
     const scenesInput = screen.getByLabelText("Cenas");
     fireEvent.change(scenesInput, { target: { value: "42" } });
+    fireEvent.change(screen.getByPlaceholderText(/Descreva a ideia/), { target: { value: "Um documentário de sete minutos sobre exploração espacial." } });
     expect(screen.getByText(/Com 42 cenas, o vídeo terá 420 segundos/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Gerar vídeo/ }));
     await waitFor(() => expect(mockedApi.generateVideo).toHaveBeenCalledWith(expect.objectContaining({

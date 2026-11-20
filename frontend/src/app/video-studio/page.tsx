@@ -80,7 +80,7 @@ export default function VideoStudioPage() {
   const [objectLoadError, setObjectLoadError] = useState<string | null>(null);
 
   // Generation form state
-  const [prompt, setPrompt] = useState("A cinematic drone shot over a misty mountain range at sunrise, with a voiceover narration");
+  const [prompt, setPrompt] = useState("");
   const [voiceover, setVoiceover] = useState(true);
   const [generateSubtitles, setGenerateSubtitles] = useState(false);
   const [voiceId, setVoiceId] = useState("default");
@@ -270,8 +270,12 @@ export default function VideoStudioPage() {
   };
 
   const handleGenerate = async () => {
-    setGenerating(true);
     setGenerationError(null);
+    if (!prompt.trim()) {
+      setGenerationError("Descreva a ideia do vídeo antes de iniciar a geração.");
+      return;
+    }
+    setGenerating(true);
     setPreflightReport(null);
     try {
       const params = {
@@ -486,7 +490,7 @@ export default function VideoStudioPage() {
             onChange={(e) => setPrompt(e.target.value)}
             rows={3}
             className="w-full rounded-lg border border-surface-300 bg-white px-3 py-2 text-sm text-surface-900 outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100"
-            placeholder="Descreva a cena do vídeo…"
+            placeholder="Descreva a ideia, o assunto, o estilo e o que deve acontecer no vídeo…"
           />
 
           {/* ── Platform format presets ──────────────────────────── */}
