@@ -2294,6 +2294,7 @@ async def generate_video(req: VideoGenerateRequest, background_tasks: Background
                 _source_scenes=result.get("scenes"),
                 _edited_scenes=result.get("scenes"),
             )
+            await _persist_output_validation(job_id)
             _persist_job(record)
         except Exception as e:  # noqa: BLE001 — surface any failure on the job
             progress_items = list(record.get("scene_progress") or [])
@@ -2482,6 +2483,7 @@ async def resume_interrupted_generation(job_id: str, background_tasks: Backgroun
                 _source_scenes=result.get("scenes"), _edited_scenes=result.get("scenes"),
                 failure_info=None, error=None,
             )
+            await _persist_output_validation(job_id)
             _persist_job(record)
         except Exception as exc:  # noqa: BLE001
             # A failed retry must not hide which checkpoints survived. Re-scan
@@ -3197,8 +3199,10 @@ async def render_video_job_edits(job_id: str):
                 if stale_narration_scene_indices else None
             ),
         )
+        output_validation = await _persist_output_validation(job_id)
         _persist_job(record)
         return {
+            "output_validation": output_validation,
             "job_id": job_id,
             "status": "completed",
             "output_url": edited_url,
@@ -3918,6 +3922,32 @@ async def validate_video_job_output(job_id: str):
                     report["fps"] = video.get("avg_frame_rate") or video.get("r_frame_rate")
                     report["video_codec"] = video.get("codec_name")
                     report["pixel_format"] = video.get("pix_fmt")
+                    params = record.get("params") if isinstance(record.get("params"), dict) else {}
+                    expected_resolution = params.get("resolution") or record.get("resolution")
+                    if expected_resolution:
+                        try:
+                            expected_width, expected_height = _parse_resolution(str(expected_resolution))
+                            actual_width = int(video.get("width") or 0)
+                            actual_height = int(video.get("height") or 0)
+                            if (actual_width, actual_height) != (expected_width, expected_height):
+                                report["errors"].append(
+                                    f"Resolução final {actual_width}x{actual_height} difere da solicitada "
+                                    f"{expected_width}x{expected_height}."
+                                )
+                        except (TypeError, ValueError):
+                            report["warnings"].append("Não foi possível comparar a resolução final com os parâmetros do projeto.")
+                    expected_fps = params.get("frame_rate") or record.get("frame_rate") or export_manifest.get("target_fps")
+                    actual_rate = video.get("avg_frame_rate") or video.get("r_frame_rate")
+                    if expected_fps and actual_rate:
+                        try:
+                            numerator, denominator = (float(value) for value in str(actual_rate).split("/", 1))
+                            measured_fps = numerator / denominator
+                            if denominator <= 0 or abs(measured_fps - float(expected_fps)) > max(0.1, float(expected_fps) * 0.01):
+                                report["errors"].append(
+                                    f"FPS final {measured_fps:.3f} difere do solicitado {float(expected_fps):.3f}."
+                                )
+                        except (TypeError, ValueError, ZeroDivisionError):
+                            report["warnings"].append("Não foi possível comparar o FPS final com os parâmetros do projeto.")
                 params = record.get("params") if isinstance(record.get("params"), dict) else {}
                 audio_status = str(record.get("edit_render_audio") or "")
                 edited_mix_requires_audio = audio_status in {
@@ -4006,6 +4036,27 @@ async def validate_video_job_output(job_id: str):
     record["output_validation"] = report
     _persist_job(record)
     return report
+
+
+async def _persist_output_validation(job_id: str) -> dict[str, Any]:
+    """Run the same FFprobe audit after every successful generation or export."""
+    try:
+        report = await validate_video_job_output(job_id)
+    except Exception as exc:  # noqa: BLE001 — rendering result remains available for diagnosis
+        report = {
+            "job_id": job_id,
+            "valid": False,
+            "integrity": "not_verified",
+            "ffprobe_available": bool(shutil.which("ffprobe")),
+            "errors": [f"Validação automática não concluída: {str(exc)[:300]}"],
+            "warnings": [],
+        }
+        record = _jobs.get(job_id)
+        if record is not None:
+            record["output_validation"] = report
+            _persist_job(record)
+    return report
+
 
 @router.get("/jobs/{job_id}", response_model=VideoStatusResponse)
 async def get_video_job_status(job_id: str):

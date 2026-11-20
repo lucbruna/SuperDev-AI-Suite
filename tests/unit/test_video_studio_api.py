@@ -1557,6 +1557,39 @@ class TestCompletedOutputValidation:
         assert video_routes._jobs["validate-job"]["output_validation"]["valid"] is True
 
     @pytest.mark.asyncio
+    async def test_validation_rejects_resolution_and_fps_mismatch(self, tmp_path, monkeypatch):
+        from types import SimpleNamespace
+        from modules.ai_video_studio.api.routes import video as video_routes
+        from modules.ai_video_studio.media import output_paths
+
+        root = tmp_path / "videos"
+        root.mkdir()
+        output = root / "wrong-profile.mp4"
+        output.write_bytes(b"mp4")
+        monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda _name: root)
+        monkeypatch.setattr(video_routes.shutil, "which", lambda name: f"/usr/bin/{name}")
+        monkeypatch.setattr(
+            video_routes.subprocess, "run",
+            lambda *args, **kwargs: SimpleNamespace(
+                returncode=0, stderr="",
+                stdout='{"format":{"duration":"12","format_name":"mov,mp4"},"streams":[{"codec_type":"video","codec_name":"h264","width":640,"height":360,"avg_frame_rate":"30/1"}]}',
+            ),
+        )
+        monkeypatch.setattr(video_routes, "_persist_job", lambda _record: None)
+        video_routes._jobs["wrong-profile-validation"] = {
+            "job_id": "wrong-profile-validation", "status": "completed",
+            "output_path": str(output), "resolution": "1280x720", "frame_rate": 24,
+            "params": {"resolution": "1280x720", "frame_rate": 24},
+        }
+
+        report = await video_routes.validate_video_job_output("wrong-profile-validation")
+
+        assert report["valid"] is False
+        assert any("Resolução final 640x360" in error for error in report["errors"])
+        assert any("FPS final 30.000" in error for error in report["errors"])
+
+
+    @pytest.mark.asyncio
     async def test_edited_vidgrid_validation_uses_final_timeline_duration(self, tmp_path, monkeypatch):
         from types import SimpleNamespace
         from modules.ai_video_studio.api.routes import video as video_routes
