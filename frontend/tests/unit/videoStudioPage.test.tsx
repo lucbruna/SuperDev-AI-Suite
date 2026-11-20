@@ -202,6 +202,7 @@ describe("VideoStudioPage", () => {
       warnings: [], limitations: [],
     });
     render(<VideoStudioPage />);
+    fireEvent.change(await screen.findByPlaceholderText(/Descreva a ideia/), { target: { value: "Um vídeo de teste para verificar o pré-requisito FFmpeg." } });
     fireEvent.click(await screen.findByRole("button", { name: /Gerar vídeo/ }));
     expect(await screen.findByText("FFmpeg não encontrado.")).toBeInTheDocument();
     expect(mockedApi.generateVideo).not.toHaveBeenCalled();
