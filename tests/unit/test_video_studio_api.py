@@ -1826,7 +1826,7 @@ class TestCompletedOutputValidation:
         assert saved[0]["edit_render_status"] == "interrupted"
 
     @pytest.mark.asyncio
-    async def test_rejects_output_path_outside_video_directory"(self, tmp_path, monkeypatch):
+    async def test_rejects_output_path_outside_video_directory(self, tmp_path, monkeypatch):
         from modules.ai_video_studio.api.routes import video as video_routes
         from modules.ai_video_studio.media import output_paths
         from fastapi import HTTPException
