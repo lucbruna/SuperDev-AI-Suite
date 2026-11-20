@@ -69,7 +69,7 @@ export default function VideoStudioPage() {
   const [jobs, setJobs] = useState<StudioJob[]>([]);
   const [activeTimelineJobId, setActiveTimelineJobId] = useState<string | null>(null);
   const [studioProfiles, setStudioProfiles] = useState<StudioProfile[]>([]);
-  const [studioId, setStudioId] = useState<StudioProfile["id"]>("whymentary");
+  const [studioId, setStudioId] = useState<StudioProfile["id"]>("custom");
   const [studioLoadError, setStudioLoadError] = useState<string | null>(null);
   const [characters, setCharacters] = useState<StudioCharacter[]>([]);
   const [selectedCharacterIds, setSelectedCharacterIds] = useState<string[]>([]);
@@ -435,10 +435,10 @@ export default function VideoStudioPage() {
           <section className="mb-5 rounded-xl border border-surface-200 bg-surface-50 p-4 dark:border-surface-700 dark:bg-surface-900/50" aria-labelledby="darkstudio-profile-title">
             <div className="mb-3">
               <h3 id="darkstudio-profile-title" className="text-sm font-semibold text-surface-900 dark:text-surface-100">DARKSTUDIO AI · Escolha seu estúdio</h3>
-              <p className="mt-1 text-xs text-surface-500">O perfil selecionado define a linguagem visual aplicada durante a renderização.</p>
+              <p className="mt-1 text-xs text-surface-500">Personalizado é o padrão: a direção visual acompanha o que você escrever no prompt. Os demais perfis são opcionais.</p>
             </div>
             <div className="grid gap-3 md:grid-cols-2">
-              {[{ id: "whymentary" as const, title: "Whymentary", subtitle: "Explicações 2D · fundo branco · cores chapadas", mark: "✍️" }, { id: "historical_documentary" as const, title: "Documentário Histórico", subtitle: "Ilustração cinematográfica · profundidade · luz dramática", mark: "🏛️" }, { id: "felt_clay" as const, title: "Felt & Clay", subtitle: "Stop motion artesanal · lã e argila · personagens consistentes", mark: "🧸" }].map((profile) => {
+              {[{ id: "custom" as const, title: "Personalizado", subtitle: "Segue o prompt e a direção visual da sua ideia", mark: "✨" }, { id: "whymentary" as const, title: "Whymentary", subtitle: "Explicações 2D · fundo branco · cores chapadas", mark: "✍️" }, { id: "historical_documentary" as const, title: "Documentário Histórico", subtitle: "Ilustração cinematográfica · profundidade · luz dramática", mark: "🏛️" }, { id: "felt_clay" as const, title: "Felt & Clay", subtitle: "Stop motion artesanal · lã e argila · personagens consistentes", mark: "🧸" }].map((profile) => {
                 const active = studioId === profile.id;
                 return (
                   <button key={profile.id} type="button" aria-pressed={active} onClick={() => setStudioId(profile.id)} className={active ? "rounded-lg border border-primary-500 bg-primary-50 p-3 text-left ring-2 ring-primary-500/20 dark:bg-primary-950/30" : "rounded-lg border border-surface-200 bg-white p-3 text-left hover:border-primary-300 dark:border-surface-700 dark:bg-surface-800"}>

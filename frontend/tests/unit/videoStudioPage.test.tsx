@@ -71,7 +71,7 @@ beforeEach(() => {
   mockedApi.listVoices.mockResolvedValue([]);
   mockedApi.listJobs.mockResolvedValue([]);
   mockedApi.preflightVideo.mockResolvedValue({
-    status: "ready_with_warnings", can_queue: true, project_id: "p1", studio_id: "whymentary",
+    status: "ready_with_warnings", can_queue: true, project_id: "p1", studio_id: "custom",
     scene_count: 3, duration_seconds: 30, clip_duration_seconds: 10, total_frames: 720,
     resolution: "1280x720", fps: 24, vidgrid_compatible: true,
     checks: [], blockers: [], warnings: ["ComfyUI não configurado"], limitations: [],
@@ -108,6 +108,15 @@ describe("VideoStudioPage", () => {
     expect(within(jobsSection).queryByText("Quadrado 1:1")).not.toBeInTheDocument();
   });
 
+  it("defaults to the universal custom profile and exposes specialized looks as optional", async () => {
+    render(<VideoStudioPage />);
+    await screen.findByText("Gerar vídeo com narração");
+    expect(screen.getByRole("button", { name: /Personalizado/ })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: /Whymentary/ })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: /Documentário Histórico/ })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: /Felt & Clay/ })).toHaveAttribute("aria-pressed", "false");
+  });
+
   it("defaults to automatic prompt-driven images for every scene", async () => {
     mockedApi.generateVideo.mockResolvedValue({
       job_id: "job_auto_images", project_id: "u1", status: "queued", progress: 0,
@@ -119,6 +128,7 @@ describe("VideoStudioPage", () => {
     fireEvent.click(screen.getByRole("button", { name: /Gerar vídeo/ }));
     await waitFor(() => expect(mockedApi.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
       scene_image_mode: "auto",
+      studio_id: "custom",
     })));
     expect(mockedApi.preflightVideo.mock.invocationCallOrder[0]).toBeLessThan(mockedApi.generateVideo.mock.invocationCallOrder[0]);
   });
@@ -176,7 +186,7 @@ describe("VideoStudioPage", () => {
 
   it("does not queue a render when preflight reports a missing MP4 prerequisite", async () => {
     mockedApi.preflightVideo.mockResolvedValue({
-      status: "blocked", can_queue: false, project_id: "p1", studio_id: "whymentary",
+      status: "blocked", can_queue: false, project_id: "p1", studio_id: "custom",
       scene_count: 3, duration_seconds: 30, clip_duration_seconds: 10, total_frames: 720,
       resolution: "1280x720", fps: 24, vidgrid_compatible: true,
       checks: [], blockers: [{ id: "ffmpeg", status: "blocked", message: "FFmpeg não encontrado." }],
