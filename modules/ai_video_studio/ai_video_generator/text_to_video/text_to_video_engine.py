@@ -359,7 +359,7 @@ class TextToVideoEngine:
         # not leave generated assets without the storyboard that describes them.
         for scene_index, scene in enumerate(scenes):
             _notify_scene(
-                scene_index, "pending", "scene_checkpoint",
+                scene_index, "processing", "scene_render",
                 scene_snapshot=dict(scene),
             )
 

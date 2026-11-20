@@ -344,6 +344,10 @@ def test_generate_async_uses_real_scene_images_and_vidgrid_ten_second_clips(monk
     assert len([event for event in scene_events if event["stage"] == "image_ready"]) == 2
     assert len([event for event in scene_events if event["stage"] == "clip_ready"]) == 2
     assert all(event["status"] == "completed" for event in scene_events if event["stage"] in {"image_ready", "clip_ready"})
+    render_events = [event for event in scene_events if event["stage"] == "scene_render"]
+    assert [event["scene_index"] for event in render_events] == [0, 1]
+    assert all(event["status"] == "processing" for event in render_events)
+    assert all(event.get("scene_snapshot", {}).get("background_image_path") for event in render_events)
 
 
 def test_vidgrid_scene_clips_receive_matching_per_scene_narration(monkeypatch, tmp_path):
