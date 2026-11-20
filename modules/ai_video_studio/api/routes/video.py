@@ -448,6 +448,16 @@ def _ordered_vidgrid_clip_paths(record: dict, scenes: list[dict]) -> list[str]:
         if clip_duration is not None and abs(clip_duration - 10.0) > 0.05:
             invalid.append(scene_index)
             continue
+        # Metadata can be stale or forged: inspect the actual MP4 container
+        # whenever FFprobe is installed, and enforce its measured duration.
+        probe = _probe_media_asset(path, "scene_clip")
+        if probe.get("status") in {"corrupt", "unreadable"}:
+            invalid.append(scene_index)
+            continue
+        measured_duration = probe.get("duration_seconds")
+        if measured_duration is not None and abs(float(measured_duration) - 10.0) > 0.05:
+            invalid.append(scene_index)
+            continue
         paths.append(str(path))
     if invalid:
         raise HTTPException(
@@ -534,6 +544,15 @@ def _scene_clip_recovery_plan(record: dict) -> dict:
                     reasons.append("vidgrid_clip_duration_invalid")
             else:
                 warnings.append("legacy_clip_without_duration_metadata")
+            if clip_path is not None and clip_path.is_file() and video_root in clip_path.parents:
+                probe = _probe_media_asset(clip_path, "scene_clip")
+                if probe.get("status") in {"corrupt", "unreadable"}:
+                    reasons.append("vidgrid_clip_mp4_invalid")
+                measured_duration = probe.get("duration_seconds")
+                if measured_duration is not None and abs(float(measured_duration) - 10.0) > 0.05:
+                    reasons.append("vidgrid_clip_measured_duration_not_10_seconds")
+                elif probe.get("probe_status") == "not_verified":
+                    warnings.append("vidgrid_clip_mp4_not_verified")
             saved_fingerprint = clip.get("source_image_fingerprint")
             if saved_fingerprint and image_fingerprint and saved_fingerprint != image_fingerprint:
                 reasons.append("source_image_changed")

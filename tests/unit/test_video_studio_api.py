@@ -3133,3 +3133,62 @@ def test_vidgrid_export_rejects_clip_with_wrong_duration_metadata(tmp_path, monk
 
     assert error.value.status_code == 409
     assert "scenes [0]" in str(error.value.detail)
+
+
+def test_vidgrid_export_checks_measured_mp4_duration_not_only_metadata(tmp_path, monkeypatch):
+    from fastapi import HTTPException
+    from modules.ai_video_studio.api.routes import video
+    from modules.ai_video_studio.media import output_paths
+
+    video_root = tmp_path / "videos"
+    video_root.mkdir()
+    clip = video_root / "misleading.mp4"
+    clip.write_bytes(b"nonempty")
+    monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda _name: video_root)
+    monkeypatch.setattr(video, "_probe_media_asset", lambda *_args: {
+        "probe_status": "passed", "duration_seconds": 8.0,
+    })
+    record = {"scene_clips": [{
+        "scene_index": 0, "status": "ready", "output_path": str(clip), "duration": 10.0,
+    }]}
+
+    with pytest.raises(HTTPException) as error:
+        video._ordered_vidgrid_clip_paths(record, [{"_source_scene_index": 0}])
+
+    assert error.value.status_code == 409
+    assert "scenes [0]" in str(error.value.detail)
+
+
+def test_recovery_plan_detects_corrupt_vidgrid_mp4_even_when_metadata_says_ten_seconds(tmp_path, monkeypatch):
+    from modules.ai_video_studio.api.routes import video
+    from modules.ai_video_studio.media import output_paths
+
+    roots = {name: tmp_path / name for name in ("images", "videos", "voice")}
+    for root in roots.values():
+        root.mkdir()
+    image = roots["images"] / "scene.png"
+    image.write_bytes(b"approved-image")
+    clip = roots["videos"] / "broken.mp4"
+    clip.write_bytes(b"not-an-mp4")
+    monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda name: roots[name])
+    monkeypatch.setattr(video, "_probe_media_asset", lambda *_args: {
+        "status": "corrupt", "reason": "ffprobe_rejected_media",
+    })
+    record = {
+        "job_id": "corrupt-vidgrid-clip", "status": "completed",
+        "vidgrid_compatible": True, "resolution": "1280x720", "frame_rate": 30,
+        "params": {},
+        "_edited_scenes": [{"_source_scene_index": 0, "background_image_path": str(image)}],
+        "scene_clips": [{
+            "scene_index": 0, "status": "ready", "output_path": str(clip),
+            "duration": 10.0, "width": 1280, "height": 720, "fps": 30,
+            "source_image_fingerprint": video._asset_sha256(image),
+        }],
+    }
+    video._jobs["corrupt-vidgrid-clip"] = record
+
+    import asyncio
+    plan = asyncio.run(video.get_video_job_recovery_plan("corrupt-vidgrid-clip"))
+
+    assert plan["repair_scene_indices"] == [0]
+    assert "vidgrid_clip_mp4_invalid" in plan["scenes"][0]["reasons"]
