@@ -524,6 +524,20 @@ def test_generate_async_reuses_complete_saved_storyboard_and_images(monkeypatch,
     monkeypatch.setattr(engine_module, "render_multi_scene_video", fake_render)
     monkeypatch.setattr(engine_module, "get_generation_statistics", lambda: Stats())
 
+    clip_dir = tmp_path / "vidgrid_clips"
+    clip_dir.mkdir()
+    saved_clip = clip_dir / "scene_01.mp4"
+    saved_clip.write_bytes(b"saved-clip")
+    rendered_scene_indices = []
+
+    def fake_scene_clip(scene, output_path, **kwargs):
+        rendered_scene_indices.append(scene.get("description"))
+        Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+        Path(output_path).write_bytes(b"new-clip")
+        return {"output_path": str(output_path), "bytes": 8, "engine": "ffmpeg"}
+
+    monkeypatch.setattr(engine_module, "render_single_scene_clip", fake_scene_clip)
+
     saved_scenes = [
         {"duration": 1.0, "description": "Cena salva", "visual_prompt": "Prompt visual preservado",
          "background_image_path": str(saved_image), "rects": [{"x": 10, "y": 20, "w": 30, "h": 40}]},
@@ -537,6 +551,12 @@ def test_generate_async_reuses_complete_saved_storyboard_and_images(monkeypatch,
             "checkpoint_scenes": saved_scenes,
             "scene_image_mode": "procedural",
             "checkpoint_scene_assets": [{"scene_index": 0, "image_path": str(saved_image), "provider": "local", "status": "generated"}],
+            "vidgrid_compatible": True,
+            "checkpoint_scene_clips": [{
+                "scene_index": 0, "duration": 10.0, "fps": 24,
+                "width": 64, "height": 36, "output_path": str(saved_clip),
+                "bytes": 111, "encode_engine": "ffmpeg",
+            }],
         },
     }))
 
@@ -545,6 +565,11 @@ def test_generate_async_reuses_complete_saved_storyboard_and_images(monkeypatch,
     assert result["ai_planner"] == "saved_checkpoint"
     assert result["storyboard_report"]["resumed_from_checkpoint"] is True
     assert result["scene_assets"][0]["status"] == "generated"
+    assert len(result["scene_clips"]) == 2
+    assert result["scene_clips"][0]["reused"] is True
+    assert result["scene_clips"][0]["output_path"] == str(saved_clip)
+    assert result["scene_clips"][1]["reused"] is False
+    assert rendered_scene_indices == ["Segunda cena"]
 
 
 def test_generate_async_rejects_incomplete_saved_storyboard(monkeypatch):
