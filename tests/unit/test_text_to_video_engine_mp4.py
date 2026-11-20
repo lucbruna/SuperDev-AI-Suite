@@ -535,6 +535,7 @@ def test_generate_async_reuses_complete_saved_storyboard_and_images(monkeypatch,
         "params": {
             "duration": 2.0, "num_scenes": 2, "fps": 24, "width": 64, "height": 36,
             "checkpoint_scenes": saved_scenes,
+            "scene_image_mode": "procedural",
             "checkpoint_scene_assets": [{"scene_index": 0, "image_path": str(saved_image), "provider": "local", "status": "generated"}],
         },
     }))
