@@ -271,6 +271,7 @@ class VideoStatusResponse(BaseModel):
     edited_subtitles: dict | None = None
     output_validation: dict | None = None
     scene_progress: list[dict[str, Any]] | None = None
+    failure_info: dict[str, Any] | None = None
     scene_clip_rebuild_queue: dict[str, Any] | None = None
     asset_health: dict[str, Any] | None = None
     error: str | None = None

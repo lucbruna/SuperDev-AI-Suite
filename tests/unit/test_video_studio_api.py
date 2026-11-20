@@ -3524,3 +3524,23 @@ async def test_single_track_narration_is_included_when_editing_audio_mix(tmp_pat
     assert narration_inputs[0]["end"] == pytest.approx(2.0)
     assert len(music_inputs) == 1
     assert video_routes._jobs[job_id]["edit_render_audio"] == "mixed_audio"
+
+
+def test_video_status_response_exposes_interruption_recovery_report():
+    from modules.ai_video_studio.api.routes.video import VideoStatusResponse
+
+    report = {
+        "kind": "server_restart",
+        "preserved_image_count": 2,
+        "preserved_clip_count": 1,
+        "preserved_narration_count": 1,
+        "recoverable_scene_indices": [0, 1],
+        "automatic_resume_supported": False,
+    }
+    response = VideoStatusResponse(
+        job_id="job-recovery",
+        status="failed",
+        progress=0.5,
+        failure_info=report,
+    )
+    assert response.model_dump()["failure_info"] == report
