@@ -69,9 +69,6 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -e ".[dev]" 2>/dev/null || pip install fastapi uvicorn 'sqlalchemy[asyncio]' asyncpg psycopg2-binary pydantic pydantic-settings python-jose[cryptography] passlib[bcrypt] python-multipart pytest pytest-asyncio pytest-timeout numpy 'Pillow>=10,<13' httpx redis python-dateutil alembic pgvector
-          # The editable install may succeed without optional database extras;
-          # backend model imports still require pgvector during test collection.
-          pip install pgvector
       - name: Run backend tests
         env:
           DATABASE_URL: postgresql+asyncpg://superdev:superdev@localhost:5432/superdev_test
