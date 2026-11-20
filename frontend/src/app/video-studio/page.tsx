@@ -97,6 +97,8 @@ export default function VideoStudioPage() {
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [preflightReport, setPreflightReport] = useState<VideoPreflight | null>(null);
   const [outputValidation, setOutputValidation] = useState<Record<string, { loading: boolean; report?: VideoOutputValidation; error?: string }>>({});
+  const [retryingEditRender, setRetryingEditRender] = useState<Record<string, boolean>>({});
+  const [editRenderErrors, setEditRenderErrors] = useState<Record<string, string>>({});
 
   const pollTimers = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map());
 
@@ -247,6 +249,23 @@ export default function VideoStudioPage() {
         ...current,
         [jobId]: { loading: false, error: extractErrorMessage(error, "Falha ao validar o MP4") },
       }));
+    }
+  };
+
+  const handleRetryEditedExport = async (jobId: string) => {
+    setRetryingEditRender((current) => ({ ...current, [jobId]: true }));
+    setEditRenderErrors((current) => ({ ...current, [jobId]: "" }));
+    try {
+      await videoStudioApi.renderJobEdits(jobId);
+      await refreshJobs();
+    } catch (error) {
+      setEditRenderErrors((current) => ({
+        ...current,
+        [jobId]: extractErrorMessage(error, "Não foi possível exportar novamente o vídeo editado"),
+      }));
+      await refreshJobs();
+    } finally {
+      setRetryingEditRender((current) => ({ ...current, [jobId]: false }));
     }
   };
 
@@ -958,6 +977,26 @@ export default function VideoStudioPage() {
                       </div>
                     )}
                     {job.error && <p className="mt-1 text-xs text-red-500">{job.error}</p>}
+                    {job.edit_render_status === "interrupted" && (
+                      <div className="mt-2 rounded-md border border-amber-300/70 bg-amber-50 p-3 text-xs text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+                        <p className="font-semibold">Exportação interrompida</p>
+                        <p className="mt-1">{job.edit_render_recovery?.message ?? "As cenas salvas foram preservadas. Gere novamente o MP4 final."}</p>
+                        {job.edit_render_recovery?.can_retry_export && (
+                          <Button
+                            className="mt-2"
+                            variant="secondary"
+                            size="sm"
+                            disabled={!!retryingEditRender[job.job_id]}
+                            onClick={() => handleRetryEditedExport(job.job_id)}
+                          >
+                            {retryingEditRender[job.job_id] ? "Exportando novamente…" : "Tentar exportar novamente"}
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                    {editRenderErrors[job.job_id] && (
+                      <p role="alert" className="mt-1 text-xs text-red-500">{editRenderErrors[job.job_id]}</p>
+                    )}
                     {outputValidation[job.job_id]?.error && (
                       <p role="alert" className="mt-1 text-xs text-red-500">{outputValidation[job.job_id]?.error}</p>
                     )}

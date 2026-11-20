@@ -389,6 +389,13 @@ export interface StudioJob {
     warning_count?: number;
   } | null;
   edit_render_status?: string | null;
+  edit_render_recovery?: {
+    kind?: string;
+    can_retry_export?: boolean;
+    scene_assets_preserved?: boolean;
+    automatic_resume_supported?: boolean;
+    message?: string;
+  } | null;
   edit_render_transition_policy?: { mode?: string; transitions_applied?: { scene_index: number; type: string; duration_frames: number }[]; message?: string } | null;
   edit_preview_url?: string | null;
   edit_preview_duration?: number | null;
