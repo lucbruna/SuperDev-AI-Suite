@@ -2968,10 +2968,8 @@ async def render_video_job_edits(job_id: str):
                 if generated_scene_clips else
                 "MP4 editado renderizado com as faixas configuradas mixadas."
                 if audio_status == "mixed_audio" else
-                "MP4 editado renderizado com música/efeitos; a narração original em faixa única foi omitida."
-                if audio_status == "mixed_audio_single_track_omitted" else
-                "MP4 editado renderizado; a faixa única original não foi reposicionada automaticamente."
-                if audio_status == "single_track_not_retimed" else
+                "MP4 editado renderizado; a narração em faixa única foi preservada na mixagem, sem reposicionamento automático."
+                if audio_status == "single_track_reused_in_mix" else
                 "MP4 editado renderizado sem faixas de áudio configuradas."
                 if audio_status == "silent" else
                 "MP4 visual renderizado, mas a muxagem de áudio falhou; consulte o status do áudio."
