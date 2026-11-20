@@ -2476,7 +2476,7 @@ async def update_video_job_audio(job_id: str, req: AudioTimelineEditRequest):
 
 @router.post("/jobs/{job_id}/render-edits")
 async def render_video_job_edits(job_id: str):
-    """Render the current edited storyboard to a new MP4; audio is not re-timed yet."""
+    """Render the edited storyboard, remap per-scene audio and rebuild subtitles."""
     record = _jobs.get(job_id)
     if record is None:
         raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
@@ -2843,7 +2843,11 @@ async def render_video_job_edits(job_id: str):
         _persist_job(record)
         raise HTTPException(status_code=500, detail="Edited video render failed") from exc
     finally:
+        # Persist the lock release as well as the render result. Without this
+        # final write, the last saved job snapshot can remain stuck at True
+        # after a restart even though the in-memory request has finished.
         record["_rendering_edits"] = False
+        _persist_job(record)
 
 _dependency_worker_task: asyncio.Task | None = None
 _dependency_worker_stop = asyncio.Event()

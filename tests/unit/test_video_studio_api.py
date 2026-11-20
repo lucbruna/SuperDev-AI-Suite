@@ -1684,6 +1684,38 @@ class TestSceneAssetRenderLock:
         assert "stale" in str(error.value.detail).lower()
 
     @pytest.mark.asyncio
+    async def test_failed_final_export_persists_render_lock_release(self, tmp_path, monkeypatch):
+        from fastapi import HTTPException
+        from modules.ai_video_studio.api.routes import video
+        from modules.ai_video_studio.media import output_paths, render
+
+        video_root = tmp_path / "videos"
+        video_root.mkdir()
+        monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda _name: video_root)
+        monkeypatch.setattr(output_paths, "unique_filename", lambda *_args: video_root / "failed.mp4")
+        snapshots = []
+        monkeypatch.setattr(video, "_persist_job", lambda record: snapshots.append(record["_rendering_edits"]))
+
+        def fail_render(*_args, **_kwargs):
+            raise RuntimeError("synthetic encoder failure")
+
+        monkeypatch.setattr(render, "render_multi_scene_video", fail_render)
+        job_id = "failed-export-lock-release"
+        video._jobs[job_id] = {
+            "job_id": job_id, "status": "completed",
+            "params": {"resolution": "320x180", "frame_rate": 24},
+            "_edited_scenes": [{"description": "test scene", "duration": 2}],
+        }
+
+        with pytest.raises(HTTPException) as error:
+            await video.render_video_job_edits(job_id)
+
+        assert error.value.status_code == 500
+        assert video._jobs[job_id]["edit_render_status"] == "failed"
+        assert video._jobs[job_id]["_rendering_edits"] is False
+        assert snapshots[-1] is False
+
+    @pytest.mark.asyncio
     async def test_recovery_plan_detects_changed_per_scene_narration(self, tmp_path, monkeypatch):
         from modules.ai_video_studio.api.routes import video
         from modules.ai_video_studio.media import output_paths
