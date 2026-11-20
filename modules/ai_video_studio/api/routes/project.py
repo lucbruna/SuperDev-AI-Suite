@@ -1,5 +1,6 @@
 """Project CRUD endpoints."""
 from __future__ import annotations
+import math
 import uuid
 from modules.ai_video_studio.core.local_store import PersistentDict
 from fastapi import APIRouter, HTTPException, Query
@@ -79,8 +80,11 @@ def _video_job_project_summary(record: dict, existing: dict | None = None) -> di
     resolution = str(record.get("resolution") or params.get("resolution") or "1280x720")
     try:
         width, height = (int(part) for part in resolution.lower().split("x", 1))
-        aspect_ratio = f"{width // __import__('math').gcd(width, height)}:{height // __import__('math').gcd(width, height)}"
-    except (TypeError, ValueError):
+        if width <= 0 or height <= 0:
+            raise ValueError("resolution dimensions must be positive")
+        divisor = math.gcd(width, height)
+        aspect_ratio = f"{width // divisor}:{height // divisor}"
+    except (TypeError, ValueError, ZeroDivisionError):
         aspect_ratio = "16:9"
 
     current = dict(existing or {})
@@ -88,7 +92,7 @@ def _video_job_project_summary(record: dict, existing: dict | None = None) -> di
         "id": project_id,
         "name": current.get("name") or "Workspace de vídeos",
         "description": current.get("description") or "Projeto local vinculado aos vídeos gerados.",
-        "status": current.get("status") or "active",
+        "status": ("completed" if record.get("status") == "completed" else "failed" if record.get("status") == "failed" else "active"),
         "resolution": resolution,
         "aspect_ratio": current.get("aspect_ratio") or aspect_ratio,
         "frame_rate": int(record.get("frame_rate") or params.get("frame_rate") or current.get("frame_rate") or 24),
