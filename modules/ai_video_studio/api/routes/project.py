@@ -116,8 +116,10 @@ def sync_video_job_project(record: dict) -> None:
     project_id = str(record.get("project_id") or "").strip()
     if not project_id:
         return
-    existing = _projects.get(project_id)\n    summary = _video_job_project_summary(record, existing)\n    if summary != existing:\n        _projects[project_id] = summary
-
+    existing = _projects.get(project_id)
+    summary = _video_job_project_summary(record, existing)
+    if summary != existing:
+        _projects[project_id] = summary
 
 @router.post("/", response_model=ProjectResponse, status_code=201)
 async def create_project(data: ProjectCreate):
