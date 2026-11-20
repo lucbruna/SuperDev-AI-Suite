@@ -3544,3 +3544,91 @@ def test_video_status_response_exposes_interruption_recovery_report():
         failure_info=report,
     )
     assert response.model_dump()["failure_info"] == report
+
+
+@pytest.mark.asyncio
+async def test_failed_generation_recovery_reports_and_preserves_new_scene_checkpoints(tmp_path, monkeypatch):
+    from fastapi import BackgroundTasks
+    from modules.ai_video_studio.api.routes import video
+    from modules.ai_video_studio.ai_video_generator.text_to_video import text_to_video_engine
+    from modules.ai_video_studio.media import output_paths
+
+    roots = {name: tmp_path / name for name in ("images", "videos", "voice")}
+    for root in roots.values():
+        root.mkdir()
+    image = roots["images"] / "scene.png"
+    image.write_bytes(b"recovered-image")
+    clip = roots["videos"] / "scene.mp4"
+    clip.write_bytes(b"recovered-ten-second-clip")
+    narration = roots["voice"] / "scene.wav"
+    narration.write_bytes(b"recovered-narration")
+    monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda name: roots[name])
+
+    job_id = "failed-recovery-checkpoints"
+    record = {
+        "job_id": job_id,
+        "project_id": "local-project",
+        "status": "failed",
+        "params": {
+            "num_scenes": 1,
+            "resolution": "320x180",
+            "frame_rate": 24,
+            "duration_seconds": 10,
+            "prompt": "A test scene",
+            "voiceover": True,
+            "vidgrid_compatible": True,
+        },
+        "_source_scenes": [{"_source_scene_index": 0, "prompt": "A test scene"}],
+        "scene_assets": [],
+        "scene_clips": [],
+        "voiceover": {"narration_style": "per_scene", "clips": []},
+    }
+    video._jobs[job_id] = record
+    persisted = []
+    monkeypatch.setattr(video, "_persist_job", lambda saved: persisted.append(dict(saved)))
+
+    class FailingEngine:
+        async def generate_async(self, _request, scene_callback=None):
+            scene_callback({
+                "scene_index": 0,
+                "stage": "clip_ready",
+                "status": "completed",
+                "image_path": str(image),
+                "narration_path": str(narration),
+                "narration_text": "Recovered narration",
+                "narration_engine": "test",
+                "narration_duration": 2.0,
+                "clip_path": str(clip),
+                "clip_bytes": clip.stat().st_size,
+                "clip_duration": 10.0,
+                "clip_fps": 24,
+                "clip_width": 320,
+                "clip_height": 180,
+                "clip_audio_status": "per_scene_narration_muxed",
+                "clip_narration_path": str(narration),
+            })
+            raise RuntimeError("simulated failure after scene checkpoint")
+
+    monkeypatch.setattr(text_to_video_engine, "TextToVideoEngine", FailingEngine)
+    tasks = BackgroundTasks()
+
+    queued = await video.resume_interrupted_generation(job_id, tasks)
+    assert queued["queued"] is True
+    assert len(tasks.tasks) == 1
+
+    task = tasks.tasks[0]
+    await task.func(*task.args, **task.kwargs)
+
+    assert record["status"] == "failed"
+    assert record["scene_assets"][0]["image_path"] == str(image)
+    assert record["scene_clips"][0]["output_path"] == str(clip.resolve())
+    assert record["scene_clips"][0]["duration"] == 10.0
+    assert record["voiceover"]["clips"][0]["audio_path"] == str(narration.resolve())
+    report = record["failure_info"]
+    assert report["kind"] == "generation_recovery_error"
+    assert report["preserved_image_count"] == 1
+    assert report["preserved_clip_count"] == 1
+    assert report["preserved_narration_count"] == 1
+    assert report["recoverable_scene_indices"] == [0]
+    assert report["scene_assets_preserved"] is True
+    assert persisted[-1]["failure_info"] == report
