@@ -108,6 +108,23 @@ class _TrackedList(list):
             list.clear(self)
             self._changed()
 
+    def sort(self, *args, **kwargs):
+        list.sort(self, *args, **kwargs)
+        self._changed()
+
+    def reverse(self):
+        list.reverse(self)
+        self._changed()
+
+    def __iadd__(self, values):
+        self.extend(values)
+        return self
+
+    def __imul__(self, count):
+        list.__imul__(self, count)
+        self._changed()
+        return self
+
 
 class PersistentDict(dict):
     """A dict-compatible JSON store that persists top-level and nested changes."""
