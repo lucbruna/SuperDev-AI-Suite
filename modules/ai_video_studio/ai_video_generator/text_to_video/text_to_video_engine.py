@@ -255,7 +255,7 @@ class TextToVideoEngine:
                         height=image_height,
                         steps=int(params.get("scene_image_steps", 20)),
                         seed=image_seed,
-                        timeout=float(params.get("scene_image_timeout", 30)),
+                        timeout=float(params.get("scene_image_timeout", 180)),
                     )
                     scene["background_image_path"] = generated["image_path"]
                     scene["image_asset_provider"] = generated["provider"]

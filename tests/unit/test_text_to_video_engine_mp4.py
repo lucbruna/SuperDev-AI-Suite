@@ -329,7 +329,7 @@ def test_generate_async_uses_real_scene_images_and_vidgrid_ten_second_clips(monk
     }, scene_callback=scene_events.append))
 
     assert len(captured["prompts"]) == 2
-    assert captured["image_timeouts"] == [30.0, 30.0]
+    assert captured["image_timeouts"] == [180.0, 180.0]
     assert "cinematic historical illustration" in captured["prompts"][0]
     assert [scene["duration"] for scene in captured["scenes"]] == [10.0, 10.0]
     assert all(scene["background_image_path"].endswith(".png") for scene in captured["scenes"])
