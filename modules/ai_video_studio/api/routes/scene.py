@@ -74,6 +74,12 @@ def sync_video_job_scenes(record: dict) -> None:
     if not project_id or not job_id:
         return
 
+    def _index(item: dict) -> int:
+        try:
+            return int(item.get("scene_index", -1))
+        except (TypeError, ValueError):
+            return -1
+
     scenes = record.get("_edited_scenes") or record.get("_source_scenes") or []
     if not isinstance(scenes, list):
         return
@@ -89,10 +95,15 @@ def sync_video_job_scenes(record: dict) -> None:
         except (TypeError, ValueError):
             index = position
         scene_id = f"job:{job_id}:{index}"
-        duration = 10.0 if record.get("vidgrid_compatible") else float(source.get("duration") or 5.0)
-        asset = next((item for item in assets if int(item.get("scene_index", -1)) == index), {})
-        clip = next((item for item in clips if int(item.get("scene_index", -1)) == index), {})
-        progress_item = next((item for item in progress if int(item.get("scene_index", -1)) == index), {})
+        try:
+            generated_duration = 10.0 if record.get("vidgrid_compatible") else float(source.get("duration") or 5.0)
+        except (TypeError, ValueError):
+            generated_duration = 5.0
+        if generated_duration <= 0:
+            generated_duration = 5.0
+        asset = next((item for item in assets if isinstance(item, dict) and _index(item) == index), {})
+        clip = next((item for item in clips if isinstance(item, dict) and _index(item) == index), {})
+        progress_item = next((item for item in progress if isinstance(item, dict) and _index(item) == index), {})
         existing = _scenes.get(scene_id, {})
         protected = set(existing.get("_user_modified_fields") or [])
         values = {
@@ -102,9 +113,7 @@ def sync_video_job_scenes(record: dict) -> None:
             "description": source.get("description") or source.get("visual_prompt"),
             "order_index": index,
             "scene_type": source.get("scene_type") or "content",
-            "start_time": offset,
-            "duration": duration,
-            "end_time": offset + duration,
+            "duration": generated_duration,
             "script": source.get("script") or source.get("narration") or source.get("voiceover_text"),
             "visual_prompt": source.get("visual_prompt") or source.get("description"),
             "voiceover_text": source.get("voiceover_text") or source.get("narration") or source.get("dialogue"),
@@ -123,14 +132,15 @@ def sync_video_job_scenes(record: dict) -> None:
             "generated_image_url": asset.get("image_url"),
             "_source_job_id": job_id,
             "_source_scene_index": index,
-            "_user_modified_fields": list(protected),
+            "_user_modified_fields": sorted(protected),
         }
         for key, value in values.items():
             if key not in protected or key.startswith("_"):
                 existing[key] = value
+        existing["start_time"] = offset
+        existing["end_time"] = offset + float(existing.get("duration") or generated_duration)
         _scenes[scene_id] = existing
-        offset += duration
-
+        offset = existing["end_time"]
 
 @router.post("/", response_model=SceneResponse, status_code=201)
 async def create_scene(data: SceneCreate):
