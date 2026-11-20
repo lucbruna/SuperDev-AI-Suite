@@ -3053,6 +3053,34 @@ def test_scene_checkpoint_persists_fingerprint_of_muxed_narration(tmp_path, monk
     assert saved["source_narration_fingerprint"] == video._asset_sha256(narration)
 
 
+def test_resolve_scene_narration_asset_requires_nonempty_file_inside_voice_root(tmp_path, monkeypatch):
+    from modules.ai_video_studio.api.routes import video
+    from modules.ai_video_studio.media import output_paths
+
+    voice_root = tmp_path / "voice"
+    outside_root = tmp_path / "outside"
+    voice_root.mkdir()
+    outside_root.mkdir()
+    monkeypatch.setattr(
+        output_paths, "get_subsystem_dir",
+        lambda name: voice_root if name == "voice" else tmp_path / name,
+    )
+
+    valid = voice_root / "scene.wav"
+    valid.write_bytes(b"valid narration")
+    assert video._resolve_scene_narration_asset(valid) == valid.resolve()
+
+    empty = voice_root / "empty.wav"
+    empty.touch()
+    with pytest.raises(ValueError, match="empty"):
+        video._resolve_scene_narration_asset(empty)
+
+    outside = outside_root / "untrusted.wav"
+    outside.write_bytes(b"not an approved asset")
+    with pytest.raises(ValueError, match="outside"):
+        video._resolve_scene_narration_asset(outside)
+
+
 def test_scene_checkpoint_rejects_narration_fingerprint_outside_voice_root(tmp_path, monkeypatch):
     from modules.ai_video_studio.api.routes import video
     from modules.ai_video_studio.media import output_paths
