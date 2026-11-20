@@ -49,13 +49,6 @@ class RenderProgressUpdate(BaseModel):
     current_step: str | None = None
 
 
-_renders: dict[str, dict] = {}
-
-
-def _seed_renders() -> dict[str, dict]:
-    """Return an empty local workspace; demo fixtures are not production records."""
-    return {}
-
 
 _renders = PersistentDict("renders")
 # Remove only the fixed IDs used by the old bundled demo fixtures. Real user

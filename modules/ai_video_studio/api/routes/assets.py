@@ -35,13 +35,6 @@ class AssetInfo(BaseModel):
     duration: float | None = None
 
 
-_assets: dict[str, dict] = {}
-
-
-def _seed_assets() -> dict[str, dict]:
-    """Return an empty local workspace; demo fixtures are not production records."""
-    return {}
-
 
 _assets = PersistentDict("assets")
 # Remove only the fixed IDs used by the old bundled demo fixtures. Real user

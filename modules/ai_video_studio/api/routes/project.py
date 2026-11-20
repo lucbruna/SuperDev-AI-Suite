@@ -60,13 +60,6 @@ class ProjectResponse(BaseModel):
     scene_count: int = 0
 
 
-_projects: dict[str, dict] = {}
-
-
-def _seed_projects() -> dict[str, dict]:
-    """Return an empty local workspace; demo fixtures are not production records."""
-    return {}
-
 
 _projects = PersistentDict("projects")
 # Remove only the fixed IDs used by the old bundled demo fixtures. Real user
