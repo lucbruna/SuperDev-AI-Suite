@@ -1719,6 +1719,53 @@ class TestSceneAssetRenderLock:
         assert snapshots[-1] is False
 
     @pytest.mark.asyncio
+    async def test_audio_mux_failure_does_not_mark_final_export_completed(self, tmp_path, monkeypatch):
+        from fastapi import HTTPException
+        from modules.ai_video_studio.api.routes import video
+        from modules.ai_video_studio.media import output_paths, render, audio, audio_timeline
+
+        video_root = tmp_path / "videos"
+        mix_root = tmp_path / "mix"
+        video_root.mkdir()
+        mix_root.mkdir()
+        rendered = video_root / "rendered.mp4"
+        rendered.write_bytes(b"video-only")
+        mixed_audio = mix_root / "mixed.wav"
+        mixed_audio.write_bytes(b"audio")
+        monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda name: mix_root if name == "mix" else video_root)
+        monkeypatch.setattr(output_paths, "unique_filename", lambda directory, *_args: Path(directory) / "out.mp4")
+        monkeypatch.setattr(render, "render_mixed_scene_video", lambda *_args, **_kwargs: {
+            "output_path": str(rendered), "frames": 48, "bytes": rendered.stat().st_size,
+            "engine": "test", "transition_policy": "frame_accurate", "transitions_applied": [],
+        })
+        monkeypatch.setattr(audio_timeline, "mix_audio_timeline", lambda *_args, **_kwargs: {
+            "output_path": str(mixed_audio), "quality": {"export_allowed": True},
+        })
+        monkeypatch.setattr(audio, "mux_audio_into_video", lambda *_args, **_kwargs: {
+            "muxed": False, "error": "synthetic ffmpeg mux failure",
+        })
+        monkeypatch.setattr(video, "_persist_job", lambda _record: None)
+
+        job_id = "audio-mux-failed-export"
+        video._jobs[job_id] = {
+            "job_id": job_id, "status": "completed",
+            "params": {"resolution": "320x180", "frame_rate": 24},
+            "_edited_scenes": [{
+                "_source_scene_index": 0, "duration": 2,
+                "generative_video_path": str(rendered),
+            }],
+            "_audio_clips": {"music": [{"audio_path": str(mixed_audio), "start": 0, "duration": 2}], "sfx": []},
+        }
+
+        with pytest.raises(HTTPException) as error:
+            await video.render_video_job_edits(job_id)
+
+        assert error.value.status_code == 500
+        assert video._jobs[job_id]["edit_render_status"] == "failed"
+        assert video._jobs[job_id]["edit_render_audio"] == "audio_mux_failed"
+        assert video._jobs[job_id]["_rendering_edits"] is False
+
+    @pytest.mark.asyncio
     async def test_recovery_plan_detects_changed_per_scene_narration(self, tmp_path, monkeypatch):
         from modules.ai_video_studio.api.routes import video
         from modules.ai_video_studio.media import output_paths

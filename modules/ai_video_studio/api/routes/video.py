@@ -2714,7 +2714,16 @@ async def render_video_job_edits(job_id: str):
                         "verified": False, "measurement": "failed", "reason": str(measure_exc)[:300]
                     }
             else:
-                audio_status = "audio_mux_failed"
+                # Never mark an export complete when requested audio was not
+                # embedded in the deliverable MP4. Keep the diagnostic in the
+                # job record; the normal failure path releases the render lock.
+                record["edit_render_audio"] = "audio_mux_failed"
+                record["edit_render_audio_error"] = str(mux_result.get("error") or "FFmpeg did not mux the audio track")[:300]
+                _persist_job(record)
+                raise HTTPException(
+                    status_code=500,
+                    detail="A renderização visual terminou, mas a faixa de áudio não foi incorporada ao MP4. Corrija o áudio e tente exportar novamente.",
+                )
 
         # Rebuild subtitle sidecar against the edited scene order and timing.
         subtitle_status = "not_generated"
