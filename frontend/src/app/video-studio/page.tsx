@@ -530,7 +530,7 @@ export default function VideoStudioPage() {
           </div>
 
           <label className="flex items-start gap-3 rounded-xl border border-primary-200 bg-primary-50/50 p-3 dark:border-primary-900 dark:bg-primary-950/20">
-            <input type="checkbox" checked={vidgridCompatible} onChange={(event) => setVidgridCompatible(event.target.checked)} className="mt-0.5 h-4 w-4 accent-primary-600" />
+            <input type="checkbox" checked={vidgridCompatible} onChange={(event) => { const enabled = event.target.checked; setVidgridCompatible(enabled); if (enabled) setMode("per_scene"); }} className="mt-0.5 h-4 w-4 accent-primary-600" />
             <span>
               <span className="block text-sm font-semibold text-surface-900 dark:text-surface-100">Modo compatível com VidGrid — clipes de 10 segundos</span>
               <span className="mt-1 block text-xs text-surface-500">Cada cena será gerada com exatamente 10 segundos. Com {numScenes} cenas, o vídeo terá {numScenes * 10} segundos no total.</span>
@@ -716,7 +716,7 @@ export default function VideoStudioPage() {
               <span className="text-xs text-surface-500">Modo</span>
               <select value={mode} onChange={(e) => setMode(e.target.value as "per_scene" | "single")} className="mt-1 w-full bg-transparent text-sm text-surface-900 outline-none dark:text-surface-100">
                 <option value="per_scene">Por cena (sync)</option>
-                <option value="single">Faixa única</option>
+                <option value="single" disabled={vidgridCompatible}>Faixa única{vidgridCompatible ? " (indisponível no VidGrid)" : ""}</option>
               </select>
             </label>
 
