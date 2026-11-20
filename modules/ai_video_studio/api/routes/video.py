@@ -1641,7 +1641,8 @@ async def rebuild_stale_video_job_scene_clips(job_id: str, req: SceneClipRebuild
                             narration_fingerprint = current_narration_fingerprint
                             audio_status = "per_scene_narration_muxed"
                         else:
-                            audio_status = "narration_mux_failed"
+                            reason = str(muxed.get("reason") or "audio mux failed")[:200]
+                            raise ValueError("Scene narration could not be embedded: {}".format(reason))
                 clip = {
                     "scene_index": scene_index, "duration": 10.0, "fps": fps,
                     "width": width, "height": height, "output_path": final_path,

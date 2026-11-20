@@ -497,8 +497,14 @@ class TextToVideoEngine:
                             scene_clip["bytes"] = mux_result.get("bytes", scene_clip["bytes"])
                             scene_clip["audio_status"] = "per_scene_narration_muxed"
                         else:
+                            reason = str(mux_result.get("reason") or "audio mux failed")[:200]
                             scene_clip["audio_status"] = "narration_mux_failed"
-                            scene_clip["audio_error"] = str(mux_result.get("reason") or "audio mux failed")[:200]
+                            scene_clip["audio_error"] = reason
+                            raise RuntimeError(
+                                "VidGrid scene {} narration could not be embedded: {}".format(
+                                    scene_clip["scene_index"] + 1, reason
+                                )
+                            )
                 elif voice and voice.get("narration_style") == "single_track":
                     for scene_clip in scene_clips:
                         scene_clip["audio_status"] = "single_track_not_split"

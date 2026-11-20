@@ -422,3 +422,43 @@ def test_vidgrid_scene_clips_receive_matching_per_scene_narration(monkeypatch, t
     ]
     assert all(clip["audio_status"] == "per_scene_narration_muxed" for clip in result["scene_clips"])
     assert all(clip["output_path"].endswith("_voiced.mp4") for clip in result["scene_clips"])
+
+def test_vidgrid_scene_narration_mux_failure_fails_generation(monkeypatch, tmp_path):
+    class Planner:
+        def plan(self, prompt, *, num_scenes, duration, timeout):
+            return {"scenes": [{"duration": 10, "description": "Cena", "voiceover_text": "Fala."}],
+                    "provider": "deterministic", "ai_generated": False}
+
+    class Stats:
+        def record(self, **kwargs):
+            pass
+
+    async def fake_voice(self, prompt, scenes, *, video_path, params):
+        return {"muxed": True, "narration_style": "per_scene", "output_path": video_path,
+                "bytes": 500, "clips": [{"index": 0, "audio_path": str(tmp_path / "voice.wav")}]}
+
+    def fake_render(scenes, output_path, **kwargs):
+        return {"output_path": str(output_path), "frames": 240, "bytes": 300, "engine": "ffmpeg"}
+
+    def fake_scene_render(scene, output_path, **kwargs):
+        return {"output_path": str(output_path), "frames": 240, "bytes": 100, "engine": "ffmpeg"}
+
+    def failed_mux(*args):
+        return {"muxed": False, "reason": "audio input missing or empty"}
+
+    monkeypatch.setattr(engine_module, "get_scene_planner", lambda: Planner())
+    monkeypatch.setattr(engine_module, "get_subsystem_dir", lambda _name: tmp_path)
+    monkeypatch.setattr(engine_module, "unique_filename", lambda directory, prefix, extension: tmp_path / (prefix + "." + extension))
+    monkeypatch.setattr(engine_module, "render_multi_scene_video", fake_render)
+    monkeypatch.setattr(engine_module, "render_scene_video", fake_scene_render)
+    monkeypatch.setattr(engine_module.TextToVideoEngine, "_add_voiceover", fake_voice)
+    monkeypatch.setattr("modules.ai_video_studio.media.audio.mux_audio_into_video", failed_mux)
+    monkeypatch.setattr(engine_module, "get_generation_statistics", lambda: Stats())
+
+    with pytest.raises(RuntimeError, match="narration could not be embedded"):
+        asyncio.run(engine_module.TextToVideoEngine().generate_async({
+            "prompt": "Vídeo de teste.",
+            "params": {"duration": 6, "num_scenes": 1, "fps": 24, "width": 640,
+                       "height": 360, "voiceover": True, "vidgrid_compatible": True},
+        }))
+
