@@ -64,3 +64,42 @@ def test_job_store_marks_only_in_flight_jobs_interrupted(tmp_path, monkeypatch) 
     loaded = job_store.load_jobs()
     assert loaded["running-job"]["status"] == "failed"
     assert "reinicialização" in loaded["running-job"]["error"]
+
+def test_interrupted_job_reports_only_existing_assets_inside_asset_roots(tmp_path, monkeypatch):
+    database = tmp_path / "jobs.sqlite3"
+    roots = {name: tmp_path / name for name in ("jobs", "images", "videos", "voice")}
+    for root in roots.values():
+        root.mkdir()
+    monkeypatch.setattr(job_store, "_database_path", lambda: database)
+    monkeypatch.setattr(job_store, "get_subsystem_dir", lambda name: roots[name])
+
+    image = roots["images"] / "scene-0.png"
+    clip = roots["videos"] / "scene-0.mp4"
+    narration = roots["voice"] / "scene-0.wav"
+    outside = tmp_path / "outside.png"
+    for path in (image, clip, narration, outside):
+        path.write_bytes(b"asset")
+
+    jobs = {
+        "recoverable": {
+            "job_id": "recoverable", "project_id": "p1", "status": "processing",
+            "scene_progress": [{"scene_index": 0, "status": "completed"}],
+            "scene_assets": [{"scene_index": 0, "image_path": str(image)}],
+            "scene_clips": [
+                {"scene_index": 0, "output_path": str(clip), "audio_path": str(narration)},
+                {"scene_index": 1, "output_path": str(outside)},
+            ],
+            "voiceover": {"clips": [{"audio_path": str(narration)}]},
+        }
+    }
+
+    assert job_store.mark_interrupted_jobs(jobs) == ["recoverable"]
+    recovery = jobs["recoverable"]["failure_info"]
+    assert recovery["preserved_image_count"] == 1
+    assert recovery["preserved_clip_count"] == 1
+    assert recovery["preserved_narration_count"] == 2
+    assert recovery["recoverable_scene_indices"] == [0]
+    assert recovery["scene_assets_preserved"] is True
+    assert recovery["automatic_resume_supported"] is False
+    persisted = job_store.load_jobs()["recoverable"]["failure_info"]
+    assert persisted["preserved_clip_count"] == 1

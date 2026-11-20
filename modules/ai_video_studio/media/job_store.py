@@ -151,6 +151,64 @@ def mark_interrupted_edit_renders(jobs: dict[str, dict[str, Any]]) -> list[str]:
     return recovered
 
 
+def _inspect_recoverable_scene_assets(record: dict[str, Any]) -> dict[str, Any]:
+    """Count durable scene assets that still exist inside DARKSTUDIO asset roots."""
+    from pathlib import Path
+
+    roots = {
+        name: Path(get_subsystem_dir(name)).resolve()
+        for name in ("images", "videos", "voice")
+    }
+
+    def exists_inside(value: Any, root_name: str) -> bool:
+        if not value:
+            return False
+        try:
+            root = roots[root_name]
+            path = Path(str(value)).resolve()
+            return root in path.parents and path.is_file() and path.stat().st_size > 0
+        except (OSError, TypeError, ValueError):
+            return False
+
+    image_indices: set[int] = set()
+    clip_indices: set[int] = set()
+    narration_count = 0
+
+    for item in record.get("scene_assets") or []:
+        if not isinstance(item, dict):
+            continue
+        index = item.get("scene_index")
+        if exists_inside(item.get("image_path"), "images") and str(index).isdigit():
+            image_indices.add(int(index))
+
+    for position, scene in enumerate(record.get("_source_scenes") or []):
+        if isinstance(scene, dict) and exists_inside(scene.get("background_image_path"), "images"):
+            image_indices.add(int(scene.get("_source_scene_index", position)))
+
+    for item in record.get("scene_clips") or []:
+        if not isinstance(item, dict):
+            continue
+        index = item.get("scene_index")
+        if exists_inside(item.get("output_path"), "videos") and str(index).isdigit():
+            clip_indices.add(int(index))
+        if exists_inside(item.get("audio_path"), "voice"):
+            narration_count += 1
+
+    voiceover = record.get("voiceover")
+    if isinstance(voiceover, dict):
+        for clip in voiceover.get("clips") or []:
+            if isinstance(clip, dict) and exists_inside(clip.get("audio_path"), "voice"):
+                narration_count += 1
+
+    return {
+        "preserved_image_count": len(image_indices),
+        "preserved_clip_count": len(clip_indices),
+        "preserved_narration_count": narration_count,
+        "recoverable_scene_indices": sorted(image_indices | clip_indices),
+        "scene_assets_preserved": bool(image_indices or clip_indices or narration_count),
+    }
+
+
 def mark_interrupted_jobs(jobs: dict[str, dict[str, Any]]) -> list[str]:
     """Mark queued/processing jobs as interrupted after an API process restart.
 
@@ -191,10 +249,11 @@ def mark_interrupted_jobs(jobs: dict[str, dict[str, Any]]) -> list[str]:
                 "failed_scene_index": active_scene.get("scene_index") if active_scene else None,
                 "last_completed_scene_index": max(completed_indices) if completed_indices else None,
                 "completed_scene_indices": completed_indices,
+                **_inspect_recoverable_scene_assets(record),
                 "automatic_resume_supported": False,
                 "recovery_hint": (
-                    "Consulte as cenas concluídas e os arquivos preservados antes de iniciar uma nova geração. "
-                    "A retomada integral da geração interrompida ainda não é suportada."
+                    "Os arquivos de imagem, clipes e narrações existentes foram verificados e listados. "
+                    "Use as cenas recuperáveis para continuar a edição; o subprocesso interrompido não é retomado."
                 ),
             },
         )
