@@ -82,13 +82,6 @@ def test_update_timeline_draft_keeps_non_video_tracks(completed_job, monkeypatch
 
 
 
-@pytest.mark.parametrize("field,value", [
-    ("target_lufs", -40),
-    ("true_peak_db", -12),
-    ("loudness_range", 25),
-])
-
-
 @pytest.mark.parametrize("pan", [-1.1, 1.1])
 def test_audio_timeline_rejects_pan_outside_stereo_range(pan):
     with pytest.raises(ValueError):
