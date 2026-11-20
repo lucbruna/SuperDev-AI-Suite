@@ -48,6 +48,14 @@ def test_generate_async_requires_mp4_output(monkeypatch, tmp_path) -> None:
             "engine": "ffmpeg",
         }
 
+    def fake_scene_render(scene, output_path, **kwargs):
+        return {
+            "output_path": str(output_path),
+            "frames": 24,
+            "bytes": 123,
+            "engine": "ffmpeg",
+        }
+
     monkeypatch.setattr(engine_module, "get_scene_planner", lambda: Planner())
     monkeypatch.setattr(engine_module, "get_subsystem_dir", lambda _name: tmp_path)
     monkeypatch.setattr(
