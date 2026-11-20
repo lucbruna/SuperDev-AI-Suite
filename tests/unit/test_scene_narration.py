@@ -272,6 +272,46 @@ def test_engine_add_voiceover_single_when_no_scene_text(fake_tts, monkeypatch, t
     assert result["narration_style"] == "single_track"
 
 
+
+@pytest.mark.asyncio
+async def test_scene_narration_uses_frame_rounded_duration_for_audio_slots(monkeypatch, tmp_path):
+    from modules.ai_video_studio.media import scene_narration
+
+    class FakeVoiceEngine:
+        async def synthesize_async(self, text, **kwargs):
+            return {"output_path": str(tmp_path / "voice.wav"), "engine": "fake", "duration": 0.8}
+
+    monkeypatch.setattr(
+        "modules.ai_video_studio.ai_voice_studio.get_voice_engine",
+        lambda: FakeVoiceEngine(),
+    )
+    captured = {}
+
+    def fake_export(tracks, output_path, *, total_duration):
+        captured["tracks"] = tracks
+        captured["total_duration"] = total_duration
+        return {"duration": total_duration}
+
+    def fake_mux(video_path, audio_path, output_path):
+        return {"muxed": True, "output_path": output_path, "bytes": 1}
+
+    monkeypatch.setattr(
+        "modules.ai_video_studio.ai_dubbing.export_dubbing.export_audio_track",
+        fake_export,
+    )
+    monkeypatch.setattr(
+        "modules.ai_video_studio.media.audio.mux_audio_into_video",
+        fake_mux,
+    )
+    result = await scene_narration.synthesize_scene_narration_async(
+        [{"index": 0, "voiceover_text": "line", "duration": 1.03}],
+        video_path=str(tmp_path / "video.mp4"),
+        params={"fps": 24},
+        output_dir=str(tmp_path),
+    )
+    assert result["clips"][0]["end"] == pytest.approx(25 / 24)
+    assert captured["total_duration"] == pytest.approx(25 / 24)
+
 def test_remap_narration_clips_for_reordered_and_resized_scenes() -> None:
     original = [
         {"text": "first", "audio_path": "first.wav"},

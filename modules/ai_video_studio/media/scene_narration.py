@@ -306,8 +306,10 @@ async def synthesize_scene_narration_async(
     for index, (scene, start) in enumerate(zip(scenes, offsets, strict=False)):
         text = scene_narration_text(scene)
         scene_duration = max(0.1, float(scene.get("duration") or 3.0))
-        scene_duration = max(1, int(scene_duration * fps)) / fps
-        end = start + scene_duration
+        # Use the same nearest-frame quantization as compute_scene_offsets and
+        # the video renderer; truncation here caused audio slots to drift.
+        scene_duration = max(1, int(round(scene_duration * fps))) / fps
+        end = round(start + scene_duration, 6)
         clip: dict[str, Any] = {
             "index": scene.get("index", index),
             "text": text,
@@ -345,8 +347,11 @@ async def synthesize_scene_narration_async(
     from modules.ai_video_studio.ai_dubbing.export_dubbing import export_audio_track
     from modules.ai_video_studio.media.audio import mux_audio_into_video
 
-    total_duration = offsets[-1] + max(0.1, float(scenes[-1].get("duration") or 3.0)) \
-        if offsets else 0.0
+    last_duration = (
+        max(1, int(round(max(0.1, float(scenes[-1].get("duration") or 3.0)) * fps))) / fps
+        if scenes else 0.0
+    )
+    total_duration = round(offsets[-1] + last_duration, 6) if offsets else 0.0
     out_dir = Path(output_dir or get_subsystem_dir("videos"))
     audio_track = str(unique_filename(out_dir, "scene_narration_track", "wav"))
     tracks = build_narration_tracks(clips)
