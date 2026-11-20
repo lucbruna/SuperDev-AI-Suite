@@ -438,6 +438,19 @@ def _asset_sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _resolve_scene_narration_asset(value: str | Path) -> Path:
+    """Resolve a per-scene narration file only from the project's voice assets."""
+    from modules.ai_video_studio.media.output_paths import get_subsystem_dir
+
+    voice_root = Path(get_subsystem_dir("voice")).resolve()
+    narration_path = Path(value).resolve()
+    if voice_root not in narration_path.parents or not narration_path.is_file():
+        raise ValueError("Scene narration is missing or outside the approved voice asset directory")
+    if narration_path.stat().st_size <= 0:
+        raise ValueError("Scene narration asset is empty")
+    return narration_path
+
+
 def _ordered_vidgrid_clip_paths(record: dict, scenes: list[dict]) -> list[str]:
     """Return a complete, ordered set of safe, non-empty VidGrid clip files."""
     from modules.ai_video_studio.media.output_paths import get_subsystem_dir
@@ -967,7 +980,15 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
                     None,
                 )
                 if narration:
-                    from modules.ai_video_studio.media.audio import extract_audio_track, mux_audio_into_video
+                    from modules.ai_video_studio.media.audio import mux_audio_into_video
+
+                    try:
+                        narration_path = _resolve_scene_narration_asset(narration["audio_path"])
+                    except (OSError, ValueError) as narration_exc:
+                        raise HTTPException(
+                            status_code=422,
+                            detail=f"Narração da cena {scene_index + 1} inválida: {narration_exc}",
+                        ) from narration_exc
 
                     voiced_path = unique_filename(
                         get_subsystem_dir("videos") / "vidgrid_clips",
@@ -975,7 +996,7 @@ async def edit_video_job_scene_image(job_id: str, scene_index: int, req: SceneIm
                         "mp4",
                     )
                     muxed = await asyncio.to_thread(
-                        mux_audio_into_video, clip_output_path, narration["audio_path"], voiced_path,
+                        mux_audio_into_video, clip_output_path, narration_path, voiced_path,
                     )
                     if muxed.get("muxed"):
                         clip_output_path = muxed["output_path"]
