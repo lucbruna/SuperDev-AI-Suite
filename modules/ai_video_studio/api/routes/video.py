@@ -343,6 +343,13 @@ def _persist_job(record: dict) -> None:
         record.pop("project_sync_warning", None)
     except Exception as exc:  # noqa: BLE001
         record["project_sync_warning"] = str(exc)[:240]
+    try:
+        from modules.ai_video_studio.api.routes.scene import sync_video_job_scenes
+
+        sync_video_job_scenes(record)
+        record.pop("scene_sync_warning", None)
+    except Exception as exc:  # noqa: BLE001
+        record["scene_sync_warning"] = str(exc)[:240]
 
 def _merge_scene_checkpoint(record: dict[str, Any], event: dict[str, Any]) -> None:
     """Merge one durable scene snapshot and its completed assets into a job."""

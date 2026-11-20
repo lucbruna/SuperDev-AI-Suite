@@ -67,6 +67,71 @@ class SceneResponse(BaseModel):
 _scenes: dict[str, dict] = PersistentDict("scenes")
 
 
+def sync_video_job_scenes(record: dict) -> None:
+    """Upsert generated scenes into the editable project scene catalog."""
+    project_id = str(record.get("project_id") or "").strip()
+    job_id = str(record.get("job_id") or "").strip()
+    if not project_id or not job_id:
+        return
+
+    scenes = record.get("_edited_scenes") or record.get("_source_scenes") or []
+    if not isinstance(scenes, list):
+        return
+    assets = record.get("scene_assets") or []
+    clips = record.get("scene_clips") or []
+    progress = record.get("scene_progress") or []
+    offset = 0.0
+    for position, source in enumerate(scenes):
+        if not isinstance(source, dict) or not source:
+            continue
+        try:
+            index = int(source.get("_source_scene_index", position))
+        except (TypeError, ValueError):
+            index = position
+        scene_id = f"job:{job_id}:{index}"
+        duration = 10.0 if record.get("vidgrid_compatible") else float(source.get("duration") or 5.0)
+        asset = next((item for item in assets if int(item.get("scene_index", -1)) == index), {})
+        clip = next((item for item in clips if int(item.get("scene_index", -1)) == index), {})
+        progress_item = next((item for item in progress if int(item.get("scene_index", -1)) == index), {})
+        existing = _scenes.get(scene_id, {})
+        protected = set(existing.get("_user_modified_fields") or [])
+        values = {
+            "id": scene_id,
+            "project_id": project_id,
+            "name": source.get("title") or source.get("name") or f"Cena {index + 1}",
+            "description": source.get("description") or source.get("visual_prompt"),
+            "order_index": index,
+            "scene_type": source.get("scene_type") or "content",
+            "start_time": offset,
+            "duration": duration,
+            "end_time": offset + duration,
+            "script": source.get("script") or source.get("narration") or source.get("voiceover_text"),
+            "visual_prompt": source.get("visual_prompt") or source.get("description"),
+            "voiceover_text": source.get("voiceover_text") or source.get("narration") or source.get("dialogue"),
+            "background_color": source.get("background_color"),
+            "transition_in": source.get("transition_in") or "cut",
+            "transition_out": source.get("transition_out") or "cut",
+            "transition_duration": float(source.get("transition_duration") or 0.5),
+            "generation_status": (
+                "completed" if clip.get("output_url") or clip.get("output_path")
+                else "processing" if progress_item.get("status") == "processing"
+                else "failed" if progress_item.get("status") == "failed"
+                else "completed" if asset.get("image_url") or asset.get("image_path")
+                else "pending"
+            ),
+            "generated_video_url": clip.get("output_url") or clip.get("generative_video_url"),
+            "generated_image_url": asset.get("image_url"),
+            "_source_job_id": job_id,
+            "_source_scene_index": index,
+            "_user_modified_fields": list(protected),
+        }
+        for key, value in values.items():
+            if key not in protected or key.startswith("_"):
+                existing[key] = value
+        _scenes[scene_id] = existing
+        offset += duration
+
+
 @router.post("/", response_model=SceneResponse, status_code=201)
 async def create_scene(data: SceneCreate):
     sid = str(uuid.uuid4())
@@ -102,8 +167,13 @@ async def get_scene(scene_id: str):
 async def update_scene(scene_id: str, data: SceneUpdate):
     if scene_id not in _scenes:
         raise HTTPException(status_code=404, detail=f"Scene {scene_id} not found")
-    _scenes[scene_id].update(data.model_dump(exclude_unset=True))
-    s = _scenes[scene_id]
+    updates = data.model_dump(exclude_unset=True)
+    scene = _scenes[scene_id]
+    scene.update(updates)
+    modified = set(scene.get("_user_modified_fields") or [])
+    modified.update(updates)
+    scene["_user_modified_fields"] = sorted(modified)
+    s = scene
     s["end_time"] = s["start_time"] + s["duration"]
     return SceneResponse(**s)
 
