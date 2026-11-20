@@ -504,7 +504,9 @@ def test_mix_audio_timeline_ducks_music_for_asset_backed_narration(tmp_path, mon
     )
     mixed, _ = dsp.read_audio(output, target_sr=sample_rate)
     before = np.sqrt(np.mean(mixed[int(0.1 * sample_rate):int(0.4 * sample_rate)] ** 2))
-    during = np.sqrt(np.mean(mixed[int(0.9 * sample_rate):int(1.2 * sample_rate)] ** 2))
+    during_with_voice = mixed[int(0.9 * sample_rate):int(1.2 * sample_rate)]
+    during_music = during_with_voice - 0.2
+    during = np.sqrt(np.mean(during_music ** 2))
     assert result["ducking"]["speech_detected"] is True
     assert result["clips"][0]["ducking_applied"] is True
-    assert during < before * 0.75
+    assert during < before * 0.4
