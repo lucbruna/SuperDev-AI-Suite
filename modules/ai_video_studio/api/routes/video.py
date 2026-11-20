@@ -2405,6 +2405,10 @@ async def resume_interrupted_generation(job_id: str, background_tasks: Backgroun
                     dict(item) for item in ((record.get("voiceover") or {}).get("clips") or [])
                     if isinstance(item, dict)
                 ],
+                "checkpoint_scene_clips": [
+                    dict(item) for item in (record.get("scene_clips") or [])
+                    if isinstance(item, dict)
+                ],
             }
 
             def on_scene(event: dict[str, Any]) -> None:

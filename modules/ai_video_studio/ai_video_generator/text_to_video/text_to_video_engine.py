@@ -439,8 +439,49 @@ class TextToVideoEngine:
         # for every ten-second scene in addition to the assembled full video.
         scene_clips: list[dict[str, Any]] = []
         if vidgrid_compatible:
-            clip_dir = get_subsystem_dir("videos") / "vidgrid_clips"
+            from pathlib import Path
+
+            video_root = Path(get_subsystem_dir("videos")).resolve()
+            clip_dir = video_root / "vidgrid_clips"
+            saved_clips = {
+                int(item.get("scene_index", -1)): item
+                for item in (params.get("checkpoint_scene_clips") or [])
+                if isinstance(item, dict) and str(item.get("scene_index", "")).lstrip("-").isdigit()
+            }
             for scene_index, scene in enumerate(scenes):
+                saved = saved_clips.get(scene_index) or {}
+                saved_path = Path(str(saved.get("output_path") or "")).resolve() if saved.get("output_path") else None
+                saved_is_compatible = (
+                    saved_path is not None
+                    and video_root in saved_path.parents
+                    and saved_path.is_file()
+                    and saved_path.stat().st_size > 0
+                    and float(saved.get("duration") or 0) == 10.0
+                    and int(saved.get("fps") or 0) == fps
+                    and int(saved.get("width") or 0) == width
+                    and int(saved.get("height") or 0) == height
+                )
+                if saved_is_compatible:
+                    clip_record = {
+                        **saved,
+                        "scene_index": scene_index,
+                        "duration": 10.0,
+                        "fps": fps,
+                        "width": width,
+                        "height": height,
+                        "output_path": str(saved_path),
+                        "bytes": saved_path.stat().st_size,
+                        "reused": True,
+                        "visual_prompt": scene.get("visual_prompt") or scene.get("description", ""),
+                        "narration_text": scene.get("voiceover_text") or scene.get("narration") or "",
+                    }
+                    scene_clips.append(clip_record)
+                    _notify_scene(
+                        scene_index, "completed", "clip_reused",
+                        clip_path=str(saved_path), clip_bytes=clip_record["bytes"],
+                    )
+                    continue
+
                 _notify_scene(scene_index, "processing", "clip_render")
                 clip_path = unique_filename(clip_dir, f"scene_{scene_index + 1:02d}", "mp4")
                 clip_result = await asyncio.to_thread(
@@ -470,6 +511,7 @@ class TextToVideoEngine:
                     "encode_engine": clip_result["engine"],
                     "visual_prompt": scene.get("visual_prompt") or scene.get("description", ""),
                     "narration_text": scene.get("voiceover_text") or scene.get("narration") or "",
+                    "reused": False,
                 })
 
         result: dict[str, Any] = {
