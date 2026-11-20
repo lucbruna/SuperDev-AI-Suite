@@ -175,8 +175,8 @@ def test_generate_async_composes_selected_characters_into_every_scene(monkeypatc
         def plan(self, prompt, *, num_scenes, duration, timeout):
             return {
                 "scenes": [
-                    {"duration": 1.0, "description": "Cena um", "visual_prompt": "Mia aponta para o quadro"},
-                    {"duration": 1.0, "description": "Cena dois", "visual_prompt": "Leo está surpreso"},
+                    {"duration": 1.0, "description": "Cena um", "visual_prompt": "A apresentadora aponta para o quadro"},
+                    {"duration": 1.0, "description": "Cena dois", "visual_prompt": "O narrador está surpreso"},
                 ],
                 "provider": "deterministic",
                 "ai_generated": False,
@@ -201,7 +201,7 @@ def test_generate_async_composes_selected_characters_into_every_scene(monkeypatc
     result = asyncio.run(
         engine_module.TextToVideoEngine().generate_async(
             {
-                "prompt": "Mia e Leo explicam uma ideia.",
+                "prompt": "Dois apresentadores explicam uma ideia.",
                 "params": {
                     "duration": 2.0,
                     "num_scenes": 2,
@@ -209,7 +209,7 @@ def test_generate_async_composes_selected_characters_into_every_scene(monkeypatc
                     "width": 640,
                     "height": 360,
                     "studio_id": "whymentary",
-                    "character_ids": ["mia", "leo"],
+                    "character_ids": ["whymentary_host", "historical_narrator"],
                 },
             }
         )
@@ -218,9 +218,9 @@ def test_generate_async_composes_selected_characters_into_every_scene(monkeypatc
     assert result["studio_id"] == "whymentary"
     assert len(captured["scenes"]) == 2
     for scene in captured["scenes"]:
-        assert len(scene["rects"]) == 5
+        assert len(scene["rects"]) == 4
         assert len(scene["circles"]) >= 11
-        assert scene["_darkstudio_characters"] == ["mia", "leo"]
+        assert scene["_darkstudio_characters"] == ["whymentary_host", "historical_narrator"]
         assert scene["_darkstudio_objects"] == []
     assert captured["scenes"][0]["character_pose"] == "point"
     assert captured["scenes"][1]["character_expression"] == "surprised"
