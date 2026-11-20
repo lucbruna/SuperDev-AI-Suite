@@ -559,12 +559,18 @@ def _reconcile_scene_clip_queue_after_restart(record: dict, durable_task_active:
 
 
 try:
-    from modules.ai_video_studio.media.job_store import load_jobs, mark_interrupted_jobs, has_active_task_for_job
+    from modules.ai_video_studio.media.job_store import (
+        load_jobs, mark_interrupted_jobs, mark_interrupted_edit_renders,
+        has_active_task_for_job,
+    )
 
     _jobs: dict[str, dict] = load_jobs()
     # Jobs cannot resume an interrupted FFmpeg/model subprocess. Mark them
     # explicitly failed instead of leaving a permanent "processing" status.
     mark_interrupted_jobs(_jobs)
+    # An edit export can be interrupted even when the source generation job
+    # itself is already completed. Preserve its editable assets and unlock retry.
+    mark_interrupted_edit_renders(_jobs)
     for _job_record in _jobs.values():
         _queue = _job_record.get("scene_clip_rebuild_queue")
         if isinstance(_queue, dict) and _queue.get("status") in {"queued", "processing"}:

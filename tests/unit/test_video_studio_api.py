@@ -1535,8 +1535,40 @@ class TestCompletedOutputValidation:
         assert failure["automatic_resume_supported"] is False
         assert saved[0]["failure_info"] == failure
 
+    def test_interrupted_edit_export_is_recoverable_without_rebuilding_scenes(self, monkeypatch):
+        from modules.ai_video_studio.media import job_store
+
+        saved = []
+        monkeypatch.setattr(job_store, "save_job", lambda record: saved.append(dict(record)))
+        jobs = {
+            "edit-restart": {
+                "job_id": "edit-restart", "project_id": "p1", "status": "completed",
+                "edit_render_status": "rendering",
+                "_edited_scenes": [{"description": "scene", "image_path": "scene.png"}],
+                "scene_clips": [{"scene_index": 0, "status": "completed", "clip_path": "clip.mp4"}],
+            },
+            "already-done": {
+                "job_id": "already-done", "project_id": "p1", "status": "completed",
+                "edit_render_status": "completed",
+            },
+        }
+
+        recovered = job_store.mark_interrupted_edit_renders(jobs)
+
+        assert recovered == ["edit-restart"]
+        record = jobs["edit-restart"]
+        assert record["edit_render_status"] == "interrupted"
+        assert record["edit_render_recovery"]["kind"] == "server_restart"
+        assert record["edit_render_recovery"]["can_retry_export"] is True
+        assert record["edit_render_recovery"]["scene_assets_preserved"] is True
+        assert record["edit_render_recovery"]["automatic_resume_supported"] is False
+        assert record["_edited_scenes"] == [{"description": "scene", "image_path": "scene.png"}]
+        assert record["scene_clips"][0]["status"] == "completed"
+        assert jobs["already-done"]["edit_render_status"] == "completed"
+        assert saved[0]["edit_render_status"] == "interrupted"
+
     @pytest.mark.asyncio
-    async def test_rejects_output_path_outside_video_directory(self, tmp_path, monkeypatch):
+    async def test_rejects_output_path_outside_video_directory"(self, tmp_path, monkeypatch):
         from modules.ai_video_studio.api.routes import video as video_routes
         from modules.ai_video_studio.media import output_paths
         from fastapi import HTTPException

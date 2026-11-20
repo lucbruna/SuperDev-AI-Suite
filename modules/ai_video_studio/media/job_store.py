@@ -88,6 +88,39 @@ def load_jobs(project_id: str | None = None) -> dict[str, dict[str, Any]]:
     return result
 
 
+def mark_interrupted_edit_renders(jobs: dict[str, dict[str, Any]]) -> list[str]:
+    """Mark an edit export interrupted when the API restarts mid-render.
+
+    The final FFmpeg process is not checkpointed, so it cannot be resumed at
+    the exact frame. Source scene clips and the saved edit remain available;
+    the user can safely request a fresh export without rebuilding those assets.
+    """
+    recovered: list[str] = []
+    for job_id, record in jobs.items():
+        if record.get("edit_render_status") != "rendering":
+            continue
+        record["edit_render_status"] = "interrupted"
+        record["edit_render_interrupted_at"] = datetime.now(timezone.utc).isoformat()
+        record["edit_render_recovery"] = {
+            "kind": "server_restart",
+            "can_retry_export": bool(record.get("_edited_scenes")),
+            "scene_assets_preserved": True,
+            "automatic_resume_supported": False,
+            "message": (
+                "A exportação foi interrompida pela reinicialização do servidor. "
+                "O MP4 parcial não será retomado; as cenas e o rascunho foram preservados. "
+                "Solicite uma nova exportação para continuar."
+            ),
+        }
+        try:
+            save_job(record)
+        except Exception:
+            # Keep in-memory recovery state even if persistence is temporarily unavailable.
+            pass
+        recovered.append(str(job_id))
+    return recovered
+
+
 def mark_interrupted_jobs(jobs: dict[str, dict[str, Any]]) -> list[str]:
     """Mark queued/processing jobs as interrupted after an API process restart.
 
