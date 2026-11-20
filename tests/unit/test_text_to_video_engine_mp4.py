@@ -537,6 +537,15 @@ def test_generate_async_reuses_complete_saved_storyboard_and_images(monkeypatch,
         return {"output_path": str(output_path), "bytes": 8, "engine": "ffmpeg"}
 
     monkeypatch.setattr(engine_module, "render_single_scene_clip", fake_scene_clip)
+    from types import SimpleNamespace
+    monkeypatch.setattr(engine_module.shutil, "which", lambda _name: "ffprobe")
+    monkeypatch.setattr(
+        engine_module.subprocess, "run",
+        lambda *_args, **_kwargs: SimpleNamespace(
+            returncode=0, stdout='{"format":{"duration":"10.0"},"streams":[{"codec_type":"video","width":64,"height":36}]}',
+            stderr="",
+        ),
+    )
 
     saved_scenes = [
         {"duration": 1.0, "description": "Cena salva", "visual_prompt": "Prompt visual preservado",
