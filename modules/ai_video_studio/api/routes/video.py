@@ -3528,7 +3528,14 @@ async def validate_video_job_output(job_id: str):
                     report["video_codec"] = video.get("codec_name")
                     report["pixel_format"] = video.get("pix_fmt")
                 params = record.get("params") if isinstance(record.get("params"), dict) else {}
-                audio_expected = bool(params.get("voiceover")) and record.get("edit_render_audio") != "silent"
+                audio_status = str(record.get("edit_render_audio") or "")
+                edited_mix_requires_audio = audio_status in {
+                    "mixed_audio", "mixed_audio_single_track_omitted",
+                }
+                audio_expected = (
+                    edited_mix_requires_audio
+                    or (bool(params.get("voiceover")) and audio_status not in {"silent", "audio_mux_failed"})
+                )
                 report["audio_expected"] = audio_expected
                 if audio_expected and not audio_streams:
                     report["errors"].append("Narração solicitada, mas o MP4 final não contém áudio.")
