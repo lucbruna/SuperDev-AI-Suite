@@ -1754,7 +1754,7 @@ class TestSceneAssetRenderLock:
                 "_source_scene_index": 0, "duration": 2,
                 "generative_video_path": str(rendered),
             }],
-            "_audio_clips": {"music": [{"audio_path": str(mixed_audio), "start": 0, "duration": 2}], "sfx": []},
+            "_audio_clips": {"music": [{"audio_path": str(mixed_audio), "start": 0, "end": 2}], "sfx": []},
         }
 
         with pytest.raises(HTTPException) as error:
