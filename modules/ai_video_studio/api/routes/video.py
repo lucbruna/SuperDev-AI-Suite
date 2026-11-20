@@ -2763,7 +2763,7 @@ async def render_video_job_edits(job_id: str):
         if single_track:
             audio_status = "single_track_not_retimed"
 
-        from modules.ai_video_studio.media.audio import mux_audio_into_video
+        from modules.ai_video_studio.media.audio import extract_audio_track, mux_audio_into_video
         from modules.ai_video_studio.media.audio_timeline import measure_encoded_audio, mix_audio_timeline
         from modules.ai_video_studio.media.output_paths import get_subsystem_dir, unique_filename
 
