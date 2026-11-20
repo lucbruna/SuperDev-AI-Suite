@@ -155,6 +155,11 @@ def main() -> None:
         subtitle_text = subtitle.read_text(encoding="utf-8-sig")
         if "-->" not in subtitle_text:
             raise SystemExit("Generated SRT does not contain valid cue timing separators")
+        normalized_subtitles = subtitle_text.casefold()
+        if "amanhecer" not in normalized_subtitles or "energia" not in normalized_subtitles:
+            raise SystemExit(
+                "Generated SRT does not contain narration text from both planned scenes"
+            )
 
         master_probe = _probe(master)
         master_video = next(s for s in master_probe["streams"] if s["codec_type"] == "video")
@@ -180,7 +185,20 @@ def main() -> None:
         narration_assets = voiceover.get("clips") or []
         if len(narration_assets) != 2 or any(not clip.get("audio_path") for clip in narration_assets):
             raise SystemExit("Expected one synthesized audio asset for each scene")
+        narration_indices = [int(clip.get("index", -1)) for clip in narration_assets]
+        if narration_indices != [0, 1]:
+            raise SystemExit(
+                f"Expected narration assets mapped in scene order [0, 1], got {narration_indices}"
+            )
+        expected_narration = [
+            "Ao amanhecer, uma cidade futurista desperta.",
+            "A energia do sol transforma o futuro da cidade.",
+        ]
         for index, narration in enumerate(narration_assets):
+            if narration.get("text") != expected_narration[index]:
+                raise SystemExit(
+                    f"Scene {index + 1} narration text mismatch: {narration.get('text')!r}"
+                )
             audio_path = Path(narration["audio_path"])
             if not audio_path.is_file() or audio_path.stat().st_size == 0:
                 raise SystemExit(f"Scene {index + 1} narration source is missing or empty: {audio_path}")
