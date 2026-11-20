@@ -299,6 +299,8 @@ async def synthesize_scene_narration_async(
     params: dict[str, Any] | None = None,
     output_dir: str | None = None,
     output_path: str | None = None,
+    checkpoint_clips: list[dict[str, Any]] | None = None,
+    clip_callback: Any = None,
 ) -> dict[str, Any]:
     """Synthesize per-scene narration, place it on the timeline and mux.
 
@@ -330,29 +332,41 @@ async def synthesize_scene_narration_async(
 
     clips: list[dict[str, Any]] = []
     synthesized_any = False
+    voice_root = Path(get_subsystem_dir("voice")).resolve()
+    saved_by_index = {
+        int(item.get("index", -1)): item
+        for item in (checkpoint_clips or [])
+        if isinstance(item, dict) and str(item.get("index", "")).lstrip("-").isdigit()
+    }
     for index, (scene, start) in enumerate(zip(scenes, offsets, strict=False)):
         text = scene_narration_text(scene)
-        # Use the same frame grid as the video renderer, but do not overlap
-        # dialogue across a visual crossfade.
         end = _scene_speech_end(scenes, index, start, fps=fps)
         clip: dict[str, Any] = {
-            "index": scene.get("index", index),
-            "text": text,
-            "start": round(start, 3),
-            "end": round(end, 3),
+            "index": scene.get("index", index), "text": text,
+            "start": round(start, 3), "end": round(end, 3),
         }
+        saved = saved_by_index.get(index) or {}
+        saved_path = Path(str(saved.get("audio_path") or "")).resolve() if saved.get("audio_path") else None
+        if (text and saved.get("text") == text and saved_path is not None
+                and voice_root in saved_path.parents and saved_path.is_file()
+                and saved_path.stat().st_size > 0):
+            clip.update({
+                "audio_path": str(saved_path),
+                "tts_engine": saved.get("tts_engine") or "reused_checkpoint",
+                "audio_duration": saved.get("audio_duration"),
+            })
+            synthesized_any = True
+            clips.append(clip)
+            if callable(clip_callback):
+                clip_callback(dict(clip))
+            continue
         if not text:
             clips.append(clip)
             continue
         try:
             synth = await voice_engine.synthesize_async(
-                text,
-                voice_id=voice_id,
-                language=language,
-                speed=speed,
-                pitch=pitch,
-                output_path=None,
-                use_cache=False,
+                text, voice_id=voice_id, language=language, speed=speed,
+                pitch=pitch, output_path=None, use_cache=False,
             )
         except Exception as e:  # noqa: BLE001 — TTS failure is per-scene non-fatal
             logger.warning("Scene %s narration failed: %s", index, e)
@@ -364,6 +378,8 @@ async def synthesize_scene_narration_async(
         clip["audio_duration"] = synth["duration"]
         clips.append(clip)
         synthesized_any = True
+        if callable(clip_callback):
+            clip_callback(dict(clip))
 
     if not synthesized_any:
         return {"muxed": False, "reason": "no scene narration synthesized", "clips": clips}
