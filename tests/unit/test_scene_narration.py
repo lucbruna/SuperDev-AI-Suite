@@ -518,3 +518,92 @@ def test_crossfade_trims_outgoing_narration_and_subtitle_slots():
     assert [(cue["start_offset"], cue["duration"]) for cue in subtitles] == [
         (0.0, 1.5), (1.5, 3.0),
     ]
+
+
+@pytest.mark.asyncio
+async def test_scene_narration_reuses_valid_checkpoint_audio_without_calling_tts(monkeypatch, tmp_path):
+    from modules.ai_video_studio.ai_voice_studio import voice_engine as ve
+
+    voice_root = tmp_path / "voice"
+    voice_root.mkdir()
+    saved_audio = voice_root / "saved.wav"
+    dsp.write_audio(str(saved_audio), dsp.sine(330.0, 0.5) * 0.5)
+
+    class MustNotSynthesize:
+        async def synthesize_async(self, *args, **kwargs):
+            raise AssertionError("saved narration should be reused, not synthesized")
+
+    monkeypatch.setattr(ve, "get_voice_engine", lambda: MustNotSynthesize())
+    monkeypatch.setattr(scene_narration, "get_subsystem_dir", lambda name: voice_root if name == "voice" else tmp_path)
+    monkeypatch.setattr(
+        "modules.ai_video_studio.ai_dubbing.export_dubbing.export_audio_track",
+        lambda tracks, output_path, *, total_duration: {"duration": total_duration, "track_count": len(tracks)},
+    )
+    monkeypatch.setattr(
+        "modules.ai_video_studio.media.audio.mux_audio_into_video",
+        lambda video, audio, output: {"muxed": True, "output_path": output, "bytes": 123},
+    )
+    video = tmp_path / "source.mp4"
+    video.write_bytes(b"video")
+    callbacks = []
+
+    result = await scene_narration.synthesize_scene_narration_async(
+        [{"index": 0, "voiceover_text": "Saved spoken line", "duration": 2.0}],
+        video_path=str(video),
+        params={},
+        output_dir=str(tmp_path),
+        checkpoint_clips=[{
+            "index": 0, "text": "Saved spoken line", "audio_path": str(saved_audio),
+            "tts_engine": "existing-engine", "audio_duration": 0.5,
+        }],
+        clip_callback=callbacks.append,
+    )
+
+    assert result["muxed"] is True
+    assert result["clips"][0]["audio_path"] == str(saved_audio)
+    assert result["clips"][0]["tts_engine"] == "existing-engine"
+    assert callbacks[0]["audio_path"] == str(saved_audio)
+
+
+@pytest.mark.asyncio
+async def test_scene_narration_does_not_reuse_checkpoint_audio_when_text_changed(monkeypatch, tmp_path):
+    from modules.ai_video_studio.ai_voice_studio import voice_engine as ve
+
+    voice_root = tmp_path / "voice"
+    voice_root.mkdir()
+    saved_audio = voice_root / "saved.wav"
+    dsp.write_audio(str(saved_audio), dsp.sine(330.0, 0.5) * 0.5)
+    synthesized = []
+
+    class FakeVoiceEngine:
+        async def synthesize_async(self, text, **kwargs):
+            synthesized.append(text)
+            output = voice_root / "fresh.wav"
+            dsp.write_audio(str(output), dsp.sine(440.0, 0.5) * 0.5)
+            return {"output_path": str(output), "engine": "fresh-engine", "duration": 0.5}
+
+    monkeypatch.setattr(ve, "get_voice_engine", lambda: FakeVoiceEngine())
+    monkeypatch.setattr(scene_narration, "get_subsystem_dir", lambda name: voice_root if name == "voice" else tmp_path)
+    monkeypatch.setattr(
+        "modules.ai_video_studio.ai_dubbing.export_dubbing.export_audio_track",
+        lambda tracks, output_path, *, total_duration: {"duration": total_duration},
+    )
+    monkeypatch.setattr(
+        "modules.ai_video_studio.media.audio.mux_audio_into_video",
+        lambda video, audio, output: {"muxed": True, "output_path": output, "bytes": 123},
+    )
+    video = tmp_path / "source.mp4"
+    video.write_bytes(b"video")
+
+    result = await scene_narration.synthesize_scene_narration_async(
+        [{"index": 0, "voiceover_text": "Updated line", "duration": 2.0}],
+        video_path=str(video),
+        params={},
+        output_dir=str(tmp_path),
+        checkpoint_clips=[{
+            "index": 0, "text": "Old line", "audio_path": str(saved_audio),
+        }],
+    )
+
+    assert synthesized == ["Updated line"]
+    assert result["clips"][0]["audio_path"] == str(voice_root / "fresh.wav")
