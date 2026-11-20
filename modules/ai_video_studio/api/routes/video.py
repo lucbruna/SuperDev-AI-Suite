@@ -3625,8 +3625,13 @@ def _probe_image_api(base_url: str, timeout: float = 1.5) -> tuple[bool, str | N
 
     if not base_url:
         return False, "Endpoint de imagens não configurado."
+    try:
+        from modules.ai_video_studio.ai_image_generator.providers.local_diffusion import _api_base_url
+        validated_base = _api_base_url()
+    except ValueError as exc:
+        return False, str(exc)
     request = urllib.request.Request(
-        f"{base_url.rstrip('/')}/sdapi/v1/options",
+        f"{validated_base}/sdapi/v1/options",
         headers={"Accept": "application/json"},
         method="GET",
     )
