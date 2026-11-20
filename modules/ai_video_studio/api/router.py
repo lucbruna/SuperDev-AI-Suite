@@ -1,9 +1,7 @@
 """Main API router aggregating all endpoint modules."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
-from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter
 
 from modules.ai_video_studio.api.routes import (
     admin,
@@ -31,9 +29,6 @@ from modules.ai_video_studio.api.routes import (
     video,
     visual_assets,
 )
-from modules.ai_video_studio.database.database import get_db
-from modules.ai_video_studio.database.models import ExportHistory, RenderJob, VideoProject
-
 api_router = APIRouter()
 
 api_router.include_router(ai.router, prefix="/ai", tags=["AI Studio"])
@@ -72,18 +67,26 @@ async def health_check():
 
 
 @api_router.get("/stats", tags=["Stats"])
-async def studio_stats(db: AsyncSession = Depends(get_db)):
-    """Aggregate statistics from the shared database."""
-    total_projects = await db.scalar(select(func.count()).select_from(VideoProject))
-    active_renders = await db.scalar(
-        select(func.count())
-        .select_from(RenderJob)
-        .where(RenderJob.status.notin_(["completed", "failed", "cancelled"]))
+async def studio_stats():
+    """Return local workspace counters without requiring the legacy SQL backend.
+
+    Project, render and export CRUD routes currently use local process stores.
+    Video generation jobs are tracked by the video route module. These counters
+    describe the running local API process, not durable database totals.
+    """
+    active_statuses = {"queued", "processing", "rendering", "running"}
+    local_renders = getattr(render, "_renders", {})
+    video_jobs = getattr(video, "_jobs", {})
+    active_renders = sum(
+        1 for item in local_renders.values()
+        if str(item.get("status", "")).lower() in active_statuses
+    ) + sum(
+        1 for item in video_jobs.values()
+        if str(item.get("status", "")).lower() in active_statuses
     )
-    total_exports = await db.scalar(select(func.count()).select_from(ExportHistory))
     return {
-        "total_projects": total_projects or 0,
-        "active_renders": active_renders or 0,
-        "total_exports": total_exports or 0,
+        "total_projects": len(getattr(project, "_projects", {})),
+        "active_renders": active_renders,
+        "total_exports": len(getattr(export, "_exports", {})),
         "storage_used_mb": 0.0,
     }
