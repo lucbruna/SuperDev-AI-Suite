@@ -66,19 +66,24 @@ def sync_video_job_assets(record: dict) -> None:
 
     candidates: list[tuple[str, str, str, int | None]] = []
 
-    def _scene_index(item: dict) -> int:
+    def _scene_index(item: dict) -> int | None:
         try:
-            return int(item.get("scene_index", 0))
+            index = int(item.get("scene_index"))
         except (TypeError, ValueError):
-            return 0
+            return None
+        return index if index >= 0 else None
 
     for item in record.get("scene_assets") or []:
         if isinstance(item, dict):
             index = _scene_index(item)
+            if index is None:
+                continue
             candidates.append((f"image-{index}", str(item.get("name") or f"Imagem da cena {index + 1}"), str(item.get("image_path") or ""), index))
     for item in record.get("scene_clips") or []:
         if isinstance(item, dict):
             index = _scene_index(item)
+            if index is None:
+                continue
             candidates.append((f"clip-{index}", str(item.get("name") or f"Clipe da cena {index + 1}"), str(item.get("output_path") or item.get("generative_video_path") or ""), index))
     subtitles = record.get("subtitles")
     if isinstance(subtitles, dict):

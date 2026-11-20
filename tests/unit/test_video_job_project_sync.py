@@ -166,3 +166,30 @@ def test_video_job_assets_sync_indexes_each_per_scene_narration(tmp_path, monkey
     assert second["asset_type"] == "audio"
     assert second["_source_scene_index"] == 1
     assert "job:job-voice:voiceover" not in store
+
+def test_video_job_asset_sync_skips_invalid_scene_indexes(tmp_path, monkeypatch):
+    from modules.ai_video_studio.api.routes import assets
+
+    store = {}
+    monkeypatch.setattr(assets, "_assets", store)
+    image = tmp_path / "orphan.png"
+    clip = tmp_path / "orphan.mp4"
+    image.write_bytes(b"image")
+    clip.write_bytes(b"video")
+
+    assets.sync_video_job_assets({
+        "job_id": "job-invalid-index",
+        "project_id": "project-invalid-index",
+        "scene_assets": [
+            {"scene_index": None, "image_path": str(image)},
+            {"scene_index": "not-an-index", "image_path": str(image)},
+            {"scene_index": -1, "image_path": str(image)},
+        ],
+        "scene_clips": [
+            {"scene_index": None, "output_path": str(clip)},
+            {"scene_index": "not-an-index", "output_path": str(clip)},
+            {"scene_index": -1, "output_path": str(clip)},
+        ],
+    })
+
+    assert store == {}
