@@ -3192,3 +3192,39 @@ def test_recovery_plan_detects_corrupt_vidgrid_mp4_even_when_metadata_says_ten_s
 
     assert plan["repair_scene_indices"] == [0]
     assert "vidgrid_clip_mp4_invalid" in plan["scenes"][0]["reasons"]
+
+
+def test_vidgrid_export_blocks_scene_clip_when_required_narration_was_not_muxed(tmp_path, monkeypatch):
+    from fastapi import HTTPException
+    from modules.ai_video_studio.api.routes import video
+    from modules.ai_video_studio.media import output_paths
+
+    roots = {name: tmp_path / name for name in ("videos", "voice")}
+    for root in roots.values():
+        root.mkdir()
+    clip = roots["videos"] / "scene.mp4"
+    clip.write_bytes(b"nonempty")
+    narration = roots["voice"] / "scene.wav"
+    narration.write_bytes(b"narration")
+    monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda name: roots[name])
+    monkeypatch.setattr(video, "_probe_media_asset", lambda *_args: {
+        "probe_status": "passed", "duration_seconds": 10.0,
+    })
+    record = {
+        "voiceover": {
+            "narration_style": "per_scene",
+            "clips": [{"index": 0, "audio_path": str(narration)}],
+        },
+        "scene_clips": [{
+            "scene_index": 0, "status": "updated", "output_path": str(clip),
+            "duration": 10.0, "audio_status": "narration_mux_failed",
+        }],
+    }
+
+    with pytest.raises(HTTPException) as error:
+        video._ordered_vidgrid_clip_paths(record, [{"_source_scene_index": 0}])
+
+    assert error.value.status_code == 409
+    assert "scenes [0]" in str(error.value.detail)
+
+

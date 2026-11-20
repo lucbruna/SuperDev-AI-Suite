@@ -432,6 +432,14 @@ def _ordered_vidgrid_clip_paths(record: dict, scenes: list[dict]) -> list[str]:
     ]
     paths: list[str] = []
     invalid: list[int] = []
+    voiceover = record.get("voiceover")
+    voiceover = voiceover if isinstance(voiceover, dict) else {}
+    narration_by_scene = {
+        _safe_record_index(item.get("index")): item
+        for item in (voiceover.get("clips") or [])
+        if isinstance(item, dict)
+    }
+    voice_root = Path(get_subsystem_dir("voice")).resolve()
     for scene_index in ordered_indices:
         clip = clips_by_index.get(scene_index)
         value = clip.get("output_path") if clip else None
@@ -458,6 +466,25 @@ def _ordered_vidgrid_clip_paths(record: dict, scenes: list[dict]) -> list[str]:
         if measured_duration is not None and abs(float(measured_duration) - 10.0) > 0.05:
             invalid.append(scene_index)
             continue
+        # A scene clip must not pass final export when its required per-scene
+        # narration failed to mux. The final timeline also mixes narration,
+        # but accepting a silent source clip here hides a broken clip artifact
+        # and makes standalone VidGrid downloads incorrect.
+        if voiceover.get("narration_style") == "per_scene":
+            narration = narration_by_scene.get(scene_index) or {}
+            narration_value = narration.get("audio_path")
+            if narration_value:
+                narration_path = Path(str(narration_value)).resolve()
+                if voice_root not in narration_path.parents or not narration_path.is_file():
+                    invalid.append(scene_index)
+                    continue
+                if clip.get("audio_status") != "per_scene_narration_muxed":
+                    invalid.append(scene_index)
+                    continue
+                saved_fingerprint = clip.get("source_narration_fingerprint")
+                if saved_fingerprint and saved_fingerprint != _asset_sha256(narration_path):
+                    invalid.append(scene_index)
+                    continue
         paths.append(str(path))
     if invalid:
         raise HTTPException(
