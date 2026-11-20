@@ -497,11 +497,19 @@ class TextToVideoEngine:
 
         # Optional AI voice narration.
         if params.get("voiceover"):
+            voice_params = dict(params)
+            voice_params["narration_clip_callback"] = lambda clip: _notify_scene(
+                int(clip.get("index", -1)), "completed", "narration_asset_ready",
+                narration_path=clip.get("audio_path"),
+                narration_text=clip.get("text"),
+                narration_engine=clip.get("tts_engine"),
+                narration_duration=clip.get("audio_duration"),
+            )
             voice = await self._add_voiceover(
                 prompt,
                 scenes,
                 video_path=result["output_path"],
-                params=params,
+                params=voice_params,
             )
             result["voiceover"] = voice
             if voice and voice.get("muxed"):

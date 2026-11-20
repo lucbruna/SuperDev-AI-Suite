@@ -396,6 +396,32 @@ def _merge_scene_checkpoint(record: dict[str, Any], event: dict[str, Any]) -> No
             "status": "generated",
         })
 
+    narration_path = event.get("narration_path")
+    if narration_path:
+        from modules.ai_video_studio.media.output_paths import get_subsystem_dir
+
+        voice_root = Path(get_subsystem_dir("voice")).resolve()
+        safe_narration = Path(str(narration_path)).resolve()
+        if voice_root in safe_narration.parents and safe_narration.is_file() and safe_narration.stat().st_size > 0:
+            voiceover = record.setdefault("voiceover", {"narration_style": "per_scene", "clips": []})
+            voiceover["narration_style"] = "per_scene"
+            narration_clips = voiceover.setdefault("clips", [])
+            saved_clip = next(
+                (item for item in narration_clips if int(item.get("index", -1)) == scene_index),
+                None,
+            )
+            if saved_clip is None:
+                saved_clip = {"index": scene_index}
+                narration_clips.append(saved_clip)
+            saved_clip.update({
+                "index": scene_index,
+                "text": str(event.get("narration_text") or ""),
+                "audio_path": str(safe_narration),
+                "tts_engine": event.get("narration_engine"),
+                "audio_duration": event.get("narration_duration"),
+            })
+            narration_clips.sort(key=lambda item: int(item.get("index", 0)))
+
     clip_path = event.get("clip_path")
     if clip_path:
         clips = record.setdefault("scene_clips", [])
@@ -2375,6 +2401,10 @@ async def resume_interrupted_generation(job_id: str, background_tasks: Backgroun
                 "vidgrid_compatible": params.get("vidgrid_compatible", record.get("vidgrid_compatible", False)),
                 "checkpoint_scenes": scenes,
                 "checkpoint_scene_assets": params["checkpoint_scene_assets"],
+                "checkpoint_narration_clips": [
+                    dict(item) for item in ((record.get("voiceover") or {}).get("clips") or [])
+                    if isinstance(item, dict)
+                ],
             }
 
             def on_scene(event: dict[str, Any]) -> None:
