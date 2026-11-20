@@ -8,6 +8,22 @@ import pytest
 from modules.ai_video_studio.ai_video_generator.text_to_video import text_to_video_engine as engine_module
 
 
+def test_scene_image_seed_is_stable_and_distinct_per_scene():
+    scene_a = {"storyboard_scene_id": "opening"}
+    scene_b = {"storyboard_scene_id": "turning-point"}
+
+    first = engine_module.derive_scene_image_seed("job-1", scene_a, 0, base_seed=1234)
+    repeated = engine_module.derive_scene_image_seed("job-1", scene_a, 0, base_seed=1234)
+    other_scene = engine_module.derive_scene_image_seed("job-1", scene_b, 1, base_seed=1234)
+    other_job = engine_module.derive_scene_image_seed("job-2", scene_a, 0)
+
+    assert first == repeated
+    assert first != other_scene
+    assert first != other_job
+    assert 0 <= first <= 0x7FFFFFFF
+    assert 0 <= other_scene <= 0x7FFFFFFF
+
+
 def test_generate_async_requires_mp4_output(monkeypatch, tmp_path) -> None:
     captured: dict = {}
 
