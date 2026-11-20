@@ -67,8 +67,14 @@ from truncating the final frames of the rendered video.
 """
     import shutil
 
+    video = Path(video_path)
+    audio = Path(audio_path)
+    if not video.is_file() or video.stat().st_size <= 0:
+        return {"output_path": str(video), "muxed": False, "reason": "video input missing or empty"}
+    if not audio.is_file() or audio.stat().st_size <= 0:
+        return {"output_path": str(video), "muxed": False, "reason": "audio input missing or empty"}
     if shutil.which("ffmpeg") is None:
-        return {"output_path": str(video_path), "muxed": False, "reason": "ffmpeg unavailable"}
+        return {"output_path": str(video), "muxed": False, "reason": "ffmpeg unavailable"}
     out = Path(output_path)
     out.parent.mkdir(parents=True, exist_ok=True)
     cmd = [
@@ -85,4 +91,7 @@ from truncating the final frames of the rendered video.
     if result.returncode != 0:
         logger.warning("Audio muxing failed: %s", result.stderr[-300:])
         return {"output_path": str(video_path), "muxed": False, "reason": result.stderr[-200:]}
+    if not out.is_file() or out.stat().st_size <= 0:
+        logger.warning("Audio mux command succeeded without producing a non-empty output file")
+        return {"output_path": str(video), "muxed": False, "reason": "mux output missing or empty"}
     return {"output_path": str(out), "muxed": True, "bytes": out.stat().st_size}
