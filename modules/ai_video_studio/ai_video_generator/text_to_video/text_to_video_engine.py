@@ -552,6 +552,11 @@ class TextToVideoEngine:
                     scene_index, "completed", "clip_ready",
                     clip_path=clip_result["output_path"],
                     clip_bytes=clip_result.get("bytes"),
+                    clip_duration=10.0,
+                    clip_fps=fps,
+                    clip_width=width,
+                    clip_height=height,
+                    clip_audio_status="silent_or_tts_unavailable",
                 )
                 scene_clips.append({
                     "scene_index": scene_index,

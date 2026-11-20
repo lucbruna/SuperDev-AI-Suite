@@ -424,14 +424,24 @@ def _merge_scene_checkpoint(record: dict[str, Any], event: dict[str, Any]) -> No
 
     clip_path = event.get("clip_path")
     if clip_path:
+        from modules.ai_video_studio.media.output_paths import get_subsystem_dir
+
+        video_root = Path(get_subsystem_dir("videos")).resolve()
+        safe_clip_path = Path(str(clip_path)).resolve()
+        if (
+            video_root not in safe_clip_path.parents
+            or not safe_clip_path.is_file()
+            or safe_clip_path.stat().st_size <= 0
+        ):
+            return
         clips = record.setdefault("scene_clips", [])
         clip = next((item for item in clips if int(item.get("scene_index", -1)) == scene_index), None)
         if clip is None:
             clip = {"scene_index": scene_index}
             clips.append(clip)
         clip.update({
-            "output_path": str(clip_path),
-            "output_url": to_download_url(str(clip_path)),
+            "output_path": str(safe_clip_path),
+            "output_url": to_download_url(str(safe_clip_path)),
             "bytes": event.get("clip_bytes"),
             "duration": event.get("clip_duration", clip.get("duration")),
             "fps": event.get("clip_fps", clip.get("fps")),
