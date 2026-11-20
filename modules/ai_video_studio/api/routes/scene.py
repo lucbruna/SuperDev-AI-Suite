@@ -104,7 +104,7 @@ def sync_video_job_scenes(record: dict) -> None:
         asset = next((item for item in assets if isinstance(item, dict) and _index(item) == index), {})
         clip = next((item for item in clips if isinstance(item, dict) and _index(item) == index), {})
         progress_item = next((item for item in progress if isinstance(item, dict) and _index(item) == index), {})
-        existing = _scenes.get(scene_id, {})
+        existing = dict(_scenes.get(scene_id, {}))
         protected = set(existing.get("_user_modified_fields") or [])
         values = {
             "id": scene_id,
@@ -139,7 +139,8 @@ def sync_video_job_scenes(record: dict) -> None:
                 existing[key] = value
         existing["start_time"] = offset
         existing["end_time"] = offset + float(existing.get("duration") or generated_duration)
-        _scenes[scene_id] = existing
+        if existing != _scenes.get(scene_id):
+            _scenes[scene_id] = existing
         offset = existing["end_time"]
 
 @router.post("/", response_model=SceneResponse, status_code=201)

@@ -76,7 +76,6 @@ def test_generated_scenes_sync_to_project_and_preserve_manual_edits(monkeypatch)
     assert second["start_time"] == 10
     assert second["generation_status"] == "processing"
 
-    scene.update_scene
     first["name"] = "My manual title"
     first["_user_modified_fields"] = ["name"]
     record["_edited_scenes"][0]["title"] = "Updated generated title"
