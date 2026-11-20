@@ -3264,3 +3264,37 @@ def test_vidgrid_export_blocks_clip_when_source_narration_changed(tmp_path, monk
     assert error.value.status_code == 409
     assert "scenes [0]" in str(error.value.detail)
 
+
+
+@pytest.mark.asyncio
+async def test_requested_audio_shorter_than_video_invalidates_final_mp4(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    from modules.ai_video_studio.api.routes import video as video_routes
+    from modules.ai_video_studio.media import output_paths
+
+    root = tmp_path / "videos"
+    root.mkdir()
+    output = root / "truncated-audio.mp4"
+    output.write_bytes(b"mp4")
+    monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda _name: root)
+    monkeypatch.setattr(video_routes.shutil, "which", lambda name: f"/usr/bin/{name}")
+    monkeypatch.setattr(
+        video_routes.subprocess, "run",
+        lambda *args, **kwargs: SimpleNamespace(
+            returncode=0, stderr="",
+            stdout='{"format":{"duration":"12"},"streams":[{"codec_type":"video","codec_name":"h264","width":1280,"height":720,"avg_frame_rate":"24/1","duration":"12"},{"codec_type":"audio","codec_name":"aac","duration":"8"}]}',
+        ),
+    )
+    monkeypatch.setattr(video_routes, "_persist_job", lambda _record: None)
+    video_routes._jobs["truncated-audio-job"] = {
+        "job_id": "truncated-audio-job", "project_id": "p1",
+        "status": "completed", "edited_output_path": str(output),
+        "params": {"voiceover": False}, "edit_render_audio": "mixed_audio",
+        "edited_video_duration": 12,
+    }
+
+    report = await video_routes.validate_video_job_output("truncated-audio-job")
+
+    assert report["audio_video_duration_delta_seconds"] == -4.0
+    assert report["valid"] is False
+    assert any("termina 4.00s antes" in item for item in report["errors"])

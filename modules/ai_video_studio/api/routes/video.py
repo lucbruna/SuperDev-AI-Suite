@@ -3663,6 +3663,34 @@ async def validate_video_job_output(job_id: str):
                     report["errors"].append("Narração solicitada, mas o MP4 final não contém áudio.")
                 elif record.get("edit_render_audio") not in {"silent", "audio_mux_failed"} and not audio_streams:
                     report["warnings"].append("A exportação não contém stream de áudio, embora a etapa de áudio não esteja marcada como silenciosa.")
+                if audio_expected and video_streams and audio_streams:
+                    video_stream_duration = float(video_streams[0].get("duration") or duration)
+                    audio_stream_duration = float(audio_streams[0].get("duration") or 0)
+                    report["video_stream_duration_seconds"] = video_stream_duration
+                    report["audio_stream_duration_seconds"] = audio_stream_duration or None
+                    if audio_stream_duration <= 0:
+                        report["warnings"].append(
+                            "FFprobe não informou a duração individual da faixa de áudio; a sincronização de duração não pôde ser confirmada."
+                        )
+                    else:
+                        frame_rate = video_streams[0].get("avg_frame_rate") or video_streams[0].get("r_frame_rate") or ""
+                        try:
+                            numerator, denominator = (int(value) for value in frame_rate.split("/", 1))
+                            frame_tolerance = 2 * denominator / numerator if numerator > 0 and denominator > 0 else 0.0
+                        except (ValueError, ZeroDivisionError):
+                            frame_tolerance = 0.0
+                        stream_tolerance = max(0.25, frame_tolerance)
+                        delta = audio_stream_duration - video_stream_duration
+                        report["audio_video_duration_delta_seconds"] = round(delta, 3)
+                        report["audio_video_duration_tolerance_seconds"] = round(stream_tolerance, 3)
+                        if delta < -stream_tolerance:
+                            report["errors"].append(
+                                f"A faixa de áudio termina {abs(delta):.2f}s antes do vídeo; o MP4 final está incompleto."
+                            )
+                        elif delta > stream_tolerance:
+                            report["warnings"].append(
+                                f"A faixa de áudio ultrapassa o vídeo em {delta:.2f}s."
+                            )
                 if record.get("edit_render_audio") == "audio_mux_failed":
                     report["warnings"].append("A mixagem de áudio não foi incorporada ao MP4.")
                 if record.get("edit_render_audio") == "single_track_not_retimed":
