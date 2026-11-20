@@ -29,7 +29,7 @@ def create_app() -> FastAPI:
     settings = get_settings()
     app = FastAPI(
         title="AI Video Studio",
-        description="Enterprise video production platform with AI-powered generation, editing, and publishing.",
+        description="Local-first video creation studio for prompt-driven storyboards, narration, editing, rendering, subtitles, and MP4 export.",
         version=__version__,
         docs_url="/api/v1/video-studio/docs",
         redoc_url="/api/v1/video-studio/redoc",
