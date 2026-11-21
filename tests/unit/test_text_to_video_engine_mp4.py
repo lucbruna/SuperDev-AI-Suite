@@ -320,7 +320,9 @@ def test_generate_async_uses_real_scene_images_and_vidgrid_ten_second_clips(monk
 
         captured.setdefault("prompts", []).append(prompt)
         captured.setdefault("image_timeouts", []).append(kwargs.get("timeout"))
-        image_path = tmp_path / f"scene-{len(captured['prompts'])}.png"
+        image_dir = tmp_path / "images"
+        image_dir.mkdir(parents=True, exist_ok=True)
+        image_path = image_dir / f"scene-{len(captured['prompts'])}.png"
         Image.new("RGB", (kwargs["width"], kwargs["height"]), (24, 48, 72)).save(image_path)
         return {
             "image_path": str(image_path),
