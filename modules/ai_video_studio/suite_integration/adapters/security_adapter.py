@@ -71,7 +71,9 @@ class SecurityAdapter(SuiteAdapter):
     actions = ("validate_url", "is_internal_host")
 
     def available(self) -> bool:
-        """Check the real SSRF implementation without importing security/__init__.py."""
+        """Check the configured SSRF integration without importing security/__init__.py."""
+        if self.platform_module != "SuperDev.security.ssrf":
+            return False
         ensure_suite_importable()
         return _load_suite_ssrf() is not None
 
@@ -79,7 +81,7 @@ class SecurityAdapter(SuiteAdapter):
         """Return ``{safe: bool, reason?}`` — never raises."""
         ensure_suite_importable()
         try:
-            suite_ssrf = _load_suite_ssrf()
+            suite_ssrf = _load_suite_ssrf() if self.platform_module == "SuperDev.security.ssrf" else None
             if suite_ssrf is None:
                 return self._local_validate(url, allow_private=allow_private)
             suite_ssrf.validate_public_url(url, allow_private=allow_private)
@@ -90,7 +92,7 @@ class SecurityAdapter(SuiteAdapter):
     def is_internal_host(self, host: str) -> dict[str, Any]:
         """Return `{internal: bool}` — never raises."""
         ensure_suite_importable()
-        suite_ssrf = _load_suite_ssrf()
+        suite_ssrf = _load_suite_ssrf() if self.platform_module == "SuperDev.security.ssrf" else None
         if suite_ssrf is not None:
             return {"internal": bool(suite_ssrf.is_internal_host(host)), "platform": True}
         return {"internal": self._local_is_internal(host)}
