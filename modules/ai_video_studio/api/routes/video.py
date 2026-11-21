@@ -67,7 +67,7 @@ class VideoGenerateRequest(BaseModel):
     format: str = Field(default="custom", max_length=32)
     studio_id: str = Field(default="custom", pattern="^(whymentary|historical_documentary|felt_clay|custom)$")
     character_ids: list[str] = Field(default_factory=list, max_length=20, description="Optional user-defined character references")
-    object_ids: list[str] = Field(default_factory=list, max_length=50, description="Optional user-defined recurring object references")
+    object_ids: list[str] = Field(default_factory=list, max_length=6, description="Optional user-defined recurring object references; at most six per generation")
     scene_image_mode: str = Field(default="auto", pattern="^(procedural|ai|auto)$", description="Procedural scenes or per-scene local diffusion image generation")
     scene_image_steps: int = Field(default=20, ge=1, le=60)
     scene_image_seed: int | None = Field(default=None, ge=0, le=2147483647, description="Optional reproducible base seed for all scene images")
