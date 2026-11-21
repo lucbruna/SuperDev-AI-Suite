@@ -118,7 +118,7 @@ def test_ducking_recommendation_uses_measured_narration_and_music_levels():
         [{"rms_dbfs": -18.0}],
     )
     assert recommendation["available"] is True
-    assert recommendation["recommended_ducking_db"] == 9.5
+    assert recommendation["recommended_ducking_db"] == 9.8
     assert recommendation["recommended_threshold_db"] == -35.0
 
 

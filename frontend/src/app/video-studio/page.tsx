@@ -252,7 +252,7 @@ export default function VideoStudioPage() {
     if (pollTimers.current.has(jobId)) return;
     let requestInFlight = false;
     let consecutiveErrors = 0;
-    const timer = setInterval(async () => {
+    const poll = async () => {
       if (requestInFlight) return;
       requestInFlight = true;
       try {
@@ -274,8 +274,12 @@ export default function VideoStudioPage() {
       } finally {
         requestInFlight = false;
       }
-    }, 1500);
+    };
+    const timer = setInterval(() => { void poll(); }, 1500);
     pollTimers.current.set(jobId, timer);
+    // Restore active jobs immediately after opening the page; the interval is
+    // only the retry cadence, not a delay before the first status refresh.
+    void poll();
   }, []);
 
   // Jobs restored from history may still be running after a browser refresh.
