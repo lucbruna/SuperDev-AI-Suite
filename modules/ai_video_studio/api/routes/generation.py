@@ -213,4 +213,4 @@ async def download_media(kind: str, filename: str, download: bool = False):
     # Browsers need inline disposition for the HTML5 video preview. Explicit
     # downloads use the query flag so the same endpoint supports both flows.
     disposition = "attachment" if download else "inline"
-    return FileResponse(str(path), content_disposition_type=disposition)
+    return FileResponse(str(path), filename=path.name, content_disposition_type=disposition)
