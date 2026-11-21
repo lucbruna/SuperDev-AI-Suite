@@ -69,7 +69,7 @@ class TestCircuitBreaker:
         assert cb.failure_count == 0
         assert cb.is_available() is True
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="function")
     async def test_call_async_success(self):
         cb = CircuitBreaker(failure_threshold=3)
 
@@ -80,7 +80,7 @@ class TestCircuitBreaker:
         assert result == "async_ok"
         assert cb.state == "closed"
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="function")
     async def test_call_async_failure(self):
         cb = CircuitBreaker(failure_threshold=2)
 
@@ -91,7 +91,7 @@ class TestCircuitBreaker:
             await cb.call_async(func)
         assert cb.failure_count == 1
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="function")
     async def test_call_async_open_raises(self):
         cb = CircuitBreaker(failure_threshold=1, recovery_timeout=10.0)
 
@@ -118,7 +118,7 @@ class TestEvent:
 
 
 class TestEventBus:
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="function")
     async def test_publish_event(self):
         bus = EventBus()
         event = await bus.publish("user.created", {"user_id": "123"})
@@ -126,7 +126,7 @@ class TestEventBus:
         assert event.data["user_id"] == "123"
         assert len(bus.get_history()) == 1
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="function")
     async def test_subscribe_and_publish(self):
         bus = EventBus()
         received = []
@@ -139,7 +139,7 @@ class TestEventBus:
         assert len(received) == 1
         assert received[0].data["user_id"] == "123"
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="function")
     async def test_unsubscribe(self):
         bus = EventBus()
         received = []
@@ -152,13 +152,13 @@ class TestEventBus:
         await bus.publish("user.created")
         assert len(received) == 0
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="function")
     async def test_publish_no_handlers(self):
         bus = EventBus()
         event = await bus.publish("user.created")
         assert event.type == "user.created"
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="function")
     async def test_publish_handler_error_ignored(self):
         bus = EventBus()
 
