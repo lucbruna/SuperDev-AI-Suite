@@ -252,7 +252,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
     if (!jobId) return;
     let cancelled = false;
     if (typeof videoStudioApi.getJobVisualDirection !== "function") return () => { cancelled = true; };
-    videoStudioApi.getJobVisualDirection(jobId).then((result) => {
+    Promise.resolve(videoStudioApi.getJobVisualDirection(jobId)).then((result) => {
       if (cancelled) return;
       const byIndex: Record<number, SceneVisualDirection> = {};
       const suggestedPrompts: Record<number, string> = {};
@@ -276,11 +276,11 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
     setRenderQuality(null);
     if (!jobId) return;
     if (typeof videoStudioApi.listJobAudioAssets === "function") {
-      videoStudioApi.listJobAudioAssets(jobId).then(setAudioAssets).catch(() => setAudioAssets([]));
+      Promise.resolve(videoStudioApi.listJobAudioAssets(jobId)).then(setAudioAssets).catch(() => setAudioAssets([]));
     } else {
       setAudioAssets([]);
     }
-    videoStudioApi.getJob(jobId).then(async (job) => {
+    Promise.resolve(videoStudioApi.getJob(jobId)).then(async (job) => {
       if (!job) return;
       if (job.scene_assets) setSceneImageAssets(job.scene_assets);
       try {
@@ -317,7 +317,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
         })).then((entries) => setSceneImageCandidates(Object.fromEntries(entries)));
       }
       if (job.vidgrid_compatible) {
-        videoStudioApi.getVidGridRecoveryPlan(jobId).then((plan) => {
+        Promise.resolve(videoStudioApi.getVidGridRecoveryPlan(jobId)).then((plan) => {
           setVidGridRecoveryPlan(plan);
           setStaleVidGridClipCount(plan.repairable_count);
         }).catch(() => setVidGridRecoveryPlan(null));

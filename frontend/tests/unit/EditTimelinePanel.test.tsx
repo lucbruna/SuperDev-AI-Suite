@@ -125,7 +125,7 @@ describe("EditTimelinePanel", () => {
     expect(screen.getByLabelText("Médios")).toHaveValue("-1");
     expect(screen.getByLabelText("Agudos")).toHaveValue("1");
     fireEvent.change(screen.getByLabelText("Preset de masterização"), { target: { value: "voice" } });
-    fireEvent.change(screen.getAllByRole("slider", { name: /Panorama L\/R/ })[1], { target: { value: "-0.5" } });
+    fireEvent.change(screen.getAllByRole("slider", { name: /Panorama L\/R/ })[0], { target: { value: "-0.5" } });
     fireEvent.click(screen.getByRole("checkbox", { name: "Repetir" }));
     fireEvent.click(screen.getAllByRole("button", { name: "Remover" })[1]);
     fireEvent.click(screen.getByRole("button", { name: "Salvar alterações de áudio" }));
@@ -244,7 +244,7 @@ it("edits a scene image from a text instruction and asks for a new MP4 render", 
   render(<EditTimelinePanel timeline={timeline} jobId="scene-image-job" />);
   const prompt = "Transforme o fundo em uma floresta ao amanhecer";
   fireEvent.change(screen.getAllByPlaceholderText("Descreva o enquadramento, cenário e ação desta cena…")[0], { target: { value: prompt } });
-  fireEvent.click(screen.getAllByRole("button", { name: "Criar imagem por texto" })[0]);
+  fireEvent.click(screen.getAllByRole("button", { name: "Criar imagem desta cena" })[0]);
   await waitFor(() => expect(edit).toHaveBeenCalledWith("scene-image-job", 0, { prompt, denoising_strength: 0.45, stage_only: true }));
   expect(await screen.findByAltText("Imagem candidata da cena 1")).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Aprovar nova imagem" }));
@@ -415,8 +415,8 @@ it("regenerates every storyboard image from its scene-specific visual brief with
   await waitFor(() => expect(screen.getByText("context")).toBeInTheDocument());
   fireEvent.click(screen.getByRole("button", { name: "Gerar imagens de todas as cenas pelo roteiro" }));
   await waitFor(() => expect(batch).toHaveBeenCalledWith("all-scenes-job", [
-    { scene_index: 0, prompt: "Plano geral cinematográfico da cidade junto ao rio." },
-    { scene_index: 1, prompt: "Navios entrando no porto ao amanhecer." },
+    { scene_index: 0, prompt: "Plano geral cinematográfico da cidade junto ao rio.", seed: -1 },
+    { scene_index: 1, prompt: "Navios entrando no porto ao amanhecer.", seed: -1 },
   ]));
   expect(await screen.findByText("2 de 2 imagens geradas como candidatas.")).toBeInTheDocument();
   expect(screen.getByAltText("Imagem candidata da cena 1")).toHaveAttribute("src", "/images/all-0.png");
@@ -485,9 +485,8 @@ describe("Storyboard scene navigation", () => {
 
     render(<EditTimelinePanel timeline={timeline} jobId="storyboard-navigation-job" />);
 
-    const sceneButtons = await screen.findAllByRole("button", { name: "Editar cena" });
-    expect(sceneButtons).toHaveLength(2);
-    fireEvent.click(sceneButtons[1]);
+    const sceneButton = await screen.findByRole("button", { name: "Editar cena" });
+    fireEvent.click(sceneButton);
 
     expect(screen.getByText(/Selecionado: Cena 2 · close_up/)).toBeInTheDocument();
     expect(screen.getByRole("slider", { name: "Posição do cursor da timeline" })).toHaveValue("48");
