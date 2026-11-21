@@ -312,7 +312,7 @@ class TestSceneCheckpointPersistence:
 
 
 class TestGenerateVoiceover:
-    @pytest.mark.asyncio(loop_scope="session")
+    @pytest.mark.asyncio
     async def test_accepts_voiceover_fields(self, client: AsyncClient, fake_engine: _FakeEngine):
         resp = await client.post(
             "/api/v1/video-studio/videos/generate",
