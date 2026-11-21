@@ -119,7 +119,7 @@ class TestRequirePermission:
 
 
 class TestEnsureSystemRoles:
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="function")
     async def test_creates_roles(self):
         mock_session = AsyncMock()
         # First call returns None (role doesn't exist)
@@ -130,7 +130,7 @@ class TestEnsureSystemRoles:
         await ensure_system_roles(mock_session)
         mock_session.commit.assert_called_once()
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="function")
     async def test_skips_existing_roles(self):
         mock_session = AsyncMock()
         # Return existing role for all queries
@@ -145,7 +145,7 @@ class TestEnsureSystemRoles:
 
 
 class TestAssignRole:
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="function")
     async def test_raises_on_missing_role(self):
         mock_session = AsyncMock()
         mock_result = MagicMock()
@@ -155,7 +155,7 @@ class TestAssignRole:
         with pytest.raises(ValueError, match="does not exist"):
             await assign_role(mock_session, "user-123", "nonexistent_role")
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="function")
     async def test_skips_duplicate_assignment(self):
         mock_role = MagicMock()
         mock_role.id = "role-123"
