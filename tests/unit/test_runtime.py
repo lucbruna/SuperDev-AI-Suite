@@ -152,7 +152,7 @@ class TestSandboxManager:
         mgr = SandboxManager(base_dir=str(tmp_path))
         assert mgr.get_sandbox_size("nonexistent") == 0
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="function")
     async def test_write_and_read_file(self, tmp_path):
         mgr = SandboxManager(base_dir=str(tmp_path))
         mgr.create_sandbox("run1")
@@ -160,7 +160,7 @@ class TestSandboxManager:
         content = await mgr.read_file("run1", "src/test.py")
         assert content == b"print('hello')"
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="function")
     async def test_write_bytes(self, tmp_path):
         mgr = SandboxManager(base_dir=str(tmp_path))
         mgr.create_sandbox("run1")
@@ -168,7 +168,7 @@ class TestSandboxManager:
         content = await mgr.read_file("run1", "data.bin")
         assert content == b"\x00\x01\x02"
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="function")
     async def test_read_file_not_found(self, tmp_path):
         mgr = SandboxManager(base_dir=str(tmp_path))
         mgr.create_sandbox("run1")
