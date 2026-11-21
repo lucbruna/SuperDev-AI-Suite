@@ -853,7 +853,7 @@ export default function VideoStudioPage() {
             <p className="text-xs text-surface-400">
               Gera MP4 com planejamento de cenas, composição por FFmpeg e narração por cena; Ollama é opcional.
             </p>
-            <Button variant="primary" onClick={handleGenerate} isLoading={generating} disabled={!prompt.trim()}>
+            <Button variant="primary" onClick={handleGenerate} isLoading={generating} disabled={generating}>
               {generating ? "Gerando…" : "▶ Gerar vídeo"}
             </Button>
           </div>
