@@ -29,16 +29,38 @@ _SUITE_IMPORT_ROOT = _SUITE_ROOT.parent
 
 
 def ensure_suite_importable() -> None:
-    """Make the SuperDev suite root importable (idempotent, safe).
+    """Expose this checkout under the canonical ``SuperDev`` package name.
 
-    Only when the suite root directory is literally named ``SuperDev`` (the
-    canonical layout); otherwise the adapters degrade to local fallbacks.
+    The repository is itself the SuperDev package, but CI and developer
+    checkouts are commonly named ``SuperDev-AI-Suite`` rather than
+    ``SuperDev``. In that layout, load the repository root as the package
+    when no canonical package is already importable.
     """
-    if _SUITE_ROOT.name != "SuperDev":
+    if _SUITE_ROOT.name == "SuperDev":
+        root = str(_SUITE_IMPORT_ROOT)
+        if root not in sys.path:
+            sys.path.insert(0, root)
         return
-    root = str(_SUITE_IMPORT_ROOT)
-    if root not in sys.path:
-        sys.path.insert(0, root)
+
+    if not (_SUITE_ROOT / "__init__.py").is_file():
+        return
+    if importlib.util.find_spec("SuperDev") is not None:
+        return
+
+    spec = importlib.util.spec_from_file_location(
+        "SuperDev",
+        _SUITE_ROOT / "__init__.py",
+        submodule_search_locations=[str(_SUITE_ROOT)],
+    )
+    if spec is None or spec.loader is None:
+        return
+    package = importlib.util.module_from_spec(spec)
+    sys.modules["SuperDev"] = package
+    try:
+        spec.loader.exec_module(package)
+    except Exception:
+        sys.modules.pop("SuperDev", None)
+        raise
 
 
 def has_module(name: str) -> bool:
