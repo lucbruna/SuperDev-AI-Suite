@@ -138,7 +138,7 @@ describe("EditTimelinePanel", () => {
     expect(screen.getByLabelText("Médios")).toHaveValue("-1");
     expect(screen.getByLabelText("Agudos")).toHaveValue("1");
     fireEvent.change(screen.getByLabelText("Preset de masterização"), { target: { value: "voice" } });
-    fireEvent.change(screen.getAllByLabelText("Panorama L/R")[2], { target: { value: "-0.5" } });
+    fireEvent.change(screen.getAllByLabelText("Panorama L/R")[0], { target: { value: "-0.5" } });
     fireEvent.click(screen.getByRole("checkbox", { name: "Repetir" }));
     fireEvent.click(screen.getAllByRole("button", { name: "Remover" })[1]);
     fireEvent.click(screen.getByRole("button", { name: "Salvar alterações de áudio" }));
