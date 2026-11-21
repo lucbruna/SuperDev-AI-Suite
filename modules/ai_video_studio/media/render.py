@@ -160,7 +160,17 @@ def render_multi_scene_video(
                 [canvas.render_scene(next_scene, j) for j in range(transition_frames)]
                 if kind == "crossfade" and next_scene is not None else []
             )
-            skip_head = transition_frames if kind == "crossfade" else 0
+            # A crossfade consumes the incoming scene's opening frames, not
+            # the outgoing scene's opening frames. The previous scene has
+            # already emitted the blended overlap at its tail.
+            previous_transition = (
+                effective_transitions[scene_index - 1]
+                if scene_index > 0 else {"type": "cut", "duration_frames": 0}
+            )
+            skip_head = (
+                previous_transition["duration_frames"]
+                if previous_transition["type"] == "crossfade" else 0
+            )
             for frame_index in range(total):
                 frame = canvas.render_scene(scene, frame_index)
                 if kind == "crossfade" and frame_index >= total - transition_frames:
