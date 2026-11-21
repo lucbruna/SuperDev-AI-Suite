@@ -71,7 +71,6 @@ class TestDefaultPermissions:
             assert isinstance(_DEFAULT_ROLE_PERMISSIONS[role], set)
 
 
-@pytest.mark.asyncio(loop_scope="function")
 class TestPermissionChecker:
     def test_init_with_enums(self):
         checker = PermissionChecker(Resource.USERS, Action.READ)
@@ -83,7 +82,7 @@ class TestPermissionChecker:
         assert checker.resource == "projects"
         assert checker.action == "create"
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="function")
     async def test_check_returns_false_for_nonexistent_user(self):
         mock_session = AsyncMock()
         mock_result = MagicMock()
@@ -94,7 +93,7 @@ class TestPermissionChecker:
         result = await checker.check(mock_session, "nonexistent-id")
         assert result is False
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="function")
     async def test_check_returns_true_for_superuser(self):
         mock_user = MagicMock()
         mock_user.is_superuser = True
