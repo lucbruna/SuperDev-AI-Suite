@@ -424,13 +424,18 @@ class TextToVideoEngine:
                             else "neutral"
                         )
                     expression = str(scene.get("character_expression") or "")
-                    if expression not in {"neutral", "happy", "surprised", "concerned"}:
-                        expression = (
+                    # The storyboard director may seed "neutral" as a default.
+                    # Let explicit visual/narrative cues refine that default, while
+                    # preserving any non-neutral expression chosen upstream.
+                    if expression not in {"neutral", "happy", "surprised", "concerned"} or expression == "neutral":
+                        inferred_expression = (
                             "surprised" if any(word in scene_words for word in ("surprised", "surpresa", "surpres", "espant"))
                             else "concerned" if any(word in scene_words for word in ("concern", "preocup", "alerta"))
                             else "happy" if any(word in scene_words for word in ("happy", "feliz", "sorr"))
                             else "neutral"
                         )
+                        if inferred_expression != "neutral" or expression not in {"neutral", "happy", "surprised", "concerned"}:
+                            expression = inferred_expression
                     scenes[scene_index]["character_pose"] = pose
                     scenes[scene_index]["character_expression"] = expression
                     scenes[scene_index] = add_character(
