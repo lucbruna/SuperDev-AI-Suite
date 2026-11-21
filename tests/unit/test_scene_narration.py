@@ -283,7 +283,7 @@ def test_engine_add_voiceover_single_when_no_scene_text(fake_tts, monkeypatch, t
 
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio(loop_scope="function")
 async def test_scene_narration_uses_frame_rounded_duration_for_audio_slots(monkeypatch, tmp_path):
     from modules.ai_video_studio.media import scene_narration
 
@@ -400,7 +400,7 @@ def test_remap_narration_keeps_audio_for_visual_only_edits() -> None:
     assert [clip["audio_path"] for clip in clips] == ["voice.wav"]
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio(loop_scope="function")
 async def test_regenerate_changed_narration_only_synthesizes_edited_scene(monkeypatch):
     from modules.ai_video_studio.media import scene_narration
 
@@ -438,7 +438,7 @@ async def test_regenerate_changed_narration_only_synthesizes_edited_scene(monkey
 
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio(loop_scope="function")
 async def test_regenerate_changed_narration_when_original_tts_failed(monkeypatch):
     from modules.ai_video_studio.media import scene_narration
 
@@ -530,7 +530,7 @@ def test_crossfade_trims_outgoing_narration_and_subtitle_slots():
     ]
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio(loop_scope="function")
 async def test_scene_narration_reuses_valid_checkpoint_audio_without_calling_tts(monkeypatch, tmp_path):
     from modules.ai_video_studio.ai_voice_studio import voice_engine as ve
 
@@ -575,7 +575,7 @@ async def test_scene_narration_reuses_valid_checkpoint_audio_without_calling_tts
     assert callbacks[0]["audio_path"] == str(saved_audio)
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio(loop_scope="function")
 async def test_scene_narration_does_not_reuse_checkpoint_audio_when_text_changed(monkeypatch, tmp_path):
     from modules.ai_video_studio.ai_voice_studio import voice_engine as ve
 
