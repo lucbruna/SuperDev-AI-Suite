@@ -271,7 +271,12 @@ class TestSceneCheckpointPersistence:
         from modules.ai_video_studio.api.routes.video import _merge_scene_checkpoint
         from modules.ai_video_studio.media import output_paths
 
-        monkeypatch.setattr(output_paths, "DOWNLOADS_DIR", tmp_path / "downloads")
+        downloads_root = tmp_path / "downloads"
+        video_root = downloads_root / "videos"
+        video_root.mkdir(parents=True)
+        clip_path = video_root / "scene-2.mp4"
+        clip_path.write_bytes(b"test-clip")
+        monkeypatch.setattr(output_paths, "DOWNLOADS_DIR", downloads_root)
         record = {
             "_source_scenes": [{"title": "Cena 1", "_source_scene_index": 0}],
             "_edited_scenes": [{"title": "Cena 1", "_source_scene_index": 0}],
@@ -284,7 +289,7 @@ class TestSceneCheckpointPersistence:
             "image_path": str(tmp_path / "scene-2.png"),
             "image_provider": "local_diffusion",
             "image_seed": 123,
-            "clip_path": str(tmp_path / "scene-2.mp4"),
+            "clip_path": str(clip_path),
             "clip_bytes": 456,
         })
 
@@ -294,7 +299,7 @@ class TestSceneCheckpointPersistence:
         assert record["scene_assets"][0]["scene_index"] == 1
         assert record["scene_assets"][0]["provider"] == "local_diffusion"
         assert record["scene_assets"][0]["seed"] == 123
-        assert record["scene_clips"][0]["output_path"] == str(tmp_path / "scene-2.mp4")
+        assert record["scene_clips"][0]["output_path"] == str(clip_path.resolve())
         assert record["scene_clips"][0]["bytes"] == 456
 
     def test_invalid_scene_checkpoint_is_ignored(self):
