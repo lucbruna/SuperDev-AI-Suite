@@ -125,7 +125,7 @@ describe("EditTimelinePanel", () => {
     expect(screen.getByLabelText("Médios")).toHaveValue("-1");
     expect(screen.getByLabelText("Agudos")).toHaveValue("1");
     fireEvent.change(screen.getByLabelText("Preset de masterização"), { target: { value: "voice" } });
-    fireEvent.change(screen.getAllByRole("slider", { name: /Panorama L\/R/ })[0], { target: { value: "-0.5" } });
+    fireEvent.change(screen.getAllByRole("slider", { name: /Panorama L\/R/ })[1], { target: { value: "-0.5" } });
     fireEvent.click(screen.getByRole("checkbox", { name: "Repetir" }));
     fireEvent.click(screen.getAllByRole("button", { name: "Remover" })[1]);
     fireEvent.click(screen.getByRole("button", { name: "Salvar alterações de áudio" }));
@@ -243,7 +243,7 @@ it("edits a scene image from a text instruction and asks for a new MP4 render", 
   const approve = vi.spyOn(videoStudioApi, "approveSceneImageCandidate").mockResolvedValue({ job_id: "scene-image-job", scene_index: 0, status: "approved", image_url: "/api/v1/downloads/images/edited.png", render_required: true, message: "Imagem aprovada e aplicada à cena. Renderize a edição para atualizar o MP4 completo." });
   render(<EditTimelinePanel timeline={timeline} jobId="scene-image-job" />);
   const prompt = "Transforme o fundo em uma floresta ao amanhecer";
-  fireEvent.change(screen.getByPlaceholderText("Descreva o enquadramento, cenário e ação desta cena…"), { target: { value: prompt } });
+  fireEvent.change(screen.getAllByPlaceholderText("Descreva o enquadramento, cenário e ação desta cena…")[0], { target: { value: prompt } });
   fireEvent.click(screen.getAllByRole("button", { name: "Criar imagem por texto" })[0]);
   await waitFor(() => expect(edit).toHaveBeenCalledWith("scene-image-job", 0, { prompt, denoising_strength: 0.45, stage_only: true }));
   expect(await screen.findByAltText("Imagem candidata da cena 1")).toBeInTheDocument();
@@ -298,6 +298,7 @@ it("generates a separate 10-second ComfyUI motion clip from a scene image", asyn
   })));
   expect(await screen.findByText(/Clipe generativo da cena 1 integrado ao projeto/)).toBeInTheDocument();
   expect(screen.getByText(/Abrir clipe generativo da cena 1/)).toBeInTheDocument();
+  });
 
   it("creates and plays a low-resolution visual preview of the saved timeline", async () => {
     vi.spyOn(videoStudioApi, "previewJobEdits").mockResolvedValue({
@@ -343,7 +344,7 @@ it("generates a separate 10-second ComfyUI motion clip from a scene image", asyn
         },
       ],
     });
-    render(<EditTimelinePanel timeline={timeline} jobId="director-job" />);
+    render(<EditTimelinePanel timeline={timeline} jobId="director-job" sceneAssets={[{ scene_index: 0, image_path: "/images/evidence.png", image_url: "/images/evidence.png", status: "generated" }, { scene_index: 1, image_path: "/images/city.png", image_url: "/images/city.png", status: "generated" }]} />);
     await waitFor(() => expect(direction).toHaveBeenCalledWith("director-job"));
     expect(await screen.findByText("revelation")).toBeInTheDocument();
     expect(screen.getByText(/Isole a evidência em close de detalhe/)).toBeInTheDocument();
@@ -374,8 +375,8 @@ it("generates a separate 10-second ComfyUI motion clip from a scene image", asyn
     fireEvent.click(screen.getByRole("checkbox", { name: "Selecionar cena 2" }));
     fireEvent.click(screen.getByRole("button", { name: "Regenerar selecionadas (2)" }));
     await waitFor(() => expect(batch).toHaveBeenCalledWith("batch-ui-job", [
-      { scene_index: 0, prompt: "Plano geral da cidade junto ao rio." },
-      { scene_index: 1, prompt: "Navios entrando no porto ao amanhecer." },
+      { scene_index: 0, prompt: "Plano geral da cidade junto ao rio.", seed: -1 },
+      { scene_index: 1, prompt: "Navios entrando no porto ao amanhecer.", seed: -1 },
     ]));
     expect(await screen.findByText(/2 de 2 imagens geradas como candidatas/)).toBeInTheDocument();
     expect(screen.getByAltText("Imagem candidata da cena 1")).toHaveAttribute("src", "/images/0.png");

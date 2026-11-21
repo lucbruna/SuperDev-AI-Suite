@@ -13,6 +13,8 @@ vi.mock("@/api/videoStudio", () => ({
     listVoices: vi.fn(),
     listJobs: vi.fn(),
     getJob: vi.fn(),
+    getJobVisualDirection: vi.fn().mockResolvedValue({ scenes: [] }),
+    listJobAudioAssets: vi.fn().mockResolvedValue([]),
     generateVideo: vi.fn(),
     preflightVideo: vi.fn(),
     validateJobOutput: vi.fn(),

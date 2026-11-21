@@ -117,7 +117,8 @@ export default function VideoStudioPage() {
 
   const refreshJobs = useCallback(async () => {
     try {
-      setJobs(await videoStudioApi.listJobs());
+      const result = await videoStudioApi.listJobs();
+      setJobs(Array.isArray(result) ? result.filter((job): job is StudioJob => Boolean(job && typeof job.job_id === "string" && typeof job.status === "string")) : []);
     } catch {
       // Backend may be offline — keep last known jobs.
     }
@@ -144,7 +145,7 @@ export default function VideoStudioPage() {
     try {
       await videoStudioApi.queueStaleVidGridClips(jobId, plan.repair_scene_indices);
       const updated = await videoStudioApi.getJob(jobId);
-      setJobs((prev) => prev.map((job) => job.job_id === jobId ? updated : job));
+      setJobs((prev) => prev.map((job) => job?.job_id === jobId ? updated : job).filter((job): job is StudioJob => Boolean(job && typeof job.job_id === "string" && typeof job.status === "string")));
       await loadVidGridRecoveryPlan(jobId);
     } catch (error) {
       setRecoveryErrors((prev) => ({ ...prev, [jobId]: extractErrorMessage(error, "Não foi possível enfileirar a reconstrução") }));
@@ -258,7 +259,7 @@ export default function VideoStudioPage() {
       try {
         const job = await videoStudioApi.getJob(jobId);
         consecutiveErrors = 0;
-        setJobs((prev) => prev.map((j) => (j.job_id === jobId ? job : j)));
+        setJobs((prev) => prev.map((j) => (j?.job_id === jobId ? job : j)).filter((j): j is StudioJob => Boolean(j && typeof j.job_id === "string" && typeof j.status === "string")));
         if (["completed", "failed", "cancelled", "interrupted"].includes(job.status)) {
           clearInterval(timer);
           pollTimers.current.delete(jobId);

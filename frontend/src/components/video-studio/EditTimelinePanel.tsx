@@ -275,10 +275,16 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
   useEffect(() => {
     setRenderQuality(null);
     if (!jobId) return;
-    videoStudioApi.listJobAudioAssets(jobId).then(setAudioAssets).catch(() => setAudioAssets([]));
+    if (typeof videoStudioApi.listJobAudioAssets === "function") {
+      videoStudioApi.listJobAudioAssets(jobId).then(setAudioAssets).catch(() => setAudioAssets([]));
+    } else {
+      setAudioAssets([]);
+    }
     videoStudioApi.getJob(jobId).then(async (job) => {
+      if (!job) return;
       if (job.scene_assets) setSceneImageAssets(job.scene_assets);
       try {
+        if (typeof videoStudioApi.getJobSceneImageFraming !== "function") return;
         const framing = await videoStudioApi.getJobSceneImageFraming(jobId);
         setSceneFraming(Object.fromEntries(
           Object.entries(framing.scenes).map(([index, transform]) => [Number(index), transform]),

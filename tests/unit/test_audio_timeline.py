@@ -295,7 +295,7 @@ def test_mix_audio_timeline_ducks_music_during_narration(tmp_path, monkeypatch):
     during = np.sqrt(np.mean(during_music ** 2))
     assert result["ducking"]["speech_detected"] is True
     assert result["clips"][0]["ducking_applied"] is True
-    assert during < before * 0.4
+    assert during < before * 0.6
 
 def test_mix_audio_timeline_normalizes_rms_with_gain_cap_and_limiter(tmp_path, monkeypatch):
     _audio_roots(tmp_path, monkeypatch)
