@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, vi } from "vitest";
 import { videoStudioApi } from "@/api/videoStudio";
 import { describe, expect, it } from "vitest";
@@ -138,7 +138,9 @@ describe("EditTimelinePanel", () => {
     expect(screen.getByLabelText("Médios")).toHaveValue("-1");
     expect(screen.getByLabelText("Agudos")).toHaveValue("1");
     fireEvent.change(screen.getByLabelText("Preset de masterização"), { target: { value: "voice" } });
-    fireEvent.change(screen.getAllByRole("slider", { name: /Panorama L\/R/ })[3], { target: { value: "-0.5" } });
+    const musicSection = screen.getByText("🎵 Música de fundo").parentElement;
+    expect(musicSection).not.toBeNull();
+    fireEvent.change(within(musicSection as HTMLElement).getByRole("slider"), { target: { value: "-0.5" } });
     fireEvent.click(screen.getByRole("checkbox", { name: "Repetir" }));
     fireEvent.click(screen.getAllByRole("button", { name: "Remover" })[1]);
     fireEvent.click(screen.getByRole("button", { name: "Salvar alterações de áudio" }));
@@ -260,7 +262,7 @@ it("edits a scene image from a text instruction and asks for a new MP4 render", 
   fireEvent.change(screen.getAllByPlaceholderText("Descreva o enquadramento, cenário e ação desta cena…")[0], { target: { value: prompt } });
   fireEvent.click(screen.getAllByRole("button", { name: "Criar imagem desta cena" })[0]);
   await waitFor(() => expect(edit).toHaveBeenCalledWith("scene-image-job", 0, { prompt, denoising_strength: 0.45, seed: -1, stage_only: true }));
-  expect(await screen.findByAltText("Imagem candidata da cena 1")).toBeInTheDocument();
+  expect(await screen.findByAltText("Alternativa 1 da cena 1")).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Aprovar nova imagem" }));
   await waitFor(() => expect(approve).toHaveBeenCalledWith("scene-image-job", 0, "candidate-1"));
   expect(await screen.findByText(/Imagem aprovada e aplicada à cena/)).toBeInTheDocument();
@@ -383,7 +385,7 @@ it("loads the director's shot rationale and pre-fills the suggested scene prompt
     });
     vi.spyOn(videoStudioApi, "approveSceneImageCandidate").mockResolvedValue({ job_id: "batch-ui-job", scene_index: 0, status: "approved", image_url: "/images/0.png", render_required: true, message: "Imagem aprovada." });
     render(<EditTimelinePanel timeline={timeline} jobId="batch-ui-job" />);
-    await waitFor(() => expect(screen.getByText("revelation")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("context")).toBeInTheDocument());
     fireEvent.click(screen.getByRole("checkbox", { name: "Selecionar cena 1" }));
     fireEvent.click(screen.getByRole("checkbox", { name: "Selecionar cena 2" }));
     fireEvent.click(screen.getByRole("button", { name: "Regenerar selecionadas (2)" }));
@@ -392,8 +394,8 @@ it("loads the director's shot rationale and pre-fills the suggested scene prompt
       { scene_index: 1, prompt: "Navios entrando no porto ao amanhecer.", seed: -1 },
     ]));
     expect(await screen.findByText(/2 de 2 imagens geradas como candidatas/)).toBeInTheDocument();
-    expect(screen.getByAltText("Imagem candidata da cena 1")).toHaveAttribute("src", "/images/0.png");
-    expect(screen.getByAltText("Imagem candidata da cena 2")).toHaveAttribute("src", "/images/1.png");
+    expect(screen.getByAltText("Alternativa 1 da cena 1")).toHaveAttribute("src", "/images/0.png");
+    expect(screen.getByAltText("Alternativa 1 da cena 2")).toHaveAttribute("src", "/images/1.png");
   });
 
 
@@ -435,8 +437,8 @@ it("regenerates every storyboard image from its scene-specific visual brief with
     { scene_index: 1, prompt: "Navios entrando no porto ao amanhecer.", seed: -1 },
   ]));
   expect(await screen.findByText("2 de 2 imagens geradas como candidatas.")).toBeInTheDocument();
-  expect(screen.getByAltText("Imagem candidata da cena 1")).toHaveAttribute("src", "/images/all-0.png");
-  expect(screen.getByAltText("Imagem candidata da cena 2")).toHaveAttribute("src", "/images/all-1.png");
+  expect(screen.getByAltText("Alternativa 1 da cena 1")).toHaveAttribute("src", "/images/all-0.png");
+  expect(screen.getByAltText("Alternativa 1 da cena 2")).toHaveAttribute("src", "/images/all-1.png");
 });
 
 

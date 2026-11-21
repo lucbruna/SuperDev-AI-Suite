@@ -72,9 +72,9 @@ def test_editing_report_accepts_balanced_speech_and_multiple_shots() -> None:
     from modules.ai_video_studio.media.editing_director import build_editing_report
 
     scenes = [
-        {"duration": 10.0, "shot_type": "wide", "voiceover_text": " ".join(["palavra"] * 20)},
-        {"duration": 10.0, "shot_type": "close_up", "voiceover_text": " ".join(["palavra"] * 20)},
-        {"duration": 10.0, "shot_type": "detail", "voiceover_text": " ".join(["palavra"] * 20)},
+        {"duration": 10.0, "shot_type": "wide", "voiceover_text": " ".join(["palavra"] * 20), "visual_prompt": "Plano geral da cidade."},
+        {"duration": 10.0, "shot_type": "close_up", "voiceover_text": " ".join(["palavra"] * 20), "visual_prompt": "Close do documento."},
+        {"duration": 10.0, "shot_type": "detail", "voiceover_text": " ".join(["palavra"] * 20), "visual_prompt": "Detalhe da evidência."},
     ]
     report = build_editing_report(scenes, fps=30, fallback_duration=10.0)
     assert report["warnings"] == []

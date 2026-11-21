@@ -275,6 +275,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
   useEffect(() => {
     setRenderQuality(null);
     if (!jobId) return;
+    setSceneImageCandidates({});
     if (typeof videoStudioApi.listJobAudioAssets === "function") {
       Promise.resolve(videoStudioApi.listJobAudioAssets(jobId)).then(setAudioAssets).catch(() => setAudioAssets([]));
     } else {
@@ -293,9 +294,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
         // Older jobs may not expose persisted framing metadata.
       }
       const candidateSceneIndices = Object.keys(job.scene_image_candidates ?? {});
-      if (!candidateSceneIndices.length) {
-        setSceneImageCandidates({});
-      } else {
+      if (candidateSceneIndices.length) {
         void Promise.all(candidateSceneIndices.map(async (rawIndex) => {
           const sceneIndex = Number(rawIndex);
           try {
