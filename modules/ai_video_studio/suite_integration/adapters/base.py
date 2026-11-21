@@ -44,7 +44,21 @@ def ensure_suite_importable() -> None:
 
     if not (_SUITE_ROOT / "__init__.py").is_file():
         return
-    if importlib.util.find_spec("SuperDev") is not None:
+
+    # A different installed distribution (or a namespace package) can make
+    # find_spec("SuperDev") succeed without exposing this checkout's modules.
+    # Prefer an already-loaded package, but extend its search path to this repo.
+    existing = sys.modules.get("SuperDev")
+    if existing is None:
+        try:
+            existing = importlib.import_module("SuperDev")
+        except (ImportError, ModuleNotFoundError):
+            existing = None
+    existing_path = getattr(existing, "__path__", None)
+    if existing_path is not None:
+        root = str(_SUITE_ROOT)
+        if root not in existing_path:
+            existing_path.append(root)
         return
 
     spec = importlib.util.spec_from_file_location(
