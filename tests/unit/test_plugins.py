@@ -109,20 +109,20 @@ class TestBasePlugin:
         plugin = self._make_plugin()
         assert plugin.version == "1.0.0"
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="function")
     async def test_activate(self):
         plugin = self._make_plugin()
         await plugin.activate()
         assert plugin.status == PluginStatus.ENABLED
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="function")
     async def test_deactivate(self):
         plugin = self._make_plugin()
         await plugin.activate()
         await plugin.deactivate()
         assert plugin.status == PluginStatus.DISABLED
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="function")
     async def test_on_config_change(self):
         plugin = self._make_plugin()
         await plugin.on_config_change({"key": "value"})
@@ -135,13 +135,13 @@ class TestBasePlugin:
         assert "on_event" in plugin._hooks
         assert handler in plugin._hooks["on_event"]
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="function")
     async def test_trigger_hook_empty(self):
         plugin = self._make_plugin()
         results = await plugin.trigger_hook("nonexistent")
         assert results == []
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="function")
     async def test_trigger_hook_with_handler(self):
         plugin = self._make_plugin()
 
@@ -152,7 +152,7 @@ class TestBasePlugin:
         results = await plugin.trigger_hook("on_event", value=5)
         assert results == [10]
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="function")
     async def test_trigger_hook_error_handling(self):
         plugin = self._make_plugin()
 
