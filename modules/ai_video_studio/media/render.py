@@ -181,8 +181,11 @@ def render_multi_scene_video(
                     offset = frame_index - (total - transition_frames)
                     progress = (offset + 1) / transition_frames
                     frame = fade_to_black(frame, progress)
-                elif kind == "fade_through_black" and frame_index < transition_frames and scene_index > 0:
-                    progress = frame_index / (transition_frames - 1)
+                elif (
+                    previous_transition["type"] == "fade_through_black"
+                    and frame_index < previous_transition["duration_frames"]
+                ):
+                    progress = frame_index / (previous_transition["duration_frames"] - 1)
                     frame = fade_from_black(frame, progress)
                 if frame_index < skip_head:
                     continue
