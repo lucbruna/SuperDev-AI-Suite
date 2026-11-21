@@ -912,7 +912,7 @@ class TestJobStatus:
 
     @pytest.mark.asyncio
     async def test_job_failure_is_surfaced(self, client: AsyncClient, monkeypatch):
-        async def _boom(self, job: dict, progress_callback=None) -> dict:
+        async def _boom(self, job: dict, progress_callback=None, scene_callback=None) -> dict:
             raise RuntimeError("engine exploded")
 
         monkeypatch.setattr(
