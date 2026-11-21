@@ -414,7 +414,8 @@ class TextToVideoEngine:
                     else:
                         x = width * (0.34 if character_index == 0 else 0.66)
                     scene_words = " ".join(str(scene.get(key) or "") for key in (
-                        "visual_prompt", "description", "voiceover_text",
+                        "visual_prompt_full", "visual_prompt", "visual_prompt_suggestion",
+                        "visual_direction", "description", "voiceover_text", "narration",
                     )).lower()
                     pose = str(scene.get("character_pose") or "")
                     if pose not in {"neutral", "explain", "point"}:
