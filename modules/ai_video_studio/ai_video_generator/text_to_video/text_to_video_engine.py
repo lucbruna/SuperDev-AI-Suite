@@ -191,6 +191,22 @@ class TextToVideoEngine:
                 field="object_ids",
             )
 
+        # Registered library props are studio-scoped. Reject incompatible
+        # selections before planning or rendering, while preserving unknown
+        # IDs as user-defined references for generated imagery.
+        for object_id in object_ids:
+            library_object = OBJECTS.get(object_id)
+            if not library_object:
+                continue
+            object_studio = str(library_object.get("studio_id") or "")
+            if object_studio != studio_id and not (
+                studio_id == "felt_clay" and object_studio == "whymentary"
+            ):
+                raise ValidationError(
+                    f"Selected object '{object_id}' does not belong to studio '{studio_id}'",
+                    field="object_ids",
+                )
+
         # A recovery run may supply the durable, fully-directed storyboard.
         # It must be complete: never silently plan replacement scenes and mix
         # them with the original project.
