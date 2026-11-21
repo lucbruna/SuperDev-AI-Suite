@@ -146,7 +146,9 @@ def build_cinematic_storyboard(
         suggested_visual = _text(scene, "visual_prompt_suggestion")
         direction = _text(scene, "visual_direction")
         generic_visuals = {"cena", "uma cena", "ilustração", "imagem", "mostrar", "visual"}
-        authored_is_generic = authored_visual.lower().strip(" .,!") in generic_visuals or len(authored_visual) < 28
+        # Short authored prompts can still carry important action/emotion cues.
+        # Replace only genuinely generic labels, not meaningful short descriptions.
+        authored_is_generic = authored_visual.lower().strip(" .,!") in generic_visuals
         visual_core = (
             suggested_visual if authored_is_generic and suggested_visual
             else authored_visual or suggested_visual or description or narration
