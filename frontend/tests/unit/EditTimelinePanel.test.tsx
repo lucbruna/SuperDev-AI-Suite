@@ -312,7 +312,8 @@ it("generates a separate 10-second ComfyUI motion clip from a scene image", asyn
     expect(screen.getByRole("link", { name: "Abrir prévia" })).toHaveAttribute("href", "/downloads/preview.mp4");
     expect(screen.getByText(/640×360 · 12 FPS/)).toBeInTheDocument();
   });
-})  it("loads the director's shot rationale and pre-fills the suggested scene prompt", async () => {
+
+it("loads the director's shot rationale and pre-fills the suggested scene prompt", async () => {
     const direction = vi.spyOn(videoStudioApi, "getJobVisualDirection").mockResolvedValue({
       job_id: "director-job",
       studio_id: "historical_documentary",

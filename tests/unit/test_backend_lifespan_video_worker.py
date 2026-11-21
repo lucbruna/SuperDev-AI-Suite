@@ -3,7 +3,7 @@
 import pytest
 
 
-@pytest.mark.asyncio(loop_scope="function")
+@pytest.mark.asyncio
 async def test_main_backend_lifespan_starts_and_stops_darkstudio_worker(monkeypatch):
     import backend.lifespan as backend_lifespan
     from modules.ai_video_studio.api.routes import video

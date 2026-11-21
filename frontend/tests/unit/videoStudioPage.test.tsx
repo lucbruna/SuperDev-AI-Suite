@@ -60,7 +60,6 @@ beforeEach(() => {
   mockedApi.listVoices.mockReset();
   mockedApi.listJobs.mockReset();
   mockedApi.getJob.mockReset();
-  mockedApi.getJob.mockResolvedValue(null);
   mockedApi.generateVideo.mockReset();
   mockedApi.preflightVideo.mockReset();
   mockedApi.validateJobOutput.mockReset();
