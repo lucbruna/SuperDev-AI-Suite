@@ -28,7 +28,7 @@ class TestPythonSlug:
         assert _python_slug("my app") == "my_app"
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio(loop_scope="function")
 class TestPythonBuilderBuild:
     async def test_build_succeeds(self, builder: PythonBuilder) -> None:
         result = await builder.build(_config())
