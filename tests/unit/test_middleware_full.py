@@ -30,28 +30,28 @@ def security_app():
 
 
 class TestSecurityHeaders:
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="function")
     async def test_x_content_type_options(self, security_app):
         transport = ASGITransport(app=security_app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
             resp = await client.get("/test")
         assert resp.headers.get("x-content-type-options") == "nosniff"
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="function")
     async def test_x_frame_options(self, security_app):
         transport = ASGITransport(app=security_app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
             resp = await client.get("/test")
         assert resp.headers.get("x-frame-options") == "DENY"
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="function")
     async def test_referrer_policy(self, security_app):
         transport = ASGITransport(app=security_app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
             resp = await client.get("/test")
         assert "referrer-policy" in resp.headers
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="function")
     async def test_permissions_policy(self, security_app):
         transport = ASGITransport(app=security_app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -60,7 +60,7 @@ class TestSecurityHeaders:
 
 
 class TestRequestIDMiddleware:
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="function")
     async def test_generates_request_id(self, security_app):
         transport = ASGITransport(app=security_app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -69,7 +69,7 @@ class TestRequestIDMiddleware:
         assert rid is not None
         assert len(rid) > 0
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="function")
     async def test_preserves_existing_request_id(self, security_app):
         transport = ASGITransport(app=security_app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -77,7 +77,7 @@ class TestRequestIDMiddleware:
         rid = resp.headers.get("x-request-id")
         assert rid == "my-custom-id"
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="function")
     async def test_different_requests_get_different_ids(self, security_app):
         transport = ASGITransport(app=security_app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
