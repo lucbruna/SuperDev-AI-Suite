@@ -7,6 +7,7 @@ Adapters must always answer without raising and fall back locally.
 """
 from __future__ import annotations
 
+import pytest
 from fastapi.testclient import TestClient
 
 from modules.ai_video_studio.suite_integration import SUITE_MANIFEST, get_suite_bridge
@@ -83,12 +84,14 @@ def test_security_is_internal_host():
 
 
 # ── Auth adapter (platform JWT) ─────────────────────────────────
+@pytest.mark.asyncio(scope="function")
 async def test_auth_rejects_missing_token():
     result = await get_suite_bridge().verify_token(None)
     assert result["ok"] is False
     assert result["reason"] == "missing_token"
 
 
+@pytest.mark.asyncio(scope="function")
 async def test_auth_rejects_garbage_token():
     result = await get_suite_bridge().verify_token("not.a.real.jwt")
     assert result["ok"] is False
