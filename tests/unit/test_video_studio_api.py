@@ -105,7 +105,8 @@ def fake_engine(monkeypatch, tmp_path) -> _FakeEngine:
 
     # Redirect BOTH the shared output-paths root and the download route's
     # copy so the fake MP4 is written/served under tmp_path only.
-    fake_root = tmp_path / "downloads"
+    # Mirror the real modules/downloads tree so to_download_url accepts fixture assets.
+    fake_root = tmp_path / "modules" / "downloads"
     monkeypatch.setattr(
         "modules.ai_video_studio.media.output_paths.DOWNLOADS_DIR", fake_root
     )
