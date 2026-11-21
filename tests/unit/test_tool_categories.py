@@ -147,6 +147,7 @@ class TestGitHubSubTools:
 # Docker Tool Tests
 # ---------------------------------------------------------------------------
 
+@pytest.mark.asyncio(loop_scope="function")
 class TestDockerTool:
     """Tests for the Docker tool category."""
 
@@ -174,6 +175,7 @@ class TestDockerTool:
         assert result["success"] is False
 
 
+@pytest.mark.asyncio(loop_scope="function")
 class TestDockerSubTools:
     async def test_container(self):
         c = DockerContainer()
@@ -211,6 +213,7 @@ class TestDockerSubTools:
 # Kubernetes Tool Tests
 # ---------------------------------------------------------------------------
 
+@pytest.mark.asyncio(loop_scope="function")
 class TestKubernetesTool:
     @pytest.fixture
     def tool(self):
@@ -228,6 +231,7 @@ class TestKubernetesTool:
         assert r["success"] is True
 
 
+@pytest.mark.asyncio(loop_scope="function")
 class TestKubernetesSubTools:
     async def test_pod(self):
         p = KubernetesPod()
@@ -262,6 +266,7 @@ class TestKubernetesSubTools:
 # Browser Tool Tests
 # ---------------------------------------------------------------------------
 
+@pytest.mark.asyncio(loop_scope="function")
 class TestBrowserTool:
     @pytest.fixture
     def tool(self):
@@ -283,6 +288,7 @@ class TestBrowserTool:
         assert r["success"] is True
 
 
+@pytest.mark.asyncio(loop_scope="function")
 class TestBrowserSubTools:
     async def test_page(self):
         p = BrowserPage()
@@ -316,6 +322,7 @@ class TestBrowserSubTools:
 # Database Tool Tests
 # ---------------------------------------------------------------------------
 
+@pytest.mark.asyncio(loop_scope="function")
 class TestDatabaseTool:
     @pytest.fixture
     def tool(self):
@@ -333,6 +340,7 @@ class TestDatabaseTool:
         assert r["success"] is True
 
 
+@pytest.mark.asyncio(loop_scope="function")
 class TestDatabaseSubTools:
     async def test_connection(self):
         c = DatabaseConnection()
@@ -365,6 +373,7 @@ class TestDatabaseSubTools:
 # API Tool Tests
 # ---------------------------------------------------------------------------
 
+@pytest.mark.asyncio(loop_scope="function")
 class TestApiTool:
     @pytest.fixture
     def tool(self):
@@ -382,6 +391,7 @@ class TestApiTool:
         assert r["success"] is True
 
 
+@pytest.mark.asyncio(loop_scope="function")
 class TestApiSubTools:
     async def test_client(self):
         c = ApiClient()
@@ -413,6 +423,7 @@ class TestApiSubTools:
 # LLM Tool Tests
 # ---------------------------------------------------------------------------
 
+@pytest.mark.asyncio(loop_scope="function")
 class TestLlmTool:
     @pytest.fixture
     def tool(self):
@@ -430,6 +441,7 @@ class TestLlmTool:
         assert r["success"] is True
 
 
+@pytest.mark.asyncio(loop_scope="function")
 class TestLlmSubTools:
     async def test_completion(self):
         c = LlmCompletion()
@@ -461,6 +473,7 @@ class TestLlmSubTools:
 # RAG Tool Tests
 # ---------------------------------------------------------------------------
 
+@pytest.mark.asyncio(loop_scope="function")
 class TestRagTool:
     @pytest.fixture
     def tool(self):
@@ -478,6 +491,7 @@ class TestRagTool:
         assert r["success"] is True
 
 
+@pytest.mark.asyncio(loop_scope="function")
 class TestRagSubTools:
     async def test_document(self):
         d = RagDocument()
@@ -510,6 +524,7 @@ class TestRagSubTools:
 # Interface Tests
 # ---------------------------------------------------------------------------
 
+@pytest.mark.asyncio(loop_scope="function")
 class TestInterfaces:
     """Verify all composite tools implement the BaseTool interface correctly."""
 
