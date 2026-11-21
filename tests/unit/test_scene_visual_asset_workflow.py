@@ -41,9 +41,9 @@ def test_stage_rejects_duplicate_and_excess_candidates() -> None:
         _job(), 0, {"candidate_id": "c1", "image_path": "/tmp/1.png"}, max_per_scene=1
     )
     with pytest.raises(ValueError):
-        stage_scene_image_candidate(record, 0, {"candidate_id": "c1", "image_path": "/tmp/2.png"})
+        stage_scene_image_candidate(record, 0, {"candidate_id": "c1", "image_path": "/tmp/2.png"}, max_per_scene=1)
     with pytest.raises(ValueError):
-        stage_scene_image_candidate(record, 0, {"candidate_id": "c2", "image_path": "/tmp/2.png"})
+        stage_scene_image_candidate(record, 0, {"candidate_id": "c2", "image_path": "/tmp/2.png"}, max_per_scene=1)
 
 
 def test_discard_keeps_active_image_and_clip_unchanged() -> None:
