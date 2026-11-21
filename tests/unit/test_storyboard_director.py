@@ -144,3 +144,11 @@ def test_custom_storyboard_accepts_arbitrary_user_character_and_object_reference
     assert "criatura_guardia" in prompt
     assert "artefato_antigo" in prompt
     assert "mapa_estelar" in prompt
+
+def test_storyboard_preserves_short_authored_emotion_cue() -> None:
+    scenes, _ = build_cinematic_storyboard(
+        [{"description": "Cena dois", "visual_prompt": "O narrador está surpreso"}],
+        studio_id="whymentary",
+    )
+    assert scenes[0]["visual_prompt"] == "O narrador está surpreso"
+    assert "O narrador está surpreso" in scenes[0]["visual_prompt_full"]
