@@ -341,7 +341,7 @@ class ScenePlanner:
                     "name": f"Scene {i + 1}",
                     "description": chunk[:1000],
                     "narrative_role": self._narrative_role(i, num_scenes),
-                    "visual_prompt": f"Visualize only this narrated beat: {chunk}. {visual_guidance}. Create a standalone image with a clear subject and environment. Keep the user's requested art style; do not add events or details absent from the brief.",
+                    "visual_prompt": f"Scene focus: {chunk}. Visualize only this narrated beat: {chunk}. {visual_guidance}. Create a standalone image with a clear subject and environment. Keep the user's requested art style; do not add events or details absent from the brief.",
                     "negative_prompt": "blurry, low quality, distorted anatomy, unreadable text, watermark, logo",
                     "voiceover_text": chunk[:1000],
                     "shot_type": shot_type,
