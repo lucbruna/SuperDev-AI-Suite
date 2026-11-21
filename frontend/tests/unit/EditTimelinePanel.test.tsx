@@ -39,7 +39,7 @@ const timeline: EditTimeline = {
 describe("EditTimelinePanel", () => {
   beforeEach(() => {
     vi.spyOn(videoStudioApi, "getJob").mockResolvedValue({ job_id: "test-job", project_id: "p1", status: "completed", progress: 1 });
-    vi.mocked(videoStudioApi.getJobVisualDirection).mockResolvedValue({ job_id: "test-job", studio_id: "default", scene_count: 0, scenes: [] });
+    vi.spyOn(videoStudioApi, "getJobVisualDirection").mockResolvedValue({ job_id: "test-job", studio_id: "default", scene_count: 0, scenes: [] });
     vi.spyOn(videoStudioApi, "listJobAudioAssets").mockResolvedValue([]);
     vi.spyOn(videoStudioApi, "getJobSceneImageFraming").mockRejectedValue(new Error("No framing fixture"));
     vi.spyOn(videoStudioApi, "getVidGridClipRebuildStatus").mockRejectedValue(new Error("No VidGrid queue fixture"));
@@ -253,7 +253,7 @@ it("edits a scene image from a text instruction and asks for a new MP4 render", 
       status: "updated",
     },
   });
-  vi.mocked(videoStudioApi.listSceneImageCandidates).mockResolvedValue({ job_id: "scene-image-job", scene_index: 0, candidates: [{ candidate_id: "candidate-1", scene_index: 0, image_url: "/api/v1/downloads/images/edited.png", provider: "automatic1111_compatible", operation: "image_to_image", prompt, status: "candidate" }] });
+  vi.spyOn(videoStudioApi, "listSceneImageCandidates").mockResolvedValue({ job_id: "scene-image-job", scene_index: 0, candidates: [{ candidate_id: "candidate-1", scene_index: 0, image_url: "/api/v1/downloads/images/edited.png", provider: "automatic1111_compatible", operation: "image_to_image", prompt: "Transforme o fundo em uma floresta ao amanhecer", status: "candidate" }] });
   const approve = vi.spyOn(videoStudioApi, "approveSceneImageCandidate").mockResolvedValue({ job_id: "scene-image-job", scene_index: 0, status: "approved", image_url: "/api/v1/downloads/images/edited.png", render_required: true, message: "Imagem aprovada e aplicada à cena. Renderize a edição para atualizar o MP4 completo." });
   render(<EditTimelinePanel timeline={timeline} jobId="scene-image-job" />);
   const prompt = "Transforme o fundo em uma floresta ao amanhecer";
@@ -372,8 +372,7 @@ it("loads the director's shot rationale and pre-fills the suggested scene prompt
         { scene_index: 1, narration: "Os navios chegaram ao porto.", visual_prompt: "", visual_prompt_suggestion: "Navios entrando no porto ao amanhecer.", visual_direction: "Travelling lateral.", narrative_beat: "development", shot_type: "tracking", image_status: "generated" },
       ],
     });
-    vi.mocked(videoStudioApi.listSceneImageCandidates).mockImplementation(async (_jobId, sceneIndex) => ({ job_id: "batch-ui-job", scene_index: sceneIndex, candidates: [{ candidate_id: sceneIndex === 0 ? "c0" : "c1", scene_index: sceneIndex, image_url: sceneIndex === 0 ? "/images/0.png" : "/images/1.png", provider: "mock", operation: "text_to_image", prompt: sceneIndex === 0 ? "Plano geral da cidade junto ao rio." : "Navios entrando no porto ao amanhecer.", status: "candidate" }] }));
-    vi.mocked(videoStudioApi.listSceneImageCandidates).mockImplementation(async (_jobId, sceneIndex) => ({ job_id: "all-scenes-job", scene_index: sceneIndex, candidates: [{ candidate_id: sceneIndex === 0 ? "all-c0" : "all-c1", scene_index: sceneIndex, image_url: sceneIndex === 0 ? "/images/all-0.png" : "/images/all-1.png", provider: "mock", operation: "text_to_image", prompt: sceneIndex === 0 ? "Plano geral cinematográfico da cidade junto ao rio." : "Navios entrando no porto ao amanhecer.", status: "candidate" }] }));
+    vi.spyOn(videoStudioApi, "listSceneImageCandidates").mockImplementation(async (_jobId, sceneIndex) => ({ job_id: "batch-ui-job", scene_index: sceneIndex, candidates: [{ candidate_id: sceneIndex === 0 ? "c0" : "c1", scene_index: sceneIndex, image_url: sceneIndex === 0 ? "/images/0.png" : "/images/1.png", provider: "mock", operation: "text_to_image", prompt: sceneIndex === 0 ? "Plano geral da cidade junto ao rio." : "Navios entrando no porto ao amanhecer.", status: "candidate" }] }));
   const batch = vi.spyOn(videoStudioApi, "regenerateSelectedSceneImages").mockResolvedValue({
       job_id: "batch-ui-job", status: "completed", requested: 2, succeeded: 2, failed: 0,
       message: "2 de 2 imagens geradas como candidatas. Compare e aprove cada uma antes de renderizar.",
@@ -419,6 +418,7 @@ it("regenerates every storyboard image from its scene-specific visual brief with
       },
     ],
   });
+    vi.spyOn(videoStudioApi, "listSceneImageCandidates").mockImplementation(async (_jobId, sceneIndex) => ({ job_id: "all-scenes-job", scene_index: sceneIndex, candidates: [{ candidate_id: sceneIndex === 0 ? "all-c0" : "all-c1", scene_index: sceneIndex, image_url: sceneIndex === 0 ? "/images/all-0.png" : "/images/all-1.png", provider: "mock", operation: "text_to_image", prompt: sceneIndex === 0 ? "Plano geral cinematográfico da cidade junto ao rio." : "Navios entrando no porto ao amanhecer.", status: "candidate" }] }));
   const batch = vi.spyOn(videoStudioApi, "regenerateSelectedSceneImages").mockResolvedValue({
     job_id: "all-scenes-job", status: "completed", requested: 2, succeeded: 2, failed: 0,
     message: "2 de 2 imagens geradas como candidatas.",
