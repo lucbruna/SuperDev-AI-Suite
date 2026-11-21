@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import pytest
+import pytest_asyncio
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from httpx import ASGITransport, AsyncClient
@@ -35,7 +36,7 @@ def app():
     return _create_cors_test_app()
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture()
 async def client(app):
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://testserver") as c:
@@ -45,7 +46,7 @@ async def client(app):
 class TestCORSHeaders:
     """Verify CORS preflight and response headers."""
 
-    @pytest.mark.anyio
+    @pytest.mark.asyncio(loop_scope="function")
     async def test_options_preflight_returns_200(self, client):
         resp = await client.options(
             "/test",
