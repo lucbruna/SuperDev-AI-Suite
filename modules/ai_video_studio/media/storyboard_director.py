@@ -135,6 +135,7 @@ def build_cinematic_storyboard(
     objects = list(object_ids or [])
     storyboard: list[dict[str, Any]] = []
     prompt_fingerprints: dict[str, list[int]] = {}
+    prompt_labels: dict[str, str] = {}
     warnings: list[str] = []
 
     for index, original in enumerate(scenes):
@@ -179,6 +180,7 @@ def build_cinematic_storyboard(
         fingerprint = re.sub(r"[^a-z0-9]+", " ", visual_core.lower()).strip()
         if fingerprint:
             prompt_fingerprints.setdefault(fingerprint, []).append(index)
+            prompt_labels.setdefault(fingerprint, visual_core.lower().strip())
 
         scene["storyboard_scene_id"] = _stable_scene_id(index, narration, description)
         scene["visual_prompt"] = (authored_visual if authored_visual and not authored_is_generic else prompt)
@@ -189,7 +191,7 @@ def build_cinematic_storyboard(
         storyboard.append(scene)
 
     repeated = [
-        {"scene_indices": indices, "prompt": key}
+        {"scene_indices": indices, "prompt": prompt_labels[key]}
         for key, indices in prompt_fingerprints.items()
         if len(indices) > 1
     ]
