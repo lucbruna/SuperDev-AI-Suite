@@ -322,7 +322,7 @@ async def test_scene_narration_uses_frame_rounded_duration_for_audio_slots(monke
         output_dir=str(tmp_path),
     )
     assert result["clips"][0]["end"] == pytest.approx(25 / 24)
-    assert captured["total_duration"] == pytest.approx(25 / 24)
+    assert captured["total_duration"] == pytest.approx(25 / 24, abs=0.001)  # duration metadata is rounded to milliseconds
 
 def test_remap_narration_clips_for_reordered_and_resized_scenes() -> None:
     original = [
