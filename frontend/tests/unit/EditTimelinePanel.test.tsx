@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, vi } from "vitest";
 import { videoStudioApi } from "@/api/videoStudio";
 import { describe, expect, it } from "vitest";
@@ -138,9 +138,7 @@ describe("EditTimelinePanel", () => {
     expect(screen.getByLabelText("Médios")).toHaveValue("-1");
     expect(screen.getByLabelText("Agudos")).toHaveValue("1");
     fireEvent.change(screen.getByLabelText("Preset de masterização"), { target: { value: "voice" } });
-    const musicSection = screen.getByText("🎵 Música de fundo").parentElement;
-    expect(musicSection).not.toBeNull();
-    fireEvent.change(within(musicSection as HTMLElement).getByRole("slider"), { target: { value: "-0.5" } });
+    fireEvent.change(screen.getAllByRole("slider", { name: /Panorama L\/R/ })[5], { target: { value: "-0.5" } });
     fireEvent.click(screen.getByRole("checkbox", { name: "Repetir" }));
     fireEvent.click(screen.getAllByRole("button", { name: "Remover" })[1]);
     fireEvent.click(screen.getByRole("button", { name: "Salvar alterações de áudio" }));
@@ -263,7 +261,7 @@ it("edits a scene image from a text instruction and asks for a new MP4 render", 
   fireEvent.click(screen.getAllByRole("button", { name: "Criar imagem desta cena" })[0]);
   await waitFor(() => expect(edit).toHaveBeenCalledWith("scene-image-job", 0, { prompt, denoising_strength: 0.45, seed: -1, stage_only: true }));
   expect(await screen.findByAltText("Alternativa 1 da cena 1")).toBeInTheDocument();
-  fireEvent.click(screen.getByRole("button", { name: "Aprovar nova imagem" }));
+  fireEvent.click(screen.getByRole("button", { name: "Aplicar esta imagem" }));
   await waitFor(() => expect(approve).toHaveBeenCalledWith("scene-image-job", 0, "candidate-1"));
   expect(await screen.findByText(/Imagem aprovada e aplicada à cena/)).toBeInTheDocument();
 });
