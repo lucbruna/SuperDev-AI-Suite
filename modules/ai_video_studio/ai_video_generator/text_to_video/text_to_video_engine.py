@@ -203,7 +203,7 @@ class TextToVideoEngine:
                 studio_id == "felt_clay" and object_studio == "whymentary"
             ):
                 raise ValidationError(
-                    f"Selected object '{object_id}' does not belong to studio '{studio_id}'",
+                    f"Selected objects do not belong to studio '{studio_id}': {object_id}",
                     field="object_ids",
                 )
 
