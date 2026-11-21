@@ -79,6 +79,7 @@ def character_primitives(
         {"x": px(0), "y": py(-142), "radius": 23*s, "color": preset.skin},
         {"x": px(-8), "y": py(-148), "radius": 2*s, "color": preset.outline},
         {"x": px(8), "y": py(-148), "radius": 2*s, "color": preset.outline},
+        {"x": px(0), "y": py(-138), "radius": 1.5*s, "color": preset.outline},
         {"x": px(-12), "y": py(-162), "radius": 12*s, "color": preset.hair},
     ]
     if preset.hair_tie:
