@@ -35,8 +35,8 @@ def classify_narrative_beat(scene: dict[str, Any]) -> str:
         ("hook", ("imagine", "você sabia", "sabia que", "e se ", "mistério", "segredo")),
         ("context", ("naquela época", "contexto", "durante o século", "no início", "era ", "origem")),
         ("cause_effect", ("porque", "por causa", "provocou", "levou a", "resultou", "consequência", "causou")),
-        ("process", ("como funciona", "etapa", "processo", "primeiro", "depois", "em seguida")),
         ("comparison", ("compar", "diferente", "enquanto", "ao contrário", "versus", "antes e depois")),
+        ("process", ("como funciona", "etapa", "processo", "primeiro", "depois", "em seguida")),
         ("revelation", ("descobriu", "revelou", "evidência", "prova", "documento mostra")),
         ("conclusion", ("portanto", "em resumo", "concluindo", "lição", "hoje sabemos", "conclusão")),
     )
