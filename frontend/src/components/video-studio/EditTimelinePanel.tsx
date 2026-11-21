@@ -1024,7 +1024,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
               <div className="mb-2 flex items-center justify-between gap-2">
                 <div className="min-w-0">
                   <p className="truncate text-xs font-semibold text-surface-800 dark:text-surface-100">Cena {index + 1}</p>
-                  <p className="text-[10px] tabular-nums text-surface-500">{formatTime(clip.start_seconds)} – {formatTime(clip.end_seconds)} · {sceneDuration.toFixed(1)}s</p>
+                  <p className="text-[10px] tabular-nums text-surface-500">{formatTime(clip.start_seconds ?? clip.start_frame / draft.fps)} – {formatTime(clip.end_seconds ?? clip.end_frame / draft.fps)} · {sceneDuration.toFixed(1)}s</p>
                 </div>
                 <button type="button" onClick={() => { setSelected(clips.indexOf(clip)); setPlayheadFrame(clip.start_frame); }} aria-pressed={activeScene} className={`shrink-0 rounded-md px-2.5 py-1.5 text-[10px] font-semibold transition ${activeScene ? "bg-primary-600 text-white" : "border border-surface-300 text-surface-600 hover:border-primary-400 dark:border-surface-600 dark:text-surface-300"}`}>
                   {activeScene ? "Em edição" : "Editar cena"}
