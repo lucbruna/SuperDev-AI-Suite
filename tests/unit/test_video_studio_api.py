@@ -215,6 +215,9 @@ class TestVidGridFinalExportRecovery:
         from modules.ai_video_studio.api.routes import video
         from modules.ai_video_studio.media import output_paths
 
+        # These fixtures are placeholder bytes, not valid MP4 containers.
+        # Keep this unit test focused on path safety and scene ordering.
+        monkeypatch.setattr(video, "_probe_media_asset", lambda *_: {"probe_status": "not_verified"})
         video_root = tmp_path / "videos"
         video_root.mkdir()
         monkeypatch.setattr(output_paths, "DOWNLOADS_DIR", tmp_path)
