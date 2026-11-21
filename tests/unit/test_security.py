@@ -99,7 +99,7 @@ class TestComplianceEngine:
             ComplianceStatus.PARTIAL,
         )
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="function")
     async def test_check_compliance_gdpr(self):
         engine = ComplianceEngine()
         report = await engine.check_compliance(ComplianceFramework.GDPR)
