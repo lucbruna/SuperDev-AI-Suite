@@ -66,6 +66,7 @@ from ai.tools.rag.index import RagIndex
 # GitHub Tool Tests
 # ---------------------------------------------------------------------------
 
+@pytest.mark.asyncio(loop_scope="function")
 class TestGitHubTool:
     """Tests for the GitHub tool category."""
 
