@@ -316,12 +316,16 @@ def test_generate_async_uses_real_scene_images_and_vidgrid_ten_second_clips(monk
             pass
 
     def fake_image(prompt, **kwargs):
+        from PIL import Image
+
         captured.setdefault("prompts", []).append(prompt)
         captured.setdefault("image_timeouts", []).append(kwargs.get("timeout"))
+        image_path = tmp_path / f"scene-{len(captured['prompts'])}.png"
+        Image.new("RGB", (kwargs["width"], kwargs["height"]), (24, 48, 72)).save(image_path)
         return {
-            "image_path": str(tmp_path / f"scene-{len(captured['prompts'])}.png"),
+            "image_path": str(image_path),
             "provider": "automatic1111_compatible",
-            "image_bytes": 100,
+            "image_bytes": image_path.stat().st_size,
         }
 
     def fake_render(scenes, output_path, **kwargs):
