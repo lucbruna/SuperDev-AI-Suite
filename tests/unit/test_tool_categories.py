@@ -112,6 +112,7 @@ class TestGitHubTool:
         await tool.cleanup()  # should not raise
 
 
+@pytest.mark.asyncio(loop_scope="function")
 class TestGitHubSubTools:
     """Tests for individual GitHub sub-tools."""
 
