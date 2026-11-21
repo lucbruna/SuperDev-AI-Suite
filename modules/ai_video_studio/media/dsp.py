@@ -589,8 +589,12 @@ def read_audio(path: str | Path, *, target_sr: int = SAMPLE_RATE, preserve_chann
             import soundfile as sf
             data, sr = sf.read(str(p), dtype="float32", always_2d=True)
         except Exception:  # noqa: BLE001
+            # The stdlib WAV reader preserves samples/channels but does not
+            # return metadata. Read the file's declared rate instead of
+            # silently labeling it with the global default sample rate.
+            with wave.open(str(p), "rb") as wav_file:
+                sr = int(wav_file.getframerate())
             data = _read_wav_stdlib(p, preserve_channels=True)
-            sr = SAMPLE_RATE
     else:
         tmp_path = None
         try:
