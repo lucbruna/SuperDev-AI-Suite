@@ -373,7 +373,7 @@ def test_scene_offsets_round_duration_to_the_same_frame_grid_as_video_rendering(
         [{"duration": 1.03}, {"duration": 1.0}],
         fps=24,
     )
-    assert offsets[1] == 25 / 24
+    assert offsets[1] == pytest.approx(25 / 24, abs=0.000001)  # offsets are rounded to six decimal places
 
 
 def test_remap_narration_does_not_reuse_audio_after_speech_text_changes() -> None:
