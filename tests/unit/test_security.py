@@ -81,7 +81,7 @@ class TestComplianceEngine:
         engine.register_rule(custom)
         assert custom in engine.get_rules(ComplianceFramework.HIPAA)
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="function")
     async def test_check_compliance_soc2(self):
         # ComplianceEngine requires an audit_logger with get_statistics()
         class MockAuditLogger:
