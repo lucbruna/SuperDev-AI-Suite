@@ -14,16 +14,15 @@ def mock_provider():
     return provider
 
 
-@pytest.mark.asyncio(loop_scope="function")
 class TestCodeGenerator:
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="session")
     async def test_gerar_codigo_basico(self, mock_provider):
         generator = CodeGenerator(mock_provider)
         result = await generator.generate("Criar uma função hello world em Python")
         assert result.code is not None
         assert len(result.code) > 0
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="session")
     async def test_gerar_com_contexto(self, mock_provider):
         generator = CodeGenerator(mock_provider)
         result = await generator.generate(
@@ -33,30 +32,28 @@ class TestCodeGenerator:
         assert result.code is not None
 
 
-@pytest.mark.asyncio(loop_scope="function")
 class TestCodeExecutor:
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="session")
     async def test_executar_python(self):
         executor = CodeExecutor()
         result = await executor.execute("print('olá mundo')", language="python")
         assert result.exit_code == 0
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="session")
     async def test_executar_erro(self):
         executor = CodeExecutor()
         result = await executor.execute("1/0", language="python")
         assert result.exit_code != 0
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="session")
     async def test_executar_timeout(self):
         executor = CodeExecutor(timeout=1)
         result = await executor.execute("import time; time.sleep(10)", language="python")
         assert result.exit_code != 0
 
 
-@pytest.mark.asyncio(loop_scope="function")
 class TestCodeReviewer:
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="session")
     async def test_revisao_codigo_perigoso(self):
         reviewer = CodeReviewer()
         result = await reviewer.review(
@@ -67,9 +64,8 @@ class TestCodeReviewer:
         assert len(result.security_issues) > 0
 
 
-@pytest.mark.asyncio(loop_scope="function")
 class TestVerificationLoop:
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="session")
     async def test_loop_completo(self, mock_provider):
         loop = VerificationLoop(provider=mock_provider, max_iterations=1)
         result = await loop.run(
@@ -79,7 +75,7 @@ class TestVerificationLoop:
         assert result.stage in (VerificationStage.COMPLETE, VerificationStage.FAILED)
         assert result.iterations >= 1
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="session")
     async def test_loop_com_callback(self, mock_provider):
         loop = VerificationLoop(provider=mock_provider, max_iterations=1)
         stages_seen = []
