@@ -36,7 +36,7 @@ def app():
     return _create_cors_test_app()
 
 
-@pytest_asyncio.fixture()
+@pytest_asyncio.fixture(loop_scope="function")
 async def client(app):
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://testserver") as c:
@@ -57,7 +57,7 @@ class TestCORSHeaders:
         )
         assert resp.status_code == 200
 
-    @pytest.mark.anyio
+    @pytest.mark.asyncio(loop_scope="function")
     async def test_cors_allows_origin_header(self, client):
         resp = await client.get(
             "/test",
@@ -65,7 +65,7 @@ class TestCORSHeaders:
         )
         assert "access-control-allow-origin" in resp.headers
 
-    @pytest.mark.anyio
+    @pytest.mark.asyncio(loop_scope="function")
     async def test_cors_allow_credentials(self, client):
         resp = await client.get(
             "/test",
@@ -74,7 +74,7 @@ class TestCORSHeaders:
         if "access-control-allow-credentials" in resp.headers:
             assert resp.headers["access-control-allow-credentials"].lower() == "true"
 
-    @pytest.mark.anyio
+    @pytest.mark.asyncio(loop_scope="function")
     async def test_cors_expose_headers(self, client):
         resp = await client.get(
             "/test",
@@ -84,7 +84,7 @@ class TestCORSHeaders:
             exposed = resp.headers["access-control-expose-headers"].lower()
             assert "x-request-id" in exposed
 
-    @pytest.mark.anyio
+    @pytest.mark.asyncio(loop_scope="function")
     async def test_regular_get_has_no_cors_headers_without_origin(self, client):
         resp = await client.get("/test")
         assert "access-control-allow-origin" not in resp.headers
