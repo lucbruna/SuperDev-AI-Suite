@@ -71,6 +71,7 @@ class TestDefaultPermissions:
             assert isinstance(_DEFAULT_ROLE_PERMISSIONS[role], set)
 
 
+@pytest.mark.asyncio(loop_scope="function")
 class TestPermissionChecker:
     def test_init_with_enums(self):
         checker = PermissionChecker(Resource.USERS, Action.READ)
