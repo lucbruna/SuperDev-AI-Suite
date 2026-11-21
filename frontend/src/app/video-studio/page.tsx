@@ -464,7 +464,7 @@ export default function VideoStudioPage() {
               <span className="text-xs font-medium text-surface-500">Na fila / em produção</span>
               <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-base dark:bg-amber-950/50">⚙️</span>
             </div>
-            <p className="mt-3 text-2xl font-bold tabular-nums text-surface-900 dark:text-surface-50">{jobs.filter((job) => job.status === "queued" || job.status === "processing").length}</p>
+            <p className="mt-3 text-2xl font-bold tabular-nums text-surface-900 dark:text-surface-50">{jobs.filter((job) => job?.status === "queued" || job.status === "processing").length}</p>
             <p className="mt-1 text-xs text-surface-400">Trabalhos aguardando ou processando</p>
           </div>
           <div className="rounded-xl border border-surface-200 bg-white p-4 shadow-sm dark:border-surface-700 dark:bg-surface-900">
@@ -472,7 +472,7 @@ export default function VideoStudioPage() {
               <span className="text-xs font-medium text-surface-500">Concluídos</span>
               <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-base dark:bg-emerald-950/50">✓</span>
             </div>
-            <p className="mt-3 text-2xl font-bold tabular-nums text-surface-900 dark:text-surface-50">{jobs.filter((job) => job.status === "completed").length}</p>
+            <p className="mt-3 text-2xl font-bold tabular-nums text-surface-900 dark:text-surface-50">{jobs.filter((job) => job?.status === "completed").length}</p>
             <p className="mt-1 text-xs text-surface-400">Vídeos finalizados no histórico carregado</p>
           </div>
           <div className="rounded-xl border border-surface-200 bg-white p-4 shadow-sm dark:border-surface-700 dark:bg-surface-900">

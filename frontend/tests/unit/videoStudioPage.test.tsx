@@ -16,6 +16,7 @@ vi.mock("@/api/videoStudio", () => ({
     generateVideo: vi.fn(),
     preflightVideo: vi.fn(),
     validateJobOutput: vi.fn(),
+    getVidGridClipRebuildStatus: vi.fn().mockResolvedValue(null),
   },
 }));
 
@@ -59,6 +60,8 @@ beforeEach(() => {
   mockedApi.generateVideo.mockReset();
   mockedApi.preflightVideo.mockReset();
   mockedApi.validateJobOutput.mockReset();
+  mockedApi.getVidGridClipRebuildStatus.mockReset();
+  mockedApi.getVidGridClipRebuildStatus.mockResolvedValue(null);
 
   mockedApi.health.mockResolvedValue({
     status: "healthy",

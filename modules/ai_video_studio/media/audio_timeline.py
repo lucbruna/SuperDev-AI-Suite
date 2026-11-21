@@ -433,6 +433,36 @@ def normalize_loudness_file(path: str | Path, *, target_lufs: float = -14.0, tru
     finally:
         temporary.unlink(missing_ok=True)
 
+def _convert_to_stereo(samples: np.ndarray) -> np.ndarray:
+    """Convert mono or multichannel audio to stereo for the fixed stereo mixer."""
+    audio = np.asarray(samples, dtype=np.float32)
+    if audio.ndim == 1:
+        audio = audio[:, None]
+    if audio.ndim != 2 or audio.shape[1] < 1:
+        raise ValueError("audio samples must have at least one channel")
+    channels = audio.shape[1]
+    if channels == 1:
+        return np.repeat(audio, 2, axis=1)
+    if channels == 2:
+        return audio
+    # ITU-style 5.1/7.1 fold-down: center and surrounds at -3 dB,
+    # LFE at -6 dB. Additional channels are folded by alternating side.
+    left = audio[:, 0].copy()
+    right = audio[:, 1].copy()
+    if channels > 2:
+        left += audio[:, 2] * 0.707
+        right += audio[:, 2] * 0.707
+    if channels > 3:
+        left += audio[:, 3] * 0.5
+        right += audio[:, 3] * 0.5
+    for channel in range(4, channels):
+        if channel % 2 == 0:
+            left += audio[:, channel] * 0.707
+        else:
+            right += audio[:, channel] * 0.707
+    return np.column_stack((left, right)).astype(np.float32, copy=False)
+
+
 def mix_audio_timeline(
     clips: list[dict[str, Any]],
     output_path: str | Path,
@@ -609,12 +639,10 @@ def mix_audio_timeline(
             samples, source_rate = dsp.read_audio(asset, target_sr=sample_rate, preserve_channels=True)
             if source_rate != sample_rate:
                 samples = dsp.resample(samples, int(round(len(samples) * sample_rate / source_rate)))
-        if samples.ndim == 1:
-            samples = samples[:, None]
-        if samples.ndim != 2 or samples.shape[1] not in (1, 2):
-            raise ValueError(f"audio clip {index} must contain mono or stereo samples")
-        if samples.shape[1] == 1:
-            samples = np.repeat(samples, 2, axis=1)
+        try:
+            samples = _convert_to_stereo(samples)
+        except ValueError as exc:
+            raise ValueError(f"audio clip {index} must contain valid audio samples") from exc
         source_start = int(round(trim_start * sample_rate))
         count = int(round(duration * sample_rate))
         segment = np.asarray(samples[source_start:], dtype=np.float32)
