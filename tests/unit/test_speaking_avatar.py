@@ -50,6 +50,7 @@ def test_compose_facial_applies_emotion_base():
 
 
 # ── Engine (hermetic, audio provided) ────────────────────────────
+@pytest.mark.asyncio(loop_scope="function")
 async def test_generate_with_audio_path_produces_video(tmp_path):
     audio = _write_narration_wav(tmp_path / "narration.wav", seconds=1.2)
     out = tmp_path / "output.mp4"
@@ -79,6 +80,7 @@ async def test_generate_with_audio_path_produces_video(tmp_path):
     assert result["colors"]["skin"].startswith("#")
 
 
+@pytest.mark.asyncio(loop_scope="function")
 async def test_generate_unknown_profile_raises(tmp_path):
     audio = _write_narration_wav(tmp_path / "narration.wav", seconds=0.6)
     with pytest.raises(KeyError):
@@ -87,6 +89,7 @@ async def test_generate_unknown_profile_raises(tmp_path):
         )
 
 
+@pytest.mark.asyncio(loop_scope="function")
 async def test_generate_render_video_false_is_metadata_only(tmp_path):
     audio = _write_narration_wav(tmp_path / "narration.wav", seconds=0.6)
     result = await get_speaking_engine().generate(
