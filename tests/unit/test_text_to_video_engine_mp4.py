@@ -348,6 +348,7 @@ def test_generate_async_uses_real_scene_images_and_vidgrid_ten_second_clips(monk
     monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda name: tmp_path / name)
     monkeypatch.setattr(engine_module, "unique_filename", lambda directory, prefix, extension: tmp_path / f"{prefix}.{extension}")
     monkeypatch.setattr(engine_module, "render_multi_scene_video", fake_render)
+    monkeypatch.setattr(engine_module, "render_single_scene_clip", fake_scene_render)
     monkeypatch.setattr(engine_module, "get_generation_statistics", lambda: Stats())
 
     scene_events = []
