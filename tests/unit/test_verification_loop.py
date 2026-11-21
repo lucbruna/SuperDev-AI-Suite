@@ -14,6 +14,7 @@ def mock_provider():
     return provider
 
 
+@pytest.mark.asyncio(loop_scope="function")
 class TestCodeGenerator:
     @pytest.mark.asyncio
     async def test_gerar_codigo_basico(self, mock_provider):
@@ -32,6 +33,7 @@ class TestCodeGenerator:
         assert result.code is not None
 
 
+@pytest.mark.asyncio(loop_scope="function")
 class TestCodeExecutor:
     @pytest.mark.asyncio
     async def test_executar_python(self):
@@ -52,6 +54,7 @@ class TestCodeExecutor:
         assert result.exit_code != 0
 
 
+@pytest.mark.asyncio(loop_scope="function")
 class TestCodeReviewer:
     @pytest.mark.asyncio
     async def test_revisao_codigo_perigoso(self):
@@ -64,6 +67,7 @@ class TestCodeReviewer:
         assert len(result.security_issues) > 0
 
 
+@pytest.mark.asyncio(loop_scope="function")
 class TestVerificationLoop:
     @pytest.mark.asyncio
     async def test_loop_completo(self, mock_provider):
