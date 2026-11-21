@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { vi } from "vitest";
+import { afterEach, beforeEach, vi } from "vitest";
 import { videoStudioApi } from "@/api/videoStudio";
 import { describe, expect, it } from "vitest";
 import EditTimelinePanel from "@/components/video-studio/EditTimelinePanel";
@@ -37,6 +37,18 @@ const timeline: EditTimeline = {
 };
 
 describe("EditTimelinePanel", () => {
+  beforeEach(() => {
+    vi.spyOn(videoStudioApi, "getJob").mockResolvedValue({ job_id: "test-job", project_id: "p1", status: "completed", progress: 1 });
+    vi.spyOn(videoStudioApi, "getJobVisualDirection").mockResolvedValue({ job_id: "test-job", studio_id: "default", scene_count: 0, scenes: [] });
+    vi.spyOn(videoStudioApi, "listJobAudioAssets").mockResolvedValue([]);
+    vi.spyOn(videoStudioApi, "getJobSceneImageFraming").mockRejectedValue(new Error("No framing fixture"));
+    vi.spyOn(videoStudioApi, "getVidGridClipRebuildStatus").mockRejectedValue(new Error("No VidGrid queue fixture"));
+    vi.spyOn(videoStudioApi, "getJobDependencyRebuildStatus").mockRejectedValue(new Error("No dependency queue fixture"));
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
   it("renders video, narration and subtitle tracks with timeline metadata", () => {
     render(<EditTimelinePanel timeline={timeline} />);
     expect(screen.getByText(/1080×1920 · 24 FPS · 00:04.0/)).toBeInTheDocument();
@@ -125,7 +137,7 @@ describe("EditTimelinePanel", () => {
     expect(screen.getByLabelText("Médios")).toHaveValue("-1");
     expect(screen.getByLabelText("Agudos")).toHaveValue("1");
     fireEvent.change(screen.getByLabelText("Preset de masterização"), { target: { value: "voice" } });
-    fireEvent.change(screen.getAllByRole("slider", { name: /Panorama L\/R/ })[0], { target: { value: "-0.5" } });
+    fireEvent.change(screen.getAllByRole("slider", { name: /Panorama L\/R/ })[2], { target: { value: "-0.5" } });
     fireEvent.click(screen.getByRole("checkbox", { name: "Repetir" }));
     fireEvent.click(screen.getAllByRole("button", { name: "Remover" })[1]);
     fireEvent.click(screen.getByRole("button", { name: "Salvar alterações de áudio" }));
@@ -245,7 +257,7 @@ it("edits a scene image from a text instruction and asks for a new MP4 render", 
   const prompt = "Transforme o fundo em uma floresta ao amanhecer";
   fireEvent.change(screen.getAllByPlaceholderText("Descreva o enquadramento, cenário e ação desta cena…")[0], { target: { value: prompt } });
   fireEvent.click(screen.getAllByRole("button", { name: "Criar imagem desta cena" })[0]);
-  await waitFor(() => expect(edit).toHaveBeenCalledWith("scene-image-job", 0, { prompt, denoising_strength: 0.45, stage_only: true }));
+  await waitFor(() => expect(edit).toHaveBeenCalledWith("scene-image-job", 0, { prompt, denoising_strength: 0.45, seed: -1, stage_only: true }));
   expect(await screen.findByAltText("Imagem candidata da cena 1")).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Aprovar nova imagem" }));
   await waitFor(() => expect(approve).toHaveBeenCalledWith("scene-image-job", 0, "candidate-1"));

@@ -1,6 +1,7 @@
 """Lifecycle integration tests for the main backend application."""
 
 import pytest
+from contextlib import asynccontextmanager
 
 
 @pytest.mark.asyncio(loop_scope="function")
@@ -27,7 +28,7 @@ async def test_main_backend_lifespan_starts_and_stops_darkstudio_worker(monkeypa
 
     monkeypatch.setattr(video, "stop_dependency_rebuild_worker", stop_worker)
 
-    async with backend_lifespan.lifespan(None):
+    async with asynccontextmanager(backend_lifespan.lifespan)(None):
         assert calls == ["backend_startup", "worker_start"]
 
     assert calls == ["backend_startup", "worker_start", "worker_stop", "backend_shutdown"]
