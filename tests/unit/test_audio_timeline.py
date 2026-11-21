@@ -510,3 +510,24 @@ def test_mix_audio_timeline_ducks_music_for_asset_backed_narration(tmp_path, mon
     assert result["ducking"]["speech_detected"] is True
     assert result["clips"][0]["ducking_applied"] is True
     assert during < before * 0.4
+
+
+def test_mix_audio_timeline_downmixes_multichannel_music_to_stereo(tmp_path, monkeypatch):
+    _audio_roots(tmp_path, monkeypatch)
+    multichannel = np.zeros((8000, 8), dtype=np.float32)
+    multichannel[:, 0] = 0.2
+    multichannel[:, 1] = 0.1
+    multichannel[:, 2] = 0.05
+    result = audio_timeline.mix_audio_timeline(
+        [{"samples": multichannel, "kind": "music", "start": 0, "end": 1}],
+        tmp_path / "multichannel_mix.wav",
+        total_duration=1,
+        sample_rate=8000,
+        ducking_enabled=False,
+        normalization_enabled=False,
+    )
+    rendered, rate = dsp.read_audio(tmp_path / "multichannel_mix.wav", target_sr=8000, preserve_channels=True)
+    assert rate == 8000
+    assert rendered.shape == (8000, 2)
+    assert np.mean(rendered[:, 0]) > np.mean(rendered[:, 1])
+    assert result["channels"] == 2
