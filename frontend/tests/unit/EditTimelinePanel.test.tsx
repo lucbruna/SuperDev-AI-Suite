@@ -127,7 +127,7 @@ describe("EditTimelinePanel", () => {
     fireEvent.change(screen.getByLabelText("Preset de masterização"), { target: { value: "voice" } });
     fireEvent.change(screen.getAllByRole("slider", { name: /Panorama L\/R/ })[0], { target: { value: "-0.5" } });
     fireEvent.click(screen.getByRole("checkbox", { name: "Repetir" }));
-    fireEvent.click(screen.getByRole("button", { name: "Remover" }));
+    fireEvent.click(screen.getAllByRole("button", { name: "Remover" })[1]);
     fireEvent.click(screen.getByRole("button", { name: "Salvar alterações de áudio" }));
     await waitFor(() => expect(save).toHaveBeenCalled());
     expect(save.mock.calls[0][1].sfx_clips).toEqual([]);
@@ -243,7 +243,7 @@ it("edits a scene image from a text instruction and asks for a new MP4 render", 
   const approve = vi.spyOn(videoStudioApi, "approveSceneImageCandidate").mockResolvedValue({ job_id: "scene-image-job", scene_index: 0, status: "approved", image_url: "/api/v1/downloads/images/edited.png", render_required: true, message: "Imagem aprovada e aplicada à cena. Renderize a edição para atualizar o MP4 completo." });
   render(<EditTimelinePanel timeline={timeline} jobId="scene-image-job" />);
   const prompt = "Transforme o fundo em uma floresta ao amanhecer";
-  fireEvent.change(screen.getAllByPlaceholderText(/transforme o fundo/i)[0], { target: { value: prompt } });
+  fireEvent.change(screen.getByPlaceholderText("Descreva o enquadramento, cenário e ação desta cena…"), { target: { value: prompt } });
   fireEvent.click(screen.getAllByRole("button", { name: "Criar imagem por texto" })[0]);
   await waitFor(() => expect(edit).toHaveBeenCalledWith("scene-image-job", 0, { prompt, denoising_strength: 0.45, stage_only: true }));
   expect(await screen.findByAltText("Imagem candidata da cena 1")).toBeInTheDocument();
@@ -292,7 +292,7 @@ it("generates a separate 10-second ComfyUI motion clip from a scene image", asyn
       visual_prompt: "A historical ship crossing the sea",
     }]}
   />);
-  fireEvent.click(screen.getByRole("button", { name: "Animar com IA · ComfyUI" }));
+  fireEvent.click(screen.getAllByRole("button", { name: "Animar com IA · ComfyUI" })[0]);
   await waitFor(() => expect(generate).toHaveBeenCalledWith("motion-job", 0, expect.objectContaining({
     motion_prompt: "A historical ship crossing the sea",
   })));
@@ -465,7 +465,7 @@ it("regenerates every storyboard image from its scene-specific visual brief with
     render(<EditTimelinePanel timeline={timeline} jobId="async-dependency-ui" />);
     fireEvent.click(screen.getByRole("button", { name: "Mapa de dependências" }));
     await waitFor(() => expect(screen.getByText("Imagem da cena 1")).toBeInTheDocument());
-    fireEvent.click(screen.getByRole("checkbox"));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Imagem da cena 1" }));
     fireEvent.click(screen.getByRole("button", { name: /Calcular impacto/ }));
     await waitFor(() => expect(screen.getByText("Plano calculado · somente prévia")).toBeInTheDocument());
     fireEvent.click(screen.getByRole("button", { name: "Confirmar e executar reconstrução" }));

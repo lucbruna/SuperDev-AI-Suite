@@ -649,7 +649,7 @@ def mix_audio_timeline(
         if len(segment) == 0:
             raise ValueError(f"audio clip {index} trim starts beyond the source asset")
         if bool(clip.get("loop", False)) and len(segment) < count:
-            segment = np.tile(segment, int(np.ceil(count / len(segment))))
+            segment = np.tile(segment, (int(np.ceil(count / len(segment))), 1))
         placed = np.zeros((count, output_channels), dtype=np.float32)
         placed[:min(count, len(segment))] = segment[:count]
         envelope = np.ones(count, dtype=np.float32)

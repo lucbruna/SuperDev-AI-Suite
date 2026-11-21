@@ -268,8 +268,9 @@ def test_mix_audio_timeline_loops_short_music_only_when_requested(tmp_path, monk
         output, total_duration=1.0,
     )
     assert result["clips"][0]["loop"] is True
-    samples, rate = dsp.read_audio(output, target_sr=dsp.SAMPLE_RATE)
+    samples, rate = dsp.read_audio(output, target_sr=dsp.SAMPLE_RATE, preserve_channels=True)
     assert rate == dsp.SAMPLE_RATE
+    assert samples.shape == (dsp.SAMPLE_RATE, 2)
     assert np.max(np.abs(samples[rate // 2:])) > 0.08
 
 

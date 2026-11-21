@@ -98,6 +98,10 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
       setVidGridQueue(null);
       return () => { active = false; };
     }
+    if (typeof videoStudioApi.getVidGridClipRebuildStatus !== "function") {
+      setVidGridQueue(null);
+      return () => { active = false; };
+    }
     videoStudioApi.getVidGridClipRebuildStatus(jobId)
       .then((status) => { if (active) setVidGridQueue(status); })
       .catch(() => { if (active) setVidGridQueue(null); });
@@ -109,6 +113,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
     let active = true;
     const pollQueue = async () => {
       try {
+        if (typeof videoStudioApi.getVidGridClipRebuildStatus !== "function") return;
         const status = await videoStudioApi.getVidGridClipRebuildStatus(jobId);
         if (!active) return;
         setVidGridQueue(status);
@@ -246,6 +251,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
   useEffect(() => {
     if (!jobId) return;
     let cancelled = false;
+    if (typeof videoStudioApi.getJobVisualDirection !== "function") return () => { cancelled = true; };
     videoStudioApi.getJobVisualDirection(jobId).then((result) => {
       if (cancelled) return;
       const byIndex: Record<number, SceneVisualDirection> = {};
@@ -1508,7 +1514,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
         <div className="mt-2 grid gap-1 sm:grid-cols-2">
           {dependencyGraph.nodes.filter((node) => ["image", "narration", "narration_track", "music", "sound_effect", "video_clip"].includes(node.type)).map((node) => (
             <label key={node.id} className="flex items-center gap-2 rounded bg-surface-50 p-2 dark:bg-surface-800">
-              <input type="checkbox" checked={selectedDependencyAssets.includes(node.id)} disabled={node.status !== "stale"} onChange={(event) => {
+              <input type="checkbox" aria-label={node.label} checked={selectedDependencyAssets.includes(node.id)} disabled={node.status !== "stale"} onChange={(event) => {
                 setSelectedDependencyAssets((current) => event.target.checked
                   ? [...current, node.id]
                   : current.filter((id) => id !== node.id));
