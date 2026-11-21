@@ -43,9 +43,10 @@ def test_offline_tts_writes_file(tmp_path) -> None:
     assert result["duration"] > 0
 
 
-def test_tts_chain_falls_back_when_network_down(monkeypatch, tmp_path) -> None:
-    """When VoiceStudioService fails, the chain must fall back to offline."""
+def test_tts_chain_rejects_non_speech_fallback_when_network_down(monkeypatch, tmp_path) -> None:
+    """A formant sound effect must never be accepted as spoken narration."""
     from modules.ai_video_studio.ai_voice_studio.synthesis import tts_engine
+    import asyncio
 
     async def _boom(self, *args, **kwargs):
         raise RuntimeError("network unavailable")
@@ -56,11 +57,10 @@ def test_tts_chain_falls_back_when_network_down(monkeypatch, tmp_path) -> None:
     )
     engine = tts_engine.TTSEngine()
     out = str(tmp_path / "fallback.wav")
-    import asyncio
 
-    result = asyncio.run(engine.synthesize("hello world", output_path=out))
-    assert result["engine"] in ("pyttsx3", "formant")
-    assert (tmp_path / "fallback.wav").exists()
+    with pytest.raises(RuntimeError, match="formant fallback is disabled"):
+        asyncio.run(engine.synthesize("hello world", output_path=out))
+    assert not (tmp_path / "fallback.wav").exists()
 
 
 # ── Voice clone ──────────────────────────────────────────────────────
