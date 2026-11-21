@@ -17,6 +17,7 @@ vi.mock("@/api/videoStudio", () => ({
     preflightVideo: vi.fn(),
     validateJobOutput: vi.fn(),
     getVidGridClipRebuildStatus: vi.fn().mockResolvedValue(null),
+    getJobDependencyRebuildStatus: vi.fn().mockResolvedValue(null),
   },
 }));
 

@@ -141,6 +141,10 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
       setDependencyRebuildStatus(null);
       return () => { active = false; };
     }
+    if (typeof videoStudioApi.getJobDependencyRebuildStatus !== "function") {
+      setDependencyRebuildStatus(null);
+      return () => { active = false; };
+    }
     videoStudioApi.getJobDependencyRebuildStatus(jobId)
       .then((status) => { if (active) setDependencyRebuildStatus(status); })
       .catch(() => { if (active) setDependencyRebuildStatus(null); });
@@ -152,6 +156,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
     let active = true;
     const poll = async () => {
       try {
+        if (typeof videoStudioApi.getJobDependencyRebuildStatus !== "function") return;
         const status = await videoStudioApi.getJobDependencyRebuildStatus(jobId);
         if (!active) return;
         setDependencyRebuildStatus(status);
