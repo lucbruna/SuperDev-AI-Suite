@@ -289,7 +289,9 @@ async def test_scene_narration_uses_frame_rounded_duration_for_audio_slots(monke
 
     class FakeVoiceEngine:
         async def synthesize_async(self, text, **kwargs):
-            return {"output_path": str(tmp_path / "voice.wav"), "engine": "fake", "duration": 0.8}
+            output = tmp_path / "voice.wav"
+            dsp.write_audio(str(output), dsp.sine(220.0, 0.8) * 0.5)
+            return {"output_path": str(output), "engine": "fake", "duration": 0.8}
 
     monkeypatch.setattr(
         "modules.ai_video_studio.ai_voice_studio.get_voice_engine",
