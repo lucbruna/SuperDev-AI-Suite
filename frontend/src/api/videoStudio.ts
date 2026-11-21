@@ -8,7 +8,7 @@ import apiClient from "./client";
 const STUDIO_BASE = "/video-studio";
 
 export interface StudioProfile {
-  id: "whymentary" | "historical_documentary" | "felt_clay";
+  id: "custom" | "whymentary" | "historical_documentary" | "felt_clay";
   name: string;
   visual_language: string;
   background: { type: string; colors: string[] };
@@ -281,8 +281,8 @@ export interface StudioJob {
     automatic_resume_supported?: boolean;
     recovery_hint?: string;
   } | null;
-  scene_progress?: {
   scene_clip_rebuild_queue?: VidGridClipRebuildResult["queue"] & { recovery_note?: string };
+  scene_progress?: {
     scene_index: number;
     status: "pending" | "processing" | "completed" | "fallback" | "failed" | string;
     stage?: string;
@@ -936,6 +936,7 @@ export const videoStudioApi = {
     cancel_requested?: boolean;
     changed_asset_ids?: string[];
     scene_indices?: number[];
+    previously_completed_scene_indices?: number[];
     queued_at?: number;
     started_at?: number;
     updated_at?: number;
