@@ -3701,3 +3701,47 @@ async def test_failed_generation_recovery_reports_and_preserves_new_scene_checkp
     assert report["recoverable_scene_indices"] == [0]
     assert report["scene_assets_preserved"] is True
     assert persisted[-1]["failure_info"] == report
+
+
+@pytest.mark.asyncio
+async def test_scene_narration_audio_preview_is_confined_to_voice_assets(tmp_path, monkeypatch):
+    from fastapi import HTTPException
+    from modules.ai_video_studio.api.routes import video
+    from modules.ai_video_studio.media import output_paths
+
+    voice_root = tmp_path / "voice"
+    voice_root.mkdir()
+    audio = voice_root / "scene-1.wav"
+    audio.write_bytes(b"RIFF-test-audio")
+    monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda name: voice_root if name == "voice" else tmp_path / name)
+
+    job_id = "scene-audio-preview-test"
+    video._jobs[job_id] = {
+        "job_id": job_id,
+        "voiceover": {
+            "narration_style": "per_scene",
+            "clips": [{"index": 0, "audio_path": str(audio)}],
+        },
+    }
+    try:
+        response = await video.get_video_job_scene_narration_audio(job_id, 0)
+        assert response.path == str(audio)
+        assert response.media_type == "audio/wav"
+
+        with pytest.raises(HTTPException) as missing:
+            await video.get_video_job_scene_narration_audio(job_id, 1)
+        assert missing.value.status_code == 404
+
+        outside = tmp_path / "outside.wav"
+        outside.write_bytes(b"not-approved")
+        video._jobs[job_id]["voiceover"]["clips"][0]["audio_path"] = str(outside)
+        with pytest.raises(HTTPException) as unsafe:
+            await video.get_video_job_scene_narration_audio(job_id, 0)
+        assert unsafe.value.status_code == 404
+
+        video._jobs[job_id]["voiceover"]["narration_style"] = "single_track"
+        with pytest.raises(HTTPException) as single:
+            await video.get_video_job_scene_narration_audio(job_id, 0)
+        assert single.value.status_code == 409
+    finally:
+        video._jobs.pop(job_id, None)
