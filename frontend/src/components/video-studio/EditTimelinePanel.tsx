@@ -202,6 +202,11 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
   const [audioAssets, setAudioAssets] = useState<StudioAudioAsset[]>([]);
   const [narrationPreviewUrl, setNarrationPreviewUrl] = useState<string | null>(null);
   const [loadingNarrationPreview, setLoadingNarrationPreview] = useState(false);
+  const [narrationText, setNarrationText] = useState("");
+  const [canRegenerateNarration, setCanRegenerateNarration] = useState(false);
+  const [regeneratingNarration, setRegeneratingNarration] = useState(false);
+  const [narrationMessage, setNarrationMessage] = useState("");
+  const [narrationPreviewVersion, setNarrationPreviewVersion] = useState(0);
   const [musicAsset, setMusicAsset] = useState("");
   const [musicStart, setMusicStart] = useState("0");
   const [musicEnd, setMusicEnd] = useState("10");
@@ -253,6 +258,24 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
 
   useEffect(() => {
     let cancelled = false;
+    setNarrationText("");
+    setCanRegenerateNarration(false);
+    setNarrationMessage("");
+    if (!jobId || selectedNarrationSceneIndex < 0) return () => { cancelled = true; };
+    videoStudioApi.getJob(jobId).then((job) => {
+      if (cancelled) return;
+      const voiceover = job.voiceover;
+      const clip = voiceover?.clips?.find((item) => item.index === selectedNarrationSceneIndex);
+      setNarrationText(clip?.text ?? "");
+      setCanRegenerateNarration(voiceover?.narration_style === "per_scene" && Boolean(clip));
+    }).catch(() => {
+      if (!cancelled) setCanRegenerateNarration(false);
+    });
+    return () => { cancelled = true; };
+  }, [jobId, selectedNarrationSceneIndex]);
+
+  useEffect(() => {
+    let cancelled = false;
     let objectUrl: string | null = null;
     setNarrationPreviewUrl(null);
     if (!jobId || selectedNarrationSceneIndex < 0) {
@@ -272,7 +295,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
       cancelled = true;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [jobId, selectedNarrationSceneIndex]);
+  }, [jobId, selectedNarrationSceneIndex, narrationPreviewVersion]);
 
   useEffect(() => {
     if (!jobId) return;
@@ -1268,7 +1291,39 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
           {loadingNarrationPreview ? <p className="text-xs text-surface-500">Carregando áudio da cena…</p>
             : narrationPreviewUrl ? <audio controls preload="metadata" src={narrationPreviewUrl} className="w-full" />
               : <p className="text-xs text-surface-500">Não há áudio individual disponível para esta cena. Em narração de faixa única, o áudio não é dividido artificialmente.</p>}
-          <p className="mt-2 text-xs text-surface-500">A prévia permite conferir a fala antes de editar a mixagem. A substituição/regeneração individual da fala ainda não está disponível.</p>
+          {canRegenerateNarration && (
+            <div className="mt-3 space-y-2">
+              <label className="block text-xs font-medium text-surface-600 dark:text-surface-300">
+                Texto da narração desta cena
+                <textarea value={narrationText} onChange={(event) => setNarrationText(event.target.value)}
+                  maxLength={5000} rows={3}
+                  className="mt-1 w-full rounded border border-surface-300 bg-transparent px-2 py-2 text-sm dark:border-surface-600" />
+              </label>
+              <button type="button" disabled={regeneratingNarration || !narrationText.trim()}
+                onClick={async () => {
+                  if (!jobId) return;
+                  setRegeneratingNarration(true);
+                  setNarrationMessage("");
+                  try {
+                    const result = await videoStudioApi.regenerateJobSceneNarration(
+                      jobId, selectedNarrationSceneIndex, { text: narrationText.trim() },
+                    );
+                    setNarrationMessage(result.message);
+                    setNarrationPreviewVersion((version) => version + 1);
+                  } catch (error) {
+                    const detail = (error as { response?: { data?: { detail?: string | { message?: string } } } })?.response?.data?.detail;
+                    setNarrationMessage(typeof detail === "string" ? detail : detail?.message ?? "Não foi possível regenerar a narração desta cena.");
+                  } finally {
+                    setRegeneratingNarration(false);
+                  }
+                }}
+                className="rounded bg-primary-600 px-3 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50">
+                {regeneratingNarration ? "Gerando nova fala…" : "Regenerar somente esta fala"}
+              </button>
+              {narrationMessage && <p className="text-xs text-surface-500">{narrationMessage}</p>}
+            </div>
+          )}
+          <p className="mt-2 text-xs text-surface-500">A regeneração altera somente o áudio desta cena. O clipe de 10 segundos e o MP4 completo precisam ser reconstruídos/exportados separadamente.</p>
         </section>
       )}
 
