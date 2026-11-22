@@ -18,6 +18,7 @@ def completed_job():
         "job_id": job_id,
         "project_id": "test-project",
         "status": "completed",
+        "progress": 1.0,
         "output_url": "/downloads/original.mp4",
         "resolution": "1280x720",
         "frame_rate": 24,
