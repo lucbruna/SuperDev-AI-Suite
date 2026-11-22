@@ -2711,7 +2711,14 @@ async def regenerate_video_job_scene_narration(
     # Keep the old asset on disk. Only replace the selected scene's source
     # reference; the recovery planner's narration fingerprint will mark its
     # already-muxed MP4 clip stale without touching the other scenes.
-    previous_path = clip.get("audio_path")
+    previous_clip = dict(clip)
+    previous_fields = {
+        key: (key in record, record.get(key))
+        for key in ("edit_render_status", "edited_output_url", "edited_video_duration", "output_validation", "subtitles")
+    }
+    previous_narration = voiceover.get("narration")
+    previous_regenerated_index = voiceover.get("last_regenerated_scene_index")
+    previous_regenerated_at = voiceover.get("last_regenerated_at")
     clip.update({
         "text": req.text,
         "audio_path": str(generated_path),
@@ -2735,9 +2742,23 @@ async def regenerate_video_job_scene_narration(
     try:
         _persist_job(record)
     except Exception as exc:  # noqa: BLE001
-        # Restore the previous metadata reference; leave the new file as an
-        # unreferenced asset rather than exposing an unpersisted replacement.
-        clip["audio_path"] = previous_path
+        clip.clear()
+        clip.update(previous_clip)
+        if previous_narration is None:
+            voiceover.pop("narration", None)
+        else:
+            voiceover["narration"] = previous_narration
+        for key, value in (("last_regenerated_scene_index", previous_regenerated_index),
+                           ("last_regenerated_at", previous_regenerated_at)):
+            if value is None:
+                voiceover.pop(key, None)
+            else:
+                voiceover[key] = value
+        for key, (existed, value) in previous_fields.items():
+            if existed:
+                record[key] = value
+            else:
+                record.pop(key, None)
         raise HTTPException(status_code=503, detail="Could not persist regenerated narration; previous narration remains active") from exc
 
     return {
