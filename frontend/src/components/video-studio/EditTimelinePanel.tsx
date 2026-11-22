@@ -262,8 +262,8 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
     setCanRegenerateNarration(false);
     setNarrationMessage("");
     if (!jobId || selectedNarrationSceneIndex < 0) return () => { cancelled = true; };
-    videoStudioApi.getJob(jobId).then((job) => {
-      if (cancelled) return;
+    Promise.resolve(videoStudioApi.getJob(jobId)).then((job) => {
+      if (cancelled || !job) return;
       const voiceover = job.voiceover;
       const clip = voiceover?.clips?.find((item) => item.index === selectedNarrationSceneIndex);
       setNarrationText(clip?.text ?? "");
