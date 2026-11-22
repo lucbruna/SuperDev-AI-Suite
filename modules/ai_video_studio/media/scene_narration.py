@@ -361,28 +361,71 @@ async def synthesize_scene_narration_async(
                 clip_callback(dict(clip))
             continue
         if not text:
+            clip["status"] = "no_narration"
             clips.append(clip)
+            if callable(clip_callback):
+                clip_callback(dict(clip))
             continue
         try:
             synth = await voice_engine.synthesize_async(
                 text, voice_id=voice_id, language=language, speed=speed,
                 pitch=pitch, output_path=None, use_cache=False,
             )
-        except Exception as e:  # noqa: BLE001 — TTS failure is per-scene non-fatal
+            audio_path = Path(str(synth.get("output_path") or "")).resolve()
+            if not audio_path.is_file() or audio_path.stat().st_size <= 0:
+                raise RuntimeError("TTS returned no readable audio file")
+            measured_duration = float(synth.get("duration") or 0)
+            if measured_duration <= 0:
+                raise RuntimeError("TTS returned invalid audio duration")
+        except Exception as e:  # noqa: BLE001 — isolate failure and persist it for recovery
             logger.warning("Scene %s narration failed: %s", index, e)
-            clip["error"] = str(e)[:120]
+            clip["status"] = "failed"
+            clip["error"] = str(e)[:240]
             clips.append(clip)
+            if callable(clip_callback):
+                clip_callback(dict(clip))
             continue
-        clip["audio_path"] = synth["output_path"]
-        clip["tts_engine"] = synth["engine"]
-        clip["audio_duration"] = synth["duration"]
+        clip["audio_path"] = str(audio_path)
+        clip["tts_engine"] = synth.get("engine") or "unknown"
+        clip["audio_duration"] = measured_duration
+        clip["status"] = "completed"
         clips.append(clip)
         synthesized_any = True
         if callable(clip_callback):
             clip_callback(dict(clip))
 
+    required_indices = [
+        index for index, scene in enumerate(scenes)
+        if scene_narration_text(scene)
+    ]
+    failed_indices = [
+        int(clip["index"]) for clip in clips
+        if clip.get("status") == "failed" and isinstance(clip.get("index"), int)
+    ]
+    missing_indices = [
+        int(clips[index]["index"]) for index in required_indices
+        if index >= len(clips) or not clips[index].get("audio_path")
+    ]
+    if failed_indices or missing_indices:
+        return {
+            "muxed": False,
+            "reason": "narration incomplete; retry failed scene audio before final export",
+            "clips": clips,
+            "failed_scene_indices": sorted(set(failed_indices + missing_indices)),
+            "narration_complete": False,
+            "voice_id": voice_id,
+            "language": language,
+            "narration_style": "per_scene",
+        }
+
     if not synthesized_any:
-        return {"muxed": False, "reason": "no scene narration synthesized", "clips": clips}
+        return {
+            "muxed": False, "reason": "no scene narration synthesized",
+            "clips": clips, "failed_scene_indices": [],
+            "narration_complete": False,
+            "voice_id": voice_id, "language": language,
+            "narration_style": "per_scene",
+        }
 
     # Mix the placed clips into one track spanning the whole video.
     from modules.ai_video_studio.ai_dubbing.export_dubbing import export_audio_track
@@ -411,6 +454,8 @@ async def synthesize_scene_narration_async(
         "voice_id": voice_id,
         "language": language,
         "narration_style": "per_scene",
+        "narration_complete": bool(muxed.get("muxed")),
+        "failed_scene_indices": [],
         **({} if muxed.get("muxed") else {"reason": muxed.get("reason")}),
     }
 
