@@ -3826,3 +3826,121 @@ async def test_scene_narration_audio_preview_is_confined_to_voice_assets(tmp_pat
         assert single.value.status_code == 409
     finally:
         video._jobs.pop(job_id, None)
+
+
+@pytest.mark.asyncio
+async def test_regenerated_per_scene_narration_reaches_final_mix_and_subtitles(tmp_path, monkeypatch):
+    """Changed scene speech must be regenerated, mixed, and captioned in the final export."""
+    from modules.ai_video_studio.api.routes import video as video_routes
+    from modules.ai_video_studio.media import output_paths, render, audio, audio_timeline, timeline, scene_narration
+    from modules.ai_video_studio.services import subtitle_studio
+
+    roots = {name: tmp_path / name for name in ("videos", "voice", "mix", "subtitles")}
+    for root in roots.values():
+        root.mkdir()
+    rendered = roots["videos"] / "edited-visual.mp4"
+    rendered.write_bytes(b"silent-edited-video")
+    regenerated_audio = roots["voice"] / "scene-0-regenerated.wav"
+    regenerated_audio.write_bytes(b"new-spoken-audio")
+    mixed = roots["mix"] / "edited-mix.wav"
+    captured = {}
+
+    monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda name: roots[name])
+    monkeypatch.setattr(output_paths, "unique_filename", lambda directory, prefix, extension: (
+        Path(directory) / ("final.mp4" if prefix == "text_to_video_edited_final"
+        else "edited_visual.mp4" if prefix == "text_to_video_edited"
+        else f"{prefix}.{extension}")
+    ))
+    monkeypatch.setattr(render, "render_mixed_scene_video", lambda *_args, **_kwargs: {
+        "output_path": str(rendered), "frames": 48, "bytes": rendered.stat().st_size,
+        "engine": "test", "transition_policy": "frame_accurate", "transitions_applied": [],
+    })
+    monkeypatch.setattr(timeline, "build_edit_timeline", lambda *_args, **_kwargs: {
+        "tracks": [], "duration_seconds": 2.0,
+    })
+
+    async def fake_regenerate(scenes, original_clips, **_kwargs):
+        assert scenes[0]["voiceover_text"] == "A fala corrigida."
+        assert original_clips[0]["text"] == "A fala antiga."
+        return {
+            "clips": [{
+                "index": 0, "text": "A fala corrigida.", "start": 0.0, "end": 2.0,
+                "audio_path": str(regenerated_audio), "tts_engine": "fake-tts",
+            }],
+            "regenerated_scene_indices": [0],
+            "failed_scene_indices": [],
+        }
+
+    def fake_build_tracks(clips):
+        captured["remapped_clips"] = clips
+        return [{
+            "audio_path": clips[0]["audio_path"], "start": clips[0]["start"],
+            "end": clips[0]["end"], "text": clips[0]["text"],
+        }]
+
+    def fake_mix(clips, output_path, **kwargs):
+        captured["audio_inputs"] = clips
+        captured["total_duration"] = kwargs["total_duration"]
+        Path(output_path).write_bytes(b"mixed-audio")
+        return {"output_path": str(mixed), "quality": {"export_allowed": True}}
+
+    def fake_mux(_video, _audio, destination):
+        Path(destination).write_bytes(b"final-mp4-with-new-audio")
+        return {"muxed": True, "output_path": str(destination), "bytes": 25}
+
+    def fake_generate_srt(_service, subtitle_scenes, output_path):
+        captured["subtitle_scenes"] = subtitle_scenes
+        Path(output_path).write_text("1\\n00:00:00,000 --> 00:00:02,000\\nA fala corrigida.\\n", encoding="utf-8")
+        return {"file_path": str(output_path), "cue_count": len(subtitle_scenes), "duration": 2.0}
+
+    async def fake_validation(_job_id):
+        return {"valid": True, "checks": {"file_exists": True}}
+
+    monkeypatch.setattr(scene_narration, "regenerate_changed_scene_narration_async", fake_regenerate)
+    monkeypatch.setattr(scene_narration, "build_narration_tracks", fake_build_tracks)
+    monkeypatch.setattr(audio_timeline, "mix_audio_timeline", fake_mix)
+    monkeypatch.setattr(audio, "mux_audio_into_video", fake_mux)
+    monkeypatch.setattr(audio_timeline, "measure_encoded_audio", lambda *_args: {
+        "measured": {"integrated_lufs": -18.0, "true_peak_dbTP": -1.0},
+    })
+    monkeypatch.setattr(subtitle_studio.SubtitleStudioService, "generate_srt", fake_generate_srt)
+    monkeypatch.setattr(video_routes, "_persist_output_validation", fake_validation)
+    monkeypatch.setattr(video_routes, "_persist_job", lambda _record: None)
+
+    job_id = "regenerated-scene-narration-final-export"
+    video_routes._jobs[job_id] = {
+        "job_id": job_id, "status": "completed",
+        "params": {"resolution": "320x180", "frame_rate": 24},
+        "_edited_scenes": [{
+            "_source_scene_index": 0, "duration": 2,
+            "generative_video_path": str(rendered),
+            "voiceover_text": "A fala corrigida.",
+        }],
+        "voiceover": {
+            "narration_style": "per_scene",
+            "clips": [{
+                "index": 0, "text": "A fala antiga.", "start": 0.0, "end": 2.0,
+                "audio_path": str(roots["voice"] / "old-scene.wav"),
+            }],
+        },
+        "subtitles": {"generated": True},
+        "_audio_clips": {"music": [], "sfx": []},
+        "_audio_settings": {},
+    }
+
+    try:
+        result = await video_routes.render_video_job_edits(job_id)
+        narration_inputs = [clip for clip in captured["audio_inputs"] if clip.get("kind") == "narration"]
+        assert result["status"] == "completed"
+        assert result["audio_status"] == "mixed_audio"
+        assert len(narration_inputs) == 1
+        assert narration_inputs[0]["audio_path"] == str(regenerated_audio)
+        assert narration_inputs[0]["text"] == "A fala corrigida."
+        assert captured["subtitle_scenes"] == [{
+            "text": "A fala corrigida.", "duration": 2.0, "start_offset": 0.0,
+        }]
+        assert result["subtitle_status"] == "regenerated"
+        assert video_routes._jobs[job_id]["edit_render_status"] == "completed"
+    finally:
+        video_routes._jobs.pop(job_id, None)
+
