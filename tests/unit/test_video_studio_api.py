@@ -341,8 +341,12 @@ class TestSceneNarrationRegeneration:
             FakeVoiceStudioService,
         )
         monkeypatch.setattr(video, "_persist_job", lambda record: None)
+        source_scene = {"_source_scene_index": 0, "voiceover_text": "Texto antigo"}
+        edited_scene = {"_source_scene_index": 0, "voiceover_text": "Texto antigo"}
         record = {
             "job_id": "job-1", "status": "completed", "vidgrid_compatible": True,
+            "_source_scenes": [source_scene],
+            "_edited_scenes": [edited_scene],
             "params": {"voice_id": "francisca", "voice_language": "pt-BR"},
             "voiceover": {
                 "narration_style": "per_scene", "voice_id": "francisca", "language": "pt-BR",
@@ -363,6 +367,8 @@ class TestSceneNarrationRegeneration:
         assert response["scene_clip_rebuild_required"] is True
         assert response["full_mp4_render_required"] is True
         assert record["voiceover"]["clips"][0]["text"] == "Nova fala da cena"
+        assert record["_source_scenes"][0]["voiceover_text"] == "Nova fala da cena"
+        assert record["_edited_scenes"][0]["voiceover_text"] == "Nova fala da cena"
         assert Path(record["voiceover"]["clips"][0]["audio_path"]).read_bytes() == b"new narration"
         assert old_audio.read_bytes() == b"old narration"
         assert record["voiceover"]["clips"][1]["audio_path"] == str(other_audio)
