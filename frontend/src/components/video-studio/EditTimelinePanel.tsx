@@ -1313,6 +1313,10 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
                       const queued = await videoStudioApi.queueStaleVidGridClips(
                         jobId, [selectedNarrationSceneIndex],
                       );
+                      if (queued.queued) {
+                        const queueStatus = await videoStudioApi.getVidGridClipRebuildStatus(jobId);
+                        setVidGridQueue(queueStatus);
+                      }
                       message = queued.queued
                         ? `${message} Reconstrução deste clipe enfileirada.`
                         : `${message} Nenhuma reconstrução foi enfileirada: ${queued.status}.`;
