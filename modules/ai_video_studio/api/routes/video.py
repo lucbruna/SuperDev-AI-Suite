@@ -2726,7 +2726,9 @@ async def regenerate_video_job_scene_narration(
     for scene_key in ("_source_scenes", "_edited_scenes"):
         scene_list = record.get(scene_key)
         if isinstance(scene_list, list):
-            previous_scene_lists[scene_key] = scene_list
+            previous_scene_lists[scene_key] = [
+                dict(scene) if isinstance(scene, dict) else scene for scene in scene_list
+            ]
             for position, scene in enumerate(scene_list):
                 if not isinstance(scene, dict):
                     continue
