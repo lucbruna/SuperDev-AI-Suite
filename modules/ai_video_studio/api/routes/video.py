@@ -557,21 +557,37 @@ def _ordered_vidgrid_clip_paths(record: dict, scenes: list[dict]) -> list[str]:
         if voiceover.get("narration_style") == "per_scene":
             narration = narration_by_scene.get(scene_index) or {}
             narration_value = narration.get("audio_path")
-            # A per-scene narration request is an audio requirement, not an
-            # optional enhancement. Missing/empty source audio must never make
-            # a silent clip appear ready for standalone VidGrid delivery.
-            if not narration_value:
+            # A scene with dialogue requires a real, muxed audio stream in its
+            # standalone clip. Missing source audio or unverifiable MP4 audio
+            # must not be presented as a ready VidGrid asset.
+            scene = next(
+                (item for position, item in enumerate(scenes)
+                 if _safe_record_index(item.get("_source_scene_index", position), position) == scene_index),
+                {},
+            )
+            requires_narration = bool(
+                str(scene.get("voiceover_text") or scene.get("narration") or "").strip()
+            )
+            if requires_narration and not narration_value:
                 invalid.append(scene_index)
                 continue
-            narration_path = Path(str(narration_value)).resolve()
-            if (voice_root not in narration_path.parents
-                    or not narration_path.is_file()
-                    or narration_path.stat().st_size <= 0):
-                invalid.append(scene_index)
-                continue
-            if clip.get("audio_status") != "per_scene_narration_muxed":
-                invalid.append(scene_index)
-                continue
+            if narration_value:
+                narration_path = Path(str(narration_value)).resolve()
+                if (voice_root not in narration_path.parents
+                        or not narration_path.is_file()
+                        or narration_path.stat().st_size <= 0):
+                    invalid.append(scene_index)
+                    continue
+                if clip.get("audio_status") != "per_scene_narration_muxed":
+                    invalid.append(scene_index)
+                    continue
+                if probe.get("probe_status") != "passed" or probe.get("audio_stream_count", 0) < 1:
+                    invalid.append(scene_index)
+                    continue
+                saved_fingerprint = clip.get("source_narration_fingerprint")
+                if saved_fingerprint and saved_fingerprint != _asset_sha256(narration_path):
+                    invalid.append(scene_index)
+                    continue
             saved_fingerprint = clip.get("source_narration_fingerprint")
             if saved_fingerprint and saved_fingerprint != _asset_sha256(narration_path):
                 invalid.append(scene_index)
@@ -684,21 +700,31 @@ def _scene_clip_recovery_plan(record: dict) -> dict:
                 reasons.append("source_image_changed")
             elif not saved_fingerprint:
                 warnings.append("legacy_clip_without_image_fingerprint")
+            narration_fingerprint = None
             if voiceover.get("narration_style") == "per_scene":
                 narration = narration_by_scene.get(scene_index) or {}
                 narration_value = narration.get("audio_path")
                 narration_path = Path(str(narration_value)).resolve() if narration_value else None
-                narration_fingerprint = None
-                if narration_path is not None and voice_root in narration_path.parents and narration_path.is_file():
+                requires_narration = bool(
+                    str(scene.get("voiceover_text") or scene.get("narration") or "").strip()
+                )
+                if narration_path is not None and voice_root in narration_path.parents and narration_path.is_file() and narration_path.stat().st_size > 0:
                     try:
                         narration_fingerprint = _asset_sha256(narration_path)
                     except OSError:
-                        warnings.append("scene_narration_unreadable")
+                        reasons.append("scene_narration_unreadable")
+                elif requires_narration:
+                    reasons.append("scene_narration_missing_or_unsafe")
                 elif narration_value:
                     warnings.append("scene_narration_missing_or_unsafe")
                 saved_narration_fingerprint = clip.get("source_narration_fingerprint")
                 if narration_fingerprint and clip.get("audio_status") != "per_scene_narration_muxed":
                     reasons.append("scene_narration_not_muxed")
+                if narration_fingerprint and clip.get("audio_status") == "per_scene_narration_muxed":
+                    if probe.get("probe_status") != "passed":
+                        reasons.append("vidgrid_clip_audio_not_verified")
+                    elif probe.get("audio_stream_count", 0) < 1:
+                        reasons.append("vidgrid_clip_audio_stream_missing")
                 if saved_narration_fingerprint and narration_fingerprint and saved_narration_fingerprint != narration_fingerprint:
                     reasons.append("source_narration_changed")
                 elif narration_fingerprint and not saved_narration_fingerprint and clip.get("audio_status") == "per_scene_narration_muxed":
@@ -1231,7 +1257,10 @@ def _probe_media_asset(path: Path, kind: str) -> dict[str, Any]:
         details = {"probe_status": "passed", "codec": stream.get("codec_name"),
                    "duration_seconds": duration}
         if expected_type == "video":
-            details.update(width=stream.get("width"), height=stream.get("height"))
+            details.update(
+                width=stream.get("width"), height=stream.get("height"),
+                audio_stream_count=sum(1 for item in streams if item.get("codec_type") == "audio"),
+            )
         else:
             details.update(sample_rate=stream.get("sample_rate"), channels=stream.get("channels"))
         return details

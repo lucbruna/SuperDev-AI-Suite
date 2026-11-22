@@ -3944,3 +3944,74 @@ async def test_regenerated_per_scene_narration_reaches_final_mix_and_subtitles(t
     finally:
         video_routes._jobs.pop(job_id, None)
 
+
+
+def test_vidgrid_export_requires_probe_verified_audio_stream_for_per_scene_narration(tmp_path, monkeypatch):
+    from fastapi import HTTPException
+    from modules.ai_video_studio.api.routes import video
+    from modules.ai_video_studio.media import output_paths
+
+    roots = {name: tmp_path / name for name in ("videos", "voice")}
+    for root in roots.values():
+        root.mkdir()
+    clip = roots["videos"] / "silent-scene.mp4"
+    clip.write_bytes(b"nonempty")
+    narration = roots["voice"] / "scene.wav"
+    narration.write_bytes(b"narration")
+    monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda name: roots[name])
+    monkeypatch.setattr(video, "_probe_media_asset", lambda *_args: {
+        "probe_status": "passed", "duration_seconds": 10.0, "audio_stream_count": 0,
+    })
+    record = {
+        "voiceover": {
+            "narration_style": "per_scene",
+            "clips": [{"index": 0, "audio_path": str(narration)}],
+        },
+        "scene_clips": [{
+            "scene_index": 0, "status": "updated", "output_path": str(clip),
+            "duration": 10.0, "audio_status": "per_scene_narration_muxed",
+        }],
+    }
+
+    with pytest.raises(HTTPException) as error:
+        video._ordered_vidgrid_clip_paths(
+            record, [{"_source_scene_index": 0, "voiceover_text": "A fala da cena"}]
+        )
+
+    assert error.value.status_code == 409
+    assert "scenes [0]" in str(error.value.detail)
+
+
+def test_recovery_plan_marks_missing_required_scene_narration_as_rebuild(tmp_path, monkeypatch):
+    from modules.ai_video_studio.api.routes import video
+    from modules.ai_video_studio.media import output_paths
+
+    roots = {name: tmp_path / name for name in ("images", "videos", "voice")}
+    for root in roots.values():
+        root.mkdir()
+    image = roots["images"] / "scene.png"
+    image.write_bytes(b"approved-image")
+    clip = roots["videos"] / "silent-scene.mp4"
+    clip.write_bytes(b"nonempty")
+    monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda name: roots[name])
+    monkeypatch.setattr(video, "_probe_media_asset", lambda *_args: {
+        "probe_status": "passed", "duration_seconds": 10.0, "audio_stream_count": 0,
+    })
+    record = {
+        "resolution": "320x180", "frame_rate": 24, "params": {},
+        "_edited_scenes": [{
+            "_source_scene_index": 0, "background_image_path": str(image),
+            "voiceover_text": "A fala obrigatória da cena",
+        }],
+        "scene_assets": [],
+        "voiceover": {"narration_style": "per_scene", "clips": []},
+        "scene_clips": [{
+            "scene_index": 0, "status": "updated", "output_path": str(clip),
+            "duration": 10.0, "width": 320, "height": 180, "fps": 24,
+        }],
+    }
+
+    plan = video._scene_clip_recovery_plan(record)
+
+    assert plan["repair_scene_indices"] == [0]
+    assert "scene_narration_missing_or_unsafe" in plan["scenes"][0]["reasons"]
