@@ -1,8 +1,7 @@
 """Exercise the real DARKSTUDIO prompt-to-video pipeline without external AI services.
 
-Renders a deterministic two-scene, 10-second-per-scene VidGrid job using the
-production TextToVideoEngine and FFmpeg. Validates the master MP4, both scene
-clips, and the generated SRT sidecar.
+Renders a deterministic VidGrid job using production TextToVideoEngine and
+FFmpeg. Scene count, fps and resolution are configurable for CI proofs.
 """
 from __future__ import annotations
 
@@ -31,12 +30,9 @@ from modules.ai_video_studio import ai_voice_studio
 
 class _DeterministicPlanner:
     def plan(self, prompt: str, *, num_scenes: int, duration: float, timeout: float) -> dict[str, Any]:
-        if num_scenes != 2 or duration != 20.0:
-            raise AssertionError(f"Unexpected smoke-test plan request: {num_scenes=} {duration=}")
-        return {
-            "provider": "deterministic-smoke",
-            "ai_generated": False,
-            "scenes": [
+        if duration != num_scenes * 10.0:
+            raise AssertionError(f"Unexpected VidGrid plan request: {num_scenes=} {duration=}")
+        scenes = [
                 {
                     "title": "A cidade desperta",
                     "description": "Uma cidade futurista surge ao amanhecer.",
@@ -57,8 +53,20 @@ class _DeterministicPlanner:
                     "background_colors": ["#321B3D", "#773B52", "#E7A45B"],
                     "camera": {"zoom": 1.03, "dx": -0.1},
                 },
-            ],
-        }
+            ]
+        while len(scenes) < num_scenes:
+            index = len(scenes) + 1
+            scenes.append({
+                "title": f"Etapa documental {index}",
+                "description": f"Uma nova etapa da narrativa documental, cena {index}.",
+                "visual_prompt": f"Cinematic documentary composition, scene {index}",
+                "voiceover_text": f"Esta é a narração sintética de teste da cena {index}.",
+                "duration": 10.0,
+                "background_type": "gradient",
+                "background_colors": ["#101A35", "#263F70", "#E07A35"],
+                "camera": {"zoom": 1.0 + (index % 4) * 0.01, "dx": 0.05 if index % 2 else -0.05},
+            })
+        return {"provider": "deterministic-smoke", "ai_generated": False, "scenes": scenes[:num_scenes]}
 
 
 def _probe(path: Path) -> dict[str, Any]:
@@ -95,7 +103,16 @@ class _DeterministicVoiceEngine:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--scenes", type=int, default=2)
+    parser.add_argument("--fps", type=int, default=12)
+    parser.add_argument("--width", type=int, default=320)
+    parser.add_argument("--height", type=int, default=180)
     args = parser.parse_args()
+    if not 1 <= args.scenes <= 60:
+        raise SystemExit("--scenes must be between 1 and 60")
+    if args.fps < 1 or args.width < 16 or args.height < 16:
+        raise SystemExit("fps and output dimensions are invalid")
+    expected_duration = float(args.scenes * 10)
 
     if not shutil.which("ffmpeg") or not shutil.which("ffprobe"):
         raise SystemExit("FFmpeg and ffprobe are required for the DARKSTUDIO pipeline proof")
@@ -121,16 +138,17 @@ def main() -> None:
         voice_dir = subsystem_dir("voice")
         ai_voice_studio.get_voice_engine = lambda: _DeterministicVoiceEngine(voice_dir)
 
+        expected_scene_count = args.scenes
         result = asyncio.run(engine_module.TextToVideoEngine().generate_async(
             {
                 "id": "ci-darkstudio-pipeline-smoke",
                 "prompt": "Um documentário cinematográfico sobre uma cidade sustentável.",
                 "params": {
-                    "duration": 20.0,
-                    "num_scenes": 2,
-                    "fps": 12,
-                    "width": 320,
-                    "height": 180,
+                    "duration": expected_duration,
+                    "num_scenes": args.scenes,
+                    "fps": args.fps,
+                    "width": args.width,
+                    "height": args.height,
                     "studio_id": "custom",
                     "style": "cinematic documentary, rich environmental detail",
                     "scene_image_mode": "procedural",
@@ -148,9 +166,9 @@ def main() -> None:
         subtitle = Path(result["subtitles"]["file_path"])
         if not master.is_file() or master.stat().st_size == 0:
             raise SystemExit("TextToVideoEngine did not produce a non-empty master MP4")
-        if len(clips) != 2 or any(not clip.is_file() or clip.stat().st_size == 0 for clip in clips):
-            raise SystemExit("TextToVideoEngine did not produce both VidGrid scene MP4s")
-        if not subtitle.is_file() or subtitle.stat().st_size == 0 or result["subtitles"]["cue_count"] < 2:
+        if len(clips) != args.scenes or any(not clip.is_file() or clip.stat().st_size == 0 for clip in clips):
+            raise SystemExit(f"TextToVideoEngine did not produce all {args.scenes} VidGrid scene MP4s")
+        if not subtitle.is_file() or subtitle.stat().st_size == 0 or result["subtitles"]["cue_count"] < args.scenes:
             raise SystemExit("TextToVideoEngine did not produce the expected SRT subtitle sidecar")
         subtitle_text = subtitle.read_text(encoding="utf-8-sig")
         if "-->" not in subtitle_text:
@@ -164,10 +182,10 @@ def main() -> None:
         master_probe = _probe(master)
         master_video = next(s for s in master_probe["streams"] if s["codec_type"] == "video")
         master_duration = float(master_probe["format"]["duration"])
-        if master_video["codec_name"] != "h264" or (master_video["width"], master_video["height"]) != (320, 180):
+        if master_video["codec_name"] != "h264" or (master_video["width"], master_video["height"]) != (args.width, args.height):
             raise SystemExit(f"Unexpected master MP4 stream: {master_video}")
-        if abs(master_duration - 20.0) > 0.2:
-            raise SystemExit(f"Expected a 20-second master MP4, got {master_duration:.3f}s")
+        if abs(master_duration - expected_duration) > 0.2:
+            raise SystemExit(f"Expected a {expected_duration:.0f}-second master MP4, got {master_duration:.3f}s")
         master_audio = [stream for stream in master_probe["streams"] if stream["codec_type"] == "audio"]
         if not master_audio:
             raise SystemExit("Narration was requested but the master MP4 has no audio stream")
@@ -175,25 +193,23 @@ def main() -> None:
             (float(stream.get("duration") or 0.0) for stream in master_audio),
             default=0.0,
         )
-        if not 19.5 <= master_audio_duration <= 20.5:
+        if not expected_duration - 0.5 <= master_audio_duration <= expected_duration + 0.5:
             raise SystemExit(
-                f"Expected master narration audio to span ~20 seconds, got {master_audio_duration:.3f}s"
+                f"Expected master narration audio to span ~{expected_duration:.0f} seconds, got {master_audio_duration:.3f}s"
             )
         voiceover = result.get("voiceover") or {}
         if not voiceover.get("muxed") or voiceover.get("narration_style") != "per_scene":
             raise SystemExit(f"Per-scene narration did not complete: {voiceover}")
         narration_assets = voiceover.get("clips") or []
-        if len(narration_assets) != 2 or any(not clip.get("audio_path") for clip in narration_assets):
-            raise SystemExit("Expected one synthesized audio asset for each scene")
+        if len(narration_assets) != args.scenes or any(not clip.get("audio_path") for clip in narration_assets):
+            raise SystemExit("Expected one synthesized audio asset for every scene")
         narration_indices = [int(clip.get("index", -1)) for clip in narration_assets]
-        if narration_indices != [0, 1]:
-            raise SystemExit(
-                f"Expected narration assets mapped in scene order [0, 1], got {narration_indices}"
-            )
+        if narration_indices != list(range(args.scenes)):
+            raise SystemExit(f"Expected narration assets in scene order, got {narration_indices}")
         expected_narration = [
             "Ao amanhecer, uma cidade futurista desperta.",
             "A energia do sol transforma o futuro da cidade.",
-        ]
+        ] + [f"Esta é a narração sintética de teste da cena {index}." for index in range(3, args.scenes + 1)]
         for index, narration in enumerate(narration_assets):
             if narration.get("text") != expected_narration[index]:
                 raise SystemExit(
@@ -235,6 +251,10 @@ def main() -> None:
         shutil.copy2(master, output)
         print(json.dumps({
             "status": "passed",
+            "scene_count": args.scenes,
+            "expected_duration": expected_duration,
+            "fps": args.fps,
+            "resolution": f"{args.width}x{args.height}",
             "planner": result["ai_planner"],
             "master_mp4": {"path": str(output), "duration": master_duration, "bytes": output.stat().st_size},
             "vidgrid_clips": clip_reports,
