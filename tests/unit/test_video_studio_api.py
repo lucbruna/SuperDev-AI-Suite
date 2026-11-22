@@ -2143,6 +2143,8 @@ class TestSelectiveVidGridClipRebuild:
         current_clip = video_root / "current-1.mp4"
         current_clip.write_bytes(b"existing-mp4")
         monkeypatch.setattr(video, "_persist_job", lambda _record: None)
+        # This test checks selective rebuild selection, not MP4 decoding. The fixture bytes are placeholders.
+        monkeypatch.setattr(video, "_probe_media_asset", lambda *_args, **_kwargs: {"probe_status": "not_verified"})
         video._jobs["selective-vidgrid-job"] = {
             "job_id": "selective-vidgrid-job", "status": "completed",
             "vidgrid_compatible": True, "resolution": "1280x720", "frame_rate": 30,
