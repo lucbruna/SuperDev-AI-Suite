@@ -1308,7 +1308,16 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
                     const result = await videoStudioApi.regenerateJobSceneNarration(
                       jobId, selectedNarrationSceneIndex, { text: narrationText.trim() },
                     );
-                    setNarrationMessage(result.message);
+                    let message = result.message;
+                    if (result.scene_clip_rebuild_required) {
+                      const queued = await videoStudioApi.queueStaleVidGridClips(
+                        jobId, [selectedNarrationSceneIndex],
+                      );
+                      message = queued.queued
+                        ? `${message} Reconstrução deste clipe enfileirada.`
+                        : `${message} Nenhuma reconstrução foi enfileirada: ${queued.status}.`;
+                    }
+                    setNarrationMessage(message);
                     setRenderUrl("");
                     setOutputValidation(null);
                     setNarrationPreviewVersion((version) => version + 1);
