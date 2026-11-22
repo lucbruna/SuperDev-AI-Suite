@@ -793,6 +793,11 @@ export const videoStudioApi = {
     return data?.assets ?? [];
   },
 
+  async getJobSceneNarrationAudio(jobId: string, sceneIndex: number): Promise<Blob> {
+    const { data } = await apiClient.get(`${STUDIO_BASE}/videos/jobs/${jobId}/scene-narration/${sceneIndex}/audio`, { responseType: "blob" });
+    return data as Blob;
+  },
+
   async analyzeJobAudio(jobId: string): Promise<{
     sources_analyzed: number;
     reports: Record<string, { source: string; file: string; rms_dbfs: number; peak_dbfs: number; silence_ratio: number; clipping_ratio: number; warnings: string[] }[]>;
