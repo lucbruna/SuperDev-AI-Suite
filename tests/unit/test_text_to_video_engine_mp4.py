@@ -716,3 +716,48 @@ def test_add_voiceover_forwards_narration_checkpoints_and_callback(monkeypatch):
     assert captured["checkpoint_clips"] == expected_checkpoints
     assert captured["clip_callback"] is callback
     assert result["narration_style"] == "per_scene"
+
+
+def test_add_voiceover_keeps_per_scene_failure_visible_without_single_track_fallback(monkeypatch):
+    from modules.ai_video_studio.media import scene_narration
+
+    calls = {"single": 0}
+
+    async def incomplete_synthesis(scenes, **kwargs):
+        return {
+            "muxed": False,
+            "reason": "narration incomplete",
+            "failed_scene_indices": [1],
+            "narration_complete": False,
+            "clips": [
+                {"index": 0, "text": "first", "audio_path": "/voice/first.wav"},
+                {"index": 1, "text": "second", "status": "failed", "error": "TTS unavailable"},
+            ],
+        }
+
+    async def forbidden_single(*args, **kwargs):
+        calls["single"] += 1
+        raise AssertionError("per-scene failure must not be hidden by a flat track")
+
+    monkeypatch.setattr(
+        scene_narration, "synthesize_scene_narration_async", incomplete_synthesis
+    )
+    monkeypatch.setattr(
+        engine_module.TextToVideoEngine, "_add_voiceover_single", forbidden_single
+    )
+
+    result = asyncio.run(engine_module.TextToVideoEngine()._add_voiceover(
+        "Prompt",
+        [
+            {"duration": 10, "voiceover_text": "first"},
+            {"duration": 10, "voiceover_text": "second"},
+        ],
+        video_path="/videos/source.mp4",
+        params={"voiceover_mode": "per_scene"},
+    ))
+
+    assert result["muxed"] is False
+    assert result["narration_complete"] is False
+    assert result["failed_scene_indices"] == [1]
+    assert result["narration_style"] == "per_scene"
+    assert calls["single"] == 0
