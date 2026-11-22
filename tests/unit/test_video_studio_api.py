@@ -3325,7 +3325,7 @@ def test_vidgrid_export_checks_measured_mp4_duration_not_only_metadata(tmp_path,
 
 def test_recovery_plan_detects_corrupt_vidgrid_mp4_even_when_metadata_says_ten_seconds(tmp_path, monkeypatch):
     from modules.ai_video_studio.api.routes import video
-    from modules.ai_video_studio.media import output_paths
+    from modules.ai_video_studio.media import job_store, output_paths
 
     roots = {name: tmp_path / name for name in ("images", "videos", "voice")}
     for root in roots.values():
