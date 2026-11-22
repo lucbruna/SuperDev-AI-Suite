@@ -11,7 +11,7 @@ from modules.ai_video_studio.api.urls import DOWNLOAD_PREFIX, to_download_url
             f"{DOWNLOAD_PREFIX}/videos/final.mp4",
         ),
         (
-            r"C:\\DarkStudio\\modules\\downloads\\videos\\final cut.mp4",
+            r"C:\DarkStudio\modules\downloads\videos\final cut.mp4",
             f"{DOWNLOAD_PREFIX}/videos/final%20cut.mp4",
         ),
         (
