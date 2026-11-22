@@ -1276,7 +1276,7 @@ class TestBatchSceneImageRegeneration:
         from modules.ai_video_studio.api.routes import video
 
         monkeypatch.setitem(video._jobs, "batch_job", {
-            "job_id": "batch_job", "status": "completed",
+            "job_id": "batch_job", "project_id": "batch_project", "status": "completed",
             "_source_scenes": [{"narration": "Cena 1"}, {"narration": "Cena 2"}],
         })
         calls: list[int] = []
