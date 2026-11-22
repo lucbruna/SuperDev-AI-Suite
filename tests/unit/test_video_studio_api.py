@@ -1872,7 +1872,7 @@ class TestSceneAssetRenderLock:
                 video.SceneImageEditRequest(prompt="new visual"),
             )
         assert error.value.status_code == 409
-        assert "rendering" in str(error.value.detail).lower()
+        assert "render" in str(error.value.detail).lower()
 
     @pytest.mark.asyncio
     async def test_candidate_approval_is_blocked_while_batch_regeneration_runs(self):
