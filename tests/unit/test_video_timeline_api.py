@@ -167,8 +167,9 @@ def test_audio_analysis_endpoint_returns_warnings_and_ducking_suggestion(complet
     monkeypatch.setattr(audio_timeline, "get_downloads_dir", lambda: downloads)
     monkeypatch.setattr(audio_timeline, "get_subsystem_dir", lambda name: downloads / name)
     monkeypatch.setattr(video, "_persist_job", lambda record: None)
+    video._jobs[completed_job]["progress"] = 100
     video._jobs[completed_job]["_audio_clips"] = {"music": [{"asset": "music/bed.wav"}], "sfx": []}
-    video._jobs[completed_job]["voiceover"] = {"clips": [{"audio_path": "voice/voice.wav"}]}
+    video._jobs[completed_job]["voiceover"] = {"clips": [{"index": 0, "audio_path": "voice/voice.wav"}]}
 
     result = asyncio.run(video.analyze_video_job_audio(completed_job))
     assert result["sources_analyzed"] == 2
