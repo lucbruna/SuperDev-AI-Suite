@@ -1411,7 +1411,7 @@ class TestSceneImageCandidateDiscard:
     async def test_discard_keeps_active_scene_image_unchanged(self, client: AsyncClient, monkeypatch):
         from modules.ai_video_studio.api.routes import video
         monkeypatch.setitem(video._jobs, "discard_candidate_job", {
-            "job_id": "discard_candidate_job", "status": "completed",
+            "job_id": "discard_candidate_job", "project_id": "discard_candidate_project", "status": "completed",
             "_source_scenes": [{"background_image_path": "/active/current.png"}],
             "scene_image_candidates": {"0": [{"candidate_id": "discard-me", "image_path": "/candidate/new.png"}]},
         })
