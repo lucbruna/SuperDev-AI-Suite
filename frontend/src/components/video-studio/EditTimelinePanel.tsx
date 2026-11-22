@@ -1309,6 +1309,8 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
                       jobId, selectedNarrationSceneIndex, { text: narrationText.trim() },
                     );
                     setNarrationMessage(result.message);
+                    setRenderUrl("");
+                    setOutputValidation(null);
                     setNarrationPreviewVersion((version) => version + 1);
                   } catch (error) {
                     const detail = (error as { response?: { data?: { detail?: string | { message?: string } } } })?.response?.data?.detail;
