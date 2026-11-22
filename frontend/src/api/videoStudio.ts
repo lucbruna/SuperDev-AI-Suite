@@ -798,6 +798,19 @@ export const videoStudioApi = {
     return data as Blob;
   },
 
+  async regenerateJobSceneNarration(jobId: string, sceneIndex: number, payload: {
+    text: string; voice_id?: string; language?: string; speed?: number; pitch?: number; emotion?: string;
+  }): Promise<{
+    status: string; scene_index: number; audio_duration: number; tts_engine?: string;
+    scene_clip_rebuild_required: boolean; full_mp4_render_required: boolean; message: string;
+  }> {
+    const { data } = await apiClient.post(
+      `${STUDIO_BASE}/videos/jobs/${jobId}/scene-narration/${sceneIndex}/regenerate`,
+      payload,
+    );
+    return data;
+  },
+
   async analyzeJobAudio(jobId: string): Promise<{
     sources_analyzed: number;
     reports: Record<string, { source: string; file: string; rms_dbfs: number; peak_dbfs: number; silence_ratio: number; clipping_ratio: number; warnings: string[] }[]>;
