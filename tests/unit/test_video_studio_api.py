@@ -2837,6 +2837,8 @@ class TestDarkstudioDependencyGraph:
         narration = roots["voice"] / "scene.wav"
         narration.write_bytes(b"new-audio")
         monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda name: roots[name])
+        # These are placeholder bytes; this test isolates fingerprint-based staleness.
+        monkeypatch.setattr(video, "_probe_media_asset", lambda *_: {"probe_status": "not_verified"})
         video._jobs["dependency-graph-narration-stale"] = {
             "job_id": "dependency-graph-narration-stale",
             "_edited_scenes": [{"_source_scene_index": 2, "background_image_path": str(image)}],
