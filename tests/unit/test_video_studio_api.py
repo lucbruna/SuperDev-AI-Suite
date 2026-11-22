@@ -2671,20 +2671,27 @@ class TestDependencyRebuildExecution:
             "rebuild_scene_indices": [1], "final_export_required": True,
         }
         monkeypatch.setattr(video, "preview_video_job_dependency_impact", lambda *_args: _async_result(impact))
-        async def rebuild(*_args):
-            return {"requested": 1, "rebuilt": 0, "failed": 1, "status": "failed"}
-        async def fail_render(*_args):
-            raise AssertionError("final render must not run after a partial scene rebuild")
-        monkeypatch.setattr(video, "rebuild_stale_video_job_scene_clips", rebuild)
-        monkeypatch.setattr(video, "render_video_job_edits", fail_render)
         monkeypatch.setattr(video, "_persist_job", lambda _record: None)
+        enqueued = []
+        monkeypatch.setattr(
+            "modules.ai_video_studio.media.job_store.enqueue_task",
+            lambda task_id, task_type, payload: enqueued.append((task_id, task_type, payload)),
+        )
 
         request = video.DependencyExecutionRequest(changed_asset_ids=["scene:1:image"], confirmed=True)
         result = await video.execute_video_job_dependency_rebuild("dependency-execution-partial", request)
 
-        assert result["status"] == "partial"
-        assert result["render"] is None
-        assert record["dependency_rebuild_execution"]["final_export_skipped"] is True
+        # Dependency rebuilds are persisted for the worker; scene rendering and
+        # final export must not run synchronously in the API request.
+        assert result["status"] == "queued"
+        assert result["queued"] is True
+        assert result["executed"] is False
+        assert result["impact"]["rebuild_scene_indices"] == [1]
+        assert result["task_id"] == enqueued[0][0]
+        assert enqueued[0][1] == "dependency_rebuild"
+        assert enqueued[0][2]["job_id"] == "dependency-execution-partial"
+        assert record["dependency_rebuild_execution"]["status"] == "queued"
+        assert record["dependency_rebuild_execution"]["final_export_required"] is True
 
 
     @pytest.mark.asyncio
