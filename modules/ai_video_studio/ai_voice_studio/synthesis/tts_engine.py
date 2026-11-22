@@ -75,6 +75,7 @@ class TTSEngine:
             result = self.offline.synthesize(
                 text, output_path=local_path, rate=speed, pitch=pitch,
                 allow_formant=False,
+                language=language,
             )
             if result.get("engine") == "formant":
                 raise RuntimeError("Formant audio is not intelligible spoken narration")
