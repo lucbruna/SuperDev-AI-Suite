@@ -2616,39 +2616,43 @@ class TestDependencyRebuildExecution:
         assert error.value.status_code == 409
 
     @pytest.mark.asyncio
-    async def test_scene_change_rebuilds_only_affected_scene_before_final_render(self, monkeypatch):
+    async def test_scene_change_is_persisted_to_durable_queue(self, monkeypatch):
         from modules.ai_video_studio.api.routes import video
 
+        job_id = "dependency-execution-scene"
         record = {
-            "job_id": "dependency-execution-scene", "status": "completed",
+            "job_id": job_id, "status": "completed",
             "vidgrid_compatible": True,
         }
-        video._jobs["dependency-execution-scene"] = record
+        video._jobs[job_id] = record
         impact = {
-            "job_id": "dependency-execution-scene",
+            "job_id": job_id,
             "changed_asset_ids": ["scene:3:image"],
             "affected_nodes": [{"id": "scene:3:clip", "type": "video_clip", "status": "stale"}],
             "affected_node_ids": ["scene:3:clip", "final:export"],
             "rebuild_scene_indices": [3], "final_export_required": True,
         }
-        calls = []
         monkeypatch.setattr(video, "preview_video_job_dependency_impact", lambda *_args: _async_result(impact))
-        async def rebuild(_job_id, request):
-            calls.append(("rebuild", request.scene_indices))
-            return {"requested": 1, "rebuilt": 1, "failed": 0, "status": "completed"}
-        async def render(_job_id):
-            calls.append(("render", None))
-            return {"output_url": "/downloads/rebuilt.mp4"}
-        monkeypatch.setattr(video, "rebuild_stale_video_job_scene_clips", rebuild)
-        monkeypatch.setattr(video, "render_video_job_edits", render)
+        monkeypatch.setattr(video, "get_video_job_dependency_graph", lambda *_args: _async_result({"nodes": []}))
         monkeypatch.setattr(video, "_persist_job", lambda _record: None)
+        enqueued = []
+        monkeypatch.setattr(
+            "modules.ai_video_studio.media.job_store.enqueue_task",
+            lambda task_id, task_type, payload: enqueued.append((task_id, task_type, payload)),
+        )
 
         request = video.DependencyExecutionRequest(changed_asset_ids=["scene:3:image"], confirmed=True)
-        result = await video.execute_video_job_dependency_rebuild("dependency-execution-scene", request)
+        result = await video.execute_video_job_dependency_rebuild(job_id, request)
 
-        assert calls == [("rebuild", [3]), ("render", None)]
-        assert result["status"] == "completed"
-        assert result["render"]["output_url"] == "/downloads/rebuilt.mp4"
+        assert result["status"] == "queued"
+        assert result["queued"] is True
+        assert result["executed"] is False
+        assert record["dependency_rebuild_execution"]["status"] == "queued"
+        assert record["dependency_rebuild_execution"]["scene_indices"] == [3]
+        assert result["task_id"] == enqueued[0][0]
+        assert enqueued[0][1] == "dependency_rebuild"
+        assert enqueued[0][2]["job_id"] == job_id
+        assert enqueued[0][2]["changed_asset_ids"] == ["scene:3:image"]
 
     @pytest.mark.asyncio
     async def test_partial_scene_rebuild_skips_final_render(self, monkeypatch):
