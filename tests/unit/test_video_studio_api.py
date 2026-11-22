@@ -3725,7 +3725,7 @@ async def test_scene_narration_audio_preview_is_confined_to_voice_assets(tmp_pat
     }
     try:
         response = await video.get_video_job_scene_narration_audio(job_id, 0)
-        assert response.path == str(audio)
+        assert Path(response.path) == audio
         assert response.media_type == "audio/wav"
 
         with pytest.raises(HTTPException) as missing:
