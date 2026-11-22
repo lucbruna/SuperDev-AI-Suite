@@ -255,6 +255,9 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
   const duration = Math.max(1, draft.duration_frames);
   const selectedClip = clips[selected] ?? null;
   const selectedNarrationSceneIndex = selectedClip?.source_scene_index ?? selectedClip?.scene_index ?? selected;
+  const vidGridRebuildInProgress = rebuildingVidGridClips || Boolean(
+    vidGridQueue && ["queued", "processing"].includes(vidGridQueue.status),
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -982,7 +985,10 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
     }
   }
   async function renderEdits() {
-    if (!jobId || dirty || saving) return;
+    if (!jobId || dirty || saving || vidGridRebuildInProgress) {
+      if (vidGridRebuildInProgress) setMessage("Aguarde a reconstrução dos clipes VidGrid terminar antes de exportar o MP4.");
+      return;
+    }
     setRendering(true);
     setRenderUrl("");
     setRenderQuality(null);
@@ -1582,7 +1588,7 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
           <button type="button" onClick={previewEdits} disabled={previewing || rendering || saving || dirty || audioDirty || savingAudio} className="rounded-md border border-violet-300 px-3 py-2 text-xs font-semibold disabled:opacity-40 dark:border-violet-700">
             {previewing ? "Gerando prévia…" : "Pré-visualizar montagem"}
           </button>
-          <button type="button" onClick={renderEdits} disabled={rendering || previewing || saving || dirty || audioDirty || savingAudio} className="rounded-md bg-primary-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-40">
+          <button type="button" onClick={renderEdits} disabled={rendering || previewing || saving || dirty || audioDirty || savingAudio || vidGridRebuildInProgress} title={vidGridRebuildInProgress ? "Aguarde a reconstrução dos clipes VidGrid terminar." : "Renderizar o MP4 final"} className="rounded-md bg-primary-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-40">
             {rendering ? "Renderizando MP4…" : "Renderizar edição"}
           </button>
         </>}
