@@ -3238,7 +3238,8 @@ async def render_video_job_edits(job_id: str):
             "transition_policy": record.get("edit_render_transition_policy") if generated_scene_clips else None,
         }
     except HTTPException:
-        record["edit_render_status"] = "quality_blocked" if record.get("edit_render_quality", {}).get("export_allowed") is False else "failed"
+        quality = record.get("edit_render_quality")
+        record["edit_render_status"] = "quality_blocked" if isinstance(quality, dict) and quality.get("export_allowed") is False else "failed"
         _persist_job(record)
         raise
     except Exception as exc:
