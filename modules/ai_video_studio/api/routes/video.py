@@ -131,6 +131,15 @@ class SceneClipRebuildRequest(BaseModel):
         return values
 
 
+class SceneNarrationRegenerateRequest(BaseModel):
+    text: str = Field(..., min_length=1, max_length=5000)
+    voice_id: str | None = Field(default=None, max_length=120)
+    language: str | None = Field(default=None, max_length=20)
+    speed: float | None = Field(default=None, ge=0.5, le=2.0)
+    pitch: float | None = Field(default=None, ge=0.5, le=2.0)
+    emotion: str | None = Field(default=None, max_length=80)
+
+
 class DependencyImpactRequest(BaseModel):
     changed_asset_ids: list[str] = Field(..., min_length=1, max_length=100)
 
@@ -2637,6 +2646,112 @@ async def get_video_job_scene_narration_audio(job_id: str, scene_index: int):
 
     media_types = {".mp3": "audio/mpeg", ".wav": "audio/wav", ".m4a": "audio/mp4", ".ogg": "audio/ogg", ".flac": "audio/flac"}
     return FileResponse(audio_path, media_type=media_types.get(audio_path.suffix.lower(), "application/octet-stream"), filename=audio_path.name)
+
+
+@router.post("/jobs/{job_id}/scene-narration/{scene_index}/regenerate")
+async def regenerate_video_job_scene_narration(
+    job_id: str, scene_index: int, req: SceneNarrationRegenerateRequest
+):
+    """Regenerate only one scene's narration; keep the previous file for rollback."""
+    record = _jobs.get(job_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+    if scene_index < 0:
+        raise HTTPException(status_code=422, detail="scene_index must be zero or greater")
+    if record.get("status") != "completed":
+        raise HTTPException(status_code=409, detail="Narration can only be changed after generation completes")
+    if (record.get("_rendering_edits") or record.get("_rebuilding_scene_clips")
+            or record.get("_scene_clip_rebuild_scheduled") or job_id in _scene_batch_jobs):
+        raise HTTPException(status_code=409, detail="Scene assets are locked by another operation")
+
+    voiceover = record.get("voiceover")
+    if not isinstance(voiceover, dict) or voiceover.get("narration_style") != "per_scene":
+        raise HTTPException(status_code=409, detail="Individual narration regeneration requires per-scene narration")
+    clips = voiceover.get("clips")
+    clip = next(
+        (item for item in clips if isinstance(item, dict) and _safe_record_index(item.get("index"), -1) == scene_index),
+        None,
+    ) if isinstance(clips, list) else None
+    if clip is None:
+        raise HTTPException(status_code=404, detail=f"Narration scene {scene_index + 1} was not found")
+
+    from modules.ai_video_studio.media.output_paths import get_subsystem_dir
+    voice_root = Path(get_subsystem_dir("voice")).resolve()
+    voice_root.mkdir(parents=True, exist_ok=True)
+    params = record.get("params") or {}
+    voice_id = req.voice_id or voiceover.get("voice_id") or params.get("voice_id") or "default"
+    language = req.language or voiceover.get("language") or params.get("voice_language") or "pt-BR"
+    speed = req.speed if req.speed is not None else float(params.get("voice_speed") or 1.0)
+    pitch = req.pitch if req.pitch is not None else float(params.get("voice_pitch") or 1.0)
+    output_path = voice_root / f"job_{job_id}_scene_{scene_index + 1:02d}_{uuid.uuid4().hex}.mp3"
+
+    from modules.ai_video_studio.services.voice_studio import VoiceStudioService
+    from modules.ai_video_studio.core.exceptions import AIError
+    try:
+        result = await VoiceStudioService().synthesize(
+            req.text, voice_id=voice_id, language=language, speed=speed,
+            pitch=pitch, emotion=req.emotion, output_path=str(output_path),
+        )
+    except AIError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.to_dict()) from exc
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=f"Narration synthesis failed: {str(exc)[:240]}") from exc
+
+    try:
+        generated_path = Path(str(result.get("file_path") or "")).resolve(strict=True)
+        if (voice_root not in generated_path.parents or not generated_path.is_file()
+                or generated_path.stat().st_size <= 0):
+            raise ValueError("TTS returned an empty or unsafe narration file")
+        duration = float(result.get("duration") or 0)
+        if duration <= 0:
+            raise ValueError("TTS output duration could not be verified")
+    except (OSError, RuntimeError, TypeError, ValueError) as exc:
+        raise HTTPException(status_code=502, detail=f"Generated narration failed validation: {str(exc)[:200]}") from exc
+
+    # Keep the old asset on disk. Only replace the selected scene's source
+    # reference; the recovery planner's narration fingerprint will mark its
+    # already-muxed MP4 clip stale without touching the other scenes.
+    previous_path = clip.get("audio_path")
+    clip.update({
+        "text": req.text,
+        "audio_path": str(generated_path),
+        "tts_engine": result.get("engine"),
+        "audio_duration": duration,
+        "error": None,
+        "failure_info": None,
+    })
+    voiceover["narration"] = " ".join(
+        str(item.get("text") or "").strip()
+        for item in sorted(clips, key=lambda item: _safe_record_index(item.get("index"), 0))
+        if isinstance(item, dict) and str(item.get("text") or "").strip()
+    )
+    voiceover["last_regenerated_scene_index"] = scene_index
+    voiceover["last_regenerated_at"] = time.time()
+    record["edit_render_status"] = "stale"
+    record["edited_output_url"] = None
+    record["edited_video_duration"] = None
+    record["output_validation"] = None
+    record["subtitles"] = {**(record.get("subtitles") or {}), "status": "stale_after_narration_edit"}
+    try:
+        _persist_job(record)
+    except Exception as exc:  # noqa: BLE001
+        # Restore the previous metadata reference; leave the new file as an
+        # unreferenced asset rather than exposing an unpersisted replacement.
+        clip["audio_path"] = previous_path
+        raise HTTPException(status_code=503, detail="Could not persist regenerated narration; previous narration remains active") from exc
+
+    return {
+        "job_id": job_id,
+        "scene_index": scene_index,
+        "status": "narration_replaced",
+        "audio_url": f"/videos/jobs/{job_id}/scene-narration/{scene_index}/audio",
+        "audio_duration": duration,
+        "tts_engine": result.get("engine"),
+        "previous_asset_preserved": bool(previous_path),
+        "scene_clip_rebuild_required": bool(record.get("vidgrid_compatible")),
+        "full_mp4_render_required": True,
+        "message": "Somente a fala desta cena foi regenerada. O clipe de 10 segundos precisa ser reconstruído e o MP4 completo reexportado; as demais cenas e arquivos foram preservados.",
+    }
 
 
 @router.post("/jobs/{job_id}/visual-analysis")
