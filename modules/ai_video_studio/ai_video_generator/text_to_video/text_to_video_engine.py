@@ -633,12 +633,25 @@ class TextToVideoEngine:
             recovery_narration_callback = params.get("narration_clip_callback")
 
             def on_narration_clip(clip: dict[str, Any]) -> None:
+                audio_ready = bool(clip.get("audio_path"))
+                clip_status = str(clip.get("status") or ("completed" if audio_ready else "failed"))
+                progress_status = (
+                    "completed" if audio_ready
+                    else "failed" if clip_status == "failed"
+                    else "skipped"
+                )
+                progress_stage = (
+                    "narration_asset_ready" if audio_ready
+                    else "narration_failed" if progress_status == "failed"
+                    else "narration_empty"
+                )
                 _notify_scene(
-                    int(clip.get("index", -1)), "completed", "narration_asset_ready",
+                    int(clip.get("index", -1)), progress_status, progress_stage,
                     narration_path=clip.get("audio_path"),
                     narration_text=clip.get("text"),
                     narration_engine=clip.get("tts_engine"),
                     narration_duration=clip.get("audio_duration"),
+                    narration_error=clip.get("error"),
                 )
                 # Recovery callers also need an immediate durable checkpoint.
                 # Keep the engine's scene-progress notification and the route's
@@ -816,26 +829,14 @@ class TextToVideoEngine:
         video_path: str,
         params: dict[str, Any],
     ) -> dict[str, Any]:
-        """Synthesize narration and mux it into the video.
-
-        Default is **per-scene narration**: one TTS clip per scene placed at
-        that scene's cumulative offset in the video timeline. When no scene
-        carries its own text (or the caller requests ``voiceover_mode="single"``)
-        a single flat track over the whole video is used instead.
-
-        Fails soft (logs a warning, returns an unmuxed marker) so TTS
-        problems never break generation — consistent with the module's
-        pipeline fallback patterns.
-        """
+        """Create per-scene speech by default; never hide its failures with a flat fallback."""
+        per_scene = str(params.get("voiceover_mode", "per_scene")).lower() != "single"
         try:
             from modules.ai_video_studio.media.scene_narration import (
-                synthesize_scene_narration_async,
+                scene_narration_text, synthesize_scene_narration_async,
             )
 
-            per_scene = str(params.get("voiceover_mode", "per_scene")).lower() != "single"
-            from modules.ai_video_studio.media.scene_narration import scene_narration_text
-
-            has_scene_text = any(scene_narration_text(s) for s in scenes)
+            has_scene_text = any(scene_narration_text(scene) for scene in scenes)
             if per_scene and has_scene_text:
                 result = await synthesize_scene_narration_async(
                     scenes,
@@ -844,23 +845,38 @@ class TextToVideoEngine:
                     checkpoint_clips=params.get("checkpoint_narration_clips"),
                     clip_callback=params.get("narration_clip_callback"),
                 )
-                if result.get("muxed"):
-                    narration = " ".join(
-                        c.get("text", "") for c in (result.get("clips") or []) if c.get("text")
-                    )[:200]
-                    return {
-                        **result,
-                        "narration_style": "per_scene",
-                        "narration": narration,
-                    }
-                logger.warning(
-                    "Per-scene voiceover not muxed (%s) — falling back to single track",
-                    result.get("reason"),
-                )
-            return await self._add_voiceover_single(prompt, scenes, video_path=video_path, params=params)
-        except Exception as e:  # noqa: BLE001 — never let narration break generation
-            logger.warning("Per-scene voiceover failed (%s) — falling back to single track", e)
-            return await self._add_voiceover_single(prompt, scenes, video_path=video_path, params=params)
+                narration = " ".join(
+                    clip.get("text", "")
+                    for clip in (result.get("clips") or [])
+                    if clip.get("text")
+                )[:200]
+                return {
+                    **result,
+                    "narration_style": "per_scene",
+                    "narration": narration,
+                    "narration_complete": bool(result.get("muxed")),
+                }
+
+            # A single continuous track is used only when explicitly selected
+            # or when the storyboard has no scene-level speech at all.
+            return await self._add_voiceover_single(
+                prompt, scenes, video_path=video_path, params=params
+            )
+        except Exception as exc:  # noqa: BLE001 — preserve silent video, expose speech failure
+            logger.warning("Voiceover generation failed: %s", exc)
+            if per_scene:
+                return {
+                    "muxed": False,
+                    "reason": str(exc)[:240],
+                    "narration_style": "per_scene",
+                    "narration_complete": False,
+                }
+            return {
+                "muxed": False,
+                "reason": str(exc)[:240],
+                "narration_style": "single_track",
+                "narration_complete": False,
+            }
 
     async def _add_voiceover_single(
         self,
