@@ -312,6 +312,81 @@ class TestSceneCheckpointPersistence:
         assert record["_source_scenes"] == []
 
 
+class TestSceneNarrationRegeneration:
+    @pytest.mark.asyncio
+    async def test_regenerates_only_requested_scene_and_preserves_previous_asset(self, monkeypatch, tmp_path):
+        from modules.ai_video_studio.api.routes import video
+        from modules.ai_video_studio.media import output_paths
+
+        downloads = tmp_path / "downloads"
+        voice_root = downloads / "voice"
+        voice_root.mkdir(parents=True)
+        old_audio = voice_root / "scene_1_old.mp3"
+        old_audio.write_bytes(b"old narration")
+        other_audio = voice_root / "scene_2.mp3"
+        other_audio.write_bytes(b"other narration")
+        monkeypatch.setattr(output_paths, "DOWNLOADS_DIR", downloads)
+        monkeypatch.setattr(output_paths, "_SUBDIRS", {
+            **output_paths._SUBDIRS, "voice": "voice",
+        })
+
+        class FakeVoiceStudioService:
+            async def synthesize(self, text, **kwargs):
+                target = Path(kwargs["output_path"])
+                target.write_bytes(b"new narration")
+                return {"file_path": str(target), "duration": 3.25, "engine": "fake-tts", "success": True}
+
+        monkeypatch.setattr(
+            "modules.ai_video_studio.services.voice_studio.VoiceStudioService",
+            FakeVoiceStudioService,
+        )
+        monkeypatch.setattr(video, "_persist_job", lambda record: None)
+        record = {
+            "job_id": "job-1", "status": "completed", "vidgrid_compatible": True,
+            "params": {"voice_id": "francisca", "voice_language": "pt-BR"},
+            "voiceover": {
+                "narration_style": "per_scene", "voice_id": "francisca", "language": "pt-BR",
+                "clips": [
+                    {"index": 0, "text": "Texto antigo", "audio_path": str(old_audio), "audio_duration": 2.0},
+                    {"index": 1, "text": "Outra cena", "audio_path": str(other_audio), "audio_duration": 2.5},
+                ],
+            },
+            "edited_output_url": "/old-export.mp4",
+        }
+        monkeypatch.setattr(video, "_jobs", {"job-1": record})
+
+        response = await video.regenerate_video_job_scene_narration(
+            "job-1", 0, video.SceneNarrationRegenerateRequest(text="Nova fala da cena")
+        )
+
+        assert response["status"] == "narration_replaced"
+        assert response["scene_clip_rebuild_required"] is True
+        assert response["full_mp4_render_required"] is True
+        assert record["voiceover"]["clips"][0]["text"] == "Nova fala da cena"
+        assert Path(record["voiceover"]["clips"][0]["audio_path"]).read_bytes() == b"new narration"
+        assert old_audio.read_bytes() == b"old narration"
+        assert record["voiceover"]["clips"][1]["audio_path"] == str(other_audio)
+        assert record["edited_output_url"] is None
+        assert record["edit_render_status"] == "stale"
+
+    @pytest.mark.asyncio
+    async def test_rejects_single_track_and_non_completed_jobs(self, monkeypatch):
+        from fastapi import HTTPException
+        from modules.ai_video_studio.api.routes import video
+
+        monkeypatch.setattr(video, "_jobs", {
+            "single": {"status": "completed", "voiceover": {"narration_style": "single_track"}},
+            "running": {"status": "processing", "voiceover": {"narration_style": "per_scene", "clips": [{"index": 0}]}},
+        })
+        request = video.SceneNarrationRegenerateRequest(text="Nova fala")
+        with pytest.raises(HTTPException) as single:
+            await video.regenerate_video_job_scene_narration("single", 0, request)
+        assert single.value.status_code == 409
+        with pytest.raises(HTTPException) as running:
+            await video.regenerate_video_job_scene_narration("running", 0, request)
+        assert running.value.status_code == 409
+
+
 class TestGenerateVoiceover:
     @pytest.mark.asyncio
     async def test_accepts_voiceover_fields(self, client: AsyncClient, fake_engine: _FakeEngine):
