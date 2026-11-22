@@ -2708,21 +2708,26 @@ class TestDependencyRebuildExecution:
             "rebuild_scene_indices": [], "final_export_required": True,
         }
         monkeypatch.setattr(video, "preview_video_job_dependency_impact", lambda *_args: _async_result(impact))
-        async def fail_rebuild(*_args):
-            raise AssertionError("audio-only changes must not rebuild scene clips")
-        async def render(*_args):
-            return {"output_url": "/downloads/final.mp4", "message": "rendered"}
-        monkeypatch.setattr(video, "rebuild_stale_video_job_scene_clips", fail_rebuild)
-        monkeypatch.setattr(video, "render_video_job_edits", render)
         monkeypatch.setattr(video, "_persist_job", lambda _record: None)
+        enqueued = []
+        monkeypatch.setattr(
+            "modules.ai_video_studio.media.job_store.enqueue_task",
+            lambda task_id, task_type, payload: enqueued.append((task_id, task_type, payload)),
+        )
 
         request = video.DependencyExecutionRequest(changed_asset_ids=["audio:music:0"], confirmed=True)
         result = await video.execute_video_job_dependency_rebuild("dependency-execution-audio", request)
 
-        assert result["status"] == "completed"
-        assert result["rebuild"] is None
-        assert result["render"]["output_url"] == "/downloads/final.mp4"
-        assert record["dependency_rebuild_execution"]["status"] == "completed"
+        # Audio-only edits queue only the final export; they do not rebuild scene clips.
+        assert result["status"] == "queued"
+        assert result["queued"] is True
+        assert result["executed"] is False
+        assert result["impact"]["rebuild_scene_indices"] == []
+        assert result["task_id"] == enqueued[0][0]
+        assert enqueued[0][1] == "dependency_rebuild"
+        assert enqueued[0][2]["changed_asset_ids"] == ["audio:music:0"]
+        assert record["dependency_rebuild_execution"]["status"] == "queued"
+        assert record["dependency_rebuild_execution"]["scene_indices"] == []
 
 
 class TestDarkstudioDependencyGraph:
