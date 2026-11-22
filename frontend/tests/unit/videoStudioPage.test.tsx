@@ -15,6 +15,7 @@ vi.mock("@/api/videoStudio", () => ({
     getJob: vi.fn(),
     getJobVisualDirection: vi.fn().mockResolvedValue({ scenes: [] }),
     listJobAudioAssets: vi.fn().mockResolvedValue([]),
+    getJobSceneNarrationAudio: vi.fn().mockResolvedValue(new Blob()),
     generateVideo: vi.fn(),
     preflightVideo: vi.fn(),
     validateJobOutput: vi.fn(),
