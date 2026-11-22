@@ -101,6 +101,15 @@ jobs:
           path: /tmp/darkstudio-pipeline-smoke.mp4
           if-no-files-found: error
 
+      - name: Render and validate 42-scene VidGrid episode (420 seconds)
+        run: python scripts/darkstudio_pipeline_smoke.py --scenes 42 --fps 1 --width 160 --height 90 --output /tmp/darkstudio-vidgrid-42-scene-proof.mp4
+      - name: Upload 42-scene VidGrid episode proof
+        uses: actions/upload-artifact@v4
+        with:
+          name: darkstudio-vidgrid-42-scene-proof
+          path: /tmp/darkstudio-vidgrid-42-scene-proof.mp4
+          if-no-files-found: error
+
   test-frontend:
     name: Frontend Tests
     runs-on: ubuntu-latest
