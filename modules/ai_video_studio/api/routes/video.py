@@ -2895,6 +2895,7 @@ async def render_video_job_edits(job_id: str):
     record.pop("edit_render_assembly_fallback", None)
     _persist_job(record)
     try:
+        vidgrid_stream_copy_used = False
         if generated_scene_clips:
             # Keep authored transitions: the mixed renderer applies them in FFmpeg
             # and the EDL uses the same crossfade overlap for narration/subtitles.
@@ -2937,7 +2938,6 @@ async def render_video_job_edits(job_id: str):
             )
             record["edit_timeline"] = mixed_timeline
             result = None
-            vidgrid_stream_copy_used = False
             if vidgrid_clip_paths:
                 from modules.ai_video_studio.media.transitions import transition_spec
                 hard_cuts_only = all(transition_spec(scene).get("type") == "cut" for scene in scenes)
