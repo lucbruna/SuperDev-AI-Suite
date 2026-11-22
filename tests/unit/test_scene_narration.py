@@ -619,3 +619,62 @@ async def test_scene_narration_does_not_reuse_checkpoint_audio_when_text_changed
 
     assert synthesized == ["Updated line"]
     assert result["clips"][0]["audio_path"] == str(voice_root / "fresh.wav")
+
+
+@pytest.mark.asyncio(loop_scope="function")
+async def test_scene_narration_does_not_mux_partial_audio_and_checkpoints_failure(monkeypatch, tmp_path):
+    callbacks = []
+    voice_root = tmp_path / "voice"
+    voice_root.mkdir()
+    valid_audio = voice_root / "scene-2.wav"
+    dsp.write_audio(str(valid_audio), dsp.sine(440.0, 0.4) * 0.25)
+
+    class OneSceneFails:
+        async def synthesize_async(self, text, **kwargs):
+            if text == "failed line":
+                raise RuntimeError("local pt-BR voice unavailable")
+            return {
+                "output_path": str(valid_audio),
+                "engine": "test-tts",
+                "duration": 0.4,
+            }
+
+    monkeypatch.setattr(
+        "modules.ai_video_studio.ai_voice_studio.get_voice_engine",
+        lambda: OneSceneFails(),
+    )
+    monkeypatch.setattr(
+        scene_narration, "get_subsystem_dir",
+        lambda name: voice_root if name == "voice" else tmp_path,
+    )
+
+    def unexpected_export(*args, **kwargs):
+        raise AssertionError("partial narration must not be exported")
+
+    monkeypatch.setattr(
+        "modules.ai_video_studio.ai_dubbing.export_dubbing.export_audio_track",
+        unexpected_export,
+    )
+    monkeypatch.setattr(
+        "modules.ai_video_studio.media.audio.mux_audio_into_video",
+        unexpected_export,
+    )
+
+    result = await scene_narration.synthesize_scene_narration_async(
+        [
+            {"index": 0, "voiceover_text": "failed line", "duration": 10.0},
+            {"index": 1, "voiceover_text": "working line", "duration": 10.0},
+        ],
+        video_path=str(tmp_path / "source.mp4"),
+        params={"voice_language": "pt-BR", "fps": 1},
+        output_dir=str(tmp_path),
+        clip_callback=callbacks.append,
+    )
+
+    assert result["muxed"] is False
+    assert result["narration_complete"] is False
+    assert result["failed_scene_indices"] == [0]
+    assert result["clips"][0]["status"] == "failed"
+    assert result["clips"][1]["status"] == "completed"
+    assert [item["index"] for item in callbacks] == [0, 1]
+    assert callbacks[0]["error"] == "local pt-BR voice unavailable"
