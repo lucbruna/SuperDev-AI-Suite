@@ -2422,6 +2422,12 @@ class TestSelectedVidGridRecoveryQueue:
             output_paths, "get_subsystem_dir",
             lambda name: image_root if name == "images" else video_root,
         )
+        # These fixture clips are placeholder bytes, not real MP4 containers.
+        # This test covers selected-scene eligibility; real MP4 integrity is
+        # exercised by the dedicated media-probe and render smoke tests.
+        monkeypatch.setattr(video, "_probe_media_asset", lambda *_: {
+            "probe_status": "not_verified",
+        })
         monkeypatch.setattr(video, "_persist_job", lambda _record: None)
         video._jobs["selected-recovery-job"] = {
             "job_id": "selected-recovery-job", "status": "completed",
