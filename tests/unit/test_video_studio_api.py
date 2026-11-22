@@ -1339,7 +1339,7 @@ class TestSceneImageCandidateApproval:
         candidate_path.write_bytes(b"test-image-bytes")
         monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda name: image_root if name == "images" else tmp_path / name)
         monkeypatch.setitem(video._jobs, "approval_job", {
-            "job_id": "approval_job", "status": "completed",
+            "job_id": "approval_job", "project_id": "approval_project", "status": "completed",
             "_source_scenes": [{"_source_scene_index": 0, "background_image_path": str(image_root / "old.png")}],
             "scene_image_candidates": {"0": [{"candidate_id": "candidate-123", "scene_index": 0,
                 "image_path": str(candidate_path), "provider": "mock", "operation": "image_to_image",
