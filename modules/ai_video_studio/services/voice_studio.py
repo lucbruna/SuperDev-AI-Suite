@@ -25,6 +25,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from modules.ai_video_studio.core.exceptions import AIError
+from modules.ai_video_studio.ai_voice_studio.synthesis.local_voice import select_local_voice
 
 logger = logging.getLogger(__name__)
 
@@ -143,7 +144,7 @@ class VoiceStudioService:
         # 3) pyttsx3 (fully offline fallback)
         try:
             wav_path = path.rsplit(".", 1)[0] + ".wav"
-            await self._synthesize_pyttsx3(text, wav_path, speed)
+            await self._synthesize_pyttsx3(text, wav_path, speed, profile.language)
             duration = await self._probe_duration(wav_path)
             logger.info("TTS via pyttsx3 (%.2fs)", duration)
             return self._result(wav_path, duration, "pyttsx3")
@@ -188,15 +189,16 @@ class VoiceStudioService:
         tts = gTTS(text=text, lang=lang)
         tts.save(path)
 
-    async def _synthesize_pyttsx3(self, text: str, path: str, speed: float) -> None:
-        await asyncio.to_thread(self._pyttsx3_sync, text, path, speed)
+    async def _synthesize_pyttsx3(self, text: str, path: str, speed: float, language: str) -> None:
+        await asyncio.to_thread(self._pyttsx3_sync, text, path, speed, language)
 
-    def _pyttsx3_sync(self, text: str, path: str, speed: float) -> None:
+    def _pyttsx3_sync(self, text: str, path: str, speed: float, language: str) -> None:
         import pyttsx3
 
         engine = pyttsx3.init()
         try:
             engine.setProperty("rate", int(180 * speed))
+            select_local_voice(engine, language)
             engine.save_to_file(text, path)
             engine.runAndWait()
         finally:
