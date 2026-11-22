@@ -200,6 +200,8 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
 
   const [dirty, setDirty] = useState(false);
   const [audioAssets, setAudioAssets] = useState<StudioAudioAsset[]>([]);
+  const [narrationPreviewUrl, setNarrationPreviewUrl] = useState<string | null>(null);
+  const [loadingNarrationPreview, setLoadingNarrationPreview] = useState(false);
   const [musicAsset, setMusicAsset] = useState("");
   const [musicStart, setMusicStart] = useState("0");
   const [musicEnd, setMusicEnd] = useState("10");
@@ -247,6 +249,30 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
   const clips = videoTrack?.clips ?? [];
   const duration = Math.max(1, draft.duration_frames);
   const selectedClip = clips[selected] ?? null;
+  const selectedNarrationSceneIndex = selectedClip?.source_scene_index ?? selectedClip?.scene_index ?? selected;
+
+  useEffect(() => {
+    let cancelled = false;
+    let objectUrl: string | null = null;
+    setNarrationPreviewUrl(null);
+    if (!jobId || selectedNarrationSceneIndex < 0) {
+      setLoadingNarrationPreview(false);
+      return () => { cancelled = true; };
+    }
+    setLoadingNarrationPreview(true);
+    videoStudioApi.getJobSceneNarrationAudio(jobId, selectedNarrationSceneIndex)
+      .then((blob) => {
+        if (cancelled) return;
+        objectUrl = URL.createObjectURL(blob);
+        setNarrationPreviewUrl(objectUrl);
+      })
+      .catch(() => { if (!cancelled) setNarrationPreviewUrl(null); })
+      .finally(() => { if (!cancelled) setLoadingNarrationPreview(false); });
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [jobId, selectedNarrationSceneIndex]);
 
   useEffect(() => {
     if (!jobId) return;
@@ -1231,6 +1257,19 @@ export default function EditTimelinePanel({ timeline, jobId, editedOutputUrl, sc
             </label>
           </div>
         </div>
+      )}
+
+      {jobId && (
+        <section className="mb-4 rounded-lg border border-surface-200 p-3 dark:border-surface-700">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <strong className="text-sm">🎙️ Narração da cena {selectedNarrationSceneIndex + 1}</strong>
+            <span className="text-xs text-surface-500">Prévia do áudio original salvo</span>
+          </div>
+          {loadingNarrationPreview ? <p className="text-xs text-surface-500">Carregando áudio da cena…</p>
+            : narrationPreviewUrl ? <audio controls preload="metadata" src={narrationPreviewUrl} className="w-full" />
+              : <p className="text-xs text-surface-500">Não há áudio individual disponível para esta cena. Em narração de faixa única, o áudio não é dividido artificialmente.</p>}
+          <p className="mt-2 text-xs text-surface-500">A prévia permite conferir a fala antes de editar a mixagem. A substituição/regeneração individual da fala ainda não está disponível.</p>
+        </section>
       )}
 
       {jobId && (
