@@ -2720,6 +2720,19 @@ async def regenerate_video_job_scene_narration(
     previous_narration = voiceover.get("narration")
     previous_regenerated_index = voiceover.get("last_regenerated_scene_index")
     previous_regenerated_at = voiceover.get("last_regenerated_at")
+    # Keep the scene's authored speech in sync with the replacement. The final
+    # edit renderer derives subtitle cues from scene fields, not voiceover.clips.
+    previous_scene_lists = {}
+    for scene_key in ("_source_scenes", "_edited_scenes"):
+        scene_list = record.get(scene_key)
+        if isinstance(scene_list, list):
+            previous_scene_lists[scene_key] = scene_list
+            for position, scene in enumerate(scene_list):
+                if not isinstance(scene, dict):
+                    continue
+                source_index = _safe_record_index(scene.get("_source_scene_index"), position)
+                if source_index == scene_index:
+                    scene["voiceover_text"] = req.text
     clip.update({
         "text": req.text,
         "audio_path": str(generated_path),
@@ -2749,6 +2762,8 @@ async def regenerate_video_job_scene_narration(
             voiceover.pop("narration", None)
         else:
             voiceover["narration"] = previous_narration
+        for scene_key, scene_list in previous_scene_lists.items():
+            record[scene_key] = scene_list
         for key, value in (("last_regenerated_scene_index", previous_regenerated_index),
                            ("last_regenerated_at", previous_regenerated_at)):
             if value is None:
