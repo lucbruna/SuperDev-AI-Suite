@@ -686,6 +686,7 @@ def _scene_clip_recovery_plan(record: dict) -> dict:
                     reasons.append("vidgrid_clip_duration_invalid")
             else:
                 warnings.append("legacy_clip_without_duration_metadata")
+            probe: dict[str, Any] = {}
             if clip_path is not None and clip_path.is_file() and video_root in clip_path.parents:
                 probe = _probe_media_asset(clip_path, "scene_clip")
                 if probe.get("status") in {"corrupt", "unreadable"}:
