@@ -2711,6 +2711,7 @@ async def regenerate_video_job_scene_narration(
     # Keep the old asset on disk. Only replace the selected scene's source
     # reference; the recovery planner's narration fingerprint will mark its
     # already-muxed MP4 clip stale without touching the other scenes.
+    previous_path = clip.get("audio_path")
     previous_clip = dict(clip)
     previous_fields = {
         key: (key in record, record.get(key))
