@@ -195,7 +195,9 @@ def test_audio_timeline_rejects_unknown_mastering_preset():
 def test_update_audio_timeline_rejects_looping_sound_effect(completed_job, monkeypatch, tmp_path) -> None:
     monkeypatch.setattr(video, "_persist_job", lambda record: None)
     from modules.ai_video_studio.media import audio_timeline
-    monkeypatch.setattr(audio_timeline, "validate_audio_asset", lambda value: tmp_path / "validated.wav")
+    validated_audio = tmp_path / "validated.wav"
+    validated_audio.write_bytes(b"validated audio fixture")
+    monkeypatch.setattr(audio_timeline, "validate_audio_asset", lambda value: validated_audio)
     request = video.AudioTimelineEditRequest(sfx_clips=[video.AudioTimelineClip(
         asset="effects/hit.wav", start=0, end=1, loop=True,
     )])
