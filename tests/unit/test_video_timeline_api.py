@@ -112,7 +112,9 @@ def test_update_audio_timeline_persists_music_and_sfx_controls(completed_job, mo
     monkeypatch.setattr(video, "_persist_job", lambda record: None)
     from modules.ai_video_studio.media import audio_timeline
 
-    monkeypatch.setattr(audio_timeline, "validate_audio_asset", lambda value: tmp_path / "validated.wav")
+    validated_audio = tmp_path / "validated.wav"
+    validated_audio.write_bytes(b"validated audio fixture")
+    monkeypatch.setattr(audio_timeline, "validate_audio_asset", lambda value: validated_audio)
     video._jobs[completed_job]["edit_render_quality"] = {"status": "needs_review", "export_allowed": True}
     request = video.AudioTimelineEditRequest(
         music_clips=[video.AudioTimelineClip(
