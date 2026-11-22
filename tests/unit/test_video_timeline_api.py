@@ -99,6 +99,11 @@ def test_audio_timeline_rejects_invalid_mastering_controls(field, value):
         video.AudioTimelineEditRequest(**{field: value})
 
 
+@pytest.mark.parametrize("field,value", [
+    ("target_lufs", -37),
+    ("true_peak_db", 1),
+    ("loudness_range", 21),
+])
 def test_audio_timeline_rejects_invalid_loudness_controls(field, value):
     with pytest.raises(ValueError):
         video.AudioTimelineEditRequest(**{field: value})
