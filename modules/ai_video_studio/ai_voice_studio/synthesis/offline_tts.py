@@ -14,6 +14,7 @@ from pathlib import Path
 import numpy as np
 
 from modules.ai_video_studio.media import dsp
+from modules.ai_video_studio.ai_voice_studio.synthesis.local_voice import select_local_voice
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +43,7 @@ class OfflineTTS:
         pitch: float = 1.0,
         sample_rate: int = dsp.SAMPLE_RATE,
         allow_formant: bool = True,
+        language: str = "en-US",
     ) -> dict:
         """Return audio metadata; disable formants when intelligible speech is required."""
         if output_path is None:
@@ -58,6 +60,7 @@ class OfflineTTS:
             engine = pyttsx3.init()
             try:
                 engine.setProperty("rate", int(180 * max(0.5, rate)))
+                select_local_voice(engine, language)
                 engine.save_to_file(text, wav_path)
                 engine.runAndWait()
             finally:
