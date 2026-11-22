@@ -3619,7 +3619,7 @@ async def test_failed_generation_recovery_reports_and_preserves_new_scene_checkp
     from fastapi import BackgroundTasks
     from modules.ai_video_studio.api.routes import video
     from modules.ai_video_studio.ai_video_generator.text_to_video import text_to_video_engine
-    from modules.ai_video_studio.media import output_paths
+    from modules.ai_video_studio.media import job_store, output_paths
 
     roots = {name: tmp_path / name for name in ("images", "videos", "voice")}
     for root in roots.values():
