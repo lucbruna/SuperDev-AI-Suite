@@ -61,3 +61,41 @@ def test_default_voice_respects_brazilian_portuguese():
 def test_explicit_voice_id_is_preserved():
     profile = _lookup_voice("antonio", "pt-BR")
     assert profile.id == "antonio"
+
+
+def test_local_voice_selection_requires_matching_brazilian_portuguese_voice():
+    from types import SimpleNamespace
+
+    from modules.ai_video_studio.ai_voice_studio.synthesis.local_voice import select_local_voice
+
+    class FakeEngine:
+        def __init__(self):
+            self.selected = None
+
+        def getProperty(self, name):
+            assert name == "voices"
+            return [
+                SimpleNamespace(id="english", name="Microsoft David Desktop", languages=[b"0409"]),
+                SimpleNamespace(id="pt-br-helena", name="Microsoft Helena Portuguese (Brazil)", languages=[b"0416"]),
+            ]
+
+        def setProperty(self, name, value):
+            if name == "voice":
+                self.selected = value
+
+    engine = FakeEngine()
+    assert select_local_voice(engine, "pt-BR") == "pt-br-helena"
+    assert engine.selected == "pt-br-helena"
+
+
+def test_local_voice_selection_does_not_silently_use_english_for_portuguese():
+    from types import SimpleNamespace
+
+    from modules.ai_video_studio.ai_voice_studio.synthesis.local_voice import select_local_voice
+
+    class FakeEngine:
+        def getProperty(self, name):
+            return [SimpleNamespace(id="english", name="English voice", languages=[b"0409"])]
+
+    with pytest.raises(RuntimeError, match="No installed offline voice matches pt-BR"):
+        select_local_voice(FakeEngine(), "pt-BR")
