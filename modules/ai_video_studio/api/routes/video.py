@@ -20,6 +20,7 @@ from math import gcd
 from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, File, HTTPException, UploadFile
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field, field_validator
 
 from modules.ai_video_studio.api.urls import to_download_url
@@ -2607,6 +2608,35 @@ async def list_video_job_audio_assets(job_id: str):
     from modules.ai_video_studio.media.audio_timeline import list_audio_assets
 
     return {"job_id": job_id, "assets": list_audio_assets()}
+
+
+@router.get("/jobs/{job_id}/scene-narration/{scene_index}/audio")
+async def get_video_job_scene_narration_audio(job_id: str, scene_index: int):
+    """Stream one persisted per-scene narration file for review in the editor."""
+    record = _jobs.get(job_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+    if scene_index < 0:
+        raise HTTPException(status_code=422, detail="scene_index must be zero or greater")
+    voiceover = record.get("voiceover")
+    if not isinstance(voiceover, dict) or voiceover.get("narration_style") != "per_scene":
+        raise HTTPException(status_code=409, detail="This job does not contain per-scene narration")
+    clips = voiceover.get("clips")
+    clip = next((item for item in clips if isinstance(item, dict) and item.get("index") == scene_index), None) if isinstance(clips, list) else None
+    if not clip or not clip.get("audio_path"):
+        raise HTTPException(status_code=404, detail=f"Narration audio for scene {scene_index + 1} was not found")
+
+    from modules.ai_video_studio.media.output_paths import get_subsystem_dir
+    voice_root = Path(get_subsystem_dir("voice")).resolve()
+    try:
+        audio_path = Path(str(clip["audio_path"])).expanduser().resolve(strict=True)
+        if voice_root not in audio_path.parents or not audio_path.is_file() or audio_path.stat().st_size <= 0:
+            raise ValueError("invalid narration asset")
+    except (OSError, RuntimeError, ValueError) as exc:
+        raise HTTPException(status_code=404, detail="Narration audio is missing or unavailable") from exc
+
+    media_types = {".mp3": "audio/mpeg", ".wav": "audio/wav", ".m4a": "audio/mp4", ".ogg": "audio/ogg", ".flac": "audio/flac"}
+    return FileResponse(audio_path, media_type=media_types.get(audio_path.suffix.lower(), "application/octet-stream"), filename=audio_path.name)
 
 
 @router.post("/jobs/{job_id}/visual-analysis")
