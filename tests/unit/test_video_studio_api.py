@@ -3249,7 +3249,7 @@ def test_scene_checkpoint_rejects_narration_fingerprint_outside_voice_root(tmp_p
 @pytest.mark.asyncio
 async def test_recovery_plan_marks_non_ten_second_vidgrid_clip_stale(tmp_path, monkeypatch):
     from modules.ai_video_studio.api.routes import video
-    from modules.ai_video_studio.media import output_paths
+    from modules.ai_video_studio.media import job_store, output_paths
 
     roots = {name: tmp_path / name for name in ("images", "videos", "voice")}
     for root in roots.values():
@@ -3631,6 +3631,7 @@ async def test_failed_generation_recovery_reports_and_preserves_new_scene_checkp
     narration = roots["voice"] / "scene.wav"
     narration.write_bytes(b"recovered-narration")
     monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda name: roots[name])
+    monkeypatch.setattr(job_store, "get_subsystem_dir", lambda name: roots[name])
 
     job_id = "failed-recovery-checkpoints"
     record = {
