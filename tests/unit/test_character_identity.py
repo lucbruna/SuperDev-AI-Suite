@@ -87,6 +87,7 @@ def test_audit_character_identity_reports_review_without_pixel_claims():
     assert report["review_scene_count"] == 1
     assert report["pixel_identity_verified"] is False
     assert report["scenes"][1]["unknown_character_ids"] == ["missing"]
+    assert report["scenes"][2]["status"] == "no_characters_assigned"
 
 
 def test_scene_character_ids_must_be_a_list():
