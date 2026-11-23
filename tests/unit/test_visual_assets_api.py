@@ -333,3 +333,98 @@ def test_character_identity_audit_marks_unknown_character_for_review(monkeypatch
     assert response["audit"]["review_scene_count"] == 1
     assert response["audit"]["scenes"][0]["status"] == "unknown_character"
     assert response["audit"]["pixel_identity_verified"] is False
+
+
+def test_character_identity_rejects_reference_asset_from_another_project(monkeypatch, tmp_path) -> None:
+    reference_file = tmp_path / "foreign.png"
+    reference_file.write_bytes(b"image")
+    monkeypatch.setattr(video, "_jobs", {"job-visual-1": _record()})
+    monkeypatch.setattr(asset_routes, "_assets", {
+        "foreign-image": {
+            "id": "foreign-image", "project_id": "another-project",
+            "asset_type": "image", "mime_type": "image/png",
+            "file_path": str(reference_file), "file_size_bytes": 5,
+        }
+    })
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(visual_assets.save_job_character_identity(
+            "job-visual-1", "mia",
+            visual_assets.CharacterIdentityRequest(
+                name="Mia", visual_identity="Mia felt character",
+                reference_asset_ids=["foreign-image"],
+            ),
+        ))
+    assert exc.value.status_code == 404
+
+
+def test_character_identity_rejects_missing_reference_asset(monkeypatch) -> None:
+    monkeypatch.setattr(video, "_jobs", {"job-visual-1": _record()})
+    monkeypatch.setattr(asset_routes, "_assets", {})
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(visual_assets.save_job_character_identity(
+            "job-visual-1", "mia",
+            visual_assets.CharacterIdentityRequest(
+                name="Mia", visual_identity="Mia felt character",
+                reference_asset_ids=["does-not-exist"],
+            ),
+        ))
+    assert exc.value.status_code == 404
+
+
+def test_character_reference_review_rejects_non_image_asset(monkeypatch, tmp_path) -> None:
+    file_path = tmp_path / "voice.wav"
+    file_path.write_bytes(b"audio")
+    record = _record()
+    record["character_identities"] = {
+        "mia": {
+            "reference_asset_ids": ["voice-asset"],
+            "approved_reference_asset_ids": [],
+            "reference_asset_reviews": {"voice-asset": "pending"},
+        }
+    }
+    monkeypatch.setattr(video, "_jobs", {"job-visual-1": record})
+    monkeypatch.setattr(asset_routes, "_assets", {
+        "voice-asset": {
+            "id": "voice-asset", "project_id": "project-1",
+            "asset_type": "audio", "mime_type": "audio/wav",
+            "file_path": str(file_path), "file_size_bytes": 5,
+        }
+    })
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(visual_assets.review_job_character_reference(
+            "job-visual-1", "mia", "voice-asset",
+            visual_assets.CharacterReferenceReviewRequest(status="approved"),
+        ))
+    assert exc.value.status_code == 422
+
+
+def test_character_reference_rejection_removes_previously_approved_asset(monkeypatch, tmp_path) -> None:
+    file_path = tmp_path / "mia.png"
+    file_path.write_bytes(b"image")
+    record = _record()
+    record["character_identities"] = {
+        "mia": {
+            "reference_asset_ids": ["mia-image"],
+            "approved_reference_asset_ids": ["mia-image"],
+            "reference_asset_reviews": {"mia-image": "approved"},
+        }
+    }
+    monkeypatch.setattr(video, "_jobs", {"job-visual-1": record})
+    monkeypatch.setattr(asset_routes, "_assets", {
+        "mia-image": {
+            "id": "mia-image", "project_id": "project-1",
+            "asset_type": "image", "mime_type": "image/png",
+            "file_path": str(file_path), "file_size_bytes": 5,
+        }
+    })
+    saved = []
+    monkeypatch.setattr(video, "_persist_job", lambda item: saved.append(item.copy()))
+    response = asyncio.run(visual_assets.review_job_character_reference(
+        "job-visual-1", "mia", "mia-image",
+        visual_assets.CharacterReferenceReviewRequest(status="rejected"),
+    ))
+    assert response["status"] == "rejected"
+    assert response["approved_reference_asset_ids"] == []
+    assert response["review_status"] == "needs_reference_review"
+    assert record["character_identities"]["mia"]["approved_reference_asset_ids"] == []
+    assert len(saved) == 1
