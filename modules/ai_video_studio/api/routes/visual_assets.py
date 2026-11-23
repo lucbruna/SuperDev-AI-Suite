@@ -551,6 +551,7 @@ async def get_job_character_identity_audit(job_id: str):
     profiles = record.get("character_identities")
     if not isinstance(profiles, dict):
         profiles = {}
+    profiles = _profiles_with_current_approved_references(record, profiles)
     scenes = _source_scenes(record)
     try:
         report = audit_character_identity(scenes, profiles)
