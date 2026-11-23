@@ -68,3 +68,39 @@ def test_fit_image_dimensions_preserves_landscape_and_portrait_aspect_ratio():
     assert local_diffusion.fit_image_dimensions(720, 1280) == (432, 768)
     assert local_diffusion.fit_image_dimensions(640, 360) == (640, 360)
     assert local_diffusion.fit_image_dimensions(1920, 1080, max_edge=1024) == (1024, 576)
+
+
+
+def test_image_to_image_bytes_transmits_exact_reference_bytes(monkeypatch, tmp_path):
+    source = _png_bytes()
+    output = tmp_path / "edited-reference.png"
+    captured = {}
+    monkeypatch.setenv("DARKSTUDIO_IMAGE_API_URL", "http://127.0.0.1:7860")
+    monkeypatch.setattr(local_diffusion, "unique_filename", lambda *_args: output)
+
+    def fake_post(url, payload, timeout):
+        captured.update(url=url, payload=payload, timeout=timeout)
+        return {"images": [base64.b64encode(_png_bytes()).decode("ascii")]}
+    monkeypatch.setattr(local_diffusion, "_post_json", fake_post)
+
+    result = local_diffusion.edit_image_bytes(
+        source, "Keep the same felt character; change the background",
+        source_mime_type="image/png",
+    )
+    assert captured["url"].endswith("/sdapi/v1/img2img")
+    assert base64.b64decode(captured["payload"]["init_images"][0]) == source
+    assert result["reference_transmitted"] is True
+    assert result["reference_bytes"] == len(source)
+    assert result["provider"] == "automatic1111_compatible"
+
+
+def test_image_to_image_bytes_rejects_invalid_or_oversized_reference():
+    import pytest
+
+    with pytest.raises(ValueError, match="corrupt or unsupported"):
+        local_diffusion.edit_image_bytes(b"not-an-image", "Edit this")
+    with pytest.raises(ValueError, match="12 MiB"):
+        local_diffusion.edit_image_bytes(
+            _png_bytes() + (b"x" * (12 * 1024 * 1024)),
+            "Edit this",
+        )
