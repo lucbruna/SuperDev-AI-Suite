@@ -490,3 +490,95 @@ def test_character_identity_reference_file_must_exist_and_be_nonempty(monkeypatc
             ),
         ))
     assert exc.value.status_code == 422
+
+
+
+def test_character_reference_generate_sends_only_approved_asset_bytes(monkeypatch, tmp_path):
+    from io import BytesIO
+    from PIL import Image
+
+    reference = BytesIO()
+    Image.new("RGB", (12, 12), (220, 40, 90)).save(reference, format="PNG")
+    source_bytes = reference.getvalue()
+    reference_file = tmp_path / "mia-reference.png"
+    reference_file.write_bytes(source_bytes)
+    output_file = tmp_path / "generated.png"
+    output_file.write_bytes(source_bytes)
+    record = _record()
+    record["character_identities"] = {
+        "mia": {
+            "reference_asset_ids": ["mia-ref"],
+            "approved_reference_asset_ids": ["mia-ref"],
+            "reference_asset_reviews": {"mia-ref": "approved"},
+        }
+    }
+    monkeypatch.setattr(video, "_jobs", {"job-visual-1": record})
+    monkeypatch.setattr(asset_routes, "_assets", {
+        "mia-ref": {
+            "id": "mia-ref", "project_id": "project-1", "name": "Mia",
+            "asset_type": "image", "mime_type": "image/png",
+            "file_path": str(reference_file), "file_size_bytes": len(source_bytes),
+        }
+    })
+    captured = {}
+
+    def fake_edit_image_bytes(data, prompt, **kwargs):
+        captured.update(data=data, prompt=prompt, kwargs=kwargs)
+        return {
+            "provider": "automatic1111_compatible",
+            "operation": "image_to_image",
+            "reference_transmitted": True,
+            "reference_bytes": len(data),
+            "image_path": str(output_file),
+            "seed": 123,
+        }
+
+    from modules.ai_video_studio.ai_image_generator.providers import local_diffusion
+    monkeypatch.setattr(local_diffusion, "edit_image_bytes", fake_edit_image_bytes)
+    monkeypatch.setattr(visual_assets, "to_download_url", lambda path: f"/media/{Path(path).name}")
+
+    response = asyncio.run(visual_assets.generate_character_reference_edit(
+        "job-visual-1", "mia", "mia-ref",
+        visual_assets.CharacterReferenceEditRequest(prompt="Mia running in a forest"),
+    ))
+
+    assert captured["data"] == source_bytes
+    assert captured["prompt"] == "Mia running in a forest"
+    assert response["status"] == "reference_transmitted"
+    assert response["reference_transmitted"] is True
+    assert response["reference_asset_id"] == "mia-ref"
+    assert response["pixel_identity_verified"] is False
+    assert response["download_url"] == "/media/generated.png"
+
+
+def test_character_reference_generate_rejects_pending_reference_without_provider_call(monkeypatch, tmp_path):
+    reference_file = tmp_path / "mia.png"
+    reference_file.write_bytes(b"image")
+    record = _record()
+    record["character_identities"] = {
+        "mia": {
+            "reference_asset_ids": ["mia-ref"],
+            "approved_reference_asset_ids": [],
+            "reference_asset_reviews": {"mia-ref": "pending"},
+        }
+    }
+    monkeypatch.setattr(video, "_jobs", {"job-visual-1": record})
+    monkeypatch.setattr(asset_routes, "_assets", {
+        "mia-ref": {
+            "id": "mia-ref", "project_id": "project-1",
+            "asset_type": "image", "mime_type": "image/png",
+            "file_path": str(reference_file), "file_size_bytes": 5,
+        }
+    })
+
+    from modules.ai_video_studio.ai_image_generator.providers import local_diffusion
+    monkeypatch.setattr(
+        local_diffusion, "edit_image_bytes",
+        lambda *_args, **_kwargs: pytest.fail("provider must not receive pending references"),
+    )
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(visual_assets.generate_character_reference_edit(
+            "job-visual-1", "mia", "mia-ref",
+            visual_assets.CharacterReferenceEditRequest(prompt="Edit Mia"),
+        ))
+    assert exc.value.status_code == 409
