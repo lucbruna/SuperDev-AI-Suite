@@ -3,11 +3,12 @@ from __future__ import annotations
 
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field, ConfigDict
 
+from modules.ai_video_studio.api.routes import assets as asset_routes
 from modules.ai_video_studio.api.routes import video as video_routes
 from modules.ai_video_studio.api.urls import to_download_url
 from modules.ai_video_studio.media.visual_asset_director import (
@@ -338,6 +339,35 @@ async def update_job_scene_image_framing(job_id: str, scene_index: int, req: Sce
     return {"job_id": job_id, "scene_index": scene_index, "status": "saved", "background_image_transform": transform, "clip_invalidated": matched, "render_started": False}
 
 
+def _resolve_character_reference_asset(record: dict[str, Any], asset_id: str) -> dict[str, Any]:
+    """Resolve an image reference from the real project asset registry."""
+    asset = asset_routes._assets.get(asset_id)
+    if not isinstance(asset, dict):
+        raise HTTPException(status_code=404, detail="Character reference image not found in this project")
+    project_id = str(record.get("project_id") or "")
+    if not project_id or str(asset.get("project_id") or "") != project_id:
+        raise HTTPException(status_code=404, detail="Character reference image not found in this project")
+    mime_type = str(asset.get("mime_type") or "").lower()
+    if asset.get("asset_type") != "image" or not mime_type.startswith("image/"):
+        raise HTTPException(status_code=422, detail="Character references must be image assets")
+    raw_path = str(asset.get("file_path") or "").strip()
+    if not raw_path:
+        raise HTTPException(status_code=422, detail="Character reference image has no stored file")
+    path = Path(raw_path).expanduser()
+    try:
+        if not path.is_file() or path.stat().st_size <= 0:
+            raise HTTPException(status_code=422, detail="Character reference image file is missing or empty")
+        size = path.stat().st_size
+    except OSError as exc:
+        raise HTTPException(status_code=422, detail="Character reference image file is unavailable") from exc
+    return {
+        "asset_id": asset_id,
+        "name": str(asset.get("name") or path.name),
+        "mime_type": mime_type,
+        "file_size_bytes": int(asset.get("file_size_bytes") or size),
+    }
+
+
 class CharacterIdentityRequest(BaseModel):
     """Authored character identity contract; references are asset IDs, not paths."""
 
@@ -384,6 +414,16 @@ async def save_job_character_identity(
         )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+    reference_metadata = [
+        _resolve_character_reference_asset(record, asset_id)
+        for asset_id in profile["reference_asset_ids"]
+    ]
+    profile["approved_reference_asset_ids"] = []
+    profile["reference_asset_reviews"] = {
+        item["asset_id"]: "pending" for item in reference_metadata
+    }
+    profile["reference_asset_metadata"] = reference_metadata
+    profile["review_status"] = "needs_reference_review" if reference_metadata else "needs_reference"
     updated = dict(record)
     stored_profiles = record.get("character_identities")
     profiles = dict(stored_profiles) if isinstance(stored_profiles, dict) else {}
@@ -399,6 +439,71 @@ async def save_job_character_identity(
         "job_id": job_id,
         "profile": profile,
         "generation_started": False,
+        "pixel_identity_verified": False,
+    }
+
+
+class CharacterReferenceReviewRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    status: Literal["approved", "rejected"]
+
+
+@router.put("/jobs/{job_id}/character-identities/{character_id}/references/{asset_id}")
+async def review_job_character_reference(
+    job_id: str,
+    character_id: str,
+    asset_id: str,
+    req: CharacterReferenceReviewRequest,
+):
+    """Approve or reject one real image asset as a character identity reference."""
+    record = _job_or_404(job_id)
+    if record.get("status") != "completed":
+        raise HTTPException(status_code=409, detail="Character references require a completed job")
+    if any(record.get(key) for key in (
+        "_rendering_edits", "_rebuilding_scene_clips", "_scene_clip_rebuild_scheduled"
+    )):
+        raise HTTPException(status_code=409, detail="Scene assets are locked by an active operation")
+    profiles = record.get("character_identities")
+    profile = profiles.get(character_id) if isinstance(profiles, dict) else None
+    if not isinstance(profile, dict):
+        raise HTTPException(status_code=404, detail="Character identity profile not found")
+    if asset_id not in (profile.get("reference_asset_ids") or []):
+        raise HTTPException(status_code=404, detail="Image is not registered as a reference for this character")
+    asset_metadata = _resolve_character_reference_asset(record, asset_id)
+
+    updated = dict(record)
+    updated_profiles = dict(profiles)
+    updated_profile = dict(profile)
+    reviews = dict(updated_profile.get("reference_asset_reviews") or {})
+    reviews[asset_id] = req.status
+    approved = list(updated_profile.get("approved_reference_asset_ids") or [])
+    if req.status == "approved" and asset_id not in approved:
+        approved.append(asset_id)
+    if req.status == "rejected":
+        approved = [item for item in approved if item != asset_id]
+    updated_profile["reference_asset_reviews"] = reviews
+    updated_profile["approved_reference_asset_ids"] = approved
+    all_refs = list(updated_profile.get("reference_asset_ids") or [])
+    updated_profile["review_status"] = (
+        "references_approved" if all_refs and all(reviews.get(item) == "approved" for item in all_refs)
+        else "partial_reference_approval" if approved
+        else "needs_reference_review"
+    )
+    updated_profiles[character_id] = updated_profile
+    updated["character_identities"] = updated_profiles
+    try:
+        video_routes._persist_job(updated)
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail="Could not persist character reference review") from exc
+    record.clear()
+    record.update(updated)
+    return {
+        "job_id": job_id,
+        "character_id": character_id,
+        "asset": asset_metadata,
+        "status": req.status,
+        "approved_reference_asset_ids": approved,
+        "review_status": updated_profile["review_status"],
         "pixel_identity_verified": False,
     }
 
