@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 from fastapi import HTTPException
 
+from modules.ai_video_studio.api.routes import assets as asset_routes
 from modules.ai_video_studio.api.routes import video, visual_assets
 
 
@@ -270,8 +271,11 @@ def test_scene_image_framing_listing_defaults_legacy_scenes(monkeypatch) -> None
         "scale": 1.0, "offset_x": 0.0, "offset_y": 0.0,
     }
 
-def test_character_identity_profile_is_saved_and_used_by_visual_plan(monkeypatch) -> None:
+def test_character_identity_profile_is_saved_and_used_by_visual_plan(monkeypatch, tmp_path) -> None:
     record = _record()
+    reference_file = tmp_path / "mia-reference.png"
+    reference_file.write_bytes(b"valid-test-image-bytes")
+    monkeypatch.setattr(asset_routes, "_assets", {"asset-mia-approved": {"id": "asset-mia-approved", "project_id": "project-1", "name": "Mia reference", "asset_type": "image", "mime_type": "image/png", "file_path": str(reference_file), "file_size_bytes": reference_file.stat().st_size}})
     record["_source_scenes"][0]["character_ids"] = ["mia"]
     monkeypatch.setattr(video, "_jobs", {"job-visual-1": record})
     saved = []
