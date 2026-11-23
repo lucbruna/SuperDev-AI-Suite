@@ -311,3 +311,82 @@ async def update_job_scene_image_framing(job_id: str, scene_index: int, req: Sce
     record.clear()
     record.update(updated)
     return {"job_id": job_id, "scene_index": scene_index, "status": "saved", "background_image_transform": transform, "clip_invalidated": matched, "render_started": False}
+
+
+class CharacterIdentityRequest(BaseModel):
+    """Authored character identity contract; references are asset IDs, not paths."""
+
+    model_config = ConfigDict(extra="forbid")
+    name: str = Field(..., min_length=1, max_length=120)
+    visual_identity: str = Field(..., min_length=1, max_length=4000)
+    reference_asset_ids: list[str] = Field(default_factory=list, max_length=24)
+    invariants: list[str] = Field(default_factory=list, max_length=32)
+    forbidden_variations: list[str] = Field(default_factory=list, max_length=32)
+
+
+@router.get("/jobs/{job_id}/character-identities")
+async def list_job_character_identities(job_id: str):
+    """List identity profiles explicitly registered for a video job."""
+    record = _job_or_404(job_id)
+    profiles = record.get("character_identities")
+    if not isinstance(profiles, dict):
+        profiles = {}
+    return {"job_id": job_id, "profiles": profiles, "count": len(profiles)}
+
+
+@router.put("/jobs/{job_id}/character-identities/{character_id}")
+async def save_job_character_identity(
+    job_id: str,
+    character_id: str,
+    req: CharacterIdentityRequest,
+):
+    """Create or replace one character identity contract without starting generation."""
+    record = _job_or_404(job_id)
+    if record.get("status") != "completed":
+        raise HTTPException(status_code=409, detail="Character identities require a completed job")
+    if any(record.get(key) for key in (
+        "_rendering_edits", "_rebuilding_scene_clips", "_scene_clip_rebuild_scheduled"
+    )):
+        raise HTTPException(status_code=409, detail="Scene assets are locked by an active operation")
+    try:
+        profile = create_character_identity(
+            character_id,
+            name=req.name,
+            visual_identity=req.visual_identity,
+            reference_asset_ids=req.reference_asset_ids,
+            invariants=req.invariants,
+            forbidden_variations=req.forbidden_variations,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    updated = dict(record)
+    profiles = dict(record.get("character_identities") or {})
+    profiles[character_id] = profile
+    updated["character_identities"] = profiles
+    try:
+        video_routes._persist_job(updated)
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail="Could not persist character identity") from exc
+    record.clear()
+    record.update(updated)
+    return {
+        "job_id": job_id,
+        "profile": profile,
+        "generation_started": False,
+        "pixel_identity_verified": False,
+    }
+
+
+@router.get("/jobs/{job_id}/character-identity-audit")
+async def get_job_character_identity_audit(job_id: str):
+    """Audit explicit scene assignments against registered character profiles."""
+    record = _job_or_404(job_id)
+    profiles = record.get("character_identities")
+    if not isinstance(profiles, dict):
+        profiles = {}
+    scenes = _source_scenes(record)
+    try:
+        report = audit_character_identity(scenes, profiles)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return {"job_id": job_id, "audit": report}
