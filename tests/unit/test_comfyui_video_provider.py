@@ -47,6 +47,63 @@ def test_comfyui_mapping_rejects_unknown_node_or_input():
         provider._set_node_input({"1": {"inputs": {}}}, {"node_id": "1", "input": "image"}, "x")
 
 
+
+def test_comfyui_multi_character_mapping_assigns_distinct_uploaded_references():
+    workflow = {
+        "10": {"inputs": {"image": "old-mia.png"}},
+        "11": {"inputs": {"image": "old-leo.png"}},
+        "20": {"inputs": {"text": "old prompt"}},
+    }
+    provider = ComfyUIVideoProvider(
+        base_url="http://127.0.0.1:8188",
+        mapping={
+            "characters": {
+                "mia": {"node_id": "10", "input": "image"},
+                "leo": {"node_id": "11", "input": "image"},
+            },
+            "prompt": {"node_id": "20", "input": "text"},
+        },
+    )
+    provider._apply_character_reference_mapping(
+        workflow,
+        {
+            "mia": {"name": "mia-approved.png", "subfolder": "input"},
+            "leo": {"name": "leo-approved.png"},
+        },
+        "Mia and Leo in the same felt-clay scene",
+    )
+    assert workflow["10"]["inputs"]["image"] == "input/mia-approved.png"
+    assert workflow["11"]["inputs"]["image"] == "leo-approved.png"
+    assert workflow["20"]["inputs"]["text"] == "Mia and Leo in the same felt-clay scene"
+
+
+def test_comfyui_multi_character_mapping_rejects_missing_or_shared_inputs():
+    provider = ComfyUIVideoProvider(
+        base_url="http://127.0.0.1:8188",
+        mapping={
+            "characters": {
+                "mia": {"node_id": "10", "input": "image"},
+                "leo": {"node_id": "10", "input": "image"},
+            },
+            "prompt": {"node_id": "20", "input": "text"},
+        },
+    )
+    workflow = {
+        "10": {"inputs": {"image": "old.png"}},
+        "20": {"inputs": {"text": "old"}},
+    }
+    with pytest.raises(ValidationError, match="mismatch"):
+        provider._apply_character_reference_mapping(
+            workflow, {"mia": {"name": "mia.png"}}, "prompt"
+        )
+    with pytest.raises(ValidationError, match="distinct"):
+        provider._apply_character_reference_mapping(
+            workflow,
+            {"mia": {"name": "mia.png"}, "leo": {"name": "leo.png"}},
+            "prompt",
+        )
+
+
 def test_comfyui_video_output_requires_mp4_entry():
     history = {"outputs": {"42": {"videos": [
         {"filename": "clip.mp4", "subfolder": "darkstudio", "type": "output"}
