@@ -298,6 +298,15 @@ def test_character_identity_profile_is_saved_and_used_by_visual_plan(monkeypatch
     assert profile_response["pixel_identity_verified"] is False
     assert profile_response["profile"]["review_status"] == "needs_reference_review"
     assert profile_response["profile"]["approved_reference_asset_ids"] == []
+    pending_plan = asyncio.run(
+        visual_assets.create_job_visual_plan(
+            "job-visual-1", visual_assets.VisualPlanRequest()
+        )
+    )
+    pending_prompt = pending_plan["plan"]["briefs"][0]["character_identity_prompts"][0]
+    assert pending_prompt["requires_human_review"] is True
+    assert pending_prompt["reference_asset_ids"] == []
+    assert "asset-mia-approved" not in pending_prompt["prompt"]
     review_response = asyncio.run(
         visual_assets.review_job_character_reference(
             "job-visual-1", "mia", "asset-mia-approved",
@@ -317,7 +326,7 @@ def test_character_identity_profile_is_saved_and_used_by_visual_plan(monkeypatch
     assert "vestido vermelho" in brief["visual_core"]
     assert "\n\nCHARACTER IDENTITY" in brief["visual_core"]
     assert brief["character_identity_review"]["status"] == "references_attached"
-    assert len(saved) == 1
+    assert len(saved) == 2
 
 
 def test_character_identity_audit_marks_unknown_character_for_review(monkeypatch) -> None:
