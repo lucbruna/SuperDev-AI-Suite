@@ -648,3 +648,161 @@ async def get_job_character_identity_audit(job_id: str):
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     return {"job_id": job_id, "audit": report}
+
+
+class SceneCharacterImageGenerationRequest(BaseModel):
+    """Generate one scene image conditioned on its single approved character."""
+    model_config = ConfigDict(extra="forbid")
+    prompt: str | None = Field(default=None, max_length=4000)
+    negative_prompt: str = Field(default="", max_length=2000)
+    denoising_strength: float = Field(default=0.32, ge=0.05, le=0.95, allow_inf_nan=False)
+    steps: int = Field(default=20, ge=1, le=60)
+    cfg_scale: float = Field(default=7.0, ge=1.0, le=20.0, allow_inf_nan=False)
+
+
+@router.post("/jobs/{job_id}/scenes/{scene_index}/generate-character-image")
+async def generate_scene_character_image(
+    job_id: str, scene_index: int, req: SceneCharacterImageGenerationRequest
+):
+    """Generate a pending scene-image candidate using one approved character reference."""
+    record = _job_or_404(job_id)
+    if record.get("status") != "completed":
+        raise HTTPException(status_code=409, detail="Scene image generation requires a completed job")
+    if scene_index < 0:
+        raise HTTPException(status_code=422, detail="scene_index must be non-negative")
+    if job_id in getattr(video_routes, "_scene_batch_jobs", set()) or any(record.get(key) for key in (
+        "_rendering_edits", "_rebuilding_scene_clips", "_scene_clip_rebuild_scheduled"
+    )):
+        raise HTTPException(status_code=409, detail="Scene assets are locked by an active operation")
+
+    scenes = _source_scenes(record)
+    position = next(
+        (i for i, item in enumerate(scenes)
+         if int(item.get("_source_scene_index", i)) == scene_index),
+        None,
+    )
+    if position is None and scene_index < len(scenes):
+        position = scene_index
+    if position is None:
+        raise HTTPException(status_code=404, detail="Scene index not found")
+    scene = scenes[position]
+
+    raw_profiles = record.get("character_identities")
+    profiles = raw_profiles if isinstance(raw_profiles, dict) else {}
+    profiles = _profiles_with_current_approved_references(record, profiles)
+    from modules.ai_video_studio.media.scene_visual_asset_workflow import (
+        select_scene_character_reference, stage_scene_image_candidate,
+    )
+    from modules.ai_video_studio.media.character_identity import build_character_identity_prompt
+    try:
+        selected = select_scene_character_reference(scene, profiles)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+    character_id = selected["character_id"]
+    reference_asset_id = selected["reference_asset_id"]
+    try:
+        metadata = _resolve_character_reference_asset(record, reference_asset_id)
+    except HTTPException:
+        raise
+
+    profile = profiles[character_id]
+    identity_prompt = build_character_identity_prompt(profile)
+    visual_brief = scene.get("visual_brief")
+    if isinstance(visual_brief, dict):
+        scene_prompt = str(visual_brief.get("visual_core") or "").strip()
+    else:
+        scene_prompt = ""
+    scene_prompt = (
+        str(req.prompt or "").strip()
+        or scene_prompt
+        or str(scene.get("visual_prompt_suggestion") or scene.get("visual_prompt") or scene.get("description") or "").strip()
+    )
+    if not scene_prompt:
+        raise HTTPException(status_code=422, detail="Scene has no visual prompt or description")
+    full_prompt = f"{scene_prompt}\n\n{identity_prompt['prompt']}\n\nUse the supplied reference image as the character's visual starting point. Preserve the same face, hair, clothing, proportions and material style while changing only pose, expression and scene composition."
+    if len(full_prompt) > 8000:
+        full_prompt = full_prompt[:8000]
+
+    asset = asset_routes._assets.get(reference_asset_id) or {}
+    source_path = Path(str(asset.get("file_path") or "")).expanduser()
+    max_reference_bytes = 12 * 1024 * 1024
+    try:
+        if not source_path.is_file():
+            raise HTTPException(status_code=422, detail="Character reference image file is unavailable")
+        if source_path.stat().st_size > max_reference_bytes:
+            raise HTTPException(status_code=413, detail="Character reference image exceeds the 12 MiB limit")
+        source_bytes = source_path.read_bytes()
+    except HTTPException:
+        raise
+    except OSError as exc:
+        raise HTTPException(status_code=422, detail="Character reference image could not be read") from exc
+    if not source_bytes or len(source_bytes) > max_reference_bytes:
+        raise HTTPException(status_code=413 if source_bytes else 422, detail="Character reference image is empty or exceeds the 12 MiB limit")
+
+    try:
+        from modules.ai_video_studio.ai_image_generator.providers.local_diffusion import edit_image_bytes
+        result = await asyncio.to_thread(
+            edit_image_bytes, source_bytes, full_prompt,
+            source_mime_type=metadata["mime_type"],
+            negative_prompt=req.negative_prompt,
+            denoising_strength=req.denoising_strength,
+            steps=req.steps,
+            cfg_scale=req.cfg_scale,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail="Configured AUTOMATIC1111-compatible image provider failed") from exc
+
+    from modules.ai_video_studio.media.output_paths import get_subsystem_dir
+    from uuid import uuid4
+    image_root = Path(get_subsystem_dir("images")).resolve()
+    output_path = Path(str(result.get("image_path") or "")).resolve()
+    if image_root not in output_path.parents or not output_path.is_file() or output_path.stat().st_size <= 0:
+        raise HTTPException(status_code=502, detail="Image provider returned an invalid output outside the DARKSTUDIO image directory")
+
+    candidate_id = str(uuid4())
+    candidate = {
+        "candidate_id": candidate_id,
+        "image_path": str(output_path),
+        "image_url": to_download_url(str(output_path)),
+        "provider": result.get("provider", "automatic1111_compatible"),
+        "operation": "scene_character_image_to_image",
+        "prompt": full_prompt,
+        "negative_prompt": req.negative_prompt,
+        "seed": result.get("seed", -1),
+        "status": "pending_approval",
+        "character_id": character_id,
+        "reference_asset_id": reference_asset_id,
+        "reference_transmitted": bool(result.get("reference_transmitted")),
+        "reference_bytes": int(result.get("reference_bytes") or len(source_bytes)),
+        "pixel_identity_verified": False,
+    }
+    try:
+        updated = stage_scene_image_candidate(record, scene_index, candidate)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    try:
+        video_routes._persist_job(updated)
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail="Could not persist generated scene image candidate") from exc
+    record.clear()
+    record.update(updated)
+    return {
+        "job_id": job_id,
+        "scene_index": scene_index,
+        "candidate_id": candidate_id,
+        "status": "pending_approval",
+        "image_url": candidate["image_url"],
+        "provider": candidate["provider"],
+        "character_id": character_id,
+        "reference_asset_id": reference_asset_id,
+        "reference_transmitted": candidate["reference_transmitted"],
+        "pixel_identity_verified": False,
+        "active_image_replaced": False,
+        "clip_invalidated": False,
+        "message": "Imagem gerada como candidata. Aprove-a separadamente para substituir a imagem ativa; a identidade visual ainda exige revisão humana.",
+    }
