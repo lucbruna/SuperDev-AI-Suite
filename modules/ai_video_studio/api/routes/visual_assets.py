@@ -59,6 +59,41 @@ def _source_scenes(record: dict[str, Any]) -> list[dict[str, Any]]:
     return [dict(scene) for scene in scenes if isinstance(scene, dict)]
 
 
+def _profiles_with_current_approved_references(
+    record: dict[str, Any], profiles: dict[str, Any]
+) -> dict[str, dict[str, Any]]:
+    """Drop approvals whose image asset was deleted, moved, or made unavailable."""
+    resolved: dict[str, dict[str, Any]] = {}
+    for character_id, raw_profile in profiles.items():
+        if not isinstance(raw_profile, dict):
+            continue
+        profile = dict(raw_profile)
+        approved_ids = profile.get("approved_reference_asset_ids")
+        approved_ids = approved_ids if isinstance(approved_ids, list) else []
+        current_approved: list[str] = []
+        reviews = dict(profile.get("reference_asset_reviews") or {})
+        for asset_id in approved_ids:
+            asset_id = str(asset_id)
+            if asset_id not in (profile.get("reference_asset_ids") or []):
+                continue
+            try:
+                _resolve_character_reference_asset(record, asset_id)
+            except HTTPException:
+                reviews[asset_id] = "missing_asset"
+                continue
+            current_approved.append(asset_id)
+        profile["approved_reference_asset_ids"] = current_approved
+        profile["reference_asset_reviews"] = reviews
+        profile["review_status"] = (
+            "references_approved" if current_approved and len(current_approved) == len(profile.get("reference_asset_ids") or [])
+            else "partial_reference_approval" if current_approved
+            else "needs_reference_review" if profile.get("reference_asset_ids")
+            else "needs_reference"
+        )
+        resolved[str(character_id)] = profile
+    return resolved
+
+
 @router.post("/jobs/{job_id}/visual-plan")
 async def create_job_visual_plan(job_id: str, req: VisualPlanRequest):
     """Create per-scene visual briefs; optional persistence is non-destructive."""
@@ -82,6 +117,7 @@ async def create_job_visual_plan(job_id: str, req: VisualPlanRequest):
     profiles = record.get("character_identities")
     if not isinstance(profiles, dict):
         profiles = {}
+    profiles = _profiles_with_current_approved_references(record, profiles)
 
     briefs: list[dict[str, Any]] = []
     for position, scene in enumerate(scenes):
