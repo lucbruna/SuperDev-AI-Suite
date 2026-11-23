@@ -653,8 +653,10 @@ def test_scene_character_generation_stages_candidate_without_replacing_active_im
     assert response["reference_transmitted"] is True
     assert response["active_image_replaced"] is False
     assert record["_source_scenes"][0]["background_image_path"] == str(image_root / "old-active.png")
-    candidate = record["scene_image_candidates"]["4"][0]
-    assert candidate["candidate_id"] == response["candidate_id"]
+    candidate = next(
+        item for item in record["scene_image_candidates"]["4"]
+        if item["candidate_id"] == response["candidate_id"]
+    )
     assert candidate["character_id"] == "mia"
     assert candidate["reference_asset_id"] == "mia-ref"
     assert candidate["status"] == "pending_approval"
