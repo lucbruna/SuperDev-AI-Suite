@@ -94,9 +94,9 @@ async def create_job_visual_plan(job_id: str, req: VisualPlanRequest):
         identity_prompts = identity_scene.get("character_identity_prompts") or []
         identity_review = identity_scene.get("character_identity_review") or {}
         if identity_prompts:
-            identity_text = "\\n\\n".join(item["prompt"] for item in identity_prompts)
+            identity_text = "\n\n".join(item["prompt"] for item in identity_prompts)
             brief["visual_core"] = (
-                str(brief.get("visual_core") or "").rstrip() + "\\n\\n" + identity_text
+                str(brief.get("visual_core") or "").rstrip() + "\n\n" + identity_text
             ).strip()
         brief["character_identity_prompts"] = identity_prompts
         brief["character_identity_review"] = identity_review
