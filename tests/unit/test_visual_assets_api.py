@@ -582,3 +582,116 @@ def test_character_reference_generate_rejects_pending_reference_without_provider
             visual_assets.CharacterReferenceEditRequest(prompt="Edit Mia"),
         ))
     assert exc.value.status_code == 409
+
+
+
+def test_scene_character_generation_stages_candidate_without_replacing_active_image(monkeypatch, tmp_path):
+    from io import BytesIO
+    from PIL import Image
+
+    reference_buffer = BytesIO()
+    Image.new("RGB", (16, 16), (200, 30, 80)).save(reference_buffer, format="PNG")
+    reference_bytes = reference_buffer.getvalue()
+    reference_file = tmp_path / "mia-reference.png"
+    reference_file.write_bytes(reference_bytes)
+    image_root = tmp_path / "images"
+    image_root.mkdir()
+    output_file = image_root / "generated.png"
+    output_file.write_bytes(reference_bytes)
+
+    record = _record()
+    record["_source_scenes"][0].update({
+        "character_ids": ["mia"],
+        "visual_prompt": "Mia em uma floresta iluminada pelo sol",
+        "background_image_path": str(image_root / "old-active.png"),
+    })
+    (image_root / "old-active.png").write_bytes(reference_bytes)
+    record["character_identities"] = {
+        "mia": {
+            "character_id": "mia",
+            "name": "Mia",
+            "visual_identity": "Menina de cabelo castanho preso, vestido vermelho, estilo felt-clay.",
+            "reference_asset_ids": ["mia-ref"],
+            "approved_reference_asset_ids": ["mia-ref"],
+            "reference_asset_reviews": {"mia-ref": "approved"},
+            "invariants": ["cabelo castanho preso", "vestido vermelho"],
+            "forbidden_variations": ["cabelo loiro", "roupa azul"],
+        }
+    }
+    monkeypatch.setattr(video, "_jobs", {"job-visual-1": record})
+    monkeypatch.setattr(asset_routes, "_assets", {
+        "mia-ref": {
+            "id": "mia-ref", "project_id": "project-1", "name": "Mia reference",
+            "asset_type": "image", "mime_type": "image/png",
+            "file_path": str(reference_file), "file_size_bytes": len(reference_bytes),
+        }
+    })
+    from modules.ai_video_studio.media import output_paths
+    monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda name: image_root)
+    from modules.ai_video_studio.ai_image_generator.providers import local_diffusion
+    captured = {}
+    def fake_edit(data, prompt, **kwargs):
+        captured.update(data=data, prompt=prompt, kwargs=kwargs)
+        return {
+            "provider": "automatic1111_compatible", "operation": "image_to_image",
+            "reference_transmitted": True, "reference_bytes": len(data),
+            "image_path": str(output_file), "seed": 77,
+        }
+    monkeypatch.setattr(local_diffusion, "edit_image_bytes", fake_edit)
+    monkeypatch.setattr(visual_assets, "to_download_url", lambda path: f"/media/{Path(path).name}")
+    persisted = []
+    monkeypatch.setattr(video, "_persist_job", lambda item: persisted.append(item.copy()))
+
+    response = asyncio.run(visual_assets.generate_scene_character_image(
+        "job-visual-1", 4, visual_assets.SceneCharacterImageGenerationRequest()
+    ))
+
+    assert captured["data"] == reference_bytes
+    assert "Mia em uma floresta" in captured["prompt"]
+    assert "vestido vermelho" in captured["prompt"]
+    assert response["status"] == "pending_approval"
+    assert response["reference_transmitted"] is True
+    assert response["active_image_replaced"] is False
+    assert record["_source_scenes"][0]["background_image_path"] == str(image_root / "old-active.png")
+    candidate = record["scene_image_candidates"]["4"][0]
+    assert candidate["candidate_id"] == response["candidate_id"]
+    assert candidate["character_id"] == "mia"
+    assert candidate["reference_asset_id"] == "mia-ref"
+    assert candidate["status"] == "pending_approval"
+    assert len(persisted) == 1
+
+
+def test_scene_character_generation_rejects_multiple_characters_before_provider(monkeypatch, tmp_path):
+    reference_file = tmp_path / "reference.png"
+    reference_file.write_bytes(b"image")
+    record = _record()
+    record["_source_scenes"][0]["character_ids"] = ["mia", "leo"]
+    record["character_identities"] = {
+        character_id: {
+            "character_id": character_id, "name": character_id,
+            "visual_identity": "Test character",
+            "reference_asset_ids": [f"{character_id}-ref"],
+            "approved_reference_asset_ids": [f"{character_id}-ref"],
+        }
+        for character_id in ("mia", "leo")
+    }
+    monkeypatch.setattr(video, "_jobs", {"job-visual-1": record})
+    monkeypatch.setattr(asset_routes, "_assets", {
+        f"{character_id}-ref": {
+            "id": f"{character_id}-ref", "project_id": "project-1",
+            "asset_type": "image", "mime_type": "image/png",
+            "file_path": str(reference_file), "file_size_bytes": 5,
+        }
+        for character_id in ("mia", "leo")
+    })
+    from modules.ai_video_studio.ai_image_generator.providers import local_diffusion
+    monkeypatch.setattr(
+        local_diffusion, "edit_image_bytes",
+        lambda *_args, **_kwargs: pytest.fail("provider must not be called for multi-character scene"),
+    )
+
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(visual_assets.generate_scene_character_image(
+            "job-visual-1", 4, visual_assets.SceneCharacterImageGenerationRequest(prompt="Two characters")
+        ))
+    assert exc.value.status_code == 409
