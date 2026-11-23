@@ -302,7 +302,7 @@ def test_character_identity_profile_is_saved_and_used_by_visual_plan(monkeypatch
     assert brief["character_identity_prompts"][0]["character_id"] == "mia"
     assert "cabelo castanho preso" in brief["visual_core"]
     assert "vestido vermelho" in brief["visual_core"]
-    assert "\\n\\nCHARACTER IDENTITY" in brief["visual_core"]
+    assert "\n\nCHARACTER IDENTITY" in brief["visual_core"]
     assert brief["character_identity_review"]["status"] == "references_attached"
     assert len(saved) == 1
 
