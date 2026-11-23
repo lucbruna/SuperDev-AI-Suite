@@ -67,3 +67,24 @@ A ponte é específica ao AUTOMATIC1111. Geradores procedurais e workflows Comfy
 ## Critério de aceite da próxima implementação
 
 A ponte só poderá ser considerada funcional quando um teste automatizado demonstrar que o provedor configurado recebeu os bytes exatos de uma referência aprovada do mesmo projeto e que nenhum byte de referências pendentes/rejeitadas/removidas foi enviado. O CI precisa passar no head que contém essa implementação.
+
+
+## Integração por cena — candidata com personagem (2026-11-23)
+
+Foi adicionada a rota `POST /jobs/{job_id}/scenes/{scene_index}/generate-character-image`.
+
+Fluxo implementado:
+1. Localiza a cena pelo índice original e exige job concluído, sem render ou reconstrução de clipe em andamento.
+2. Exige `character_ids` explícito e exatamente um personagem atribuído à cena para o adaptador AUTOMATIC1111 atual.
+3. Seleciona uma referência aprovada que ainda exista no registro do mesmo projeto; revalida o arquivo e lê os bytes no servidor.
+4. Combina o brief/prompt da cena com identidade, invariantes e variações proibidas do perfil.
+5. Envia os bytes para `img2img` via `init_images`.
+6. Registra a saída como `pending_approval` no fluxo de candidatas existente. A imagem ativa não é alterada e o clipe atual não é invalidado até aprovação explícita.
+
+Limitações deliberadas:
+- Cenas sem personagem ou com múltiplos personagens são rejeitadas por este adaptador. Não se escolhe uma referência arbitrária nem se mistura referências incompatíveis. Para cenas com vários personagens, será necessário um workflow ComfyUI com entradas de referência múltiplas mapeadas e testadas.
+- O adaptador atual continua sendo AUTOMATIC1111 img2img; não foi executada inferência real nesta sessão.
+- `reference_transmitted=true` comprova o envio dos bytes ao adaptador, não que o modelo preservou o personagem. `pixel_identity_verified=false` permanece obrigatório até existir avaliação visual semântica.
+- A aprovação da candidata é uma ação separada: só então a imagem substitui a ativa e o clipe dependente fica marcado como desatualizado.
+
+Testes adicionados cobrem o envio dos bytes aprovados, a composição do prompt, o armazenamento não destrutivo da candidata e a rejeição de cenas com múltiplos personagens. A execução do CI para o commit `19b04f7d0038d91c15bb8cac4cf06e6836869f2c` foi iniciada; ainda não há resultado final confirmado.
