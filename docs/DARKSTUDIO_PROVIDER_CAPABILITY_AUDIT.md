@@ -48,6 +48,22 @@ A próxima integração deve ser explícita por provedor. Não se deve enviar um
 - A validação de identidade visual exige avaliação de imagem/visão apropriada e revisão humana; não está implementada nesta etapa.
 - Não foi executada geração real contra AUTOMATIC1111 ou ComfyUI nesta auditoria.
 
+## Ponte implementada nesta etapa
+
+Foi criado o método `edit_image_bytes` no adaptador AUTOMATIC1111 compatível. Ele valida MIME e conteúdo real PNG/JPEG/WebP, limita a referência a 12 MiB, codifica os bytes em base64 e envia `init_images` ao endpoint `/sdapi/v1/img2img`.
+
+A rota `POST /jobs/{job_id}/character-identities/{character_id}/references/{asset_id}/generate`:
+
+- exige job concluído e sem bloqueio de render;
+- aceita somente um asset que esteja aprovado e continue disponível no registro do mesmo projeto;
+- lê os bytes do arquivo do servidor, sem aceitar caminho fornecido pelo cliente;
+- limita o tamanho antes do envio;
+- chama o adaptador AUTOMATIC1111 em thread de trabalho;
+- informa `reference_transmitted`, ID do asset, bytes enviados e provedor;
+- mantém `pixel_identity_verified=false`, pois img2img não garante identidade visual.
+
+A ponte é específica ao AUTOMATIC1111. Geradores procedurais e workflows ComfyUI não são selecionados implicitamente por essa rota. Se o serviço local não estiver ativo ou falhar, a rota retorna erro de provedor em vez de simular sucesso.
+
 ## Critério de aceite da próxima implementação
 
 A ponte só poderá ser considerada funcional quando um teste automatizado demonstrar que o provedor configurado recebeu os bytes exatos de uma referência aprovada do mesmo projeto e que nenhum byte de referências pendentes/rejeitadas/removidas foi enviado. O CI precisa passar no head que contém essa implementação.
