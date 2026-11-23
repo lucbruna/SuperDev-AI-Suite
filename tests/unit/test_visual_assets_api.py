@@ -437,3 +437,56 @@ def test_character_reference_rejection_removes_previously_approved_asset(monkeyp
     assert response["review_status"] == "needs_reference_review"
     assert record["character_identities"]["mia"]["approved_reference_asset_ids"] == []
     assert len(saved) == 1
+
+
+def test_visual_plan_drops_deleted_approved_character_reference(monkeypatch) -> None:
+    record = _record()
+    record["_source_scenes"][0]["character_ids"] = ["mia"]
+    record["character_identities"] = {
+        "mia": {
+            "character_id": "mia",
+            "name": "Mia",
+            "visual_identity": "Menina de cabelo castanho preso e vestido vermelho.",
+            "reference_asset_ids": ["deleted-image"],
+            "approved_reference_asset_ids": ["deleted-image"],
+            "reference_asset_reviews": {"deleted-image": "approved"},
+            "invariants": ["cabelo castanho preso", "vestido vermelho"],
+            "forbidden_variations": [],
+        }
+    }
+    monkeypatch.setattr(video, "_jobs", {"job-visual-1": record})
+    monkeypatch.setattr(asset_routes, "_assets", {})
+
+    response = asyncio.run(
+        visual_assets.create_job_visual_plan(
+            "job-visual-1", visual_assets.VisualPlanRequest()
+        )
+    )
+
+    brief = response["plan"]["briefs"][0]
+    prompt = brief["character_identity_prompts"][0]
+    assert prompt["reference_asset_ids"] == []
+    assert prompt["requires_human_review"] is True
+    assert "deleted-image" not in prompt["prompt"]
+    assert record["character_identities"]["mia"]["approved_reference_asset_ids"] == ["deleted-image"]
+
+
+def test_character_identity_reference_file_must_exist_and_be_nonempty(monkeypatch, tmp_path) -> None:
+    missing_file = tmp_path / "missing.png"
+    monkeypatch.setattr(video, "_jobs", {"job-visual-1": _record()})
+    monkeypatch.setattr(asset_routes, "_assets", {
+        "missing-image": {
+            "id": "missing-image", "project_id": "project-1",
+            "asset_type": "image", "mime_type": "image/png",
+            "file_path": str(missing_file), "file_size_bytes": 0,
+        }
+    })
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(visual_assets.save_job_character_identity(
+            "job-visual-1", "mia",
+            visual_assets.CharacterIdentityRequest(
+                name="Mia", visual_identity="Mia felt character",
+                reference_asset_ids=["missing-image"],
+            ),
+        ))
+    assert exc.value.status_code == 422
