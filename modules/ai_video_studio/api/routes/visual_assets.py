@@ -15,6 +15,12 @@ from modules.ai_video_studio.media.visual_asset_director import (
     rank_visual_candidates,
 )
 
+from modules.ai_video_studio.media.character_identity import (
+    apply_character_identities,
+    audit_character_identity,
+    create_character_identity,
+)
+
 router = APIRouter()
 
 
