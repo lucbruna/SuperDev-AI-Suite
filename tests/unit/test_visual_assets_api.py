@@ -294,14 +294,23 @@ def test_character_identity_profile_is_saved_and_used_by_visual_plan(monkeypatch
             ),
         )
     )
+    assert profile_response["generation_started"] is False
+    assert profile_response["pixel_identity_verified"] is False
+    assert profile_response["profile"]["review_status"] == "needs_reference_review"
+    assert profile_response["profile"]["approved_reference_asset_ids"] == []
+    review_response = asyncio.run(
+        visual_assets.review_job_character_reference(
+            "job-visual-1", "mia", "asset-mia-approved",
+            visual_assets.CharacterReferenceReviewRequest(status="approved"),
+        )
+    )
+    assert review_response["review_status"] == "references_approved"
+    assert review_response["approved_reference_asset_ids"] == ["asset-mia-approved"]
     plan_response = asyncio.run(
         visual_assets.create_job_visual_plan(
             "job-visual-1", visual_assets.VisualPlanRequest()
         )
     )
-
-    assert profile_response["generation_started"] is False
-    assert profile_response["pixel_identity_verified"] is False
     brief = plan_response["plan"]["briefs"][0]
     assert brief["character_identity_prompts"][0]["character_id"] == "mia"
     assert "cabelo castanho preso" in brief["visual_core"]
