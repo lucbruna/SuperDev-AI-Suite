@@ -173,15 +173,16 @@ class TestVidGridFinalExportRecovery:
                 "clips": [{"index": 0, "audio_path": None}],
             },
         }
+        narrated_scene = [{"_source_scene_index": 0, "voiceover_text": "Teste de narração"}]
         with pytest.raises(HTTPException) as missing:
-            video._ordered_vidgrid_clip_paths(base, [{"_source_scene_index": 0}])
+            video._ordered_vidgrid_clip_paths(base, narrated_scene)
         assert missing.value.status_code == 409
 
         narration_path = voice_root / "scene.wav"
         narration_path.write_bytes(b"audio")
         base["voiceover"]["clips"][0]["audio_path"] = str(narration_path)
         with pytest.raises(HTTPException) as unmuxed:
-            video._ordered_vidgrid_clip_paths(base, [{"_source_scene_index": 0}])
+            video._ordered_vidgrid_clip_paths(base, narrated_scene)
         assert unmuxed.value.status_code == 409
 
     def test_single_track_narration_cannot_mark_individual_vidgrid_clips_ready(self, tmp_path, monkeypatch):
