@@ -153,19 +153,34 @@ class ComfyUIVideoProvider:
                 f"Character reference mapping mismatch (missing={missing}, unexpected={unexpected})"
             )
 
+        if any(not isinstance(item, str) or not item.strip() for item in expected):
+            raise ValidationError("Character IDs in the ComfyUI mapping must be non-empty strings")
+        prompt_node = self.mapping.get("prompt")
+        if not isinstance(prompt_node, dict):
+            raise ValidationError("Multi-character mapping requires a prompt node definition")
+        negative_node = self.mapping.get("negative_prompt")
+        if negative_node is not None and not isinstance(negative_node, dict):
+            raise ValidationError("negative_prompt mapping must be an object")
+
+        def target_of(spec: dict[str, Any]) -> tuple[str, str]:
+            return (str(spec.get("node_id") or ""), str(spec.get("input") or ""))
+
+        reserved = {target_of(prompt_node)}
+        if negative_node is not None:
+            reserved.add(target_of(negative_node))
+        if any(not node_id or not input_name for node_id, input_name in reserved):
+            raise ValidationError("Prompt mappings need explicit node_id and input")
         occupied_inputs: set[tuple[str, str]] = set()
         for character_id in sorted(expected):
             spec = character_mapping[character_id]
             uploaded = uploaded_by_character[character_id]
             if not isinstance(spec, dict) or not isinstance(uploaded, dict):
                 raise ValidationError(f"Invalid ComfyUI reference mapping for character '{character_id}'")
-            node_id = str(spec.get("node_id") or "")
-            input_name = str(spec.get("input") or "")
-            target = (node_id, input_name)
-            if target in occupied_inputs:
-                raise ValidationError("Each character reference must map to a distinct ComfyUI node input")
+            target = target_of(spec)
+            if not all(target) or target in occupied_inputs or target in reserved:
+                raise ValidationError("Each character reference must map to a distinct input separate from prompt inputs")
             occupied_inputs.add(target)
-            uploaded_name = str(uploaded.get("name") or "")
+            uploaded_name = str(uploaded.get("name") or "").strip()
             if not uploaded_name:
                 raise ValidationError(f"ComfyUI upload returned no image name for character '{character_id}'")
             subfolder = str(uploaded.get("subfolder") or "").strip("/")
@@ -173,14 +188,8 @@ class ComfyUIVideoProvider:
                 uploaded_name = f"{subfolder}/{uploaded_name}"
             self._set_node_input(workflow, spec, uploaded_name)
 
-        prompt_node = self.mapping.get("prompt")
-        if not isinstance(prompt_node, dict):
-            raise ValidationError("Multi-character mapping requires a prompt node definition")
         self._set_node_input(workflow, prompt_node, prompt)
-        negative_node = self.mapping.get("negative_prompt")
-        if negative_node and negative_prompt:
-            if not isinstance(negative_node, dict):
-                raise ValidationError("negative_prompt mapping must be an object")
+        if negative_node is not None and negative_prompt:
             self._set_node_input(workflow, negative_node, negative_prompt)
 
     @staticmethod
