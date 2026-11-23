@@ -72,12 +72,31 @@ async def create_job_visual_plan(job_id: str, req: VisualPlanRequest):
     if not scenes:
         raise HTTPException(status_code=422, detail="Job has no usable scenes")
 
+    profiles = record.get("character_identities")
+    if not isinstance(profiles, dict):
+        profiles = {}
+
     briefs: list[dict[str, Any]] = []
     for position, scene in enumerate(scenes):
         try:
-            brief = build_scene_visual_brief(scene, scene_index=position, studio_id=studio_id)
+            identity_scene = apply_character_identities(scene, profiles)
+            brief = build_scene_visual_brief(
+                identity_scene, scene_index=position, studio_id=studio_id
+            )
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
+        identity_prompts = identity_scene.get("character_identity_prompts") or []
+        identity_review = identity_scene.get("character_identity_review") or {}
+        if identity_prompts:
+            identity_text = "\\n\\n".join(item["prompt"] for item in identity_prompts)
+            brief["visual_core"] = (
+                str(brief.get("visual_core") or "").rstrip() + "\\n\\n" + identity_text
+            ).strip()
+        brief["character_identity_prompts"] = identity_prompts
+        brief["character_identity_review"] = identity_review
+        if identity_review.get("requires_human_review"):
+            brief["requires_human_review"] = True
+            brief["status"] = "needs_identity_review"
         source_index = scene.get("_source_scene_index", position)
         try:
             brief["scene_index"] = int(source_index)
