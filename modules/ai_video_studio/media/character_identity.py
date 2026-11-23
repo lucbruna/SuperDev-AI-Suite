@@ -114,8 +114,10 @@ def apply_character_identities(
     result["character_identity_prompts"] = prompts
     result["character_identity_review"] = {
         "status": "unknown_character" if unknown else (
-            "needs_human_review" if any(item["requires_human_review"] for item in prompts)
-            else "references_attached"
+            "no_characters_assigned" if not prompts else (
+                "needs_human_review" if any(item["requires_human_review"] for item in prompts)
+                else "references_attached"
+            )
         ),
         "unknown_character_ids": unknown,
         "pixel_identity_verified": False,
