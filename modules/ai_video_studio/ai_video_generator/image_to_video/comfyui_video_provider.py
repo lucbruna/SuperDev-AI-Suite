@@ -127,6 +127,62 @@ class ComfyUIVideoProvider:
                 raise ValidationError("negative_prompt mapping must be an object")
             self._set_node_input(workflow, negative_node, negative_prompt)
 
+    def _apply_character_reference_mapping(
+        self,
+        workflow: dict[str, Any],
+        uploaded_by_character: dict[str, dict[str, Any]],
+        prompt: str,
+        negative_prompt: str = "",
+    ) -> None:
+        """Map each explicitly assigned character to its own workflow image input.
+
+        This validates configuration only; callers must upload each approved
+        reference first and pass the returned ComfyUI upload metadata here.
+        """
+        character_mapping = self.mapping.get("characters")
+        if not isinstance(character_mapping, dict) or not character_mapping:
+            raise ValidationError("Multi-character ComfyUI mapping requires a characters object")
+        if not isinstance(uploaded_by_character, dict) or not uploaded_by_character:
+            raise ValidationError("Multi-character generation requires uploaded references")
+        expected = set(character_mapping)
+        supplied = set(uploaded_by_character)
+        if expected != supplied:
+            missing = sorted(expected - supplied)
+            unexpected = sorted(supplied - expected)
+            raise ValidationError(
+                f"Character reference mapping mismatch (missing={missing}, unexpected={unexpected})"
+            )
+
+        occupied_inputs: set[tuple[str, str]] = set()
+        for character_id in sorted(expected):
+            spec = character_mapping[character_id]
+            uploaded = uploaded_by_character[character_id]
+            if not isinstance(spec, dict) or not isinstance(uploaded, dict):
+                raise ValidationError(f"Invalid ComfyUI reference mapping for character '{character_id}'")
+            node_id = str(spec.get("node_id") or "")
+            input_name = str(spec.get("input") or "")
+            target = (node_id, input_name)
+            if target in occupied_inputs:
+                raise ValidationError("Each character reference must map to a distinct ComfyUI node input")
+            occupied_inputs.add(target)
+            uploaded_name = str(uploaded.get("name") or "")
+            if not uploaded_name:
+                raise ValidationError(f"ComfyUI upload returned no image name for character '{character_id}'")
+            subfolder = str(uploaded.get("subfolder") or "").strip("/")
+            if subfolder:
+                uploaded_name = f"{subfolder}/{uploaded_name}"
+            self._set_node_input(workflow, spec, uploaded_name)
+
+        prompt_node = self.mapping.get("prompt")
+        if not isinstance(prompt_node, dict):
+            raise ValidationError("Multi-character mapping requires a prompt node definition")
+        self._set_node_input(workflow, prompt_node, prompt)
+        negative_node = self.mapping.get("negative_prompt")
+        if negative_node and negative_prompt:
+            if not isinstance(negative_node, dict):
+                raise ValidationError("negative_prompt mapping must be an object")
+            self._set_node_input(workflow, negative_node, negative_prompt)
+
     @staticmethod
     def _set_node_input(workflow: dict[str, Any], spec: dict[str, Any], value: str) -> None:
         node_id = str(spec.get("node_id") or "")
