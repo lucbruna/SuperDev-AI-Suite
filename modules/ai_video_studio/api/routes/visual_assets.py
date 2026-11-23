@@ -1,6 +1,7 @@
 """Visual planning and candidate inspection endpoints for DARKSTUDIO jobs."""
 from __future__ import annotations
 
+import asyncio
 import time
 from pathlib import Path
 from typing import Any, Literal
@@ -479,6 +480,16 @@ async def save_job_character_identity(
     }
 
 
+
+class CharacterReferenceEditRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    prompt: str = Field(..., min_length=1, max_length=4000)
+    negative_prompt: str = Field(default="", max_length=2000)
+    denoising_strength: float = Field(default=0.35, ge=0.05, le=0.95, allow_inf_nan=False)
+    steps: int = Field(default=20, ge=1, le=60)
+    cfg_scale: float = Field(default=7.0, ge=1.0, le=20.0, allow_inf_nan=False)
+
+
 class CharacterReferenceReviewRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     status: Literal["approved", "rejected"]
@@ -541,6 +552,85 @@ async def review_job_character_reference(
         "approved_reference_asset_ids": approved,
         "review_status": updated_profile["review_status"],
         "pixel_identity_verified": False,
+    }
+
+
+
+@router.post("/jobs/{job_id}/character-identities/{character_id}/references/{asset_id}/generate")
+async def generate_character_reference_edit(
+    job_id: str,
+    character_id: str,
+    asset_id: str,
+    req: CharacterReferenceEditRequest,
+):
+    """Run AUTOMATIC1111 img2img using one currently approved project reference."""
+    record = _job_or_404(job_id)
+    if record.get("status") != "completed":
+        raise HTTPException(status_code=409, detail="Character reference generation requires a completed job")
+    if any(record.get(key) for key in (
+        "_rendering_edits", "_rebuilding_scene_clips", "_scene_clip_rebuild_scheduled"
+    )):
+        raise HTTPException(status_code=409, detail="Scene assets are locked by an active operation")
+    profiles = record.get("character_identities")
+    profile = profiles.get(character_id) if isinstance(profiles, dict) else None
+    if not isinstance(profile, dict):
+        raise HTTPException(status_code=404, detail="Character identity profile not found")
+
+    current_profiles = _profiles_with_current_approved_references(
+        record, {character_id: profile}
+    )
+    current_profile = current_profiles.get(character_id) or {}
+    if asset_id not in current_profile.get("approved_reference_asset_ids", []):
+        raise HTTPException(status_code=409, detail="Character reference must be approved and currently available")
+
+    metadata = _resolve_character_reference_asset(record, asset_id)
+    asset = asset_routes._assets.get(asset_id) or {}
+    source_path = Path(str(asset.get("file_path") or "")).expanduser()
+    max_reference_bytes = 12 * 1024 * 1024
+    try:
+        if not source_path.is_file():
+            raise HTTPException(status_code=422, detail="Character reference image file is unavailable")
+        if source_path.stat().st_size > max_reference_bytes:
+            raise HTTPException(status_code=413, detail="Character reference image exceeds the 12 MiB limit")
+        source_bytes = source_path.read_bytes()
+    except HTTPException:
+        raise
+    except OSError as exc:
+        raise HTTPException(status_code=422, detail="Character reference image could not be read") from exc
+    if not source_bytes or len(source_bytes) > max_reference_bytes:
+        raise HTTPException(status_code=413 if source_bytes else 422, detail="Character reference image is empty or exceeds the 12 MiB limit")
+
+    try:
+        from modules.ai_video_studio.ai_image_generator.providers.local_diffusion import edit_image_bytes
+        result = await asyncio.to_thread(
+            edit_image_bytes,
+            source_bytes,
+            req.prompt,
+            source_mime_type=metadata["mime_type"],
+            negative_prompt=req.negative_prompt,
+            denoising_strength=req.denoising_strength,
+            steps=req.steps,
+            cfg_scale=req.cfg_scale,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail="Configured AUTOMATIC1111-compatible image provider failed") from exc
+
+    return {
+        "job_id": job_id,
+        "character_id": character_id,
+        "provider": result.get("provider"),
+        "operation": result.get("operation"),
+        "status": "reference_transmitted",
+        "reference_asset_id": asset_id,
+        "reference_transmitted": bool(result.get("reference_transmitted")),
+        "reference_bytes": int(result.get("reference_bytes") or 0),
+        "output_path": result.get("image_path"),
+        "download_url": to_download_url(result["image_path"]),
+        "seed": result.get("seed"),
+        "pixel_identity_verified": False,
+        "message": "A imagem aprovada foi enviada como init_images ao img2img. Isso condiciona a edição, mas não garante identidade visual idêntica.",
     }
 
 
