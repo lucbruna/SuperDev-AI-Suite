@@ -269,3 +269,54 @@ def test_scene_image_framing_listing_defaults_legacy_scenes(monkeypatch) -> None
     assert response["scenes"]["4"] == {
         "scale": 1.0, "offset_x": 0.0, "offset_y": 0.0,
     }
+
+def test_character_identity_profile_is_saved_and_used_by_visual_plan(monkeypatch) -> None:
+    record = _record()
+    record["_source_scenes"][0]["character_ids"] = ["mia"]
+    monkeypatch.setattr(video, "_jobs", {"job-visual-1": record})
+    saved = []
+    monkeypatch.setattr(video, "_persist_job", lambda item: saved.append(item.copy()))
+
+    profile_response = asyncio.run(
+        visual_assets.save_job_character_identity(
+            "job-visual-1",
+            "mia",
+            visual_assets.CharacterIdentityRequest(
+                name="Mia",
+                visual_identity="Menina de cabelo castanho preso, vestido vermelho, estilo felt-clay.",
+                reference_asset_ids=["asset-mia-approved"],
+                invariants=["cabelo castanho preso", "vestido vermelho"],
+                forbidden_variations=["cabelo loiro", "roupa azul"],
+            ),
+        )
+    )
+    plan_response = asyncio.run(
+        visual_assets.create_job_visual_plan(
+            "job-visual-1", visual_assets.VisualPlanRequest()
+        )
+    )
+
+    assert profile_response["generation_started"] is False
+    assert profile_response["pixel_identity_verified"] is False
+    brief = plan_response["plan"]["briefs"][0]
+    assert brief["character_identity_prompts"][0]["character_id"] == "mia"
+    assert "cabelo castanho preso" in brief["visual_core"]
+    assert "vestido vermelho" in brief["visual_core"]
+    assert "\\n\\nCHARACTER IDENTITY" in brief["visual_core"]
+    assert brief["character_identity_review"]["status"] == "references_attached"
+    assert len(saved) == 1
+
+
+def test_character_identity_audit_marks_unknown_character_for_review(monkeypatch) -> None:
+    record = _record()
+    record["_source_scenes"][0]["character_ids"] = ["leo"]
+    record["character_identities"] = {}
+    monkeypatch.setattr(video, "_jobs", {"job-visual-1": record})
+
+    response = asyncio.run(
+        visual_assets.get_job_character_identity_audit("job-visual-1")
+    )
+
+    assert response["audit"]["review_scene_count"] == 1
+    assert response["audit"]["scenes"][0]["status"] == "unknown_character"
+    assert response["audit"]["pixel_identity_verified"] is False
