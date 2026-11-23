@@ -246,3 +246,37 @@ def test_comfyui_engine_rejects_odd_h264_dimensions(tmp_path):
             "prompt": str(image),
             "params": {"motion_provider": "comfyui", "width": 641, "height": 480},
         })
+
+
+
+def test_comfyui_multi_character_mapping_rejects_prompt_input_collision():
+    provider = ComfyUIVideoProvider(
+        base_url="http://127.0.0.1:8188",
+        mapping={
+            "characters": {"mia": {"node_id": "10", "input": "image"}},
+            "prompt": {"node_id": "10", "input": "image"},
+        },
+    )
+    workflow = {"10": {"inputs": {"image": "old.png"}}}
+    with pytest.raises(ValidationError, match="separate from prompt inputs"):
+        provider._apply_character_reference_mapping(
+            workflow, {"mia": {"name": "mia.png"}}, "Mia in the forest"
+        )
+
+
+def test_comfyui_multi_character_mapping_rejects_blank_character_ids():
+    provider = ComfyUIVideoProvider(
+        base_url="http://127.0.0.1:8188",
+        mapping={
+            "characters": {"": {"node_id": "10", "input": "image"}},
+            "prompt": {"node_id": "20", "input": "text"},
+        },
+    )
+    workflow = {
+        "10": {"inputs": {"image": "old.png"}},
+        "20": {"inputs": {"text": "old"}},
+    }
+    with pytest.raises(ValidationError, match="non-empty strings"):
+        provider._apply_character_reference_mapping(
+            workflow, {"": {"name": "unknown.png"}}, "prompt"
+        )
