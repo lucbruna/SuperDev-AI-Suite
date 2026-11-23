@@ -379,7 +379,8 @@ async def save_job_character_identity(
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     updated = dict(record)
-    profiles = dict(record.get("character_identities") or {})
+    stored_profiles = record.get("character_identities")
+    profiles = dict(stored_profiles) if isinstance(stored_profiles, dict) else {}
     profiles[character_id] = profile
     updated["character_identities"] = profiles
     try:
