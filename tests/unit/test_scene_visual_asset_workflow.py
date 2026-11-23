@@ -185,3 +185,40 @@ def test_restore_history_rejects_unknown_entry_and_render_lock(tmp_path: Path) -
         restore_scene_image_history(record, 0, "missing", image_root=image_root, image_url_builder=lambda path: path)
     with pytest.raises(RuntimeError, match="locked"):
         restore_scene_image_history({**record, "_rendering_edits": True}, 0, "h1", image_root=image_root, image_url_builder=lambda path: path)
+
+
+def test_select_scene_character_reference_requires_explicit_single_character() -> None:
+    from modules.ai_video_studio.media.scene_visual_asset_workflow import select_scene_character_reference
+
+    profiles = {
+        "leo": {
+            "reference_asset_ids": ["asset-leo"],
+            "approved_reference_asset_ids": ["asset-leo"],
+        },
+        "mia": {
+            "reference_asset_ids": ["asset-mia"],
+            "approved_reference_asset_ids": ["asset-mia"],
+        },
+    }
+    assert select_scene_character_reference(
+        {"character_ids": ["leo", "leo"]}, profiles
+    ) == {"character_id": "leo", "reference_asset_id": "asset-leo"}
+    with pytest.raises(ValueError, match="no assigned character"):
+        select_scene_character_reference({"character_ids": []}, profiles)
+    with pytest.raises(ValueError, match="multiple characters"):
+        select_scene_character_reference({"character_ids": ["leo", "mia"]}, profiles)
+
+
+def test_select_scene_character_reference_rejects_unapproved_or_unregistered_asset() -> None:
+    from modules.ai_video_studio.media.scene_visual_asset_workflow import select_scene_character_reference
+
+    with pytest.raises(ValueError, match="no approved reference"):
+        select_scene_character_reference(
+            {"character_ids": ["leo"]},
+            {"leo": {"reference_asset_ids": ["asset-leo"], "approved_reference_asset_ids": []}},
+        )
+    with pytest.raises(ValueError, match="no approved reference"):
+        select_scene_character_reference(
+            {"character_ids": ["leo"]},
+            {"leo": {"reference_asset_ids": ["asset-leo"], "approved_reference_asset_ids": ["asset-other"]}},
+        )
