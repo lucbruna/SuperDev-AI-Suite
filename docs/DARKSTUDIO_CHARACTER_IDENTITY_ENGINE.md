@@ -39,6 +39,11 @@ which scenes have approved reference asset IDs and which require review.
 
 ## Honest validation boundary
 
+Only approved asset IDs are included in the provider-neutral character prompt metadata.
+This implementation validates and tracks those assets; it does not yet load image
+bytes or transmit image-reference inputs to a generation provider. Provider adapters
+must implement that transport before claiming image-conditioned character consistency.
+
 An approved reference ID means the asset exists and a human approved its use; it does
 not mean that generated pixels match the reference. The engine still cannot compare
 faces, clothing, poses, or semantic identity in generated images. A later provider/vision
