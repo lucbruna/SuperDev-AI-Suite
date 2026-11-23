@@ -325,3 +325,41 @@ def restore_scene_image_history(
             clip["status"] = "stale"
             clip["reason"] = "Uma imagem anterior foi restaurada; gere novamente o clipe VidGrid."
     return updated, deepcopy(selected)
+
+
+def select_scene_character_reference(
+    scene: dict[str, Any], profiles: dict[str, Any]
+) -> dict[str, str]:
+    """Select one explicitly approved reference for a single-character scene.
+
+    AUTOMATIC1111 img2img accepts one init image in this integration. Scenes
+    containing zero or multiple assigned characters must use another workflow
+    rather than silently conditioning on an arbitrary character.
+    """
+    raw_ids = scene.get("character_ids")
+    if not isinstance(raw_ids, list):
+        raise ValueError("Scene must explicitly declare character_ids")
+    character_ids = list(dict.fromkeys(
+        item.strip() for item in raw_ids if isinstance(item, str) and item.strip()
+    ))
+    if not character_ids:
+        raise ValueError("Scene has no assigned character for reference conditioning")
+    if len(character_ids) != 1:
+        raise ValueError(
+            "Scene has multiple characters; select a composition workflow that supports multiple references"
+        )
+    character_id = character_ids[0]
+    profile = profiles.get(character_id)
+    if not isinstance(profile, dict):
+        raise ValueError(f"Character identity profile is missing: {character_id}")
+    registered = profile.get("reference_asset_ids")
+    approved = profile.get("approved_reference_asset_ids")
+    registered = registered if isinstance(registered, list) else []
+    approved = approved if isinstance(approved, list) else []
+    available = [
+        item for item in dict.fromkeys(str(value) for value in approved)
+        if item in registered and item.strip()
+    ]
+    if not available:
+        raise ValueError(f"Character has no approved reference image: {character_id}")
+    return {"character_id": character_id, "reference_asset_id": available[0]}
