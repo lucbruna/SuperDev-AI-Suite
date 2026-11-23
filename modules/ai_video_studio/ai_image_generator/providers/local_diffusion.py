@@ -166,6 +166,74 @@ def generate_scene_image(
     return output
 
 
+
+def edit_image_bytes(
+    source_bytes: bytes,
+    prompt: str,
+    *,
+    source_mime_type: str = "image/png",
+    negative_prompt: str = "",
+    denoising_strength: float = 0.35,
+    steps: int = 20,
+    cfg_scale: float = 7.0,
+    seed: int = -1,
+    timeout: float = 240.0,
+    max_source_bytes: int = 12 * 1024 * 1024,
+) -> dict[str, Any]:
+    """Condition img2img on validated image bytes without accepting client paths."""
+    from io import BytesIO
+    from PIL import Image, UnidentifiedImageError
+
+    if not isinstance(source_bytes, bytes) or not source_bytes:
+        raise ValueError("source image bytes cannot be empty")
+    if len(source_bytes) > max_source_bytes:
+        raise ValueError("source image exceeds the 12 MiB reference limit")
+    if source_mime_type.lower() not in {"image/png", "image/jpeg", "image/webp"}:
+        raise ValueError("source image MIME type must be PNG, JPEG or WebP")
+    if not prompt.strip():
+        raise ValueError("image edit prompt cannot be empty")
+    if not math.isfinite(denoising_strength) or not 0.05 <= denoising_strength <= 0.95:
+        raise ValueError("denoising_strength must be between 0.05 and 0.95")
+    if steps < 1 or steps > 60:
+        raise ValueError("image steps must be between 1 and 60")
+    if not math.isfinite(cfg_scale) or cfg_scale < 1 or cfg_scale > 20:
+        raise ValueError("cfg_scale must be between 1 and 20")
+    if timeout < 1 or timeout > 900:
+        raise ValueError("image timeout must be between 1 and 900 seconds")
+    try:
+        with Image.open(BytesIO(source_bytes)) as image:
+            detected = (image.format or "").upper()
+            if detected not in {"PNG", "JPEG", "WEBP"}:
+                raise ValueError("source image content must be PNG, JPEG or WebP")
+            image.verify()
+    except (UnidentifiedImageError, OSError) as exc:
+        raise ValueError("source image bytes are corrupt or unsupported") from exc
+
+    encoded = base64.b64encode(source_bytes).decode("ascii")
+    payload = {
+        "init_images": [encoded],
+        "prompt": prompt[:4000],
+        "negative_prompt": negative_prompt[:2000],
+        "denoising_strength": denoising_strength,
+        "steps": steps,
+        "cfg_scale": cfg_scale,
+        "seed": int(seed),
+        "batch_size": 1,
+        "n_iter": 1,
+        "save_images": False,
+    }
+    result = _post_json(f"{_api_base_url()}/sdapi/v1/img2img", payload, timeout)
+    output = _decode_image(result, "darkstudio_character_reference")
+    output.update({
+        "operation": "image_to_image",
+        "seed": _reported_seed(result.get("info"), seed),
+        "reference_transmitted": True,
+        "reference_mime_type": source_mime_type.lower(),
+        "reference_bytes": len(source_bytes),
+    })
+    return output
+
+
 def edit_image(
     source_path: str | Path,
     prompt: str,
