@@ -75,18 +75,26 @@ def build_character_identity_prompt(profile: dict[str, Any]) -> dict[str, Any]:
         lines.append("PRESERVE: " + "; ".join(identity["invariants"]))
     if identity["forbidden_variations"]:
         lines.append("DO NOT CHANGE: " + "; ".join(identity["forbidden_variations"]))
-    if identity["reference_asset_ids"]:
+    if "approved_reference_asset_ids" in profile:
+        approved = list(dict.fromkeys(
+            str(item) for item in (profile.get("approved_reference_asset_ids") or [])
+            if str(item) in identity["reference_asset_ids"]
+        ))
+    else:
+        # Backward compatibility for callers that construct trusted profiles
+        # directly; API-managed profiles always require explicit approval.
+        approved = identity["reference_asset_ids"]
+    if approved:
         lines.append(
-            "Use the approved character reference assets: "
-            + ", ".join(identity["reference_asset_ids"])
+            "Use the approved character reference assets: " + ", ".join(approved)
         )
     else:
         lines.append("No approved visual reference asset is attached; human review is required.")
     return {
         "character_id": identity["character_id"],
         "prompt": "\n".join(lines),
-        "reference_asset_ids": identity["reference_asset_ids"],
-        "requires_human_review": not bool(identity["reference_asset_ids"]),
+        "reference_asset_ids": approved,
+        "requires_human_review": not bool(approved),
         "pixel_identity_verified": False,
     }
 
