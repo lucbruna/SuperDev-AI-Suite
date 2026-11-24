@@ -89,7 +89,7 @@ def test_visual_plan_rejects_active_render_lock(monkeypatch) -> None:
                 visual_assets.VisualPlanRequest(apply_suggestions=True),
             )
         )
-    assert exc.value.status_code == 503
+    assert exc.value.status_code == 409
 
 
 def test_candidate_listing_ranks_and_does_not_expose_local_paths(monkeypatch) -> None:
