@@ -690,29 +690,56 @@ async def generate_scene_character_image(
     raw_profiles = record.get("character_identities")
     profiles = raw_profiles if isinstance(raw_profiles, dict) else {}
     profiles = _profiles_with_current_approved_references(record, profiles)
-    from modules.ai_video_studio.media.scene_visual_asset_workflow import (
-        select_scene_character_reference, stage_scene_image_candidate,
-    )
+    from modules.ai_video_studio.media.scene_visual_asset_workflow import stage_scene_image_candidate
     from modules.ai_video_studio.media.character_identity import build_character_identity_prompt
-    try:
-        selected = select_scene_character_reference(scene, profiles)
-    except ValueError as exc:
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    from modules.ai_video_studio.media.output_paths import get_subsystem_dir
+    from uuid import uuid4
 
-    character_id = selected["character_id"]
-    reference_asset_id = selected["reference_asset_id"]
-    try:
-        metadata = _resolve_character_reference_asset(record, reference_asset_id)
-    except HTTPException:
-        raise
+    raw_character_ids = scene.get("character_ids")
+    if not isinstance(raw_character_ids, list) or not raw_character_ids:
+        raise HTTPException(status_code=409, detail="Scene must explicitly declare character_ids before character-consistent generation")
+    character_ids = list(dict.fromkeys(str(value).strip() for value in raw_character_ids if str(value).strip()))
+    if not character_ids:
+        raise HTTPException(status_code=409, detail="Scene has no valid character IDs")
+    selected_profiles: dict[str, dict[str, Any]] = {}
+    reference_paths: dict[str, Path] = {}
+    reference_metadata: dict[str, dict[str, Any]] = {}
+    for character_id in character_ids:
+        profile = profiles.get(character_id)
+        if not isinstance(profile, dict):
+            raise HTTPException(status_code=409, detail=f"Character identity profile '{character_id}' is missing")
+        approved = [
+            item for item in (profile.get("approved_reference_asset_ids") or [])
+            if item in (profile.get("reference_asset_ids") or [])
+        ]
+        if not approved:
+            raise HTTPException(status_code=409, detail=f"Character '{character_id}' has no currently approved reference")
+        asset_id = str(approved[0])
+        try:
+            metadata = _resolve_character_reference_asset(record, asset_id)
+        except HTTPException:
+            raise
+        asset = asset_routes._assets.get(asset_id) or {}
+        source_path = Path(str(asset.get("file_path") or "")).expanduser()
+        try:
+            if not source_path.is_file():
+                raise HTTPException(status_code=422, detail=f"Reference image for '{character_id}' is unavailable")
+            if source_path.stat().st_size > 12 * 1024 * 1024:
+                raise HTTPException(status_code=413, detail=f"Reference image for '{character_id}' exceeds 12 MiB")
+            if source_path.stat().st_size <= 0:
+                raise HTTPException(status_code=422, detail=f"Reference image for '{character_id}' is empty")
+        except OSError as exc:
+            raise HTTPException(status_code=422, detail=f"Reference image for '{character_id}' could not be read") from exc
+        selected_profiles[character_id] = profile
+        reference_paths[character_id] = source_path
+        reference_metadata[character_id] = {**metadata, "asset_id": asset_id}
 
-    profile = profiles[character_id]
-    identity_prompt = build_character_identity_prompt(profile)
+    identity_prompts = [
+        build_character_identity_prompt(selected_profiles[character_id])["prompt"]
+        for character_id in character_ids
+    ]
     visual_brief = scene.get("visual_brief")
-    if isinstance(visual_brief, dict):
-        scene_prompt = str(visual_brief.get("visual_core") or "").strip()
-    else:
-        scene_prompt = ""
+    scene_prompt = str(visual_brief.get("visual_core") or "").strip() if isinstance(visual_brief, dict) else ""
     scene_prompt = (
         str(req.prompt or "").strip()
         or scene_prompt
@@ -720,46 +747,64 @@ async def generate_scene_character_image(
     )
     if not scene_prompt:
         raise HTTPException(status_code=422, detail="Scene has no visual prompt or description")
-    full_prompt = f"{scene_prompt}\n\n{identity_prompt['prompt']}\n\nUse the supplied reference image as the character's visual starting point. Preserve the same face, hair, clothing, proportions and material style while changing only pose, expression and scene composition."
-    if len(full_prompt) > 8000:
-        full_prompt = full_prompt[:8000]
+    full_prompt = (
+        scene_prompt + "\\n\\n" + "\\n\\n".join(identity_prompts)
+        + "\\n\\nUse the supplied character reference images as visual identity anchors. "
+        "Preserve each character's face, hair, clothing, proportions and felt material style. "
+        "Change only pose, expression, camera composition and scene interaction."
+    )[:8000]
 
-    asset = asset_routes._assets.get(reference_asset_id) or {}
-    source_path = Path(str(asset.get("file_path") or "")).expanduser()
-    max_reference_bytes = 12 * 1024 * 1024
+    image_root = Path(get_subsystem_dir("images")).resolve()
+    image_root.mkdir(parents=True, exist_ok=True)
+    output_path = image_root / f"scene_{scene_index}_character_{uuid4().hex}.png"
     try:
-        if not source_path.is_file():
-            raise HTTPException(status_code=422, detail="Character reference image file is unavailable")
-        if source_path.stat().st_size > max_reference_bytes:
-            raise HTTPException(status_code=413, detail="Character reference image exceeds the 12 MiB limit")
-        source_bytes = source_path.read_bytes()
+        from modules.ai_video_studio.ai_image_generator.providers.comfyui_image_provider import ComfyUIImageProvider
+        comfy_provider = ComfyUIImageProvider()
+        if comfy_provider.is_configured():
+            result = await asyncio.to_thread(
+                comfy_provider.generate,
+                prompt=full_prompt,
+                references_by_character=reference_paths,
+                output_path=output_path,
+                negative_prompt=req.negative_prompt,
+            )
+            provider_name = result.get("provider", "comfyui_image_workflow")
+            reference_transmitted = True
+            reference_bytes = sum(path.stat().st_size for path in reference_paths.values())
+            operation = "scene_multi_character_comfyui_image"
+        elif len(character_ids) > 1:
+            raise HTTPException(
+                status_code=503,
+                detail="Scenes with multiple characters require DARKSTUDIO_COMFYUI_IMAGE_WORKFLOW and DARKSTUDIO_COMFYUI_IMAGE_MAPPING; AUTOMATIC1111 img2img supports only one reference image.",
+            )
+        else:
+            source_path = reference_paths[character_ids[0]]
+            source_bytes = source_path.read_bytes()
+            metadata = reference_metadata[character_ids[0]]
+            from modules.ai_video_studio.ai_image_generator.providers.local_diffusion import edit_image_bytes
+            result = await asyncio.to_thread(
+                edit_image_bytes, source_bytes, full_prompt,
+                source_mime_type=metadata["mime_type"],
+                negative_prompt=req.negative_prompt,
+                denoising_strength=req.denoising_strength,
+                steps=req.steps,
+                cfg_scale=req.cfg_scale,
+            )
+            provider_name = result.get("provider", "automatic1111_compatible")
+            reference_transmitted = bool(result.get("reference_transmitted"))
+            reference_bytes = int(result.get("reference_bytes") or len(source_bytes))
+            operation = "scene_character_image_to_image"
+            output_path = Path(str(result.get("image_path") or "")).resolve()
     except HTTPException:
         raise
-    except OSError as exc:
-        raise HTTPException(status_code=422, detail="Character reference image could not be read") from exc
-    if not source_bytes or len(source_bytes) > max_reference_bytes:
-        raise HTTPException(status_code=413 if source_bytes else 422, detail="Character reference image is empty or exceeds the 12 MiB limit")
-
-    try:
-        from modules.ai_video_studio.ai_image_generator.providers.local_diffusion import edit_image_bytes
-        result = await asyncio.to_thread(
-            edit_image_bytes, source_bytes, full_prompt,
-            source_mime_type=metadata["mime_type"],
-            negative_prompt=req.negative_prompt,
-            denoising_strength=req.denoising_strength,
-            steps=req.steps,
-            cfg_scale=req.cfg_scale,
-        )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except RuntimeError as exc:
-        raise HTTPException(status_code=502, detail="Configured AUTOMATIC1111-compatible image provider failed") from exc
+        raise HTTPException(status_code=502, detail="Configured scene image provider failed") from exc
+    except TimeoutError as exc:
+        raise HTTPException(status_code=504, detail="Scene image provider timed out") from exc
 
-    from modules.ai_video_studio.media.output_paths import get_subsystem_dir
-    from uuid import uuid4
-    image_root = Path(get_subsystem_dir("images")).resolve()
-    output_path = Path(str(result.get("image_path") or "")).resolve()
-    if image_root not in output_path.parents or not output_path.is_file() or output_path.stat().st_size <= 0:
+    if image_root not in output_path.resolve().parents or not output_path.is_file() or output_path.stat().st_size <= 0:
         raise HTTPException(status_code=502, detail="Image provider returned an invalid output outside the DARKSTUDIO image directory")
 
     candidate_id = str(uuid4())
@@ -767,16 +812,18 @@ async def generate_scene_character_image(
         "candidate_id": candidate_id,
         "image_path": str(output_path),
         "image_url": to_download_url(str(output_path)),
-        "provider": result.get("provider", "automatic1111_compatible"),
-        "operation": "scene_character_image_to_image",
+        "provider": provider_name,
+        "operation": operation,
         "prompt": full_prompt,
         "negative_prompt": req.negative_prompt,
         "seed": result.get("seed", -1),
         "status": "pending_approval",
-        "character_id": character_id,
-        "reference_asset_id": reference_asset_id,
-        "reference_transmitted": bool(result.get("reference_transmitted")),
-        "reference_bytes": int(result.get("reference_bytes") or len(source_bytes)),
+        "character_id": character_ids[0] if len(character_ids) == 1 else None,
+        "character_ids": character_ids,
+        "reference_asset_id": reference_metadata[character_ids[0]]["asset_id"] if len(character_ids) == 1 else None,
+        "reference_asset_ids": [reference_metadata[item]["asset_id"] for item in character_ids],
+        "reference_transmitted": reference_transmitted,
+        "reference_bytes": reference_bytes,
         "pixel_identity_verified": False,
     }
     try:
@@ -798,8 +845,8 @@ async def generate_scene_character_image(
         "status": "pending_approval",
         "image_url": candidate["image_url"],
         "provider": candidate["provider"],
-        "character_id": character_id,
-        "reference_asset_id": reference_asset_id,
+        "character_ids": character_ids,
+        "reference_asset_ids": candidate["reference_asset_ids"],
         "reference_transmitted": candidate["reference_transmitted"],
         "pixel_identity_verified": False,
         "active_image_replaced": False,
