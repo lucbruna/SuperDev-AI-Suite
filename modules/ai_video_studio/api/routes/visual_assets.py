@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from fastapi import APIRouter, HTTPException
+from modules.ai_video_studio.core.exceptions import ValidationError
 from pydantic import BaseModel, Field, ConfigDict
 
 from modules.ai_video_studio.api.routes import assets as asset_routes
@@ -676,11 +677,15 @@ async def generate_scene_character_image(
         raise HTTPException(status_code=409, detail="Scene assets are locked by an active operation")
 
     scenes = _source_scenes(record)
-    position = next(
-        (i for i, item in enumerate(scenes)
-         if int(item.get("_source_scene_index", i)) == scene_index),
-        None,
-    )
+    position = None
+    for scene_position, scene_item in enumerate(scenes):
+        try:
+            original_index = int(scene_item.get("_source_scene_index", scene_position))
+        except (TypeError, ValueError):
+            continue
+        if original_index == scene_index:
+            position = scene_position
+            break
     if position is None and scene_index < len(scenes):
         position = scene_index
     if position is None:
@@ -797,7 +802,7 @@ async def generate_scene_character_image(
             output_path = Path(str(result.get("image_path") or "")).resolve()
     except HTTPException:
         raise
-    except ValueError as exc:
+    except (ValueError, ValidationError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except RuntimeError as exc:
         raise HTTPException(status_code=502, detail="Configured scene image provider failed") from exc
