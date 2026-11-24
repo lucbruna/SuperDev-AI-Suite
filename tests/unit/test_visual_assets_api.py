@@ -696,7 +696,7 @@ def test_scene_character_generation_requires_comfyui_for_multiple_characters(mon
         asyncio.run(visual_assets.generate_scene_character_image(
             "job-visual-1", 4, visual_assets.SceneCharacterImageGenerationRequest(prompt="Two characters")
         ))
-    assert exc.value.status_code == 409
+    assert exc.value.status_code == 503
 
 
 def test_scene_character_generation_uses_comfyui_for_multiple_approved_characters(monkeypatch, tmp_path):
