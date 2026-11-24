@@ -89,7 +89,7 @@ class _DeterministicVoiceEngine:
         # This is a pipeline integration proof, not a Portuguese voice-quality test.
         output = self.output_dir / f"darkstudio-voice-{abs(hash(text))}.wav"
         sample_rate = 22050
-        duration = 1.25
+        duration = 8.0
         samples = (0.12 * np.sin(2 * np.pi * 440 * np.arange(int(sample_rate * duration)) / sample_rate))
         pcm = (samples * 32767).astype(np.int16)
         with wave.open(str(output), "wb") as wav:
