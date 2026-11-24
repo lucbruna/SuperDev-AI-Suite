@@ -89,7 +89,7 @@ def test_visual_plan_rejects_active_render_lock(monkeypatch) -> None:
                 visual_assets.VisualPlanRequest(apply_suggestions=True),
             )
         )
-    assert exc.value.status_code == 409
+    assert exc.value.status_code == 503
 
 
 def test_candidate_listing_ranks_and_does_not_expose_local_paths(monkeypatch) -> None:
@@ -663,7 +663,7 @@ def test_scene_character_generation_stages_candidate_without_replacing_active_im
     assert len(persisted) == 1
 
 
-def test_scene_character_generation_rejects_multiple_characters_before_provider(monkeypatch, tmp_path):
+def test_scene_character_generation_requires_comfyui_for_multiple_characters(monkeypatch, tmp_path):
     reference_file = tmp_path / "reference.png"
     reference_file.write_bytes(b"image")
     record = _record()
@@ -697,3 +697,92 @@ def test_scene_character_generation_rejects_multiple_characters_before_provider(
             "job-visual-1", 4, visual_assets.SceneCharacterImageGenerationRequest(prompt="Two characters")
         ))
     assert exc.value.status_code == 409
+
+
+def test_scene_character_generation_uses_comfyui_for_multiple_approved_characters(monkeypatch, tmp_path):
+    from io import BytesIO
+    from PIL import Image
+
+    reference_buffer = BytesIO()
+    Image.new("RGB", (16, 16), (90, 120, 180)).save(reference_buffer, format="PNG")
+    reference_bytes = reference_buffer.getvalue()
+    mia_file = tmp_path / "mia.png"
+    leo_file = tmp_path / "leo.png"
+    mia_file.write_bytes(reference_bytes)
+    leo_file.write_bytes(reference_bytes)
+    image_root = tmp_path / "images"
+    image_root.mkdir()
+    output_file = image_root / "comfyui-scene.png"
+
+    record = _record()
+    record["_source_scenes"][0].update({
+        "character_ids": ["mia", "leo"],
+        "visual_prompt": "Mia e Leo conversam em uma praça de feltro",
+    })
+    record["character_identities"] = {
+        character_id: {
+            "character_id": character_id,
+            "name": character_id.title(),
+            "visual_identity": f"{character_id.title()} felt character",
+            "reference_asset_ids": [f"{character_id}-ref"],
+            "approved_reference_asset_ids": [f"{character_id}-ref"],
+            "reference_asset_reviews": {f"{character_id}-ref": "approved"},
+            "invariants": [f"{character_id} invariant"],
+            "forbidden_variations": [],
+        }
+        for character_id in ("mia", "leo")
+    }
+    monkeypatch.setattr(video, "_jobs", {"job-visual-1": record})
+    monkeypatch.setattr(asset_routes, "_assets", {
+        f"{character_id}-ref": {
+            "id": f"{character_id}-ref", "project_id": "project-1",
+            "asset_type": "image", "mime_type": "image/png",
+            "file_path": str(path), "file_size_bytes": path.stat().st_size,
+        }
+        for character_id, path in (("mia", mia_file), ("leo", leo_file))
+    })
+    from modules.ai_video_studio.media import output_paths
+    monkeypatch.setattr(output_paths, "get_subsystem_dir", lambda _name: image_root)
+
+    captured = {}
+    class FakeComfyUIImageProvider:
+        def is_configured(self):
+            return True
+
+        def generate(self, **kwargs):
+            captured.update(kwargs)
+            Image.new("RGB", (32, 32), (30, 180, 90)).save(kwargs["output_path"])
+            return {
+                "provider": "comfyui_image_workflow",
+                "prompt_id": "fake-image-job",
+                "output_path": str(kwargs["output_path"]),
+                "character_ids": ["leo", "mia"],
+                "reference_count": 2,
+            }
+
+    from modules.ai_video_studio.ai_image_generator.providers import comfyui_image_provider
+    monkeypatch.setattr(comfyui_image_provider, "ComfyUIImageProvider", FakeComfyUIImageProvider)
+    monkeypatch.setattr(visual_assets, "to_download_url", lambda path: f"/media/{Path(path).name}")
+    persisted = []
+    monkeypatch.setattr(video, "_persist_job", lambda item: persisted.append(item.copy()))
+
+    response = asyncio.run(visual_assets.generate_scene_character_image(
+        "job-visual-1", 4, visual_assets.SceneCharacterImageGenerationRequest()
+    ))
+
+    assert set(captured["references_by_character"]) == {"mia", "leo"}
+    assert captured["references_by_character"]["mia"] == mia_file
+    assert captured["references_by_character"]["leo"] == leo_file
+    assert "Mia felt character" in captured["prompt"]
+    assert "Leo felt character" in captured["prompt"]
+    assert response["provider"] == "comfyui_image_workflow"
+    assert response["character_ids"] == ["mia", "leo"]
+    assert response["reference_asset_ids"] == ["mia-ref", "leo-ref"]
+    assert response["active_image_replaced"] is False
+    candidate = next(
+        item for item in record["scene_image_candidates"]["4"]
+        if item["candidate_id"] == response["candidate_id"]
+    )
+    assert candidate["status"] == "pending_approval"
+    assert candidate["pixel_identity_verified"] is False
+    assert len(persisted) == 1
