@@ -14,7 +14,6 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
-from io import BytesIO
 from pathlib import Path
 from typing import Any
 
